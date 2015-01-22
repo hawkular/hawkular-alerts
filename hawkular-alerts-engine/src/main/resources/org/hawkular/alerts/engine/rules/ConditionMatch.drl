@@ -1,0 +1,195 @@
+/*
+ * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.hawkular.alerts.engine.rules
+
+import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
+import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
+import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.condition.CompareCondition;
+import org.hawkular.alerts.api.model.condition.CompareConditionEval;
+import org.hawkular.alerts.api.model.condition.StringCondition;
+import org.hawkular.alerts.api.model.condition.StringConditionEval;
+import org.hawkular.alerts.api.model.condition.ThresholdCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
+import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
+import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.data.Availability;
+import org.hawkular.alerts.api.model.data.Availability.AvailabilityType
+import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.data.StringData;
+import org.hawkular.alerts.api.model.notification.Notification;
+import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.NotificationsService;
+
+import org.slf4j.Logger;
+
+import java.util.HashSet;
+import java.util.List;
+
+global Logger log;
+global NotificationsService notifications;
+global List alerts;
+
+////// CONDITION MATCHING
+
+rule Threshold
+    when 
+        $t : Trigger( active == true, $tid : id )
+        $c : ThresholdCondition ( triggerId == $tid, $did : dataId )
+        NumericData( $did == id, $value : value)
+    then
+        ThresholdConditionEval ce = new ThresholdConditionEval($c, (Double)$value);
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Threshold Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+        }
+        insert( ce );
+end
+
+rule ThresholdRange
+    when 
+        $t : Trigger( active == true, $tid : id )
+        $c : ThresholdRangeCondition ( triggerId == $tid, $did : dataId )
+        NumericData( $did == id, $value : value)
+    then
+        ThresholdRangeConditionEval ce = new ThresholdRangeConditionEval($c, (Double)$value);
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("ThresholdRange Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+        }
+        insert( ce );
+end
+
+rule Compare
+    when 
+        $t : Trigger( active == true, $tid : id )
+        $c : CompareCondition ( triggerId == $tid, $d1id : data1Id, $d2id : data2Id )
+        NumericData( $d1id == id, $value1 : value)
+        NumericData( $d2id == id, $value2 : value)
+    then
+        CompareConditionEval ce = new CompareConditionEval($c, (Double)$value1, (Double)$value2);
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Compare Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+        }
+        insert( ce );
+end
+
+rule Availability
+    when 
+        $t : Trigger( active == true, $tid : id )
+        $c : AvailabilityCondition ( triggerId == $tid, $did : dataId )
+        Availability( $did == id, $value : value)
+    then
+        AvailabilityConditionEval ce = new AvailabilityConditionEval($c, (AvailabilityType)$value);
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Availability Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+        }
+        insert( ce );
+end
+
+rule String
+    when 
+        $t : Trigger( active == true, $tid : id )
+        $c : StringCondition ( triggerId == $tid, $did : dataId  )
+        StringData( $did == id, $value : value)
+    then
+        StringConditionEval ce = new StringConditionEval($c, (String)$value);
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("String Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+        }
+        insert( ce );
+end
+
+rule RemoveProcessedData
+    when 
+        $d : NumericData()
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Retracting " + $d + "..." );
+        }
+        retract ( $d );
+end
+
+////// DAMPENING
+
+rule ProvideDefaultDampening
+    when
+        $t : Trigger( active == true, $tid : id )
+        not Dampening( triggerId == $tid )
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Adding default dampening for trigger! " + $t.getId());
+        }
+        Dampening d = new Dampening( $tid, Dampening.Type.STRICT, 1, 1, 0L );
+        insert( d );
+end
+
+
+rule DampenOneConditionTrigger
+    when
+        $t  : Trigger( active == true, $tid : id )
+        $d  : Dampening( triggerId == $tid, satisfied == false ) 
+        $ce : ConditionEval ( triggerId == $tid, conditionSetSize == 1, conditionSetIndex == 1 )
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Updating dampening for and then retracting " + $ce);
+        }
+        $d.perform( $ce );
+        update( $d );
+        retract ( $ce );
+end
+
+rule DampenTwoConditionTrigger
+    when
+        $t   : Trigger( active == true, $tid : id )
+        $d   : Dampening( triggerId == $tid, satisfied == false ) 
+        $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 2, conditionSetIndex == 1 )
+        $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 2, conditionSetIndex == 2 )
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Updating dampening for and then retracting " + $ce1 + $ce2);
+        }
+        $d.perform( $ce1, $ce2 );
+        update( $d );
+        retract ( $ce1 );
+        retract ( $ce2 );
+end
+
+////// ALERT GENERATION
+
+rule AlertOnSatisfiedDampening
+    when
+        $t  : Trigger( active == true, $tid : id )
+        $d  : Dampening( triggerId == $tid, satisfied == true ) 
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("AlertDampeningOneCondition! " + $d.getLog());
+        }
+        Alert newAlert = new Alert( $tid, $d.getSatisfyingEvals() );
+        alerts.add(newAlert);
+        if (notifications != null) {
+            for (String notifierId : $t.getNotifiers()) {
+                Notification notification = new Notification();
+                notification.setNotifierId(notifierId);
+                notification.setMessage(newAlert.toString());
+                notifications.send(notification);
+            }
+        }
+        insert(  newAlert );
+        $d.reset();
+        update( $d )
+end

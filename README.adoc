@@ -1,0 +1,38 @@
+= hawkular-alerts
+
+== hawkular-bus
+
+1. `cd hawkular-bus ; mvn clean install -Pdev`
+
+Note:
+
+Verify that Bus is configured in failover mode due:
+https://issues.jboss.org/browse/HAWKULAR-14
+
+== hawkular-alerts
+
+1. `cd hawkular-alerts ; mvn clean install -Pdev`
+
+In case you don't have hawkular-bus and hawkular-alerts project in the same folder you should indicate path of bus:
+
+1. `NEST_HOME=$PATH_TO/hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-8.2.0.Final`
+2. `cd hawkular-alerts ; mvn clean install -Pdev -Dorg.hawkular.wildfly.home=$NEST_HOME`
+
+== Tests
+
+1. Send metrics to Hawkular Bus:
+
+curl -X POST -H "Content-Type: application/json" \
+--data "{\"data\" : [ { \"id\": \"NumericData-01\", \"type\" : \"numeric\", \"value\" : 0.1} ]}" \
+http://localhost:8080/hawkular-bus/message/MetricsTopic
+
+curl -X POST -H "Content-Type: application/json" \
+--data "{\"data\" : [ { \"id\": \"StringData-01\", \"type\" : \"string\", \"value\" : \"Barney\"} ]}" \
+http://localhost:8080/hawkular-bus/message/MetricsTopic
+
+curl -X POST -H "Content-Type: application/json" \
+--data "{\"data\" : [ { \"id\": \"Availability-01\", \"type\" : \"availability\", \"value\" : \"UP\"} ]}" \
+http://localhost:8080/hawkular-bus/message/MetricsTopic
+
+
+
