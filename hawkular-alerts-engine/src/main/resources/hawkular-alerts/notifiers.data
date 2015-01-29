@@ -1,0 +1,5 @@
+#notifier id, notifier type,description
+SNMP-Trap-1,snmp,description
+SNMP-Trap-2,snmp,description
+admin@email.com,email,description
+SMS-555-12345,sms,description
