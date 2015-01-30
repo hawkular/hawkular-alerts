@@ -27,6 +27,7 @@
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts</artifactId>
     <version>1.0.0.Alpha1-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
   </parent>
 
   <groupId>org.hawkular.alerts</groupId>
