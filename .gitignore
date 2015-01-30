@@ -18,5 +18,10 @@ target/
 .idea
 *.iml
 
+# Eclipse
+.project
+.classpath
+.settings
+
 # KDE
 .directory
