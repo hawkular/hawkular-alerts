@@ -20,6 +20,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.hawkular</groupId>
+    <artifactId>hawkular-parent</artifactId>
+    <version>2</version>
+  </parent>
+
   <groupId>org.hawkular.alerts</groupId>
   <artifactId>hawkular-alerts</artifactId>
   <version>1.0.0.Alpha1-SNAPSHOT</version>
@@ -60,18 +66,6 @@
     <url>https://issues.jboss.org/browse/HWKALERTS</url>
     <system>jira</system>
   </issueManagement>
-  <distributionManagement>
-    <repository>
-      <id>jboss-releases-repository</id>
-      <name>JBoss Releases Repository</name>
-      <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
-    </repository>
-    <snapshotRepository>
-      <id>jboss-snapshots-repository</id>
-      <name>JBoss Snapshots Repository</name>
-      <url>https://repository.jboss.org/nexus/content/repositories/snapshots/</url>
-    </snapshotRepository>
-  </distributionManagement>
 
   <modules>
     <module>hawkular-alerts-api</module>
@@ -90,171 +84,23 @@
     <maven.compiler.source>1.6</maven.compiler.source>
     <maven.compiler.target>1.6</maven.compiler.target>
 
-    <checkstyleConsoleOutput>true</checkstyleConsoleOutput>
-    <checkstyleFailOnError>true</checkstyleFailOnError>
-    <checkstyle.suppressions.file>hawkular-checkstyle/suppressions.xml</checkstyle.suppressions.file>
-
     <org.hawkular.wildfly.home>${project.basedir}/../../hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-${version.org.wildfly}</org.hawkular.wildfly.home>
     <org.hawkular.wildfly.deployments>${org.hawkular.wildfly.home}/modules/system/layers/base/org/hawkular/nest/main/deployments</org.hawkular.wildfly.deployments>
 
-    <plugin.version.checkstyle>2.13</plugin.version.checkstyle>
     <plugin.version.ear>2.6</plugin.version.ear>
 
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-    <version.checkstyle>6.1.1</version.checkstyle>
     <version.com.google.code.gson>2.2.4</version.com.google.code.gson>
     <version.com.google.guava>16.0.1</version.com.google.guava>
     <version.com.mycila.license-maven-plugin>2.7</version.com.mycila.license-maven-plugin>
-    <version.com.puppycrawl.tools.checkstyle>6.1.1</version.com.puppycrawl.tools.checkstyle>
     <version.javaee.spec>7.0</version.javaee.spec>
     <version.junit>4.12</version.junit>
     <version.org.apache.activemq>5.10.0</version.org.apache.activemq>
     <version.org.drools>6.1.0.Final</version.org.drools>
     <version.org.eclipse.jgit>3.6.1.201501031845-r</version.org.eclipse.jgit>
-    <version.org.hawkular.hawkular-build-tools>5</version.org.hawkular.hawkular-build-tools>
     <version.org.hawkular.nest>1.0.0.Alpha1-SNAPSHOT</version.org.hawkular.nest>
     <version.org.jboss.spec>1.0.0.Final</version.org.jboss.spec>
     <version.org.slf4j>1.7.2</version.org.slf4j>
     <version.org.wildfly>8.2.0.Final</version.org.wildfly>
   </properties>
-
-  <dependencies>
-
-  </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.1</version>
-        <configuration>
-          <tagNameFormat>@{project.version}</tagNameFormat>
-          <preparationGoals>package</preparationGoals>
-          <goals>deploy</goals>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${plugin.version.checkstyle}</version>
-        <configuration>
-          <configLocation>hawkular-checkstyle/checkstyle.xml</configLocation>
-          <consoleOutput>${checkstyleConsoleOutput}</consoleOutput>
-          <failsOnError>${checkstyleFailOnError}</failsOnError>
-          <!-- Make includes relative to ${basedir} -->
-          <sourceDirectory>${basedir}</sourceDirectory>
-          <!-- in <includes>, it is necessary to avoid using an item-initial **/ wildcard
-               which pulls in also files from all submodules and target folders. We do not want
-               that. We rather have to name specific root folder patterns like *.extension
-               or directory/**/*.extension -->
-          <includes>
-            src/**/*.java,
-            *.xml,
-            src/**/*.xml,
-            src/**/*.js,
-            *.adoc,
-            src/**/*.adoc,
-            *.conf,
-            src/**/*.conf,
-            src/**/*.cql,
-            src/**/*.css,
-            Dockerfile,
-            src/**/Dockerfile,
-            src/**/*.groovy,
-            *.html,
-            src/**/*.html,
-            src/**/*.json,
-            src/**/*.js.map,
-            *.md,
-            src/**/*.md,
-            *.properties,
-            src/**/*.properties,
-            *.sh,
-            src/**/*.sh,
-            *.txt,
-            src/**/*.txt,
-            src/**/*.xsl,
-            *.yml,
-            src/**/*.yml,
-          </includes>
-          <!-- to override in a submodule, just redefine the checkstyle.suppressions.file property
-               in the given submodule's pom -->
-          <suppressionsLocation>${checkstyle.suppressions.file}</suppressionsLocation>
-          <useFile />
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>com.puppycrawl.tools</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>${version.checkstyle}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.hawkular</groupId>
-            <artifactId>hawkular-build-tools</artifactId>
-            <version>${version.org.hawkular.hawkular-build-tools}</version>
-          </dependency>
-        </dependencies>
-        <executions>
-          <execution>
-            <id>check-style</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>checkstyle</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>com.mycila</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <version>${version.com.mycila.license-maven-plugin}</version>
-        <configuration>
-          <header>hawkular-license/jboss-apache-2-template.txt</header>
-          <excludes>
-            <exclude>**/.bowerrc</exclude>
-            <exclude>**/.jshintrc</exclude>
-            <exclude>**/LICENSE</exclude>
-            <exclude>**/README.*</exclude>
-            <exclude>**/*.eot</exclude>
-            <exclude>**/*.otf</exclude>
-            <exclude>**/*.ttf</exclude>
-            <exclude>**/*.svg</exclude>
-            <exclude>**/*.woff</exclude>
-            <exclude>**/*.html</exclude>
-            <exclude>**/*.htm</exclude>
-          </excludes>
-          <mapping>
-            <conf>SCRIPT_STYLE</conf>
-            <cql>DOUBLEDASHES_STYLE</cql>
-            <Dockerfile>SCRIPT_STYLE</Dockerfile>
-            <g4>SLASHSTAR_STYLE</g4>
-            <iql>DOUBLEDASHES_STYLE</iql>
-            <jshintrc>SLASHSTAR_STYLE</jshintrc>
-            <java>SLASHSTAR_STYLE</java>
-            <ts>SLASHSTAR_STYLE</ts>
-          </mapping>
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>org.hawkular</groupId>
-            <artifactId>hawkular-build-tools</artifactId>
-            <version>${version.org.hawkular.hawkular-build-tools}</version>
-          </dependency>
-        </dependencies>
-        <executions>
-          <execution>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 
 </project>
