@@ -56,17 +56,6 @@
     </mailingList>
   </mailingLists>
 
-  <scm>
-    <connection>scm:git:git://github.com/hawkular/hawkular-alerts.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/hawkular/hawkular-alerts.git</developerConnection>
-    <url>https://github.com/hawkular/hawkular-alerts</url>
-    <tag>HEAD</tag>
-  </scm>
-  <issueManagement>
-    <url>https://issues.jboss.org/browse/HWKALERTS</url>
-    <system>jira</system>
-  </issueManagement>
-
   <modules>
     <module>hawkular-alerts-api</module>
     <module>hawkular-notifiers-api</module>
@@ -79,6 +68,17 @@
     <module>hawkular-notifiers-snmp</module>
     <module>examples/example-alerts-ui</module>
   </modules>
+
+  <scm>
+    <connection>scm:git:git://github.com/hawkular/hawkular-alerts.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/hawkular/hawkular-alerts.git</developerConnection>
+    <url>https://github.com/hawkular/hawkular-alerts</url>
+    <tag>HEAD</tag>
+  </scm>
+  <issueManagement>
+    <url>https://issues.jboss.org/browse/HWKALERTS</url>
+    <system>jira</system>
+  </issueManagement>
 
   <properties>
     <maven.compiler.source>1.6</maven.compiler.source>
