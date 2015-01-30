@@ -35,6 +35,7 @@ import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.data.StringData;
 import org.hawkular.alerts.api.model.notification.Notification;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerTemplate.Match;
 import org.hawkular.alerts.api.services.NotificationsService;
 
 import org.slf4j.Logger;
@@ -47,6 +48,18 @@ global NotificationsService notifications;
 global List alerts;
 
 ////// CONDITION MATCHING
+//
+// To perform dampening it is important not only to record positive condition evaluations but also false
+// evaluations.  True evals will contribute to an alert firing. And for default dampening (1 consecutive condition set
+// match) it is enough to fire the trigger.  But negative evals also contribute to dampening, resetting strict
+// dampening, and potentially resetting relaxed dampening.  So, each defined Condition will be evaluated when its
+// relevant Data facts are present in working memory , generating a ConditionEval fact which will then be applied
+// to the relevant Dampening fact.
+//
+// Data facts will be applied to all relevant Condition evals, and then will be retracted (using rule complexity
+// to fire the retract rule after the condition evals).
+
+// ConditionEval rules
 
 rule Threshold
     when 
@@ -74,6 +87,12 @@ rule ThresholdRange
         insert( ce );
 end
 
+// Note that at the moment a CompareCondition will only ever match if the NumericData facts are inserted
+// at the same time. If only one Data is present in WM it will not match this rule and will get retracted
+// as unused/unnencessary.  We may have to revisit this behavior and nail down the desired semantics of this
+// kind of condition.  One approach may be to insert a special fact type, here, like CompareData (in addition to
+// inserting as NumericData, for other condition evals) and then handle that retraction differently, always
+// holding onto the most recent data for the dataId, as needed for comparing data when it arrives at different times.
 rule Compare
     when 
         $t : Trigger( active == true, $tid : id )
@@ -114,17 +133,56 @@ rule String
         insert( ce );
 end
 
-rule RemoveProcessedData
-    when 
+// Data retraction rules
+
+rule RetractProcessedNumericData
+    when
         $d : NumericData()
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debug("Retracting " + $d + "..." );
+            log.debug( "Retracting " + $d + "..." );
         }
         retract ( $d );
 end
 
+rule RetractProcessedStringData
+    when
+        $d : StringData()
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug( "Retracting " + $d + "..." );
+        }
+        retract ( $d );
+end
+
+rule RetractProcessedAvailabilityData
+    when
+        $d : Availability()
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug( "Retracting " + $d + "..." );
+        }
+        retract ( $d );
+end
+
+
 ////// DAMPENING
+//
+// Dampening defines for each trigger how the number of positive, negative, and total evaluations determine
+// whether a trigger fires.  Additionally, there may be a constraint on the period of time involved in the
+// evaluations.
+//
+// Dampening is optionally defined for a Trigger.  If not defined default dampening will be applied for uniformaty of
+// processing.  Default dampening is basically handled as STRICT( 1 ).  Meaning 1 positive, consecutive evaluation
+// is required for the trigger to fire.  In other words, if the conditions match, the trigger fires.
+//
+// So, there is one Dampening fact for each Trigger fact.  And it is continually updated given each relevant condition
+// evaluation for the trigger.  After the evaluation has been recorded in the dampening, it is retracted as a fact.
+// Note that despite being retracted as a fact, the XxxEval pojos are maintained in the Dampening pojo as auditing
+// information for any firing of the trigger.
+//
+// Note that there are N rules required to cover triggers varying numbers of conditions, from 1..N, with N being the
+// maximum number of supported conditions.  Current MAX_CONDITIONS = 4.
 
 rule ProvideDefaultDampening
     when
@@ -138,10 +196,23 @@ rule ProvideDefaultDampening
         insert( d );
 end
 
+rule DampenTriggerAny
+    when
+        $t  : Trigger( active == true, match == Match.ANY, $tid : id )
+        $d  : Dampening( triggerId == $tid, satisfied == false )
+        $ce : ConditionEval ( triggerId == $tid )
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug( "Updating dampening (ANY) for and then retracting " + $ce );
+        }
+        $d.perform( $ce );
+        update( $d );
+        retract ( $ce );
+end
 
 rule DampenOneConditionTrigger
     when
-        $t  : Trigger( active == true, $tid : id )
+        $t  : Trigger( active == true, match == Match.ALL, $tid : id )
         $d  : Dampening( triggerId == $tid, satisfied == false ) 
         $ce : ConditionEval ( triggerId == $tid, conditionSetSize == 1, conditionSetIndex == 1 )
     then
@@ -155,8 +226,8 @@ end
 
 rule DampenTwoConditionTrigger
     when
-        $t   : Trigger( active == true, $tid : id )
-        $d   : Dampening( triggerId == $tid, satisfied == false ) 
+        $t  : Trigger( active == true, match == Match.ALL, $tid : id )
+        $d   : Dampening( triggerId == $tid, satisfied == false )
         $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 2, conditionSetIndex == 1 )
         $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 2, conditionSetIndex == 2 )
     then
@@ -169,7 +240,53 @@ rule DampenTwoConditionTrigger
         retract ( $ce2 );
 end
 
+rule DampenThreeConditionTrigger
+    when
+        $t   : Trigger( active == true, match == Match.ALL, $tid : id )
+        $d   : Dampening( triggerId == $tid, satisfied == false )
+        $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 3, conditionSetIndex == 1 )
+        $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 3, conditionSetIndex == 2 )
+        $ce3 : ConditionEval ( triggerId == $tid, conditionSetSize == 3, conditionSetIndex == 3 )
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Updating dampening for and then retracting " + $ce1 + $ce2 + $ce3);
+        }
+        $d.perform( $ce1, $ce2, $ce3 );
+        update( $d );
+        retract ( $ce1 );
+        retract ( $ce2 );
+        retract ( $ce3 );
+end
+
+rule DampenFourConditionTrigger
+    when
+        $t   : Trigger( active == true, match == Match.ALL, $tid : id )
+        $d   : Dampening( triggerId == $tid, satisfied == false )
+        $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 1 )
+        $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 2 )
+        $ce3 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 3 )
+        $ce4 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 4 )
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Updating dampening for and then retracting " + $ce1 + $ce2 + $ce3 + $ce4);
+        }
+        $d.perform( $ce1, $ce2, $ce3, $ce4 );
+        update( $d );
+        retract ( $ce1 );
+        retract ( $ce2 );
+        retract ( $ce3 );
+        retract ( $ce4 );
+end
+
+
 ////// ALERT GENERATION
+//
+// This is pretty straightforward.  If a trigger's dampening is satisfied, then the trigger fires and gnerates an
+// alert.  The Trigger's Dampening fact is then reset and updated in working memory, ready to again track evals
+// for the Trigger.
+//
+// TODO: We have yet to introduce something like RHQ's recovery alerting. So, for now, Trigger's stay active after
+// firing.
 
 rule AlertOnSatisfiedDampening
     when
@@ -177,7 +294,7 @@ rule AlertOnSatisfiedDampening
         $d  : Dampening( triggerId == $tid, satisfied == true ) 
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debug("AlertDampeningOneCondition! " + $d.getLog());
+            log.debug("AlertOnSatisfiedDampening! " + $d.getLog());
         }
         Alert newAlert = new Alert( $tid, $d.getSatisfyingEvals() );
         alerts.add(newAlert);
