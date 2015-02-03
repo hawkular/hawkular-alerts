@@ -138,7 +138,7 @@ public class CompareCondition extends Condition {
 
     @Override
     public String toString() {
-        return "CompareCondition{triggerId='" + triggerId + '\'' +
+        return "CompareCondition{conditionId='" + conditionId + '\'' +
                 "data1Id='" + data1Id + '\'' +
                 ", operator=" + operator +
                 ", data2Id='" + data2Id + '\'' +

@@ -121,8 +121,8 @@ public class ThresholdCondition extends Condition {
 
     @Override
     public String toString() {
-        return "ThresholdCondition{triggerId='" + triggerId + '\'' +
-                "dataId='" + dataId + '\'' +
+        return "ThresholdCondition{conditionId='" + conditionId + '\'' +
+                ", dataId='" + dataId + '\'' +
                 ", operator=" + operator +
                 ", threshold=" + threshold +
                 '}';

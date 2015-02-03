@@ -143,7 +143,7 @@ public class StringCondition extends Condition {
 
     @Override
     public String toString() {
-        return "StringCondition{triggerId='" + triggerId + '\'' +
+        return "StringCondition{conditionId='" + conditionId + '\'' +
                 "dataId='" + dataId + '\'' +
                 ", operator=" + operator +
                 ", pattern='" + pattern + '\'' +

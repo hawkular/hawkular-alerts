@@ -18,5 +18,5 @@
 
 -->
 <jboss-web>
-  <context-root>hawkular-notifiers-sms</context-root>
+  <context-root>/hawkular/notifiers/sms</context-root>
 </jboss-web>

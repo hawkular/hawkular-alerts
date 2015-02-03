@@ -368,7 +368,7 @@ rule AlertOnSatisfiedDampening
         $d  : Dampening( triggerId == $tid, satisfied == true ) 
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debug("AlertOnSatisfiedDampening! " + $d.getLog());
+            log.debug("AlertOnSatisfiedDampening! " + $d.log());
         }
         Alert newAlert = new Alert( $tid, $d.getSatisfyingEvals() );
         alerts.add(newAlert);

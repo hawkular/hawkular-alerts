@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2015 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
@@ -14,25 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.rest;
+package org.hawkular.alerts.rest
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.Test
 
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
+import static org.junit.Assert.assertTrue
+import static org.junit.Assert.assertEquals
 
 /**
- * Base class for REST module.
+ * Alerts REST tests.
  *
- * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApplicationPath("/")
-public class HawkularAlertsApp extends Application {
-    private static final Logger log = LoggerFactory.getLogger(HawkularAlertsApp.class);
+class AlertsTest extends AbstractTestBase {
 
-    public HawkularAlertsApp() {
-        log.info("Hawkular Alerts REST starting...");
+    @Test
+    void getAllAlertsTest() {
+        def resp = client.get(path: "")
+        assertTrue(resp.status == 200 || resp.status == 204)
     }
+
+    @Test
+    void reloadTest() {
+        def resp = client.get(path: "reload")
+        assertEquals(200, resp.status)
+    }
+
 }
