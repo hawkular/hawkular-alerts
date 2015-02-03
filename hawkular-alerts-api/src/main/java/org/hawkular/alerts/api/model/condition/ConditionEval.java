@@ -24,12 +24,17 @@ package org.hawkular.alerts.api.model.condition;
  */
 public abstract class ConditionEval {
 
+    // result of the condition evaluation
     protected boolean match;
+    // time of condition evaluation (i.e. creation time)
     protected long time;
+    // flag noting whether this condition eval was used in a tested Tuple and already applied to dampening
+    protected boolean used;
 
     public ConditionEval(boolean match) {
         this.match = match;
         this.time = System.currentTimeMillis();
+        this.used = false;
     }
 
     public boolean isMatch() {
@@ -48,6 +53,14 @@ public abstract class ConditionEval {
         this.time = time;
     }
 
+    public boolean isUsed() {
+        return used;
+    }
+
+    public void setUsed(boolean used) {
+        this.used = used;
+    }
+
     public abstract String getTriggerId();
 
     public abstract int getConditionSetSize();
@@ -58,13 +71,17 @@ public abstract class ConditionEval {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
 
         ConditionEval that = (ConditionEval) o;
 
-        if (match != that.match) return false;
-        if (time != that.time) return false;
+        if (match != that.match)
+            return false;
+        if (time != that.time)
+            return false;
 
         return true;
     }
@@ -78,9 +95,7 @@ public abstract class ConditionEval {
 
     @Override
     public String toString() {
-        return "ConditionEval{" +
-                "match=" + match +
-                ", time=" + time +
-                '}';
+        return "ConditionEval [match=" + match + ", time=" + time + ", used=" + used + "]";
     }
+
 }

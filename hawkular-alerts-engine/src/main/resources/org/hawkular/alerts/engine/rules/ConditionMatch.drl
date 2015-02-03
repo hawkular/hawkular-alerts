@@ -89,10 +89,12 @@ end
 
 // Note that at the moment a CompareCondition will only ever match if the NumericData facts are inserted
 // at the same time. If only one Data is present in WM it will not match this rule and will get retracted
-// as unused/unnencessary.  We may have to revisit this behavior and nail down the desired semantics of this
-// kind of condition.  One approach may be to insert a special fact type, here, like CompareData (in addition to
-// inserting as NumericData, for other condition evals) and then handle that retraction differently, always
-// holding onto the most recent data for the dataId, as needed for comparing data when it arrives at different times.
+// as unused/unnecessary.  We may have to revisit this behavior and nail down the desired semantics of this
+// kind of condition. But this may be correct behavior as is.  It makes sense to me that this sort of condition
+// should likely be used on data reported in the same batch. But if not, one approach may be to insert a special
+// fact type, here, like CompareData (in addition to inserting as NumericData, for other condition evals) and then
+// handle that retraction differently, always holding onto the most recent data for the dataId, as needed for comparing
+// data when it arrives at different times.
 rule Compare
     when 
         $t : Trigger( active == true, $tid : id )
@@ -134,6 +136,9 @@ rule String
 end
 
 // Data retraction rules
+// These rules are expected to fire after any Eval rules, due to their simplicity.  Note that Data is not retracted
+// in the (above) rules, that generate ConditionEval facts, because one Datum can generate multiple evals, for different
+// Triggers.
 
 rule RetractProcessedNumericData
     when
@@ -172,17 +177,65 @@ end
 // whether a trigger fires.  Additionally, there may be a constraint on the period of time involved in the
 // evaluations.
 //
-// Dampening is optionally defined for a Trigger.  If not defined default dampening will be applied for uniformaty of
-// processing.  Default dampening is basically handled as STRICT( 1 ).  Meaning 1 positive, consecutive evaluation
+// Dampening is optionally defined for a Trigger.  If not defined then default dampening will be applied for uniformity
+// of processing.  Default dampening is basically handled as STRICT( 1 ).  Meaning 1 positive, consecutive evaluation
 // is required for the trigger to fire.  In other words, if the conditions match, the trigger fires.
 //
 // So, there is one Dampening fact for each Trigger fact.  And it is continually updated given each relevant condition
-// evaluation for the trigger.  After the evaluation has been recorded in the dampening, it is retracted as a fact.
-// Note that despite being retracted as a fact, the XxxEval pojos are maintained in the Dampening pojo as auditing
-// information for any firing of the trigger.
+// set evaluation for the trigger.
 //
-// Note that there are N rules required to cover triggers varying numbers of conditions, from 1..N, with N being the
-// maximum number of supported conditions.  Current MAX_CONDITIONS = 4.
+// Note that there are N rules required to cover triggers with varying numbers of conditions, from 1..N, with N being
+// the maximum number of supported conditions.  Current MAX_CONDITIONS = 4.  This applies to ALL-match triggers,
+// ANY-match triggers can have any number of conditions.
+
+// ConditionEval retraction rules
+// Understanding multi-condition Trigger evaluation is important.  ConditionEvals are generated when the relevant Data
+// appears in working memory.  Because Data for specific Ids can appear at different rates, there can be several
+// ConditionEvals for DataId X than for DataId Y, or even before we have a single eval for DataId Y.  Our approach is
+// chosen for two reasons: simplicity of understanding, and the general desire for recency in alerting.  For 
+// *multi-condition* Trigger evaluations we test only tuples containing the most recent evaluation of each condition.
+// For example, consider a Trigger T with two conditions, (X > 100) and (Y > 200).  Now assume Data arrives like this:
+// (t1, X=125), (t2, X=50), (t3, Y=300), (t4, X=110), (t5, Y=150). The t1 evaluation of X=125 will be superseded by the
+// t2 evaluation of X=50. When Y is finally reported at t3, the tuple tested for T is (X=50, Y=300), which will not
+// fire an Alert because the X condition (50 > 100 ) evaluates to false.  At t4 we the tuple (X=110, Y=300) will
+// evaluate to true, firing T.  And at t5 the evaluation of Y=300 will be superseded by Y=150, the tuple (X=110, Y=150)
+// will evaluate to false and T will not fire.
+//
+// Given the above approach to matching, we must hold onto the most recent evaluation of each condition used in
+// a multi-condition Trigger.  For a single-condition Trigger we can  immediately retract the ConditionEval after
+// Dampening is updated.  Note that "ANY"-match multi-condition Triggers are equivalent to a single-condition Trigger
+// with respect to retraction, but all others must be retracted only when replaced by a more recent eval.  Additionally,
+// we must prevent updating dampening on the same Tuple multiple times.  To do that we do two things:
+//   - mark the ConditionEvals used in a tested Tuple as "used".
+//   - require at least one unused ConditionEval in a tested Tuple.
+// Note that because Dampening can be updated outside of the rule performing the dampening update, using "no-loop true"
+// is not sufficient.  For example, Dampening is reset when an Trigger is fired.
+//
+// The retraction rule executes at a higher-than-default salience (priority) to ensure that only the most recent
+// ConditionEval is applied to Dampening updates.
+//
+// Note that despite being retracted as a fact, the XxxEval pojos are maintained in the Dampening pojo as auditing
+// information for any firing of the Trigger.
+
+rule RetractObsoleteConditionEval
+    salience 10
+    when
+        $ce1 : ConditionEval( $tid : triggerId, ( conditionSetSize > 1 ), $csi : conditionSetIndex, $t1 : time )
+        $ce2 : ConditionEval( $tid == triggerId, $csi == conditionSetIndex, $t1 > time )
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug( "Retracting obsolete multi-condition eval " + $ce2 + " (due to " + $ce1 + ")");
+        }
+        retract( $ce2 );
+end
+
+
+// Dampening update rules
+// Note that single-condition Triggers can retract the ConditionEval immediately because it is not needed to
+// form a future Tuple.  ANY-match Triggers are treated as single-condition because only the single-condition must
+// evaluate to true.
+// For multi-condition Triggers the ConditionEvals can not be retracted and instead must be set to "used". Those
+// ConditionEvals are instead retracted by "RetractObsoleteConditionEval" when a newer Eval comes into WM.
 
 rule ProvideDefaultDampening
     when
@@ -203,10 +256,13 @@ rule DampenTriggerAny
         $ce : ConditionEval ( triggerId == $tid )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debug( "Updating dampening (ANY) for and then retracting " + $ce );
+            log.debug( "Updating dampening (ANY) for: " + $ce );
         }
         $d.perform( $ce );
         update( $d );
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Retracting multi-condition ANY trigger eval: " + $ce);
+        }
         retract ( $ce );
 end
 
@@ -217,48 +273,62 @@ rule DampenOneConditionTrigger
         $ce : ConditionEval ( triggerId == $tid, conditionSetSize == 1, conditionSetIndex == 1 )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debug("Updating dampening for and then retracting " + $ce);
+            log.debug("Updating dampening for: " + $ce);
         }
         $d.perform( $ce );
         update( $d );
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Retracting single-condition trigger eval: " + $ce);
+        }
         retract ( $ce );
 end
 
 rule DampenTwoConditionTrigger
     when
-        $t  : Trigger( active == true, match == Match.ALL, $tid : id )
+        $t   : Trigger( active == true, match == Match.ALL, $tid : id )
         $d   : Dampening( triggerId == $tid, satisfied == false )
         $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 2, conditionSetIndex == 1 )
         $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 2, conditionSetIndex == 2 )
+        exists ConditionEval ( triggerId == $tid, used == false )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debug("Updating dampening for and then retracting " + $ce1 + $ce2);
+            log.debug("Updating dampening for: " + $ce1 + $ce2);
         }
         $d.perform( $ce1, $ce2 );
         update( $d );
-        retract ( $ce1 );
-        retract ( $ce2 );
+        for( ConditionEval ce : new ConditionEval[] { $ce1, $ce2 } ) {
+            if ( ! ce.isUsed() ) {
+                ce.setUsed( true );
+                update( ce );
+            }
+        }
 end
 
 rule DampenThreeConditionTrigger
+    no-loop true
     when
         $t   : Trigger( active == true, match == Match.ALL, $tid : id )
         $d   : Dampening( triggerId == $tid, satisfied == false )
         $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 3, conditionSetIndex == 1 )
         $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 3, conditionSetIndex == 2 )
         $ce3 : ConditionEval ( triggerId == $tid, conditionSetSize == 3, conditionSetIndex == 3 )
+        exists ConditionEval ( triggerId == $tid, used == false )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debug("Updating dampening for and then retracting " + $ce1 + $ce2 + $ce3);
+            log.debug("Updating dampening for: " + $ce1 + $ce2 + $ce3);
         }
         $d.perform( $ce1, $ce2, $ce3 );
         update( $d );
-        retract ( $ce1 );
-        retract ( $ce2 );
-        retract ( $ce3 );
+        for( ConditionEval ce : new ConditionEval[] { $ce1, $ce2, $ce3 } ) {
+            if ( ! ce.isUsed() ) {
+                ce.setUsed( true );
+                update( ce );
+            }
+        }
 end
 
 rule DampenFourConditionTrigger
+    no-loop true
     when
         $t   : Trigger( active == true, match == Match.ALL, $tid : id )
         $d   : Dampening( triggerId == $tid, satisfied == false )
@@ -266,23 +336,27 @@ rule DampenFourConditionTrigger
         $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 2 )
         $ce3 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 3 )
         $ce4 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 4 )
+        exists ConditionEval ( triggerId == $tid, used == false )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debug("Updating dampening for and then retracting " + $ce1 + $ce2 + $ce3 + $ce4);
+            log.debug("Updating dampening for: " + $ce1 + $ce2 + $ce3 + $ce4);
         }
         $d.perform( $ce1, $ce2, $ce3, $ce4 );
         update( $d );
-        retract ( $ce1 );
-        retract ( $ce2 );
-        retract ( $ce3 );
-        retract ( $ce4 );
+        for( ConditionEval ce : new ConditionEval[] { $ce1, $ce2, $ce3, $ce4 } ) {
+            if ( ! ce.isUsed() ) {
+                ce.setUsed( true );
+                update( ce );
+            }
+        }
 end
+
 
 
 ////// ALERT GENERATION
 //
-// This is pretty straightforward.  If a trigger's dampening is satisfied, then the trigger fires and gnerates an
-// alert.  The Trigger's Dampening fact is then reset and updated in working memory, ready to again track evals
+// This is pretty straightforward.  If a Trigger's Dampening is satisfied, then the Trigger fires and generates an
+// Alert.  The Trigger's Dampening fact is then reset and updated in working memory, ready to again track evals
 // for the Trigger.
 //
 // TODO: We have yet to introduce something like RHQ's recovery alerting. So, for now, Trigger's stay active after
