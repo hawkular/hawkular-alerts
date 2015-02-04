@@ -17,9 +17,9 @@
 package org.hawkular.notifiers.email.registration;
 
 import org.hawkular.bus.common.consumer.BasicMessageListener;
+import org.hawkular.notifiers.api.log.MsgLogger;
 import org.hawkular.notifiers.api.model.NotifierRegistrationMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
@@ -36,9 +36,10 @@ import javax.jms.MessageListener;
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "NotifierRegisterTopic"),
         @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = "NotifierType like 'email'")})
 public class RegisterListener extends BasicMessageListener<NotifierRegistrationMessage>  {
-    private final Logger log = LoggerFactory.getLogger(RegisterListener.class);
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(RegisterListener.class);
 
     protected void onBasicMessage(NotifierRegistrationMessage msg) {
-        log.info("Received message [{}] registering a new NotifierID", msg);
+        msgLog.infoNotifierRegistrationReceived("email", msg.getNotifierId(), msg.toString());
     }
 }

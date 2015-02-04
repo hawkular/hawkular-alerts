@@ -18,8 +18,8 @@ package org.hawkular.alerts.rest;
 
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.services.AlertsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.hawkular.alerts.rest.log.MsgLogger;
+import org.jboss.logging.Logger;
 
 import javax.ejb.EJB;
 import javax.ws.rs.GET;
@@ -42,14 +42,11 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  */
 @Path("/")
 public class AlertsHandler {
-    private static final Logger log = LoggerFactory.getLogger(AlertsHandler.class);
-    private boolean debug = false;
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(AlertsHandler.class);
 
     public AlertsHandler() {
-        if (log.isDebugEnabled()) {
-            log.debug("Creating instance.");
-            debug = true;
-        }
+        log.debugf("Creating instance.");
     }
 
     @EJB
@@ -61,14 +58,10 @@ public class AlertsHandler {
     public void findAllAlerts(@Suspended final AsyncResponse response) {
         Collection<Alert> alertList = alerts.checkAlerts();
         if (alertList.isEmpty()) {
-            if (debug) {
-                log.debug("GET - findAllAlerts - Empty");
-            }
+            log.debugf("GET - findAllAlerts - Empty");
             response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("GET - findAllAlerts - " + alertList.size() + " alerts");
-            }
+            log.debugf("GET - findAllAlerts - %s alerts", alertList.size());
             response.resume(Response.status(Response.Status.OK).entity(alertList).type(APPLICATION_JSON_TYPE).build());
         }
     }

@@ -19,8 +19,8 @@ package org.hawkular.alerts.engine.impl;
 import org.hawkular.alerts.api.model.notification.Notification;
 import org.hawkular.alerts.api.services.NotificationsService;
 import org.hawkular.alerts.api.services.NotifierListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.hawkular.alerts.engine.log.MsgLogger;
+import org.jboss.logging.Logger;
 
 import javax.ejb.Singleton;
 import java.util.List;
@@ -38,17 +38,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 @Singleton
 public class MemNotificationsServiceImpl implements NotificationsService {
-    private static final Logger log = LoggerFactory.getLogger(MemNotificationsServiceImpl.class);
-    private boolean debug = false;
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(MemNotificationsServiceImpl.class);
 
     Queue<Notification> pending = new ConcurrentLinkedDeque<Notification>();
     List<NotifierListener> listeners = new CopyOnWriteArrayList<NotifierListener>();
 
     public MemNotificationsServiceImpl() {
-        if (log.isDebugEnabled()) {
-            log.debug("Creating instance.");
-            debug = true;
-        }
+        log.debugf("Creating instance.");
     }
 
     @Override
@@ -73,6 +70,6 @@ public class MemNotificationsServiceImpl implements NotificationsService {
             throw new IllegalArgumentException("NotifierListener must not be null");
         }
         listeners.add(listener);
-        log.info("NotifierListener {} registered ", listener);
+        msgLog.infoNotifierListenerRegistered(listener.toString());
     }
 }

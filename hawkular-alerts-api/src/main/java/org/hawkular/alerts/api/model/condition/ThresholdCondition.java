@@ -16,8 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.hawkular.alerts.api.log.MsgLogger;
 
 /**
  * A numeric threshold condition.
@@ -26,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * @author Lucas Ponce
  */
 public class ThresholdCondition extends Condition {
-    private static final Logger log = LoggerFactory.getLogger(ThresholdCondition.class);
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         LT, GT, LTE, GTE
@@ -90,7 +89,7 @@ public class ThresholdCondition extends Condition {
             case GTE:
                 return value >= threshold;
             default:
-                log.warn("Unknown operator: " + operator.name());
+                msgLog.warnUnknowOperatorOnCondition(operator.name(), this.getClass().getName());
                 return false;
         }
     }

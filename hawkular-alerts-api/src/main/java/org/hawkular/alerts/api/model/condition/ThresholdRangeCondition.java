@@ -16,8 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.hawkular.alerts.api.log.MsgLogger;
 
 /**
  * A numeric threshold range condition.
@@ -26,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * @author Lucas Ponce
  */
 public class ThresholdRangeCondition extends Condition {
-    private static final Logger log = LoggerFactory.getLogger(ThresholdRangeCondition.class);
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         INCLUSIVE("[", "]"), EXCLUSIVE("(", ")");
@@ -138,7 +137,7 @@ public class ThresholdRangeCondition extends Condition {
                 aboveLow = value > thresholdLow;
                 break;
             default:
-                log.warn("Unknown operator low: " + operatorLow.name());
+                msgLog.warnUnknowOperatorOnCondition(operatorLow.name(), this.getClass().getName());
                 return false;
         }
 
@@ -154,7 +153,7 @@ public class ThresholdRangeCondition extends Condition {
                 belowHigh = value < thresholdHigh;
                 break;
             default:
-                log.warn("Unknown operator high: " + operatorHigh.name());
+                msgLog.warnUnknowOperatorOnCondition(operatorHigh.name(), this.getClass().getName());
                 return false;
         }
 

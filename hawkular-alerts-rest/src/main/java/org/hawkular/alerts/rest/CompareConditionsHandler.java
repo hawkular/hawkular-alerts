@@ -19,8 +19,7 @@ package org.hawkular.alerts.rest;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -49,17 +48,13 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  */
 @Path("/conditions/compare")
 public class CompareConditionsHandler {
-    private static final Logger log = LoggerFactory.getLogger(CompareConditionsHandler.class);
-    private boolean debug = false;
+    private final Logger log = Logger.getLogger(CompareConditionsHandler.class);
 
     @EJB
     DefinitionsService definitions;
 
     public CompareConditionsHandler() {
-        if (log.isDebugEnabled()) {
-            log.debug("Creating instance.");
-            debug = true;
-        }
+        log.debugf("Creating instance.");
     }
 
     @GET
@@ -74,15 +69,10 @@ public class CompareConditionsHandler {
             }
         }
         if (compareConditions.isEmpty()) {
-            if (debug) {
-                log.debug("GET - findAllCompareConditions - Empty");
-            }
+            log.debugf("GET - findAllCompareConditions - Empty");
             response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("GET - findAllCompareConditions - " + compareConditions.size() +
-                          " compare conditions");
-            }
+            log.debugf("GET - findAllCompareConditions - %s compare conditions. ", compareConditions.size());
             response.resume(Response.status(Response.Status.OK)
                     .entity(compareConditions).type(APPLICATION_JSON_TYPE).build());
         }
@@ -96,15 +86,11 @@ public class CompareConditionsHandler {
                                        final CompareCondition condition) {
         if (condition != null && condition.getConditionId() != null
                 && definitions.getCondition(condition.getConditionId()) == null) {
-            if (debug) {
-                log.debug("POST - createCompareCondition - conditionId " + condition.getConditionId());
-            }
+            log.debugf("POST - createCompareCondition - conditionId %s ", condition.getConditionId());
             definitions.addCondition(condition);
             response.resume(Response.status(Response.Status.OK).entity(condition).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("POST - createCompareCondition - ID not valid or existing condition");
-            }
+            log.debugf("POST - createCompareCondition - ID not valid or existing condition");
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Existing condition or invalid ID");
             response.resume(Response.status(Response.Status.BAD_REQUEST)
@@ -123,21 +109,15 @@ public class CompareConditionsHandler {
             if (c instanceof CompareCondition) {
                 found = (CompareCondition)c;
             } else {
-                if (debug) {
-                    log.debug("GET - getCompareCondition - conditionId: " + found.getConditionId() + " found " +
-                              "but not instance of CompareCondition class");
-                }
+                log.debugf("GET - getCompareCondition - conditionId: %s found" +
+                        "but not instance of CompareCondition class", found.getConditionId());
             }
         }
         if (found != null) {
-            if (debug) {
-                log.debug("GET - getCompareCondition - conditionId: " + found.getConditionId());
-            }
+            log.debugf("GET - getCompareCondition - conditionId: % s", found.getConditionId());
             response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("GET - getCompareCondition - conditionId: " + conditionId + " not found or invalid. ");
-            }
+            log.debugf("GET - getCompareCondition - conditionId: %s not found or invalid ", conditionId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)
@@ -155,13 +135,11 @@ public class CompareConditionsHandler {
                 condition != null && condition.getConditionId() != null &&
                 conditionId.equals(condition.getConditionId()) &&
                 definitions.getCondition(conditionId) != null) {
-            if (debug) {
-                log.debug("PUT - updateCompareCondition - conditionId: " + conditionId);
-            }
+            log.debugf("PUT - updateCompareCondition - conditionId: %s ", conditionId);
             definitions.updateCondition(condition);
             response.resume(Response.status(Response.Status.OK).build());
         } else {
-            log.debug("PUT - updateCompareCondition - conditionId: " + conditionId + " not found or invalid. ");
+            log.debugf("PUT - updateCompareCondition - conditionId: %s  not found or invalid. ", conditionId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)
@@ -174,16 +152,11 @@ public class CompareConditionsHandler {
     public void deleteCompareCondition(@Suspended final AsyncResponse response,
                                        @PathParam("conditionId") final String conditionId) {
         if (conditionId != null && !conditionId.isEmpty() && definitions.getCondition(conditionId) != null) {
-            if (debug) {
-                log.debug("DELETE - deleteCompareCondition - conditionId: " + conditionId);
-            }
+            log.debugf("DELETE - deleteCompareCondition - conditionId: %s", conditionId);
             definitions.removeCondition(conditionId);
             response.resume(Response.status(Response.Status.OK).build());
         } else {
-            if (debug) {
-                log.debug("DELETE - deleteCompareCondition - conditionId: " + conditionId + " not found or " +
-                          "invalid. ");
-            }
+            log.debugf("DELETE - deleteCompareCondition - conditionId: %s not found or invalid. ",conditionId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)

@@ -19,14 +19,14 @@ package org.hawkular.alerts.bus.sender;
 import org.hawkular.alerts.api.model.notification.Notification;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.NotifierListener;
+import org.hawkular.alerts.bus.log.MsgLogger;
 import org.hawkular.bus.common.ConnectionContextFactory;
 import org.hawkular.bus.common.Endpoint;
 import org.hawkular.bus.common.MessageId;
 import org.hawkular.bus.common.MessageProcessor;
 import org.hawkular.bus.common.producer.ProducerConnectionContext;
 import org.hawkular.notifiers.api.model.NotificationMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.jms.TopicConnectionFactory;
 import javax.naming.InitialContext;
@@ -41,7 +41,8 @@ import java.util.Map;
  * @author Lucas Ponce
  */
 public class NotificationSender implements NotifierListener {
-    private final Logger log = LoggerFactory.getLogger(NotificationSender.class);
+    private final MsgLogger msgLogger = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(NotificationSender.class);
     private final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
     private final String NOTIFICATIONS_TOPIC = "NotificationsTopic";
     private final String DEFINITIONS_SERVICE =
@@ -62,7 +63,8 @@ public class NotificationSender implements NotifierListener {
         try {
             init();
             if (pcc == null) {
-                log.warn("Send " + notification);
+                msgLogger.warnCannotConnectToBus();
+                return;
             }
             NotificationMessage nMsg = new NotificationMessage();
             nMsg.setNotifierId(notification.getNotifierId());
@@ -76,12 +78,13 @@ public class NotificationSender implements NotifierListener {
                 } else {
                     mid = new MessageProcessor().send(pcc, nMsg);
                 }
-                log.info("Sent {}", mid);
+                msgLogger.infoSentNotificationMessage(mid.getId());
             } else {
-                log.warn("Could not accesss to DefinitionsService");
+                msgLogger.warnCannotAccessToDefinitionsService();
             }
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
+            msgLogger.errorProcessingNotification(e.getMessage());
         }
     }
 

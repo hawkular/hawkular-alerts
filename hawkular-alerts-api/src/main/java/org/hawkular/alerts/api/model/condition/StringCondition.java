@@ -16,8 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.hawkular.alerts.api.log.MsgLogger;
 
 /**
  * A string comparison condition.
@@ -26,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * @author Lucas Ponce
  */
 public class StringCondition extends Condition {
-    private static final Logger log = LoggerFactory.getLogger(StringCondition.class);
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         EQUAL, NOT_EQUAL, STARTS_WITH, ENDS_WITH, CONTAINS, MATCH
@@ -110,7 +109,7 @@ public class StringCondition extends Condition {
             case MATCH:
                 return value.matches(pattern);
             default:
-                log.warn("Unknown operator: " + operator.name());
+                msgLog.warnUnknowOperatorOnCondition(operator.name(), this.getClass().getName());
                 return false;
         }
     }

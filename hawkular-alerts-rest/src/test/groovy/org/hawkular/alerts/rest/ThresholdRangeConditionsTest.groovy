@@ -17,9 +17,8 @@
 package org.hawkular.alerts.rest
 
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition
+import org.jboss.logging.Logger
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import static org.hawkular.alerts.api.model.condition.ThresholdRangeCondition.Operator
 import static org.junit.Assert.assertEquals
@@ -30,7 +29,7 @@ import static org.junit.Assert.assertEquals
  * @author Lucas Ponce
  */
 class ThresholdRangeConditionsTest extends AbstractTestBase {
-    private static final Logger log = LoggerFactory.getLogger(ThresholdRangeConditionsTest.class);
+    private static final Logger log = Logger.getLogger(ThresholdRangeConditionsTest.class);
 
     @Test
     void findInitialThresholdRangeConditions() {

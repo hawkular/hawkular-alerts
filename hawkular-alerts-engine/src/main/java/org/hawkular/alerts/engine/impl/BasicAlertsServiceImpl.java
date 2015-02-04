@@ -24,9 +24,9 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.NotificationsService;
+import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.rules.RulesEngine;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -47,8 +47,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 @Singleton
 public class BasicAlertsServiceImpl implements AlertsService {
-    private static final Logger log = LoggerFactory.getLogger(BasicAlertsServiceImpl.class);
-    private boolean debug = false;
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(BasicAlertsServiceImpl.class);
     private static final int DELAY;
     private static final int PERIOD;
 
@@ -84,10 +84,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
     }
 
     public BasicAlertsServiceImpl() {
-        if (log.isDebugEnabled()) {
-            log.debug("Creating instance.");
-            debug = true;
-        }
+        log.debugf("Creating instance.");
         pendingData = new CopyOnWriteArrayList<Data>();
         alerts = new CopyOnWriteArrayList<Alert>();
         wakeUpTimer = new Timer("BasicAlertsServiceImpl-Timer");
@@ -166,9 +163,9 @@ public class BasicAlertsServiceImpl implements AlertsService {
         @Override
         public void run() {
             if (!pendingData.isEmpty()) {
-                if (debug) {
-                    log.debug("Pending {} data found. Adding to rules engine.", pendingData.size());
-                }
+
+                log.debugf("Pending {} data found. Adding to rules engine.", pendingData.size());
+
                 for (Data data : pendingData) {
                     rules.addFact(data);
                 }
@@ -178,7 +175,8 @@ public class BasicAlertsServiceImpl implements AlertsService {
                 try {
                     rules.fire();
                 } catch (Exception e) {
-                    log.error("Error on rules processing: " + e.getMessage(), e);
+                    log.debugf("Error on rules processing: " + e.getMessage(), e);
+                    msgLog.errorProcessingRules(e.getMessage());
                 }
             }
         }

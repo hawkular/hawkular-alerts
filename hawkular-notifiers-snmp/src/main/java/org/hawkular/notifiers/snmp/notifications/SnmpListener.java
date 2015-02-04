@@ -17,9 +17,9 @@
 package org.hawkular.notifiers.snmp.notifications;
 
 import org.hawkular.bus.common.consumer.BasicMessageListener;
+import org.hawkular.notifiers.api.log.MsgLogger;
 import org.hawkular.notifiers.api.model.NotificationMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
@@ -36,9 +36,10 @@ import javax.jms.MessageListener;
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "NotificationsTopic"),
         @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = "NotifierType like 'snmp'")})
 public class SnmpListener extends BasicMessageListener<NotificationMessage> {
-    private final Logger log = LoggerFactory.getLogger(SnmpListener.class);
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(SnmpListener.class);
 
     protected void onBasicMessage(NotificationMessage msg) {
-        log.info("SNMP request message [{}]", msg);
+        msgLog.infoNotificationReceived("SNMP", msg.toString());
     }
 }

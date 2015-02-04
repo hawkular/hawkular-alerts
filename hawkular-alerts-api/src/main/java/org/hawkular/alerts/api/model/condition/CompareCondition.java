@@ -16,8 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.hawkular.alerts.api.log.MsgLogger;
 
 /**
  * A numeric comparison condition.
@@ -27,7 +26,7 @@ import org.slf4j.LoggerFactory;
  * @author Lucas Ponce
  */
 public class CompareCondition extends Condition {
-    private static final Logger log = LoggerFactory.getLogger(CompareCondition.class);
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         LT, GT, LTE, GTE
@@ -104,7 +103,7 @@ public class CompareCondition extends Condition {
             case GTE:
                 return data1Value >= threshold;
             default:
-                log.warn("Unknown operator: " + operator.name());
+                msgLog.warnUnknowOperatorOnCondition(operator.name(), this.getClass().getName());
                 return false;
         }
     }

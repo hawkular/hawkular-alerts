@@ -17,10 +17,8 @@
 package org.hawkular.alerts.rest
 
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
-import org.hawkular.alerts.api.model.trigger.Trigger
+import org.jboss.logging.Logger
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
 import static org.junit.Assert.assertEquals
@@ -32,7 +30,7 @@ import static org.junit.Assert.assertEquals
  * @author Lucas Ponce
  */
 class AvailabilityConditionsTest extends AbstractTestBase {
-    private static final Logger log = LoggerFactory.getLogger(AvailabilityConditionsTest.class);
+    private static final Logger log = Logger.getLogger(AvailabilityConditionsTest.class);
 
     @Test
     void findInitialAvailabilityConditions() {
