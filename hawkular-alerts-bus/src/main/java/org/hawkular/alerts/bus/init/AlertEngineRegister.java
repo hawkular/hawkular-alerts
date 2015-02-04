@@ -18,8 +18,8 @@ package org.hawkular.alerts.bus.init;
 
 import org.hawkular.alerts.api.services.NotificationsService;
 import org.hawkular.alerts.bus.sender.NotificationSender;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
+
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -35,7 +35,7 @@ import javax.ejb.Startup;
 @Startup
 @Singleton
 public class AlertEngineRegister {
-    private final Logger log = LoggerFactory.getLogger(AlertEngineRegister.class);
+    private final Logger log = Logger.getLogger(AlertEngineRegister.class);
 
     @EJB
     NotificationsService notifications;
@@ -44,6 +44,6 @@ public class AlertEngineRegister {
     public void init() {
         NotificationSender sender = new NotificationSender();
         notifications.register(sender);
-        log.info("Registering sender: " + sender);
+        log.debugf("Registering sender: [%s]", sender);
     }
 }

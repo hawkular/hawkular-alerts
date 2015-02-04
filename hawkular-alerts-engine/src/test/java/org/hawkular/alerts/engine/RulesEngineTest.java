@@ -29,10 +29,9 @@ import org.hawkular.alerts.api.model.data.StringData;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.rules.RulesEngine;
+import org.jboss.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -49,7 +48,7 @@ import static org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
  * @author Lucas Ponce
  */
 public class RulesEngineTest {
-    private static final Logger log = LoggerFactory.getLogger(RulesEngineTest.class);
+    private static final Logger log = Logger.getLogger(RulesEngineTest.class);
 
     Set < Data > datums;
 

@@ -17,9 +17,8 @@
 package org.hawkular.alerts.rest
 
 import org.hawkular.alerts.api.model.dampening.Dampening
+import org.jboss.logging.Logger
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import org.hawkular.alerts.api.model.dampening.Dampening.Type
 import static org.junit.Assert.assertEquals
@@ -30,7 +29,7 @@ import static org.junit.Assert.assertEquals
  * @author Lucas Ponce
  */
 class DampeningTest extends AbstractTestBase {
-    private static final Logger log = LoggerFactory.getLogger(DampeningTest.class);
+    private static final Logger log = Logger.getLogger(DampeningTest.class);
 
     @Test
     void findInitialDampenings() {

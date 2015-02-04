@@ -21,16 +21,16 @@ import org.hawkular.bus.common.Endpoint;
 import org.hawkular.bus.common.MessageId;
 import org.hawkular.bus.common.MessageProcessor;
 import org.hawkular.bus.common.producer.ProducerConnectionContext;
+import org.hawkular.notifiers.api.log.MsgLogger;
 import org.hawkular.notifiers.api.model.NotifierTypeRegistrationMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
 import javax.jms.JMSException;
 import javax.jms.QueueConnectionFactory;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -40,9 +40,11 @@ import java.util.Set;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@WebListener
-public class RegistrationInit implements ServletContextListener {
-    private final Logger log = LoggerFactory.getLogger(RegistrationInit.class);
+@Startup
+@Singleton
+public class RegistrationInit {
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(RegistrationInit.class);
     private static final String NOTIFIER_TYPE_REGISTER = "NotifierTypeRegisterQueue";
 
     @Resource(mappedName = "java:/HawkularBusConnectionFactory")
@@ -50,13 +52,8 @@ public class RegistrationInit implements ServletContextListener {
     private ConnectionContextFactory ccf;
     private ProducerConnectionContext pcc;
 
-    @Override
-    public void contextDestroyed(ServletContextEvent sce) {
-        log.info("Unregistering plugin snmp");
-    }
-
-    @Override
-    public void contextInitialized(ServletContextEvent sce) {
+    @PostConstruct
+    public void init() {
         try {
             ccf = new ConnectionContextFactory(conFactory);
             pcc = ccf.createProducerConnectionContext(new Endpoint(Endpoint.Type.QUEUE, NOTIFIER_TYPE_REGISTER));
@@ -72,10 +69,10 @@ public class RegistrationInit implements ServletContextListener {
 
             MessageId mid = new MessageProcessor().send(pcc, ntrMsg);
 
-            log.info("Sent registration request for snmp plugin. ");
-
+            msgLog.infoPluginRegistration("snmp", mid.toString());
         } catch (JMSException e) {
-            log.error(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
+            msgLog.errorCannotSendMessage("snmp", e.getMessage());
         }
     }
 }

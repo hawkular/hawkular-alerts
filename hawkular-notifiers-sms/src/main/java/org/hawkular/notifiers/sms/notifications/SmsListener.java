@@ -17,9 +17,9 @@
 package org.hawkular.notifiers.sms.notifications;
 
 import org.hawkular.bus.common.consumer.BasicMessageListener;
+import org.hawkular.notifiers.api.log.MsgLogger;
 import org.hawkular.notifiers.api.model.NotificationMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
@@ -36,9 +36,10 @@ import javax.jms.MessageListener;
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "NotificationsTopic"),
         @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = "NotifierType like 'sms'")})
 public class SmsListener extends BasicMessageListener<NotificationMessage> {
-    private final Logger log = LoggerFactory.getLogger(SmsListener.class);
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(SmsListener.class);
 
     protected void onBasicMessage(NotificationMessage msg) {
-        log.info("SMS request message [{}]", msg);
+        msgLog.infoNotificationReceived("SMS", msg.toString());
     }
 }

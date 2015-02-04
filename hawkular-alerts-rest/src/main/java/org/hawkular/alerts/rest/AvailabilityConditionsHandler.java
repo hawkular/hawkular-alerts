@@ -19,8 +19,7 @@ package org.hawkular.alerts.rest;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -50,17 +49,13 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  */
 @Path("/conditions/availability")
 public class AvailabilityConditionsHandler {
-    private static final Logger log = LoggerFactory.getLogger(AvailabilityConditionsHandler.class);
-    private boolean debug = false;
+    private final Logger log = Logger.getLogger(AvailabilityConditionsHandler.class);
 
     @EJB
     DefinitionsService definitions;
 
     public AvailabilityConditionsHandler() {
-        if (log.isDebugEnabled()) {
-            log.debug("Creating instance.");
-            debug = true;
-        }
+        log.debugf("Creating instance.");
     }
 
     @GET
@@ -75,15 +70,12 @@ public class AvailabilityConditionsHandler {
             }
         }
         if (availabilityConditions.isEmpty()) {
-            if (debug) {
-                log.debug("GET - findAllAvailabilityConditions - Empty");
-            }
+            log.debugf("GET - findAllAvailabilityConditions - Empty");
             response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("GET - findAllAvailabilityConditions - " + availabilityConditions.size() +
-                          " availability conditions");
-            }
+            log.debugf("GET - findAllAvailabilityConditions - %s availability conditions ",
+                    availabilityConditions.size());
+
             response.resume(Response.status(Response.Status.OK)
                     .entity(availabilityConditions).type(APPLICATION_JSON_TYPE).build());
         }
@@ -97,15 +89,11 @@ public class AvailabilityConditionsHandler {
                                             final AvailabilityCondition condition) {
         if (condition != null && condition.getConditionId() != null
                 && definitions.getCondition(condition.getConditionId()) == null) {
-            if (debug) {
-                log.debug("POST - createAvailabilityCondition - conditionId " + condition.getConditionId());
-            }
+            log.debugf("POST - createAvailabilityCondition - conditionId: %s ", condition.getConditionId());
             definitions.addCondition(condition);
             response.resume(Response.status(Response.Status.OK).entity(condition).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("POST - createAvailabilityCondition - ID not valid or existing condition");
-            }
+            log.debugf("POST - createAvailabilityCondition - ID not valid or existing condition");
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Existing condition or invalid ID");
             response.resume(Response.status(Response.Status.BAD_REQUEST)
@@ -124,21 +112,15 @@ public class AvailabilityConditionsHandler {
             if (c instanceof AvailabilityCondition) {
                 found = (AvailabilityCondition)c;
             } else {
-                if (debug) {
-                    log.debug("GET - getAvailabilityCondition - conditionId: " + found.getConditionId() + " found " +
-                              "but not instance of AvailabilityCondition class");
-                }
+                log.debugf("GET - getAvailabilityCondition - conditionId: %s found " +
+                        "but not instance of AvailabilityCondition class", found.getConditionId());
             }
         }
         if (found != null) {
-            if (debug) {
-                log.debug("GET - getAvailabilityCondition - conditionId: " + found.getConditionId());
-            }
+            log.debugf("GET - getAvailabilityCondition - conditionId: ", found.getConditionId());
             response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("GET - getAvailabilityCondition - conditionId: " + conditionId + " not found or invalid. ");
-            }
+            log.debugf("GET - getAvailabilityCondition - conditionId: %s not found or invalid. ", conditionId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)
@@ -156,13 +138,11 @@ public class AvailabilityConditionsHandler {
                 condition != null && condition.getConditionId() != null &&
                 conditionId.equals(condition.getConditionId()) &&
                 definitions.getCondition(conditionId) != null) {
-            if (debug) {
-                log.debug("PUT - updateAvailabilityCondition - conditionId: " + conditionId);
-            }
+            log.debugf("PUT - updateAvailabilityCondition - conditionId: %s", conditionId);
             definitions.updateCondition(condition);
             response.resume(Response.status(Response.Status.OK).build());
         } else {
-            log.debug("PUT - updateAvailabilityCondition - conditionId: " + conditionId + " not found or invalid. ");
+            log.debugf("PUT - updateAvailabilityCondition - conditionId: %s not found or invalid. ", conditionId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)
@@ -175,16 +155,11 @@ public class AvailabilityConditionsHandler {
     public void deleteAvailabilityCondition(@Suspended final AsyncResponse response,
                                             @PathParam("conditionId") final String conditionId) {
         if (conditionId != null && !conditionId.isEmpty() && definitions.getCondition(conditionId) != null) {
-            if (debug) {
-                log.debug("DELETE - deleteAvailabilityCondition - conditionId: " + conditionId);
-            }
+            log.debugf("DELETE - deleteAvailabilityCondition - conditionId: %s", conditionId);
             definitions.removeCondition(conditionId);
             response.resume(Response.status(Response.Status.OK).build());
         } else {
-            if (debug) {
-                log.debug("DELETE - deleteAvailabilityCondition - conditionId: " + conditionId + " not found or " +
-                          "invalid. ");
-            }
+            log.debugf("DELETE - deleteAvailabilityCondition - conditionId: %s not found or invalid.", conditionId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)

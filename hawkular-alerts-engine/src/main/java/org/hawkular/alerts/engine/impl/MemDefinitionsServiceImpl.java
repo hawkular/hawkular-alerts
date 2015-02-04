@@ -26,8 +26,8 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerTemplate;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.hawkular.alerts.engine.log.MsgLogger;
+import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Singleton;
@@ -55,8 +55,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Singleton
 public class MemDefinitionsServiceImpl implements DefinitionsService {
-    private static final Logger log = LoggerFactory.getLogger(MemDefinitionsServiceImpl.class);
-    private boolean debug = false;
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(MemDefinitionsServiceImpl.class);
 
     private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
     private static final String INIT_FOLDER = "hawkular-alerts";
@@ -68,20 +68,16 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
     private Map<String, Map<String, String>> notifiers = new ConcurrentHashMap<String, Map<String, String>>();
 
     public MemDefinitionsServiceImpl() {
-        if (log.isDebugEnabled()) {
-            log.debug("Creating instance.");
-            debug = true;
-        }
+        log.debugf("Creating instance.");
     }
 
     @PostConstruct
     public void init() {
-        if (debug) {
-            log.debug("Initial load from file");
-        }
+        log.debugf("Initial load from file");
+
         String data = System.getProperty(JBOSS_DATA_DIR);
         if (data == null) {
-            log.error(JBOSS_DATA_DIR + " folder is null");
+            msgLog.errorFolderNotFound(data);
             return;
         }
         String folder = data + "/" + INIT_FOLDER;
@@ -97,7 +93,7 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
     private void initFiles(String folder) {
 
         if (folder == null) {
-            log.error("folder must not be null");
+            msgLog.errorFolderMustBeNotNull();
             return;
         }
 
@@ -112,7 +108,8 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
             try {
                 lines = Files.readAllLines(Paths.get(triggers.toURI()), Charset.forName("UTF-8"));
             } catch (IOException e) {
-                log.error(e.toString(), e);
+                log.debugf(e.toString(), e);
+                msgLog.errorReadingFile("triggers.data");
             }
             if (lines != null && !lines.isEmpty()) {
                 for (String line : lines) {
@@ -135,15 +132,13 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
                             trigger.addNotifier(notifier);
                         }
 
-                        if (debug){
-                            log.debug("Init file - Inserting [{}]", trigger);
-                        }
                         this.triggers.put(triggerId, trigger);
+                        log.debugf("Init file - Inserting [%s]", trigger);
                     }
                 }
             }
         } else {
-            log.error("triggers.data file not found. Skipping triggers initialization.");
+            msgLog.errorFileNotFound("triggers.data");
         }
 
         /*
@@ -155,7 +150,7 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
             try {
                 lines = Files.readAllLines(Paths.get(conditions.toURI()), Charset.forName("UTF-8"));
             } catch (IOException e) {
-                log.error(e.toString(), e);
+                msgLog.errorReadingFile("conditions.data");
             }
             if (lines != null && !lines.isEmpty()) {
                 for (String line : lines) {
@@ -182,9 +177,7 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
                             newCondition.setThreshold(threshold);
 
                             this.conditions.put(newCondition.getConditionId(), newCondition);
-                            if (debug){
-                                log.debug("Init file - Inserting [{}]", newCondition);
-                            }
+                            log.debugf("Init file - Inserting [%s]", newCondition);
                         }
                         if (type != null && !type.isEmpty() && type.equals("range") && fields.length == 10) {
                             String dataId = fields[4];
@@ -206,9 +199,7 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
                             newCondition.setInRange(inRange);
 
                             this.conditions.put(newCondition.getConditionId(), newCondition);
-                            if (debug){
-                                log.debug("Init file - Inserting [{}]", newCondition);
-                            }
+                            log.debugf("Init file - Inserting [%s]", newCondition);
                         }
                         if (type != null && !type.isEmpty() && type.equals("compare") && fields.length == 8) {
                             String data1Id = fields[4];
@@ -226,9 +217,7 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
                             newCondition.setData2Id(data2Id);
 
                             this.conditions.put(newCondition.getConditionId(), newCondition);
-                            if (debug) {
-                                log.debug("Init file - Inserting [{}]", newCondition);
-                            }
+                            log.debugf("Init file - Inserting [%s]", newCondition);
                         }
                         if (type != null && !type.isEmpty() && type.equals("string") && fields.length == 8) {
                             String dataId = fields[4];
@@ -246,9 +235,7 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
                             newCondition.setIgnoreCase(ignoreCase);
 
                             this.conditions.put(newCondition.getConditionId(), newCondition);
-                            if (debug) {
-                                log.debug("Init file - Inserting [{}]", newCondition);
-                            }
+                            log.debugf("Init file - Inserting [%s]", newCondition);
                         }
                         if (type != null && !type.isEmpty() && type.equals("availability") && fields.length == 6) {
                             String dataId = fields[4];
@@ -262,15 +249,13 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
                             newCondition.setOperator(AvailabilityCondition.Operator.valueOf(operator));
 
                             this.conditions.put(newCondition.getConditionId(), newCondition);
-                            if (debug) {
-                                log.debug("Init file - Inserting [{}]", newCondition);
-                            }
+                            log.debugf("Init file - Inserting [%s]", newCondition);
                         }
                     }
                 }
             }
         } else {
-            log.error("conditions.data file not found. Skipping conditions initialization.");
+            msgLog.errorFileNotFound("conditions.data");
         }
 
         /*
@@ -282,7 +267,7 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
             try {
                 lines = Files.readAllLines(Paths.get(dampening.toURI()), Charset.forName("UTF-8"));
             } catch (IOException e) {
-                log.error(e.toString(), e);
+                msgLog.errorReadingFile("dampening.data");
             }
             if (lines != null && !lines.isEmpty()) {
                 for (String line : lines) {
@@ -300,15 +285,13 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
                         Dampening newDampening = new Dampening(triggerId, Dampening.Type.valueOf(type),
                                 evalTrueSetting, evalTotalSetting, evalTimeSetting);
 
-                        if (debug) {
-                            log.debug("Init file - Inserting [{}]", newDampening);
-                        }
                         this.dampenings.put(triggerId, newDampening);
+                        log.debugf("Init file - Inserting [%s]", newDampening);
                     }
                 }
             }
         } else {
-            log.error("dampening.data file not found. Skipping dampening initialization.");
+            msgLog.errorFileNotFound("dampening.data");
         }
 
         /*
@@ -337,24 +320,20 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
                         newNotifier.put("NotifierType", notifierType);
                         newNotifier.put("description", description);
 
-                        if (debug) {
-                            log.debug("Init file - Inserting [{}]", newNotifier);
-                        }
                         this.notifiers.put(notifierId, newNotifier);
+                        log.debugf("Init file - Inserting [%s]", newNotifier);
                     }
                 }
             }
         } else {
-            log.error("notifiers.data file not found. Skipping notifiers initialization.");
+            msgLog.errorFileNotFound("notifiers.data");
         }
 
-        if (debug) {
-            log.debug("Triggers: " + this.triggers.keySet().size() + " size.");
-            log.debug("Conditions: " + this.conditions.keySet().size() + " size.");
-            log.debug("Dampenings: " + this.dampenings.keySet().size() + " size.");
-            log.debug("Notifiers Types: " + this.notifierTypes.keySet().size() + " size.");
-            log.debug("Notifiers: " + this.notifiers.keySet().size() + " size.");
-        }
+        log.debugf("Triggers: %s size.", this.triggers.keySet().size());
+        log.debugf("Conditions: %s size.", this.conditions.keySet().size());
+        log.debugf("Dampenings: %s size.", this.dampenings.keySet().size());
+        log.debugf("Notifiers Types: %s size.", this.notifierTypes.keySet().size());
+        log.debugf("Notifiers: %s size.", this.notifiers.keySet().size());
     }
 
     @Override

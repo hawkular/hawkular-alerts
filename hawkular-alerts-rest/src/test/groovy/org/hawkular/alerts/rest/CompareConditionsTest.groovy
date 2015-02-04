@@ -17,9 +17,8 @@
 package org.hawkular.alerts.rest
 
 import org.hawkular.alerts.api.model.condition.CompareCondition
+import org.jboss.logging.Logger
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import static org.hawkular.alerts.api.model.condition.CompareCondition.Operator
 import static org.junit.Assert.assertEquals
@@ -30,7 +29,7 @@ import static org.junit.Assert.assertEquals
  * @author Lucas Ponce
  */
 class CompareConditionsTest extends AbstractTestBase {
-    private static final Logger log = LoggerFactory.getLogger(CompareConditionsTest.class);
+    private static final Logger log = Logger.getLogger(CompareConditionsTest.class);
 
     @Test
     void findInitialCompareConditions() {

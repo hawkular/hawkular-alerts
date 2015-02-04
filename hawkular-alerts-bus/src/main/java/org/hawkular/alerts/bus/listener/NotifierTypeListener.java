@@ -17,10 +17,10 @@
 package org.hawkular.alerts.bus.listener;
 
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.bus.log.MsgLogger;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.hawkular.notifiers.api.model.NotifierTypeRegistrationMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
@@ -38,30 +38,29 @@ import java.util.Set;
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "NotifierTypeRegisterQueue")})
 public class NotifierTypeListener extends BasicMessageListener<NotifierTypeRegistrationMessage>  {
-    private final Logger log = LoggerFactory.getLogger(NotifierTypeListener.class);
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(NotifierTypeListener.class);
 
     @EJB
     DefinitionsService definitions;
 
     @Override
     protected void onBasicMessage(NotifierTypeRegistrationMessage msg) {
-        if (log.isDebugEnabled()) {
-            log.debug("Message received: [{}]", msg);
-        }
+        log.debugf("Message received: [%s]", msg);
         String op = msg.getOp();
+        String notifierType = msg.getNotifierType();
         if (op == null || op.isEmpty()) {
-            log.warn("Notifier type registration received without op.");
+            msgLog.warnNotifierTypeRegistrationWithoutOp();
         } else if (op.equals("init")) {
-            String notifierType = msg.getNotifierType();
             if (definitions.getNotifierType(notifierType) == null) {
                 Set<String> properties = msg.getProperties();
                 definitions.addNotifierType(notifierType, properties);
-                log.info("Notifier type {} registered.", notifierType);
+                msgLog.infoNotifierTypeRegistration(notifierType);
             } else {
-                log.warn("Notifier type {} is already registered", notifierType);
+                msgLog.warnNotifierTypeAlreadyRegistered(notifierType);
             }
         } else {
-            log.warn("Notifier type registration received with unknown op {} ", op);
+            msgLog.warnNotifierTypeRegistrationWithUnknownOp(notifierType, op);
         }
     }
 }

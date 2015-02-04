@@ -14,24 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.rest;
+package org.hawkular.alerts.rest.log;
 
+import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
-
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
+import org.jboss.logging.Message;
+import org.jboss.logging.annotations.LogMessage;
+import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.logging.annotations.ValidIdRange;
 
 /**
- * Base class for REST module.
+ * Common log for INFO, WARN, ERROR and FATAL messages.
  *
- * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApplicationPath("/")
-public class HawkularAlertsApp extends Application {
-    private final Logger log = Logger.getLogger(HawkularAlertsApp.class);
+@MessageLogger(projectCode = "HAWKALERT")
+@ValidIdRange(min = 230000, max = 239999)
+public interface MsgLogger extends BasicLogger {
+    MsgLogger LOGGER = Logger.getMessageLogger(MsgLogger.class, MsgLogger.class.getPackage().getName());
 
-    public HawkularAlertsApp() {
-        log.debugf("Hawkular Alerts REST starting...");
-    }
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 230001, value = "Error processing rules: [%s]")
+    void errorProcessingRules(String msg);
+
 }

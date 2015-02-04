@@ -38,7 +38,7 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerTemplate.Match;
 import org.hawkular.alerts.api.services.NotificationsService;
 
-import org.slf4j.Logger;
+import org.jboss.logging.Logger;
 
 import java.util.HashSet;
 import java.util.List;

@@ -18,8 +18,7 @@ package org.hawkular.alerts.rest;
 
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -48,17 +47,13 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  */
 @Path("/triggers")
 public class TriggersHandler {
-    private static final Logger log = LoggerFactory.getLogger(TriggersHandler.class);
-    private boolean debug = false;
+    private static final Logger log = Logger.getLogger(TriggersHandler.class);
 
     @EJB
     DefinitionsService definitions;
 
     public TriggersHandler() {
-        if (log.isDebugEnabled()) {
-            log.debug("Creating instance.");
-            debug = true;
-        }
+        log.debugf("Creating instance.");
     }
 
     @GET
@@ -67,14 +62,10 @@ public class TriggersHandler {
     public void findAllTriggers(@Suspended final AsyncResponse response) {
         Collection<Trigger> triggerList = definitions.getTriggers();
         if (triggerList.isEmpty()) {
-            if (debug) {
-                log.debug("GET - findAllTriggers - Empty");
-            }
+            log.debugf("GET - findAllTriggers - Empty");
             response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("GET - findAllTriggers - " + triggerList.size() + " triggers");
-            }
+            log.debugf("GET - findAllTriggers - %s triggers ", triggerList.size());
             response.resume(Response.status(Response.Status.OK)
                     .entity(triggerList).type(APPLICATION_JSON_TYPE).build());
         }
@@ -86,15 +77,11 @@ public class TriggersHandler {
     @Produces(APPLICATION_JSON)
     public void createTrigger(@Suspended final AsyncResponse response, final Trigger trigger) {
         if (trigger != null && trigger.getId() != null && definitions.getTrigger(trigger.getId()) == null) {
-            if (debug) {
-                log.debug("POST - createTrigger - triggerId " + trigger.getId());
-            }
+            log.debugf("POST - createTrigger - triggerId %s ", trigger.getId());
             definitions.addTrigger(trigger);
             response.resume(Response.status(Response.Status.OK).entity(trigger).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("POST - createTrigger - ID not valid or existing trigger");
-            }
+            log.debugf("POST - createTrigger - ID not valid or existing trigger");
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Existing trigger or invalid ID");
             response.resume(Response.status(Response.Status.BAD_REQUEST)
@@ -111,14 +98,10 @@ public class TriggersHandler {
             found = definitions.getTrigger(triggerId);
         }
         if (found != null) {
-            if (debug) {
-                log.debug("GET - getTrigger - triggerId: " + found.getId());
-            }
+            log.debugf("GET - getTrigger - triggerId: %s ", found.getId());
             response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("GET - getTrigger - triggerId : " + triggerId + " not found or invalid. ");
-            }
+            log.debugf("GET - getTrigger - triggerId: %s not found or invalid. ", triggerId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)
@@ -135,14 +118,12 @@ public class TriggersHandler {
                 trigger != null && trigger.getId() != null &&
                 triggerId.equals(trigger.getId()) &&
                 definitions.getTrigger(triggerId) != null) {
-            if (debug) {
-                log.debug("PUT - updateTrigger - triggerId: " + triggerId);
-            }
+            log.debugf("PUT - updateTrigger - triggerId: %s ", triggerId);
             definitions.removeTrigger(triggerId);
             definitions.addTrigger(trigger);
             response.resume(Response.status(Response.Status.OK).build());
         } else {
-            log.debug("PUT - updateTrigger - triggerId: " + triggerId + " not found or invalid. ");
+            log.debugf("PUT - updateTrigger - triggerId: %s not found or invalid. ", triggerId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)
@@ -154,15 +135,11 @@ public class TriggersHandler {
     @Path("/{triggerId}")
     public void deleteTrigger(@Suspended final AsyncResponse response, @PathParam("triggerId") final String triggerId) {
         if (triggerId != null && !triggerId.isEmpty() && definitions.getTrigger(triggerId) != null) {
-            if (debug) {
-                log.debug("DELETE - deleteTrigger - triggerId: " + triggerId);
-            }
+            log.debugf("DELETE - deleteTrigger - triggerId: %s ", triggerId);
             definitions.removeTrigger(triggerId);
             response.resume(Response.status(Response.Status.OK).build());
         } else {
-            if (debug) {
-                log.debug("DELETE - deleteTrigger - triggerId: " + triggerId + " not found or invalid. ");
-            }
+            log.debugf("DELETE - deleteTrigger - triggerId: %s not found or invalid. ", triggerId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)

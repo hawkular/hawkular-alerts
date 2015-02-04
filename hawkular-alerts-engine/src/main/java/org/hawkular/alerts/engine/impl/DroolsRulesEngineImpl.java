@@ -16,13 +16,13 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.rules.RulesEngine;
+import org.jboss.logging.Logger;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.rule.FactHandle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.ejb.Singleton;
 import java.util.Collection;
@@ -37,8 +37,8 @@ import java.util.Collection;
  */
 @Singleton
 public class DroolsRulesEngineImpl implements RulesEngine {
-    private static final Logger log = LoggerFactory.getLogger(DroolsRulesEngineImpl.class);
-    private boolean debug = false;
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(DroolsRulesEngineImpl.class);
     private static final String SESSION_NAME = "hawkular-alerts-engine-session";
 
     private KieServices ks;
@@ -46,10 +46,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     private KieSession kSession;
 
     public DroolsRulesEngineImpl() {
-        if (log.isDebugEnabled()) {
-            debug = true;
-            log.debug("Creating instance.");
-        }
+        log.debugf("Creating instance.");
         ks = KieServices.Factory.get();
         kc = ks.getKieClasspathContainer();
         kSession = kc.newKieSession(SESSION_NAME);
@@ -57,45 +54,35 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
     @Override
     public void addFact(Object fact) {
-        if (debug) {
-            log.debug("Insert {} ", fact);
-        }
+        log.debugf("Insert %s ", fact);
         kSession.insert(fact);
     }
 
     @Override
     public void addFacts(Collection facts) {
         for (Object fact : facts) {
-            if (debug) {
-                log.debug("Insert {} ", fact);
-            }
+            log.debugf("Insert %s ", fact);
             kSession.insert(fact);
         }
     }
 
     @Override
     public void addGlobal(String name, Object global) {
-        if (debug) {
-            log.debug("Add Global {} = {}", name, global);
-        }
+        log.debugf("Add Global %s = %s", name, global);
         kSession.setGlobal(name, global);
     }
 
     @Override
     public void clear() {
         for (FactHandle factHandle : kSession.getFactHandles()) {
-            if (debug) {
-                log.debug("Delete {} ", factHandle);
-            }
+            log.debugf("Delete %s ", factHandle);
             kSession.delete(factHandle);
         }
     }
 
     @Override
     public void fire() {
-        if (debug) {
-            log.debug("Firing rules !!");
-        }
+        log.debugf("Firing rules !!");
         kSession.fireAllRules();
     }
 
@@ -103,9 +90,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     public void removeFact(Object fact) {
         FactHandle factHandle = kSession.getFactHandle(fact);
         if (factHandle != null) {
-            if (debug) {
-                log.debug("Delete {} ", factHandle);
-            }
+            log.debugf("Delete %s ", factHandle);
             kSession.delete(factHandle);
         }
     }
@@ -119,17 +104,13 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
     @Override
     public void removeGlobal(String name) {
-        if (debug) {
-            log.debug("Remove Global {} ", name);
-        }
+        log.debugf("Remove Global %s ", name);
         kSession.setGlobal(name, null);
     }
 
     @Override
     public void reset() {
-        if (debug) {
-            log.debug("Reset session");
-        }
+        log.debugf("Reset session");
         kSession.dispose();
         kSession = kc.newKieSession(SESSION_NAME);
     }

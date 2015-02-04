@@ -19,8 +19,7 @@ package org.hawkular.alerts.bus.listener;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.bus.messages.AlertDataMessage;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
@@ -37,16 +36,14 @@ import javax.jms.MessageListener;
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "MetricsTopic")})
 public class AlertDataListener extends BasicMessageListener<AlertDataMessage> {
-    private final Logger log = LoggerFactory.getLogger(AlertDataListener.class);
+    private final Logger log = Logger.getLogger(AlertDataListener.class);
 
     @EJB
     AlertsService alerts;
 
     @Override
     protected void onBasicMessage(AlertDataMessage msg) {
-        if (log.isDebugEnabled()) {
-            log.debug("Message received: [{}]", msg);
-        }
+        log.debugf("Message received: [%s]", msg);
         alerts.sendData(msg.getData());
     }
 }

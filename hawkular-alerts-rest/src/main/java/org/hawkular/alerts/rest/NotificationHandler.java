@@ -18,8 +18,7 @@ package org.hawkular.alerts.rest;
 
 import org.hawkular.alerts.api.model.notification.Notification;
 import org.hawkular.alerts.api.services.NotificationsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -40,17 +39,13 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
  */
 @Path("/notifications")
 public class NotificationHandler {
-    private static final Logger log = LoggerFactory.getLogger(NotificationHandler.class);
-    private boolean debug = false;
+    private final Logger log = Logger.getLogger(NotificationHandler.class);
 
     @EJB
     NotificationsService notifications;
 
     public NotificationHandler() {
-        if (log.isDebugEnabled()) {
-            log.debug("Creating instance.");
-            debug = true;
-        }
+        log.debug("Creating instance.");
     }
 
     @POST

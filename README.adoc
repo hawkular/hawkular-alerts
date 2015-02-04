@@ -4,11 +4,6 @@
 
 1. `cd hawkular-bus ; mvn clean install -Pdev`
 
-Note:
-
-Verify that Bus is configured in failover mode due:
-https://issues.jboss.org/browse/HAWKULAR-14
-
 == hawkular-alerts
 
 1. `cd hawkular-alerts ; mvn clean install -Pdev`

@@ -18,8 +18,7 @@ package org.hawkular.alerts.rest;
 
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -47,17 +46,13 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  */
 @Path("/trigger/dampening")
 public class DampeningHandler {
-    private static final Logger log = LoggerFactory.getLogger(DampeningHandler.class);
-    private boolean debug = false;
+    private final Logger log = Logger.getLogger(DampeningHandler.class);
 
     @EJB
     DefinitionsService definitions;
 
     public DampeningHandler() {
-        if (log.isDebugEnabled()) {
-            log.debug("Creating instance.");
-            debug = true;
-        }
+        log.debugf("Creating instance.");
     }
 
     @GET
@@ -66,15 +61,10 @@ public class DampeningHandler {
     public void findAllDampenings(@Suspended final AsyncResponse response) {
         Collection<Dampening> dampeningList = definitions.getDampenings();
         if (dampeningList.isEmpty()) {
-            if (debug) {
-                log.debug("GET - findAllDampenings - Empty");
-            }
+            log.debugf("GET - findAllDampenings - Empty");
             response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("GET - findAllDampenings - " + dampeningList.size() +
-                          " compare conditions");
-            }
+            log.debugf("GET - findAllDampenings - %s compare conditions. ", dampeningList.size());
             response.resume(Response.status(Response.Status.OK)
                     .entity(dampeningList).type(APPLICATION_JSON_TYPE).build());
         }
@@ -88,15 +78,11 @@ public class DampeningHandler {
                                 final Dampening dampening) {
         if (dampening != null && dampening.getTriggerId() != null
                 && definitions.getDampening(dampening.getTriggerId()) == null) {
-            if (debug) {
-                log.debug("POST - createDampening - triggerId " + dampening.getTriggerId());
-            }
+            log.debugf("POST - createDampening - triggerId %s ", dampening.getTriggerId());
             definitions.addDampening(dampening);
             response.resume(Response.status(Response.Status.OK).entity(dampening).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("POST - createDampening - ID not valid or existing dampening");
-            }
+            log.debugf("POST - createDampening - ID not valid or existing dampening");
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Existing dampening or invalid ID");
             response.resume(Response.status(Response.Status.BAD_REQUEST)
@@ -114,14 +100,10 @@ public class DampeningHandler {
             found = definitions.getDampening(triggerId);
         }
         if (found != null) {
-            if (debug) {
-                log.debug("GET - getDampening - triggerId: " + found.getTriggerId());
-            }
+            log.debugf("GET - getDampening - triggerId: %s ", found.getTriggerId());
             response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
         } else {
-            if (debug) {
-                log.debug("GET - getDampening - triggerId: " + triggerId + " not found or invalid. ");
-            }
+            log.debugf("GET - getDampening - triggerId: %s not found or invalid. ", triggerId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)
@@ -139,13 +121,11 @@ public class DampeningHandler {
                 dampening != null && dampening.getTriggerId() != null &&
                 triggerId.equals(dampening.getTriggerId()) &&
                 definitions.getDampening(triggerId) != null) {
-            if (debug) {
-                log.debug("PUT - updateDampening - triggerId: " + triggerId);
-            }
+            log.debugf("PUT - updateDampening - triggerId: %s ", triggerId);
             definitions.updateDampening(dampening);
             response.resume(Response.status(Response.Status.OK).build());
         } else {
-            log.debug("PUT - updateDampening - triggerId: " + triggerId + " not found or invalid. ");
+            log.debugf("PUT - updateDampening - triggerId: %s not found or invalid. ", triggerId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)
@@ -158,16 +138,11 @@ public class DampeningHandler {
     public void deleteDampening(@Suspended final AsyncResponse response,
                                 @PathParam("triggerId") final String triggerId) {
         if (triggerId != null && !triggerId.isEmpty() && definitions.getDampening(triggerId) != null) {
-            if (debug) {
-                log.debug("DELETE - deleteDampening - triggerId: " + triggerId);
-            }
+            log.debugf("DELETE - deleteDampening - triggerId: %s ", triggerId);
             definitions.removeDampening(triggerId);
             response.resume(Response.status(Response.Status.OK).build());
         } else {
-            if (debug) {
-                log.debug("DELETE - deleteDampening - triggerId: " + triggerId + " not found or " +
-                          "invalid. ");
-            }
+            log.debugf("DELETE - deleteDampening - triggerId: %s not found or invalid ", triggerId);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
             response.resume(Response.status(Response.Status.NOT_FOUND)

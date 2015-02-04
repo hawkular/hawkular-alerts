@@ -16,9 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * An availability condition definition.
@@ -27,7 +26,7 @@ import org.slf4j.LoggerFactory;
  * @author Lucas Ponce
  */
 public class AvailabilityCondition extends Condition {
-    private static final Logger log = LoggerFactory.getLogger(AvailabilityCondition.class);
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         DOWN, NOT_UP, UP
@@ -79,7 +78,7 @@ public class AvailabilityCondition extends Condition {
             case NOT_UP:
                 return value != AvailabilityType.UP;
             default:
-                log.warn("Unknown operator: " + operator.name());
+                msgLog.warnUnknowOperatorOnCondition(operator.name(), this.getClass().getName());
                 return false;
         }
     }
