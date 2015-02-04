@@ -41,10 +41,16 @@ public abstract class Condition {
      */
     protected int conditionSetIndex;
 
+    /**
+     * A composed key for conditionId
+     */
+    protected String conditionId;
+
     public Condition(String triggerId, int conditionSetSize, int conditionSetIndex) {
         this.triggerId = triggerId;
         this.conditionSetSize = conditionSetSize;
         this.conditionSetIndex = conditionSetIndex;
+        this.conditionId = triggerId + "-" + conditionSetSize + "-" + conditionSetIndex;
     }
 
     public int getConditionSetIndex() {
@@ -72,7 +78,12 @@ public abstract class Condition {
     }
 
     public String getConditionId() {
-        return triggerId + "/" + conditionSetSize + "/" + conditionSetIndex;
+        conditionId = triggerId + "-" + conditionSetSize + "-" + conditionSetIndex;
+        return conditionId;
+    }
+
+    public void setConditionId(String conditionId) {
+        this.conditionId = conditionId;
     }
 
     @Override
@@ -103,6 +114,6 @@ public abstract class Condition {
                 "conditionSetIndex=" + conditionSetIndex +
                 ", triggerId='" + triggerId + '\'' +
                 ", conditionSetSize=" + conditionSetSize +
-                '}';
+                ", conditionId=" + conditionId + '}';
     }
 }

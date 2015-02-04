@@ -87,7 +87,7 @@
             <webModule>
               <groupId>org.hawkular.alerts</groupId>
               <artifactId>hawkular-alerts-rest</artifactId>
-              <contextRoot>/hawkular-alerts</contextRoot>
+              <contextRoot>/hawkular/alerts</contextRoot>
             </webModule>
           </modules>
           <fileNameMapping>no-version</fileNameMapping>

@@ -54,7 +54,7 @@ public class NotificationHandler {
     }
 
     @POST
-    @Path("/notify")
+    @Path("/")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     public void notify(@Suspended final AsyncResponse response, Notification notification) {

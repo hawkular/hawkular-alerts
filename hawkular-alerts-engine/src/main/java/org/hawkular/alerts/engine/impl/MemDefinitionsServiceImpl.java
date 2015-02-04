@@ -348,6 +348,13 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
             log.error("notifiers.data file not found. Skipping notifiers initialization.");
         }
 
+        if (debug) {
+            log.debug("Triggers: " + this.triggers.keySet().size() + " size.");
+            log.debug("Conditions: " + this.conditions.keySet().size() + " size.");
+            log.debug("Dampenings: " + this.dampenings.keySet().size() + " size.");
+            log.debug("Notifiers Types: " + this.notifierTypes.keySet().size() + " size.");
+            log.debug("Notifiers: " + this.notifiers.keySet().size() + " size.");
+        }
     }
 
     @Override
@@ -522,7 +529,7 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
         if (conditionId == null || conditionId.isEmpty()) {
             throw new IllegalArgumentException("ConditionId must be not null");
         }
-        if (conditions.containsValue(conditionId)) {
+        if (conditions.containsKey(conditionId)) {
             conditions.remove(conditionId);
         }
     }

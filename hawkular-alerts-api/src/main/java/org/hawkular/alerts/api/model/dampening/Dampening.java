@@ -47,6 +47,10 @@ public class Dampening {
     private boolean satisfied;
     private List<Set<ConditionEval>> satisfyingEvals = new ArrayList<Set<ConditionEval>>();
 
+    public Dampening() {
+        this("Default", Type.RELAXED_COUNT, 0, 0, 0);
+    }
+
     public Dampening(String triggerId, Type type, int evalTrueSetting, int evalTotalSetting, long evalTimeSetting) {
         super();
         this.triggerId = triggerId;
@@ -60,6 +64,34 @@ public class Dampening {
 
     public String getTriggerId() {
         return triggerId;
+    }
+
+    public void setTriggerId(String triggerId) {
+        this.triggerId = triggerId;
+    }
+
+    public void setEvalTimeSetting(long evalTimeSetting) {
+        this.evalTimeSetting = evalTimeSetting;
+    }
+
+    public void setEvalTotalSetting(int evalTotalSetting) {
+        this.evalTotalSetting = evalTotalSetting;
+    }
+
+    public void setEvalTrueSetting(int evalTrueSetting) {
+        this.evalTrueSetting = evalTrueSetting;
+    }
+
+    public void setSatisfied(boolean satisfied) {
+        this.satisfied = satisfied;
+    }
+
+    public void setSatisfyingEvals(List<Set<ConditionEval>> satisfyingEvals) {
+        this.satisfyingEvals = satisfyingEvals;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 
     public int getNumTrueEvals() {
@@ -183,7 +215,7 @@ public class Dampening {
         this.satisfyingEvals.clear();
     }
 
-    public String getLog() {
+    public String log() {
         StringBuilder sb = new StringBuilder("[" + triggerId + ", numTrueEvals="
                 + numTrueEvals + ", numEvals=" + numEvals + ", trueEvalsStartTime=" + trueEvalsStartTime
                 + ", satisfied=" + satisfied);

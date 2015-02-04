@@ -40,7 +40,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Path("/alerts")
+@Path("/")
 public class AlertsHandler {
     private static final Logger log = LoggerFactory.getLogger(AlertsHandler.class);
     private boolean debug = false;

@@ -194,8 +194,8 @@ public class ThresholdRangeCondition extends Condition {
 
     @Override
     public String toString() {
-        return "ThresholdRangeCondition{triggerId='" + triggerId + '\'' +
-                "dataId='" + dataId + '\'' +
+        return "ThresholdRangeCondition{conditionId='" + conditionId + '\'' +
+                ", dataId='" + dataId + '\'' +
                 ", operatorLow=" + operatorLow +
                 ", operatorHigh=" + operatorHigh +
                 ", thresholdLow=" + thresholdLow +

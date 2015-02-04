@@ -69,6 +69,57 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${version.org.slf4j}</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
+
+  <profiles>
+    <profile>
+      <id>rest</id>
+
+      <dependencies>
+
+        <dependency>
+          <groupId>org.codehaus.groovy</groupId>
+          <artifactId>groovy-all</artifactId>
+          <version>${version.org.codehaus.groovy}</version>
+          <scope>test</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.codehaus.groovy.modules.http-builder</groupId>
+          <artifactId>http-builder</artifactId>
+          <version>${version.org.codehaus.groovy.modules.http-builder}</version>
+          <scope>test</scope>
+        </dependency>
+
+      </dependencies>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.gmavenplus</groupId>
+            <artifactId>gmavenplus-plugin</artifactId>
+            <version>${version.org.codehaus.gmavenplus}</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>addSources</goal>
+                  <goal>addTestSources</goal>
+                  <goal>compile</goal>
+                  <goal>testCompile</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

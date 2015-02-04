@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2015 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
@@ -14,25 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.rest;
+package org.hawkular.alerts.rest
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
+import groovyx.net.http.ContentType
+import groovyx.net.http.RESTClient
+import org.junit.BeforeClass
 
 /**
- * Base class for REST module.
+ * Base class for REST tests.
  *
- * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApplicationPath("/")
-public class HawkularAlertsApp extends Application {
-    private static final Logger log = LoggerFactory.getLogger(HawkularAlertsApp.class);
+class AbstractTestBase {
 
-    public HawkularAlertsApp() {
-        log.info("Hawkular Alerts REST starting...");
+    static baseURI = System.getProperty('hawkular.base-uri') ?: 'http://127.0.0.1:8080/hawkular/alerts/'
+    static RESTClient client
+
+    @BeforeClass
+    static void initClient() {
+            client = new RESTClient(baseURI, ContentType.JSON)
     }
 }

@@ -18,5 +18,5 @@
 
 -->
 <jboss-web>
-  <context-root>hawkular-notifiers-snmp</context-root>
+  <context-root>/hawkular/notifiers/snmp</context-root>
 </jboss-web>

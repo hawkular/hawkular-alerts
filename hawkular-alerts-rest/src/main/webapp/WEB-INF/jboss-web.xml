@@ -18,5 +18,5 @@
 
 -->
 <jboss-web>
-  <context-root>hawkular-alerts</context-root>
+  <context-root>/hawkular/alerts</context-root>
 </jboss-web>
