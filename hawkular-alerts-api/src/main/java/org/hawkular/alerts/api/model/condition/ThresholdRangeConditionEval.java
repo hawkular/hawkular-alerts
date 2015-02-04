@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.model.data.NumericData;
+
 /**
  * An evaluation state for threshold range condition.
  *
@@ -28,15 +30,15 @@ public class ThresholdRangeConditionEval extends ConditionEval {
     private Double value;
 
     public ThresholdRangeConditionEval() {
-        super(false);
+        super(false, 0);
         this.condition = null;
         this.value = null;
     }
 
-    public ThresholdRangeConditionEval(ThresholdRangeCondition condition, Double value) {
-        super(condition.match(value));
+    public ThresholdRangeConditionEval(ThresholdRangeCondition condition, NumericData data) {
+        super(condition.match(data.getValue()), data.getTimestamp());
         this.condition = condition;
-        this.value = value;
+        this.value = data.getValue();
     }
 
     public ThresholdRangeCondition getCondition() {
@@ -99,9 +101,8 @@ public class ThresholdRangeConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "ThresholdRangeConditionEval{" +
-                "condition=" + condition +
-                ", value=" + value +
-                '}';
+        return "ThresholdRangeConditionEval [condition=" + condition + ", value=" + value + ", toString()="
+                + super.toString() + "]";
     }
+
 }

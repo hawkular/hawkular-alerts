@@ -108,9 +108,8 @@ public class AvailabilityCondition extends Condition {
 
     @Override
     public String toString() {
-        return "AvailabilityCondition{conditionId='" + conditionId + '\'' +
-                ", dataId='" + dataId + '\'' +
-                ", operator=" + operator +
-                '}';
+        return "AvailabilityCondition [dataId=" + dataId + ", operator=" + operator + ", toString()="
+                + super.toString() + "]";
     }
+
 }

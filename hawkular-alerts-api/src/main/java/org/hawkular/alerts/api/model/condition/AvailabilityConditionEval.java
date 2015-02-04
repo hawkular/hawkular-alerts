@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
 
 /**
@@ -30,15 +31,15 @@ public class AvailabilityConditionEval extends ConditionEval {
     private AvailabilityType value;
 
     public AvailabilityConditionEval() {
-        super(false);
+        super(false, 0);
         this.condition = null;
         this.value = null;
     }
 
-    public AvailabilityConditionEval(AvailabilityCondition condition, AvailabilityType value) {
-        super(condition.match(value));
+    public AvailabilityConditionEval(AvailabilityCondition condition, Availability avail) {
+        super(condition.match(avail.getValue()), avail.getTimestamp());
         this.condition = condition;
-        this.value = value;
+        this.value = avail.getValue();
     }
 
     public AvailabilityCondition getCondition() {
@@ -101,9 +102,8 @@ public class AvailabilityConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "AvailabilityConditionEval{" +
-                "condition=" + condition +
-                ", value=" + value +
-                '}';
+        return "AvailabilityConditionEval [condition=" + condition + ", value=" + value + ", toString()="
+                + super.toString() + "]";
     }
+
 }

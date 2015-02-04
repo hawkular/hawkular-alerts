@@ -30,11 +30,11 @@ public class NumericData extends Data {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this(null, null);
+        this(null, 0, null);
     }
 
-    public NumericData(String id, Double value) {
-        this.id = id;
+    public NumericData(String id, long timestamp, Double value) {
+        super(id, timestamp);
         this.value = value;
     }
 
@@ -48,13 +48,17 @@ public class NumericData extends Data {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         NumericData that = (NumericData) o;
 
-        if (value != null ? !value.equals(that.value) : that.value != null) return false;
+        if (value != null ? !value.equals(that.value) : that.value != null)
+            return false;
 
         return true;
     }
@@ -68,8 +72,7 @@ public class NumericData extends Data {
 
     @Override
     public String toString() {
-        return "NumericData{id='" + id + '\'' +
-                ", value=" + value +
-                '}';
+        return "NumericData [value=" + value + ", getId()=" + getId() + ", getTimestamp()=" + getTimestamp() + "]";
     }
+
 }

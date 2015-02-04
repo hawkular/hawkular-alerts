@@ -17,14 +17,17 @@
 package org.hawkular.alerts.api.model.data;
 
 /**
- * A base class for incoming data into alerts subsystem.
+ * A base class for incoming data into alerts subsystem.  All {@link Data} has an Id and a timestamp. The
+ * timestamp is used to ensure that data is time-ordered when being sent into the alerting engine.  If
+ * not assigned the timestamp will be assigned to current time.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class Data {
 
-    protected String id;
+    private String id;
+    private long timestamp;
 
     public Data() {
         /*
@@ -33,8 +36,13 @@ public class Data {
         this.id = null;
     }
 
-    public Data(String id) {
+    /**
+     * @param id not null.
+     * @param timestamp if <=0 assigned currentTime.
+     */
+    public Data(String id, long timestamp) {
         this.id = id;
+        this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
     }
 
     public String getId() {
@@ -45,27 +53,48 @@ public class Data {
         this.id = id;
     }
 
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    /**
+     * @param timestamp if <=0 assigned currentTime.
+     */
+    public void setTimestamp(long timestamp) {
+        this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
+    }
+
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Data data = (Data) o;
-
-        if (id != null ? !id.equals(data.id) : data.id != null) return false;
-
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Data other = (Data) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        if (timestamp != other.timestamp)
+            return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return id != null ? id.hashCode() : 0;
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
+        return result;
     }
 
     @Override
     public String toString() {
-        return "Data{" +
-                "id='" + id + '\'' +
-                '}';
+        return "Data [id=" + id + ", timestamp=" + timestamp + "]";
     }
+
 }

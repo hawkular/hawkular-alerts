@@ -143,11 +143,8 @@ public class StringCondition extends Condition {
 
     @Override
     public String toString() {
-        return "StringCondition{conditionId='" + conditionId + '\'' +
-                "dataId='" + dataId + '\'' +
-                ", operator=" + operator +
-                ", pattern='" + pattern + '\'' +
-                ", ignoreCase=" + ignoreCase +
-                '}';
+        return "StringCondition [dataId=" + dataId + ", operator=" + operator + ", pattern=" + pattern
+                + ", ignoreCase=" + ignoreCase + ", toString()=" + super.toString() + "]";
     }
+
 }

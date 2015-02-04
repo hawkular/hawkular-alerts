@@ -110,10 +110,8 @@ public abstract class Condition {
 
     @Override
     public String toString() {
-        return "Condition{" +
-                "conditionSetIndex=" + conditionSetIndex +
-                ", triggerId='" + triggerId + '\'' +
-                ", conditionSetSize=" + conditionSetSize +
-                ", conditionId=" + conditionId + '}';
+        return "Condition [triggerId=" + triggerId + ", conditionSetSize=" + conditionSetSize + ", conditionSetIndex="
+                + conditionSetIndex + ", conditionId=" + conditionId + "]";
     }
+
 }

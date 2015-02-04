@@ -65,9 +65,9 @@ rule Threshold
     when 
         $t : Trigger( active == true, $tid : id )
         $c : ThresholdCondition ( triggerId == $tid, $did : dataId )
-        NumericData( $did == id, $value : value)
+        $d : NumericData( $did == id )
     then
-        ThresholdConditionEval ce = new ThresholdConditionEval($c, (Double)$value);
+        ThresholdConditionEval ce = new ThresholdConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
             log.debug("Threshold Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
         }
@@ -78,9 +78,9 @@ rule ThresholdRange
     when 
         $t : Trigger( active == true, $tid : id )
         $c : ThresholdRangeCondition ( triggerId == $tid, $did : dataId )
-        NumericData( $did == id, $value : value)
+        $d : NumericData( $did == id )
     then
-        ThresholdRangeConditionEval ce = new ThresholdRangeConditionEval($c, (Double)$value);
+        ThresholdRangeConditionEval ce = new ThresholdRangeConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
             log.debug("ThresholdRange Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
         }
@@ -97,12 +97,12 @@ end
 // data when it arrives at different times.
 rule Compare
     when 
-        $t : Trigger( active == true, $tid : id )
-        $c : CompareCondition ( triggerId == $tid, $d1id : data1Id, $d2id : data2Id )
-        NumericData( $d1id == id, $value1 : value)
-        NumericData( $d2id == id, $value2 : value)
+        $t  : Trigger( active == true, $tid : id )
+        $c  : CompareCondition ( triggerId == $tid, $d1id : data1Id, $d2id : data2Id )
+        $d1 : NumericData( $d1id == id )
+        $d2 : NumericData( $d2id == id )
     then
-        CompareConditionEval ce = new CompareConditionEval($c, (Double)$value1, (Double)$value2);
+        CompareConditionEval ce = new CompareConditionEval($c, $d1, $d2);
         if (log != null && log.isDebugEnabled()) {
             log.debug("Compare Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
         }
@@ -113,9 +113,9 @@ rule Availability
     when 
         $t : Trigger( active == true, $tid : id )
         $c : AvailabilityCondition ( triggerId == $tid, $did : dataId )
-        Availability( $did == id, $value : value)
+        $d : Availability( $did == id )
     then
-        AvailabilityConditionEval ce = new AvailabilityConditionEval($c, (AvailabilityType)$value);
+        AvailabilityConditionEval ce = new AvailabilityConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
             log.debug("Availability Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
         }
@@ -126,9 +126,9 @@ rule String
     when 
         $t : Trigger( active == true, $tid : id )
         $c : StringCondition ( triggerId == $tid, $did : dataId  )
-        StringData( $did == id, $value : value)
+        $d : StringData( $did == id )
     then
-        StringConditionEval ce = new StringConditionEval($c, (String)$value);
+        StringConditionEval ce = new StringConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
             log.debug("String Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
         }
@@ -220,8 +220,8 @@ end
 rule RetractObsoleteConditionEval
     salience 10
     when
-        $ce1 : ConditionEval( $tid : triggerId, ( conditionSetSize > 1 ), $csi : conditionSetIndex, $t1 : time )
-        $ce2 : ConditionEval( $tid == triggerId, $csi == conditionSetIndex, $t1 > time )
+        $ce1 : ConditionEval( $tid : triggerId, ( conditionSetSize > 1 ), $csi : conditionSetIndex, $t1 : evalTimestamp )
+        $ce2 : ConditionEval( $tid == triggerId, $csi == conditionSetIndex, $t1 > evalTimestamp )
     then
         if (log != null && log.isDebugEnabled()) {
             log.debug( "Retracting obsolete multi-condition eval " + $ce2 + " (due to " + $ce1 + ")");
