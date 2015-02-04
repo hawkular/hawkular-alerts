@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.model.data.NumericData;
+
 /**
  * An evaluation state for compare condition.
  *
@@ -29,17 +31,18 @@ public class CompareConditionEval extends ConditionEval {
     private Double value2;
 
     public CompareConditionEval() {
-        super(false);
+        super(false, 0);
         this.condition = null;
         this.value1 = null;
         this.value2 = null;
     }
 
-    public CompareConditionEval(CompareCondition condition, Double value1, Double value2) {
-        super(condition.match(value1, value2));
+    public CompareConditionEval(CompareCondition condition, NumericData data1, NumericData data2) {
+        super(condition.match(data1.getValue(), data2.getValue()),
+                ((data1.getTimestamp() > data1.getTimestamp()) ? data1.getTimestamp() : data2.getTimestamp()));
         this.condition = condition;
-        this.value1 = value1;
-        this.value2 = value2;
+        this.value1 = data1.getValue();
+        this.value2 = data2.getValue();
     }
 
     public CompareCondition getCondition() {
@@ -88,15 +91,21 @@ public class CompareConditionEval extends ConditionEval {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         CompareConditionEval that = (CompareConditionEval) o;
 
-        if (condition != null ? !condition.equals(that.condition) : that.condition != null) return false;
-        if (value1 != null ? !value1.equals(that.value1) : that.value1 != null) return false;
-        if (value2 != null ? !value2.equals(that.value2) : that.value2 != null) return false;
+        if (condition != null ? !condition.equals(that.condition) : that.condition != null)
+            return false;
+        if (value1 != null ? !value1.equals(that.value1) : that.value1 != null)
+            return false;
+        if (value2 != null ? !value2.equals(that.value2) : that.value2 != null)
+            return false;
 
         return true;
     }
@@ -112,10 +121,8 @@ public class CompareConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "CompareConditionEval{" +
-                "condition=" + condition +
-                ", value1=" + value1 +
-                ", value2=" + value2 +
-                '}';
+        return "CompareConditionEval [condition=" + condition + ", value1=" + value1 + ", value2=" + value2
+                + ", toString()=" + super.toString() + "]";
     }
+
 }

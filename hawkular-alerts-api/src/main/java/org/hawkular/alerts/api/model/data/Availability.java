@@ -31,11 +31,11 @@ public class Availability extends Data {
     private AvailabilityType value;
 
     public Availability() {
-        this(null, null);
+        this(null, 0, null);
     }
 
-    public Availability(String id, AvailabilityType value) {
-        this.id = id;
+    public Availability(String id, long timestamp, AvailabilityType value) {
+        super(id, timestamp);
         this.value = value;
     }
 
@@ -49,13 +49,17 @@ public class Availability extends Data {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         Availability that = (Availability) o;
 
-        if (value != that.value) return false;
+        if (value != that.value)
+            return false;
 
         return true;
     }
@@ -69,8 +73,7 @@ public class Availability extends Data {
 
     @Override
     public String toString() {
-        return "Availability{id='" + id + '\'' +
-                "value=" + value +
-                '}';
+        return "Availability [value=" + value + ", getId()=" + getId() + ", getTimestamp()=" + getTimestamp() + "]";
     }
+
 }

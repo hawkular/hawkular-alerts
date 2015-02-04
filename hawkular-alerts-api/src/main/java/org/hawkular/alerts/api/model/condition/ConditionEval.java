@@ -27,13 +27,16 @@ public abstract class ConditionEval {
     // result of the condition evaluation
     protected boolean match;
     // time of condition evaluation (i.e. creation time)
-    protected long time;
+    protected long evalTimestamp;
+    // time stamped on the data used in the eval
+    protected long dataTimestamp;
     // flag noting whether this condition eval was used in a tested Tuple and already applied to dampening
     protected boolean used;
 
-    public ConditionEval(boolean match) {
+    public ConditionEval(boolean match, long dataTimestamp) {
         this.match = match;
-        this.time = System.currentTimeMillis();
+        this.dataTimestamp = dataTimestamp;
+        this.evalTimestamp = System.currentTimeMillis();
         this.used = false;
     }
 
@@ -45,12 +48,20 @@ public abstract class ConditionEval {
         this.match = match;
     }
 
-    public long getTime() {
-        return time;
+    public long getEvalTimestamp() {
+        return evalTimestamp;
     }
 
-    public void setTime(long time) {
-        this.time = time;
+    public void setEvalTimestamp(long evalTimestamp) {
+        this.evalTimestamp = evalTimestamp;
+    }
+
+    public long getDataTimestamp() {
+        return dataTimestamp;
+    }
+
+    public void setDataTimestamp(long dataTimestamp) {
+        this.dataTimestamp = dataTimestamp;
     }
 
     public boolean isUsed() {
@@ -70,32 +81,40 @@ public abstract class ConditionEval {
     public abstract String getLog();
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-
-        ConditionEval that = (ConditionEval) o;
-
-        if (match != that.match)
-            return false;
-        if (time != that.time)
-            return false;
-
-        return true;
-    }
-
-    @Override
     public int hashCode() {
-        int result = (match ? 1 : 0);
-        result = 31 * result + (int) (time ^ (time >>> 32));
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (int) (dataTimestamp ^ (dataTimestamp >>> 32));
+        result = prime * result + (int) (evalTimestamp ^ (evalTimestamp >>> 32));
+        result = prime * result + (match ? 1231 : 1237);
+        result = prime * result + (used ? 1231 : 1237);
         return result;
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ConditionEval other = (ConditionEval) obj;
+        if (dataTimestamp != other.dataTimestamp)
+            return false;
+        if (evalTimestamp != other.evalTimestamp)
+            return false;
+        if (match != other.match)
+            return false;
+        if (used != other.used)
+            return false;
+        return true;
+    }
+
+    @Override
     public String toString() {
-        return "ConditionEval [match=" + match + ", time=" + time + ", used=" + used + "]";
+        return "ConditionEval [match=" + match + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp="
+                + dataTimestamp + ", used=" + used + "]";
     }
 
 }

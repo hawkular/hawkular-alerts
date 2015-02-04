@@ -193,13 +193,9 @@ public class ThresholdRangeCondition extends Condition {
 
     @Override
     public String toString() {
-        return "ThresholdRangeCondition{conditionId='" + conditionId + '\'' +
-                ", dataId='" + dataId + '\'' +
-                ", operatorLow=" + operatorLow +
-                ", operatorHigh=" + operatorHigh +
-                ", thresholdLow=" + thresholdLow +
-                ", thresholdHigh=" + thresholdHigh +
-                ", inRange=" + inRange +
-                '}';
+        return "ThresholdRangeCondition [dataId=" + dataId + ", operatorLow=" + operatorLow + ", operatorHigh="
+                + operatorHigh + ", thresholdLow=" + thresholdLow + ", thresholdHigh=" + thresholdHigh + ", inRange="
+                + inRange + ", toString()=" + super.toString() + "]";
     }
+
 }

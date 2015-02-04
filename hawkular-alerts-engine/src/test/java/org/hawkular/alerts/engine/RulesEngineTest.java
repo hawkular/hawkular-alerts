@@ -16,6 +16,12 @@
  */
 package org.hawkular.alerts.engine;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.StringCondition;
@@ -23,6 +29,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Availability;
+import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.data.StringData;
@@ -32,14 +39,6 @@ import org.hawkular.alerts.engine.rules.RulesEngine;
 import org.jboss.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-
-import static org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
 
 /**
  * Basic test of RulesEngine implementation.
@@ -57,25 +56,25 @@ public class RulesEngineTest {
         datums = new HashSet<Data>();
         Random r = new Random();
         for (int i = 0; i < 10; ++i) {
-            NumericData m = new NumericData("NumericData-01", r.nextDouble() * 20);
+            NumericData m = new NumericData("NumericData-01", i, r.nextDouble() * 20);
             datums.add(m);
         }
         for (int i = 0; i < 10; ++i) {
-            NumericData m = new NumericData("NumericData-02", r.nextDouble() * 20);
+            NumericData m = new NumericData("NumericData-02", i, r.nextDouble() * 20);
             datums.add(m);
         }
         for (int i = 0; i < 10; ++i) {
-            NumericData m = new NumericData("NumericData-03", r.nextDouble() * 20);
+            NumericData m = new NumericData("NumericData-03", i, r.nextDouble() * 20);
             datums.add(m);
         }
 
-        datums.add(new StringData("StringData-01", "Barney"));
-        datums.add(new StringData("StringData-01", "Fred and Barney"));
-        datums.add(new StringData("StringData-02", "Fred Flintstone"));
+        datums.add(new StringData("StringData-01", 1, "Barney"));
+        datums.add(new StringData("StringData-01", 2, "Fred and Barney"));
+        datums.add(new StringData("StringData-02", 3, "Fred Flintstone"));
 
-        datums.add(new Availability("Availability-01", AvailabilityType.UP));
-        datums.add(new Availability("Availability-01", AvailabilityType.UP));
-        datums.add(new Availability("Availability-01", AvailabilityType.UNAVAILABLE));
+        datums.add(new Availability("Availability-01", 1, AvailabilityType.UP));
+        datums.add(new Availability("Availability-01", 2, AvailabilityType.UP));
+        datums.add(new Availability("Availability-01", 3, AvailabilityType.UNAVAILABLE));
     }
 
     @Test

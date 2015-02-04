@@ -137,11 +137,8 @@ public class CompareCondition extends Condition {
 
     @Override
     public String toString() {
-        return "CompareCondition{conditionId='" + conditionId + '\'' +
-                "data1Id='" + data1Id + '\'' +
-                ", operator=" + operator +
-                ", data2Id='" + data2Id + '\'' +
-                ", data2Multiplier=" + data2Multiplier +
-                '}';
+        return "CompareCondition [data1Id=" + data1Id + ", operator=" + operator + ", data2Id=" + data2Id
+                + ", data2Multiplier=" + data2Multiplier + ", toString()=" + super.toString() + "]";
     }
+
 }

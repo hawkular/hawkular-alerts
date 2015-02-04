@@ -85,10 +85,7 @@ public class Alert {
 
     @Override
     public String toString() {
-        return "Alert{" +
-                "evals=" + evals +
-                ", triggerId='" + triggerId + '\'' +
-                ", time=" + time +
-                '}';
+        return "Alert [triggerId=" + triggerId + ", evals=" + evals + ", time=" + time + "]";
     }
+
 }

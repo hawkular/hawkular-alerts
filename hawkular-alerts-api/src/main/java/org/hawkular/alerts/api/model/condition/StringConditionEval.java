@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.model.data.StringData;
+
 /**
  * An evaluation state for string condition.
  *
@@ -28,15 +30,15 @@ public class StringConditionEval extends ConditionEval {
     private String value;
 
     public StringConditionEval() {
-        super(false);
+        super(false, 0);
         this.condition = null;
         this.value = null;
     }
 
-    public StringConditionEval(StringCondition condition, String value) {
-        super(condition.match(value));
+    public StringConditionEval(StringCondition condition, StringData data) {
+        super(condition.match(data.getValue()), data.getTimestamp());
         this.condition = condition;
-        this.value = value;
+        this.value = data.getValue();
     }
 
     public StringCondition getCondition() {
@@ -99,9 +101,8 @@ public class StringConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "StringConditionEval{" +
-                "condition=" + condition +
-                ", value='" + value + '\'' +
-                '}';
+        return "StringConditionEval [condition=" + condition + ", value=" + value + ", toString()=" + super.toString()
+                + "]";
     }
+
 }
