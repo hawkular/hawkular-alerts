@@ -101,4 +101,18 @@
     <version.org.wildfly>8.2.0.Final</version.org.wildfly>
   </properties>
 
+  <dependencyManagement>
+    <dependencies>
+
+      <!-- this also includes the org.jboss.spec:jboss-javaee-7.0 dependencies -->
+      <dependency>
+        <groupId>org.wildfly.bom</groupId>
+        <artifactId>jboss-javaee-7.0-with-logging</artifactId>
+        <version>${version.org.wildfly}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+    </dependencies>
+  </dependencyManagement>
 </project>
