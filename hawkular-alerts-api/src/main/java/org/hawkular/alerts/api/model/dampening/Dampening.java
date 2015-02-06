@@ -16,13 +16,13 @@
  */
 package org.hawkular.alerts.api.model.dampening;
 
-import org.hawkular.alerts.api.model.condition.ConditionEval;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.hawkular.alerts.api.model.condition.ConditionEval;
 
 /**
  * A representation of dampening status.
@@ -138,8 +138,11 @@ public class Dampening {
         return satisfied;
     }
 
+    /**
+     * @return a safe, but not deep, copy of the satisfying evals List
+     */
     public List<Set<ConditionEval>> getSatisfyingEvals() {
-        return satisfyingEvals;
+        return new ArrayList<Set<ConditionEval>>(satisfyingEvals);
     }
 
     public void addSatisfyingEvals(Set<ConditionEval> satisfyingEvals) {
