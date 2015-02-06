@@ -28,52 +28,31 @@ public class Availability extends Data {
         UP, DOWN, UNAVAILABLE
     }
 
-    private AvailabilityType value;
-
     public Availability() {
-        this(null, 0, null);
+        this(null, 0, AvailabilityType.UP);
     }
 
     public Availability(String id, long timestamp, AvailabilityType value) {
-        super(id, timestamp);
-        this.value = value;
+        super(id, timestamp, (null == value) ? AvailabilityType.UP : value);
     }
 
     public AvailabilityType getValue() {
-        return value;
+        return (AvailabilityType) value;
     }
 
     public void setValue(AvailabilityType value) {
-        this.value = value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        if (!super.equals(o))
-            return false;
-
-        Availability that = (Availability) o;
-
-        if (value != that.value)
-            return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (value != null ? value.hashCode() : 0);
-        return result;
+        this.value = (null == value) ? AvailabilityType.UP : value;
     }
 
     @Override
     public String toString() {
-        return "Availability [value=" + value + ", getId()=" + getId() + ", getTimestamp()=" + getTimestamp() + "]";
+        return "Availability [id=" + id + ", timestamp=" + timestamp + ", value=" + value + "]";
     }
 
+    @Override
+    int compareValue(Object value1, Object value2) {
+        AvailabilityType v1 = (AvailabilityType) value1;
+        AvailabilityType v2 = (AvailabilityType) value2;
+        return v1.compareTo(v2);
+    }
 }

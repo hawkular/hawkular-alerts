@@ -36,9 +36,10 @@ import org.hawkular.alerts.api.model.data.StringData;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.rules.RulesEngine;
-import org.jboss.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.jboss.logging.Logger;
 
 /**
  * Basic test of RulesEngine implementation.
@@ -143,7 +144,7 @@ public class RulesEngineTest {
         rulesEngine.addFact(t6);
         rulesEngine.addFact(t6c1);
 
-        rulesEngine.addFacts(datums);
+        rulesEngine.addData(datums);
 
         rulesEngine.fire();
     }

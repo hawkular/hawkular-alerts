@@ -24,55 +24,35 @@ package org.hawkular.alerts.api.model.data;
  */
 public class NumericData extends Data {
 
-    private Double value;
-
     public NumericData() {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this(null, 0, null);
+        this(null, 0, Double.NaN);
     }
 
     public NumericData(String id, long timestamp, Double value) {
-        super(id, timestamp);
-        this.value = value;
+        super(id, timestamp, (null == value) ? Double.NaN : value);
     }
 
     public Double getValue() {
-        return value;
+        return (Double) value;
     }
 
     public void setValue(Double value) {
-        this.value = value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        if (!super.equals(o))
-            return false;
-
-        NumericData that = (NumericData) o;
-
-        if (value != null ? !value.equals(that.value) : that.value != null)
-            return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (value != null ? value.hashCode() : 0);
-        return result;
+        super.setValue(null == value ? Double.NaN : value);
     }
 
     @Override
     public String toString() {
-        return "NumericData [value=" + value + ", getId()=" + getId() + ", getTimestamp()=" + getTimestamp() + "]";
+        return "NumericData [id=" + id + ", timestamp=" + timestamp + ", value=" + value + "]";
+    }
+
+    @Override
+    int compareValue(Object value1, Object value2) {
+        Double v1 = (Double) value1;
+        Double v2 = (Double) value2;
+        return v1.compareTo(v2);
     }
 
 }

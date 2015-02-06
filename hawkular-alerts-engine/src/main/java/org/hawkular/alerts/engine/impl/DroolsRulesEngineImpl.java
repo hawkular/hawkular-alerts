@@ -16,16 +16,20 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import java.util.Collection;
+import java.util.TreeSet;
+
+import javax.ejb.Singleton;
+
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.rules.RulesEngine;
-import org.jboss.logging.Logger;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.rule.FactHandle;
 
-import javax.ejb.Singleton;
-import java.util.Collection;
+import org.jboss.logging.Logger;
 
 /**
  * An implementation of RulesEngine based on drools framework.
@@ -45,6 +49,8 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     private KieContainer kc;
     private KieSession kSession;
 
+    TreeSet<Data> pendingData = new TreeSet<>();
+
     public DroolsRulesEngineImpl() {
         log.debugf("Creating instance.");
         ks = KieServices.Factory.get();
@@ -54,6 +60,10 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
     @Override
     public void addFact(Object fact) {
+        if (fact instanceof Data) {
+            throw new IllegalArgumentException(fact.toString());
+        }
+
         log.debugf("Insert %s ", fact);
         kSession.insert(fact);
     }
@@ -61,9 +71,24 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     @Override
     public void addFacts(Collection facts) {
         for (Object fact : facts) {
+            if (fact instanceof Data) {
+                throw new IllegalArgumentException(fact.toString());
+            }
+        }
+        for (Object fact : facts) {
             log.debugf("Insert %s ", fact);
             kSession.insert(fact);
         }
+    }
+
+    @Override
+    public void addData(Data data) {
+        pendingData.add(data);
+    }
+
+    @Override
+    public void addData(Collection<Data> data) {
+        pendingData.addAll(data);
     }
 
     @Override
@@ -82,8 +107,38 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
     @Override
     public void fire() {
-        log.debugf("Firing rules !!");
-        kSession.fireAllRules();
+        // The rules engine requires that for any DataId only the oldest Data instance is processed in one
+        // execution of the rules.  So, if we find multiple Data instances for the same Id, defer all but
+        // the oldest to a subsequent run. Note that pendingData is already sorted by (id ASC, timestamp ASC) so
+        // the iterator will present Data with the same id together, and time-ordered.
+        while (!pendingData.isEmpty()) {
+
+            log.debugf("Data found. Firing rules on [%1$d] datums.", pendingData.size());
+
+            TreeSet<Data> batchData = new TreeSet<Data>(pendingData);
+            Data previousData = null;
+
+            pendingData.clear();
+
+            for (Data data : batchData) {
+                if (null == previousData || !data.getId().equals(previousData.getId())) {
+                    kSession.insert(data);
+                    previousData = data;
+
+                } else {
+                    pendingData.add(data);
+                    log.debugf("Deferring more recent %1$s until older %2$s is processed", data, previousData);
+                }
+            }
+
+            if (!pendingData.isEmpty()) {
+                log.debugf("Deferring [%1$d] Datum(s) to next firing !!", pendingData.size());
+            }
+
+            batchData.clear();
+
+            kSession.fireAllRules();
+        }
     }
 
     @Override
