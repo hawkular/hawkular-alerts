@@ -63,7 +63,7 @@ public class EmailListener extends BasicMessageListener<NotificationMessage> {
         message.setFrom(new InternetAddress("noreply@hawkular"));
         Address toAddress = new InternetAddress("root@localhost");
         message.addRecipient(RecipientType.TO, toAddress);
-        message.setSubject("Hawkular alert");
+        message.setSubject("Hawkular alert " + msg.getNotifierId());
         message.setContent(msg.getMessage(), "text/plain");
         return message;
     }
