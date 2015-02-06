@@ -16,14 +16,22 @@
  */
 package org.hawkular.notifiers.email.notifications;
 
-import org.hawkular.bus.common.consumer.BasicMessageListener;
-import org.hawkular.notifiers.api.log.MsgLogger;
-import org.hawkular.notifiers.api.model.NotificationMessage;
-import org.jboss.logging.Logger;
-
+import javax.annotation.Resource;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.jms.MessageListener;
+import javax.mail.Address;
+import javax.mail.Message;
+import javax.mail.Message.RecipientType;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+
+import org.hawkular.bus.common.consumer.BasicMessageListener;
+import org.hawkular.notifiers.api.log.MsgLogger;
+import org.hawkular.notifiers.api.model.NotificationMessage;
 
 /**
  * An example of listener for emails processing.
@@ -37,9 +45,26 @@ import javax.jms.MessageListener;
         @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = "NotifierType like 'email'")})
 public class EmailListener extends BasicMessageListener<NotificationMessage> {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(EmailListener.class);
+
+    @Resource(mappedName = "java:jboss/mail/Default")
+    Session mailSession;
 
     protected void onBasicMessage(NotificationMessage msg) {
-        msgLog.infoNotificationReceived("Email", msg.toString());
+        try {
+            Message message = createMimeMessage(msg);
+            Transport.send(message);
+        } catch (MessagingException e) {
+            msgLog.errorCannotSendMessage("email", e.getLocalizedMessage());
+        }
+    }
+
+    Message createMimeMessage(NotificationMessage msg) throws MessagingException {
+        Message message = new MimeMessage(mailSession);
+        message.setFrom(new InternetAddress("noreply@hawkular"));
+        Address toAddress = new InternetAddress("root@localhost");
+        message.addRecipient(RecipientType.TO, toAddress);
+        message.setSubject("Hawkular alert");
+        message.setContent(msg.getMessage(), "text/plain");
+        return message;
     }
 }
