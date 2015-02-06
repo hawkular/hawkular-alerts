@@ -81,9 +81,6 @@
   </issueManagement>
 
   <properties>
-    <maven.compiler.source>1.6</maven.compiler.source>
-    <maven.compiler.target>1.6</maven.compiler.target>
-
     <org.hawkular.wildfly.home>${project.basedir}/../../hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-${version.org.wildfly}</org.hawkular.wildfly.home>
     <org.hawkular.wildfly.deployments>${org.hawkular.wildfly.home}/modules/system/layers/base/org/hawkular/nest/main/deployments</org.hawkular.wildfly.deployments>
 
