@@ -51,6 +51,40 @@ public class Dampening {
         this("Default", Type.RELAXED_COUNT, 0, 0, 0);
     }
 
+    /**
+     * Fire if we have <code>numTrueEvals</code> consecutive true evaluations of the condition set.
+     * @param triggerId
+     * @param numConsecutiveTrueEvals
+     * @return
+     */
+    static public Dampening forStrict(String triggerId, int numConsecutiveTrueEvals) {
+        return new Dampening(triggerId, Type.STRICT, numConsecutiveTrueEvals, numConsecutiveTrueEvals, 0);
+    }
+
+    /**
+     * Fire if we have <code>numTrueEvals</code> of the condition set out of <code>numTotalEvals</code>.
+     * @param triggerId
+     * @param numTrueEvals
+     * @param numTotalEvals
+     * @return
+     */
+    static public Dampening forRelaxedCount(String triggerId, int numTrueEvals, int numTotalEvals) {
+        return new Dampening(triggerId, Type.RELAXED_COUNT, numTrueEvals, numTotalEvals, 0);
+    }
+
+    /**
+     * Fire if we have <code>numTrueEvals</code> of the condition set within <code>evalTimeSetting</code>.
+     * @param triggerId
+     * @param numTrueEvals
+     * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
+     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
+     * evaluation times.
+     * @return
+     */
+    static public Dampening forRelaxedTime(String triggerId, int numTrueEvals, long evalPeriod) {
+        return new Dampening(triggerId, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
+    }
+
     public Dampening(String triggerId, Type type, int evalTrueSetting, int evalTotalSetting, long evalTimeSetting) {
         super();
         this.triggerId = triggerId;
@@ -243,7 +277,8 @@ public class Dampening {
     @Override
     public String toString() {
         return "Dampening [triggerId=" + triggerId + ", type=" + type + ", evalTrueSetting=" + evalTrueSetting
-                + ", evalTotalSetting=" + evalTotalSetting + ", evalTimeSetting=" + evalTimeSetting + ", numTrueEvals="
+                + ", evalTotalSetting=" + evalTotalSetting + ", evalTimeSetting=" + evalTimeSetting
+                + ", numTrueEvals="
                 + numTrueEvals + ", numEvals=" + numEvals + ", trueEvalsStartTime=" + trueEvalsStartTime
                 + ", satisfied=" + satisfied + ", satisfyingEvals=" + satisfyingEvals + "]";
     }

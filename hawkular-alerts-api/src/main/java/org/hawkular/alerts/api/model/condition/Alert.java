@@ -28,21 +28,21 @@ import java.util.Set;
 public class Alert {
 
     private String triggerId;
-    private List<Set<ConditionEval>> evals;
+    private List<Set<ConditionEval>> evalSets;
     private long time;
 
-    public Alert(String triggerId, List<Set<ConditionEval>> evals) {
+    public Alert(String triggerId, List<Set<ConditionEval>> evalSets) {
         this.triggerId = triggerId;
-        this.evals = evals;
+        this.evalSets = evalSets;
         this.time = System.currentTimeMillis();
     }
 
-    public List<Set<ConditionEval>> getEvals() {
-        return evals;
+    public List<Set<ConditionEval>> getEvalSets() {
+        return evalSets;
     }
 
-    public void setEvals(List<Set<ConditionEval>> evals) {
-        this.evals = evals;
+    public void setEvalSets(List<Set<ConditionEval>> evalSets) {
+        this.evalSets = evalSets;
     }
 
     public long getTime() {
@@ -69,7 +69,7 @@ public class Alert {
         Alert alert = (Alert) o;
 
         if (time != alert.time) return false;
-        if (evals != null ? !evals.equals(alert.evals) : alert.evals != null) return false;
+        if (evalSets != null ? !evalSets.equals(alert.evalSets) : alert.evalSets != null) return false;
         if (triggerId != null ? !triggerId.equals(alert.triggerId) : alert.triggerId != null) return false;
 
         return true;
@@ -78,14 +78,14 @@ public class Alert {
     @Override
     public int hashCode() {
         int result = triggerId != null ? triggerId.hashCode() : 0;
-        result = 31 * result + (evals != null ? evals.hashCode() : 0);
+        result = 31 * result + (evalSets != null ? evalSets.hashCode() : 0);
         result = 31 * result + (int) (time ^ (time >>> 32));
         return result;
     }
 
     @Override
     public String toString() {
-        return "Alert [triggerId=" + triggerId + ", evals=" + evals + ", time=" + time + "]";
+        return "Alert [triggerId=" + triggerId + ", evals=" + evalSets + ", time=" + time + "]";
     }
 
 }
