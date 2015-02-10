@@ -19,6 +19,7 @@ package org.hawkular.alerts.engine;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -1027,6 +1028,84 @@ public class RulesEngineTest {
             assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") : ((AvailabilityConditionEval) e)
                     .getCondition();
         }
+    }
+
+    @Test
+    public void multiConditionTest()
+    {
+        Trigger t1 = new Trigger("trigger-1", "Two-Conditions");
+        ThresholdCondition t1c1 = new ThresholdCondition("trigger-1", 2, 1, "NumericData-01",
+                ThresholdCondition.Operator.LT, 10.0);
+        ThresholdRangeCondition t1c2 = new ThresholdRangeCondition("trigger-1", 2, 2, "NumericData-02",
+                ThresholdRangeCondition.Operator.INCLUSIVE, ThresholdRangeCondition.Operator.EXCLUSIVE, 100.0, 200.0,
+                true);
+
+        // default dampening
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+        rulesEngine.addFact(t1c2);
+
+        // break up the arrivals of the relevant datums so that we get a more complicated series of evaluations.
+        // remember that for any batch of datums:
+        //   1) one datum for a specific dataId will will be processed at a time
+        //   2) only the most recent conditionEvals will be used in a condition set tuple for a multi-condition trigger
+
+        datums.add(new NumericData("NumericData-01", 1, 10.0));  // eval(d1,t1) = no match, 
+        datums.add(new NumericData("NumericData-01", 2, 5.0));   // eval(d1,t2) =    match, replaces eval(d1,t1) 
+        datums.add(new NumericData("NumericData-01", 3, 15.0));  // eval(d1,t3) = no match, replaces eval(d1,t2) 
+
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        assert alerts.size() == 0 : alerts;
+
+        datums.clear();
+        datums.add(new NumericData("NumericData-02", 4, 10.0));  // eval(d2,t4) = no match, tuple(eval(d1,t3), eval(d2,t4)) = false
+        datums.add(new NumericData("NumericData-02", 5, 150.0)); // eval(d2,t5) =    match, tuple(eval(d1,t3), eval(d2,t5)) = false
+
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        assert alerts.size() == 0 : alerts;
+
+        datums.clear();
+        datums.add(new NumericData("NumericData-01", 6, 8.0));   // eval(d1,t6) =    match, tuple(eval(d1,t6), eval(d2,t5)) = true
+
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        assert alerts.size() == 1 : alerts;
+
+        Alert a = alerts.get(0);
+        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
+        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        Set<ConditionEval> evals = a.getEvalSets().get(0);
+        assert evals.size() == 2 : evals;
+        List<ConditionEval> evalsList = new ArrayList<>(evals);
+        Collections.sort(
+                evalsList,
+                (ConditionEval c1, ConditionEval c2) -> Integer.compare(c1.getConditionSetIndex(),
+                        c2.getConditionSetIndex()));
+        Iterator<ConditionEval> i = evalsList.iterator();
+        ConditionEval e = i.next();
+        assert e.getConditionSetSize() == 2 : e;
+        assert e.getConditionSetIndex() == 1 : e;
+        assert e.getTriggerId().equals("trigger-1");
+        assert e.isMatch();
+        Double v = ((ThresholdConditionEval) e).getValue();
+        assert v.equals(8.0) : e;
+        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") : ((ThresholdConditionEval) e)
+                .getCondition();
+        e = i.next();
+        assert e.getConditionSetSize() == 2 : e;
+        assert e.getConditionSetIndex() == 2 : e;
+        assert e.getTriggerId().equals("trigger-1");
+        assert e.isMatch();
+        v = ((ThresholdRangeConditionEval) e).getValue();
+        assert v.equals(150.0) : e;
+        assert ((ThresholdRangeConditionEval) e).getCondition().getDataId().equals("NumericData-02") : ((ThresholdRangeConditionEval) e)
+                .getCondition();
     }
 
 }
