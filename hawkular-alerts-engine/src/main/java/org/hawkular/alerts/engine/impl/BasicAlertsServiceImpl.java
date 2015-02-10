@@ -16,6 +16,17 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
+import javax.ejb.Singleton;
+
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
@@ -26,17 +37,8 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.NotificationsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.rules.RulesEngine;
-import org.jboss.logging.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.EJB;
-import javax.ejb.Singleton;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.CopyOnWriteArrayList;
+import org.jboss.logging.Logger;
 
 /**
  * Basic implementation for {@link org.hawkular.alerts.api.services.AlertsService}.
@@ -164,12 +166,9 @@ public class BasicAlertsServiceImpl implements AlertsService {
         public void run() {
             if (!pendingData.isEmpty()) {
 
-                log.debugf("Pending {} data found. Adding to rules engine.", pendingData.size());
+                log.debugf("Pending data [%1$d] found. Executing rules engine.", pendingData.size());
 
-                for (Data data : pendingData) {
-                    rules.addFact(data);
-                }
-
+                rules.addData(pendingData);
                 pendingData.clear();
 
                 try {

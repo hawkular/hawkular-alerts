@@ -141,8 +141,8 @@ public class ThresholdRangeCondition extends Condition {
                 return false;
         }
 
-        if (!aboveLow && inRange) {
-            return false;
+        if (!aboveLow) {
+            return inRange ? false : true;
         }
 
         switch (operatorHigh) {

@@ -18,8 +18,11 @@ package org.hawkular.alerts.engine.rules;
 
 import java.util.Collection;
 
+import org.hawkular.alerts.api.model.data.Data;
+
 /**
- * Interface that defines an abstract API with the rules engine implementation
+ * Interface that defines an abstract API with the rules engine implementation. This is for internal use by the
+ * public API implementation.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -27,16 +30,63 @@ import java.util.Collection;
 public interface RulesEngine {
 
     void addGlobal(String name, Object global);
+
     void removeGlobal(String name);
 
+    /**
+     * Insert the provided <code>fact</code> into the rules engine. This method is not appropriate for
+     * <code>Data</code>.  For <code>Data</code> use {@link #addData(Data)}.
+     * @param facts
+     * @throws IllegalArgumentExeption If <code>fact</code> instanceof <code>Data</code>.
+     */
     void addFact(Object fact);
+
+    /**
+     * Retrieves the FactHandle for <code>fact</code> and then deletes the fact from the rules engine.
+     * @param fact
+     */
     void removeFact(Object fact);
+
+    /**
+     * Insert the provided <code>fact</code> into the rules engine. This method is not appropriate for
+     * <code>Data</code>.  For <code>Data</code> use {@link #addData(Collection)}.
+     * @param facts
+     * @throws IllegalArgumentExeption If any <code>fact</code> instanceof <code>Data</code>.
+     */
     void addFacts(Collection facts);
+
+    /**
+     * Retrieves the FactHandles for <code>facts</code> and then deletes the facts from the rules engine.
+     * @param facts
+     */
     void removeFacts(Collection facts);
 
+    /**
+     * Add to the accumulated <code>Data</code> to be processed the next time {@link #fire()} is called. After the
+     * rules are fired on the accumulated <code>Data</code> it will be cleared.
+     * @param data
+     */
+    void addData(Data data);
+
+    /**
+     * Add to the accumulated <code>Data</code> to be processed the next time {@link #fire()} is called. After the
+     * rules are fired on the accumulated <code>Data</code> it will be cleared.
+     * @param data
+     */
+    void addData(Collection<Data> data);
+
+    /**
+     * Fire all rules given the current set of added definitions and the currently accumulated <Data>.
+     */
     void fire();
 
+    /**
+     * Deletes all Facts from the rules engine.
+     */
     void clear();
 
+    /**
+     * Completely reset the rules engine session. Disposes of any existing session before creating a new session.
+     */
     void reset();
 }

@@ -107,7 +107,7 @@ public class StringCondition extends Condition {
             case CONTAINS:
                 return value.contains(pattern);
             case MATCH:
-                return value.matches(pattern);
+                return value.matches(ignoreCase ? ("(?i)" + pattern) : pattern);
             default:
                 msgLog.warnUnknowOperatorOnCondition(operator.name(), this.getClass().getName());
                 return false;

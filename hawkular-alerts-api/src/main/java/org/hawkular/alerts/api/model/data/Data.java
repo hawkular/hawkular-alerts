@@ -20,14 +20,18 @@ package org.hawkular.alerts.api.model.data;
  * A base class for incoming data into alerts subsystem.  All {@link Data} has an Id and a timestamp. The
  * timestamp is used to ensure that data is time-ordered when being sent into the alerting engine.  If
  * not assigned the timestamp will be assigned to current time.
+ * <br/><br/>
+ * This provides a  default implementation of {@link #compareTo(Data)}.  Subclasses must Override this if
+ * they are unhappy with the Natural Ordering provided:
+ *   Id asc, Timestamp asc, Value asc
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class Data {
-
-    private String id;
-    private long timestamp;
+public abstract class Data implements Comparable<Data> {
+    protected String id;
+    protected long timestamp;
+    protected Object value;
 
     public Data() {
         /*
@@ -40,9 +44,10 @@ public class Data {
      * @param id not null.
      * @param timestamp if <=0 assigned currentTime.
      */
-    public Data(String id, long timestamp) {
+    public Data(String id, long timestamp, Object value) {
         this.id = id;
         this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
+        this.value = value;
     }
 
     public String getId() {
@@ -64,6 +69,24 @@ public class Data {
         this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
     }
 
+    public Object getValue() {
+        return value;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
+        result = prime * result + ((value == null) ? 0 : value.hashCode());
+        return result;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -80,21 +103,39 @@ public class Data {
             return false;
         if (timestamp != other.timestamp)
             return false;
+        if (value == null) {
+            if (other.value != null)
+                return false;
+        } else if (!value.equals(other.value))
+            return false;
         return true;
     }
 
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
-        result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
-        return result;
+    public String toString() {
+        return "Data [id=" + id + ", timestamp=" + timestamp + ", value=" + value + "]";
     }
 
     @Override
-    public String toString() {
-        return "Data [id=" + id + ", timestamp=" + timestamp + "]";
+    public int compareTo(Data o) {
+        int c = this.id.compareTo(o.id);
+        if (0 != c)
+            return c;
+
+        c = Long.compare(this.timestamp, o.timestamp);
+        if (0 != c)
+            return c;
+
+        return compareValue(this.value, o.value);
     }
+
+    /**
+     * Subclasses must provide the natural comparison of their value type. Or, override {@link #compare(Data, Data)}
+     * completely.
+     * @param value1
+     * @param value2
+     * @return standard -1, 0, 1 compare value
+     */
+    abstract int compareValue(Object value1, Object value2);
 
 }
