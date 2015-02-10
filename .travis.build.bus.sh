@@ -19,8 +19,10 @@
 
 set -xe
 
+BUS_BUILD_LOG="${HOME}/bus.build.log"
+
 cd "${HOME}"
 
 git clone --depth=50 https://github.com/hawkular/hawkular-bus.git hawkular/hawkular-bus
 cd hawkular/hawkular-bus
-mvn clean install -DskipTests
+mvn clean install -DskipTests > "${BUS_BUILD_LOG}" 2>&1 || (cat "${BUS_BUILD_LOG}" && exit 1)
