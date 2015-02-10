@@ -21,6 +21,6 @@ set -xe
 
 cd "${HOME}"
 
-git clone --depth=50 git@github.com:hawkular/hawkular-bus.git hawkular/hawkular-bus
+git clone --depth=50 https://github.com/hawkular/hawkular-bus.git hawkular/hawkular-bus
 cd hawkular/hawkular-bus
 mvn clean install -DskipTests
