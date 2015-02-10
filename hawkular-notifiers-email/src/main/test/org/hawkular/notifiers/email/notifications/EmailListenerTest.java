@@ -35,9 +35,12 @@ public class EmailListenerTest {
 
     @Test
     public void testMessageContent() throws Exception {
+        String recipient = "root@localhost";
+        String alertContent = "marseille";
+
         NotificationMessage notificationMessage = new NotificationMessage();
-        notificationMessage.setMessage("marseille");
-        notificationMessage.setNotifierId("mare nostrum");
+        notificationMessage.setNotifierId(recipient);
+        notificationMessage.setMessage(alertContent);
 
         Message mimeMessage = emailListener.createMimeMessage(notificationMessage);
 
@@ -49,11 +52,11 @@ public class EmailListenerTest {
         Address[] recipients = mimeMessage.getRecipients(RecipientType.TO);
         assertNotNull(recipients);
         assertEquals(1, recipients.length);
-        assertEquals("root@localhost", recipients[0].toString());
+        assertEquals(recipient, recipients[0].toString());
 
-        assertEquals("Hawkular alert " + notificationMessage.getNotifierId(), mimeMessage.getSubject());
+        assertEquals("Hawkular alert", mimeMessage.getSubject());
 
         assertEquals("text/plain", mimeMessage.getContentType());
-        assertEquals("marseille", mimeMessage.getContent());
+        assertEquals(alertContent, mimeMessage.getContent());
     }
 }
