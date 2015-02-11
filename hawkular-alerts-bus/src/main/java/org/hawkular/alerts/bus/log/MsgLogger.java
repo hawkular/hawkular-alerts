@@ -68,4 +68,18 @@ public interface MsgLogger extends BasicLogger {
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 210009, value = "Error accesing to DefinitionsService. Description: [%s]")
     void errorDefinitionsService(String msg);
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 210010, value = "Error processing registration. Description: [%s]")
+    void errorProcessingRegistration(String msg);
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 210011, value = "Error processing deregistration. Description: [%s]")
+    void errorProcessingDeregistration(String msg);
+
+    @LogMessage(level = Logger.Level.INFO)
+    @Message(id = 210012, value = "Sent notifier registration message [%s] to the bus")
+    void infoSentNotifierRegistrationMessage(String msg);
+
+
 }

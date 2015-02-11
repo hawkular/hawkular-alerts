@@ -19,7 +19,7 @@ package org.hawkular.notifiers.api.model;
 import com.google.gson.annotations.Expose;
 import org.hawkular.bus.common.BasicMessage;
 
-import java.util.Set;
+import java.util.Map;
 
 /**
  * A notifier registration message.
@@ -38,7 +38,7 @@ public class NotifierRegistrationMessage extends BasicMessage {
     String notifierId;
 
     @Expose
-    Set<String> properties;
+    Map<String, String> properties;
 
     public NotifierRegistrationMessage() { }
 
@@ -58,11 +58,11 @@ public class NotifierRegistrationMessage extends BasicMessage {
         this.op = op;
     }
 
-    public Set<String> getProperties() {
+    public Map<String, String> getProperties() {
         return properties;
     }
 
-    public void setProperties(Set<String> properties) {
+    public void setProperties(Map<String, String> properties) {
         this.properties = properties;
     }
 

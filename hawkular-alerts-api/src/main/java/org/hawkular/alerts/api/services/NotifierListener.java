@@ -18,6 +18,8 @@ package org.hawkular.alerts.api.services;
 
 import org.hawkular.alerts.api.model.notification.Notification;
 
+import java.util.Map;
+
 /**
  * A listener that will process a notification sent to the NotificationService.
  *
@@ -28,9 +30,23 @@ public interface NotifierListener {
 
     /**
      * Process a notification sent to {@link org.hawkular.alerts.api.services.NotifierListener}.
-     * It is responsability of NotifierListener implementation how this listener it will be invoked.
      *
      * @param notification Notification to be processed.
      */
     void process(Notification notification);
+
+    /**
+     * This method is invoked when a Notifier is created or updated through DefinitionsService API.
+     *
+     * @param notifierId
+     * @param properties
+     */
+    void register(String notifierId, Map<String, String> properties);
+
+    /**
+     * This method is invoked when a Notifier is removed through DefinitionsService API.
+     *
+     * @param notifierId
+     */
+    void unregister(String notifierId);
 }

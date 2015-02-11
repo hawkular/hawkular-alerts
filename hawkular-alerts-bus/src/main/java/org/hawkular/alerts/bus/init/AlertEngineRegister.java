@@ -43,7 +43,7 @@ public class AlertEngineRegister {
     @PostConstruct
     public void init() {
         NotificationSender sender = new NotificationSender();
-        notifications.register(sender);
+        notifications.addListener(sender);
         log.debugf("Registering sender: [%s]", sender);
     }
 }

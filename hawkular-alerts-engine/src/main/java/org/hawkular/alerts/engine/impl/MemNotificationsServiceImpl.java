@@ -24,6 +24,7 @@ import org.jboss.logging.Logger;
 
 import javax.ejb.Singleton;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -65,7 +66,44 @@ public class MemNotificationsServiceImpl implements NotificationsService {
     }
 
     @Override
-    public void register(NotifierListener listener) {
+    public void deregister(String notifierId) {
+        if (notifierId == null || notifierId.isEmpty()) {
+            throw new IllegalArgumentException("NotifierId must be not null");
+        }
+
+        /*
+            In this implementation we invoke listeners as soon as we receive an event.
+            This can be modified per implementation basis adding asynchronously behaviour at this level.
+         */
+        for (NotifierListener listener : listeners) {
+            listener.unregister(notifierId);
+        }
+
+    }
+
+    @Override
+    public void register(String notifierId, Map<String, String> properties) {
+        if (notifierId == null || notifierId.isEmpty()) {
+            throw new IllegalArgumentException("NotifierId must be not null");
+        }
+        if (properties == null || properties.isEmpty()) {
+            throw new IllegalArgumentException("Properties must be not null");
+        }
+        if (!properties.containsValue("NotifierType")) {
+            throw new IllegalArgumentException("Properties must contain a NotifierType property");
+        }
+
+        /*
+            In this implementation we invoke listeners as soon as we receive an event.
+            This can be modified per implementation basis adding asynchronously behaviour at this level.
+         */
+        for (NotifierListener listener : listeners) {
+            listener.register(notifierId, properties);
+        }
+    }
+
+    @Override
+    public void addListener(NotifierListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("NotifierListener must not be null");
         }
