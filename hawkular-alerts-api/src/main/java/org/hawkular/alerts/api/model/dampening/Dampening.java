@@ -57,7 +57,7 @@ public class Dampening {
      * @param numConsecutiveTrueEvals
      * @return
      */
-    static public Dampening forStrict(String triggerId, int numConsecutiveTrueEvals) {
+    public static Dampening forStrict(String triggerId, int numConsecutiveTrueEvals) {
         return new Dampening(triggerId, Type.STRICT, numConsecutiveTrueEvals, numConsecutiveTrueEvals, 0);
     }
 
@@ -68,7 +68,7 @@ public class Dampening {
      * @param numTotalEvals
      * @return
      */
-    static public Dampening forRelaxedCount(String triggerId, int numTrueEvals, int numTotalEvals) {
+    public static Dampening forRelaxedCount(String triggerId, int numTrueEvals, int numTotalEvals) {
         return new Dampening(triggerId, Type.RELAXED_COUNT, numTrueEvals, numTotalEvals, 0);
     }
 
@@ -81,7 +81,7 @@ public class Dampening {
      * evaluation times.
      * @return
      */
-    static public Dampening forRelaxedTime(String triggerId, int numTrueEvals, long evalPeriod) {
+    public static Dampening forRelaxedTime(String triggerId, int numTrueEvals, long evalPeriod) {
         return new Dampening(triggerId, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
     }
 
