@@ -100,7 +100,7 @@ public class StringConditionsHandler {
                 response.resume(Response.status(Response.Status.OK)
                         .entity(condition).type(APPLICATION_JSON_TYPE).build());
             } else {
-                log.debugf("POST - createStringConditionn - ID not valid or existing condition");
+                log.debugf("POST - createStringCondition - ID not valid or existing condition");
                 Map<String, String> errors = new HashMap<String, String>();
                 errors.put("errorMsg", "Existing condition or invalid ID");
                 response.resume(Response.status(Response.Status.BAD_REQUEST)
