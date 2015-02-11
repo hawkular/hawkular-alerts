@@ -26,7 +26,7 @@ import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
  * @author Lucas Ponce
  */
 public class AvailabilityCondition extends Condition {
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private static final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         DOWN, NOT_UP, UP

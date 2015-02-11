@@ -57,4 +57,17 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 220006, value = "NotifierListener [%s] registered")
     void infoNotifierListenerRegistered(String msg);
 
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 220007, value = "DataSource cannot be accessed. Msg: [%s]")
+    void errorCannotConnectWithDatasource(String msg);
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 220008, value = "Database Exception. Msg: [%s]")
+    void errorDatabaseException(String msg);
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 220009, value = "Definitions Service error in [%s]. Msg: [%s]")
+    void errorDefinitionsService(String msg, String errorMsg);
+
+
 }

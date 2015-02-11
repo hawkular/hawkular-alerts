@@ -61,20 +61,28 @@ public class ThresholdConditionsHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     public void findAllThresholdConditions(@Suspended final AsyncResponse response) {
-        Collection<Condition> conditionsList = definitions.getConditions();
-        Collection<ThresholdCondition> thresholdConditions = new ArrayList<ThresholdCondition>();
-        for (Condition cond : conditionsList) {
-            if (cond instanceof ThresholdCondition) {
-                thresholdConditions.add((ThresholdCondition)cond);
+        try {
+            Collection<Condition> conditionsList = definitions.getConditions();
+            Collection<ThresholdCondition> thresholdConditions = new ArrayList<ThresholdCondition>();
+            for (Condition cond : conditionsList) {
+                if (cond instanceof ThresholdCondition) {
+                    thresholdConditions.add((ThresholdCondition) cond);
+                }
             }
-        }
-        if (thresholdConditions.isEmpty()) {
-            log.debugf("GET - findAllThresholdConditions - Empty");
-            response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
-        } else {
-            log.debugf("GET - findAllThresholdConditions - %s compare conditions. ", thresholdConditions.size());
-            response.resume(Response.status(Response.Status.OK)
-                    .entity(thresholdConditions).type(APPLICATION_JSON_TYPE).build());
+            if (thresholdConditions.isEmpty()) {
+                log.debugf("GET - findAllThresholdConditions - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - findAllThresholdConditions - %s compare conditions. ", thresholdConditions.size());
+                response.resume(Response.status(Response.Status.OK)
+                        .entity(thresholdConditions).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -84,16 +92,25 @@ public class ThresholdConditionsHandler {
     @Produces(APPLICATION_JSON)
     public void createThresholdCondition(@Suspended final AsyncResponse response,
                                          final ThresholdCondition condition) {
-        if (condition != null && condition.getConditionId() != null
-                && definitions.getCondition(condition.getConditionId()) == null) {
-            log.debugf("POST - createThresholdCondition - conditionId %s ", condition.getConditionId());
-            definitions.addCondition(condition);
-            response.resume(Response.status(Response.Status.OK).entity(condition).type(APPLICATION_JSON_TYPE).build());
-        } else {
-            log.debugf("POST - createThresholdCondition - ID not valid or existing condition");
+        try {
+            if (condition != null && condition.getConditionId() != null
+                    && definitions.getCondition(condition.getConditionId()) == null) {
+                log.debugf("POST - createThresholdCondition - conditionId %s ", condition.getConditionId());
+                definitions.addCondition(condition);
+                response.resume(Response.status(Response.Status.OK)
+                        .entity(condition).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("POST - createThresholdCondition - ID not valid or existing condition");
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Existing condition or invalid ID");
+                response.resume(Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Existing condition or invalid ID");
-            response.resume(Response.status(Response.Status.BAD_REQUEST)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
@@ -103,24 +120,32 @@ public class ThresholdConditionsHandler {
     @Produces(APPLICATION_JSON)
     public void getThresholdCondition(@Suspended final AsyncResponse response,
                                       @PathParam("conditionId") final String conditionId) {
-        ThresholdCondition found = null;
-        if (conditionId != null && !conditionId.isEmpty()) {
-            Condition c = definitions.getCondition(conditionId);
-            if (c instanceof ThresholdCondition) {
-                found = (ThresholdCondition)c;
-            } else {
-                log.debugf("GET - getThresholdCondition - conditionId: %s found " +
-                        "but not instance of StringCondition class ", c.getConditionId());
+        try {
+            ThresholdCondition found = null;
+            if (conditionId != null && !conditionId.isEmpty()) {
+                Condition c = definitions.getCondition(conditionId);
+                if (c instanceof ThresholdCondition) {
+                    found = (ThresholdCondition) c;
+                } else {
+                    log.debugf("GET - getThresholdCondition - conditionId: %s found " +
+                            "but not instance of StringCondition class ", c.getConditionId());
+                }
             }
-        }
-        if (found != null) {
-            log.debugf("GET - getThresholdCondition - conditionId: %s ", found.getConditionId());
-            response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
-        } else {
-            log.debugf("GET - getThresholdCondition - conditionId: %s not found or invalid. ", conditionId);
+            if (found != null) {
+                log.debugf("GET - getThresholdCondition - conditionId: %s ", found.getConditionId());
+                response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - getThresholdCondition - conditionId: %s not found or invalid. ", conditionId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
-            response.resume(Response.status(Response.Status.NOT_FOUND)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
@@ -131,18 +156,26 @@ public class ThresholdConditionsHandler {
     public void updateThresholdCondition(@Suspended final AsyncResponse response,
                                          @PathParam("conditionId") final String conditionId,
                                          final ThresholdCondition condition) {
-        if (conditionId != null && !conditionId.isEmpty() &&
-                condition != null && condition.getConditionId() != null &&
-                conditionId.equals(condition.getConditionId()) &&
-                definitions.getCondition(conditionId) != null) {
-            log.debugf("PUT - updateThresholdCondition - conditionId: %s ", conditionId);
-            definitions.updateCondition(condition);
-            response.resume(Response.status(Response.Status.OK).build());
-        } else {
-            log.debugf("PUT - updateThresholdCondition - conditionId: %s not found or invalid. ", conditionId);
+        try {
+            if (conditionId != null && !conditionId.isEmpty() &&
+                    condition != null && condition.getConditionId() != null &&
+                    conditionId.equals(condition.getConditionId()) &&
+                    definitions.getCondition(conditionId) != null) {
+                log.debugf("PUT - updateThresholdCondition - conditionId: %s ", conditionId);
+                definitions.updateCondition(condition);
+                response.resume(Response.status(Response.Status.OK).build());
+            } else {
+                log.debugf("PUT - updateThresholdCondition - conditionId: %s not found or invalid. ", conditionId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
-            response.resume(Response.status(Response.Status.NOT_FOUND)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
@@ -151,15 +184,23 @@ public class ThresholdConditionsHandler {
     @Path("/{conditionId}")
     public void deleteThresholdCondition(@Suspended final AsyncResponse response,
                                          @PathParam("conditionId") final String conditionId) {
-        if (conditionId != null && !conditionId.isEmpty() && definitions.getCondition(conditionId) != null) {
-            log.debugf("DELETE - deleteThresholdCondition - conditionId: %s ", conditionId);
-            definitions.removeCondition(conditionId);
-            response.resume(Response.status(Response.Status.OK).build());
-        } else {
-            log.debugf("DELETE - deleteThresholdCondition - conditionId: %s not found or invalid. ", conditionId);
+        try {
+            if (conditionId != null && !conditionId.isEmpty() && definitions.getCondition(conditionId) != null) {
+                log.debugf("DELETE - deleteThresholdCondition - conditionId: %s ", conditionId);
+                definitions.removeCondition(conditionId);
+                response.resume(Response.status(Response.Status.OK).build());
+            } else {
+                log.debugf("DELETE - deleteThresholdCondition - conditionId: %s not found or invalid. ", conditionId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
-            response.resume(Response.status(Response.Status.NOT_FOUND)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }

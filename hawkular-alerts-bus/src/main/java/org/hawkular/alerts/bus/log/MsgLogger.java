@@ -65,4 +65,7 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 210008, value = "Error processing notification. Description: [%s]")
     void errorProcessingNotification(String msg);
 
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 210009, value = "Error accesing to DefinitionsService. Description: [%s]")
+    void errorDefinitionsService(String msg);
 }

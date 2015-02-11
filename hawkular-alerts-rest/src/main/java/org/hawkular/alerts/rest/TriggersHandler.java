@@ -60,14 +60,22 @@ public class TriggersHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     public void findAllTriggers(@Suspended final AsyncResponse response) {
-        Collection<Trigger> triggerList = definitions.getTriggers();
-        if (triggerList.isEmpty()) {
-            log.debugf("GET - findAllTriggers - Empty");
-            response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
-        } else {
-            log.debugf("GET - findAllTriggers - %s triggers ", triggerList.size());
-            response.resume(Response.status(Response.Status.OK)
-                    .entity(triggerList).type(APPLICATION_JSON_TYPE).build());
+        try {
+            Collection<Trigger> triggerList = definitions.getTriggers();
+            if (triggerList.isEmpty()) {
+                log.debugf("GET - findAllTriggers - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - findAllTriggers - %s triggers ", triggerList.size());
+                response.resume(Response.status(Response.Status.OK)
+                        .entity(triggerList).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -76,15 +84,24 @@ public class TriggersHandler {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     public void createTrigger(@Suspended final AsyncResponse response, final Trigger trigger) {
-        if (trigger != null && trigger.getId() != null && definitions.getTrigger(trigger.getId()) == null) {
-            log.debugf("POST - createTrigger - triggerId %s ", trigger.getId());
-            definitions.addTrigger(trigger);
-            response.resume(Response.status(Response.Status.OK).entity(trigger).type(APPLICATION_JSON_TYPE).build());
-        } else {
-            log.debugf("POST - createTrigger - ID not valid or existing trigger");
+        try {
+            if (trigger != null && trigger.getId() != null && definitions.getTrigger(trigger.getId()) == null) {
+                log.debugf("POST - createTrigger - triggerId %s ", trigger.getId());
+                definitions.addTrigger(trigger);
+                response.resume(Response.status(Response.Status.OK)
+                        .entity(trigger).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("POST - createTrigger - ID not valid or existing trigger");
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Existing trigger or invalid ID");
+                response.resume(Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Existing trigger or invalid ID");
-            response.resume(Response.status(Response.Status.BAD_REQUEST)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
@@ -93,18 +110,26 @@ public class TriggersHandler {
     @Path("/{triggerId}")
     @Produces(APPLICATION_JSON)
     public void getTrigger(@Suspended final AsyncResponse response, @PathParam("triggerId") final String triggerId) {
-        Trigger found = null;
-        if (triggerId != null && !triggerId.isEmpty()) {
-            found = definitions.getTrigger(triggerId);
-        }
-        if (found != null) {
-            log.debugf("GET - getTrigger - triggerId: %s ", found.getId());
-            response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
-        } else {
-            log.debugf("GET - getTrigger - triggerId: %s not found or invalid. ", triggerId);
+        try {
+            Trigger found = null;
+            if (triggerId != null && !triggerId.isEmpty()) {
+                found = definitions.getTrigger(triggerId);
+            }
+            if (found != null) {
+                log.debugf("GET - getTrigger - triggerId: %s ", found.getId());
+                response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - getTrigger - triggerId: %s not found or invalid. ", triggerId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
-            response.resume(Response.status(Response.Status.NOT_FOUND)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
@@ -114,19 +139,27 @@ public class TriggersHandler {
     @Consumes(APPLICATION_JSON)
     public void updateTrigger(@Suspended final AsyncResponse response, @PathParam("triggerId") final String triggerId,
                               final Trigger trigger) {
-        if (triggerId != null && !triggerId.isEmpty() &&
-                trigger != null && trigger.getId() != null &&
-                triggerId.equals(trigger.getId()) &&
-                definitions.getTrigger(triggerId) != null) {
-            log.debugf("PUT - updateTrigger - triggerId: %s ", triggerId);
-            definitions.removeTrigger(triggerId);
-            definitions.addTrigger(trigger);
-            response.resume(Response.status(Response.Status.OK).build());
-        } else {
-            log.debugf("PUT - updateTrigger - triggerId: %s not found or invalid. ", triggerId);
+        try {
+            if (triggerId != null && !triggerId.isEmpty() &&
+                    trigger != null && trigger.getId() != null &&
+                    triggerId.equals(trigger.getId()) &&
+                    definitions.getTrigger(triggerId) != null) {
+                log.debugf("PUT - updateTrigger - triggerId: %s ", triggerId);
+                definitions.removeTrigger(triggerId);
+                definitions.addTrigger(trigger);
+                response.resume(Response.status(Response.Status.OK).build());
+            } else {
+                log.debugf("PUT - updateTrigger - triggerId: %s not found or invalid. ", triggerId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
-            response.resume(Response.status(Response.Status.NOT_FOUND)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
@@ -134,15 +167,23 @@ public class TriggersHandler {
     @DELETE
     @Path("/{triggerId}")
     public void deleteTrigger(@Suspended final AsyncResponse response, @PathParam("triggerId") final String triggerId) {
-        if (triggerId != null && !triggerId.isEmpty() && definitions.getTrigger(triggerId) != null) {
-            log.debugf("DELETE - deleteTrigger - triggerId: %s ", triggerId);
-            definitions.removeTrigger(triggerId);
-            response.resume(Response.status(Response.Status.OK).build());
-        } else {
-            log.debugf("DELETE - deleteTrigger - triggerId: %s not found or invalid. ", triggerId);
+        try {
+            if (triggerId != null && !triggerId.isEmpty() && definitions.getTrigger(triggerId) != null) {
+                log.debugf("DELETE - deleteTrigger - triggerId: %s ", triggerId);
+                definitions.removeTrigger(triggerId);
+                response.resume(Response.status(Response.Status.OK).build());
+            } else {
+                log.debugf("DELETE - deleteTrigger - triggerId: %s not found or invalid. ", triggerId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
-            response.resume(Response.status(Response.Status.NOT_FOUND)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }

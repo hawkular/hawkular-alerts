@@ -30,7 +30,6 @@ import org.hawkular.alerts.engine.log.MsgLogger;
 import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -53,7 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
+// @Singleton
 public class MemDefinitionsServiceImpl implements DefinitionsService {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(MemDefinitionsServiceImpl.class);

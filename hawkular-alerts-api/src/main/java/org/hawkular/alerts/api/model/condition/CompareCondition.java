@@ -26,7 +26,7 @@ import org.hawkular.alerts.api.log.MsgLogger;
  * @author Lucas Ponce
  */
 public class CompareCondition extends Condition {
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private static final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         LT, GT, LTE, GTE

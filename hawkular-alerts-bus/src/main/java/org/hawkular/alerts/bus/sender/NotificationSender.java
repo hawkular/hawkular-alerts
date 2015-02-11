@@ -46,7 +46,7 @@ public class NotificationSender implements NotifierListener {
     private final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
     private final String NOTIFICATIONS_TOPIC = "NotificationsTopic";
     private final String DEFINITIONS_SERVICE =
-            "java:global/hawkular-alerts/hawkular-alerts-engine/MemDefinitionsServiceImpl";
+            "java:global/hawkular-alerts/hawkular-alerts-engine/DbDefinitionsServiceImpl";
 
     private TopicConnectionFactory conFactory;
     private ConnectionContextFactory ccf;

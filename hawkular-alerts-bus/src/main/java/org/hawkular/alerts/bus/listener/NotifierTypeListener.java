@@ -52,12 +52,17 @@ public class NotifierTypeListener extends BasicMessageListener<NotifierTypeRegis
         if (op == null || op.isEmpty()) {
             msgLog.warnNotifierTypeRegistrationWithoutOp();
         } else if (op.equals("init")) {
-            if (definitions.getNotifierType(notifierType) == null) {
-                Set<String> properties = msg.getProperties();
-                definitions.addNotifierType(notifierType, properties);
-                msgLog.infoNotifierTypeRegistration(notifierType);
-            } else {
-                msgLog.warnNotifierTypeAlreadyRegistered(notifierType);
+            try {
+                if (definitions.getNotifierType(notifierType) == null) {
+                    Set<String> properties = msg.getProperties();
+                    definitions.addNotifierType(notifierType, properties);
+                    msgLog.infoNotifierTypeRegistration(notifierType);
+                } else {
+                    msgLog.warnNotifierTypeAlreadyRegistered(notifierType);
+                }
+            } catch (Exception e) {
+                log.debugf(e.getMessage(), e);
+                msgLog.errorDefinitionsService(e.getMessage());
             }
         } else {
             msgLog.warnNotifierTypeRegistrationWithUnknownOp(notifierType, op);
