@@ -73,7 +73,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
     public DbDefinitionsServiceImpl() {
         DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource") == null ?
-                "java:jboss/datasources/ExampleDS" :
+                "java:jboss/datasources/HawkularDS" :
                 System.getProperty("org.hawkular.alerts.engine.datasource");
     }
 
