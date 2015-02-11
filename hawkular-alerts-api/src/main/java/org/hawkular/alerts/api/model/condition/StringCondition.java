@@ -25,7 +25,7 @@ import org.hawkular.alerts.api.log.MsgLogger;
  * @author Lucas Ponce
  */
 public class StringCondition extends Condition {
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private static final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         EQUAL, NOT_EQUAL, STARTS_WITH, ENDS_WITH, CONTAINS, MATCH

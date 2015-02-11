@@ -18,6 +18,8 @@ package org.hawkular.alerts.api.services;
 
 import org.hawkular.alerts.api.model.notification.Notification;
 
+import java.util.Map;
+
 /**
  * A interface used to send notifications.
  *
@@ -38,7 +40,19 @@ public interface NotificationsService {
     void send(Notification notification);
 
     /**
-     * Register a listener that will process a notification send to the service asynchronously.
+     * Send a registration message, to notify plugins that API has created/updated a notifier.
      */
-    void register(NotifierListener listener);
+    void register(String notifierId, Map<String, String> properties);
+
+    /**
+     * Send a registration message, to notify plugins that API has removed a notifier.
+     */
+    void deregister(String notifierId);
+
+    /**
+     * Register a listener that will process asynchronously:
+     * - A notification message
+     * - A registration of new notifier
+     */
+    void addListener(NotifierListener listener);
 }

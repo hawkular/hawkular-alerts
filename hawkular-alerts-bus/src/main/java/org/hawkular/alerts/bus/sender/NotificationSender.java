@@ -26,6 +26,7 @@ import org.hawkular.bus.common.MessageId;
 import org.hawkular.bus.common.MessageProcessor;
 import org.hawkular.bus.common.producer.ProducerConnectionContext;
 import org.hawkular.notifiers.api.model.NotificationMessage;
+import org.hawkular.notifiers.api.model.NotifierRegistrationMessage;
 import org.jboss.logging.Logger;
 
 import javax.jms.TopicConnectionFactory;
@@ -46,7 +47,7 @@ public class NotificationSender implements NotifierListener {
     private final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
     private final String NOTIFICATIONS_TOPIC = "NotificationsTopic";
     private final String DEFINITIONS_SERVICE =
-            "java:global/hawkular-alerts/hawkular-alerts-engine/MemDefinitionsServiceImpl";
+            "java:global/hawkular-alerts/hawkular-alerts-engine/DbDefinitionsServiceImpl";
 
     private TopicConnectionFactory conFactory;
     private ConnectionContextFactory ccf;
@@ -85,6 +86,64 @@ public class NotificationSender implements NotifierListener {
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             msgLogger.errorProcessingNotification(e.getMessage());
+        }
+    }
+
+    @Override
+    public void register(String notifierId, Map<String, String> properties) {
+        try {
+            init();
+            if (pcc == null) {
+                msgLogger.warnCannotConnectToBus();
+                return;
+            }
+            NotifierRegistrationMessage nMsg = new NotifierRegistrationMessage();
+            nMsg.setOp("register");
+            nMsg.setNotifierId(notifierId);
+            nMsg.setProperties(properties);
+            MessageId mid;
+            if (properties != null && properties.containsKey("NotifierType")) {
+                String notifierType = properties.get("NotifierType");
+                mid = new MessageProcessor().send(pcc, nMsg, notifierTypeFilter(notifierType));
+            } else {
+                mid = new MessageProcessor().send(pcc, nMsg);
+            }
+            msgLogger.infoSentNotifierRegistrationMessage(mid.getId());
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            msgLogger.errorProcessingRegistration(e.getMessage());
+        }
+    }
+
+    @Override
+    public void unregister(String notifierId) {
+        try {
+            init();
+            if (pcc == null) {
+                msgLogger.warnCannotConnectToBus();
+                return;
+            }
+            NotifierRegistrationMessage nMsg = new NotifierRegistrationMessage();
+            nMsg.setOp("deregister");
+            nMsg.setNotifierId(notifierId);
+            MessageId mid;
+            if (definitions != null) {
+                Map<String, String> properties = definitions.getNotifier(notifierId);
+
+                if (properties != null && properties.containsKey("NotifierType")) {
+                    String notifierType = properties.get("NotifierType");
+                    mid = new MessageProcessor().send(pcc, nMsg, notifierTypeFilter(notifierType));
+                } else {
+                    mid = new MessageProcessor().send(pcc, nMsg);
+                }
+                msgLogger.infoSentNotifierRegistrationMessage(mid.getId());
+            } else {
+                msgLogger.warnCannotAccessToDefinitionsService();
+            }
+
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            msgLogger.errorProcessingRegistration(e.getMessage());
         }
     }
 

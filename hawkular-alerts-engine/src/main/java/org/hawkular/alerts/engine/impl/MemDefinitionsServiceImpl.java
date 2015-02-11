@@ -26,11 +26,12 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerTemplate;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.services.NotificationsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.jboss.logging.Logger;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Singleton;
+import javax.ejb.EJB;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -53,7 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
+// @Singleton
 public class MemDefinitionsServiceImpl implements DefinitionsService {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(MemDefinitionsServiceImpl.class);
@@ -66,6 +67,9 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
     private Map<String, Dampening> dampenings = new ConcurrentHashMap<String, Dampening>();
     private Map<String, Set<String>> notifierTypes = new ConcurrentHashMap<String, Set<String>>();
     private Map<String, Map<String, String>> notifiers = new ConcurrentHashMap<String, Map<String, String>>();
+
+    @EJB
+    NotificationsService notifications;
 
     public MemDefinitionsServiceImpl() {
         log.debugf("Creating instance.");
@@ -359,6 +363,7 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Notifier already exists on repository");
         }
         notifiers.put(notifierId, properties);
+        notifications.register(notifierId, properties);
     }
 
     @Override
@@ -520,6 +525,7 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
         }
         if (notifiers.containsKey(notifierId)) {
             notifiers.remove(notifierId);
+            notifications.deregister(notifierId);
         }
     }
 
@@ -576,6 +582,7 @@ public class MemDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Notifier must exist on repository");
         }
         notifiers.put(notifierId, properties);
+        notifications.register(notifierId, properties);
     }
 
     @Override

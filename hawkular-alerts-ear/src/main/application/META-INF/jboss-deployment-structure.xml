@@ -28,4 +28,9 @@
       <module name="org.hawkular.nest" />
     </dependencies>
   </sub-deployment>
+  <sub-deployment name="hawkular-alerts-engine.jar">
+    <dependencies>
+      <module name="org.hawkular.nest" />
+    </dependencies>
+  </sub-deployment>
 </jboss-deployment-structure>

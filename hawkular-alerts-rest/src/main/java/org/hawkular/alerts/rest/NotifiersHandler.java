@@ -16,7 +16,6 @@
  */
 package org.hawkular.alerts.rest;
 
-import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
 
@@ -40,34 +39,34 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 
 /**
- * REST endpoint for string conditions.
+ * REST endpoint for Notifiers
  *
  * @author Lucas Ponce
  */
-@Path("/trigger/dampening")
-public class DampeningHandler {
-    private final Logger log = Logger.getLogger(DampeningHandler.class);
+@Path("/notifiers")
+public class NotifiersHandler {
+    private final Logger log = Logger.getLogger(NotifiersHandler.class);
 
     @EJB
     DefinitionsService definitions;
 
-    public DampeningHandler() {
+    public NotifiersHandler() {
         log.debugf("Creating instance.");
     }
 
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
-    public void findAllDampenings(@Suspended final AsyncResponse response) {
+    public void findAllNotifiers(@Suspended final AsyncResponse response) {
         try {
-            Collection<Dampening> dampeningList = definitions.getDampenings();
-            if (dampeningList.isEmpty()) {
-                log.debugf("GET - findAllDampenings - Empty");
+            Collection<String> notifiers = definitions.getNotifiers();
+            if (notifiers == null || notifiers.isEmpty()) {
+                log.debugf("GET - findAllNotifiers - Empty");
                 response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
             } else {
-                log.debugf("GET - findAllDampenings - %s compare conditions. ", dampeningList.size());
+                log.debugf("GET - findAllNotifiers - %s notifiers ", notifiers);
                 response.resume(Response.status(Response.Status.OK)
-                        .entity(dampeningList).type(APPLICATION_JSON_TYPE).build());
+                        .entity(notifiers).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
@@ -82,19 +81,21 @@ public class DampeningHandler {
     @Path("/")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    public void createDampening(@Suspended final AsyncResponse response,
-                                final Dampening dampening) {
+    public void createNotifier(@Suspended final AsyncResponse response,
+                               final Map<String, String> notifierProperties) {
         try {
-            if (dampening != null && dampening.getTriggerId() != null
-                    && definitions.getDampening(dampening.getTriggerId()) == null) {
-                log.debugf("POST - createDampening - triggerId %s ", dampening.getTriggerId());
-                definitions.addDampening(dampening);
+            if (notifierProperties != null && !notifierProperties.isEmpty() &&
+                    notifierProperties.containsKey("notifierId") &&
+                    definitions.getNotifier(notifierProperties.get("notifierId")) == null) {
+                String notifierId = notifierProperties.get("notifierId");
+                log.debugf("POST - createNotifier - notifierId %s - Properties: ", notifierId, notifierProperties);
+                definitions.addNotifier(notifierId, notifierProperties);
                 response.resume(Response.status(Response.Status.OK)
-                        .entity(dampening).type(APPLICATION_JSON_TYPE).build());
+                        .entity(notifierProperties).type(APPLICATION_JSON_TYPE).build());
             } else {
-                log.debugf("POST - createDampening - ID not valid or existing dampening");
+                log.debugf("POST - createNotifier - ID not valid or existing condition");
                 Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "Existing dampening or invalid ID");
+                errors.put("errorMsg", "Existing notifier or invalid ID");
                 response.resume(Response.status(Response.Status.BAD_REQUEST)
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }
@@ -108,24 +109,20 @@ public class DampeningHandler {
     }
 
     @GET
-    @Path("/{triggerId}")
+    @Path("/{notifierId}")
     @Produces(APPLICATION_JSON)
-    public void getDampening(@Suspended final AsyncResponse response,
-                             @PathParam("triggerId") final String triggerId) {
+    public void getNotifier(@Suspended final AsyncResponse response,
+                            @PathParam("notifierId") final String notifierId) {
         try {
-            Dampening found = null;
-            if (triggerId != null && !triggerId.isEmpty()) {
-                found = definitions.getDampening(triggerId);
-            }
-            if (found != null) {
-                log.debugf("GET - getDampening - triggerId: %s ", found.getTriggerId());
-                response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
+             Map<String, String> notifierProp = definitions.getNotifier(notifierId);
+            if (notifierProp == null || notifierProp.isEmpty()) {
+                log.debugf("GET - getNotifier - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
             } else {
-                log.debugf("GET - getDampening - triggerId: %s not found or invalid. ", triggerId);
-                Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
-                response.resume(Response.status(Response.Status.NOT_FOUND)
-                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                log.debugf("GET - getNotifier - notifierId: %s - properties: %s ",
+                        notifierId, notifierProp);
+                response.resume(Response.status(Response.Status.OK)
+                        .entity(notifierProp).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
@@ -137,24 +134,27 @@ public class DampeningHandler {
     }
 
     @PUT
-    @Path("/{triggerId}")
+    @Path("/{notifierId}")
     @Consumes(APPLICATION_JSON)
-    public void updateDampening(@Suspended final AsyncResponse response,
-                                @PathParam("triggerId") final String triggerId,
-                                final Dampening dampening) {
+    public void updateNotifier(@Suspended final AsyncResponse response,
+                               @PathParam("notifierId") final String notifierId,
+                               final Map<String, String> notifierProperties) {
         try {
-            if (triggerId != null && !triggerId.isEmpty() &&
-                    dampening != null && dampening.getTriggerId() != null &&
-                    triggerId.equals(dampening.getTriggerId()) &&
-                    definitions.getDampening(triggerId) != null) {
-                log.debugf("PUT - updateDampening - triggerId: %s ", triggerId);
-                definitions.updateDampening(dampening);
-                response.resume(Response.status(Response.Status.OK).build());
+            if (notifierId != null && !notifierId.isEmpty() &&
+                    notifierProperties != null && !notifierProperties.isEmpty() &&
+                    notifierProperties.containsKey("notifierId") &&
+                    notifierProperties.get("notifierId").equals(notifierId) &&
+                    definitions.getNotifier(notifierId) != null) {
+                log.debugf("POST - updateNotifier - notifierId %s - Properties: ", notifierId, notifierProperties);
+                definitions.updateNotifier(notifierId, notifierProperties);
+                response.resume(Response.status(Response.Status.OK)
+                        .entity(notifierProperties).type(APPLICATION_JSON_TYPE).build());
             } else {
-                log.debugf("PUT - updateDampening - triggerId: %s not found or invalid. ", triggerId);
+                log.debugf("PUT - updateNotifier - notifierId: %s not found or invalid. ", notifierId);
                 Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
-                response.resume(Response.status(Response.Status.NOT_FOUND)
+                errors.put("errorMsg", "Notifier ID " + notifierId + " not found or invalid ID");
+                errors.put("errorMsg", "Existing notifier or invalid ID");
+                response.resume(Response.status(Response.Status.BAD_REQUEST)
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
@@ -167,18 +167,18 @@ public class DampeningHandler {
     }
 
     @DELETE
-    @Path("/{triggerId}")
-    public void deleteDampening(@Suspended final AsyncResponse response,
-                                @PathParam("triggerId") final String triggerId) {
+    @Path("/{notifierId}")
+    public void deleteNotifier(@Suspended final AsyncResponse response,
+                               @PathParam("notifierId") final String notifierId) {
         try {
-            if (triggerId != null && !triggerId.isEmpty() && definitions.getDampening(triggerId) != null) {
-                log.debugf("DELETE - deleteDampening - triggerId: %s ", triggerId);
-                definitions.removeDampening(triggerId);
+            if (notifierId != null && !notifierId.isEmpty() && definitions.getNotifier(notifierId) != null) {
+                log.debugf("DELETE - deleteNotifier - notifierId: %s ", notifierId);
+                definitions.removeNotifier(notifierId);
                 response.resume(Response.status(Response.Status.OK).build());
             } else {
-                log.debugf("DELETE - deleteDampening - triggerId: %s not found or invalid ", triggerId);
+                log.debugf("DELETE - deleteNotifier - notifierId: %s not found or invalid. ", notifierId);
                 Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
+                errors.put("errorMsg", "Notifier ID " + notifierId + " not found or invalid ID");
                 response.resume(Response.status(Response.Status.NOT_FOUND)
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }
@@ -190,4 +190,5 @@ public class DampeningHandler {
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
+
 }

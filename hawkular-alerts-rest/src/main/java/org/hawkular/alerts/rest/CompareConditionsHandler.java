@@ -61,20 +61,28 @@ public class CompareConditionsHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     public void findAllCompareConditions(@Suspended final AsyncResponse response) {
-        Collection<Condition> conditionsList = definitions.getConditions();
-        Collection<CompareCondition> compareConditions = new ArrayList<CompareCondition>();
-        for (Condition cond : conditionsList) {
-            if (cond instanceof CompareCondition) {
-                compareConditions.add((CompareCondition)cond);
+        try {
+            Collection<Condition> conditionsList = definitions.getConditions();
+            Collection<CompareCondition> compareConditions = new ArrayList<CompareCondition>();
+            for (Condition cond : conditionsList) {
+                if (cond instanceof CompareCondition) {
+                    compareConditions.add((CompareCondition) cond);
+                }
             }
-        }
-        if (compareConditions.isEmpty()) {
-            log.debugf("GET - findAllCompareConditions - Empty");
-            response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
-        } else {
-            log.debugf("GET - findAllCompareConditions - %s compare conditions. ", compareConditions.size());
-            response.resume(Response.status(Response.Status.OK)
-                    .entity(compareConditions).type(APPLICATION_JSON_TYPE).build());
+            if (compareConditions.isEmpty()) {
+                log.debugf("GET - findAllCompareConditions - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - findAllCompareConditions - %s compare conditions. ", compareConditions.size());
+                response.resume(Response.status(Response.Status.OK)
+                        .entity(compareConditions).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -84,16 +92,25 @@ public class CompareConditionsHandler {
     @Produces(APPLICATION_JSON)
     public void createCompareCondition(@Suspended final AsyncResponse response,
                                        final CompareCondition condition) {
-        if (condition != null && condition.getConditionId() != null
-                && definitions.getCondition(condition.getConditionId()) == null) {
-            log.debugf("POST - createCompareCondition - conditionId %s ", condition.getConditionId());
-            definitions.addCondition(condition);
-            response.resume(Response.status(Response.Status.OK).entity(condition).type(APPLICATION_JSON_TYPE).build());
-        } else {
-            log.debugf("POST - createCompareCondition - ID not valid or existing condition");
+        try {
+            if (condition != null && condition.getConditionId() != null
+                    && definitions.getCondition(condition.getConditionId()) == null) {
+                log.debugf("POST - createCompareCondition - conditionId %s ", condition.getConditionId());
+                definitions.addCondition(condition);
+                response.resume(Response.status(Response.Status.OK)
+                        .entity(condition).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("POST - createCompareCondition - ID not valid or existing condition");
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Existing condition or invalid ID");
+                response.resume(Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Existing condition or invalid ID");
-            response.resume(Response.status(Response.Status.BAD_REQUEST)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
@@ -103,24 +120,32 @@ public class CompareConditionsHandler {
     @Produces(APPLICATION_JSON)
     public void getCompareCondition(@Suspended final AsyncResponse response,
                                     @PathParam("conditionId") final String conditionId) {
-        CompareCondition found = null;
-        if (conditionId != null && !conditionId.isEmpty()) {
-            Condition c = definitions.getCondition(conditionId);
-            if (c instanceof CompareCondition) {
-                found = (CompareCondition)c;
-            } else {
-                log.debugf("GET - getCompareCondition - conditionId: %s found" +
-                        "but not instance of CompareCondition class", found.getConditionId());
+        try {
+            CompareCondition found = null;
+            if (conditionId != null && !conditionId.isEmpty()) {
+                Condition c = definitions.getCondition(conditionId);
+                if (c instanceof CompareCondition) {
+                    found = (CompareCondition) c;
+                } else {
+                    log.debugf("GET - getCompareCondition - conditionId: %s found" +
+                            "but not instance of CompareCondition class", found.getConditionId());
+                }
             }
-        }
-        if (found != null) {
-            log.debugf("GET - getCompareCondition - conditionId: % s", found.getConditionId());
-            response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
-        } else {
-            log.debugf("GET - getCompareCondition - conditionId: %s not found or invalid ", conditionId);
+            if (found != null) {
+                log.debugf("GET - getCompareCondition - conditionId: %s", found.getConditionId());
+                response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - getCompareCondition - conditionId: %s not found or invalid ", conditionId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
-            response.resume(Response.status(Response.Status.NOT_FOUND)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
@@ -131,18 +156,26 @@ public class CompareConditionsHandler {
     public void updateCompareCondition(@Suspended final AsyncResponse response,
                                        @PathParam("conditionId") final String conditionId,
                                        final CompareCondition condition) {
-        if (conditionId != null && !conditionId.isEmpty() &&
-                condition != null && condition.getConditionId() != null &&
-                conditionId.equals(condition.getConditionId()) &&
-                definitions.getCondition(conditionId) != null) {
-            log.debugf("PUT - updateCompareCondition - conditionId: %s ", conditionId);
-            definitions.updateCondition(condition);
-            response.resume(Response.status(Response.Status.OK).build());
-        } else {
-            log.debugf("PUT - updateCompareCondition - conditionId: %s  not found or invalid. ", conditionId);
+        try {
+            if (conditionId != null && !conditionId.isEmpty() &&
+                    condition != null && condition.getConditionId() != null &&
+                    conditionId.equals(condition.getConditionId()) &&
+                    definitions.getCondition(conditionId) != null) {
+                log.debugf("PUT - updateCompareCondition - conditionId: %s ", conditionId);
+                definitions.updateCondition(condition);
+                response.resume(Response.status(Response.Status.OK).build());
+            } else {
+                log.debugf("PUT - updateCompareCondition - conditionId: %s  not found or invalid. ", conditionId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
-            response.resume(Response.status(Response.Status.NOT_FOUND)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
@@ -151,15 +184,23 @@ public class CompareConditionsHandler {
     @Path("/{conditionId}")
     public void deleteCompareCondition(@Suspended final AsyncResponse response,
                                        @PathParam("conditionId") final String conditionId) {
-        if (conditionId != null && !conditionId.isEmpty() && definitions.getCondition(conditionId) != null) {
-            log.debugf("DELETE - deleteCompareCondition - conditionId: %s", conditionId);
-            definitions.removeCondition(conditionId);
-            response.resume(Response.status(Response.Status.OK).build());
-        } else {
-            log.debugf("DELETE - deleteCompareCondition - conditionId: %s not found or invalid. ",conditionId);
+        try {
+            if (conditionId != null && !conditionId.isEmpty() && definitions.getCondition(conditionId) != null) {
+                log.debugf("DELETE - deleteCompareCondition - conditionId: %s", conditionId);
+                definitions.removeCondition(conditionId);
+                response.resume(Response.status(Response.Status.OK).build());
+            } else {
+                log.debugf("DELETE - deleteCompareCondition - conditionId: %s not found or invalid. ", conditionId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Condition ID " + conditionId + " not found or invalid ID");
-            response.resume(Response.status(Response.Status.NOT_FOUND)
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }

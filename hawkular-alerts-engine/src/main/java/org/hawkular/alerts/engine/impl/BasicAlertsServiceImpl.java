@@ -122,17 +122,35 @@ public class BasicAlertsServiceImpl implements AlertsService {
             rulesTask.cancel();
         }
 
-        Collection<Trigger> triggers = definitions.getTriggers();
+        Collection<Trigger> triggers = null;
+        try {
+            definitions.getTriggers();
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            msgLog.errorDefinitionsService("Triggers", e.getMessage());
+        }
         if (triggers != null && !triggers.isEmpty()) {
             rules.addFacts(triggers);
         }
 
-        Collection<Dampening> dampenings = definitions.getDampenings();
+        Collection<Dampening> dampenings = null;
+        try {
+            definitions.getDampenings();
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            msgLog.errorDefinitionsService("Dampenings", e.getMessage());
+        }
         if (dampenings != null && !dampenings.isEmpty()) {
             rules.addFacts(dampenings);
         }
 
-        Collection<Condition> conditions = definitions.getConditions();
+        Collection<Condition> conditions = null;
+        try {
+            definitions.getConditions();
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            msgLog.errorDefinitionsService("Conditions", e.getMessage());
+        }
         if (conditions != null && !conditions.isEmpty()) {
             rules.addFacts(conditions);
         }

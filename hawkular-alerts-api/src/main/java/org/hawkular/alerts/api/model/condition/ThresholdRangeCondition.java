@@ -25,7 +25,7 @@ import org.hawkular.alerts.api.log.MsgLogger;
  * @author Lucas Ponce
  */
 public class ThresholdRangeCondition extends Condition {
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private static final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         INCLUSIVE("[", "]"), EXCLUSIVE("(", ")");
