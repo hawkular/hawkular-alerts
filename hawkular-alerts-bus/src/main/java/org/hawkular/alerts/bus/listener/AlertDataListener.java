@@ -16,15 +16,16 @@
  */
 package org.hawkular.alerts.bus.listener;
 
-import org.hawkular.alerts.api.services.AlertsService;
-import org.hawkular.alerts.bus.messages.AlertDataMessage;
-import org.hawkular.bus.common.consumer.BasicMessageListener;
-import org.jboss.logging.Logger;
-
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
 import javax.jms.MessageListener;
+
+import org.hawkular.alerts.api.services.AlertsService;
+import org.hawkular.alerts.bus.messages.AlertDataMessage;
+import org.hawkular.bus.common.consumer.BasicMessageListener;
+
+import org.jboss.logging.Logger;
 
 /**
  * A component that listens from the bus data to send into the alerts engine.
@@ -34,7 +35,7 @@ import javax.jms.MessageListener;
  */
 @MessageDriven(messageListenerInterface = MessageListener.class, activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
-        @ActivationConfigProperty(propertyName = "destination", propertyValue = "MetricsTopic")})
+        @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAlertData") })
 public class AlertDataListener extends BasicMessageListener<AlertDataMessage> {
     private final Logger log = Logger.getLogger(AlertDataListener.class);
 
