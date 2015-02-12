@@ -13,10 +13,12 @@ In case you don't have hawkular-bus and hawkular-alerts project in the same fold
 1. `NEST_HOME=$PATH_TO/hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-8.2.0.Final`
 2. `cd hawkular-alerts ; mvn clean install -Pdev -Dorg.hawkular.wildfly.home=$NEST_HOME`
 
-== Tests
+== Test the bus
 
 1. Send metrics to Hawkular Bus:
 
+[source]
+----
 curl -X POST -H "Content-Type: application/json" \
 --data "{\"data\" : [ { \"id\": \"NumericData-01\", \"type\" : \"numeric\", \"value\" : 0.1} ]}" \
 http://localhost:8080/hawkular-bus/message/MetricsTopic
@@ -29,5 +31,6 @@ curl -X POST -H "Content-Type: application/json" \
 --data "{\"data\" : [ { \"id\": \"Availability-01\", \"type\" : \"availability\", \"value\" : \"UP\"} ]}" \
 http://localhost:8080/hawkular-bus/message/MetricsTopic
 
+----
 
 
