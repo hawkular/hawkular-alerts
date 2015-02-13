@@ -133,8 +133,8 @@ public class RulesEngineTest {
         assert e.isMatch();
         Double v = ((ThresholdConditionEval) e).getValue();
         assert v.equals(5.0D) : e;
-        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") :
-                ((ThresholdConditionEval) e).getCondition();
+        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") : ((ThresholdConditionEval) e)
+                .getCondition();
 
         a = alerts.get(1);
         assert a.getTriggerId().equals("trigger-2") : a.getTriggerId();
@@ -148,8 +148,8 @@ public class RulesEngineTest {
         assert e.isMatch();
         v = ((ThresholdConditionEval) e).getValue();
         assert v.equals(5.0D) || v.equals(10.0D) : e;
-        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") :
-                ((ThresholdConditionEval) e).getCondition();
+        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") : ((ThresholdConditionEval) e)
+                .getCondition();
 
         a = alerts.get(2);
         assert a.getTriggerId().equals("trigger-2") : a.getTriggerId();
@@ -164,8 +164,8 @@ public class RulesEngineTest {
         assert !v.equals(((ThresholdConditionEval) e).getValue());
         v = ((ThresholdConditionEval) e).getValue();
         assert v.equals(5.0D) || v.equals(10.0D) : e;
-        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") :
-                ((ThresholdConditionEval) e).getCondition();
+        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") : ((ThresholdConditionEval) e)
+                .getCondition();
 
         a = alerts.get(3);
         assert a.getTriggerId().equals("trigger-3") : a.getTriggerId();
@@ -179,8 +179,8 @@ public class RulesEngineTest {
         assert e.isMatch();
         v = ((ThresholdConditionEval) e).getValue();
         assert v.equals(15.0D) : e;
-        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") :
-                ((ThresholdConditionEval) e).getCondition();
+        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") : ((ThresholdConditionEval) e)
+                .getCondition();
 
         a = alerts.get(4);
         assert a.getTriggerId().equals("trigger-4") : a.getTriggerId();
@@ -194,8 +194,8 @@ public class RulesEngineTest {
         assert e.isMatch();
         v = ((ThresholdConditionEval) e).getValue();
         assert v.equals(15.0D) || v.equals(10.0D) : e;
-        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") :
-                ((ThresholdConditionEval) e).getCondition();
+        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") : ((ThresholdConditionEval) e)
+                .getCondition();
 
         a = alerts.get(5);
         assert a.getTriggerId().equals("trigger-4") : a.getTriggerId();
@@ -210,8 +210,8 @@ public class RulesEngineTest {
         assert !v.equals(((ThresholdConditionEval) e).getValue());
         v = ((ThresholdConditionEval) e).getValue();
         assert v.equals(15.0D) || v.equals(10.0D) : e;
-        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") :
-                ((ThresholdConditionEval) e).getCondition();
+        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") : ((ThresholdConditionEval) e)
+                .getCondition();
     }
 
     @Test
@@ -272,8 +272,8 @@ public class RulesEngineTest {
         assert e.isMatch();
         Double v = ((ThresholdRangeConditionEval) e).getValue();
         assert v.equals(10.0D) || v.equals(15.0D) : e;
-        assert ((ThresholdRangeConditionEval) e).getCondition().getDataId().equals("NumericData-01") :
-                ((ThresholdRangeConditionEval) e).getCondition();
+        assert ((ThresholdRangeConditionEval) e).getCondition().getDataId().equals("NumericData-01") : ((ThresholdRangeConditionEval) e)
+                .getCondition();
 
         a = alerts.get(1);
         assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
@@ -288,8 +288,8 @@ public class RulesEngineTest {
         assert !v.equals(((ThresholdRangeConditionEval) e).getValue()) : e;
         v = ((ThresholdRangeConditionEval) e).getValue();
         assert v.equals(10.0D) || v.equals(15.0D) : e;
-        assert ((ThresholdRangeConditionEval) e).getCondition().getDataId().equals("NumericData-01") :
-                ((ThresholdRangeConditionEval) e).getCondition();
+        assert ((ThresholdRangeConditionEval) e).getCondition().getDataId().equals("NumericData-01") : ((ThresholdRangeConditionEval) e)
+                .getCondition();
 
         a = alerts.get(2);
         assert a.getTriggerId().equals("trigger-3") : a.getTriggerId();
@@ -303,8 +303,8 @@ public class RulesEngineTest {
         assert e.isMatch();
         v = ((ThresholdRangeConditionEval) e).getValue();
         assert v.equals(5.0D) : e;
-        assert ((ThresholdRangeConditionEval) e).getCondition().getDataId().equals("NumericData-01") :
-                ((ThresholdRangeConditionEval) e).getCondition();
+        assert ((ThresholdRangeConditionEval) e).getCondition().getDataId().equals("NumericData-01") : ((ThresholdRangeConditionEval) e)
+                .getCondition();
     }
 
     @Test
@@ -366,10 +366,10 @@ public class RulesEngineTest {
         Double v2 = ((CompareConditionEval) e).getValue2();
         assert v1.equals(10.0D) : e;
         assert v2.equals(30.0D) : e;
-        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") :
-                ((CompareConditionEval) e).getCondition();
-        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") :
-                ((CompareConditionEval) e).getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") : ((CompareConditionEval) e)
+                .getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") : ((CompareConditionEval) e)
+                .getCondition();
 
         a = alerts.get(1);
         assert a.getTriggerId().equals("trigger-2") : a.getTriggerId();
@@ -385,10 +385,10 @@ public class RulesEngineTest {
         v2 = ((CompareConditionEval) e).getValue2();
         assert v1.equals(10.0D) : e;
         assert v2.equals(30.0D) : e;
-        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") :
-                ((CompareConditionEval) e).getCondition();
-        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") :
-                ((CompareConditionEval) e).getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") : ((CompareConditionEval) e)
+                .getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") : ((CompareConditionEval) e)
+                .getCondition();
 
         // Test LTE + GTE
         datums.clear();
@@ -417,10 +417,10 @@ public class RulesEngineTest {
         v2 = ((CompareConditionEval) e).getValue2();
         assert v1.equals(10.0D) : e;
         assert v2.equals(20.0D) : e;
-        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") :
-                ((CompareConditionEval) e).getCondition();
-        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") :
-                ((CompareConditionEval) e).getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") : ((CompareConditionEval) e)
+                .getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") : ((CompareConditionEval) e)
+                .getCondition();
 
         a = alerts.get(1);
         assert a.getTriggerId().equals("trigger-4") : a.getTriggerId();
@@ -436,10 +436,10 @@ public class RulesEngineTest {
         v2 = ((CompareConditionEval) e).getValue2();
         assert v1.equals(10.0D) : e;
         assert v2.equals(20.0D) : e;
-        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") :
-                ((CompareConditionEval) e).getCondition();
-        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") :
-                ((CompareConditionEval) e).getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") : ((CompareConditionEval) e)
+                .getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") : ((CompareConditionEval) e)
+                .getCondition();
 
         // Test GT (also GTE)
         datums.clear();
@@ -468,10 +468,10 @@ public class RulesEngineTest {
         v2 = ((CompareConditionEval) e).getValue2();
         assert v1.equals(15.0D) : e;
         assert v2.equals(20.0D) : e;
-        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") :
-                ((CompareConditionEval) e).getCondition();
-        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") :
-                ((CompareConditionEval) e).getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") : ((CompareConditionEval) e)
+                .getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") : ((CompareConditionEval) e)
+                .getCondition();
 
         a = alerts.get(1);
         assert a.getTriggerId().equals("trigger-4") : a.getTriggerId();
@@ -487,10 +487,10 @@ public class RulesEngineTest {
         v2 = ((CompareConditionEval) e).getValue2();
         assert v1.equals(15.0D) : e;
         assert v2.equals(20.0D) : e;
-        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") :
-                ((CompareConditionEval) e).getCondition();
-        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") :
-                ((CompareConditionEval) e).getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData1Id().equals("NumericData-01") : ((CompareConditionEval) e)
+                .getCondition();
+        assert ((CompareConditionEval) e).getCondition().getData2Id().equals("NumericData-02") : ((CompareConditionEval) e)
+                .getCondition();
     }
 
     @Test
@@ -865,8 +865,8 @@ public class RulesEngineTest {
         assert e.isMatch();
         AvailabilityType v = ((AvailabilityConditionEval) e).getValue();
         assert v == AvailabilityType.DOWN : e;
-        assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") :
-                ((AvailabilityConditionEval) e).getCondition();
+        assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") : ((AvailabilityConditionEval) e)
+                .getCondition();
 
         a = alerts.get(1);
         assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
@@ -880,8 +880,8 @@ public class RulesEngineTest {
         assert e.isMatch();
         v = ((AvailabilityConditionEval) e).getValue();
         assert v == AvailabilityType.UNAVAILABLE : e;
-        assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") :
-                ((AvailabilityConditionEval) e).getCondition();
+        assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") : ((AvailabilityConditionEval) e)
+                .getCondition();
     }
 
     @Test
@@ -924,8 +924,8 @@ public class RulesEngineTest {
             assert e.getDataTimestamp() == expectedTimestamp++;
             AvailabilityType v = ((AvailabilityConditionEval) e).getValue();
             assert v == AvailabilityType.DOWN : e;
-            assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") :
-                    ((AvailabilityConditionEval) e).getCondition();
+            assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") : ((AvailabilityConditionEval) e)
+                    .getCondition();
         }
     }
 
@@ -970,8 +970,8 @@ public class RulesEngineTest {
             assert e.getDataTimestamp() == expectedTimestamps[i++];
             AvailabilityType v = ((AvailabilityConditionEval) e).getValue();
             assert v == AvailabilityType.DOWN : e;
-            assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") :
-                    ((AvailabilityConditionEval) e).getCondition();
+            assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") : ((AvailabilityConditionEval) e)
+                    .getCondition();
         }
     }
 
@@ -1025,8 +1025,47 @@ public class RulesEngineTest {
             assert e.getDataTimestamp() == expectedTimestamps[i++];
             AvailabilityType v = ((AvailabilityConditionEval) e).getValue();
             assert v == AvailabilityType.DOWN : e;
-            assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") :
-                    ((AvailabilityConditionEval) e).getCondition();
+            assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") : ((AvailabilityConditionEval) e)
+                    .getCondition();
+        }
+    }
+
+    @Test
+    public void DampeningStrictTimeTest() {
+        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
+                "AvailData-01", AvailabilityCondition.Operator.DOWN);
+
+        Dampening t1d = Dampening.forStrictTime("trigger-1", 250L);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+        rulesEngine.addFact(t1d);
+
+        long start = System.currentTimeMillis();
+        int i = 0;
+        while ((alerts.size() == 0) && ((System.currentTimeMillis() - start) < 500)) {
+            rulesEngine.addData(new Availability("AvailData-01", ++i, AvailabilityType.DOWN));
+            rulesEngine.fire();
+        }
+
+        assert alerts.size() == 1 : alerts;
+
+        Alert a = alerts.get(0);
+        assert (alerts.get(0).getTime() - start) >= 250 : (alerts.get(0).getTime() - start);
+        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
+        assert a.getEvalSets().size() >= 2 : a.getEvalSets().size();
+        for (Set<ConditionEval> evalSet : a.getEvalSets()) {
+            assert evalSet.size() == 1 : evalSet;
+            ConditionEval e = evalSet.iterator().next();
+            assert e.getConditionSetIndex() == 1 : e;
+            assert e.getConditionSetSize() == 1 : e;
+            assert e.getTriggerId().equals("trigger-1");
+            assert e.isMatch();
+            AvailabilityType v = ((AvailabilityConditionEval) e).getValue();
+            assert v == AvailabilityType.DOWN : e;
+            assert ((AvailabilityConditionEval) e).getCondition().getDataId().equals("AvailData-01") : ((AvailabilityConditionEval) e)
+                    .getCondition();
         }
     }
 
@@ -1097,8 +1136,8 @@ public class RulesEngineTest {
         assert e.isMatch();
         Double v = ((ThresholdConditionEval) e).getValue();
         assert v.equals(8.0) : e;
-        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") :
-                ((ThresholdConditionEval) e).getCondition();
+        assert ((ThresholdConditionEval) e).getCondition().getDataId().equals("NumericData-01") : ((ThresholdConditionEval) e)
+                .getCondition();
         e = i.next();
         assert e.getConditionSetSize() == 2 : e;
         assert e.getConditionSetIndex() == 2 : e;
@@ -1106,8 +1145,8 @@ public class RulesEngineTest {
         assert e.isMatch();
         v = ((ThresholdRangeConditionEval) e).getValue();
         assert v.equals(150.0) : e;
-        assert ((ThresholdRangeConditionEval) e).getCondition().getDataId().equals("NumericData-02") :
-                ((ThresholdRangeConditionEval) e).getCondition();
+        assert ((ThresholdRangeConditionEval) e).getCondition().getDataId().equals("NumericData-02") : ((ThresholdRangeConditionEval) e)
+                .getCondition();
     }
 
 }

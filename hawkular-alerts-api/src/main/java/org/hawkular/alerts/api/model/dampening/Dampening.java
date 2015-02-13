@@ -32,7 +32,7 @@ import org.hawkular.alerts.api.model.condition.ConditionEval;
 public class Dampening {
 
     public enum Type {
-        STRICT, RELAXED_COUNT, RELAXED_TIME
+        STRICT, RELAXED_COUNT, RELAXED_TIME, STRICT_TIME
     };
 
     private String triggerId;
@@ -52,7 +52,8 @@ public class Dampening {
     }
 
     /**
-     * Fire if we have <code>numTrueEvals</code> consecutive true evaluations of the condition set.
+     * Fire if we have <code>numTrueEvals</code> consecutive true evaluations of the condition set.  There is
+     * no time limit for the evaluations. 
      * @param triggerId
      * @param numConsecutiveTrueEvals
      * @return
@@ -62,7 +63,8 @@ public class Dampening {
     }
 
     /**
-     * Fire if we have <code>numTrueEvals</code> of the condition set out of <code>numTotalEvals</code>.
+     * Fire if we have <code>numTrueEvals</code> of the condition set out of <code>numTotalEvals</code>. There is
+     * no time limit for the evaluations. 
      * @param triggerId
      * @param numTrueEvals
      * @param numTotalEvals
@@ -73,16 +75,30 @@ public class Dampening {
     }
 
     /**
-     * Fire if we have <code>numTrueEvals</code> of the condition set within <code>evalTimeSetting</code>.
+     * Fire if we have <code>numTrueEvals</code> of the condition set within <code>evalPeriod</code>. This can only
+     * fire if the condition set is evaluated the required number of times in the given <code>evalPeriod</code>, so
+     * the requisite data must be supplied in a timely manner. 
      * @param triggerId
      * @param numTrueEvals
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
-     * evaluation times.
      * @return
      */
     public static Dampening forRelaxedTime(String triggerId, int numTrueEvals, long evalPeriod) {
         return new Dampening(triggerId, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
+    }
+
+    /**
+     * Fire if we have only true evaluations of the condition set for at least <code>evalPeriod</code>.  In other
+     * words, fire the Trigger after N consecutive true condition set evaluations, such that N >= 2
+     * and delta(evalTime-1,evalTime-N) >= <code>evalPeriod</code>.  Any false evaluation resets the dampening.
+     * @param triggerId
+     * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
+     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
+     * @return
+     */
+    public static Dampening forStrictTime(String triggerId, long evalPeriod) {
+        return new Dampening(triggerId, Type.STRICT_TIME, 0, 0, evalPeriod);
     }
 
     public Dampening(String triggerId, Type type, int evalTrueSetting, int evalTotalSetting, long evalTimeSetting) {
@@ -225,10 +241,19 @@ public class Dampening {
                         satisfied = true;
                     }
                     break;
+                case STRICT_TIME:
+                    if (trueEvalsStartTime == 0L) {
+                        trueEvalsStartTime = now;
+
+                    } else if ((now - trueEvalsStartTime) >= evalTimeSetting) {
+                        satisfied = true;
+                    }
+                    break;
             }
         } else {
             switch (type) {
                 case STRICT:
+                case STRICT_TIME:
                     reset();
                     break;
                 case RELAXED_COUNT:
