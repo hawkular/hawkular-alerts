@@ -53,7 +53,7 @@ public class Dampening {
 
     /**
      * Fire if we have <code>numTrueEvals</code> consecutive true evaluations of the condition set.  There is
-     * no time limit for the evaluations. 
+     * no time limit for the evaluations.
      * @param triggerId
      * @param numConsecutiveTrueEvals
      * @return
@@ -64,7 +64,7 @@ public class Dampening {
 
     /**
      * Fire if we have <code>numTrueEvals</code> of the condition set out of <code>numTotalEvals</code>. There is
-     * no time limit for the evaluations. 
+     * no time limit for the evaluations.
      * @param triggerId
      * @param numTrueEvals
      * @param numTotalEvals
@@ -77,7 +77,7 @@ public class Dampening {
     /**
      * Fire if we have <code>numTrueEvals</code> of the condition set within <code>evalPeriod</code>. This can only
      * fire if the condition set is evaluated the required number of times in the given <code>evalPeriod</code>, so
-     * the requisite data must be supplied in a timely manner. 
+     * the requisite data must be supplied in a timely manner.
      * @param triggerId
      * @param numTrueEvals
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
