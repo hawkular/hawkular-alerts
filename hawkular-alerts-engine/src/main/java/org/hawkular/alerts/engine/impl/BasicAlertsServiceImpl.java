@@ -124,7 +124,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
 
         Collection<Trigger> triggers = null;
         try {
-            definitions.getTriggers();
+            triggers = definitions.getTriggers();
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             msgLog.errorDefinitionsService("Triggers", e.getMessage());
@@ -135,7 +135,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
 
         Collection<Dampening> dampenings = null;
         try {
-            definitions.getDampenings();
+            dampenings = definitions.getDampenings();
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             msgLog.errorDefinitionsService("Dampenings", e.getMessage());
@@ -146,7 +146,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
 
         Collection<Condition> conditions = null;
         try {
-            definitions.getConditions();
+            conditions = definitions.getConditions();
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             msgLog.errorDefinitionsService("Conditions", e.getMessage());
