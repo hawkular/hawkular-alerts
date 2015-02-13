@@ -6,8 +6,6 @@ notifications:
     channels:
     - chat.freenode.net#hawkular
     on_success: change
-before_install:
-- bash .travis.build.bus.sh
 install:
 - mvn -version -B
 script:
