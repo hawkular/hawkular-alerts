@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.rest;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.rest.log.MsgLogger;
@@ -41,6 +43,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  * @author Lucas Ponce
  */
 @Path("/")
+@Api(value = "/", description = "Operations about alerts")
 public class AlertsHandler {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(AlertsHandler.class);
@@ -55,6 +58,9 @@ public class AlertsHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all alerts",
+                  responseClass = "Collection<org.hawkular.alerts.api.model.condition.Alert>",
+                  notes = "Pagination is not yet implemented.")
     public void findAllAlerts(@Suspended final AsyncResponse response) {
         Collection<Alert> alertList = alerts.checkAlerts();
         if (alertList.isEmpty()) {
@@ -68,6 +74,10 @@ public class AlertsHandler {
 
     @GET
     @Path("/reload")
+    @ApiOperation(value = "Reload all definitions into the alerts service",
+                  responseClass = "void",
+                  notes = "This service is temporal for demos/poc, this functionality will be handled internally" +
+                          "between definitions and alerts services")
     public void reloadAlerts(@Suspended final AsyncResponse response) {
         alerts.reload();
         response.resume(Response.status(Response.Status.OK).build());

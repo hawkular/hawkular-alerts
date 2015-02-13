@@ -27,7 +27,7 @@
   <xsl:template match="/api">
     <html>
       <head>
-        <title>Hawkular Metrics REST-Api documentation</title>
+        <title>Hawkular Alerts REST-Api documentation</title>
         <style type="text/css">
           h2 {background-color:#ADD8E6   }
           h3 {background-color:#C0C0C0   }
@@ -153,15 +153,21 @@
   </xsl:template>
 
   <xsl:template match="param">
-    <tr>
-      <td><xsl:value-of select="@name"/></td>
-      <td><xsl:value-of select="@paramType"/></td>
-      <td><xsl:value-of select="@description"/></td>
-      <td><xsl:value-of select="@required"/></td>
-      <td><xsl:value-of select="@type"/></td>
-      <td><xsl:value-of select="@allowableValues"/></td>
-      <td><xsl:value-of select="@defaultValue"/></td>
-    </tr>
+    <!--
+      javax.ws.rs.container.AsyncResponse is used for building an AsyncResponse
+      but it is not part of the business semantic, so we are going to skip it from documentation
+    -->
+    <xsl:if test="not(@type = 'javax.ws.rs.container.AsyncResponse')">
+      <tr>
+        <td><xsl:value-of select="@name"/></td>
+        <td><xsl:value-of select="@paramType"/></td>
+        <td><xsl:value-of select="@description"/></td>
+        <td><xsl:value-of select="@required"/></td>
+        <td><xsl:value-of select="@type"/></td>
+        <td><xsl:value-of select="@allowableValues"/></td>
+        <td><xsl:value-of select="@defaultValue"/></td>
+      </tr>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="error">

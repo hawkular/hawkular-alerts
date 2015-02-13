@@ -33,7 +33,7 @@ Common API for notifiers plugins. +
 A notifier plugin will be deployed as a .war artifact and it will interact with the bus via this API.
 | hawkular-notifiers-email +
 hawkular-notifiers-sms +
-hawkular-notifiers-snmp | 
+hawkular-notifiers-snmp |
 Project examples with the skeleton of a notifier plugin. +
 Main responsabilities are: +
 - Register at deployment time into the alerts-engine. +

@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.rest;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.services.DefinitionsService;
@@ -47,6 +50,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  * @author Lucas Ponce
  */
 @Path("/conditions/string")
+@Api(value = "/conditions/string",
+     description = "Create/Read/Update/Delete operations for StringCondition type condition")
 public class StringConditionsHandler {
     private final Logger log = Logger.getLogger(StringConditionsHandler.class);
 
@@ -60,6 +65,9 @@ public class StringConditionsHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all string conditions",
+                  responseClass = "Collection<org.hawkular.alerts.api.model.condition.StringCondition>",
+                  notes = "Pagination is not yet implemented")
     public void findAllStringConditions(@Suspended final AsyncResponse response) {
         try {
             Collection<Condition> conditionsList = definitions.getConditions();
@@ -86,11 +94,52 @@ public class StringConditionsHandler {
         }
     }
 
+    @GET
+    @Path("/trigger/{triggerId}")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all string conditions for a specific trigger",
+                  responseClass = "Collection<org.hawkular.alerts.api.model.condition.StringCondition>",
+                  notes = "Pagination is not yet implemented")
+    public void findAllStringConditionsByTrigger(@Suspended final AsyncResponse response,
+                                                 @ApiParam(value = "Trigger id to get string conditions",
+                                                           required = true)
+                                                 @PathParam("triggerId") final String triggerId) {
+        try {
+            Collection<Condition> conditionsList = definitions.getConditions(triggerId);
+            Collection<StringCondition> stringConditions = new ArrayList<StringCondition>();
+            for (Condition cond : conditionsList) {
+                if (cond instanceof StringCondition) {
+                    stringConditions.add((StringCondition) cond);
+                }
+            }
+            if (stringConditions.isEmpty()) {
+                log.debugf("GET - findAllStringConditions - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - findAllStringConditions - %s compare conditions ", stringConditions.size());
+                response.resume(Response.status(Response.Status.OK)
+                                        .entity(stringConditions).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
     @POST
     @Path("/")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Create a new string condition",
+                  responseClass = "org.hawkular.alerts.api.model.condition.StringCondition",
+                  notes = "Returns StringCondition created if operation finished correctly")
     public void createStringCondition(@Suspended final AsyncResponse response,
+                                      @ApiParam(value = "String condition to be created",
+                                                name = "condition",
+                                                required = true)
                                       final StringCondition condition) {
         try {
             if (condition != null && condition.getConditionId() != null
@@ -118,7 +167,11 @@ public class StringConditionsHandler {
     @GET
     @Path("/{conditionId}")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get an existing string condition",
+                  responseClass = "org.hawkular.alerts.api.model.condition.StringCondition")
     public void getStringCondition(@Suspended final AsyncResponse response,
+                                   @ApiParam(value = "String condition id to be retrieved",
+                                             required = true)
                                    @PathParam("conditionId") final String conditionId) {
         try {
             StringCondition found = null;
@@ -153,8 +206,15 @@ public class StringConditionsHandler {
     @PUT
     @Path("/{conditionId}")
     @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Update an existing string condition",
+                  responseClass = "void")
     public void updateStringCondition(@Suspended final AsyncResponse response,
+                                      @ApiParam(value = "String condition id to be updated",
+                                                required = true)
                                       @PathParam("conditionId") final String conditionId,
+                                      @ApiParam(value = "Updated string condition",
+                                                name = "condition",
+                                                required = true)
                                       final StringCondition condition) {
         try {
             if (conditionId != null && !conditionId.isEmpty() &&
@@ -182,7 +242,11 @@ public class StringConditionsHandler {
 
     @DELETE
     @Path("/{conditionId}")
+    @ApiOperation(value = "Delete an existing string condition",
+                  responseClass = "void")
     public void deleteStringCondition(@Suspended final AsyncResponse response,
+                                      @ApiParam(value = "String condition id to be deleted",
+                                                required = true)
                                       @PathParam("conditionId") final String conditionId) {
         try {
             if (conditionId != null && !conditionId.isEmpty() && definitions.getCondition(conditionId) != null) {

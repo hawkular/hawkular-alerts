@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.rest;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
@@ -45,6 +48,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  * @author Lucas Ponce
  */
 @Path("/trigger/dampening")
+@Api(value = "/trigger/dampening",
+     description = "Create/Read/Update/Delete operations for dampenings definitions")
 public class DampeningHandler {
     private final Logger log = Logger.getLogger(DampeningHandler.class);
 
@@ -58,6 +63,9 @@ public class DampeningHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all dampenings",
+                  responseClass = "Collection<org.hawkular.alerts.api.model.dampening.Dampening>",
+                  notes = "Pagination is not yet implemented")
     public void findAllDampenings(@Suspended final AsyncResponse response) {
         try {
             Collection<Dampening> dampeningList = definitions.getDampenings();
@@ -82,7 +90,13 @@ public class DampeningHandler {
     @Path("/")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Create a new dampening",
+                  responseClass = "org.hawkular.alerts.api.model.dampening.Dampening",
+                  notes = "Returns Dampening created if operation finished correctly")
     public void createDampening(@Suspended final AsyncResponse response,
+                                @ApiParam(value = "Dampening definition to be created",
+                                          name = "dampening",
+                                          required = true)
                                 final Dampening dampening) {
         try {
             if (dampening != null && dampening.getTriggerId() != null
@@ -110,7 +124,11 @@ public class DampeningHandler {
     @GET
     @Path("/{triggerId}")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get an existing dampening linked with a specific trigger definition",
+                  responseClass = "org.hawkular.alerts.api.model.dampening.Dampening")
     public void getDampening(@Suspended final AsyncResponse response,
+                             @ApiParam(value = "Trigger id linked with dampening definition to be retrieved",
+                                       required = true)
                              @PathParam("triggerId") final String triggerId) {
         try {
             Dampening found = null;
@@ -139,8 +157,15 @@ public class DampeningHandler {
     @PUT
     @Path("/{triggerId}")
     @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Update an existing dampening definition",
+                  responseClass = "void")
     public void updateDampening(@Suspended final AsyncResponse response,
+                                @ApiParam(value = "Trigger id linked with dampening definition to be retrieved",
+                                          required = true)
                                 @PathParam("triggerId") final String triggerId,
+                                @ApiParam(value = "Updated dampening definition",
+                                          name = "dampening",
+                                          required = true)
                                 final Dampening dampening) {
         try {
             if (triggerId != null && !triggerId.isEmpty() &&
@@ -168,7 +193,11 @@ public class DampeningHandler {
 
     @DELETE
     @Path("/{triggerId}")
+    @ApiOperation(value = "Delete an existing dampening definition",
+                  responseClass = "void")
     public void deleteDampening(@Suspended final AsyncResponse response,
+                                @ApiParam(value = "Trigger id linked with dampening definition to be retrieved",
+                                          required = true)
                                 @PathParam("triggerId") final String triggerId) {
         try {
             if (triggerId != null && !triggerId.isEmpty() && definitions.getDampening(triggerId) != null) {

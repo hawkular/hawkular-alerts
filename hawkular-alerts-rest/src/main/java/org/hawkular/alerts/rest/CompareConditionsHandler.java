@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.rest;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.services.DefinitionsService;
@@ -47,6 +50,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  * @author Lucas Ponce
  */
 @Path("/conditions/compare")
+@Api(value = "/conditions/compare",
+     description = "Create/Read/Update/Delete operations for CompareCondition type condition")
 public class CompareConditionsHandler {
     private final Logger log = Logger.getLogger(CompareConditionsHandler.class);
 
@@ -60,6 +65,9 @@ public class CompareConditionsHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all compare conditions",
+                  responseClass = "Collection<org.hawkular.alerts.api.model.condition.CompareCondition>",
+                  notes = "Pagination is not yet implemented")
     public void findAllCompareConditions(@Suspended final AsyncResponse response) {
         try {
             Collection<Condition> conditionsList = definitions.getConditions();
@@ -86,11 +94,52 @@ public class CompareConditionsHandler {
         }
     }
 
+    @GET
+    @Path("/trigger/{triggerId}")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all compare conditions for a specific trigger",
+                  responseClass = "Collection<org.hawkular.alerts.api.model.condition.CompareCondition>",
+                  notes = "Pagination is not yet implemented")
+    public void findAllCompareConditionsByTrigger(@Suspended final AsyncResponse response,
+                                                  @ApiParam(value = "Trigger id to get compare conditions",
+                                                            required = true)
+                                                  @PathParam("triggerId") final String triggerId) {
+        try {
+            Collection<Condition> conditionsList = definitions.getConditions(triggerId);
+            Collection<CompareCondition> compareConditions = new ArrayList<CompareCondition>();
+            for (Condition cond : conditionsList) {
+                if (cond instanceof CompareCondition) {
+                    compareConditions.add((CompareCondition) cond);
+                }
+            }
+            if (compareConditions.isEmpty()) {
+                log.debugf("GET - findAllCompareConditions - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - findAllCompareConditions - %s compare conditions. ", compareConditions.size());
+                response.resume(Response.status(Response.Status.OK)
+                                        .entity(compareConditions).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
     @POST
     @Path("/")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Create a new availability condition",
+                  responseClass = "org.hawkular.alerts.api.model.condition.CompareCondition",
+                  notes = "Returns CompareCondition created if operation finished correctly")
     public void createCompareCondition(@Suspended final AsyncResponse response,
+                                       @ApiParam(value = "Compare condition to be created",
+                                                 name = "condition",
+                                                 required = true)
                                        final CompareCondition condition) {
         try {
             if (condition != null && condition.getConditionId() != null
@@ -118,7 +167,11 @@ public class CompareConditionsHandler {
     @GET
     @Path("/{conditionId}")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get an existing compare condition",
+                  responseClass = "org.hawkular.alerts.api.model.condition.CompareCondition")
     public void getCompareCondition(@Suspended final AsyncResponse response,
+                                    @ApiParam(value = "Compare condition id to be retrieved",
+                                              required = true)
                                     @PathParam("conditionId") final String conditionId) {
         try {
             CompareCondition found = null;
@@ -153,8 +206,15 @@ public class CompareConditionsHandler {
     @PUT
     @Path("/{conditionId}")
     @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Update an existing compare condition",
+                  responseClass = "void")
     public void updateCompareCondition(@Suspended final AsyncResponse response,
+                                       @ApiParam(value = "Compare condition id to be updated",
+                                                 required = true)
                                        @PathParam("conditionId") final String conditionId,
+                                       @ApiParam(value = "Updated compare condition",
+                                                 name = "condition",
+                                                 required = true)
                                        final CompareCondition condition) {
         try {
             if (conditionId != null && !conditionId.isEmpty() &&
@@ -182,7 +242,11 @@ public class CompareConditionsHandler {
 
     @DELETE
     @Path("/{conditionId}")
+    @ApiOperation(value = "Delete an existing compare condition",
+                  responseClass = "void")
     public void deleteCompareCondition(@Suspended final AsyncResponse response,
+                                       @ApiParam(value = "Compare condition id to be deleted",
+                                                 required = true)
                                        @PathParam("conditionId") final String conditionId) {
         try {
             if (conditionId != null && !conditionId.isEmpty() && definitions.getCondition(conditionId) != null) {
