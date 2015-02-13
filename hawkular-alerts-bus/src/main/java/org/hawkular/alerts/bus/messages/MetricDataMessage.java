@@ -54,9 +54,7 @@ public class MetricDataMessage extends BasicMessage {
         @Expose
         String tenantId;
         @Expose
-        String metricId;
-        @Expose
-        List<NumericDataPoint> dataPoints;
+        List<SingleMetric> metrics;
 
         public MetricData() {
         }
@@ -69,41 +67,49 @@ public class MetricDataMessage extends BasicMessage {
             this.tenantId = tenantId;
         }
 
-        public String getMetricId() {
-            return metricId;
+        public List<SingleMetric> getMetrics() {
+            return metrics;
         }
 
-        public void setMetricId(String metricId) {
-            this.metricId = metricId;
-        }
-
-        public List<NumericDataPoint> getDataPoints() {
-            return dataPoints;
-        }
-
-        public void setDataPoints(List<NumericDataPoint> dataPoints) {
-            this.dataPoints = dataPoints;
+        public void setMetrics(List<SingleMetric> metrics) {
+            this.metrics = metrics;
         }
 
         @Override
         public String toString() {
-            return "MetricData [tenantId=" + tenantId + ", metricId=" + metricId + ", dataPoints=" + dataPoints
-                    + "]";
+            return "MetricData [tenantId=" + tenantId + ", metrics=" + metrics + "]";
         }
     }
 
-    public static class NumericDataPoint {
+    /**
+     * This is meant to parse out an instance of <code>org.rhq.metrics.client.common.SingleMetric</code>
+     */
+    public static class SingleMetric {
+        @Expose
+        private String source;
         @Expose
         private long timestamp;
         @Expose
         private double value;
+        @Expose
+        private int metricType;
 
-        public NumericDataPoint() {
+        public SingleMetric() {
         }
 
-        public NumericDataPoint(long timestamp, double value) {
+        public SingleMetric(String source, long timestamp, double value, int type) {
+            this.source = source;
             this.timestamp = timestamp;
             this.value = value;
+            this.metricType = type;
+        }
+
+        public String getSource() {
+            return source;
+        }
+
+        public void setSource(String source) {
+            this.source = source;
         }
 
         public long getTimestamp() {
@@ -122,11 +128,18 @@ public class MetricDataMessage extends BasicMessage {
             this.value = value;
         }
 
-        @Override
-        public String toString() {
-            return "NumericDataPoint [timestamp=" + timestamp + ", value=" + value + "]";
+        public int getMetricType() {
+            return metricType;
         }
 
-    }
+        public void setMetricType(int type) {
+            this.metricType = type;
+        }
 
+        @Override
+        public String toString() {
+            return "SingleMetric [source=" + source + ", timestamp=" + timestamp + ", value=" + value
+                    + ", metricType=" + metricType + "]";
+        }
+    }
 }

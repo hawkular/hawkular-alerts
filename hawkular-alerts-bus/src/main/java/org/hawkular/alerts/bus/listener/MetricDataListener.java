@@ -31,17 +31,22 @@ import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.bus.messages.MetricDataMessage;
 import org.hawkular.alerts.bus.messages.MetricDataMessage.MetricData;
-import org.hawkular.alerts.bus.messages.MetricDataMessage.NumericDataPoint;
+import org.hawkular.alerts.bus.messages.MetricDataMessage.SingleMetric;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 
 import org.jboss.logging.Logger;
 
 /**
- * An adapter that processes Hawkular Metrics reports, extracts relevant metric datums, translates then to Alerting
- * Data format, and forwards them for Alert processing.</br>
- * </br>
- * This is useful only when deploying into the Hawkular Bus with Hawkular Metrics.</br>
- * </br>
+ * An adapter that processes Hawkular Metrics data, extracts relevant metric datums, translates them to Alerting
+ * Data format, and forwards them for Alert processing.
+ * </p>
+ * This is useful only when deploying into the Hawkular Bus with Hawkular Metrics. The expected format of the
+ * data is JSON like:
+ * </p>
+ * <code>
+ *  { tenantId , List<org.rhq.metrics.client.common.SingleMetric> }
+ * </code>
+ * </p>
  * TODO: Add filtering of relevant Metric Ids.  This means fetching the active triggers, running through the conditions,
  * and collecting the dataIds.  Then using thise to filter the metricIds converted and forwarded to the engine. Note
  * that we will need a way to update that Id set as changes occur to the Trigger population. Changes are
@@ -76,16 +81,15 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
     protected void onBasicMessage(MetricDataMessage msg) {
         log.debugf("Message received: [%s]", msg);
 
+        // TODO: tenants?
         MetricData metricData = msg.getMetricData();
-        String metricId = metricData.getMetricId();
-        if (!isNeeded(metricId)) {
-            return;
-        }
 
-        List<NumericDataPoint> metricDataPoints = metricData.getDataPoints();
-        List<Data> alertData = new ArrayList<>(metricDataPoints.size());
-        for (NumericDataPoint dp : metricDataPoints) {
-            alertData.add(new NumericData(metricId, dp.getTimestamp(), dp.getValue()));
+        List<SingleMetric> metrics = metricData.getMetrics();
+        List<Data> alertData = new ArrayList<>(metrics.size());
+        for (SingleMetric m : metrics) {
+            if (isNeeded(m.getSource())) {
+                alertData.add(new NumericData(m.getSource(), m.getTimestamp(), m.getValue()));
+            }
         }
 
         log.debugf("Sending: [%s]", alertData);
