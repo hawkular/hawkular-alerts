@@ -305,7 +305,6 @@ rule DampenTwoConditionTrigger
 end
 
 rule DampenThreeConditionTrigger
-    no-loop true
     when
         $t   : Trigger( match == Match.ALL, $tid : id )
         $d   : Dampening( triggerId == $tid, satisfied == false )
@@ -328,7 +327,6 @@ rule DampenThreeConditionTrigger
 end
 
 rule DampenFourConditionTrigger
-    no-loop true
     when
         $t   : Trigger( match == Match.ALL, $tid : id )
         $d   : Dampening( triggerId == $tid, satisfied == false )
