@@ -122,7 +122,7 @@ public class NotifiersHandler {
                   responseClass = "Map<String, Strin>",
                   notes = "Notifier properties are variable and depends on the notifier type. " +
                           "A user needs to request previously NotifierType API to get the list of properties to fill " +
-                          "for a specific type. All notifier should have notifierId and NotifierType as mandatory " +
+                          "for a specific type. All notifier should have NotifierId and NotifierType as mandatory " +
                           "properties")
     public void createNotifier(@Suspended final AsyncResponse response,
                                @ApiParam(value = "Notifier properties. Properties depend of specific NotifierType.",
@@ -191,7 +191,7 @@ public class NotifiersHandler {
                   responseClass = "void",
                   notes = "Notifier properties are variable and depends on the notifier type. " +
                           "A user needs to request previously NotifierType API to get the list of properties to fill " +
-                          "for a specific type. All notifier should have notifierId and NotifierType as mandatory " +
+                          "for a specific type. All notifier should have NotifierId and NotifierType as mandatory " +
                           "properties")
     public void updateNotifier(@Suspended final AsyncResponse response,
                                @ApiParam(value = "Notifier id to be updated",

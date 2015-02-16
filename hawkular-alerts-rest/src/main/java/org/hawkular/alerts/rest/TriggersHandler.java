@@ -36,6 +36,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -159,27 +160,30 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get a map with all conditions id an specific trigger.",
-                  responseClass = "Map<String, String>",
-                  notes = "This is a helper for the UI to get all id of the conditions with specific type ")
+                  responseClass = "Collection<Map<String, String>>",
+                  notes = "This is a helper for the UI to get all id of the conditions with specific type. " +
+                          "It returns a collection of {conditionId: \"value\", className: \"value\" }")
     public void getTriggerConditions(@Suspended final AsyncResponse response,
                                      @ApiParam(value = "Trigger definition id to be retrieved",
                                                required = true)
                                      @PathParam("triggerId") final String triggerId) {
         try {
             Collection<Condition> conditionsList = definitions.getConditions(triggerId);
-            Map<String, String> conditionsType = new HashMap<String, String>();
-
+            Collection<Map<String, String>> conditions = new ArrayList<>();
             for (Condition cond : conditionsList) {
-                conditionsType.put(cond.getConditionId(), cond.getClass().getSimpleName());
+                Map<String, String> conditionsType = new HashMap<String, String>();
+                conditionsType.put("conditionId", cond.getConditionId());
+                conditionsType.put("className", cond.getClass().getSimpleName());
+                conditions.add(conditionsType);
             }
-            if (conditionsType.isEmpty()) {
+            if (conditions.isEmpty()) {
                 log.debugf("GET - getTriggerConditions - Empty");
                 response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
             } else {
-                log.debugf("GET - getTriggerConditions - %s conditions ", conditionsType.size());
+                log.debugf("GET - getTriggerConditions - %s conditions ", conditions.size());
 
                 response.resume(Response.status(Response.Status.OK)
-                                        .entity(conditionsType).type(APPLICATION_JSON_TYPE).build());
+                                        .entity(conditions).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
@@ -188,9 +192,7 @@ public class TriggersHandler {
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
-
     }
-
 
     @PUT
     @Path("/{triggerId}")
