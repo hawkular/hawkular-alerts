@@ -16,4 +16,4 @@ env:
   - secure: TQJ1pIBM6dGgCQj59OiYxmKI2Nk+0XIT9His/iBt4FGRXHQ4BqWZuMVbtiX0ngGJbyg6Ntq9mJwmioGNl3tyK3jY9eqD/pWg8XjA9YAn+UINSBS3ooPYgAwIjTuJp6o7x9xExLEKCdzyttFjQ0BG+AkNvIEVyjSTZq7ky/ngbP4=
   - secure: FxylCjpefGYtjx8tclzaruX6oGirSxSPr2GX6LrRsQVBhTcsCMJAyVfQur3Xobbm1WaJOOvSqFi8CUz7e2Fy6wNX10HaPZs0jGIFgnISATzBYZd3gC9nQwSDDtsvqE9J1cztXYaVtbtmTazLSRpPy5jUi5Trcqx3e/ZCQ2fnt7M=
 after_success:
-- mvn  -s .travis.maven.settings.xml deploy
+- test ${TRAVIS_BRANCH} = master && mvn  -s .travis.maven.settings.xml deploy
