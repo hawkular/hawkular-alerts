@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.rest;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.services.DefinitionsService;
@@ -48,6 +51,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  * @author Lucas Ponce
  */
 @Path("/conditions/availability")
+@Api(value = "/conditions/availability",
+     description = "Create/Read/Update/Delete operations for AvailabilityCondition type condition")
 public class AvailabilityConditionsHandler {
     private final Logger log = Logger.getLogger(AvailabilityConditionsHandler.class);
 
@@ -61,6 +66,9 @@ public class AvailabilityConditionsHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all availability conditions",
+                  responseClass = "Collection<org.hawkular.alerts.api.model.condition.AvailabilityCondition>",
+                  notes = "Pagination is not yet implemented")
     public void findAllAvailabilityConditions(@Suspended final AsyncResponse response) {
         try {
             Collection<Condition> conditionsList = definitions.getConditions();
@@ -89,11 +97,54 @@ public class AvailabilityConditionsHandler {
         }
     }
 
+    @GET
+    @Path("/trigger/{triggerId}")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all availability conditions for a specific trigger",
+                  responseClass = "Collection<org.hawkular.alerts.api.model.condition.AvailabilityCondition>",
+                  notes = "Pagination is not yet implemented")
+    public void findAllAvailabilityConditionsByTrigger(@Suspended final AsyncResponse response,
+                                                       @ApiParam(value = "Trigger id to get availability conditions",
+                                                                 required = true)
+                                                       @PathParam("triggerId") final String triggerId) {
+        try {
+            Collection<Condition> conditionsList = definitions.getConditions(triggerId);
+            Collection<AvailabilityCondition> availabilityConditions = new ArrayList<AvailabilityCondition>();
+            for (Condition cond : conditionsList) {
+                if (cond instanceof AvailabilityCondition) {
+                    availabilityConditions.add((AvailabilityCondition) cond);
+                }
+            }
+            if (availabilityConditions.isEmpty()) {
+                log.debugf("GET - findAllAvailabilityConditions - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - findAllAvailabilityConditions - %s availability conditions ",
+                           availabilityConditions.size());
+
+                response.resume(Response.status(Response.Status.OK)
+                                        .entity(availabilityConditions).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
     @POST
     @Path("/")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Create a new availability condition",
+                  responseClass = "org.hawkular.alerts.api.model.condition.AvailabilityCondition",
+                  notes = "Returns AvailabilityCondition created if operation finished correctly")
     public void createAvailabilityCondition(@Suspended final AsyncResponse response,
+                                            @ApiParam(value = "Availability condition to be created",
+                                                      name = "condition",
+                                                      required = true)
                                             final AvailabilityCondition condition) {
         try {
             if (condition != null && condition.getConditionId() != null
@@ -121,7 +172,11 @@ public class AvailabilityConditionsHandler {
     @GET
     @Path("/{conditionId}")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get an existing availability condition",
+                  responseClass = "org.hawkular.alerts.api.model.condition.AvailabilityCondition")
     public void getAvailabilityCondition(@Suspended final AsyncResponse response,
+                                         @ApiParam(value = "Availability condition id to be retrieved",
+                                                   required = true)
                                          @PathParam("conditionId") final String conditionId) {
         try {
             AvailabilityCondition found = null;
@@ -156,8 +211,15 @@ public class AvailabilityConditionsHandler {
     @PUT
     @Path("/{conditionId}")
     @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Update an existing availability condition",
+                  responseClass = "void")
     public void updateAvailabilityCondition(@Suspended final AsyncResponse response,
+                                            @ApiParam(value = "Availability condition id to be updated",
+                                                      required = true)
                                             @PathParam("conditionId") final String conditionId,
+                                            @ApiParam(value = "Updated availability condition",
+                                                      name = "condition",
+                                                      required = true)
                                             final AvailabilityCondition condition) {
         try {
             if (conditionId != null && !conditionId.isEmpty() &&
@@ -185,7 +247,11 @@ public class AvailabilityConditionsHandler {
 
     @DELETE
     @Path("/{conditionId}")
+    @ApiOperation(value = "Delete an existing availability condition",
+                  responseClass = "void")
     public void deleteAvailabilityCondition(@Suspended final AsyncResponse response,
+                                            @ApiParam(value = "Availability condition id to be deleted",
+                                                      required = true)
                                             @PathParam("conditionId") final String conditionId) {
         try {
             if (conditionId != null && !conditionId.isEmpty() && definitions.getCondition(conditionId) != null) {

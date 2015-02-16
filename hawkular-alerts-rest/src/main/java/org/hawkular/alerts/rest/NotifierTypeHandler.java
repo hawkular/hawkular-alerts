@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.rest;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
 
@@ -42,6 +45,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  * @author Lucas Ponce
  */
 @Path("/notifierType")
+@Api(value = "/notifierType",
+     description = "Query operations for notifier type plugins.")
 public class NotifierTypeHandler {
     private final Logger log = Logger.getLogger(NotifierTypeHandler.class);
 
@@ -55,6 +60,9 @@ public class NotifierTypeHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all notifiers types",
+                  responseClass = "Collection<String>",
+                  notes = "Pagination is not yet implemented")
     public void findAllNotifierTypes(@Suspended final AsyncResponse response) {
         try {
             Collection<String> notifierTypes = definitions.getNotifierTypes();
@@ -78,7 +86,13 @@ public class NotifierTypeHandler {
     @GET
     @Path("/{notifierType}")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find list of properties to fill for a specific notifier type",
+                  responseClass = "Collection<String>",
+                  notes = "Each notifier type can have a different and variable number of properties. " +
+                          "This method should be invoked before of a creation of a new notifier.")
     public void getNotifierType(@Suspended final AsyncResponse response,
+                                @ApiParam(value = "Notifier type to query",
+                                          required = true)
                                 @PathParam("notifierType") final String notifierType) {
         try {
             Set<String> notifierTypeProp = definitions.getNotifierType(notifierType);

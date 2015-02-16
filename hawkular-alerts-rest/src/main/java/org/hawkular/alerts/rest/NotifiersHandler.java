@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.rest;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
 
@@ -44,6 +47,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  * @author Lucas Ponce
  */
 @Path("/notifiers")
+@Api(value = "/notifiers",
+     description = "Create/Read/Update/Delete operations for notifiers")
 public class NotifiersHandler {
     private final Logger log = Logger.getLogger(NotifiersHandler.class);
 
@@ -57,6 +62,9 @@ public class NotifiersHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all notifiers ids",
+                  responseClass = "Collection<String>",
+                  notes = "Pagination is not yet implemented")
     public void findAllNotifiers(@Suspended final AsyncResponse response) {
         try {
             Collection<String> notifiers = definitions.getNotifiers();
@@ -77,11 +85,49 @@ public class NotifiersHandler {
         }
     }
 
+    @GET
+    @Path("/type/{notifierType}")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all notifiers ids of an specific notifier type",
+                  responseClass = "Collection<String>",
+                  notes = "Pagination is not yet implemented")
+    public void findAllNotifiersByType(@Suspended final AsyncResponse response,
+                                       @ApiParam(value = "Notifier type to filter query for notifiers ids",
+                                                 required = true)
+                                       @PathParam("notifierType") final String notifierType) {
+        try {
+            Collection<String> notifiers = definitions.getNotifiers(notifierType);
+            if (notifiers == null || notifiers.isEmpty()) {
+                log.debugf("GET - findAllNotifiers - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - findAllNotifiers - %s notifiers ", notifiers);
+                response.resume(Response.status(Response.Status.OK)
+                                        .entity(notifiers).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
     @POST
     @Path("/")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Create a new notifier",
+                  responseClass = "Map<String, Strin>",
+                  notes = "Notifier properties are variable and depends on the notifier type. " +
+                          "A user needs to request previously NotifierType API to get the list of properties to fill " +
+                          "for a specific type. All notifier should have notifierId and NotifierType as mandatory " +
+                          "properties")
     public void createNotifier(@Suspended final AsyncResponse response,
+                               @ApiParam(value = "Notifier properties. Properties depend of specific NotifierType.",
+                                         name = "notifierProperties",
+                                         required = true)
                                final Map<String, String> notifierProperties) {
         try {
             if (notifierProperties != null && !notifierProperties.isEmpty() &&
@@ -111,7 +157,12 @@ public class NotifiersHandler {
     @GET
     @Path("/{notifierId}")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get an existing notifier",
+                  responseClass = "Map<String, String>",
+                  notes = "Notifier is represented as a map of properties.")
     public void getNotifier(@Suspended final AsyncResponse response,
+                            @ApiParam(value = "Notifier id to be retrieved",
+                                      required = true)
                             @PathParam("notifierId") final String notifierId) {
         try {
              Map<String, String> notifierProp = definitions.getNotifier(notifierId);
@@ -136,8 +187,19 @@ public class NotifiersHandler {
     @PUT
     @Path("/{notifierId}")
     @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Update an existing notifier",
+                  responseClass = "void",
+                  notes = "Notifier properties are variable and depends on the notifier type. " +
+                          "A user needs to request previously NotifierType API to get the list of properties to fill " +
+                          "for a specific type. All notifier should have notifierId and NotifierType as mandatory " +
+                          "properties")
     public void updateNotifier(@Suspended final AsyncResponse response,
+                               @ApiParam(value = "Notifier id to be updated",
+                                         required = true)
                                @PathParam("notifierId") final String notifierId,
+                               @ApiParam(value = "Notifier properties. Properties depend of specific NotifierType.",
+                                         name = "notifierProperties",
+                                         required = true)
                                final Map<String, String> notifierProperties) {
         try {
             if (notifierId != null && !notifierId.isEmpty() &&
@@ -168,7 +230,11 @@ public class NotifiersHandler {
 
     @DELETE
     @Path("/{notifierId}")
+    @ApiOperation(value = "Delete an existing notifier",
+                  responseClass = "void")
     public void deleteNotifier(@Suspended final AsyncResponse response,
+                               @ApiParam(value = "Notifier id to be deleted",
+                                         required = true)
                                @PathParam("notifierId") final String notifierId) {
         try {
             if (notifierId != null && !notifierId.isEmpty() && definitions.getNotifier(notifierId) != null) {

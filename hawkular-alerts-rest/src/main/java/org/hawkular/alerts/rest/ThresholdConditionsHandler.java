@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.rest;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.services.DefinitionsService;
@@ -47,6 +50,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  * @author Lucas Ponce
  */
 @Path("/conditions/threshold")
+@Api(value = "/conditions/threshold",
+     description = "Create/Read/Update/Delete operations for ThresholdCondition type condition")
 public class ThresholdConditionsHandler {
     private final Logger log = Logger.getLogger(ThresholdConditionsHandler.class);
 
@@ -60,6 +65,9 @@ public class ThresholdConditionsHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all threshold conditions",
+                  responseClass = "Collection<org.hawkular.alerts.api.model.condition.StringCondition>",
+                  notes = "Pagination is not yet implemented")
     public void findAllThresholdConditions(@Suspended final AsyncResponse response) {
         try {
             Collection<Condition> conditionsList = definitions.getConditions();
@@ -86,11 +94,52 @@ public class ThresholdConditionsHandler {
         }
     }
 
+    @GET
+    @Path("/trigger/{triggerId}")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Find all threshold conditions",
+                  responseClass = "Collection<org.hawkular.alerts.api.model.condition.StringCondition>",
+                  notes = "Pagination is not yet implemented")
+    public void findAllThresholdConditionsByTrigger(@Suspended final AsyncResponse response,
+                                                    @ApiParam(value = "Trigger id to get threshold conditions",
+                                                              required = true)
+                                                    @PathParam("triggerId") final String triggerId) {
+        try {
+            Collection<Condition> conditionsList = definitions.getConditions(triggerId);
+            Collection<ThresholdCondition> thresholdConditions = new ArrayList<ThresholdCondition>();
+            for (Condition cond : conditionsList) {
+                if (cond instanceof ThresholdCondition) {
+                    thresholdConditions.add((ThresholdCondition) cond);
+                }
+            }
+            if (thresholdConditions.isEmpty()) {
+                log.debugf("GET - findAllThresholdConditions - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - findAllThresholdConditions - %s compare conditions. ", thresholdConditions.size());
+                response.resume(Response.status(Response.Status.OK)
+                                        .entity(thresholdConditions).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
     @POST
     @Path("/")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Create a new threshold condition",
+                  responseClass = "org.hawkular.alerts.api.model.condition.ThresholdCondition",
+                  notes = "Returns ThresholdCondition created if operation finished correctly")
     public void createThresholdCondition(@Suspended final AsyncResponse response,
+                                         @ApiParam(value = "Threshold condition to be created",
+                                                   name = "condition",
+                                                   required = true)
                                          final ThresholdCondition condition) {
         try {
             if (condition != null && condition.getConditionId() != null
@@ -118,7 +167,11 @@ public class ThresholdConditionsHandler {
     @GET
     @Path("/{conditionId}")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get an existing threshold condition",
+                  responseClass = "org.hawkular.alerts.api.model.condition.ThresholdCondition")
     public void getThresholdCondition(@Suspended final AsyncResponse response,
+                                      @ApiParam(value = "Threshold condition id to be retrieved",
+                                                required = true)
                                       @PathParam("conditionId") final String conditionId) {
         try {
             ThresholdCondition found = null;
@@ -153,8 +206,15 @@ public class ThresholdConditionsHandler {
     @PUT
     @Path("/{conditionId}")
     @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Update an existing threshold condition",
+                  responseClass = "void")
     public void updateThresholdCondition(@Suspended final AsyncResponse response,
+                                         @ApiParam(value = "Threshold condition id to be updated",
+                                                   required = true)
                                          @PathParam("conditionId") final String conditionId,
+                                         @ApiParam(value = "Updated threshold condition",
+                                                   name = "condition",
+                                                   required = true)
                                          final ThresholdCondition condition) {
         try {
             if (conditionId != null && !conditionId.isEmpty() &&
@@ -182,7 +242,11 @@ public class ThresholdConditionsHandler {
 
     @DELETE
     @Path("/{conditionId}")
+    @ApiOperation(value = "Delete an existing threshold condition",
+                  responseClass = "void")
     public void deleteThresholdCondition(@Suspended final AsyncResponse response,
+                                         @ApiParam(value = "Threshold condition id to be deleted",
+                                                   required = true)
                                          @PathParam("conditionId") final String conditionId) {
         try {
             if (conditionId != null && !conditionId.isEmpty() && definitions.getCondition(conditionId) != null) {

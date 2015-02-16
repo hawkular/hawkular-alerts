@@ -172,61 +172,67 @@
   </xsl:template>
 
   <xsl:template match="param">
-    <tr>
-      <td>
-        <xsl:choose>
-          <xsl:when test="@name">
-          <xsl:value-of select="@name"/>
+    <!--
+      javax.ws.rs.container.AsyncResponse is used for building an AsyncResponse
+      but it is not part of the business semantic, so we are going to skip it from documentation
+    -->
+    <xsl:if test="not(@type = 'javax.ws.rs.container.AsyncResponse')">
+      <tr>
+        <td>
+          <xsl:choose>
+            <xsl:when test="@name">
+            <xsl:value-of select="@name"/>
+            </xsl:when>
+            <xsl:otherwise><emphasis>implicit</emphasis></xsl:otherwise>
+          </xsl:choose>
+        </td>
+        <td>
+          <xsl:value-of select="@paramType"/>
+        </td>
+        <td>
+          <xsl:choose>
+            <xsl:when test="@description">
+            <xsl:value-of select="@description"/>
+            </xsl:when>
+            <xsl:otherwise><emphasis>none</emphasis></xsl:otherwise>
+          </xsl:choose>
+        </td>
+        <td>
+          <xsl:value-of select="@required"/>
+        </td>
+        <td>
+          <xsl:choose>
+          <xsl:when test="starts-with(@typeId,'...')">
+            <link>
+              <xsl:attribute name="linkend">
+                  <xsl:value-of select="@typeId"/>
+              </xsl:attribute>
+              <xsl:value-of select="@type"/>
+            </link>
           </xsl:when>
-          <xsl:otherwise><emphasis>implicit</emphasis></xsl:otherwise>
-        </xsl:choose>
-      </td>
-      <td>
-        <xsl:value-of select="@paramType"/>
-      </td>
-      <td>
-        <xsl:choose>
-          <xsl:when test="@description">
-          <xsl:value-of select="@description"/>
-          </xsl:when>
-          <xsl:otherwise><emphasis>none</emphasis></xsl:otherwise>
-        </xsl:choose>
-      </td>
-      <td>
-        <xsl:value-of select="@required"/>
-      </td>
-      <td>
-        <xsl:choose>
-        <xsl:when test="starts-with(@typeId,'...')">
-          <link>
-            <xsl:attribute name="linkend">
-                <xsl:value-of select="@typeId"/>
-            </xsl:attribute>
-            <xsl:value-of select="@type"/>
-          </link>
-        </xsl:when>
-          <xsl:otherwise>
-            <xsl:value-of select="@type"/>
-          </xsl:otherwise>
-        </xsl:choose>
-      </td>
-      <td>
-        <xsl:choose>
-          <xsl:when test="@allowableValues">
-            <xsl:value-of select="@allowableValues"/>
-          </xsl:when>
-          <xsl:otherwise><emphasis>-all-</emphasis></xsl:otherwise>
-        </xsl:choose>
-      </td>
-      <td>
-        <xsl:choose>
-          <xsl:when test="@defaultValue">
-            <xsl:value-of select="@defaultValue"/>
-          </xsl:when>
-          <xsl:otherwise><emphasis>none</emphasis></xsl:otherwise>
-        </xsl:choose>
-      </td>
-    </tr>
+            <xsl:otherwise>
+              <xsl:value-of select="@type"/>
+            </xsl:otherwise>
+          </xsl:choose>
+        </td>
+        <td>
+          <xsl:choose>
+            <xsl:when test="@allowableValues">
+              <xsl:value-of select="@allowableValues"/>
+            </xsl:when>
+            <xsl:otherwise><emphasis>-all-</emphasis></xsl:otherwise>
+          </xsl:choose>
+        </td>
+        <td>
+          <xsl:choose>
+            <xsl:when test="@defaultValue">
+              <xsl:value-of select="@defaultValue"/>
+            </xsl:when>
+            <xsl:otherwise><emphasis>none</emphasis></xsl:otherwise>
+          </xsl:choose>
+        </td>
+      </tr>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="error">

@@ -1,36 +1,151 @@
 = hawkular-alerts
 
-== hawkular-bus
+[.lead]
+*Hawkular Alerts* is the alerts module for Hawkular. It is responsible to define conditions rules over data events
+and fire alerts that can be sent by several notifications plugins.
 
-1. `cd hawkular-bus ; mvn clean install -Pdev`
+Hawkular is a modular systems monitoring suite, that consists of several sub-projects for
+storing of metrics, alerting on incoming events and more. Those projects are developed
+in their own GitHub repositories and integrated in this project.
 
-== hawkular-alerts
+== About Alerts
 
-1. `cd hawkular-alerts ; mvn clean install -Pdev`
+The project is divided into several modules
 
-In case you don't have hawkular-bus and hawkular-alerts project in the same folder you should indicate path of bus:
+[cols=">s,d"]
+|=======================
+| hawkular-alerts-api |
+This is the public Java API for alerts component. +
+Users should use only this API to interact with alerts.
+| hawkular-alerts-engine |
+This is the implementation of the alerts engine. +
+It is responsible to manage the alerts definitions and the evaluation of the alerts conditions. +
+It includes a rules engine as part of the implementation details.
+| hawkular-alerts-rest |
+This is a public REST API for alerts component. +
+It is a wrapper of the main *hawkular-alerts-api*.
+| hawkular-alerts-bus |
+This component is responsible for the communication between the alerts engine and the bus. +
+*hawkular-alerts-engine* is decoupled from the bus, so it can be used in other scenarios +
+(i.e. standalone, third party alerts system).
+| hawkular-notifiers-api |
+Common API for notifiers plugins. +
+A notifier plugin will be deployed as a .war artifact and it will interact with the bus via this API.
+| hawkular-notifiers-email +
+hawkular-notifiers-sms +
+hawkular-notifiers-snmp |
+Project examples with the skeleton of a notifier plugin. +
+Main responsabilities are: +
+- Register at deployment time into the alerts-engine. +
+- Process registration of new notifiers. +
+- Process notifications messages.
+|=======================
 
-1. `NEST_HOME=$PATH_TO/hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-8.2.0.Final`
-2. `cd hawkular-alerts ; mvn clean install -Pdev -Dorg.hawkular.wildfly.home=$NEST_HOME`
+== Setup
 
-== Test the bus
+Hawkular Alerts can be easily deployed using Hawkular Bus as main container.
 
-1. Send metrics to Hawkular Bus:
+1. Prepare *hawkular-bus* in your local environment
 
-[source]
+```shell
+git clone https://github.com/hawkular/hawkular-bus.git
+cd hawkular-bus
+mvn clean install -Pdev
+```
+
+Profile *-Pdev* creates a pre-configured wildfly-8.2.0.Final server with all dependencies needed in
+
+```shell
+$YOUR_FOLDER/hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-8.2.0.Final
+```
+
+We will call this wildfly server as *$NEST_HOME*
+
+[start=2]
+2. Prepare *hawkular-alerts* in your local environment
+
+```shell
+git clone https://github.com/hawkular/hawkular-alerts.git
+cd hawkular-alerts
+mvn clean install -Pdev
+```
+
+Profile *-Pdev* copies *hawkular-alerts* artifacts into *$NEST_HOME*. +
+If *hawkular-bus* and *hawkular-alerts* are not in the same folder, you can define the location of wildfly server like:
+
+```shell
+NEST_HOME=$PATH_TO/hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-8.2.0.Final
+mvn clean install -Pdev -Dorg.hawkular.wildfly.home=$NEST_HOME
+```
+
+[start=3]
+3. Start the nest:
+
+```shell
+cd $NEST_HOME
+bin/standalone.sh
+```
+
+== Integration tests
+
+Once the nest is up and running we can run the integration tests using *-Prest* profile:
+
+```shell
+mvn clean install -Prest
+```
+
+== Documentation
+
+REST API documentation can be generated using *-Pdocgen* profile. +
+The doc is generated under *hawkular-alerts-rest/target* folder.
+
+```shell
+mvn clean install -Pdocgen
+```
+
+== Debug
+
+1. Set a DEBUG logger in the nest:
+
+[source,xml]
 ----
+<logger category="org.hawkular.alerts">
+    <level name="DEBUG"/>
+</logger>
+----
+
+[start=2]
+2. Use curl to send messages directly to the bus for debugging:
+
+```shell
 curl -X POST -H "Content-Type: application/json" \
 --data "{\"data\" : [ { \"id\": \"NumericData-01\", \"type\" : \"numeric\", \"value\" : 0.1} ]}" \
-http://localhost:8080/hawkular-bus/message/MetricsTopic
+http://localhost:8080/hawkular-bus/message/HawkularAlertData
 
 curl -X POST -H "Content-Type: application/json" \
 --data "{\"data\" : [ { \"id\": \"StringData-01\", \"type\" : \"string\", \"value\" : \"Barney\"} ]}" \
-http://localhost:8080/hawkular-bus/message/MetricsTopic
+http://localhost:8080/hawkular-bus/message/HawkularAlertData
 
 curl -X POST -H "Content-Type: application/json" \
 --data "{\"data\" : [ { \"id\": \"Availability-01\", \"type\" : \"availability\", \"value\" : \"UP\"} ]}" \
-http://localhost:8080/hawkular-bus/message/MetricsTopic
+http://localhost:8080/hawkular-bus/message/HawkularAlertData
+```
+
+== License
+
+Hawkular-Alerts is released under Apache License, Version 2.0 as described in the link:LICENSE[LICENSE] document
 
 ----
+   Copyright 2015 Red Hat, Inc.
 
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
 
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.

@@ -27,7 +27,7 @@
   <xsl:template match="/api">
     <html>
       <head>
-        <title>Hawkular Metrics REST-Api overview</title>
+        <title>Hawkular Alerts REST-Api overview</title>
         <style type="text/css">
           h2 {background-color:#ADD8E6   }
           h3 {background-color:#C0C0C0   }

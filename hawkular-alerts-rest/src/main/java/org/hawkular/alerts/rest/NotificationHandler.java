@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.rest;
 
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
 import org.hawkular.alerts.api.model.notification.Notification;
 import org.hawkular.alerts.api.services.NotificationsService;
 import org.jboss.logging.Logger;
@@ -24,7 +26,6 @@ import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
@@ -38,6 +39,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
  * @author Lucas Ponce
  */
 @Path("/notifications")
+@Api(value = "/notifications",
+     description = "Operations about notifications")
 public class NotificationHandler {
     private final Logger log = Logger.getLogger(NotificationHandler.class);
 
@@ -51,7 +54,9 @@ public class NotificationHandler {
     @POST
     @Path("/")
     @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Create a new notification through NotificationsService.",
+                  responseClass = "void",
+                  notes = "NotificationsService should not be invoked directly. This method is for demo/poc purposes.")
     public void notify(@Suspended final AsyncResponse response, Notification notification) {
         notifications.send(notification);
         response.resume(Response.status(Response.Status.OK).build());
