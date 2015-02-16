@@ -16,26 +16,6 @@
  */
 package org.hawkular.alerts.engine.impl;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
-import org.hawkular.alerts.api.model.condition.CompareCondition;
-import org.hawkular.alerts.api.model.condition.Condition;
-import org.hawkular.alerts.api.model.condition.StringCondition;
-import org.hawkular.alerts.api.model.condition.ThresholdCondition;
-import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
-import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.model.trigger.TriggerTemplate;
-import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.engine.log.MsgLogger;
-import org.jboss.logging.Logger;
-
-import javax.annotation.PostConstruct;
-import javax.ejb.Singleton;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -52,6 +32,29 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.Singleton;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
+import org.hawkular.alerts.api.model.condition.CompareCondition;
+import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.condition.StringCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
+import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerTemplate;
+import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.engine.log.MsgLogger;
+
+import org.jboss.logging.Logger;
 
 /**
  * A database implementation of {@link org.hawkular.alerts.api.services.DefinitionsService}.
@@ -218,13 +221,14 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     String[] fields = line.split(",");
                     if (fields.length == 6) {
                         String triggerId = fields[0];
-                        boolean active = new Boolean(fields[1]).booleanValue();
+                        boolean enabled = new Boolean(fields[1]).booleanValue();
                         String name = fields[2];
                         String description = fields[3];
                         TriggerTemplate.Match match = TriggerTemplate.Match.valueOf(fields[4]);
                         String[] notifiers = fields[5].split("\\|");
 
-                        Trigger trigger = new Trigger(triggerId, name, active);
+                        Trigger trigger = new Trigger(triggerId, name);
+                        trigger.setEnabled(enabled);
                         trigger.setDescription(description);
                         trigger.setMatch(match);
                         for (String notifier : notifiers) {

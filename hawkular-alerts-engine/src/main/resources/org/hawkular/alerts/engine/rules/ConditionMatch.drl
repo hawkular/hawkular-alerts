@@ -63,7 +63,7 @@ global List alerts;
 
 rule Threshold
     when 
-        $t : Trigger( active == true, $tid : id )
+        $t : Trigger( $tid : id )
         $c : ThresholdCondition ( triggerId == $tid, $did : dataId )
         $d : NumericData( $did == id )
     then
@@ -76,7 +76,7 @@ end
 
 rule ThresholdRange
     when 
-        $t : Trigger( active == true, $tid : id )
+        $t : Trigger( $tid : id )
         $c : ThresholdRangeCondition ( triggerId == $tid, $did : dataId )
         $d : NumericData( $did == id )
     then
@@ -97,7 +97,7 @@ end
 // data when it arrives at different times.
 rule Compare
     when 
-        $t  : Trigger( active == true, $tid : id )
+        $t  : Trigger( $tid : id )
         $c  : CompareCondition ( triggerId == $tid, $d1id : data1Id, $d2id : data2Id )
         $d1 : NumericData( $d1id == id )
         $d2 : NumericData( $d2id == id )
@@ -111,7 +111,7 @@ end
 
 rule Availability
     when 
-        $t : Trigger( active == true, $tid : id )
+        $t : Trigger( $tid : id )
         $c : AvailabilityCondition ( triggerId == $tid, $did : dataId )
         $d : Availability( $did == id )
     then
@@ -124,7 +124,7 @@ end
 
 rule String
     when 
-        $t : Trigger( active == true, $tid : id )
+        $t : Trigger( $tid : id )
         $c : StringCondition ( triggerId == $tid, $did : dataId  )
         $d : StringData( $did == id )
     then
@@ -239,7 +239,7 @@ end
 
 rule ProvideDefaultDampening
     when
-        $t : Trigger( active == true, $tid : id )
+        $t : Trigger( $tid : id )
         not Dampening( triggerId == $tid )
     then
         if (log != null && log.isDebugEnabled()) {
@@ -251,7 +251,7 @@ end
 
 rule DampenTriggerAny
     when
-        $t  : Trigger( active == true, match == Match.ANY, $tid : id )
+        $t  : Trigger( match == Match.ANY, $tid : id )
         $d  : Dampening( triggerId == $tid, satisfied == false )
         $ce : ConditionEval ( triggerId == $tid )
     then
@@ -268,7 +268,7 @@ end
 
 rule DampenOneConditionTrigger
     when
-        $t  : Trigger( active == true, match == Match.ALL, $tid : id )
+        $t  : Trigger( match == Match.ALL, $tid : id )
         $d  : Dampening( triggerId == $tid, satisfied == false ) 
         $ce : ConditionEval ( triggerId == $tid, conditionSetSize == 1, conditionSetIndex == 1 )
     then
@@ -285,7 +285,7 @@ end
 
 rule DampenTwoConditionTrigger
     when
-        $t   : Trigger( active == true, match == Match.ALL, $tid : id )
+        $t   : Trigger( match == Match.ALL, $tid : id )
         $d   : Dampening( triggerId == $tid, satisfied == false )
         $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 2, conditionSetIndex == 1 )
         $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 2, conditionSetIndex == 2 )
@@ -307,7 +307,7 @@ end
 rule DampenThreeConditionTrigger
     no-loop true
     when
-        $t   : Trigger( active == true, match == Match.ALL, $tid : id )
+        $t   : Trigger( match == Match.ALL, $tid : id )
         $d   : Dampening( triggerId == $tid, satisfied == false )
         $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 3, conditionSetIndex == 1 )
         $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 3, conditionSetIndex == 2 )
@@ -330,7 +330,7 @@ end
 rule DampenFourConditionTrigger
     no-loop true
     when
-        $t   : Trigger( active == true, match == Match.ALL, $tid : id )
+        $t   : Trigger( match == Match.ALL, $tid : id )
         $d   : Dampening( triggerId == $tid, satisfied == false )
         $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 1 )
         $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 2 )
@@ -364,7 +364,7 @@ end
 
 rule AlertOnSatisfiedDampening
     when
-        $t  : Trigger( active == true, $tid : id )
+        $t  : Trigger( $tid : id )
         $d  : Dampening( triggerId == $tid, satisfied == true ) 
     then
         if (log != null && log.isDebugEnabled()) {
