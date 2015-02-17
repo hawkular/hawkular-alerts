@@ -119,7 +119,7 @@ public class NotifiersHandler {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Create a new notifier",
-                  responseClass = "Map<String, Strin>",
+                  responseClass = "Map<String, String>",
                   notes = "Notifier properties are variable and depends on the notifier type. " +
                           "A user needs to request previously NotifierType API to get the list of properties to fill " +
                           "for a specific type. All notifier should have NotifierId and NotifierType as mandatory " +
@@ -131,10 +131,10 @@ public class NotifiersHandler {
                                final Map<String, String> notifierProperties) {
         try {
             if (notifierProperties != null && !notifierProperties.isEmpty() &&
-                    notifierProperties.containsKey("notifierId") &&
-                    definitions.getNotifier(notifierProperties.get("notifierId")) == null) {
-                String notifierId = notifierProperties.get("notifierId");
-                log.debugf("POST - createNotifier - notifierId %s - Properties: ", notifierId, notifierProperties);
+                    notifierProperties.containsKey("NotifierId") &&
+                    definitions.getNotifier(notifierProperties.get("NotifierId")) == null) {
+                String notifierId = notifierProperties.get("NotifierId");
+                log.debugf("POST - createNotifier - NotifierId %s - Properties: ", notifierId, notifierProperties);
                 definitions.addNotifier(notifierId, notifierProperties);
                 response.resume(Response.status(Response.Status.OK)
                         .entity(notifierProperties).type(APPLICATION_JSON_TYPE).build());
@@ -204,8 +204,8 @@ public class NotifiersHandler {
         try {
             if (notifierId != null && !notifierId.isEmpty() &&
                     notifierProperties != null && !notifierProperties.isEmpty() &&
-                    notifierProperties.containsKey("notifierId") &&
-                    notifierProperties.get("notifierId").equals(notifierId) &&
+                    notifierProperties.containsKey("NotifierId") &&
+                    notifierProperties.get("NotifierId").equals(notifierId) &&
                     definitions.getNotifier(notifierId) != null) {
                 log.debugf("POST - updateNotifier - notifierId %s - Properties: ", notifierId, notifierProperties);
                 definitions.updateNotifier(notifierId, notifierProperties);

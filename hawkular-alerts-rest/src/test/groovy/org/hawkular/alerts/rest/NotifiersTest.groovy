@@ -45,7 +45,7 @@ class NotifiersTest extends AbstractTestBase {
     @Test
     void createNotifier() {
         Map<String, String> notifier = new HashMap<>();
-        notifier.put("notifierId", "test-notifier");
+        notifier.put("NotifierId", "test-notifier");
         notifier.put("NotifierType", "email");
         notifier.put("prop1", "value1");
         notifier.put("prop2", "value2");
@@ -54,19 +54,19 @@ class NotifiersTest extends AbstractTestBase {
         def resp = client.post(path: "notifiers", body: notifier)
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "notifiers/" + notifier.get("notifierId"));
+        resp = client.get(path: "notifiers/" + notifier.get("NotifierId"));
         assertEquals(200, resp.status)
         assertEquals("value1", resp.data.prop1)
 
         notifier.put("prop3", "value3Modified")
-        resp = client.put(path: "notifiers/" + notifier.get("notifierId"), body: notifier)
+        resp = client.put(path: "notifiers/" + notifier.get("NotifierId"), body: notifier)
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "notifiers/" + notifier.get("notifierId"))
+        resp = client.get(path: "notifiers/" + notifier.get("NotifierId"))
         assertEquals(200, resp.status)
         assertEquals("value3Modified", resp.data.prop3)
 
-        resp = client.delete(path: "notifiers/" + notifier.get("notifierId"))
+        resp = client.delete(path: "notifiers/" + notifier.get("NotifierId"))
         assertEquals(200, resp.status)
     }
 
