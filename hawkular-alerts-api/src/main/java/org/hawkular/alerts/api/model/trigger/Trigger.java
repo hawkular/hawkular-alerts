@@ -25,11 +25,12 @@ package org.hawkular.alerts.api.model.trigger;
 public class Trigger extends TriggerTemplate {
 
     public enum Mode {
-        FIRING, SAFETY
+        FIRE, SAFETY
     };
 
     private String id;
     private boolean enabled;
+    private boolean safetyEnabled;
     private Mode mode;
 
     public Trigger() {
@@ -48,7 +49,8 @@ public class Trigger extends TriggerTemplate {
         this.id = id;
 
         this.enabled = false;
-        this.mode = Mode.FIRING;
+        this.safetyEnabled = false;
+        this.mode = Mode.FIRE;
     }
 
     public boolean isEnabled() {
@@ -67,31 +69,68 @@ public class Trigger extends TriggerTemplate {
         this.id = id;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        if (!super.equals(o))
-            return false;
+    public Mode getMode() {
+        return mode;
+    }
 
-        Trigger trigger = (Trigger) o;
+    public void setMode(Mode mode) {
+        this.mode = mode;
+    }
 
-        if (enabled != trigger.enabled)
-            return false;
-        if (id != null ? !id.equals(trigger.id) : trigger.id != null)
-            return false;
+    /**
+     * This tells you whether the Trigger defines safety conditions and whether safety mode is enabled.
+     * This does NOT return the current <code>mode</code> of the Trigger.
+     * @return true if this Trigger supports safety mode and is it enabled.
+     * @see {@link #getMode()} to see the current <code>mode</code>.
+     */
+    public boolean isSafetyEnabled() {
+        return safetyEnabled;
+    }
 
-        return true;
+    /**
+     * Set true if safety conditions and dampening are fully defined and should be activated on a Trigger firing. Set
+     * false otherwise.
+     * @param safetyEnabled
+     */
+    public void setSafetyEnabled(boolean safetyEnabled) {
+        this.safetyEnabled = safetyEnabled;
+    }
+
+    public Match getMatch() {
+        return this.mode == Mode.FIRE ? getFiringMatch() : getSafetyMatch();
     }
 
     @Override
     public int hashCode() {
+        final int prime = 31;
         int result = super.hashCode();
-        result = 31 * result + (id != null ? id.hashCode() : 0);
-        result = 31 * result + (enabled ? 1 : 0);
+        result = prime * result + (enabled ? 1231 : 1237);
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
         return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!super.equals(obj))
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Trigger other = (Trigger) obj;
+        if (enabled != other.enabled)
+            return false;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Trigger [id=" + id + ", enabled=" + enabled + ", mode=" + mode + ", match=" + getMatch() + "]";
     }
 
 }

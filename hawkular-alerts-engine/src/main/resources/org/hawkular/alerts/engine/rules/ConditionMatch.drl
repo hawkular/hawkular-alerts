@@ -35,6 +35,7 @@ import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.data.StringData;
 import org.hawkular.alerts.api.model.notification.Notification;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.TriggerTemplate.Match;
 import org.hawkular.alerts.api.services.NotificationsService;
 
@@ -58,13 +59,15 @@ global List alerts;
 //
 // Data facts will be applied to all relevant Condition evals, and then will be retracted (using rule complexity
 // to fire the retract rule after the condition evals).
+//
+// It is a precondition that all Triggers in working memory are enabled (i.e. enabled == true ).
 
 // ConditionEval rules
 
 rule Threshold
     when 
-        $t : Trigger( $tid : id )
-        $c : ThresholdCondition ( triggerId == $tid, $did : dataId )
+        $t : Trigger( $tid : id, $tmode : mode )
+        $c : ThresholdCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
         $d : NumericData( $did == id )
     then
         ThresholdConditionEval ce = new ThresholdConditionEval($c, $d);
@@ -76,8 +79,8 @@ end
 
 rule ThresholdRange
     when 
-        $t : Trigger( $tid : id )
-        $c : ThresholdRangeCondition ( triggerId == $tid, $did : dataId )
+        $t : Trigger( $tid : id, $tmode : mode )
+        $c : ThresholdRangeCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
         $d : NumericData( $did == id )
     then
         ThresholdRangeConditionEval ce = new ThresholdRangeConditionEval($c, $d);
@@ -97,8 +100,8 @@ end
 // data when it arrives at different times.
 rule Compare
     when 
-        $t  : Trigger( $tid : id )
-        $c  : CompareCondition ( triggerId == $tid, $d1id : data1Id, $d2id : data2Id )
+        $t  : Trigger( $tid : id, $tmode : mode )
+        $c  : CompareCondition ( triggerId == $tid, triggerMode == $tmode, $d1id : data1Id, $d2id : data2Id )
         $d1 : NumericData( $d1id == id )
         $d2 : NumericData( $d2id == id )
     then
@@ -111,8 +114,8 @@ end
 
 rule Availability
     when 
-        $t : Trigger( $tid : id )
-        $c : AvailabilityCondition ( triggerId == $tid, $did : dataId )
+        $t : Trigger( $tid : id, $tmode : mode )
+        $c : AvailabilityCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
         $d : Availability( $did == id )
     then
         AvailabilityConditionEval ce = new AvailabilityConditionEval($c, $d);
@@ -124,8 +127,8 @@ end
 
 rule String
     when 
-        $t : Trigger( $tid : id )
-        $c : StringCondition ( triggerId == $tid, $did : dataId  )
+        $t : Trigger( $tid : id, $tmode : mode )
+        $c : StringCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId  )
         $d : StringData( $did == id )
     then
         StringConditionEval ce = new StringConditionEval($c, $d);
@@ -239,20 +242,20 @@ end
 
 rule ProvideDefaultDampening
     when
-        $t : Trigger( $tid : id )
-        not Dampening( triggerId == $tid )
+        $t : Trigger( $tid : id, $tmode : mode )
+        not Dampening( triggerId == $tid, triggerMode == $tmode )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debug("Adding default dampening for trigger! " + $t.getId());
+            log.debug("Adding default " + $tmode + " dampening for trigger! " + $t.getId());
         }
-        Dampening d = new Dampening( $tid, Dampening.Type.STRICT, 1, 1, 0L );
+        Dampening d = new Dampening( $tid, $tmode, Dampening.Type.STRICT, 1, 1, 0L );
         insert( d );
 end
 
 rule DampenTriggerAny
     when
-        $t  : Trigger( match == Match.ANY, $tid : id )
-        $d  : Dampening( triggerId == $tid, satisfied == false )
+        $t  : Trigger( match == Match.ANY, $tid : id, $tmode : mode )
+        $d  : Dampening( triggerId == $tid, triggerMode == $tmode, satisfied == false )
         $ce : ConditionEval ( triggerId == $tid )
     then
         if (log != null && log.isDebugEnabled()) {
@@ -268,8 +271,8 @@ end
 
 rule DampenOneConditionTrigger
     when
-        $t  : Trigger( match == Match.ALL, $tid : id )
-        $d  : Dampening( triggerId == $tid, satisfied == false ) 
+        $t  : Trigger( match == Match.ALL, $tid : id, $tmode : mode )
+        $d  : Dampening( triggerId == $tid, triggerMode == $tmode, satisfied == false ) 
         $ce : ConditionEval ( triggerId == $tid, conditionSetSize == 1, conditionSetIndex == 1 )
     then
         if (log != null && log.isDebugEnabled()) {
@@ -285,8 +288,8 @@ end
 
 rule DampenTwoConditionTrigger
     when
-        $t   : Trigger( match == Match.ALL, $tid : id )
-        $d   : Dampening( triggerId == $tid, satisfied == false )
+        $t   : Trigger( match == Match.ALL, $tid : id, $tmode : mode )
+        $d   : Dampening( triggerId == $tid, triggerMode == $tmode, satisfied == false )
         $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 2, conditionSetIndex == 1 )
         $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 2, conditionSetIndex == 2 )
         exists ConditionEval ( triggerId == $tid, used == false )
@@ -306,8 +309,8 @@ end
 
 rule DampenThreeConditionTrigger
     when
-        $t   : Trigger( match == Match.ALL, $tid : id )
-        $d   : Dampening( triggerId == $tid, satisfied == false )
+        $t   : Trigger( match == Match.ALL, $tid : id, $tmode : mode )
+        $d   : Dampening( triggerId == $tid, triggerMode == $tmode, satisfied == false )
         $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 3, conditionSetIndex == 1 )
         $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 3, conditionSetIndex == 2 )
         $ce3 : ConditionEval ( triggerId == $tid, conditionSetSize == 3, conditionSetIndex == 3 )
@@ -328,8 +331,8 @@ end
 
 rule DampenFourConditionTrigger
     when
-        $t   : Trigger( match == Match.ALL, $tid : id )
-        $d   : Dampening( triggerId == $tid, satisfied == false )
+        $t   : Trigger( match == Match.ALL, $tid : id, $tmode : mode )
+        $d   : Dampening( triggerId == $tid, triggerMode == $tmode, satisfied == false )
         $ce1 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 1 )
         $ce2 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 2 )
         $ce3 : ConditionEval ( triggerId == $tid, conditionSetSize == 4, conditionSetIndex == 3 )
@@ -351,23 +354,21 @@ end
 
 
 
-////// ALERT GENERATION
-//
-// This is pretty straightforward.  If a Trigger's Dampening is satisfied, then the Trigger fires and generates an
-// Alert.  The Trigger's Dampening fact is then reset and updated in working memory, ready to again track evals
-// for the Trigger.
-//
-// TODO: We have yet to introduce something like RHQ's recovery alerting. So, for now, Trigger's stay active after
-// firing.
+////// ALERT GENERATION / TRIGGER MODE HANDLING
 
+// If a Trigger's FIRE mode Dampening is satisfied, then the Trigger fires and generates an Alert.  The Trigger's
+// FIRE mode Dampening fact is then reset and updated in working memory, ready to again track evals for the Trigger.
+// If the Trigger has safety mode enabled then we toggle the Trigger to SAFETY mode and it can not fire again
+// until the safety mode Dampening is satisfied and the Trigger returns to FIRE mode.
 rule AlertOnSatisfiedDampening
     when
-        $t  : Trigger( $tid : id )
-        $d  : Dampening( triggerId == $tid, satisfied == true ) 
+        $t  : Trigger( mode == Mode.FIRE, $tid : id )
+        $d  : Dampening( triggerMode == Mode.FIRE, triggerId == $tid, satisfied == true ) 
     then
         if (log != null && log.isDebugEnabled()) {
             log.debug("AlertOnSatisfiedDampening! " + $d.log());
         }
+
         Alert newAlert = new Alert( $tid, $d.getSatisfyingEvals() );
         alerts.add(newAlert);
         if (notifications != null) {
@@ -378,7 +379,37 @@ rule AlertOnSatisfiedDampening
                 notifications.send(notification);
             }
         }
-        insert(  newAlert );
+
+        //insert(  newAlert );
+
         $d.reset();
         update( $d )
+
+        if ($t.isSafetyEnabled()) {
+            if (log != null && log.isDebugEnabled()) {
+                log.debug("Setting Trigger to Safety Mode! " + $t);
+            }
+            $t.setMode(Mode.SAFETY);
+            update( $t )
+
+        } else if (log != null && log.isDebugEnabled()) {
+            log.debug("Trigger remains in Fire mode, Safety Mode not enabled. " + $t);
+        }
+end
+
+
+rule SetFiringModeOnSatisfiedDampening
+    when
+        $t  : Trigger( mode == Mode.SAFETY, $tid : id )
+        $d  : Dampening( triggerMode == Mode.SAFETY, triggerId == $tid, satisfied == true ) 
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("SetFiringModeOnSatisfiedDampening! " + $d.log());
+        }
+
+        $d.reset();
+        update( $d )
+
+        $t.setMode(Mode.FIRE);
+        update( $t )
 end

@@ -16,7 +16,10 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import static org.hawkular.alerts.api.model.trigger.Trigger.Mode.FIRE;
+
 import org.hawkular.alerts.api.log.MsgLogger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 /**
  * A numeric comparison condition.
@@ -45,8 +48,13 @@ public class CompareCondition extends Condition {
     }
 
     public CompareCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
-                            String data1Id, Operator operator, Double data2Multiplier, String data2Id) {
-        super(triggerId, conditionSetSize, conditionSetIndex);
+            String data1Id, Operator operator, Double data2Multiplier, String data2Id) {
+        this(triggerId, FIRE, conditionSetSize, conditionSetIndex, data1Id, operator, data2Multiplier, data2Id);
+    }
+
+    public CompareCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+            String data1Id, Operator operator, Double data2Multiplier, String data2Id) {
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex);
         this.data1Id = data1Id;
         this.operator = operator;
         this.data2Id = data2Id;
@@ -110,17 +118,23 @@ public class CompareCondition extends Condition {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         CompareCondition that = (CompareCondition) o;
 
-        if (data1Id != null ? !data1Id.equals(that.data1Id) : that.data1Id != null) return false;
-        if (data2Id != null ? !data2Id.equals(that.data2Id) : that.data2Id != null) return false;
+        if (data1Id != null ? !data1Id.equals(that.data1Id) : that.data1Id != null)
+            return false;
+        if (data2Id != null ? !data2Id.equals(that.data2Id) : that.data2Id != null)
+            return false;
         if (data2Multiplier != null ? !data2Multiplier.equals(that.data2Multiplier) : that.data2Multiplier != null)
             return false;
-        if (operator != that.operator) return false;
+        if (operator != that.operator)
+            return false;
 
         return true;
     }

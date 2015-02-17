@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.api.model.trigger;
 
-import org.hawkular.alerts.api.model.condition.Condition;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,18 +33,15 @@ public class TriggerTemplate {
 
     private String name;
     private String description;
-    private Match match;
-    private Set<Condition> conditions;
-
-    /**
-     * A group of notifier's ids.
-     */
+    private Match firingMatch;
+    private Match safetyMatch;
+    /** A group of notifier's ids. */
     private Set<String> notifiers;
 
     public TriggerTemplate(String name) {
         this.name = name;
-        this.match = Match.ALL;
-        this.conditions = new HashSet();
+        this.firingMatch = Match.ALL;
+        this.safetyMatch = Match.ALL;
         this.notifiers = new HashSet();
     }
 
@@ -69,41 +64,20 @@ public class TriggerTemplate {
         this.description = description;
     }
 
-    public Match getMatch() {
-        return match;
+    public Match getFiringMatch() {
+        return firingMatch;
     }
 
-    public void setMatch(Match match) {
-        this.match = match;
+    public void setFiringMatch(Match firingMatch) {
+        this.firingMatch = firingMatch;
     }
 
-    public Set<Condition> getConditions() {
-        return conditions;
+    public Match getSafetyMatch() {
+        return safetyMatch;
     }
 
-    public void setConditions(Set<Condition> conditions) {
-        this.conditions = conditions;
-    }
-
-    public void addCondition(Condition condition) {
-        if (condition == null) {
-            return;
-        }
-        conditions.add(condition);
-    }
-
-    public void addConditions(Set<Condition> conditions) {
-        if (conditions == null) {
-            return;
-        }
-        this.conditions.addAll(conditions);
-    }
-
-    public void removeCondition(Condition condition) {
-        if (condition == null) {
-            return;
-        }
-        conditions.remove(condition);
+    public void setSafetyMatch(Match safetyMatch) {
+        this.safetyMatch = safetyMatch;
     }
 
     public Set<String> getNotifiers() {
@@ -136,39 +110,46 @@ public class TriggerTemplate {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof TriggerTemplate)) return false;
-
-        TriggerTemplate that = (TriggerTemplate) o;
-
-        if (conditions != null ? !conditions.equals(that.conditions) : that.conditions != null) return false;
-        if (description != null ? !description.equals(that.description) : that.description != null) return false;
-        if (match != that.match) return false;
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        if (notifiers != null ? !notifiers.equals(that.notifiers) : that.notifiers != null) return false;
-
-        return true;
-    }
-
-    @Override
     public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (description != null ? description.hashCode() : 0);
-        result = 31 * result + (match != null ? match.hashCode() : 0);
-        result = 31 * result + (conditions != null ? conditions.hashCode() : 0);
-        result = 31 * result + (notifiers != null ? notifiers.hashCode() : 0);
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((description == null) ? 0 : description.hashCode());
+        result = prime * result + ((firingMatch == null) ? 0 : firingMatch.hashCode());
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + ((safetyMatch == null) ? 0 : safetyMatch.hashCode());
         return result;
     }
 
     @Override
-    public String toString() {
-        return "TriggerTemplate{" +
-                "name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", match=" + match +
-                ", conditions=" + conditions +
-                ", notifiers=" + notifiers +
-                '}';
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        TriggerTemplate other = (TriggerTemplate) obj;
+        if (description == null) {
+            if (other.description != null)
+                return false;
+        } else if (!description.equals(other.description))
+            return false;
+        if (firingMatch != other.firingMatch)
+            return false;
+        if (name == null) {
+            if (other.name != null)
+                return false;
+        } else if (!name.equals(other.name))
+            return false;
+        if (safetyMatch != other.safetyMatch)
+            return false;
+        return true;
     }
+
+    @Override
+    public String toString() {
+        return "TriggerTemplate [name=" + name + ", description=" + description + ", firingMatch=" + firingMatch
+                + ", safetyMatch=" + safetyMatch + "]";
+    }
+
 }

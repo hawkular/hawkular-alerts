@@ -75,19 +75,24 @@ public class AvailabilityConditionEval extends ConditionEval {
 
     @Override
     public String getLog() {
-        return condition.getLog(value);
+        return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         AvailabilityConditionEval that = (AvailabilityConditionEval) o;
 
-        if (condition != null ? !condition.equals(that.condition) : that.condition != null) return false;
-        if (value != that.value) return false;
+        if (condition != null ? !condition.equals(that.condition) : that.condition != null)
+            return false;
+        if (value != that.value)
+            return false;
 
         return true;
     }

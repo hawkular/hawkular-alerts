@@ -86,7 +86,8 @@ public class CompareConditionEval extends ConditionEval {
 
     @Override
     public String getLog() {
-        return condition.getLog(value1, value2);
+        return condition.getLog(value1, value2) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp="
+                + dataTimestamp;
     }
 
     @Override

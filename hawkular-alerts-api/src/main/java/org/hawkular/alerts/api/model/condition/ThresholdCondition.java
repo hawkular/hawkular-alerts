@@ -17,6 +17,7 @@
 package org.hawkular.alerts.api.model.condition;
 
 import org.hawkular.alerts.api.log.MsgLogger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 /**
  * A numeric threshold condition.
@@ -43,8 +44,14 @@ public class ThresholdCondition extends Condition {
     }
 
     public ThresholdCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
-                              String dataId, Operator operator, Double threshold) {
-        super(triggerId, conditionSetSize, conditionSetIndex);
+            String dataId, Operator operator, Double threshold) {
+
+        this(triggerId, Mode.FIRE, conditionSetSize, conditionSetIndex, dataId, operator, threshold);
+    }
+
+    public ThresholdCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operator, Double threshold) {
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex);
         this.dataId = dataId;
         this.operator = operator;
         this.threshold = threshold;
@@ -96,15 +103,21 @@ public class ThresholdCondition extends Condition {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         ThresholdCondition that = (ThresholdCondition) o;
 
-        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null) return false;
-        if (operator != that.operator) return false;
-        if (threshold != null ? !threshold.equals(that.threshold) : that.threshold != null) return false;
+        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null)
+            return false;
+        if (operator != that.operator)
+            return false;
+        if (threshold != null ? !threshold.equals(that.threshold) : that.threshold != null)
+            return false;
 
         return true;
     }

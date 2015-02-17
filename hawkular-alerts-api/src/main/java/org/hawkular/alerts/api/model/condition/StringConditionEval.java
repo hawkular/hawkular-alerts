@@ -74,7 +74,7 @@ public class StringConditionEval extends ConditionEval {
 
     @Override
     public String getLog() {
-        return condition.getLog(value);
+        return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp;
     }
 
     @Override

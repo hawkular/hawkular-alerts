@@ -17,6 +17,7 @@
 package org.hawkular.alerts.api.model.condition;
 
 import org.hawkular.alerts.api.log.MsgLogger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 /**
  * A string comparison condition.
@@ -44,8 +45,13 @@ public class StringCondition extends Condition {
     }
 
     public StringCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
-                           String dataId, Operator operator, String pattern, boolean ignoreCase) {
-        super(triggerId, conditionSetSize, conditionSetIndex);
+            String dataId, Operator operator, String pattern, boolean ignoreCase) {
+        this(triggerId, Mode.FIRE, conditionSetSize, conditionSetIndex, dataId, operator, pattern, ignoreCase);
+    }
+
+    public StringCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operator, String pattern, boolean ignoreCase) {
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex);
         this.dataId = dataId;
         this.operator = operator;
         this.pattern = pattern;
@@ -116,16 +122,23 @@ public class StringCondition extends Condition {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         StringCondition that = (StringCondition) o;
 
-        if (ignoreCase != that.ignoreCase) return false;
-        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null) return false;
-        if (operator != that.operator) return false;
-        if (pattern != null ? !pattern.equals(that.pattern) : that.pattern != null) return false;
+        if (ignoreCase != that.ignoreCase)
+            return false;
+        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null)
+            return false;
+        if (operator != that.operator)
+            return false;
+        if (pattern != null ? !pattern.equals(that.pattern) : that.pattern != null)
+            return false;
 
         return true;
     }

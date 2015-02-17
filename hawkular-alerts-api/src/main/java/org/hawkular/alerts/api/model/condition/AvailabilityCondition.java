@@ -16,8 +16,11 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import static org.hawkular.alerts.api.model.trigger.Trigger.Mode.FIRE;
+
 import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 /**
  * An availability condition definition.
@@ -43,8 +46,13 @@ public class AvailabilityCondition extends Condition {
     }
 
     public AvailabilityCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
-                                 String dataId, Operator operator) {
-        super(triggerId, conditionSetSize, conditionSetIndex);
+            String dataId, Operator operator) {
+        this(triggerId, FIRE, conditionSetSize, conditionSetIndex, dataId, operator);
+    }
+
+    public AvailabilityCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operator) {
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex);
         this.dataId = dataId;
         this.operator = operator;
     }
@@ -85,14 +93,19 @@ public class AvailabilityCondition extends Condition {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         AvailabilityCondition that = (AvailabilityCondition) o;
 
-        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null) return false;
-        if (operator != that.operator) return false;
+        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null)
+            return false;
+        if (operator != that.operator)
+            return false;
 
         return true;
     }

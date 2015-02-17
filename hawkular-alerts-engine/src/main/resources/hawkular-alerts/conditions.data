@@ -1,29 +1,29 @@
-# triggerId,conditionSetSize,conditionSetIndex,<type>
+# <triggerId>,<triggerMode>,<conditionSetSize>,<conditionSetIndex>,<type>
 # <type> == threshold
 # ..., dataId,operator,value
 #
-trigger-1,1,1,threshold,NumericData-01,LT,10.0
-trigger-2,2,1,threshold,NumericData-01,GTE,15.0
-trigger-2,2,2,threshold,NumericData-02,GTE,15.0
+trigger-1,FIRE,1,1,threshold,NumericData-01,LT,10.0
+trigger-2,FIRE,2,1,threshold,NumericData-01,GTE,15.0
+trigger-2,FIRE,2,2,threshold,NumericData-02,GTE,15.0
 #
 # <type> == range
 # ...,dataId,operatorLow,operatorHigh,thresholdLow,thresholdHigh,inRange
 #
-trigger-3,1,1,range,NumericData-03,INCLUSIVE,INCLUSIVE,10.0,15.0,true
+trigger-3,FIRE,1,1,range,NumericData-03,INCLUSIVE,INCLUSIVE,10.0,15.0,true
 #
 # <type> == compare
 # ...,data1Id,operator,data2Multiplier,data2Id
 #
-trigger-4,1,1,compare,NumericData-01,LT,0.5,NumericData-02
+trigger-4,FIRE,1,1,compare,NumericData-01,LT,0.5,NumericData-02
 #
 # <type> == string
 # ...,dataId,operator,pattern,ignoreCase
 #
-trigger-5,1,1,string,StringData-01,STARTS_WITH,Fred,false
+trigger-5,FIRE,1,1,string,StringData-01,STARTS_WITH,Fred,false
 #
 # <type> == availability
 # ...,dataId,operator
 #
-trigger-6,1,1,availability,Availability-01,NOT_UP
+trigger-6,FIRE,1,1,availability,Availability-01,NOT_UP
 
 

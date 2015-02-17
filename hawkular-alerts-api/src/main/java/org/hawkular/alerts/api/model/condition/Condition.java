@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
+
 /**
  * A base class for condition definition.
  *
@@ -30,6 +32,11 @@ public abstract class Condition {
     protected String triggerId;
 
     /**
+     * The owning trigger's mode when this condition is active
+     */
+    protected Mode triggerMode;
+
+    /**
      * Number of conditions associated with a particular trigger.
      * i.e. 2 [ conditions ]
      */
@@ -42,15 +49,16 @@ public abstract class Condition {
     protected int conditionSetIndex;
 
     /**
-     * A composed key for conditionId
+     * A composed key for the condition
      */
-    protected String conditionId;
+    protected String id;
 
-    public Condition(String triggerId, int conditionSetSize, int conditionSetIndex) {
+    public Condition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex) {
         this.triggerId = triggerId;
+        this.triggerMode = triggerMode;
         this.conditionSetSize = conditionSetSize;
         this.conditionSetIndex = conditionSetIndex;
-        this.conditionId = triggerId + "-" + conditionSetSize + "-" + conditionSetIndex;
+        updateId();
     }
 
     public int getConditionSetIndex() {
@@ -59,6 +67,7 @@ public abstract class Condition {
 
     public void setConditionSetIndex(int conditionSetIndex) {
         this.conditionSetIndex = conditionSetIndex;
+        updateId();
     }
 
     public int getConditionSetSize() {
@@ -67,6 +76,7 @@ public abstract class Condition {
 
     public void setConditionSetSize(int conditionSetSize) {
         this.conditionSetSize = conditionSetSize;
+        updateId();
     }
 
     public String getTriggerId() {
@@ -75,43 +85,59 @@ public abstract class Condition {
 
     public void setTriggerId(String triggerId) {
         this.triggerId = triggerId;
+        updateId();
+    }
+
+    public Mode getTriggerMode() {
+        return triggerMode;
+    }
+
+    public void setTriggerMode(Mode triggerMode) {
+        this.triggerMode = triggerMode;
+        updateId();
     }
 
     public String getConditionId() {
-        conditionId = triggerId + "-" + conditionSetSize + "-" + conditionSetIndex;
-        return conditionId;
+        return id;
     }
 
-    public void setConditionId(String conditionId) {
-        this.conditionId = conditionId;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Condition condition = (Condition) o;
-
-        if (conditionSetIndex != condition.conditionSetIndex) return false;
-        if (conditionSetSize != condition.conditionSetSize) return false;
-        if (triggerId != null ? !triggerId.equals(condition.triggerId) : condition.triggerId != null) return false;
-
-        return true;
+    private void updateId() {
+        StringBuilder sb = new StringBuilder(triggerId);
+        sb.append("-").append(triggerMode.ordinal());
+        sb.append("-").append(conditionSetSize);
+        sb.append("-").append(conditionSetIndex);
+        this.id = sb.toString();
     }
 
     @Override
     public int hashCode() {
-        int result = triggerId != null ? triggerId.hashCode() : 0;
-        result = 31 * result + conditionSetSize;
-        result = 31 * result + conditionSetIndex;
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
         return result;
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Condition other = (Condition) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        return true;
+    }
+
+    @Override
     public String toString() {
-        return "Condition [triggerId=" + triggerId + ", conditionSetSize=" + conditionSetSize + ", conditionSetIndex="
-                + conditionSetIndex + ", conditionId=" + conditionId + "]";
+        return "Condition [triggerId=" + triggerId + ", triggerMode=" + triggerMode + ", conditionSetSize="
+                + conditionSetSize + ", conditionSetIndex=" + conditionSetIndex + "]";
     }
 
 }

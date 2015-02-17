@@ -50,6 +50,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.TriggerTemplate;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
@@ -196,7 +197,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                 initNotifiers(initFolder);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException("Error initializing files. Msg: " + e.getMessage());
+            msgLog.errorDatabaseException("Error initializing files. Msg: " + e);
         }
     }
 
@@ -219,18 +220,22 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length == 6) {
+                    if (fields.length == 8) {
                         String triggerId = fields[0];
                         boolean enabled = new Boolean(fields[1]).booleanValue();
-                        String name = fields[2];
-                        String description = fields[3];
-                        TriggerTemplate.Match match = TriggerTemplate.Match.valueOf(fields[4]);
-                        String[] notifiers = fields[5].split("\\|");
+                        boolean safetyEnabled = new Boolean(fields[2]).booleanValue();
+                        String name = fields[3];
+                        String description = fields[4];
+                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[5]);
+                        TriggerTemplate.Match safetyMatch = TriggerTemplate.Match.valueOf(fields[6]);
+                        String[] notifiers = fields[7].split("\\|");
 
                         Trigger trigger = new Trigger(triggerId, name);
                         trigger.setEnabled(enabled);
+                        trigger.setSafetyEnabled(safetyEnabled);
                         trigger.setDescription(description);
-                        trigger.setMatch(match);
+                        trigger.setFiringMatch(firingMatch);
+                        trigger.setSafetyMatch(safetyMatch);
                         for (String notifier : notifiers) {
                             trigger.addNotifier(notifier);
                         }
@@ -263,18 +268,20 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length > 3) {
+                    if (fields.length > 4) {
                         String triggerId = fields[0];
-                        int conditionSetSize = new Integer(fields[1]).intValue();
-                        int conditionSetIndex = new Integer(fields[2]).intValue();
-                        String type = fields[3];
-                        if (type != null && !type.isEmpty() && type.equals("threshold") && fields.length == 7) {
-                            String dataId = fields[4];
-                            String operator = fields[5];
-                            Double threshold = new Double(fields[6]).doubleValue();
+                        Mode triggerMode = Mode.valueOf(fields[1]);
+                        int conditionSetSize = new Integer(fields[2]).intValue();
+                        int conditionSetIndex = new Integer(fields[3]).intValue();
+                        String type = fields[4];
+                        if (type != null && !type.isEmpty() && type.equals("threshold") && fields.length == 8) {
+                            String dataId = fields[5];
+                            String operator = fields[6];
+                            Double threshold = new Double(fields[7]).doubleValue();
 
                             ThresholdCondition newCondition = new ThresholdCondition();
                             newCondition.setTriggerId(triggerId);
+                            newCondition.setTriggerMode(triggerMode);
                             newCondition.setConditionSetSize(conditionSetSize);
                             newCondition.setConditionSetIndex(conditionSetIndex);
                             newCondition.setDataId(dataId);
@@ -284,16 +291,17 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             addCondition(newCondition);
                             log.debugf("Init file - Inserting [%s]", newCondition);
                         }
-                        if (type != null && !type.isEmpty() && type.equals("range") && fields.length == 10) {
-                            String dataId = fields[4];
-                            String operatorLow = fields[5];
-                            String operatorHigh = fields[6];
-                            Double thresholdLow = new Double(fields[7]).doubleValue();
-                            Double thresholdHigh = new Double(fields[8]).doubleValue();
-                            boolean inRange = new Boolean(fields[9]).booleanValue();
+                        if (type != null && !type.isEmpty() && type.equals("range") && fields.length == 11) {
+                            String dataId = fields[5];
+                            String operatorLow = fields[6];
+                            String operatorHigh = fields[7];
+                            Double thresholdLow = new Double(fields[8]).doubleValue();
+                            Double thresholdHigh = new Double(fields[9]).doubleValue();
+                            boolean inRange = new Boolean(fields[10]).booleanValue();
 
                             ThresholdRangeCondition newCondition = new ThresholdRangeCondition();
                             newCondition.setTriggerId(triggerId);
+                            newCondition.setTriggerMode(triggerMode);
                             newCondition.setConditionSetSize(conditionSetSize);
                             newCondition.setConditionSetIndex(conditionSetIndex);
                             newCondition.setDataId(dataId);
@@ -306,14 +314,15 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             addCondition(newCondition);
                             log.debugf("Init file - Inserting [%s]", newCondition);
                         }
-                        if (type != null && !type.isEmpty() && type.equals("compare") && fields.length == 8) {
-                            String data1Id = fields[4];
-                            String operator = fields[5];
-                            Double data2Multiplier = new Double(fields[6]).doubleValue();
-                            String data2Id = fields[7];
+                        if (type != null && !type.isEmpty() && type.equals("compare") && fields.length == 9) {
+                            String data1Id = fields[5];
+                            String operator = fields[6];
+                            Double data2Multiplier = new Double(fields[7]).doubleValue();
+                            String data2Id = fields[8];
 
                             CompareCondition newCondition = new CompareCondition();
                             newCondition.setTriggerId(triggerId);
+                            newCondition.setTriggerMode(triggerMode);
                             newCondition.setConditionSetSize(conditionSetSize);
                             newCondition.setConditionSetIndex(conditionSetIndex);
                             newCondition.setData1Id(data1Id);
@@ -324,14 +333,15 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             addCondition(newCondition);
                             log.debugf("Init file - Inserting [%s]", newCondition);
                         }
-                        if (type != null && !type.isEmpty() && type.equals("string") && fields.length == 8) {
-                            String dataId = fields[4];
-                            String operator = fields[5];
-                            String pattern = fields[6];
-                            boolean ignoreCase = new Boolean(fields[7]).booleanValue();
+                        if (type != null && !type.isEmpty() && type.equals("string") && fields.length == 9) {
+                            String dataId = fields[5];
+                            String operator = fields[6];
+                            String pattern = fields[7];
+                            boolean ignoreCase = new Boolean(fields[8]).booleanValue();
 
                             StringCondition newCondition = new StringCondition();
                             newCondition.setTriggerId(triggerId);
+                            newCondition.setTriggerMode(triggerMode);
                             newCondition.setConditionSetSize(conditionSetSize);
                             newCondition.setConditionSetIndex(conditionSetIndex);
                             newCondition.setDataId(dataId);
@@ -342,12 +352,13 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             addCondition(newCondition);
                             log.debugf("Init file - Inserting [%s]", newCondition);
                         }
-                        if (type != null && !type.isEmpty() && type.equals("availability") && fields.length == 6) {
-                            String dataId = fields[4];
-                            String operator = fields[5];
+                        if (type != null && !type.isEmpty() && type.equals("availability") && fields.length == 7) {
+                            String dataId = fields[5];
+                            String operator = fields[6];
 
                             AvailabilityCondition newCondition = new AvailabilityCondition();
                             newCondition.setTriggerId(triggerId);
+                            newCondition.setTriggerMode(triggerMode);
                             newCondition.setConditionSetSize(conditionSetSize);
                             newCondition.setConditionSetIndex(conditionSetIndex);
                             newCondition.setDataId(dataId);
@@ -382,14 +393,15 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length == 5) {
+                    if (fields.length == 6) {
                         String triggerId = fields[0];
-                        String type = fields[1];
-                        int evalTrueSetting = new Integer(fields[2]);
-                        int evalTotalSetting = new Integer(fields[3]);
-                        int evalTimeSetting = new Integer(fields[4]);
+                        Mode triggerMode = Mode.valueOf(fields[1]);
+                        String type = fields[2];
+                        int evalTrueSetting = new Integer(fields[3]);
+                        int evalTotalSetting = new Integer(fields[4]);
+                        int evalTimeSetting = new Integer(fields[5]);
 
-                        Dampening newDampening = new Dampening(triggerId, Dampening.Type.valueOf(type),
+                        Dampening newDampening = new Dampening(triggerId, triggerMode, Dampening.Type.valueOf(type),
                                 evalTrueSetting, evalTotalSetting, evalTimeSetting);
 
                         addDampening(newDampening);

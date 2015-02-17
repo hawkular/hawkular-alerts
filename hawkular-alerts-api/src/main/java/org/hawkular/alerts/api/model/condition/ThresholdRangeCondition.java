@@ -17,6 +17,7 @@
 package org.hawkular.alerts.api.model.condition;
 
 import org.hawkular.alerts.api.log.MsgLogger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 /**
  * A numeric threshold range condition.
@@ -61,9 +62,17 @@ public class ThresholdRangeCondition extends Condition {
     }
 
     public ThresholdRangeCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
-                                   String dataId, Operator operatorLow, Operator operatorHigh,
-                                   Double thresholdLow, Double thresholdHigh, boolean inRange) {
-        super(triggerId, conditionSetSize, conditionSetIndex);
+            String dataId, Operator operatorLow, Operator operatorHigh,
+            Double thresholdLow, Double thresholdHigh, boolean inRange) {
+
+        this(triggerId, Mode.FIRE, conditionSetSize, conditionSetIndex, dataId, operatorLow, operatorHigh,
+                thresholdLow, thresholdHigh, inRange);
+    }
+
+    public ThresholdRangeCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operatorLow, Operator operatorHigh,
+            Double thresholdLow, Double thresholdHigh, boolean inRange) {
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex);
         this.dataId = dataId;
         this.operatorLow = operatorLow;
         this.operatorHigh = operatorHigh;
@@ -162,19 +171,27 @@ public class ThresholdRangeCondition extends Condition {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         ThresholdRangeCondition that = (ThresholdRangeCondition) o;
 
-        if (inRange != that.inRange) return false;
-        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null) return false;
-        if (operatorHigh != that.operatorHigh) return false;
-        if (operatorLow != that.operatorLow) return false;
+        if (inRange != that.inRange)
+            return false;
+        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null)
+            return false;
+        if (operatorHigh != that.operatorHigh)
+            return false;
+        if (operatorLow != that.operatorLow)
+            return false;
         if (thresholdHigh != null ? !thresholdHigh.equals(that.thresholdHigh) : that.thresholdHigh != null)
             return false;
-        if (thresholdLow != null ? !thresholdLow.equals(that.thresholdLow) : that.thresholdLow != null) return false;
+        if (thresholdLow != null ? !thresholdLow.equals(that.thresholdLow) : that.thresholdLow != null)
+            return false;
 
         return true;
     }

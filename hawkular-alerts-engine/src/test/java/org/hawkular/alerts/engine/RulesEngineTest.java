@@ -42,6 +42,7 @@ import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.data.StringData;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.rules.RulesEngine;
 import org.junit.After;
@@ -104,6 +105,11 @@ public class RulesEngineTest {
         datums.add(new NumericData("NumericData-01", 3, 15.0));
 
         // default dampening
+
+        t1.setEnabled(true);
+        t2.setEnabled(true);
+        t3.setEnabled(true);
+        t4.setEnabled(true);
 
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
@@ -245,6 +251,10 @@ public class RulesEngineTest {
 
         // default dampening
 
+        t1.setEnabled(true);
+        t2.setEnabled(true);
+        t3.setEnabled(true);
+
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
         rulesEngine.addFact(t2);
@@ -325,6 +335,11 @@ public class RulesEngineTest {
                 CompareCondition.Operator.GTE, 0.5, "NumericData-02");
 
         // default dampening
+
+        t1.setEnabled(true);
+        t2.setEnabled(true);
+        t3.setEnabled(true);
+        t4.setEnabled(true);
 
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
@@ -534,6 +549,13 @@ public class RulesEngineTest {
 
         // default dampening
 
+        t1.setEnabled(true);
+        t2.setEnabled(true);
+        t3.setEnabled(true);
+        t4.setEnabled(true);
+        t5.setEnabled(true);
+        t6.setEnabled(true);
+
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
         rulesEngine.addFact(t2);
@@ -703,6 +725,13 @@ public class RulesEngineTest {
 
         // default dampening
 
+        t1.setEnabled(true);
+        t2.setEnabled(true);
+        t3.setEnabled(true);
+        t4.setEnabled(true);
+        t5.setEnabled(true);
+        t6.setEnabled(true);
+
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
         rulesEngine.addFact(t2);
@@ -842,6 +871,8 @@ public class RulesEngineTest {
 
         // default dampening
 
+        t1.setEnabled(true);
+
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
 
@@ -888,7 +919,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forStrict("trigger-1", 3);
+        Dampening t1d = Dampening.forStrict("trigger-1", Mode.FIRE, 3);
 
         datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
         datums.add(new Availability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
@@ -897,6 +928,8 @@ public class RulesEngineTest {
         datums.add(new Availability("AvailData-01", 5, AvailabilityType.DOWN));
         datums.add(new Availability("AvailData-01", 6, AvailabilityType.DOWN));
         datums.add(new Availability("AvailData-01", 7, AvailabilityType.UP));
+
+        t1.setEnabled(true);
 
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
@@ -933,7 +966,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forRelaxedCount("trigger-1", 3, 5);
+        Dampening t1d = Dampening.forRelaxedCount("trigger-1", Mode.FIRE, 3, 5);
 
         datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
         datums.add(new Availability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
@@ -942,6 +975,8 @@ public class RulesEngineTest {
         datums.add(new Availability("AvailData-01", 5, AvailabilityType.DOWN));
         datums.add(new Availability("AvailData-01", 6, AvailabilityType.DOWN));
         datums.add(new Availability("AvailData-01", 7, AvailabilityType.UP));
+
+        t1.setEnabled(true);
 
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
@@ -979,7 +1014,9 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forRelaxedTime("trigger-1", 2, 500L);
+        Dampening t1d = Dampening.forRelaxedTime("trigger-1", Mode.FIRE, 2, 500L);
+
+        t1.setEnabled(true);
 
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
@@ -1034,7 +1071,9 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forStrictTime("trigger-1", 250L);
+        Dampening t1d = Dampening.forStrictTime("trigger-1", Mode.FIRE, 250L);
+
+        t1.setEnabled(true);
 
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
@@ -1077,6 +1116,8 @@ public class RulesEngineTest {
                 true);
 
         // default dampening
+
+        t1.setEnabled(true);
 
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
@@ -1143,6 +1184,79 @@ public class RulesEngineTest {
         v = e2.getValue();
         assert v.equals(150.0) : e2;
         assert e2.getCondition().getDataId().equals("NumericData-02") : e2.getCondition();
+    }
+
+    @Test
+    public void SafetyModeTest() {
+        // The single trigger has definitions for both FIRE and SAFETY modes
+        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        // Fire Mode
+        AvailabilityCondition fmt1c1 = new AvailabilityCondition("trigger-1", Mode.FIRE, 1, 1,
+                "AvailData-01", AvailabilityCondition.Operator.DOWN);
+        Dampening fmt1d = Dampening.forStrict("trigger-1", Mode.FIRE, 2);
+
+        // Safety Mode
+        AvailabilityCondition smt1c1 = new AvailabilityCondition("trigger-1", Mode.SAFETY, 1, 1,
+                "AvailData-01", AvailabilityCondition.Operator.UP);
+        Dampening smt1d = Dampening.forStrict("trigger-1", Mode.SAFETY, 2);
+
+
+        datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(new Availability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
+        datums.add(new Availability("AvailData-01", 3, AvailabilityType.UP));
+        datums.add(new Availability("AvailData-01", 4, AvailabilityType.DOWN));
+        datums.add(new Availability("AvailData-01", 5, AvailabilityType.DOWN));
+        datums.add(new Availability("AvailData-01", 6, AvailabilityType.DOWN));
+        datums.add(new Availability("AvailData-01", 7, AvailabilityType.DOWN));
+        datums.add(new Availability("AvailData-01", 8, AvailabilityType.UP));
+
+        t1.setEnabled(true);
+        t1.setSafetyEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(fmt1c1);
+        rulesEngine.addFact(fmt1d);
+        rulesEngine.addFact(smt1c1);
+        rulesEngine.addFact(smt1d);
+
+        // The Trigger should fire on the consecutive DOWN datums at T4,T5. It should then switch to
+        // safety mode and not fire again at the next two consecutive down datums at T6,T7.  T8 should be the
+        // first match for the safety dampening but it should not yet be satisfied until T9 (see below).
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        assert alerts.size() == 1 : alerts;
+
+        Alert a = alerts.get(0);
+        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
+        assert a.getEvalSets().size() == 2 : a.getEvalSets();
+        long expectedTimestamp = 4;
+        for (Set<ConditionEval> evalSet : a.getEvalSets()) {
+            assert evalSet.size() == 1 : evalSet;
+            AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
+            assert e.getConditionSetIndex() == 1 : e;
+            assert e.getConditionSetSize() == 1 : e;
+            assert e.getTriggerId().equals("trigger-1");
+            assert e.isMatch();
+            assert e.getDataTimestamp() == expectedTimestamp++;
+            AvailabilityType v = e.getValue();
+            assert v == AvailabilityType.DOWN : e;
+            assert e.getCondition().getDataId().equals("AvailData-01") : e
+                    .getCondition();
+        }
+
+        assert t1.getMode() == Mode.SAFETY : t1;
+
+        alerts.clear();
+        datums.clear();
+        datums.add(new Availability("AvailData-01", 9, AvailabilityType.UP));
+
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        // The second consecutive UP should satisfy the safety requirements and return the Trigger to FIRE mode.
+        assert alerts.size() == 0 : alerts;
+        assert t1.getMode() == Mode.FIRE : t1;
     }
 
 }
