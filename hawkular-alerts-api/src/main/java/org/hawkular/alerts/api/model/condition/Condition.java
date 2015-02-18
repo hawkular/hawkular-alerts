@@ -51,7 +51,7 @@ public abstract class Condition {
     /**
      * A composed key for the condition
      */
-    protected String id;
+    protected String conditionId;
 
     public Condition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex) {
         this.triggerId = triggerId;
@@ -98,7 +98,7 @@ public abstract class Condition {
     }
 
     public String getConditionId() {
-        return id;
+        return conditionId;
     }
 
     private void updateId() {
@@ -106,14 +106,14 @@ public abstract class Condition {
         sb.append("-").append(triggerMode.ordinal());
         sb.append("-").append(conditionSetSize);
         sb.append("-").append(conditionSetIndex);
-        this.id = sb.toString();
+        this.conditionId = sb.toString();
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((conditionId == null) ? 0 : conditionId.hashCode());
         return result;
     }
 
@@ -126,10 +126,10 @@ public abstract class Condition {
         if (getClass() != obj.getClass())
             return false;
         Condition other = (Condition) obj;
-        if (id == null) {
-            if (other.id != null)
+        if (conditionId == null) {
+            if (other.conditionId != null)
                 return false;
-        } else if (!id.equals(other.id))
+        } else if (!conditionId.equals(other.conditionId))
             return false;
         return true;
     }

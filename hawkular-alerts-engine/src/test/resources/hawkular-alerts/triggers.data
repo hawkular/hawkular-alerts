@@ -1,7 +1,7 @@
-# <triggerId>,<active>,<name>,<description>,<match>,<notifierId1>|<notifierId2>|<notifierId3>|...
-trigger-1,true,NumericData-01-low,description,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com
-trigger-2,true,NumericData-01-02-high,description,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com
-trigger-3,true,NumericData-03-range,description,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com
-trigger-4,true,CompareData-01-d1-lthalf-d2,description,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com
-trigger-5,true,StringData-01-starts,description,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com
-trigger-6,true,Availability-01-NOT-UP,description,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com
+# <triggerId>,<enabled>,<safetyEnabled>,<name>,<description>,<firingMatch>,<safetyMatch>,<notifierId1>|<notifierId2>|<notifierId3>|...
+trigger-1,true,false,NumericData-01-low,description,ALL,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com
+trigger-2,true,false,NumericData-01-02-high,description,ALL,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com
+trigger-3,true,false,NumericData-03-range,description,ALL,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com
+trigger-4,true,false,CompareData-01-d1-lthalf-d2,description,ALL,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com
+trigger-5,true,false,StringData-01-starts,description,ALL,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com
+trigger-6,true,false,Availability-01-NOT-UP,description,ALL,ALL,SNMP-Trap-1|SNMP-Trap-2|admin@email.com

@@ -21,6 +21,7 @@ import org.jboss.logging.Logger
 import org.junit.Test
 
 import org.hawkular.alerts.api.model.dampening.Dampening.Type
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode
 import static org.junit.Assert.assertEquals
 
 /**
@@ -45,7 +46,7 @@ class DampeningTest extends AbstractTestBase {
 
     @Test
     void createDampening() {
-        Dampening d = new Dampening("test-trigger-6", Type.RELAXED_COUNT, 1, 1, 1);
+        Dampening d = new Dampening("test-trigger-6", Mode.FIRE, Type.RELAXED_COUNT, 1, 1, 1);
 
         def resp = client.post(path: "trigger/dampening", body: d)
         assertEquals(200, resp.status)

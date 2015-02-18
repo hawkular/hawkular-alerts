@@ -33,6 +33,8 @@ public class Trigger extends TriggerTemplate {
     private boolean safetyEnabled;
     private Mode mode;
 
+    private transient Match match;
+
     public Trigger() {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
@@ -51,6 +53,7 @@ public class Trigger extends TriggerTemplate {
         this.enabled = false;
         this.safetyEnabled = false;
         this.mode = Mode.FIRE;
+        this.match = getFiringMatch();
     }
 
     public boolean isEnabled() {
@@ -75,6 +78,7 @@ public class Trigger extends TriggerTemplate {
 
     public void setMode(Mode mode) {
         this.mode = mode;
+        setMatch(this.mode == Mode.FIRE ? getFiringMatch() : getSafetyMatch());
     }
 
     /**
@@ -97,7 +101,11 @@ public class Trigger extends TriggerTemplate {
     }
 
     public Match getMatch() {
-        return this.mode == Mode.FIRE ? getFiringMatch() : getSafetyMatch();
+        return match;
+    }
+
+    public void setMatch(Match match) {
+        this.match = match;
     }
 
     @Override

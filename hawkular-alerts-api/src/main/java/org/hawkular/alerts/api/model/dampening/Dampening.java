@@ -43,11 +43,12 @@ public class Dampening {
     private int evalTotalSetting;
     private long evalTimeSetting;
 
-    private int numTrueEvals;
-    private int numEvals;
-    private long trueEvalsStartTime;
-    private boolean satisfied;
-    private List<Set<ConditionEval>> satisfyingEvals = new ArrayList<Set<ConditionEval>>();
+    // The following fields are only relevant while the engine is executing.
+    private transient int numTrueEvals;
+    private transient int numEvals;
+    private transient long trueEvalsStartTime;
+    private transient boolean satisfied;
+    private transient List<Set<ConditionEval>> satisfyingEvals = new ArrayList<Set<ConditionEval>>();
 
     public Dampening() {
         this("Default", Mode.FIRE, Type.STRICT, 1, 1, 0);

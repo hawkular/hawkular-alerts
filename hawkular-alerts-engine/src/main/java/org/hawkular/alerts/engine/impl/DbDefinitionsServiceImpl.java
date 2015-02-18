@@ -197,6 +197,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                 initNotifiers(initFolder);
             }
         } catch (Exception e) {
+            if (log.isDebugEnabled()) {
+                e.printStackTrace();
+            }
             msgLog.errorDatabaseException("Error initializing files. Msg: " + e);
         }
     }
