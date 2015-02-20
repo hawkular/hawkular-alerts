@@ -103,7 +103,7 @@ public abstract class Condition {
 
     private void updateId() {
         StringBuilder sb = new StringBuilder(triggerId);
-        sb.append("-").append(triggerMode.ordinal());
+        sb.append("-").append(triggerMode.name());
         sb.append("-").append(conditionSetSize);
         sb.append("-").append(conditionSetIndex);
         this.conditionId = sb.toString();
