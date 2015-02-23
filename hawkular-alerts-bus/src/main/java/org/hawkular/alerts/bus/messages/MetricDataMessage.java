@@ -54,7 +54,7 @@ public class MetricDataMessage extends BasicMessage {
         @Expose
         String tenantId;
         @Expose
-        List<SingleMetric> metrics;
+        List<SingleMetric> data;
 
         public MetricData() {
         }
@@ -67,17 +67,17 @@ public class MetricDataMessage extends BasicMessage {
             this.tenantId = tenantId;
         }
 
-        public List<SingleMetric> getMetrics() {
-            return metrics;
+        public List<SingleMetric> getData() {
+            return data;
         }
 
-        public void setMetrics(List<SingleMetric> metrics) {
-            this.metrics = metrics;
+        public void setData(List<SingleMetric> data) {
+            this.data = data;
         }
 
         @Override
         public String toString() {
-            return "MetricData [tenantId=" + tenantId + ", metrics=" + metrics + "]";
+            return "MetricData [tenantId=" + tenantId + ", data=" + data + "]";
         }
     }
 

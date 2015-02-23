@@ -84,9 +84,9 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
         // TODO: tenants?
         MetricData metricData = msg.getMetricData();
 
-        List<SingleMetric> metrics = metricData.getMetrics();
-        List<Data> alertData = new ArrayList<>(metrics.size());
-        for (SingleMetric m : metrics) {
+        List<SingleMetric> data = metricData.getData();
+        List<Data> alertData = new ArrayList<>(data.size());
+        for (SingleMetric m : data) {
             if (isNeeded(m.getSource())) {
                 alertData.add(new NumericData(m.getSource(), m.getTimestamp(), m.getValue()));
             }
