@@ -91,17 +91,14 @@ public class MetricDataMessage extends BasicMessage {
         private long timestamp;
         @Expose
         private double value;
-        @Expose
-        private int metricType;
 
         public SingleMetric() {
         }
 
-        public SingleMetric(String source, long timestamp, double value, int type) {
+        public SingleMetric(String source, long timestamp, double value) {
             this.source = source;
             this.timestamp = timestamp;
             this.value = value;
-            this.metricType = type;
         }
 
         public String getSource() {
@@ -128,18 +125,9 @@ public class MetricDataMessage extends BasicMessage {
             this.value = value;
         }
 
-        public int getMetricType() {
-            return metricType;
-        }
-
-        public void setMetricType(int type) {
-            this.metricType = type;
-        }
-
         @Override
         public String toString() {
-            return "SingleMetric [source=" + source + ", timestamp=" + timestamp + ", value=" + value
-                    + ", metricType=" + metricType + "]";
+            return "SingleMetric [source=" + source + ", timestamp=" + timestamp + ", value=" + value + "]";
         }
     }
 }
