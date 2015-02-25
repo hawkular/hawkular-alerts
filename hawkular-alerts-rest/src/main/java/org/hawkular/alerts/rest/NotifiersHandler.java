@@ -67,7 +67,7 @@ public class NotifiersHandler {
                   notes = "Pagination is not yet implemented")
     public void findAllNotifiers(@Suspended final AsyncResponse response) {
         try {
-            Collection<String> notifiers = definitions.getNotifiers();
+            Collection<String> notifiers = definitions.getAllNotifiers();
             if (notifiers == null || notifiers.isEmpty()) {
                 log.debugf("GET - findAllNotifiers - Empty");
                 response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());

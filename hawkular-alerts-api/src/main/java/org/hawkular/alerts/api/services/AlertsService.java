@@ -16,10 +16,10 @@
  */
 package org.hawkular.alerts.api.services;
 
+import java.util.Collection;
+
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.data.Data;
-
-import java.util.Collection;
 
 /**
  * Interface that allows to send data to the alerts engine and check resulting state.
@@ -30,18 +30,25 @@ import java.util.Collection;
 public interface AlertsService {
 
     void sendData(Data data);
+
     void sendData(Collection<Data> data);
 
     Collection<Alert> checkAlerts();
-
-    /**
-     * Reload all alerts definitions.
-     */
-    void reload();
 
     /**
      * Reset session state.
      */
     void clear();
 
+    /**
+     * Reload all Triggers.
+     */
+    void reload();
+
+    /**
+     * Reload the specified Trigger.  Removes any existing definition from the engine.  If enabled then loads the firing
+     * condition set and dampening.  If safetyEnabled then also loads the safety condition set and dampening.
+     * @param triggerId
+     */
+    void reloadTrigger(String triggerId);
 }

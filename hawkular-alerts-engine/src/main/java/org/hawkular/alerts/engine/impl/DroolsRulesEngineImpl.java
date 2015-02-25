@@ -18,6 +18,7 @@ package org.hawkular.alerts.engine.impl;
 
 import java.util.Collection;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 
 import javax.ejb.Singleton;
 
@@ -27,6 +28,7 @@ import org.hawkular.alerts.engine.rules.RulesEngine;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.ObjectFilter;
 import org.kie.api.runtime.rule.FactHandle;
 
 import org.jboss.logging.Logger;
@@ -142,6 +144,11 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     }
 
     @Override
+    public Object getFact(Object o) {
+        return kSession.getFactHandle(o);
+    }
+
+    @Override
     public void removeFact(Object fact) {
         FactHandle factHandle = kSession.getFactHandle(fact);
         if (factHandle != null) {
@@ -154,6 +161,25 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     public void removeFacts(Collection facts) {
         for (Object fact : facts) {
             removeFact(fact);
+        }
+    }
+
+    @Override
+    public void removeFacts(Predicate<Object> factFilter) {
+        Collection<FactHandle> handles = kSession.getFactHandles(new ObjectFilter() {
+            @Override
+            public boolean accept(Object object) {
+                return factFilter.test(object);
+            }
+        });
+
+        if (null == handles) {
+            return;
+        }
+
+        for (FactHandle h : handles) {
+            log.debugf("Delete %s ", h);
+            removeFact(h);
         }
     }
 

@@ -25,7 +25,7 @@ import java.util.Set;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class TriggerTemplate {
+public abstract class TriggerTemplate {
 
     public enum Match {
         ALL, ANY
@@ -33,13 +33,16 @@ public class TriggerTemplate {
 
     private String name;
     private String description;
-    private Match firingMatch;
-    private Match safetyMatch;
+
     /** A group of notifier's ids. */
     private Set<String> notifiers;
 
+    private transient Match firingMatch;
+    private transient Match safetyMatch;
+
     public TriggerTemplate(String name) {
         this.name = name;
+
         this.firingMatch = Match.ALL;
         this.safetyMatch = Match.ALL;
         this.notifiers = new HashSet();
@@ -107,43 +110,6 @@ public class TriggerTemplate {
             throw new IllegalArgumentException("Notifier id must be non-empty.");
         }
         notifiers.remove(id);
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((description == null) ? 0 : description.hashCode());
-        result = prime * result + ((firingMatch == null) ? 0 : firingMatch.hashCode());
-        result = prime * result + ((name == null) ? 0 : name.hashCode());
-        result = prime * result + ((safetyMatch == null) ? 0 : safetyMatch.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        TriggerTemplate other = (TriggerTemplate) obj;
-        if (description == null) {
-            if (other.description != null)
-                return false;
-        } else if (!description.equals(other.description))
-            return false;
-        if (firingMatch != other.firingMatch)
-            return false;
-        if (name == null) {
-            if (other.name != null)
-                return false;
-        } else if (!name.equals(other.name))
-            return false;
-        if (safetyMatch != other.safetyMatch)
-            return false;
-        return true;
     }
 
     @Override

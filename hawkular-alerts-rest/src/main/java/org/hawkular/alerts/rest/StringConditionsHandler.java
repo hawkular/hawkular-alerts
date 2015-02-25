@@ -41,8 +41,10 @@ import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
 
+import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.StringCondition;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
 
 import org.jboss.logging.Logger;
@@ -73,7 +75,7 @@ public class StringConditionsHandler {
                   notes = "Pagination is not yet implemented")
     public void findAllStringConditions(@Suspended final AsyncResponse response) {
         try {
-            Collection<Condition> conditionsList = definitions.getConditions();
+            Collection<Condition> conditionsList = definitions.getAllConditions();
             Collection<StringCondition> stringConditions = new ArrayList<StringCondition>();
             for (Condition cond : conditionsList) {
                 if (cond instanceof StringCondition) {
@@ -108,7 +110,7 @@ public class StringConditionsHandler {
                                                            required = true)
                                                  @PathParam("triggerId") final String triggerId) {
         try {
-            Collection<Condition> conditionsList = definitions.getConditions(triggerId);
+            Collection<Condition> conditionsList = definitions.getTriggerConditions(triggerId, null);
             Collection<StringCondition> stringConditions = new ArrayList<StringCondition>();
             for (Condition cond : conditionsList) {
                 if (cond instanceof StringCondition) {
@@ -140,15 +142,18 @@ public class StringConditionsHandler {
                   responseClass = "org.hawkular.alerts.api.model.condition.StringCondition",
                   notes = "Returns StringCondition created if operation finished correctly")
     public void createStringCondition(@Suspended final AsyncResponse response,
-                                      @ApiParam(value = "String condition to be created",
-                                                name = "condition",
-                                                required = true)
-                                      final StringCondition condition) {
+            @ApiParam(value = "Trigger id for new string condition",
+                    required = true) @PathParam("triggerId") final String triggerId,
+            @ApiParam(value = "Trigger mode for new string condition",
+                    required = true) @PathParam("triggerMode") final String triggerMode,
+            @ApiParam(value = "String condition to be created",
+                    name = "condition",
+                    required = true) final CompareCondition condition) {
         try {
             if (condition != null && condition.getConditionId() != null
                     && definitions.getCondition(condition.getConditionId()) == null) {
                 log.debugf("POST - createStringCondition - conditionId %s ", condition.getConditionId());
-                definitions.addCondition(condition);
+                definitions.addCondition(triggerId, Trigger.Mode.valueOf(triggerMode), condition);
                 response.resume(Response.status(Response.Status.OK)
                         .entity(condition).type(APPLICATION_JSON_TYPE).build());
             } else {

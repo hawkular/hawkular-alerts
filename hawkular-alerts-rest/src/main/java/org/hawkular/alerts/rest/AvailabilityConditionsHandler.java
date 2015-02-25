@@ -42,7 +42,9 @@ import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
 
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
+import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
 
 import org.jboss.logging.Logger;
@@ -73,7 +75,7 @@ public class AvailabilityConditionsHandler {
                   notes = "Pagination is not yet implemented")
     public void findAllAvailabilityConditions(@Suspended final AsyncResponse response) {
         try {
-            Collection<Condition> conditionsList = definitions.getConditions();
+            Collection<Condition> conditionsList = definitions.getAllConditions();
             Collection<AvailabilityCondition> availabilityConditions = new ArrayList<AvailabilityCondition>();
             for (Condition cond : conditionsList) {
                 if (cond instanceof AvailabilityCondition) {
@@ -110,7 +112,7 @@ public class AvailabilityConditionsHandler {
                                                                  required = true)
                                                        @PathParam("triggerId") final String triggerId) {
         try {
-            Collection<Condition> conditionsList = definitions.getConditions(triggerId);
+            Collection<Condition> conditionsList = definitions.getTriggerConditions(triggerId, null);
             Collection<AvailabilityCondition> availabilityConditions = new ArrayList<AvailabilityCondition>();
             for (Condition cond : conditionsList) {
                 if (cond instanceof AvailabilityCondition) {
@@ -144,15 +146,18 @@ public class AvailabilityConditionsHandler {
                   responseClass = "org.hawkular.alerts.api.model.condition.AvailabilityCondition",
                   notes = "Returns AvailabilityCondition created if operation finished correctly")
     public void createAvailabilityCondition(@Suspended final AsyncResponse response,
-                                            @ApiParam(value = "Availability condition to be created",
-                                                      name = "condition",
-                                                      required = true)
-                                            final AvailabilityCondition condition) {
+            @ApiParam(value = "Trigger id for new availability condition",
+                    required = true) @PathParam("triggerId") final String triggerId,
+            @ApiParam(value = "Trigger mode for new availability condition",
+                    required = true) @PathParam("triggerMode") final String triggerMode,
+            @ApiParam(value = "Availability condition to be created",
+                    name = "condition",
+                    required = true) final CompareCondition condition) {
         try {
             if (condition != null && condition.getConditionId() != null
                     && definitions.getCondition(condition.getConditionId()) == null) {
                 log.debugf("POST - createAvailabilityCondition - conditionId: %s ", condition.getConditionId());
-                definitions.addCondition(condition);
+                definitions.addCondition(triggerId, Trigger.Mode.valueOf(triggerMode), condition);
                 response.resume(Response.status(Response.Status.OK)
                         .entity(condition).type(APPLICATION_JSON_TYPE).build());
             } else {

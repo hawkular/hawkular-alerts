@@ -108,11 +108,11 @@ public class Trigger extends TriggerTemplate {
         this.match = match;
     }
 
+
     @Override
     public int hashCode() {
         final int prime = 31;
-        int result = super.hashCode();
-        result = prime * result + (enabled ? 1231 : 1237);
+        int result = 1;
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         return result;
     }
@@ -121,13 +121,11 @@ public class Trigger extends TriggerTemplate {
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
-        if (!super.equals(obj))
+        if (obj == null)
             return false;
         if (getClass() != obj.getClass())
             return false;
         Trigger other = (Trigger) obj;
-        if (enabled != other.enabled)
-            return false;
         if (id == null) {
             if (other.id != null)
                 return false;

@@ -16,13 +16,13 @@
  */
 package org.hawkular.alerts.rest;
 
-import com.wordnik.swagger.annotations.Api;
-import com.wordnik.swagger.annotations.ApiOperation;
-import com.wordnik.swagger.annotations.ApiParam;
-import org.hawkular.alerts.api.model.condition.Condition;
-import org.hawkular.alerts.api.model.condition.ThresholdCondition;
-import org.hawkular.alerts.api.services.DefinitionsService;
-import org.jboss.logging.Logger;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -36,13 +36,18 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
+
+import org.hawkular.alerts.api.model.condition.CompareCondition;
+import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.condition.ThresholdCondition;
+import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.DefinitionsService;
+
+import org.jboss.logging.Logger;
 
 /**
  * REST endpoint for threshold conditions.
@@ -70,7 +75,7 @@ public class ThresholdConditionsHandler {
                   notes = "Pagination is not yet implemented")
     public void findAllThresholdConditions(@Suspended final AsyncResponse response) {
         try {
-            Collection<Condition> conditionsList = definitions.getConditions();
+            Collection<Condition> conditionsList = definitions.getAllConditions();
             Collection<ThresholdCondition> thresholdConditions = new ArrayList<ThresholdCondition>();
             for (Condition cond : conditionsList) {
                 if (cond instanceof ThresholdCondition) {
@@ -105,7 +110,7 @@ public class ThresholdConditionsHandler {
                                                               required = true)
                                                     @PathParam("triggerId") final String triggerId) {
         try {
-            Collection<Condition> conditionsList = definitions.getConditions(triggerId);
+            Collection<Condition> conditionsList = definitions.getTriggerConditions(triggerId, null);
             Collection<ThresholdCondition> thresholdConditions = new ArrayList<ThresholdCondition>();
             for (Condition cond : conditionsList) {
                 if (cond instanceof ThresholdCondition) {
@@ -137,15 +142,18 @@ public class ThresholdConditionsHandler {
                   responseClass = "org.hawkular.alerts.api.model.condition.ThresholdCondition",
                   notes = "Returns ThresholdCondition created if operation finished correctly")
     public void createThresholdCondition(@Suspended final AsyncResponse response,
-                                         @ApiParam(value = "Threshold condition to be created",
-                                                   name = "condition",
-                                                   required = true)
-                                         final ThresholdCondition condition) {
+            @ApiParam(value = "Trigger id for new threshold condition",
+                    required = true) @PathParam("triggerId") final String triggerId,
+            @ApiParam(value = "Trigger mode for new threshold condition",
+                    required = true) @PathParam("triggerMode") final String triggerMode,
+            @ApiParam(value = "Threshold condition to be created",
+                    name = "condition",
+                    required = true) final CompareCondition condition) {
         try {
             if (condition != null && condition.getConditionId() != null
                     && definitions.getCondition(condition.getConditionId()) == null) {
                 log.debugf("POST - createThresholdCondition - conditionId %s ", condition.getConditionId());
-                definitions.addCondition(condition);
+                definitions.addCondition(triggerId, Trigger.Mode.valueOf(triggerMode), condition);
                 response.resume(Response.status(Response.Status.OK)
                         .entity(condition).type(APPLICATION_JSON_TYPE).build());
             } else {

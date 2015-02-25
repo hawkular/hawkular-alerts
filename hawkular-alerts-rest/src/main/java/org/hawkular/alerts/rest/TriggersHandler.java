@@ -16,13 +16,13 @@
  */
 package org.hawkular.alerts.rest;
 
-import com.wordnik.swagger.annotations.Api;
-import com.wordnik.swagger.annotations.ApiOperation;
-import com.wordnik.swagger.annotations.ApiParam;
-import org.hawkular.alerts.api.model.condition.Condition;
-import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.services.DefinitionsService;
-import org.jboss.logging.Logger;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -36,13 +36,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
+
+import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.DefinitionsService;
+
+import org.jboss.logging.Logger;
 
 /**
  * REST endpoint for triggers
@@ -71,7 +74,7 @@ public class TriggersHandler {
                   notes = "Pagination is not yet implemented")
     public void findAllTriggers(@Suspended final AsyncResponse response) {
         try {
-            Collection<Trigger> triggerList = definitions.getTriggers();
+            Collection<Trigger> triggerList = definitions.getAllTriggers();
             if (triggerList.isEmpty()) {
                 log.debugf("GET - findAllTriggers - Empty");
                 response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
@@ -168,7 +171,7 @@ public class TriggersHandler {
                                                required = true)
                                      @PathParam("triggerId") final String triggerId) {
         try {
-            Collection<Condition> conditionsList = definitions.getConditions(triggerId);
+            Collection<Condition> conditionsList = definitions.getTriggerConditions(triggerId, null);
             Collection<Map<String, String>> conditions = new ArrayList<>();
             for (Condition cond : conditionsList) {
                 Map<String, String> conditionsType = new HashMap<String, String>();

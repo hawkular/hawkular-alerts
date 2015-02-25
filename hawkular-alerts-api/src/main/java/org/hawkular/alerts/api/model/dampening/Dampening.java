@@ -42,6 +42,10 @@ public class Dampening {
     private int evalTrueSetting;
     private int evalTotalSetting;
     private long evalTimeSetting;
+    /**
+     * A composed key for the dampening
+     */
+    protected String dampeningId;
 
     // The following fields are only relevant while the engine is executing.
     private transient int numTrueEvals;
@@ -117,6 +121,7 @@ public class Dampening {
         this.evalTotalSetting = evalTotalSetting;
         this.evalTimeSetting = evalTimeSetting;
         this.triggerMode = triggerMode;
+        updateId();
 
         reset();
     }
@@ -127,6 +132,16 @@ public class Dampening {
 
     public void setTriggerId(String triggerId) {
         this.triggerId = triggerId;
+        updateId();
+    }
+
+    public Mode getTriggerMode() {
+        return triggerMode;
+    }
+
+    public void setTriggerMode(Mode triggerMode) {
+        this.triggerMode = triggerMode;
+        updateId();
     }
 
     public void setEvalTimeSetting(long evalTimeSetting) {
@@ -191,14 +206,6 @@ public class Dampening {
 
     public long getEvalTimeSetting() {
         return evalTimeSetting;
-    }
-
-    public Mode getTriggerMode() {
-        return triggerMode;
-    }
-
-    public void setTriggerMode(Mode triggerMode) {
-        this.triggerMode = triggerMode;
     }
 
     public boolean isSatisfied() {
@@ -316,16 +323,21 @@ public class Dampening {
         return sb.toString();
     }
 
+    public String getDampeningId() {
+        return dampeningId;
+    }
+
+    private void updateId() {
+        StringBuilder sb = new StringBuilder(triggerId);
+        sb.append("-").append(triggerMode.name());
+        this.dampeningId = sb.toString();
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + (int) (evalTimeSetting ^ (evalTimeSetting >>> 32));
-        result = prime * result + evalTotalSetting;
-        result = prime * result + evalTrueSetting;
-        result = prime * result + ((triggerId == null) ? 0 : triggerId.hashCode());
-        result = prime * result + ((triggerMode == null) ? 0 : triggerMode.hashCode());
-        result = prime * result + ((type == null) ? 0 : type.hashCode());
+        result = prime * result + ((dampeningId == null) ? 0 : dampeningId.hashCode());
         return result;
     }
 
@@ -338,20 +350,10 @@ public class Dampening {
         if (getClass() != obj.getClass())
             return false;
         Dampening other = (Dampening) obj;
-        if (evalTimeSetting != other.evalTimeSetting)
-            return false;
-        if (evalTotalSetting != other.evalTotalSetting)
-            return false;
-        if (evalTrueSetting != other.evalTrueSetting)
-            return false;
-        if (triggerId == null) {
-            if (other.triggerId != null)
+        if (dampeningId == null) {
+            if (other.dampeningId != null)
                 return false;
-        } else if (!triggerId.equals(other.triggerId))
-            return false;
-        if (triggerMode != other.triggerMode)
-            return false;
-        if (type != other.type)
+        } else if (!dampeningId.equals(other.dampeningId))
             return false;
         return true;
     }

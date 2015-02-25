@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -80,7 +81,8 @@ public class BasicAlertsServiceImpl implements AlertsService {
         try {
             dDelay = new Integer(sDelay).intValue();
             dPeriod = new Integer(sPeriod).intValue();
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+        }
         DELAY = dDelay;
         PERIOD = dPeriod;
     }
@@ -124,18 +126,22 @@ public class BasicAlertsServiceImpl implements AlertsService {
 
         Collection<Trigger> triggers = null;
         try {
-            triggers = definitions.getTriggers();
+            triggers = definitions.getAllTriggers();
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             msgLog.errorDefinitionsService("Triggers", e.getMessage());
         }
         if (triggers != null && !triggers.isEmpty()) {
-            rules.addFacts(triggers);
+            for (Trigger trigger : triggers) {
+                if (trigger.isEnabled()) {
+                    reloadTrigger(trigger);
+                }
+            }
         }
 
         Collection<Dampening> dampenings = null;
         try {
-            dampenings = definitions.getDampenings();
+            dampenings = definitions.getAllDampenings();
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             msgLog.errorDefinitionsService("Dampenings", e.getMessage());
@@ -146,7 +152,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
 
         Collection<Condition> conditions = null;
         try {
-            conditions = definitions.getConditions();
+            conditions = definitions.getAllConditions();
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             msgLog.errorDefinitionsService("Conditions", e.getMessage());
@@ -161,6 +167,73 @@ public class BasicAlertsServiceImpl implements AlertsService {
 
         rulesTask = new RulesInvoker();
         wakeUpTimer.schedule(rulesTask, DELAY, PERIOD);
+    }
+
+    @Override
+    public void reloadTrigger(final String triggerId) {
+        if (null == triggerId) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+
+        Trigger trigger = null;
+        try {
+            trigger = definitions.getTrigger(triggerId);
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            msgLog.errorDefinitionsService("Trigger", e.getMessage());
+        }
+        if (null == trigger) {
+            throw new IllegalArgumentException("Trigger not found for triggerId [" + triggerId + "]");
+        }
+
+        reloadTrigger(trigger);
+    }
+
+    private void reloadTrigger(Trigger trigger) {
+        if (null == trigger) {
+            throw new IllegalArgumentException("Trigger must be not null");
+        }
+
+        // Look for the Trigger in the rules engine, if it is there then remove everything about it
+        if (null != rules.getFact(trigger)) {
+            // First remove the related Trigger facts from the engine
+            rules.removeFact(trigger);
+
+            // then remove everything else.
+            // TODO: We may want to do this with rules, because as is, we need to loop through every Fact in
+            // the rules engine doing a relatively slow check.
+            final String triggerId = trigger.getId();
+            rules.removeFacts(new Predicate<Object>() {
+                @Override
+                public boolean test(Object t) {
+                    if (t instanceof Dampening) {
+                        return ((Dampening) t).getTriggerId().equals(triggerId);
+                    } else if (t instanceof Condition) {
+                        return ((Condition) t).getTriggerId().equals(triggerId);
+                    }
+                    return false;
+                }
+            });
+        }
+
+        Collection<Condition> conditionSet = null;
+        Collection<Dampening> dampenings = null;
+
+        if (trigger.isEnabled()) {
+            try {
+                conditionSet = definitions.getTriggerConditions(trigger.getId(), null);
+                dampenings = definitions.getTriggerDampenings(trigger.getId(), null);
+
+                rules.addFact(trigger);
+                rules.addFacts(conditionSet);
+                if (!dampenings.isEmpty()) {
+                    rules.addFacts(dampenings);
+                }
+            } catch (Exception e) {
+                log.debugf(e.getMessage(), e);
+                msgLog.errorDefinitionsService("Conditions/Dampening", e.getMessage());
+            }
+        }
     }
 
     @Override

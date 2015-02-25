@@ -16,14 +16,14 @@
  */
 package org.hawkular.alerts.engine;
 
+import static org.junit.Assert.assertTrue;
+
+import javax.sql.DataSource;
+
 import org.h2.jdbcx.JdbcDataSource;
 import org.hawkular.alerts.engine.impl.DbDefinitionsServiceImpl;
 import org.junit.Before;
 import org.junit.Test;
-
-import javax.sql.DataSource;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * Basic test for DbDefinitionsServiceImpl
@@ -52,10 +52,10 @@ public class DbDefinitionsServiceImplTest {
         DbDefinitionsServiceImpl db = new DbDefinitionsServiceImpl(ds);
         db.init();
 
-        assertTrue(db.getTriggers().size() > 0);
-        assertTrue(db.getConditions().size() > 0);
-        assertTrue(db.getDampenings().size() > 0);
-        assertTrue(db.getNotifiers().size() > 0);
+        assertTrue(db.getAllTriggers().size() > 0);
+        assertTrue(db.getAllConditions().size() > 0);
+        assertTrue(db.getAllDampenings().size() > 0);
+        assertTrue(db.getAllNotifiers().size() > 0);
     }
 
 }
