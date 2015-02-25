@@ -16,6 +16,12 @@
  */
 package org.hawkular.alerts.bus.sender;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.jms.TopicConnectionFactory;
+import javax.naming.InitialContext;
+
 import org.hawkular.alerts.api.model.notification.Notification;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.NotifierListener;
@@ -27,12 +33,8 @@ import org.hawkular.bus.common.MessageProcessor;
 import org.hawkular.bus.common.producer.ProducerConnectionContext;
 import org.hawkular.notifiers.api.model.NotificationMessage;
 import org.hawkular.notifiers.api.model.NotifierRegistrationMessage;
-import org.jboss.logging.Logger;
 
-import javax.jms.TopicConnectionFactory;
-import javax.naming.InitialContext;
-import java.util.HashMap;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * An implementation of {@link org.hawkular.alerts.api.services.NotifierListener} that will send notifications
@@ -47,7 +49,7 @@ public class NotificationSender implements NotifierListener {
     private final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
     private final String NOTIFICATIONS_TOPIC = "NotificationsTopic";
     private final String DEFINITIONS_SERVICE =
-            "java:global/hawkular-alerts/hawkular-alerts-engine/DbDefinitionsServiceImpl";
+            "java:app/hawkular-alerts-engine/DbDefinitionsServiceImpl";
 
     private TopicConnectionFactory conFactory;
     private ConnectionContextFactory ccf;

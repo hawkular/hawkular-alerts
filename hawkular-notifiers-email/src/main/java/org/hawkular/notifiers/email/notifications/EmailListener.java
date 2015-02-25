@@ -60,7 +60,7 @@ public class EmailListener extends BasicMessageListener<NotificationMessage> {
 
     Message createMimeMessage(NotificationMessage msg) throws MessagingException {
         Message message = new MimeMessage(mailSession);
-        message.setFrom(new InternetAddress("noreply@hawkular"));
+        message.setFrom(new InternetAddress("noreply@hawkular.org"));
         Address toAddress = new InternetAddress(msg.getNotifierId());
         message.addRecipient(RecipientType.TO, toAddress);
         message.setSubject("Hawkular alert");
