@@ -33,5 +33,7 @@ class AbstractTestBase {
     @BeforeClass
     static void initClient() {
             client = new RESTClient(baseURI, ContentType.JSON)
+            // this prevents 404 from being wrapped in an Exception, just return the response, better for testing
+            client.handler.failure = { it }
     }
 }

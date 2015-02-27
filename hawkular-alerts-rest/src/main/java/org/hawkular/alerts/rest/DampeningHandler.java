@@ -106,7 +106,8 @@ public class DampeningHandler {
                                 final Dampening dampening) {
         try {
             if (dampening != null && dampening.getTriggerId() != null
-                    && definitions.getTriggerDampenings(dampening.getTriggerId(), Trigger.Mode.FIRE).isEmpty()) {
+                    && definitions.getTriggerDampenings(dampening.getTriggerId(), dampening.getTriggerMode())
+                            .isEmpty()) {
                 log.debugf("POST - createDampening - triggerId %s ", dampening.getTriggerId());
                 definitions.addDampening(dampening);
                 response.resume(Response.status(Response.Status.OK)
@@ -199,13 +200,13 @@ public class DampeningHandler {
     }
 
     @DELETE
-    @Path("/{triggerId}")
+    @Path("/{dampeningId}")
     @ApiOperation(value = "Delete an existing dampening definition",
                   responseClass = "void")
-    public void deleteDampening(@Suspended final AsyncResponse response,
-                                @ApiParam(value = "Dampening id for dampening definition to be deleted",
-                                          required = true)
-                                @PathParam("dampeningId") final String dampeningId) {
+    public void deleteDampening(
+            @Suspended final AsyncResponse response,
+            @ApiParam(value = "Dampening id for dampening definition to be deleted", required = true)//
+            @PathParam("dampeningId") final String dampeningId) {
         try {
             if (dampeningId != null && !dampeningId.isEmpty()
                     && definitions.getDampening(dampeningId) != null) {

@@ -46,7 +46,11 @@ class TriggersTest extends AbstractTestBase {
     void createTrigger() {
         Trigger testTrigger = new Trigger("test-trigger-1", "No-Metric");
 
-        def resp = client.post(path: "triggers", body: testTrigger)
+        // remove if it exists
+        def resp = client.delete(path: "triggers/test-trigger-1")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "triggers/test-trigger-1");

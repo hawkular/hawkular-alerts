@@ -41,10 +41,8 @@ import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
 
-import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
-import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
 
 import org.jboss.logging.Logger;
@@ -143,18 +141,13 @@ public class ThresholdRangeConditionsHandler {
                   responseClass = "org.hawkular.alerts.api.model.condition.ThresholdRangeCondition",
                   notes = "Returns ThresholdRangeCondition created if operation finished correctly")
     public void createThresholdRangeCondition(@Suspended final AsyncResponse response,
-            @ApiParam(value = "Trigger id for new threshold range condition",
-                    required = true) @PathParam("triggerId") final String triggerId,
-            @ApiParam(value = "Trigger mode for new threshold range condition",
-                    required = true) @PathParam("triggerMode") final String triggerMode,
-            @ApiParam(value = "Threshold ange condition to be created",
+            @ApiParam(value = "Threshold range condition to be created",
                     name = "condition",
-                    required = true) final CompareCondition condition) {
+                    required = true) final ThresholdRangeCondition condition) {
         try {
-            if (condition != null && condition.getConditionId() != null
-                    && definitions.getCondition(condition.getConditionId()) == null) {
-                log.debugf("POST - createThresholdRangeCondition - conditionId %s ", condition.getConditionId());
-                definitions.addCondition(triggerId, Trigger.Mode.valueOf(triggerMode), condition);
+            if (condition != null && condition.getTriggerId() != null && condition.getTriggerMode() != null) {
+                log.debugf("POST - createThresholdRangeCondition - conditionId %s ", condition);
+                definitions.addCondition(condition.getTriggerId(), condition.getTriggerMode(), condition);
                 response.resume(Response.status(Response.Status.OK)
                         .entity(condition).type(APPLICATION_JSON_TYPE).build());
             } else {

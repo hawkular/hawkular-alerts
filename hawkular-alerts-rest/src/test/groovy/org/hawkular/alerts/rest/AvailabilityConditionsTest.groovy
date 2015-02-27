@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.rest
 
+import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.jboss.logging.Logger
 import org.junit.Test
@@ -46,10 +47,17 @@ class AvailabilityConditionsTest extends AbstractTestBase {
 
     @Test
     void createAvailabilityCondition() {
+        Trigger testTrigger = new Trigger("test-trigger-1", "No-Metric");
+
+        // make sure clean test trigger exists
+        client.delete(path: "triggers/test-trigger-1")
+        def resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
         AvailabilityCondition testCond = new AvailabilityCondition("test-trigger-1", 1, 1,
                                                                    "No-Metric", Operator.NOT_UP);
 
-        def resp = client.post(path: "conditions/availability", body: testCond)
+        resp = client.post(path: "conditions/availability", body: testCond)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "conditions/availability/" + testCond.getConditionId());
@@ -65,6 +73,9 @@ class AvailabilityConditionsTest extends AbstractTestBase {
         assertEquals("UP", resp.data.operator)
 
         resp = client.delete(path: "conditions/availability/" + testCond.getConditionId())
+        assertEquals(200, resp.status)
+
+        resp = client.delete(path: "triggers/test-trigger-1")
         assertEquals(200, resp.status)
     }
 

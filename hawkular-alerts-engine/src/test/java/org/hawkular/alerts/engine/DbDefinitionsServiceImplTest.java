@@ -18,9 +18,14 @@ package org.hawkular.alerts.engine;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.Collection;
+
 import javax.sql.DataSource;
 
 import org.h2.jdbcx.JdbcDataSource;
+import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.engine.impl.DbDefinitionsServiceImpl;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +54,7 @@ public class DbDefinitionsServiceImplTest {
     @Test
     public void checkInitTest() throws Exception {
 
-        DbDefinitionsServiceImpl db = new DbDefinitionsServiceImpl(ds);
+        DbDefinitionsServiceImpl db = new DbDefinitionsServiceImpl(new TestAlertsService(), ds);
         db.init();
 
         assertTrue(db.getAllTriggers().size() > 0);
@@ -58,4 +63,43 @@ public class DbDefinitionsServiceImplTest {
         assertTrue(db.getAllNotifiers().size() > 0);
     }
 
+    private static class TestAlertsService implements AlertsService {
+
+        @Override
+        public void sendData(Data data) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void sendData(Collection<Data> data) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public Collection<Alert> checkAlerts() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public void clear() {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void reload() {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void reloadTrigger(String triggerId) {
+            // TODO Auto-generated method stub
+
+        }
+
+    }
 }

@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.rest
 
+import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition
 import org.jboss.logging.Logger
 import org.junit.Test
@@ -45,12 +46,19 @@ class ThresholdRangeConditionsTest extends AbstractTestBase {
 
     @Test
     void createThresholdRangeCondition() {
+            Trigger testTrigger = new Trigger("test-trigger-5", "No-Metric");
+
+        // make sure clean test trigger exists
+        client.delete(path: "triggers/test-trigger-5")
+        def resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
         ThresholdRangeCondition testCond = new ThresholdRangeCondition("test-trigger-5", 1, 1,
                                                                        "No-Metric",
                                                                        Operator.INCLUSIVE, Operator.EXCLUSIVE,
                                                                        10.51, 10.99, true);
 
-        def resp = client.post(path: "conditions/range", body: testCond)
+        resp = client.post(path: "conditions/range", body: testCond)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "conditions/range/" + testCond.getConditionId());

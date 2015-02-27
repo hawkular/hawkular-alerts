@@ -78,7 +78,11 @@ class FlowUITest extends AbstractTestBase {
                 Get all conditions for a trigger
              */
             resp = client.get(path: "triggers/" + t.getId() + "/conditions")
+            if ( 204 == resp.status ) {
+                continue;
+            }
             assertEquals(200, resp.status)
+
             log.info("Conditions for " + t.getId());
             def conditions = resp.data
             for (int j = 0; j < conditions.size(); j++) {

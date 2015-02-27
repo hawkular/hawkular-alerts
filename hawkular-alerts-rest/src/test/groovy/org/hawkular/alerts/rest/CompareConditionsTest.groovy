@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.rest
 
+import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.condition.CompareCondition
 import org.jboss.logging.Logger
 import org.junit.Test
@@ -45,10 +46,17 @@ class CompareConditionsTest extends AbstractTestBase {
 
     @Test
     void createCompareCondition() {
+        Trigger testTrigger = new Trigger("test-trigger-2", "No-Metric");
+
+        // make sure clean test trigger exists
+        client.delete(path: "triggers/test-trigger-2")
+        def resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
         CompareCondition testCond = new CompareCondition("test-trigger-2", 1, 1,
                                                          "No-Metric-1", Operator.LT, 1.0, "No-Metric-2");
 
-        def resp = client.post(path: "conditions/compare", body: testCond)
+        resp = client.post(path: "conditions/compare", body: testCond)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "conditions/compare/" + testCond.getConditionId());

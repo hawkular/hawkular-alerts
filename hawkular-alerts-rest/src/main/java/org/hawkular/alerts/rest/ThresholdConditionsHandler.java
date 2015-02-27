@@ -41,10 +41,8 @@ import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
 
-import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
-import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
 
 import org.jboss.logging.Logger;
@@ -142,18 +140,13 @@ public class ThresholdConditionsHandler {
                   responseClass = "org.hawkular.alerts.api.model.condition.ThresholdCondition",
                   notes = "Returns ThresholdCondition created if operation finished correctly")
     public void createThresholdCondition(@Suspended final AsyncResponse response,
-            @ApiParam(value = "Trigger id for new threshold condition",
-                    required = true) @PathParam("triggerId") final String triggerId,
-            @ApiParam(value = "Trigger mode for new threshold condition",
-                    required = true) @PathParam("triggerMode") final String triggerMode,
             @ApiParam(value = "Threshold condition to be created",
                     name = "condition",
-                    required = true) final CompareCondition condition) {
+                    required = true) final ThresholdCondition condition) {
         try {
-            if (condition != null && condition.getConditionId() != null
-                    && definitions.getCondition(condition.getConditionId()) == null) {
-                log.debugf("POST - createThresholdCondition - conditionId %s ", condition.getConditionId());
-                definitions.addCondition(triggerId, Trigger.Mode.valueOf(triggerMode), condition);
+            if (condition != null && condition.getTriggerId() != null && condition.getTriggerMode() != null) {
+                log.debugf("POST - createThresholdCondition - conditionId %s ", condition);
+                definitions.addCondition(condition.getTriggerId(), condition.getTriggerMode(), condition);
                 response.resume(Response.status(Response.Status.OK)
                         .entity(condition).type(APPLICATION_JSON_TYPE).build());
             } else {

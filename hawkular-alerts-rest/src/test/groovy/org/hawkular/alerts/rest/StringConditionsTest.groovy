@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.rest
 
+import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.condition.StringCondition
 import org.jboss.logging.Logger
 import org.junit.Test
@@ -45,10 +46,17 @@ class StringConditionsTest extends AbstractTestBase {
 
     @Test
     void createStringCondition() {
+        Trigger testTrigger = new Trigger("test-trigger-3", "No-Metric");
+
+        // make sure clean test trigger exists
+        client.delete(path: "triggers/test-trigger-3")
+        def resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
         StringCondition testCond = new StringCondition("test-trigger-3", 1, 1,
                                                        "No-Metric", Operator.CONTAINS, "test", false);
 
-        def resp = client.post(path: "conditions/string", body: testCond)
+        resp = client.post(path: "conditions/string", body: testCond)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "conditions/string/" + testCond.getConditionId());

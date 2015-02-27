@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.rest
 
+import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.jboss.logging.Logger
 import org.junit.Test
@@ -45,10 +46,17 @@ class ThresholdConditionsTest extends AbstractTestBase {
 
     @Test
     void createThresholdCondition() {
+        Trigger testTrigger = new Trigger("test-trigger-4", "No-Metric");
+
+        // make sure clean test trigger exists
+        client.delete(path: "triggers/test-trigger-4")
+        def resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
         ThresholdCondition testCond = new ThresholdCondition("test-trigger-4", 1, 1,
                                                              "No-Metric", Operator.GT, 10.12);
 
-        def resp = client.post(path: "conditions/threshold", body: testCond)
+        resp = client.post(path: "conditions/threshold", body: testCond)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "conditions/threshold/" + testCond.getConditionId());

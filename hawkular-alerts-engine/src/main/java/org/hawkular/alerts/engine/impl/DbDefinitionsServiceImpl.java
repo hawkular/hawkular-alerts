@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -61,7 +60,6 @@ import org.jboss.logging.Logger;
 
 /**
  * A database implementation of {@link org.hawkular.alerts.api.services.DefinitionsService}.
- * A very basic implementation for poc/demo porpuses.
  *
  * @author Lucas Ponce
  */
@@ -76,42 +74,55 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     private Gson gson;
     private final String DS_NAME;
     private DataSource ds;
-
-    @EJB
-    AlertsService alertsService;
+    private AlertsService alertsService;
 
     public DbDefinitionsServiceImpl() {
-        DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource") == null ?
-                "java:jboss/datasources/HawkularDS" :
-                System.getProperty("org.hawkular.alerts.engine.datasource");
+        DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource", "java:jboss/datasources/HawkularDS");
     }
 
-    public DbDefinitionsServiceImpl(DataSource ds) {
+    public DbDefinitionsServiceImpl(AlertsService alertsService, DataSource ds) {
         this();
         this.ds = ds;
+        this.alertsService = alertsService;
     }
 
     @PostConstruct
     public void init() {
-        gson = new GsonBuilder().create();
-        if (ds == null) {
-            try {
-                InitialContext ctx = new InitialContext();
-                ds = (DataSource) ctx.lookup(DS_NAME);
-            } catch (NamingException e) {
-                log.debugf(e.getMessage(), e);
-                msgLog.errorCannotConnectWithDatasource(e.getMessage());
+        try {
+            gson = new GsonBuilder().create();
+            if (ds == null) {
+                try {
+                    InitialContext ctx = new InitialContext();
+                    ds = (DataSource) ctx.lookup(DS_NAME);
+                } catch (NamingException e) {
+                    log.debugf(e.getMessage(), e);
+                    msgLog.errorCannotConnectWithDatasource(e.getMessage());
+                }
             }
-        }
-        initDatabase();
+            if (alertsService == null) {
+                try {
+                    InitialContext ctx = new InitialContext();
+                    alertsService = (AlertsService) ctx
+                            .lookup("java:app/hawkular-alerts-engine/BasicAlertsServiceImpl");
+                } catch (NamingException e) {
+                    log.debugf(e.getMessage(), e);
+                    msgLog.errorCannotConnectWithDatasource(e.getMessage());
+                }
+            }
 
-        String data = System.getProperty(JBOSS_DATA_DIR);
-        if (data == null) {
-            msgLog.errorFolderNotFound(data);
-            return;
+            initDatabase();
+
+            String data = System.getProperty(JBOSS_DATA_DIR);
+            if (data == null) {
+                msgLog.errorFolderNotFound(data);
+                return;
+            }
+            String folder = data + "/" + INIT_FOLDER;
+            initFiles(folder);
+        } catch (Throwable t) {
+            System.out.println(" !!!!!!!!!!!! " + t);
+            t.printStackTrace();
         }
-        String folder = data + "/" + INIT_FOLDER;
-        initFiles(folder);
     }
 
     private void initDatabase() {
@@ -121,9 +132,10 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
 
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_TRIGGERS " +
                     "( triggerId VARCHAR(250) PRIMARY KEY, " +
@@ -158,12 +170,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             log.debugf(e.getMessage(), e);
             msgLog.errorDatabaseException(e.getMessage());
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
     }
 
@@ -476,14 +483,16 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
         List<Condition> conditions = new ArrayList<Condition>();
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT conditionId, className, payload FROM HWK_ALERTS_CONDITIONS ")
                     .append("ORDER BY conditionId");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             while (rs.next()) {
                 String className = rs.getString(2);
                 Condition condition;
@@ -505,18 +514,13 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     conditions.add(condition);
                 }
             }
-            s.close();
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
         return conditions;
     }
 
@@ -531,16 +535,18 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
         Condition condition = null;
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT conditionId, className, payload FROM HWK_ALERTS_CONDITIONS "
                     + "WHERE ")
                     .append("conditionId = '").append(conditionId).append("' ")
                     .append("ORDER BY triggerId");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             if (rs.next()) {
                 String className = rs.getString(2);
                 if (className.equals("AvailabilityCondition")) {
@@ -558,21 +564,14 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     condition = null;
                 }
             }
-            s.close();
-
-            return condition;
-
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
+        return condition;
     }
 
     @Override
@@ -586,9 +585,11 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
         List<Condition> conditions = new ArrayList<>();
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT triggerId, className, payload FROM HWK_ALERTS_CONDITIONS " +
                     "WHERE ")
@@ -598,7 +599,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             }
             sql.append("ORDER BY triggerId");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             while (rs.next()) {
                 String className = rs.getString(2);
                 Condition condition;
@@ -620,22 +621,14 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     conditions.add(condition);
                 }
             }
-
-            s.close();
-
-            return conditions;
-
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
+        return conditions;
     }
 
     @Override
@@ -649,29 +642,26 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
         Dampening dampening = null;
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT dampeningId, payload FROM HWK_ALERTS_DAMPENINGS WHERE ")
                     .append("dampeningId = '").append(dampeningId).append("' ");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             if (rs.next()) {
                 dampening = fromJson(rs.getString(2), Dampening.class);
             }
-            s.close();
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
         return dampening;
     }
 
@@ -686,11 +676,13 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
         List<Dampening> dampenings = new ArrayList<>();
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("SELECT triggerId, className, payload FROM HWK_ALERTS_DAMPENINGS " +
+            StringBuilder sql = new StringBuilder("SELECT triggerId, payload FROM HWK_ALERTS_DAMPENINGS " +
                     "WHERE ")
                     .append("triggerId = '").append(triggerId).append("' ");
             if (null != triggerMode) {
@@ -698,27 +690,19 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             }
             sql.append("ORDER BY triggerId");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             while (rs.next()) {
                 Dampening dampening = fromJson(rs.getString(2), Dampening.class);
                 dampenings.add(dampening);
             }
-
-            s.close();
-
-            return dampenings;
-
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
+        return dampenings;
     }
 
     @Override
@@ -728,30 +712,27 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
         List<Dampening> dampenings = new ArrayList<Dampening>();
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT triggerId, payload FROM HWK_ALERTS_DAMPENINGS ")
                     .append("ORDER BY triggerId");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             while (rs.next()) {
                 Dampening dampening = fromJson(rs.getString(2), Dampening.class);
                 dampenings.add(dampening);
             }
-            s.close();
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
         return dampenings;
     }
 
@@ -850,7 +831,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (triggerMode == null) {
             throw new IllegalArgumentException("TriggerMode must be not null");
         }
-        if (conditions == null || conditions.isEmpty()) {
+        if (conditions == null) {
             throw new IllegalArgumentException("Conditions must be not null");
         }
         if (ds == null) {
@@ -862,8 +843,10 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
         // Now add the new condition set
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
+            s = c.createStatement();
 
             int i = 0;
             for (Condition cond : conditions) {
@@ -880,26 +863,21 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         .append("'").append(toJson(cond)).append("'")
                         .append(")");
                 log.debugf("SQL: " + sql);
-                Statement s = c.createStatement();
                 s.execute(sql.toString());
-                s.close();
             }
-
-            alertsService.reloadTrigger(triggerId);
-
-            return conditions;
 
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
+
+        if (null != alertsService) {
+            alertsService.reloadTrigger(triggerId);
+        }
+
+        return conditions;
     }
 
     @Override
@@ -910,10 +888,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_DAMPENINGS VALUES (")
                     .append("'").append(dampening.getDampeningId()).append("', ")
@@ -923,23 +903,19 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     .append(")");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
-
-            alertsService.reloadTrigger(dampening.getTriggerId());
-
-            return dampening;
 
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
+
+        if (null != alertsService) {
+            alertsService.reloadTrigger(dampening.getTriggerId());
+        }
+
+        return dampening;
     }
 
     @Override
@@ -954,14 +930,15 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (notifierType == null) {
             throw new IllegalArgumentException("Notifier has not NotifierType property");
         }
-
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_NOTIFIERS VALUES (")
                     .append("'").append(notifierId).append("', ")
@@ -970,17 +947,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     .append(")");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
+
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
     }
 
@@ -995,10 +967,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_NOTIFIER_TYPES VALUES (")
                     .append("'").append(notifierType).append("', ")
@@ -1011,12 +985,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
     }
 
@@ -1028,10 +997,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_TRIGGERS VALUES (")
                     .append("'").append(trigger.getId()).append("', ")
@@ -1039,17 +1010,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     .append(")");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
+
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
     }
 
@@ -1061,31 +1027,31 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Map<String, String> payload = null;
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT notifierId, payload FROM HWK_ALERTS_NOTIFIERS WHERE ")
                     .append("notifierId = '").append(notifierId).append("'");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             if (rs.next()) {
                 payload = fromJson(rs.getString(2), Map.class);
             }
             s.close();
+
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
         return payload;
     }
 
@@ -1097,31 +1063,29 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         List<String> notifiers = null;
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT notifierId FROM HWK_ALERTS_NOTIFIERS ORDER BY notifierId ");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             notifiers = new ArrayList();
             while (rs.next()) {
                 notifiers.add(rs.getString(1));
             }
-            s.close();
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
         return notifiers;
     }
 
@@ -1133,33 +1097,31 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         List<String> notifiers = null;
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT notifierId FROM HWK_ALERTS_NOTIFIERS WHERE ")
                     .append("notifierType = '").append(notifierType).append("' ")
                     .append("ORDER BY notifierId");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             notifiers = new ArrayList();
             while (rs.next()) {
                 notifiers.add(rs.getString(1));
             }
-            s.close();
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
         return notifiers;
     }
 
@@ -1171,31 +1133,29 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Set<String> payload = null;
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT notifierType, payload FROM HWK_ALERTS_NOTIFIER_TYPES WHERE ")
                     .append("notifierType = '").append(notifierType).append("'");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             if (rs.next()) {
                 payload = fromJson(rs.getString(2), Set.class);
             }
-            s.close();
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
         return payload != null && !payload.isEmpty() ? new HashSet(payload) : null;
     }
 
@@ -1204,31 +1164,29 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         List<String> notifierTypes = new ArrayList<String>();
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT notifierType FROM HWK_ALERTS_NOTIFIER_TYPES ")
                     .append("ORDER BY notifierType");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             while (rs.next()) {
                 notifierTypes.add(rs.getString(1));
             }
-            s.close();
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
         return notifierTypes;
     }
 
@@ -1240,31 +1198,29 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Trigger trigger = null;
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT triggerId, payload FROM HWK_ALERTS_TRIGGERS WHERE ")
                     .append("triggerId = '").append(triggerId).append("' ");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             if (rs.next()) {
                 trigger = fromJson(rs.getString(2), Trigger.class);
             }
-            s.close();
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
         return trigger;
     }
 
@@ -1273,32 +1229,30 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         List<Trigger> triggers = new ArrayList<Trigger>();
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT triggerId, payload FROM HWK_ALERTS_TRIGGERS ")
                     .append("ORDER BY triggerId");
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             while (rs.next()) {
                 Trigger trigger = fromJson(rs.getString(2), Trigger.class);
                 triggers.add(trigger);
             }
-            s.close();
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s, rs);
         }
+
         return triggers;
     }
 
@@ -1314,27 +1268,22 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
 
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_CONDITIONS WHERE ")
                     .append("triggerId = '").append(triggerId).append("' ")
                     .append(" AND triggerMode = '").append(triggerMode.name()).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
 
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
     }
 
@@ -1354,28 +1303,25 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
 
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_DAMPENINGS WHERE ")
                     .append("dampeningId = '").append(dampeningId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
-
-            alertsService.reloadTrigger(dampening.getTriggerId());
 
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
+        }
+
+        if (null != alertsService) {
+            alertsService.reloadTrigger(dampening.getTriggerId());
         }
     }
 
@@ -1387,26 +1333,23 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_NOTIFIERS WHERE ")
                     .append("notifierId = '").append(notifierId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
+
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
     }
 
@@ -1418,26 +1361,23 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_NOTIFIER_TYPES WHERE ")
                     .append("notifierType = '").append(notifierType).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
+
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
     }
 
@@ -1446,29 +1386,40 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (triggerId == null || triggerId.isEmpty()) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
+
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
-
-            StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_TRIGGERS WHERE ")
+            s = c.createStatement();
+            StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_DAMPENINGS WHERE ")
                     .append("triggerId = '").append(triggerId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
+
+            sql = new StringBuilder("DELETE FROM HWK_ALERTS_CONDITIONS WHERE ")
+                    .append("triggerId = '").append(triggerId).append("' ");
+            log.debugf("SQL: " + sql);
+            s.execute(sql.toString());
+
+            sql = new StringBuilder("DELETE FROM HWK_ALERTS_TRIGGERS WHERE ")
+                    .append("triggerId = '").append(triggerId).append("' ");
+            log.debugf("SQL: " + sql);
+            s.execute(sql.toString());
+
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
+        }
+
+        if (null != alertsService) {
+            alertsService.reloadTrigger(triggerId);
         }
     }
 
@@ -1480,33 +1431,31 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_DAMPENINGS SET ")
                     .append("payload = '").append(toJson(dampening)).append("' ")
-                    .append("WHERE dampeningId = '").append(dampening.getTriggerId()).append("' ");
+                    .append("WHERE dampeningId = '").append(dampening.getDampeningId()).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
-
-            alertsService.reloadTrigger(dampening.getTriggerId());
-
-            return dampening;
 
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
+
+        if (null != alertsService) {
+            alertsService.reloadTrigger(dampening.getTriggerId());
+        }
+
+        return dampening;
     }
 
     @Override
@@ -1520,27 +1469,24 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_NOTIFIERS SET ")
                     .append("payload = '").append(toJson(properties)).append("' ")
                     .append("WHERE notifierId = '").append(notifierId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
+
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
     }
 
@@ -1555,27 +1501,24 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_NOTIFIER_TYPES SET ")
                     .append("payload = '").append(toJson(properties)).append("' ")
                     .append("WHERE notifierType = '").append(notifierType).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
+
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
     }
 
@@ -1587,33 +1530,31 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         Connection c = null;
+        Statement s = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_TRIGGERS SET ")
                     .append("payload = '").append(toJson(trigger)).append("' ")
                     .append("WHERE triggerId = '").append(trigger.getId()).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
-            s.close();
-
-            alertsService.reloadTrigger(trigger.getId());
-
-            return trigger;
 
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
+
+        if (null != alertsService) {
+            alertsService.reloadTrigger(trigger.getId());
+        }
+
+        return trigger;
     }
 
     public int getNumTable(String table) throws Exception {
@@ -1623,31 +1564,30 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
+
         int numRows = -1;
         Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
         try {
             c = ds.getConnection();
-            Statement s = c.createStatement();
+            s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM ")
                     .append(table);
             log.debugf("SQL: " + sql);
-            ResultSet rs = s.executeQuery(sql.toString());
+            rs = s.executeQuery(sql.toString());
             if (rs.next()) {
                 numRows = rs.getInt(1);
             }
-            s.close();
+
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
-            try {
-                if (c != null) {
-                    c.close();
-                }
-            } catch (Exception ignored) {
-            }
+            close(c, s);
         }
+
         return numRows;
     }
 
@@ -1661,4 +1601,30 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
         return gson.fromJson(json, clazz);
     }
+
+    private void close(Connection c, Statement s) {
+        close(c, s, null);
+    }
+
+    private void close(Connection c, Statement s, ResultSet rs) {
+        try {
+            if (rs != null) {
+                rs.close();
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            if (s != null) {
+                s.close();
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            if (c != null) {
+                c.close();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
 }

@@ -183,7 +183,10 @@ public class BasicAlertsServiceImpl implements AlertsService {
             msgLog.errorDefinitionsService("Trigger", e.getMessage());
         }
         if (null == trigger) {
-            throw new IllegalArgumentException("Trigger not found for triggerId [" + triggerId + "]");
+            log.debugf("Trigger not found for triggerId [" + triggerId + "], removing from rulebase if it exists");
+            Trigger doomedTrigger = new Trigger(triggerId, "doomed");
+            removeTrigger(trigger);
+            return;
         }
 
         reloadTrigger(trigger);
@@ -195,6 +198,26 @@ public class BasicAlertsServiceImpl implements AlertsService {
         }
 
         // Look for the Trigger in the rules engine, if it is there then remove everything about it
+        removeTrigger(trigger);
+
+        if (trigger.isEnabled()) {
+            try {
+                Collection<Condition> conditionSet = definitions.getTriggerConditions(trigger.getId(), null);
+                Collection<Dampening> dampenings = definitions.getTriggerDampenings(trigger.getId(), null);
+
+                rules.addFact(trigger);
+                rules.addFacts(conditionSet);
+                if (!dampenings.isEmpty()) {
+                    rules.addFacts(dampenings);
+                }
+            } catch (Exception e) {
+                log.debugf(e.getMessage(), e);
+                msgLog.errorDefinitionsService("Conditions/Dampening", e.getMessage());
+            }
+        }
+    }
+
+    private void removeTrigger(Trigger trigger) {
         if (null != rules.getFact(trigger)) {
             // First remove the related Trigger facts from the engine
             rules.removeFact(trigger);
@@ -214,25 +237,6 @@ public class BasicAlertsServiceImpl implements AlertsService {
                     return false;
                 }
             });
-        }
-
-        Collection<Condition> conditionSet = null;
-        Collection<Dampening> dampenings = null;
-
-        if (trigger.isEnabled()) {
-            try {
-                conditionSet = definitions.getTriggerConditions(trigger.getId(), null);
-                dampenings = definitions.getTriggerDampenings(trigger.getId(), null);
-
-                rules.addFact(trigger);
-                rules.addFacts(conditionSet);
-                if (!dampenings.isEmpty()) {
-                    rules.addFacts(dampenings);
-                }
-            } catch (Exception e) {
-                log.debugf(e.getMessage(), e);
-                msgLog.errorDefinitionsService("Conditions/Dampening", e.getMessage());
-            }
         }
     }
 

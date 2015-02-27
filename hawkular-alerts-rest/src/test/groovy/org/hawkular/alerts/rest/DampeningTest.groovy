@@ -20,6 +20,7 @@ import org.hawkular.alerts.api.model.dampening.Dampening
 import org.jboss.logging.Logger
 import org.junit.Test
 
+import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.dampening.Dampening.Type
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode
 import static org.junit.Assert.assertEquals
@@ -46,9 +47,16 @@ class DampeningTest extends AbstractTestBase {
 
     @Test
     void createDampening() {
+       Trigger testTrigger = new Trigger("test-trigger-6", "No-Metric");
+
+        // make sure clean test trigger exists
+        client.delete(path: "triggers/test-trigger-6")
+        def resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
         Dampening d = new Dampening("test-trigger-6", Mode.FIRE, Type.RELAXED_COUNT, 1, 1, 1);
 
-        def resp = client.post(path: "trigger/dampening", body: d)
+        resp = client.post(path: "trigger/dampening", body: d)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "trigger/dampening/" + d.getTriggerId());
@@ -63,7 +71,7 @@ class DampeningTest extends AbstractTestBase {
         assertEquals(200, resp.status)
         assertEquals("STRICT", resp.data.type)
 
-        resp = client.delete(path: "trigger/dampening/" + d.getTriggerId())
+        resp = client.delete(path: "trigger/dampening/" + d.getDampeningId())
         assertEquals(200, resp.status)
     }
 
