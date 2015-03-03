@@ -75,6 +75,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     private final String DS_NAME;
     private DataSource ds;
     private AlertsService alertsService;
+    private boolean initialized = false;
 
     public DbDefinitionsServiceImpl() {
         DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource", "java:jboss/datasources/HawkularDS");
@@ -119,6 +120,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             }
             String folder = data + "/" + INIT_FOLDER;
             initFiles(folder);
+            initialized = true;
         } catch (Throwable t) {
             System.out.println(" !!!!!!!!!!!! " + t);
             t.printStackTrace();
@@ -873,7 +875,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (null != alertsService) {
+        if (initialized && null != alertsService) {
             alertsService.reloadTrigger(triggerId);
         }
 
@@ -911,7 +913,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (null != alertsService) {
+        if (initialized && null != alertsService) {
             alertsService.reloadTrigger(dampening.getTriggerId());
         }
 
@@ -1320,7 +1322,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (null != alertsService) {
+        if (initialized && null != alertsService) {
             alertsService.reloadTrigger(dampening.getTriggerId());
         }
     }
@@ -1418,7 +1420,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (null != alertsService) {
+        if (initialized && null != alertsService) {
             alertsService.reloadTrigger(triggerId);
         }
     }
@@ -1451,7 +1453,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (null != alertsService) {
+        if (initialized && null != alertsService) {
             alertsService.reloadTrigger(dampening.getTriggerId());
         }
 
@@ -1550,7 +1552,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (null != alertsService) {
+        if (initialized && null != alertsService) {
             alertsService.reloadTrigger(trigger.getId());
         }
 
