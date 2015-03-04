@@ -34,52 +34,38 @@ public interface MsgLogger extends BasicLogger {
     MsgLogger LOGGER = Logger.getMessageLogger(MsgLogger.class, MsgLogger.class.getPackage().getName());
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 210001, value = "Notifier type registration received without op.")
-    void warnNotifierTypeRegistrationWithoutOp();
+    @Message(id = 210001, value = "Action plugin registration received without op.")
+    void warnActionPluginRegistrationWithoutOp();
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 210002, value = "NotifierType [%s] registered")
-    void infoNotifierTypeRegistration(String notifierType);
+    @Message(id = 210002, value = "Action plugin [%s] registered")
+    void infoActionPluginRegistration(String actionPlugin);
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 210003, value = "NotifierType [%s] is already registered")
-    void warnNotifierTypeAlreadyRegistered(String notifierType);
+    @Message(id = 210003, value = "Action plugin [%s] is already registered")
+    void warnActionPluginAlreadyRegistered(String actionPlugin);
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 210004, value = "Notifier type [%s] registration received with unkwown op [%s]")
-    void warnNotifierTypeRegistrationWithUnknownOp(String notifierType, String op);
+    @Message(id = 210004, value = "Action plugin [%s] registration received with unkwown op [%s]")
+    void warnActionPluginRegistrationWithUnknownOp(String actionPlugin, String op);
 
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 210005, value = "Cannot connect to hawkular bus")
     void warnCannotConnectToBus();
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 210006, value = "Sent notification message [%s] to the bus")
-    void infoSentNotificationMessage(String msg);
+    @Message(id = 210006, value = "Sent action message [%s] to the bus")
+    void infoSentActionMessage(String msg);
 
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 210007, value = "Cannot access to DefinitionsService")
     void warnCannotAccessToDefinitionsService();
 
     @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 210008, value = "Error processing notification. Description: [%s]")
-    void errorProcessingNotification(String msg);
+    @Message(id = 210008, value = "Error processing action. Description: [%s]")
+    void errorProcessingAction(String msg);
 
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 210009, value = "Error accesing to DefinitionsService. Description: [%s]")
     void errorDefinitionsService(String msg);
-
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 210010, value = "Error processing registration. Description: [%s]")
-    void errorProcessingRegistration(String msg);
-
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 210011, value = "Error processing deregistration. Description: [%s]")
-    void errorProcessingDeregistration(String msg);
-
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 210012, value = "Sent notifier registration message [%s] to the bus")
-    void infoSentNotifierRegistrationMessage(String msg);
-
-
 }

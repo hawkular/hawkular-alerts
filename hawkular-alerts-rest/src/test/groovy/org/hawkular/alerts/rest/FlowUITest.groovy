@@ -21,7 +21,6 @@ import org.jboss.logging.Logger
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertTrue
 
 /**
  * These tests are intended to reproduce scenarios based on UI flows.
@@ -34,7 +33,7 @@ import static org.junit.Assert.assertTrue
  * - Specific properties for the trigger definition itself.
  * - A maximum of 4 conditions associated with it.
  * - Dampening informacion.
- * - A list of notifiers associated with this definition.
+ * - A list of actions associated with this definition.
  *
  * @author Lucas Ponce
  */
@@ -103,13 +102,13 @@ class FlowUITest extends AbstractTestBase {
                 log.info("No dampening found")
             }
             /*
-                Get all notifiers for a trigger
+                Get all actions for a trigger
              */
-            log.info("Notifiers: " + t.getNotifiers())
-            for (String notifierId : t.getNotifiers()) {
-                resp = client.get(path: "notifiers/" + notifierId)
-                def notifier = resp.data
-                log.info("Notifier: " + notifier)
+            log.info("Actions: " + t.getActions())
+            for (String actionId : t.getActions()) {
+                resp = client.get(path: "actions/" + actionId)
+                def action = resp.data
+                log.info("Action: " + action)
             }
         }
     }
