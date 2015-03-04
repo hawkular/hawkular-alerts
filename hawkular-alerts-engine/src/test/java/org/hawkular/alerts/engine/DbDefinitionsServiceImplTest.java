@@ -65,7 +65,7 @@ public class DbDefinitionsServiceImplTest {
         assertTrue(db.getAllTriggers().size() > 0);
         assertTrue(db.getAllConditions().size() > 0);
         assertTrue(db.getAllDampenings().size() > 0);
-        assertTrue(db.getAllNotifiers().size() > 0);
+        assertTrue(db.getAllActions().size() > 0);
     }
 
     @Test

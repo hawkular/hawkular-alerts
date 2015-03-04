@@ -34,8 +34,8 @@ public abstract class TriggerTemplate {
     private String name;
     private String description;
 
-    /** A group of notifier's ids. */
-    private Set<String> notifiers;
+    /** A group of actions's ids. */
+    private Set<String> actions;
 
     private transient Match firingMatch;
     private transient Match safetyMatch;
@@ -45,7 +45,7 @@ public abstract class TriggerTemplate {
 
         this.firingMatch = Match.ALL;
         this.safetyMatch = Match.ALL;
-        this.notifiers = new HashSet();
+        this.actions = new HashSet();
     }
 
     public String getName() {
@@ -83,33 +83,33 @@ public abstract class TriggerTemplate {
         this.safetyMatch = safetyMatch;
     }
 
-    public Set<String> getNotifiers() {
-        return notifiers;
+    public Set<String> getActions() {
+        return actions;
     }
 
-    public void setNotifiers(Set<String> notifiers) {
-        this.notifiers = notifiers;
+    public void setActions(Set<String> actions) {
+        this.actions = actions;
     }
 
-    public void addNotifier(String id) {
-        if (id == null || id.isEmpty()) {
-            throw new IllegalArgumentException("Notifier id must be non-empty.");
+    public void addAction(String actionId) {
+        if (actionId == null || actionId.isEmpty()) {
+            throw new IllegalArgumentException("ActionId must be non-empty.");
         }
-        notifiers.add(id);
+        actions.add(actionId);
     }
 
-    public void addNotifiers(Set<String> ids) {
-        if (ids == null) {
+    public void addActions(Set<String> actionIds) {
+        if (actionIds == null) {
             return;
         }
-        notifiers.addAll(ids);
+        actions.addAll(actionIds);
     }
 
-    public void removeNotifier(String id) {
-        if (id == null || id.isEmpty()) {
-            throw new IllegalArgumentException("Notifier id must be non-empty.");
+    public void removeAction(String actionId) {
+        if (actionId == null || actionId.isEmpty()) {
+            throw new IllegalArgumentException("ActionId must be non-empty.");
         }
-        notifiers.remove(id);
+        actions.remove(actionId);
     }
 
     @Override

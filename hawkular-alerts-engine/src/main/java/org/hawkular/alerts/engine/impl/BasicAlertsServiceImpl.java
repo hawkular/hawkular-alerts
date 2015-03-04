@@ -35,7 +35,7 @@ import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.api.services.NotificationsService;
+import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.rules.RulesEngine;
 
@@ -68,7 +68,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
     DefinitionsService definitions;
 
     @EJB
-    NotificationsService notifications;
+    ActionsService actions;
 
     /*
         Init properties
@@ -162,7 +162,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
         }
 
         rules.addGlobal("log", log);
-        rules.addGlobal("notifications", notifications);
+        rules.addGlobal("actions", actions);
         rules.addGlobal("alerts", alerts);
 
         rulesTask = new RulesInvoker();

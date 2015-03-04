@@ -33,11 +33,11 @@ import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.Availability.AvailabilityType
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.data.StringData;
-import org.hawkular.alerts.api.model.notification.Notification;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.TriggerTemplate.Match;
-import org.hawkular.alerts.api.services.NotificationsService;
+import org.hawkular.alerts.api.services.ActionsService;
 
 import org.jboss.logging.Logger;
 
@@ -45,7 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 
 global Logger log;
-global NotificationsService notifications;
+global ActionsService actions;
 global List alerts;
 
 ////// CONDITION MATCHING
@@ -371,12 +371,12 @@ rule AlertOnSatisfiedDampening
 
         Alert newAlert = new Alert( $tid, $d.getSatisfyingEvals() );
         alerts.add(newAlert);
-        if (notifications != null) {
-            for (String notifierId : $t.getNotifiers()) {
-                Notification notification = new Notification();
-                notification.setNotifierId(notifierId);
-                notification.setMessage(newAlert.toString());
-                notifications.send(notification);
+        if (actions != null) {
+            for (String actionId : $t.getActions()) {
+                Action action = new Action();
+                action.setActionId(actionId);
+                action.setMessage(newAlert.toString());
+                actions.send(action);
             }
         }
 
