@@ -43,7 +43,7 @@
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-notifiers-api</artifactId>
+      <artifactId>hawkular-actions-api</artifactId>
       <version>${project.version}</version>
     </dependency>
 

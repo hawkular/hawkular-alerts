@@ -156,15 +156,15 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     "  triggerMode VARCHAR(20) NOT NULL," +
                     "  payload VARCHAR(1024) )");
 
-            s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_NOTIFIER_TYPES " +
-                    "( notifierType VARCHAR(250) PRIMARY KEY," +
+            s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_ACTION_PLUGINS " +
+                    "( actionPlugin VARCHAR(250) PRIMARY KEY," +
                     "  payload VARCHAR(1024) )");
 
-            s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_NOTIFIERS " +
-                    "( notifierId VARCHAR(250) NOT NULL," +
-                    "  notifierType VARCHAR(250)," +
+            s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_ACTIONS " +
+                    "( actionId VARCHAR(250) NOT NULL," +
+                    "  actionPLugin VARCHAR(250)," +
                     "  payload VARCHAR(1024)," +
-                    "  PRIMARY KEY(notifierId, notifierType))");
+                    "  PRIMARY KEY(actionId, actionPlugin))");
 
             s.close();
 
@@ -210,9 +210,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                 initDampening(initFolder);
             }
 
-            int nNotifiers = getNumTable("HWK_ALERTS_NOTIFIERS");
-            if (nNotifiers == 0) {
-                initNotifiers(initFolder);
+            int nActions = getNumTable("HWK_ALERTS_ACTIONS");
+            if (nActions == 0) {
+                initActions(initFolder);
             }
         } catch (Exception e) {
             if (log.isDebugEnabled()) {
@@ -258,7 +258,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         trigger.setFiringMatch(firingMatch);
                         trigger.setSafetyMatch(safetyMatch);
                         for (String notifier : notifiers) {
-                            trigger.addNotifier(notifier);
+                            trigger.addAction(notifier);
                         }
 
                         addTrigger(trigger);
@@ -441,15 +441,15 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
-    private void initNotifiers(File initFolder) throws Exception {
+    private void initActions(File initFolder) throws Exception {
         /*
-            Notifiers
+            Actions
          */
-        File notifiers = new File(initFolder, "notifiers.data");
-        if (notifiers.exists() && notifiers.isFile()) {
+        File actions = new File(initFolder, "actions.data");
+        if (actions.exists() && actions.isFile()) {
             List<String> lines = null;
             try {
-                lines = Files.readAllLines(Paths.get(notifiers.toURI()), Charset.forName("UTF-8"));
+                lines = Files.readAllLines(Paths.get(actions.toURI()), Charset.forName("UTF-8"));
             } catch (IOException e) {
                 log.error(e.toString(), e);
             }
@@ -459,22 +459,28 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length == 3) {
-                        String notifierId = fields[0];
-                        String notifierType = fields[1];
-                        String description = fields[2];
-                        Map<String, String> newNotifier = new HashMap<String, String>();
-                        newNotifier.put("NotifierID", notifierId);
-                        newNotifier.put("NotifierType", notifierType);
-                        newNotifier.put("description", description);
+                    if (fields.length > 2) {
+                        String actionId = fields[0];
+                        String actionPlugin = fields[1];
 
-                        addNotifier(notifierId, newNotifier);
-                        log.debugf("Init file - Inserting [%s]", newNotifier);
+                        Map<String, String> newAction = new HashMap<String, String>();
+                        newAction.put("actionId", actionId);
+                        newAction.put("actionPlugin", actionPlugin);
+
+                        for (int i = 2; i < fields.length; i++) {
+                            String property = fields[i];
+                            String[] properties = property.split("=");
+                            if (properties.length == 2) {
+                                newAction.put(properties[0], properties[1]);
+                            }
+                        }
+                        addAction(actionId, newAction);
+                        log.debugf("Init file - Inserting [%s]", newAction);
                     }
                 }
             }
         } else {
-            msgLog.errorFileNotFound("notifiers.data");
+            msgLog.errorFileNotFound("actions.data");
         }
     }
 
@@ -921,16 +927,16 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void addNotifier(String notifierId, Map<String, String> properties) throws Exception {
-        if (notifierId == null || notifierId.isEmpty()) {
-            throw new IllegalArgumentException("NotifierId must be not null");
+    public void addAction(String actionId, Map<String, String> properties) throws Exception {
+        if (actionId == null || actionId.isEmpty()) {
+            throw new IllegalArgumentException("actionId must be not null");
         }
         if (properties == null || properties.isEmpty()) {
             throw new IllegalArgumentException("Properties must be not null");
         }
-        String notifierType = properties.get("NotifierType");
-        if (notifierType == null) {
-            throw new IllegalArgumentException("Notifier has not NotifierType property");
+        String actionPlugin = properties.get("actionPlugin");
+        if (actionPlugin == null) {
+            throw new IllegalArgumentException("Action has not actionPlugin property");
         }
         if (ds == null) {
             throw new Exception("DataSource is null");
@@ -942,9 +948,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_NOTIFIERS VALUES (")
-                    .append("'").append(notifierId).append("', ")
-                    .append("'").append(notifierType).append("', ")
+            StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_ACTIONS VALUES (")
+                    .append("'").append(actionId).append("', ")
+                    .append("'").append(actionPlugin).append("', ")
                     .append("'").append(toJson(properties)).append("'")
                     .append(")");
             log.debugf("SQL: " + sql);
@@ -959,9 +965,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void addNotifierType(String notifierType, Set<String> properties) throws Exception {
-        if (notifierType == null || notifierType.isEmpty()) {
-            throw new IllegalArgumentException("NotifierType must be not null");
+    public void addActionPlugin(String actionPlugin, Set<String> properties) throws Exception {
+        if (actionPlugin == null || actionPlugin.isEmpty()) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
         }
         if (properties == null || properties.isEmpty()) {
             throw new IllegalArgumentException("Properties must be not null");
@@ -976,8 +982,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_NOTIFIER_TYPES VALUES (")
-                    .append("'").append(notifierType).append("', ")
+            StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_ACTION_PLUGINS VALUES (")
+                    .append("'").append(actionPlugin).append("', ")
                     .append("'").append(toJson(properties)).append("'")
                     .append(")");
             log.debugf("SQL: " + sql);
@@ -1022,9 +1028,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Map<String, String> getNotifier(String notifierId) throws Exception {
-        if (notifierId == null || notifierId.isEmpty()) {
-            throw new IllegalArgumentException("NotifierId must be not null");
+    public Map<String, String> getAction(String actionId) throws Exception {
+        if (actionId == null || actionId.isEmpty()) {
+            throw new IllegalArgumentException("ActionId must be not null");
         }
         if (ds == null) {
             throw new Exception("DataSource is null");
@@ -1038,8 +1044,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("SELECT notifierId, payload FROM HWK_ALERTS_NOTIFIERS WHERE ")
-                    .append("notifierId = '").append(notifierId).append("'");
+            StringBuilder sql = new StringBuilder("SELECT actionId, payload FROM HWK_ALERTS_ACTIONS WHERE ")
+                    .append("actionId = '").append(actionId).append("'");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
             if (rs.next()) {
@@ -1058,7 +1064,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<String> getAllNotifiers() throws Exception {
+    public Collection<String> getAllActions() throws Exception {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
@@ -1066,7 +1072,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             throw new Exception("DataSource is null");
         }
 
-        List<String> notifiers = null;
+        List<String> actions = null;
         Connection c = null;
         Statement s = null;
         ResultSet rs = null;
@@ -1074,12 +1080,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("SELECT notifierId FROM HWK_ALERTS_NOTIFIERS ORDER BY notifierId ");
+            StringBuilder sql = new StringBuilder("SELECT actionId FROM HWK_ALERTS_ACTIONS ORDER BY actionId ");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
-            notifiers = new ArrayList();
+            actions = new ArrayList();
             while (rs.next()) {
-                notifiers.add(rs.getString(1));
+                actions.add(rs.getString(1));
             }
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1088,19 +1094,19 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s, rs);
         }
 
-        return notifiers;
+        return actions;
     }
 
     @Override
-    public Collection<String> getNotifiers(String notifierType) throws Exception {
-        if (notifierType == null || notifierType.isEmpty()) {
-            throw new IllegalArgumentException("NotifierType must be not null");
+    public Collection<String> getActions(String actionPlugin) throws Exception {
+        if (actionPlugin == null || actionPlugin.isEmpty()) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
         }
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
 
-        List<String> notifiers = null;
+        List<String> actions = null;
         Connection c = null;
         Statement s = null;
         ResultSet rs = null;
@@ -1108,14 +1114,14 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("SELECT notifierId FROM HWK_ALERTS_NOTIFIERS WHERE ")
-                    .append("notifierType = '").append(notifierType).append("' ")
-                    .append("ORDER BY notifierId");
+            StringBuilder sql = new StringBuilder("SELECT actionId FROM HWK_ALERTS_ACTIONS WHERE ")
+                    .append("actionPlugin = '").append(actionPlugin).append("' ")
+                    .append("ORDER BY actionId");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
-            notifiers = new ArrayList();
+            actions = new ArrayList();
             while (rs.next()) {
-                notifiers.add(rs.getString(1));
+                actions.add(rs.getString(1));
             }
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1124,13 +1130,13 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s, rs);
         }
 
-        return notifiers;
+        return actions;
     }
 
     @Override
-    public Set<String> getNotifierType(String notifierType) throws Exception {
-        if (notifierType == null || notifierType.isEmpty()) {
-            throw new IllegalArgumentException("NotifierType must be not null");
+    public Set<String> getActionPlugin(String actionPlugin) throws Exception {
+        if (actionPlugin == null || actionPlugin.isEmpty()) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
         }
         if (ds == null) {
             throw new Exception("DataSource is null");
@@ -1144,8 +1150,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("SELECT notifierType, payload FROM HWK_ALERTS_NOTIFIER_TYPES WHERE ")
-                    .append("notifierType = '").append(notifierType).append("'");
+            StringBuilder sql = new StringBuilder("SELECT actionPlugin, payload FROM HWK_ALERTS_ACTION_PLUGINS WHERE ")
+                    .append("actionPlugin = '").append(actionPlugin).append("'");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
             if (rs.next()) {
@@ -1162,12 +1168,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<String> getNotifierTypes() throws Exception {
+    public Collection<String> getActionPlugins() throws Exception {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
 
-        List<String> notifierTypes = new ArrayList<String>();
+        List<String> actionPlugins = new ArrayList<String>();
         Connection c = null;
         Statement s = null;
         ResultSet rs = null;
@@ -1175,12 +1181,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("SELECT notifierType FROM HWK_ALERTS_NOTIFIER_TYPES ")
-                    .append("ORDER BY notifierType");
+            StringBuilder sql = new StringBuilder("SELECT actionPlugin FROM HWK_ALERTS_ACTION_PLUGIN ")
+                    .append("ORDER BY actionPlugin");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
             while (rs.next()) {
-                notifierTypes.add(rs.getString(1));
+                actionPlugins.add(rs.getString(1));
             }
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1189,7 +1195,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s, rs);
         }
 
-        return notifierTypes;
+        return actionPlugins;
     }
 
     @Override
@@ -1328,9 +1334,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void removeNotifier(String notifierId) throws Exception {
-        if (notifierId == null || notifierId.isEmpty()) {
-            throw new IllegalArgumentException("NotifierId must not be null");
+    public void removeAction(String actionId) throws Exception {
+        if (actionId == null || actionId.isEmpty()) {
+            throw new IllegalArgumentException("ActionId must not be null");
         }
         if (ds == null) {
             throw new Exception("DataSource is null");
@@ -1342,8 +1348,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_NOTIFIERS WHERE ")
-                    .append("notifierId = '").append(notifierId).append("' ");
+            StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_ACTIONS WHERE ")
+                    .append("actionId = '").append(actionId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 
@@ -1356,9 +1362,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void removeNotifierType(String notifierType) throws Exception {
-        if (notifierType == null || notifierType.isEmpty()) {
-            throw new IllegalArgumentException("NotifierType must not be null");
+    public void removeActionPlugin(String actionPlugin) throws Exception {
+        if (actionPlugin == null || actionPlugin.isEmpty()) {
+            throw new IllegalArgumentException("ActionPlugin must not be null");
         }
         if (ds == null) {
             throw new Exception("DataSource is null");
@@ -1370,8 +1376,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_NOTIFIER_TYPES WHERE ")
-                    .append("notifierType = '").append(notifierType).append("' ");
+            StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_ACTION_PLUGINS WHERE ")
+                    .append("actionPlugin = '").append(actionPlugin).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 
@@ -1461,9 +1467,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void updateNotifier(String notifierId, Map<String, String> properties) throws Exception {
-        if (notifierId == null || notifierId.isEmpty()) {
-            throw new IllegalArgumentException("NotifierId must be not null");
+    public void updateAction(String actionId, Map<String, String> properties) throws Exception {
+        if (actionId == null || actionId.isEmpty()) {
+            throw new IllegalArgumentException("ActionId must be not null");
         }
         if (properties == null || properties.isEmpty()) {
             throw new IllegalArgumentException("Properties must be not null");
@@ -1478,9 +1484,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_NOTIFIERS SET ")
+            StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_ACTIONS SET ")
                     .append("payload = '").append(toJson(properties)).append("' ")
-                    .append("WHERE notifierId = '").append(notifierId).append("' ");
+                    .append("WHERE actionId = '").append(actionId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 
@@ -1493,9 +1499,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void updateNotifierType(String notifierType, Set<String> properties) throws Exception {
-        if (notifierType == null || notifierType.isEmpty()) {
-            throw new IllegalArgumentException("NotifierType must be not null");
+    public void updateActionPlugin(String actionPlugin, Set<String> properties) throws Exception {
+        if (actionPlugin == null || actionPlugin.isEmpty()) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
         }
         if (properties == null || properties.isEmpty()) {
             throw new IllegalArgumentException("Properties must be not null");
@@ -1510,9 +1516,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_NOTIFIER_TYPES SET ")
+            StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_ACTION_PLUGINS SET ")
                     .append("payload = '").append(toJson(properties)).append("' ")
-                    .append("WHERE notifierType = '").append(notifierType).append("' ");
+                    .append("WHERE actionPlugin = '").append(actionPlugin).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 

@@ -165,41 +165,41 @@ public interface DefinitionsService {
     Collection<Condition> getAllConditions() throws Exception;
 
     /*
-        A notifier type is representation of a notifier capability.
+        An action plugin is a representation of an action capability.
         i.e. email, snmp or sms.
-        It will have a set of specific properties to fill per a specific notifier.
+        It will have a set of specific properties to fill per a specific action definition.
 
-        Notifier plugin should be responsible to init a notifier type before to send notifications.
+        Action plugin should be responsible to register an action type before to send actions.
 
-        NotifierType API will be useful for future UI to help to define new notifiers.
-        i.e. querying for properties to fill for a specific notifier type.
+        ActionPlugin API will be useful in the UI to help to define new actions.
+        i.e. querying for properties to fill for a specific action type.
      */
-    void addNotifierType(String notifierType, Set<String> properties) throws Exception;
+    void addActionPlugin(String actionPlugin, Set<String> properties) throws Exception;
 
-    void removeNotifierType(String notifierType) throws Exception;
+    void removeActionPlugin(String actionPlugin) throws Exception;
 
-    void updateNotifierType(String notifierType, Set<String> properties) throws Exception;
+    void updateActionPlugin(String actionPlugin, Set<String> properties) throws Exception;
 
-    Collection<String> getNotifierTypes() throws Exception;
+    Collection<String> getActionPlugins() throws Exception;
 
-    Set<String> getNotifierType(String notifierType) throws Exception;
+    Set<String> getActionPlugin(String actionPlugin) throws Exception;
 
     /*
-        A notifier is a specific instance of notification.
+        An action is a representation of specific tasks to be executed by action plugins.
         i.e. email to admin@mycompany.com.
              send a specific TRAP with specific details.
              send a SMS mobile to an admin number.
      */
-    void addNotifier(String notifierId, Map<String, String> properties) throws Exception;
+    void addAction(String actionId, Map<String, String> properties) throws Exception;
 
-    void removeNotifier(String notifierId) throws Exception;
+    void removeAction(String actionId) throws Exception;
 
-    void updateNotifier(String notifierId, Map<String, String> properties) throws Exception;
+    void updateAction(String actionId, Map<String, String> properties) throws Exception;
 
-    Collection<String> getAllNotifiers() throws Exception;
+    Collection<String> getAllActions() throws Exception;
 
-    Collection<String> getNotifiers(String notifierType) throws Exception;
+    Collection<String> getActions(String actionPlugin) throws Exception;
 
-    Map<String, String> getNotifier(String notifierId) throws Exception;
+    Map<String, String> getAction(String actionId) throws Exception;
 
 }
