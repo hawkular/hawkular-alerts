@@ -42,7 +42,6 @@ import javax.sql.DataSource;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import org.apache.poi.ss.formula.functions.T;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -1064,7 +1063,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         newTrigger.setDescription(trigger.getDescription());
         newTrigger.setFiringMatch(trigger.getFiringMatch());
         newTrigger.setSafetyMatch(trigger.getSafetyMatch());
-        newTrigger.setNotifiers(trigger.getNotifiers());
+        newTrigger.setActions(trigger.getActions());
 
         addTrigger(newTrigger);
 
@@ -1117,6 +1116,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         return newTrigger;
     }
 
+    @Override
     public Map<String, String> getAction(String actionId) throws Exception {
         if (actionId == null || actionId.isEmpty()) {
             throw new IllegalArgumentException("ActionId must be not null");
