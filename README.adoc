@@ -2,7 +2,7 @@
 
 [.lead]
 *Hawkular Alerts* is the alerts module for Hawkular. It is responsible to define conditions rules over data events
-and fire alerts that can be sent by several notifications plugins.
+and fire alerts that can be sent by several action plugins.
 
 Hawkular is a modular systems monitoring suite, that consists of several sub-projects for
 storing of metrics, alerting on incoming events and more. Those projects are developed
@@ -28,17 +28,16 @@ It is a wrapper of the main *hawkular-alerts-api*.
 This component is responsible for the communication between the alerts engine and the bus. +
 *hawkular-alerts-engine* is decoupled from the bus, so it can be used in other scenarios +
 (i.e. standalone, third party alerts system).
-| hawkular-notifiers-api |
-Common API for notifiers plugins. +
-A notifier plugin will be deployed as a .war artifact and it will interact with the bus via this API.
-| hawkular-notifiers-email +
-hawkular-notifiers-sms +
-hawkular-notifiers-snmp |
-Project examples with the skeleton of a notifier plugin. +
+| hawkular-actions-api |
+Common API for action plugins. +
+An action plugin will be deployed as a .war artifact and it will interact with the bus via this API.
+| hawkular-actions-email +
+hawkular-actions-sms +
+hawkular-actions-snmp |
+Project examples with the skeleton of a action plugin. +
 Main responsabilities are: +
 - Register at deployment time into the alerts-engine. +
-- Process registration of new notifiers. +
-- Process notifications messages.
+- Process actions messages.
 |=======================
 
 == Setup
@@ -123,7 +122,7 @@ curl -X POST -H "Content-Type: application/json" \
 http://localhost:8080/hawkular-bus/message/HawkularAlertData
 
 curl -X POST -H "Content-Type: application/json" \
---data "{\"data\" : [ { \"id\": \"StringData-01\", \"type\" : \"string\", \"value\" : \"Barney\"} ]}" \
+--data "{\"data\" : [ { \"id\": \"StringData-01\", \"type\" : \"string\", \"value\" : \"Fred\"} ]}" \
 http://localhost:8080/hawkular-bus/message/HawkularAlertData
 
 curl -X POST -H "Content-Type: application/json" \
