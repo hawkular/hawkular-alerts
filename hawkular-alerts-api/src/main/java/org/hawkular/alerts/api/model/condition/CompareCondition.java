@@ -61,6 +61,13 @@ public class CompareCondition extends Condition {
         this.data2Multiplier = data2Multiplier;
     }
 
+    /** Returns null. Use {@link #getDataId1} and {@link #getDataId2}
+     * @see org.hawkular.alerts.api.model.condition.Condition#getDataId()
+     */
+    public String getDataId() {
+        return null;
+    }
+
     public String getData1Id() {
         return data1Id;
     }

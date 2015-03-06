@@ -1022,6 +1022,95 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
+    public Trigger copyTrigger(String triggerId, Map<String, String> dataIdMap) throws Exception {
+        if (triggerId == null || triggerId.isEmpty()) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (dataIdMap == null || dataIdMap.isEmpty()) {
+            throw new IllegalArgumentException("DataIdMap must be not null");
+        }
+
+        Trigger trigger = getTrigger(triggerId);
+        if (trigger == null) {
+            throw new IllegalArgumentException("Trigger not found for triggerId [" + triggerId + "]");
+        }
+        // ensure we have a 1-1 mapping for the dataId substitution
+        Set<String> dataIdTokens = new HashSet<>();
+        Collection<Condition> conditions = getTriggerConditions(triggerId, null);
+        for (Condition c : conditions) {
+            if (c instanceof CompareCondition) {
+                dataIdTokens.add(((CompareCondition) c).getData1Id());
+                dataIdTokens.add(((CompareCondition) c).getData2Id());
+            } else {
+                dataIdTokens.add(c.getDataId());
+            }
+        }
+        if (!dataIdTokens.equals(dataIdMap.keySet())) {
+            throw new IllegalArgumentException(
+                    "DataIdMap must contain the exact dataIds (keyset) expected by the condition set. Expected: "
+                            + dataIdMap.keySet() + ", dataIdMap: " + dataIdMap.keySet());
+        }
+        Collection<Dampening> dampenings = getTriggerDampenings(triggerId, null);
+
+        Trigger newTrigger = new Trigger(trigger.getName());
+        newTrigger.setName(trigger.getName());
+        newTrigger.setDescription(trigger.getDescription());
+        newTrigger.setFiringMatch(trigger.getFiringMatch());
+        newTrigger.setSafetyMatch(trigger.getSafetyMatch());
+        newTrigger.setNotifiers(trigger.getNotifiers());
+
+        addTrigger(newTrigger);
+
+        for (Condition c : conditions) {
+            Condition newCondition = null;
+            if (c instanceof ThresholdCondition) {
+                newCondition = new ThresholdCondition(newTrigger.getId(), c.getTriggerMode(),
+                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
+                        ((ThresholdCondition) c).getOperator(), ((ThresholdCondition) c).getThreshold());
+
+            } else if (c instanceof ThresholdRangeCondition) {
+                newCondition = new ThresholdRangeCondition(newTrigger.getId(), c.getTriggerMode(),
+                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
+                        ((ThresholdRangeCondition) c).getOperatorLow(),
+                        ((ThresholdRangeCondition) c).getOperatorHigh(),
+                        ((ThresholdRangeCondition) c).getThresholdLow(),
+                        ((ThresholdRangeCondition) c).getThresholdHigh(),
+                        ((ThresholdRangeCondition) c).isInRange());
+
+            } else if (c instanceof AvailabilityCondition) {
+                newCondition = new AvailabilityCondition(newTrigger.getId(), c.getTriggerMode(),
+                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
+                        ((AvailabilityCondition) c).getOperator());
+
+            } else if (c instanceof CompareCondition) {
+                newCondition = new CompareCondition(newTrigger.getId(), c.getTriggerMode(),
+                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(((CompareCondition) c)
+                                .getData1Id()),
+                        ((CompareCondition) c).getOperator(),
+                        ((CompareCondition) c).getData2Multiplier(),
+                        dataIdMap.get(((CompareCondition) c).getData2Id()));
+
+            } else if (c instanceof StringCondition) {
+                newCondition = new StringCondition(newTrigger.getId(), c.getTriggerMode(),
+                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
+                        ((StringCondition) c).getOperator(), ((StringCondition) c).getPattern(),
+                        ((StringCondition) c).isIgnoreCase());
+            }
+
+            addCondition(newTrigger.getId(), newCondition.getTriggerMode(), newCondition);
+        }
+
+        for (Dampening d : dampenings) {
+            Dampening newDampening = new Dampening(newTrigger.getId(), d.getTriggerMode(), d.getType(),
+                    d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
+
+            addDampening(newDampening);
+        }
+
+        return newTrigger;
+    }
+
+    @Override
     public Map<String, String> getNotifier(String notifierId) throws Exception {
         if (notifierId == null || notifierId.isEmpty()) {
             throw new IllegalArgumentException("NotifierId must be not null");

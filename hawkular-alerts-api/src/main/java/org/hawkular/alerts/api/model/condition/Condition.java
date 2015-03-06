@@ -140,4 +140,8 @@ public abstract class Condition {
                 + conditionSetSize + ", conditionSetIndex=" + conditionSetIndex + "]";
     }
 
+    /**
+     * @return The dataId, can be null if the Condition has no relevant dataId.
+     */
+    public abstract String getDataId();
 }

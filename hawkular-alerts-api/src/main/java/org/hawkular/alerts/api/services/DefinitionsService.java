@@ -68,6 +68,16 @@ public interface DefinitionsService {
 
     Collection<Trigger> getAllTriggers() throws Exception;
 
+    /**
+     * Used to generate an explicit Trigger from a Tokenized Trigger.  The dataIdMap replaces the tokens in the
+     * Conditions with actual dataIds.
+     * @param triggerId
+     * @param dataIdMap
+     * @return
+     * @throws Exception
+     */
+    Trigger copyTrigger(String triggerId, Map<String, String> dataIdMap) throws Exception;
+
     /*
         CRUD interface for Dampening
      */
