@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
@@ -32,8 +34,13 @@ public class ThresholdCondition extends Condition {
         LT, GT, LTE, GTE
     }
 
+    @JsonInclude(Include.NON_NULL)
     private String dataId;
+
+    @JsonInclude(Include.NON_NULL)
     private Operator operator;
+
+    @JsonInclude(Include.NON_NULL)
     private Double threshold;
 
     public ThresholdCondition() {
@@ -41,6 +48,18 @@ public class ThresholdCondition extends Condition {
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
         this("DefaultId", 1, 1, null, null, null);
+    }
+
+    public ThresholdCondition(String triggerId,
+                              String dataId, Operator operator, Double threshold) {
+
+        this(triggerId, Mode.FIRE, 1, 1, dataId, operator, threshold);
+    }
+
+    public ThresholdCondition(String triggerId, Mode triggerMode,
+                              String dataId, Operator operator, Double threshold) {
+
+        this(triggerId, triggerMode, 1, 1, dataId, operator, threshold);
     }
 
     public ThresholdCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
@@ -51,7 +70,7 @@ public class ThresholdCondition extends Condition {
 
     public ThresholdCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator, Double threshold) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex);
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.THRESHOLD);
         this.dataId = dataId;
         this.operator = operator;
         this.threshold = threshold;
@@ -133,8 +152,11 @@ public class ThresholdCondition extends Condition {
 
     @Override
     public String toString() {
-        return "ThresholdCondition [dataId=" + dataId + ", operator=" + operator + ", threshold=" + threshold
-                + ", toString()=" + super.toString() + "]";
+        return "ThresholdCondition [triggerId='" + triggerId + "', " +
+                "triggerMode=" + triggerMode + ", " +
+                "dataId=" + (dataId == null ? null : '\'' + dataId + '\'') + ", " +
+                "operator=" + (operator == null ? null : '\'' + operator.toString() + '\'') + ", " +
+                "threshold=" + threshold + "]";
     }
 
 }

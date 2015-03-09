@@ -32,7 +32,7 @@ public class NumericData extends Data {
     }
 
     public NumericData(String id, long timestamp, Double value) {
-        super(id, timestamp, (null == value) ? Double.NaN : value);
+        super(id, timestamp, (null == value) ? Double.NaN : value, Type.NUMERIC);
     }
 
     public Double getValue() {
