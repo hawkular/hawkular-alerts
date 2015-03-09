@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.api.model.data;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 /**
  * A base class for incoming data into alerts subsystem.  All {@link Data} has an Id and a timestamp. The
  * timestamp is used to ensure that data is time-ordered when being sent into the alerting engine.  If
@@ -29,9 +32,22 @@ package org.hawkular.alerts.api.model.data;
  * @author Lucas Ponce
  */
 public abstract class Data implements Comparable<Data> {
+
+    public enum Type {
+        AVAILABILITY, NUMERIC, STRING
+    };
+
+    @JsonInclude
     protected String id;
+
+    @JsonInclude
     protected long timestamp;
+
+    @JsonInclude(Include.NON_NULL)
     protected Object value;
+
+    @JsonInclude
+    protected Type type;
 
     public Data() {
         /*
@@ -44,10 +60,11 @@ public abstract class Data implements Comparable<Data> {
      * @param id not null.
      * @param timestamp if <=0 assigned currentTime.
      */
-    public Data(String id, long timestamp, Object value) {
+    public Data(String id, long timestamp, Object value, Type type) {
         this.id = id;
         this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
         this.value = value;
+        this.type = type;
     }
 
     public String getId() {
@@ -75,6 +92,14 @@ public abstract class Data implements Comparable<Data> {
 
     public void setValue(Object value) {
         this.value = value;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override

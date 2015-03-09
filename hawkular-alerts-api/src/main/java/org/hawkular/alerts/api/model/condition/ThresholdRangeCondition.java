@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
@@ -47,11 +48,22 @@ public class ThresholdRangeCondition extends Condition {
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String dataId;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Operator operatorLow;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Operator operatorHigh;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Double thresholdLow;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Double thresholdHigh;
+
+    @JsonInclude
     private boolean inRange;
 
     public ThresholdRangeCondition() {
@@ -59,6 +71,22 @@ public class ThresholdRangeCondition extends Condition {
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
         this("DefaultId", 1, 1, null, null, null, null, null, false);
+    }
+
+    public ThresholdRangeCondition(String triggerId,
+                                   String dataId, Operator operatorLow, Operator operatorHigh,
+                                   Double thresholdLow, Double thresholdHigh, boolean inRange) {
+
+        this(triggerId, Mode.FIRE, 1, 1, dataId, operatorLow, operatorHigh,
+             thresholdLow, thresholdHigh, inRange);
+    }
+
+    public ThresholdRangeCondition(String triggerId, Mode triggerMode,
+                                   String dataId, Operator operatorLow, Operator operatorHigh,
+                                   Double thresholdLow, Double thresholdHigh, boolean inRange) {
+
+        this(triggerId, triggerMode, 1, 1, dataId, operatorLow, operatorHigh,
+             thresholdLow, thresholdHigh, inRange);
     }
 
     public ThresholdRangeCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
@@ -72,7 +100,7 @@ public class ThresholdRangeCondition extends Condition {
     public ThresholdRangeCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operatorLow, Operator operatorHigh,
             Double thresholdLow, Double thresholdHigh, boolean inRange) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex);
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.RANGE);
         this.dataId = dataId;
         this.operatorLow = operatorLow;
         this.operatorHigh = operatorHigh;
@@ -210,9 +238,14 @@ public class ThresholdRangeCondition extends Condition {
 
     @Override
     public String toString() {
-        return "ThresholdRangeCondition [dataId=" + dataId + ", operatorLow=" + operatorLow + ", operatorHigh="
-                + operatorHigh + ", thresholdLow=" + thresholdLow + ", thresholdHigh=" + thresholdHigh + ", inRange="
-                + inRange + ", toString()=" + super.toString() + "]";
+        return "ThresholdRangeCondition [triggerId='" + triggerId + "', " +
+                "triggerMode=" + triggerMode + ", " +
+                "dataId=" + (dataId == null ? null : '\'' + dataId + '\'') + ", " +
+                "operatorLow=" + (operatorLow == null ? null : '\'' + operatorLow.toString() + '\'') + ", " +
+                "operatorHigh=" + (operatorHigh == null ? null : '\'' + operatorHigh.toString() + '\'') + ", " +
+                "thresholdLow=" + thresholdLow + ", " +
+                "thresholdHigh=" + thresholdHigh + ", " +
+                "inRange=" + inRange + "]";
     }
 
 }

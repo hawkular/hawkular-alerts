@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
 
@@ -27,7 +29,10 @@ import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
  */
 public class AvailabilityConditionEval extends ConditionEval {
 
+    @JsonInclude(Include.NON_NULL)
     private AvailabilityCondition condition;
+
+    @JsonInclude(Include.NON_NULL)
     private AvailabilityType value;
 
     public AvailabilityConditionEval() {
@@ -107,8 +112,10 @@ public class AvailabilityConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "AvailabilityConditionEval [condition=" + condition + ", value=" + value + ", toString()="
-                + super.toString() + "]";
+        return "AvailabilityConditionEval [evalTimestamp=" + evalTimestamp + ", " +
+                "dataTimestamp=" + dataTimestamp + ", " +
+                "condition=" + condition + ", " +
+                "value=" + value + "]";
     }
 
 }

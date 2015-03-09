@@ -53,7 +53,7 @@ class CompareConditionsTest extends AbstractTestBase {
         def resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        CompareCondition testCond = new CompareCondition("test-trigger-2", 1, 1,
+        CompareCondition testCond = new CompareCondition("test-trigger-2",
                                                          "No-Metric-1", Operator.LT, 1.0, "No-Metric-2");
 
         resp = client.post(path: "conditions/compare", body: testCond)

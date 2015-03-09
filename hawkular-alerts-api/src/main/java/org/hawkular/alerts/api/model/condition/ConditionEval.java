@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * An evaluation state of a specific condition.
  *
@@ -25,12 +28,19 @@ package org.hawkular.alerts.api.model.condition;
 public abstract class ConditionEval {
 
     // result of the condition evaluation
+    @JsonIgnore
     protected boolean match;
+
     // time of condition evaluation (i.e. creation time)
+    @JsonInclude
     protected long evalTimestamp;
+
     // time stamped on the data used in the eval
+    @JsonInclude
     protected long dataTimestamp;
+
     // flag noting whether this condition eval was used in a tested Tuple and already applied to dampening
+    @JsonIgnore
     protected boolean used;
 
     public ConditionEval(boolean match, long dataTimestamp) {
@@ -72,12 +82,16 @@ public abstract class ConditionEval {
         this.used = used;
     }
 
+    @JsonIgnore
     public abstract String getTriggerId();
 
+    @JsonIgnore
     public abstract int getConditionSetSize();
 
+    @JsonIgnore
     public abstract int getConditionSetIndex();
 
+    @JsonIgnore
     public abstract String getLog();
 
     @Override
@@ -110,11 +124,4 @@ public abstract class ConditionEval {
             return false;
         return true;
     }
-
-    @Override
-    public String toString() {
-        return "ConditionEval [match=" + match + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp="
-                + dataTimestamp + ", used=" + used + "]";
-    }
-
 }

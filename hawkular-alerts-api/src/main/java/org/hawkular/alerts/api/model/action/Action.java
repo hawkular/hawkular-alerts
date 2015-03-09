@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.api.model.action;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 /**
  * A base class for action representation from the perspective of the alerts engine.
  * An action is the abstract concept of a consequence of an alert.
@@ -30,8 +33,18 @@ package org.hawkular.alerts.api.model.action;
  */
 public class Action {
 
+    @JsonInclude
     private String actionId;
+
+    @JsonInclude(Include.NON_NULL)
     private String message;
+
+    public Action() { }
+
+    public Action(String actionId, String message) {
+        this.actionId = actionId;
+        this.message = message;
+    }
 
     public String getMessage() {
         return message;
@@ -45,8 +58,8 @@ public class Action {
         return actionId;
     }
 
-    public void setActionId(String notifierId) {
-        this.actionId = notifierId;
+    public void setActionId(String actionId) {
+        this.actionId = actionId;
     }
 
     @Override
@@ -72,7 +85,7 @@ public class Action {
     @Override
     public String toString() {
         return "Action{" +
-                "message='" + message + '\'' +
+                "message=" + (message == null ? null : '\'' + message + '\'') +
                 ", actionId='" + actionId + '\'' +
                 '}';
     }

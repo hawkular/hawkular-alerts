@@ -54,7 +54,7 @@ class AvailabilityConditionsTest extends AbstractTestBase {
         def resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        AvailabilityCondition testCond = new AvailabilityCondition("test-trigger-1", 1, 1,
+        AvailabilityCondition testCond = new AvailabilityCondition("test-trigger-1",
                                                                    "No-Metric", Operator.NOT_UP);
 
         resp = client.post(path: "conditions/availability", body: testCond)
