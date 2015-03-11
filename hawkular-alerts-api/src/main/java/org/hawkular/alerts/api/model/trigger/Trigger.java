@@ -42,7 +42,7 @@ public class Trigger extends TriggerTemplate {
     @JsonInclude
     private boolean safetyEnabled;
 
-    @JsonInclude
+    @JsonIgnore
     private Mode mode;
 
     @JsonIgnore
@@ -89,6 +89,7 @@ public class Trigger extends TriggerTemplate {
         this.id = id;
     }
 
+    @JsonIgnore
     public Mode getMode() {
         return mode;
     }
@@ -153,7 +154,14 @@ public class Trigger extends TriggerTemplate {
 
     @Override
     public String toString() {
-        return "Trigger [id=" + id + ", enabled=" + enabled + ", mode=" + mode + ", match=" + getMatch() + "]";
+        return "Trigger [id=" + id + ", " +
+                "name=" + getName() + ", " +
+                "description=" + getDescription() + ", " +
+                "firingMatch=" + getFiringMatch() + ", " +
+                "safetyMatch=" + getSafetyMatch() + ", " +
+                "enabled=" + enabled + ", " +
+                "mode=" + mode + ", " +
+                "match=" + getMatch() + "]";
     }
 
 }

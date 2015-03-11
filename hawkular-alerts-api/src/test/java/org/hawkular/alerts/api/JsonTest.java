@@ -710,8 +710,7 @@ public class JsonTest {
                 "\"safetyMatch\":\"ALL\"," +
                 "\"id\":\"test\"," +
                 "\"enabled\":true," +
-                "\"safetyEnabled\":true," +
-                "\"mode\":\"FIRE\"}";
+                "\"safetyEnabled\":true}";
         Trigger trigger = objectMapper.readValue(str, Trigger.class);
 
         assert trigger.getName().equals("test-name");
@@ -722,12 +721,10 @@ public class JsonTest {
         assert trigger.getId().equals("test");
         assert trigger.isEnabled() == true;
         assert trigger.isSafetyEnabled() == true;
-        assert trigger.getMode().equals(Mode.FIRE);
 
         String output = objectMapper.writeValueAsString(trigger);
 
-        assert !output.contains("firingMatch");
-        assert !output.contains("safetyMatch");
+        assert !output.contains("mode");
         assert !output.contains("match");
     }
 
