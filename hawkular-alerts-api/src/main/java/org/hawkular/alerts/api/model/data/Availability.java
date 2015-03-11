@@ -33,7 +33,7 @@ public class Availability extends Data {
     }
 
     public Availability(String id, long timestamp, AvailabilityType value) {
-        super(id, timestamp, (null == value) ? AvailabilityType.UP : value);
+        super(id, timestamp, (null == value) ? AvailabilityType.UP : value, Type.AVAILABILITY);
     }
 
     public AvailabilityType getValue() {

@@ -19,6 +19,10 @@ package org.hawkular.alerts.api.model.condition;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.*;
+
 /**
  * A status of an alert thrown by several matched conditions.
  *
@@ -27,8 +31,13 @@ import java.util.Set;
  */
 public class Alert {
 
+    @JsonInclude
     private String triggerId;
+
+    @JsonInclude(Include.NON_EMPTY)
     private List<Set<ConditionEval>> evalSets;
+
+    @JsonInclude
     private long time;
 
     public Alert(String triggerId, List<Set<ConditionEval>> evalSets) {
@@ -85,7 +94,9 @@ public class Alert {
 
     @Override
     public String toString() {
-        return "Alert [triggerId=" + triggerId + ", evals=" + evalSets + ", time=" + time + "]";
+        return "Alert [triggerId=" + triggerId + ", " +
+                "evals=" + evalSets + ", " +
+                "time=" + time + "]";
     }
 
 }

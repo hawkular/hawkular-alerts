@@ -19,6 +19,10 @@ package org.hawkular.alerts.api.model.trigger;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 /**
  * A base template for trigger definition.
  *
@@ -31,14 +35,21 @@ public abstract class TriggerTemplate {
         ALL, ANY
     };
 
+    @JsonInclude
     private String name;
+
+    @JsonInclude
     private String description;
 
     /** A group of actions's ids. */
+    @JsonInclude(Include.NON_EMPTY)
     private Set<String> actions;
 
-    private transient Match firingMatch;
-    private transient Match safetyMatch;
+    @JsonInclude
+    private Match firingMatch;
+
+    @JsonInclude
+    private Match safetyMatch;
 
     public TriggerTemplate(String name) {
         this.name = name;
@@ -67,6 +78,7 @@ public abstract class TriggerTemplate {
         this.description = description;
     }
 
+    @JsonIgnore
     public Match getFiringMatch() {
         return firingMatch;
     }
@@ -75,6 +87,7 @@ public abstract class TriggerTemplate {
         this.firingMatch = firingMatch;
     }
 
+    @JsonIgnore
     public Match getSafetyMatch() {
         return safetyMatch;
     }

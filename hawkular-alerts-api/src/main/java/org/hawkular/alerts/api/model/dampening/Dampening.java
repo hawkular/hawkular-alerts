@@ -22,6 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
@@ -36,22 +38,44 @@ public class Dampening {
         STRICT, RELAXED_COUNT, RELAXED_TIME, STRICT_TIME
     };
 
+    @JsonInclude
     private String triggerId;
+
+    @JsonInclude
     private Mode triggerMode;
+
+    @JsonInclude
     private Type type;
+
+    @JsonInclude
     private int evalTrueSetting;
+
+    @JsonInclude
     private int evalTotalSetting;
+
+    @JsonInclude
     private long evalTimeSetting;
+
     /**
      * A composed key for the dampening
      */
+    @JsonInclude
     protected String dampeningId;
 
     // The following fields are only relevant while the engine is executing.
+    @JsonIgnore
     private transient int numTrueEvals;
+
+    @JsonIgnore
     private transient int numEvals;
+
+    @JsonIgnore
     private transient long trueEvalsStartTime;
+
+    @JsonIgnore
     private transient boolean satisfied;
+
+    @JsonIgnore
     private transient List<Set<ConditionEval>> satisfyingEvals = new ArrayList<Set<ConditionEval>>();
 
     public Dampening() {
@@ -168,6 +192,7 @@ public class Dampening {
         this.type = type;
     }
 
+    @JsonIgnore
     public int getNumTrueEvals() {
         return numTrueEvals;
     }
@@ -176,6 +201,7 @@ public class Dampening {
         this.numTrueEvals = numTrueEvals;
     }
 
+    @JsonIgnore
     public long getTrueEvalsStartTime() {
         return trueEvalsStartTime;
     }
@@ -184,6 +210,7 @@ public class Dampening {
         this.trueEvalsStartTime = trueEvalsStartTime;
     }
 
+    @JsonIgnore
     public int getNumEvals() {
         return numEvals;
     }
@@ -208,6 +235,7 @@ public class Dampening {
         return evalTimeSetting;
     }
 
+    @JsonIgnore
     public boolean isSatisfied() {
         return satisfied;
     }
@@ -215,6 +243,7 @@ public class Dampening {
     /**
      * @return a safe, but not deep, copy of the satisfying evals List
      */
+    @JsonIgnore
     public List<Set<ConditionEval>> getSatisfyingEvals() {
         return new ArrayList<Set<ConditionEval>>(satisfyingEvals);
     }

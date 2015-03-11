@@ -16,7 +16,10 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.hawkular.alerts.api.model.data.NumericData;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.*;
 
 /**
  * An evaluation state for compare condition.
@@ -26,8 +29,13 @@ import org.hawkular.alerts.api.model.data.NumericData;
  */
 public class CompareConditionEval extends ConditionEval {
 
+    @JsonInclude(Include.NON_NULL)
     private CompareCondition condition;
+
+    @JsonInclude(Include.NON_NULL)
     private Double value1;
+
+    @JsonInclude(Include.NON_NULL)
     private Double value2;
 
     public CompareConditionEval() {
@@ -122,8 +130,11 @@ public class CompareConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "CompareConditionEval [condition=" + condition + ", value1=" + value1 + ", value2=" + value2
-                + ", toString()=" + super.toString() + "]";
+        return "CompareConditionEval [evalTimestamp=" + evalTimestamp + ", " +
+                "dataTimestamp=" + dataTimestamp + ", " +
+                "condition=" + condition + ", " +
+                "value1=" + value1 + ", " +
+                "value2=" + value2 + "]";
     }
 
 }

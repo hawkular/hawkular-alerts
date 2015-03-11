@@ -18,6 +18,8 @@ package org.hawkular.alerts.api.model.condition;
 
 import static org.hawkular.alerts.api.model.trigger.Trigger.Mode.FIRE;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
@@ -35,7 +37,10 @@ public class AvailabilityCondition extends Condition {
         DOWN, NOT_UP, UP
     }
 
+    @JsonInclude(Include.NON_NULL)
     private String dataId;
+
+    @JsonInclude(Include.NON_NULL)
     private Operator operator;
 
     public AvailabilityCondition() {
@@ -45,6 +50,16 @@ public class AvailabilityCondition extends Condition {
         this("DefaultId", 1, 1, null, null);
     }
 
+    public AvailabilityCondition(String triggerId,
+                                 String dataId, Operator operator) {
+        this(triggerId, FIRE, 1, 1, dataId, operator);
+    }
+
+    public AvailabilityCondition(String triggerId, Mode triggerMode,
+                                 String dataId, Operator operator) {
+        this(triggerId, triggerMode, 1, 1, dataId, operator);
+    }
+
     public AvailabilityCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator) {
         this(triggerId, FIRE, conditionSetSize, conditionSetIndex, dataId, operator);
@@ -52,7 +67,7 @@ public class AvailabilityCondition extends Condition {
 
     public AvailabilityCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex);
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.AVAILABILITY);
         this.dataId = dataId;
         this.operator = operator;
     }
@@ -120,8 +135,10 @@ public class AvailabilityCondition extends Condition {
 
     @Override
     public String toString() {
-        return "AvailabilityCondition [dataId=" + dataId + ", operator=" + operator + ", toString()="
-                + super.toString() + "]";
+        return "AvailabilityCondition [triggerId='" + triggerId + "', " +
+                "triggerMode=" + triggerMode + ", " +
+                "dataId=" + (dataId == null ? null : '\'' + dataId + '\'') + ", " +
+                "operator=" + (operator == null ? null : '\'' + operator.toString() + '\'') + "]";
     }
 
 }

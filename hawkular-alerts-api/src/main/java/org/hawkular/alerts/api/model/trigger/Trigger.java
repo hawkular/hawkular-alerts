@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.api.model.trigger;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * A trigger definition.
  *
@@ -28,11 +31,19 @@ public class Trigger extends TriggerTemplate {
         FIRE, SAFETY
     };
 
+    @JsonInclude
     private String id;
+
+    @JsonInclude
     private boolean enabled;
+
+    @JsonInclude
     private boolean safetyEnabled;
+
+    @JsonInclude
     private Mode mode;
 
+    @JsonIgnore
     private transient Match match;
 
     public Trigger() {
@@ -100,6 +111,7 @@ public class Trigger extends TriggerTemplate {
         this.safetyEnabled = safetyEnabled;
     }
 
+    @JsonIgnore
     public Match getMatch() {
         return match;
     }
@@ -107,7 +119,6 @@ public class Trigger extends TriggerTemplate {
     public void setMatch(Match match) {
         this.match = match;
     }
-
 
     @Override
     public int hashCode() {

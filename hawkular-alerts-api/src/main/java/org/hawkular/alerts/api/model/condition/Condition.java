@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 /**
@@ -26,38 +28,51 @@ import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
  */
 public abstract class Condition {
 
+    public enum Type {
+        AVAILABILITY, COMPARE, STRING, THRESHOLD, RANGE
+    }
+
     /**
      * The owning trigger
      */
+    @JsonInclude
     protected String triggerId;
 
     /**
      * The owning trigger's mode when this condition is active
      */
+    @JsonInclude
     protected Mode triggerMode;
+
+    @JsonInclude
+    protected Type type;
 
     /**
      * Number of conditions associated with a particular trigger.
      * i.e. 2 [ conditions ]
      */
+    @JsonIgnore
     protected int conditionSetSize;
 
     /**
      * Index of the current condition
      * i.e. 1 [ of 2 conditions ]
      */
+    @JsonIgnore
     protected int conditionSetIndex;
 
     /**
      * A composed key for the condition
      */
+    @JsonIgnore
     protected String conditionId;
 
-    public Condition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex) {
+    public Condition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex, Type type) {
         this.triggerId = triggerId;
         this.triggerMode = triggerMode;
         this.conditionSetSize = conditionSetSize;
         this.conditionSetIndex = conditionSetIndex;
+        this.type = type;
         updateId();
     }
 
@@ -109,6 +124,10 @@ public abstract class Condition {
         this.conditionId = sb.toString();
     }
 
+    public Type getType() {
+        return type;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -132,12 +151,6 @@ public abstract class Condition {
         } else if (!conditionId.equals(other.conditionId))
             return false;
         return true;
-    }
-
-    @Override
-    public String toString() {
-        return "Condition [triggerId=" + triggerId + ", triggerMode=" + triggerMode + ", conditionSetSize="
-                + conditionSetSize + ", conditionSetIndex=" + conditionSetIndex + "]";
     }
 
 }

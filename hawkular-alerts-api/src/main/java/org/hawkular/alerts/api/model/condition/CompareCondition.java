@@ -18,6 +18,8 @@ package org.hawkular.alerts.api.model.condition;
 
 import static org.hawkular.alerts.api.model.trigger.Trigger.Mode.FIRE;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
@@ -35,9 +37,16 @@ public class CompareCondition extends Condition {
         LT, GT, LTE, GTE
     }
 
+    @JsonInclude(Include.NON_NULL)
     private String data1Id;
+
+    @JsonInclude(Include.NON_NULL)
     private Operator operator;
+
+    @JsonInclude(Include.NON_NULL)
     private String data2Id;
+
+    @JsonInclude(Include.NON_NULL)
     private Double data2Multiplier;
 
     public CompareCondition() {
@@ -47,6 +56,16 @@ public class CompareCondition extends Condition {
         this("DefaultId", 1, 1, null, null, null, null);
     }
 
+    public CompareCondition(String triggerId,
+                            String data1Id, Operator operator, Double data2Multiplier, String data2Id) {
+        this(triggerId, FIRE, 1, 1, data1Id, operator, data2Multiplier, data2Id);
+    }
+
+    public CompareCondition(String triggerId, Mode triggerMode,
+                            String data1Id, Operator operator, Double data2Multiplier, String data2Id) {
+        this(triggerId, triggerMode, 1, 1, data1Id, operator, data2Multiplier, data2Id);
+    }
+
     public CompareCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
             String data1Id, Operator operator, Double data2Multiplier, String data2Id) {
         this(triggerId, FIRE, conditionSetSize, conditionSetIndex, data1Id, operator, data2Multiplier, data2Id);
@@ -54,7 +73,7 @@ public class CompareCondition extends Condition {
 
     public CompareCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
             String data1Id, Operator operator, Double data2Multiplier, String data2Id) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex);
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.COMPARE);
         this.data1Id = data1Id;
         this.operator = operator;
         this.data2Id = data2Id;
@@ -151,8 +170,12 @@ public class CompareCondition extends Condition {
 
     @Override
     public String toString() {
-        return "CompareCondition [data1Id=" + data1Id + ", operator=" + operator + ", data2Id=" + data2Id
-                + ", data2Multiplier=" + data2Multiplier + ", toString()=" + super.toString() + "]";
+        return "CompareCondition [triggerId='" + triggerId + "', " +
+                "triggerMode=" + triggerMode + ", " +
+                "data1Id=" + (data1Id == null ? null : '\'' + data1Id + '\'') + ", " +
+                "operator=" + (operator == null ? null : '\'' + operator.toString() + '\'') + ", " +
+                "data2Id=" + (data2Id == null ? null : '\'' + data2Id + '\'') + ", " +
+                "data2Multiplier=" + data2Multiplier + "]";
     }
 
 }

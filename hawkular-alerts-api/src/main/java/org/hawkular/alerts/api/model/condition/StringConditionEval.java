@@ -16,7 +16,10 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.hawkular.alerts.api.model.data.StringData;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.*;
 
 /**
  * An evaluation state for string condition.
@@ -26,7 +29,10 @@ import org.hawkular.alerts.api.model.data.StringData;
  */
 public class StringConditionEval extends ConditionEval {
 
+    @JsonInclude(Include.NON_NULL)
     private StringCondition condition;
+
+    @JsonInclude(Include.NON_NULL)
     private String value;
 
     public StringConditionEval() {
@@ -101,8 +107,10 @@ public class StringConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "StringConditionEval [condition=" + condition + ", value=" + value + ", toString()=" + super.toString()
-                + "]";
+        return "StringConditionEval [evalTimestamp=" + evalTimestamp + ", " +
+                "dataTimestamp=" + dataTimestamp + ", " +
+                "condition=" + condition + ", " +
+                "value=" + value + "]";
     }
 
 }
