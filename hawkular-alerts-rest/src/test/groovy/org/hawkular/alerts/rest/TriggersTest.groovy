@@ -68,5 +68,4 @@ class TriggersTest extends AbstractTestBase {
         resp = client.delete(path: "triggers/test-trigger-1")
         assertEquals(200, resp.status)
     }
-
 }
