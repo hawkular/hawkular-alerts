@@ -41,7 +41,6 @@ import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
 
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
 
 import org.jboss.logging.Logger;
@@ -106,8 +105,7 @@ public class DampeningHandler {
                                 final Dampening dampening) {
         try {
             if (dampening != null && dampening.getTriggerId() != null
-                    && definitions.getTriggerDampenings(dampening.getTriggerId(), dampening.getTriggerMode())
-                            .isEmpty()) {
+                    && definitions.getDampening(dampening.getDampeningId()) == null) {
                 log.debugf("POST - createDampening - triggerId %s ", dampening.getTriggerId());
                 definitions.addDampening(dampening);
                 response.resume(Response.status(Response.Status.OK)
@@ -129,27 +127,26 @@ public class DampeningHandler {
     }
 
     @GET
-    @Path("/{triggerId}")
+    @Path("/{dampeningId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get an existing dampening linked with a specific trigger definition",
+    @ApiOperation(value = "Get an existing dampening",
                   responseClass = "org.hawkular.alerts.api.model.dampening.Dampening")
     public void getDampening(@Suspended final AsyncResponse response,
-                             @ApiParam(value = "Trigger id linked with dampening definition to be retrieved",
+                             @ApiParam(value = "Dampening id",
                                        required = true)
-                             @PathParam("triggerId") final String triggerId) {
+                             @PathParam("dampeningId") final String dampeningId) {
         try {
             Dampening found = null;
-            if (triggerId != null && !triggerId.isEmpty()) {
-                Collection<Dampening> td = definitions.getTriggerDampenings(triggerId, Trigger.Mode.FIRE);
-                found = td.isEmpty() ? null : td.iterator().next();
+            if (dampeningId != null && !dampeningId.isEmpty()) {
+                found = definitions.getDampening(dampeningId);
             }
             if (found != null) {
-                log.debugf("GET - getDampening - triggerId: %s ", found.getTriggerId());
+                log.debugf("GET - getDampening - dampeningId: %s ", found.getDampeningId());
                 response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
             } else {
-                log.debugf("GET - getDampening - triggerId: %s not found or invalid. ", triggerId);
+                log.debugf("GET - getDampening - dampeningId: %s not found or invalid. ", dampeningId);
                 Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
+                errors.put("errorMsg", "Dampening ID " + dampeningId + " not found or invalid ID");
                 response.resume(Response.status(Response.Status.NOT_FOUND)
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }
@@ -163,30 +160,30 @@ public class DampeningHandler {
     }
 
     @PUT
-    @Path("/{triggerId}")
+    @Path("/{dampeningId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing dampening definition",
                   responseClass = "void")
     public void updateDampening(@Suspended final AsyncResponse response,
-                                @ApiParam(value = "Trigger id linked with dampening definition to be retrieved",
+                                @ApiParam(value = "Dampening id",
                                           required = true)
-                                @PathParam("triggerId") final String triggerId,
+                                @PathParam("dampeningId") final String dampeningId,
                                 @ApiParam(value = "Updated dampening definition",
                                           name = "dampening",
                                           required = true)
                                 final Dampening dampening) {
         try {
-            if (triggerId != null && !triggerId.isEmpty() &&
-                    dampening != null && dampening.getTriggerId() != null &&
-                    triggerId.equals(dampening.getTriggerId()) &&
-                    !definitions.getTriggerDampenings(triggerId, Trigger.Mode.FIRE).isEmpty()) {
-                log.debugf("PUT - updateDampening - triggerId: %s ", triggerId);
+            if (dampeningId != null && !dampeningId.isEmpty() &&
+                    dampening != null && dampening.getDampeningId() != null &&
+                    dampeningId.equals(dampening.getDampeningId()) &&
+                    definitions.getDampening(dampeningId) != null) {
+                log.debugf("PUT - updateDampening - dampeningId: %s ", dampeningId);
                 definitions.updateDampening(dampening);
                 response.resume(Response.status(Response.Status.OK).build());
             } else {
-                log.debugf("PUT - updateDampening - triggerId: %s not found or invalid. ", triggerId);
+                log.debugf("PUT - updateDampening - dampeningId: %s not found or invalid. ", dampeningId);
                 Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
+                errors.put("errorMsg", "Dampening ID " + dampeningId + " not found or invalid ID");
                 response.resume(Response.status(Response.Status.NOT_FOUND)
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }

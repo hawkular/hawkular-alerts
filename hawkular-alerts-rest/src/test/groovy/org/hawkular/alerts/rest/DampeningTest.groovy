@@ -59,17 +59,25 @@ class DampeningTest extends AbstractTestBase {
         resp = client.post(path: "trigger/dampening", body: d)
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "trigger/dampening/" + d.getTriggerId());
+        resp = client.get(path: "trigger/dampening/" + d.getDampeningId());
         assertEquals(200, resp.status)
         assertEquals("RELAXED_COUNT", resp.data.type)
 
         d.setType(Type.STRICT)
-        resp = client.put(path: "trigger/dampening/" + d.getTriggerId(), body: d)
+        resp = client.put(path: "trigger/dampening/" + d.getDampeningId(), body: d)
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "trigger/dampening/" + d.getTriggerId())
+        resp = client.get(path: "trigger/dampening/" + d.getDampeningId())
         assertEquals(200, resp.status)
         assertEquals("STRICT", resp.data.type)
+
+        resp = client.get(path: "triggers/test-trigger-6/dampenings")
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        resp = client.get(path: "triggers/test-trigger-6/dampening/FIRE")
+        assertEquals(200, resp.status)
+        assertEquals("test-trigger-6", resp.data.triggerId)
 
         resp = client.delete(path: "trigger/dampening/" + d.getDampeningId())
         assertEquals(200, resp.status)
