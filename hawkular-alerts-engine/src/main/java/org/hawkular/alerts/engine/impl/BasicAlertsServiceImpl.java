@@ -16,8 +16,16 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import java.io.Reader;
+import java.io.StringReader;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -27,15 +35,24 @@ import java.util.function.Predicate;
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.ActionsService;
+import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.rules.RulesEngine;
 
@@ -60,6 +77,10 @@ public class BasicAlertsServiceImpl implements AlertsService {
 
     private final Timer wakeUpTimer;
     private TimerTask rulesTask;
+
+    private Gson gson;
+    private final String DS_NAME;
+    private DataSource ds;
 
     @EJB
     RulesEngine rules;
@@ -92,16 +113,226 @@ public class BasicAlertsServiceImpl implements AlertsService {
         pendingData = new CopyOnWriteArrayList<Data>();
         alerts = new CopyOnWriteArrayList<Alert>();
         wakeUpTimer = new Timer("BasicAlertsServiceImpl-Timer");
+
+        DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource", "java:jboss/datasources/HawkularDS");
     }
 
     @PostConstruct
     public void initServices() {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeHierarchyAdapter(ConditionEval.class, new GsonAdapter<ConditionEval>());
+        gson = gsonBuilder.create();
+
+        if (ds == null) {
+            try {
+                InitialContext ctx = new InitialContext();
+                ds = (DataSource) ctx.lookup(DS_NAME);
+            } catch (NamingException e) {
+                log.debugf(e.getMessage(), e);
+                msgLog.errorCannotConnectWithDatasource(e.getMessage());
+            }
+        }
+
         reload();
     }
 
     @Override
-    public Collection<Alert> checkAlerts() {
-        return Collections.unmodifiableCollection(alerts);
+    public void addAlerts(Collection<Alert> alerts) throws Exception {
+        if (alerts == null) {
+            throw new IllegalArgumentException("Alerts must be not null");
+        }
+        if (ds == null) {
+            throw new Exception("DataSource is null");
+        }
+
+        Connection c = null;
+        PreparedStatement ps = null;
+        StringReader sr = null;
+
+        try {
+            c = ds.getConnection();
+            String sql = "INSERT INTO HWK_ALERTS_ALERTS VALUES (?,?,?)";
+            ps = c.prepareStatement(sql);
+
+            for (Alert a : alerts) {
+                ps.setString(1, a.getTriggerId());
+                ps.setLong(2, a.getCTime());
+                sr = new StringReader(toJson(a));
+                ps.setCharacterStream(3, sr);
+                log.debugf("SQL: " + sql);
+                ps.executeUpdate();
+                sr.close();
+                sr = null;
+            }
+
+        } catch (SQLException e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            close(c, ps, null);
+            if (null != sr) {
+                sr.close();
+            }
+        }
+    }
+
+    @Override
+    public List<Alert> getAlerts(AlertsCriteria criteria) throws Exception {
+        if (ds == null) {
+            throw new Exception("DataSource is null");
+        }
+
+        boolean filter = (null != criteria && criteria.hasCriteria());
+
+        List<Alert> alerts = new ArrayList<>();
+        Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
+        Reader r = null;
+        try {
+            c = ds.getConnection();
+            s = c.createStatement();
+
+            StringBuilder sql = new StringBuilder("SELECT triggerId, ctime, payload FROM HWK_ALERTS_ALERTS a");
+            if (filter) {
+                int filters = 0;
+                sql.append(" WHERE ");
+                if (isEmpty(criteria.getTriggerIds())) {
+                    if (!isEmpty(criteria.getTriggerId())) {
+                        sql.append(filters++ > 0 ? " AND " : " ");
+                        sql.append("( triggerId = '");
+                        sql.append(criteria.getTriggerId());
+                        sql.append("' )");
+                    }
+                } else {
+                    sql.append(filters++ > 0 ? " AND " : " ");
+                    sql.append("( triggerId IN (");
+                    int entries = 0;
+                    for (String triggerId : criteria.getTriggerIds()) {
+                        if (isEmpty(triggerId)) {
+                            continue;
+                        }
+                        sql.append(entries++ > 0 ? "," : "");
+                        sql.append("'");
+                        sql.append(triggerId);
+                        sql.append("'");
+                    }
+                    sql.append(") )");
+                }
+                if (filter && null != criteria.getStartTime()) {
+                    sql.append(filters++ > 0 ? " AND " : " ");
+                    sql.append("( ctime >= ");
+                    sql.append(criteria.getStartTime());
+                    sql.append(" )");
+                }
+                if (filter && null != criteria.getEndTime()) {
+                    sql.append(filters++ > 0 ? " AND " : " ");
+                    sql.append(" ctime <= ");
+                    sql.append(criteria.getEndTime());
+                    sql.append(" )");
+                }
+                if (isEmpty(criteria.getTags())) {
+                    Tag tag = criteria.getTag();
+                    if (null != tag) {
+                        sql.append(filters++ > 0 ? " AND " : " ");
+                        sql.append("( EXIST ( SELECT * FROM HWL_ALERTS_TAGS WHERE");
+                        if (!isEmpty(tag.getCategory())) {
+                            sql.append(" category = '");
+                            sql.append(tag.getCategory());
+                            sql.append("' AND");
+                        }
+                        sql.append(" name = '");
+                        sql.append(tag.getName());
+                        sql.append("' ) )");
+                    }
+                } else {
+                    sql.append(filters++ > 0 ? " AND " : " ");
+                    sql.append("(");
+                    int entries = 0;
+                    for (Tag tag : criteria.getTags()) {
+                        sql.append(entries++ > 0 ? " OR " : "");
+                        sql.append("( EXIST ( SELECT * FROM HWL_ALERTS_TAGS WHERE");
+                        if (!isEmpty(tag.getCategory())) {
+                            sql.append(" category = '");
+                            sql.append(tag.getCategory());
+                            sql.append("' AND");
+                        }
+                        sql.append(" name = '");
+                        sql.append(tag.getName());
+                        sql.append("' ) )");
+                    }
+                    sql.append(")");
+                }
+            }
+            sql.append(" ORDER BY a.ctime");
+            log.debugf("SQL: " + sql);
+            rs = s.executeQuery(sql.toString());
+            while (rs.next()) {
+                Clob clob = rs.getClob(3);
+                r = clob.getCharacterStream();
+                Alert alert = fromJson(r, Alert.class);
+                r.close();
+                r = null;
+                alerts.add(alert);
+            }
+        } catch (SQLException e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            close(c, s, rs);
+            if (null != r) {
+                r.close();
+            }
+        }
+
+        log.debugf("Alerts Found! " + alerts);
+        return alerts;
+    }
+
+    private boolean isEmpty(Collection<?> c) {
+        return null != c && !c.isEmpty();
+    }
+
+    private boolean isEmpty(String s) {
+        return null != s && !s.isEmpty();
+    }
+
+    private String toJson(Object resource) {
+
+        log.debugf(gson.toJson(resource));
+        return gson.toJson(resource);
+
+    }
+
+    private <T> T fromJson(Reader json, Class<T> clazz) {
+
+        return gson.fromJson(json, clazz);
+    }
+
+    private <T> T fromJson(String json, Class<T> clazz) {
+
+        return gson.fromJson(json, clazz);
+    }
+
+    private void close(Connection c, Statement s, ResultSet rs) {
+        try {
+            if (rs != null) {
+                rs.close();
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            if (s != null) {
+                s.close();
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            if (c != null) {
+                c.close();
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     @Override
@@ -268,9 +499,15 @@ public class BasicAlertsServiceImpl implements AlertsService {
 
                 try {
                     rules.fire();
+                    addAlerts(alerts);
+                    alerts.clear();
+
                 } catch (Exception e) {
-                    log.debugf("Error on rules processing: " + e.getMessage(), e);
+                    e.printStackTrace();
+                    log.debugf("Error on rules processing: " + e);
                     msgLog.errorProcessingRules(e.getMessage());
+                } finally {
+                    alerts.clear();
                 }
             }
         }

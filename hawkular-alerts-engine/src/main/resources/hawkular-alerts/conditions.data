@@ -12,7 +12,7 @@ trigger-2,FIRE,2,2,threshold,NumericData-02,GTE,15.0
 trigger-3,FIRE,1,1,range,NumericData-03,INCLUSIVE,INCLUSIVE,10.0,15.0,true
 #
 # <type> == compare
-# ...,data1Id,operator,data2Multiplier,data2Id
+# ...,dataId,operator,data2Multiplier,data2Id
 #
 trigger-4,FIRE,1,1,compare,NumericData-01,LT,0.5,NumericData-02
 #

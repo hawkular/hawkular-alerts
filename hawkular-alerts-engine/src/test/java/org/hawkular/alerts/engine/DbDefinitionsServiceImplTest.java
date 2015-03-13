@@ -19,7 +19,9 @@ package org.hawkular.alerts.engine;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.sql.DataSource;
@@ -30,6 +32,7 @@ import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.engine.impl.DbDefinitionsServiceImpl;
 import org.junit.Before;
@@ -131,9 +134,8 @@ public class DbDefinitionsServiceImplTest {
         }
 
         @Override
-        public Collection<Alert> checkAlerts() {
-            // TODO Auto-generated method stub
-            return null;
+        public List<Alert> getAlerts(AlertsCriteria criteria) {
+            return Collections.EMPTY_LIST;
         }
 
         @Override
@@ -150,6 +152,12 @@ public class DbDefinitionsServiceImplTest {
 
         @Override
         public void reloadTrigger(String triggerId) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void addAlerts(Collection<Alert> alerts) throws Exception {
             // TODO Auto-generated method stub
 
         }

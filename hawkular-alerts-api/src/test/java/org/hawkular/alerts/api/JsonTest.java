@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
@@ -38,14 +39,14 @@ import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Availability;
+import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.data.StringData;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
+import org.hawkular.alerts.api.model.trigger.TriggerTemplate.Match;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.hawkular.alerts.api.model.data.Availability.*;
-import static org.hawkular.alerts.api.model.trigger.Trigger.*;
 
 /**
  * Validation of JSON serialization/deserialization
@@ -190,12 +191,12 @@ public class JsonTest {
     @Test
     public void jsonCompareConditionTest() throws Exception {
         String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRE\",\"type\":\"COMPARE\"," +
-                "\"data1Id\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
+                "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         CompareCondition condition = objectMapper.readValue(str, CompareCondition.class);
 
         assert condition.getTriggerId().equals("test");
         assert condition.getTriggerMode().equals(Mode.FIRE);
-        assert condition.getData1Id().equals("Default1");
+        assert condition.getDataId().equals("Default1");
         assert condition.getOperator().equals(CompareCondition.Operator.LT);
         assert condition.getData2Id().equals("Default2");
         assert condition.getData2Multiplier() == 1.2d;
@@ -207,7 +208,7 @@ public class JsonTest {
         // Check bad mode and operator
 
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIREX\"," +
-                "\"data1Id\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
+                "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         try {
             condition = objectMapper.readValue(str, CompareCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
@@ -216,7 +217,7 @@ public class JsonTest {
         }
 
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRE\"," +
-                "\"data1Id\":\"Default1\",\"operator\":\"LTX\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
+                "\"dataId\":\"Default1\",\"operator\":\"LTX\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         try {
             condition = objectMapper.readValue(str, CompareCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
@@ -230,14 +231,14 @@ public class JsonTest {
                 "\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         condition = objectMapper.readValue(str, CompareCondition.class);
 
-        assert condition.getData1Id() == null;
+        assert condition.getDataId() == null;
 
         output = objectMapper.writeValueAsString(condition);
 
-        assert !output.contains("data1Id");
+        assert !output.contains("dataId");
 
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRE\"," +
-                "\"data1Id\":\"Default1\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
+                "\"dataId\":\"Default1\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         condition = objectMapper.readValue(str, CompareCondition.class);
 
         assert condition.getOperator() == null;
@@ -247,7 +248,7 @@ public class JsonTest {
         assert !output.contains("operator");
 
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRE\"," +
-                "\"data1Id\":\"Default1\",\"operator\":\"LT\",\"data2Multiplier\":1.2}";
+                "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Multiplier\":1.2}";
 
         condition = objectMapper.readValue(str, CompareCondition.class);
 
@@ -258,7 +259,7 @@ public class JsonTest {
         assert !output.contains("data2Id");
 
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRE\"," +
-                "\"data1Id\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\"}";
+                "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\"}";
 
         condition = objectMapper.readValue(str, CompareCondition.class);
 
@@ -274,7 +275,7 @@ public class JsonTest {
         String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1," +
                 "\"condition\":" +
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRE\"," +
-                "\"data1Id\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}," +
+                "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}," +
                 "\"value1\":10.0," +
                 "\"value2\":15.0}";
         CompareConditionEval eval = objectMapper.readValue(str, CompareConditionEval.class);
@@ -284,7 +285,7 @@ public class JsonTest {
         assert eval.getCondition().getType().equals(Condition.Type.COMPARE);
         assert eval.getCondition().getTriggerId().equals("test");
         assert eval.getCondition().getTriggerMode().equals(Mode.FIRE);
-        assert eval.getCondition().getData1Id().equals("Default1");
+        assert eval.getCondition().getDataId().equals("Default1");
         assert eval.getCondition().getOperator().equals(CompareCondition.Operator.LT);
         assert eval.getValue1().equals(10.0);
         assert eval.getValue2().equals(15.0);

@@ -68,6 +68,10 @@ public abstract class Condition {
     @JsonIgnore
     protected String conditionId;
 
+    public Condition() {
+        // for json assembly
+    }
+
     public Condition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex, Type type) {
         this.triggerId = triggerId;
         this.triggerMode = triggerMode;

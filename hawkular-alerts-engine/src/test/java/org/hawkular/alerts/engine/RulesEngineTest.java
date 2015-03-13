@@ -379,7 +379,7 @@ public class RulesEngineTest {
         Double v2 = e.getValue2();
         assert v1.equals(10.0D) : e;
         assert v2.equals(30.0D) : e;
-        assert e.getCondition().getData1Id().equals("NumericData-01") : e
+        assert e.getCondition().getDataId().equals("NumericData-01") : e
                 .getCondition();
         assert e.getCondition().getData2Id().equals("NumericData-02") : e
                 .getCondition();
@@ -398,7 +398,7 @@ public class RulesEngineTest {
         v2 = e.getValue2();
         assert v1.equals(10.0D) : e;
         assert v2.equals(30.0D) : e;
-        assert e.getCondition().getData1Id().equals("NumericData-01") : e
+        assert e.getCondition().getDataId().equals("NumericData-01") : e
                 .getCondition();
         assert e.getCondition().getData2Id().equals("NumericData-02") : e
                 .getCondition();
@@ -430,7 +430,7 @@ public class RulesEngineTest {
         v2 = e.getValue2();
         assert v1.equals(10.0D) : e;
         assert v2.equals(20.0D) : e;
-        assert e.getCondition().getData1Id().equals("NumericData-01") : e
+        assert e.getCondition().getDataId().equals("NumericData-01") : e
                 .getCondition();
         assert e.getCondition().getData2Id().equals("NumericData-02") : e
                 .getCondition();
@@ -449,7 +449,7 @@ public class RulesEngineTest {
         v2 = e.getValue2();
         assert v1.equals(10.0D) : e;
         assert v2.equals(20.0D) : e;
-        assert e.getCondition().getData1Id().equals("NumericData-01") : e
+        assert e.getCondition().getDataId().equals("NumericData-01") : e
                 .getCondition();
         assert e.getCondition().getData2Id().equals("NumericData-02") : e
                 .getCondition();
@@ -481,7 +481,7 @@ public class RulesEngineTest {
         v2 = e.getValue2();
         assert v1.equals(15.0D) : e;
         assert v2.equals(20.0D) : e;
-        assert e.getCondition().getData1Id().equals("NumericData-01") : e
+        assert e.getCondition().getDataId().equals("NumericData-01") : e
                 .getCondition();
         assert e.getCondition().getData2Id().equals("NumericData-02") : e
                 .getCondition();
@@ -500,7 +500,7 @@ public class RulesEngineTest {
         v2 = e.getValue2();
         assert v1.equals(15.0D) : e;
         assert v2.equals(20.0D) : e;
-        assert e.getCondition().getData1Id().equals("NumericData-01") : e
+        assert e.getCondition().getDataId().equals("NumericData-01") : e
                 .getCondition();
         assert e.getCondition().getData2Id().equals("NumericData-02") : e
                 .getCondition();
@@ -1089,7 +1089,7 @@ public class RulesEngineTest {
         assert alerts.size() == 1 : alerts;
 
         Alert a = alerts.get(0);
-        assert (alerts.get(0).getTime() - start) >= 250 : (alerts.get(0).getTime() - start);
+        assert (alerts.get(0).getCTime() - start) >= 250 : (alerts.get(0).getCTime() - start);
         assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
         assert a.getEvalSets().size() >= 2 : a.getEvalSets().size();
         for (Set<ConditionEval> evalSet : a.getEvalSets()) {

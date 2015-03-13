@@ -140,21 +140,21 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_TRIGGERS " +
-                    "( triggerId VARCHAR(250) PRIMARY KEY, " +
-                    "  payload VARCHAR(1024) )");
+                    "( triggerId VARCHAR2(250) PRIMARY KEY, " +
+                    "  payload VARCHAR2(1024) )");
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_CONDITIONS " +
-                    "( conditionId VARCHAR(250) PRIMARY KEY," +
-                    "  triggerId VARCHAR(250) NOT NULL," +
-                    "  triggerMode VARCHAR(20) NOT NULL," +
-                    "  className VARCHAR(250) NOT NULL," +
-                    "  payload VARCHAR(1024) )");
+                    "( conditionId VARCHAR2(250) PRIMARY KEY," +
+                    "  triggerId VARCHAR2(250) NOT NULL," +
+                    "  triggerMode VARCHAR2(20) NOT NULL," +
+                    "  className VARCHAR2(250) NOT NULL," +
+                    "  payload VARCHAR2(1024) )");
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_DAMPENINGS " +
-                    "( dampeningId VARCHAR(250) PRIMARY KEY," +
-                    "  triggerId VARCHAR(250) NOT NULL," +
-                    "  triggerMode VARCHAR(20) NOT NULL," +
-                    "  payload VARCHAR(1024) )");
+                    "( dampeningId VARCHAR2(250) PRIMARY KEY," +
+                    "  triggerId VARCHAR2(250) NOT NULL," +
+                    "  triggerMode VARCHAR2(20) NOT NULL," +
+                    "  payload VARCHAR2(1024) )");
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_ACTION_PLUGINS " +
                     "( actionPlugin VARCHAR(250) PRIMARY KEY," +
@@ -165,6 +165,19 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     "  actionPLugin VARCHAR(250)," +
                     "  payload VARCHAR(1024)," +
                     "  PRIMARY KEY(actionId, actionPlugin))");
+
+            s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_TAGS " +
+                    "( triggerId VARCHAR2(250) NOT NULL, " +
+                    "  category VARCHAR2(250)," +
+                    "  name VARCHAR2(1024) NOT NULL, " +
+                    "  visible BOOLEAN NOT NULL, " +
+                    "  PRIMARY KEY(triggerId, category, name) )");
+
+            s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_ALERTS " +
+                    "( triggerId VARCHAR2(250) NOT NULL, " +
+                    "  ctime long NOT NULL," +
+                    "  payload CLOB," +
+                    "  PRIMARY KEY(triggerId, ctime) )");
 
             s.close();
 
@@ -336,7 +349,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             log.debugf("Init file - Inserting [%s]", newCondition);
                         }
                         if (type != null && !type.isEmpty() && type.equals("compare") && fields.length == 9) {
-                            String data1Id = fields[5];
+                            String dataId = fields[5];
                             String operator = fields[6];
                             Double data2Multiplier = new Double(fields[7]).doubleValue();
                             String data2Id = fields[8];
@@ -346,7 +359,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             newCondition.setTriggerMode(triggerMode);
                             newCondition.setConditionSetSize(conditionSetSize);
                             newCondition.setConditionSetIndex(conditionSetIndex);
-                            newCondition.setData1Id(data1Id);
+                            newCondition.setDataId(dataId);
                             newCondition.setOperator(CompareCondition.Operator.valueOf(operator));
                             newCondition.setData2Multiplier(data2Multiplier);
                             newCondition.setData2Id(data2Id);
@@ -855,6 +868,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         try {
             c = ds.getConnection();
             s = c.createStatement();
+            List<String> dataIds = new ArrayList<>(2);
 
             int i = 0;
             for (Condition cond : conditions) {
@@ -872,8 +886,24 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         .append(")");
                 log.debugf("SQL: " + sql);
                 s.execute(sql.toString());
-            }
 
+                // generate the automatic dataId tags for search
+                dataIds.add(cond.getDataId());
+                if (cond instanceof CompareCondition) {
+                    dataIds.add(((CompareCondition) cond).getData2Id());
+                }
+                for (String dataId : dataIds) {
+                    sql = new StringBuilder("INSERT INTO HWK_ALERTS_TAGS VALUES (")
+                            .append("'").append(cond.getTriggerId()).append("', ")
+                            .append("'dataId', ")
+                            .append("'").append(dataId).append("', ")
+                            .append("false ")
+                            .append(")");
+                    log.debugf("SQL: " + sql);
+                    s.execute(sql.toString());
+                }
+                dataIds.clear();
+            }
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -1045,7 +1075,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         Collection<Condition> conditions = getTriggerConditions(triggerId, null);
         for (Condition c : conditions) {
             if (c instanceof CompareCondition) {
-                dataIdTokens.add(((CompareCondition) c).getData1Id());
+                dataIdTokens.add(((CompareCondition) c).getDataId());
                 dataIdTokens.add(((CompareCondition) c).getData2Id());
             } else {
                 dataIdTokens.add(c.getDataId());
@@ -1091,7 +1121,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             } else if (c instanceof CompareCondition) {
                 newCondition = new CompareCondition(newTrigger.getId(), c.getTriggerMode(),
                         c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(((CompareCondition) c)
-                                .getData1Id()),
+                                .getDataId()),
                         ((CompareCondition) c).getOperator(),
                         ((CompareCondition) c).getData2Multiplier(),
                         dataIdMap.get(((CompareCondition) c).getData2Id()));
@@ -1374,6 +1404,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     .append("triggerId = '").append(triggerId).append("' ")
                     .append(" AND triggerMode = '").append(triggerMode.name()).append("' ");
             log.debugf("SQL: " + sql);
+            s.execute(sql.toString());
+
+            // if removing conditions remove the automatically-added dataId tags
+            sql = new StringBuilder("DELETE FROM HWK_ALERTS_TAGS WHERE ")
+                    .append("triggerId = '").append(triggerId).append("' ")
+                    .append(" AND category = 'dataId'");
             s.execute(sql.toString());
 
         } catch (SQLException e) {

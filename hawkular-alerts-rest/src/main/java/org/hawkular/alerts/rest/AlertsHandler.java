@@ -16,12 +16,12 @@
  */
 package org.hawkular.alerts.rest;
 
-import com.wordnik.swagger.annotations.Api;
-import com.wordnik.swagger.annotations.ApiOperation;
-import org.hawkular.alerts.api.model.condition.Alert;
-import org.hawkular.alerts.api.services.AlertsService;
-import org.hawkular.alerts.rest.log.MsgLogger;
-import org.jboss.logging.Logger;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.ejb.EJB;
 import javax.ws.rs.GET;
@@ -31,10 +31,15 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
-import java.util.Collection;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.services.AlertsCriteria;
+import org.hawkular.alerts.api.services.AlertsService;
+import org.hawkular.alerts.rest.log.MsgLogger;
+
+import org.jboss.logging.Logger;
 
 /**
  * REST endpoint for alerts
@@ -59,26 +64,40 @@ public class AlertsHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all alerts",
-                  responseClass = "Collection<org.hawkular.alerts.api.model.condition.Alert>",
-                  notes = "Pagination is not yet implemented.")
-    public void findAllAlerts(@Suspended final AsyncResponse response) {
-        Collection<Alert> alertList = alerts.checkAlerts();
-        if (alertList.isEmpty()) {
-            log.debugf("GET - findAllAlerts - Empty");
-            response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
-        } else {
-            log.debugf("GET - findAllAlerts - %s alerts", alertList.size());
-            response.resume(Response.status(Response.Status.OK).entity(alertList).type(APPLICATION_JSON_TYPE).build());
+            responseClass = "Collection<org.hawkular.alerts.api.model.condition.Alert>",
+            notes = "Pagination is not yet implemented.")
+    public void findAllAlerts(
+            @Suspended
+            final AsyncResponse response) {
+        try {
+            List<Alert> alertList = alerts.getAlerts(new AlertsCriteria()); // TODO, support new param
+            if (alertList.isEmpty()) {
+                log.debugf("GET - findAllAlerts - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - findAllAlerts - %s alerts", alertList.size());
+                response.resume(Response.status(Response.Status.OK).entity(alertList).type(APPLICATION_JSON_TYPE)
+                        .build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
+
     }
 
     @GET
     @Path("/reload")
     @ApiOperation(value = "Reload all definitions into the alerts service",
-                  responseClass = "void",
-                  notes = "This service is temporal for demos/poc, this functionality will be handled internally" +
-                          "between definitions and alerts services")
-    public void reloadAlerts(@Suspended final AsyncResponse response) {
+            responseClass = "void",
+            notes = "This service is temporal for demos/poc, this functionality will be handled internally" +
+                    "between definitions and alerts services")
+    public void reloadAlerts(
+            @Suspended
+            final AsyncResponse response) {
         alerts.reload();
         response.resume(Response.status(Response.Status.OK).build());
     }

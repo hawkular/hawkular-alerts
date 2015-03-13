@@ -43,6 +43,10 @@ public abstract class ConditionEval {
     @JsonIgnore
     protected boolean used;
 
+    public ConditionEval() {
+        // for json assembly
+    }
+
     public ConditionEval(boolean match, long dataTimestamp) {
         this.match = match;
         this.dataTimestamp = dataTimestamp;

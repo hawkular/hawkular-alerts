@@ -31,7 +31,7 @@ class AlertsTest extends AbstractTestBase {
     @Test
     void getAllAlertsTest() {
         def resp = client.get(path: "")
-        assertTrue(resp.status == 200 || resp.status == 204)
+        assert resp.status == 200 || resp.status == 204 : resp.status
     }
 
     @Test
