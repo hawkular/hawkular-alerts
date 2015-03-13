@@ -112,4 +112,11 @@ public class AlertsCriteria {
                 null != tag || //
                 (null != tags && !tags.isEmpty());
     }
+
+    @Override
+    public String toString() {
+        return "AlertsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", triggerId=" + triggerId
+                + ", triggerIds=" + triggerIds + ", tag=" + tag + ", tags=" + tags + "]";
+    }
+
 }

@@ -182,6 +182,8 @@ public class BasicAlertsServiceImpl implements AlertsService {
             throw new Exception("DataSource is null");
         }
 
+        log.debugf("getAlerts criteria: %s", criteria.toString());
+
         boolean filter = (null != criteria && criteria.hasCriteria());
 
         List<Alert> alerts = new ArrayList<>();
@@ -227,7 +229,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
                 }
                 if (filter && null != criteria.getEndTime()) {
                     sql.append(filters++ > 0 ? " AND " : " ");
-                    sql.append(" ctime <= ");
+                    sql.append("( ctime <= ");
                     sql.append(criteria.getEndTime());
                     sql.append(" )");
                 }
@@ -290,11 +292,11 @@ public class BasicAlertsServiceImpl implements AlertsService {
     }
 
     private boolean isEmpty(Collection<?> c) {
-        return null != c && !c.isEmpty();
+        return null == c || c.isEmpty();
     }
 
     private boolean isEmpty(String s) {
-        return null != s && !s.isEmpty();
+        return null == s || s.isEmpty();
     }
 
     private String toJson(Object resource) {

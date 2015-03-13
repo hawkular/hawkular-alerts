@@ -30,7 +30,26 @@ public class Tag {
     private boolean visible;
 
     /**
-     * Create an invisible Tag.
+     * Create a searchable Tag on name only
+     *
+     * @param tag @NotEmpty
+     */
+    public Tag(String name) {
+        this(null, null, name, false);
+    }
+
+    /**
+     * Create a searchable Tag on category + name
+     *
+     * @param category @Nullable
+     * @param tag @NotEmpty
+     */
+    public Tag(String category, String tag) {
+        this(null, category, tag, false);
+    }
+
+    /**
+     * Create an invisible Tag for persisting.
      *
      * @param triggerId @Nullable Note, required for storage but not search.
      * @param category @Nullable
@@ -78,6 +97,43 @@ public class Tag {
     public String toString() {
         return "Tag [triggerId=" + triggerId + ", category=" + category + ", name=" + name + ", visible=" + visible
                 + "]";
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((category == null) ? 0 : category.hashCode());
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + ((triggerId == null) ? 0 : triggerId.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Tag other = (Tag) obj;
+        if (category == null) {
+            if (other.category != null)
+                return false;
+        } else if (!category.equals(other.category))
+            return false;
+        if (name == null) {
+            if (other.name != null)
+                return false;
+        } else if (!name.equals(other.name))
+            return false;
+        if (triggerId == null) {
+            if (other.triggerId != null)
+                return false;
+        } else if (!triggerId.equals(other.triggerId))
+            return false;
+        return true;
     }
 
 }
