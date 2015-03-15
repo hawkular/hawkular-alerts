@@ -64,7 +64,7 @@ public abstract class Condition {
     /**
      * A composed key for the condition
      */
-    @JsonIgnore
+    @JsonInclude
     protected String conditionId;
 
     public Condition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex, Type type) {
