@@ -24,12 +24,12 @@ import static org.hawkular.alerts.api.model.condition.StringCondition.Operator
 import static org.junit.Assert.assertEquals
 
 /**
- * Notifier REST tests.
+ * Actions REST tests.
  *
  * @author Lucas Ponce
  */
-class NotifiersTest extends AbstractTestBase {
-    private static final Logger log = Logger.getLogger(NotifiersTest.class);
+class ActionsTest extends AbstractTestBase {
+    private static final Logger log = Logger.getLogger(ActionsTest.class);
 
     @Test
     void findInitialActions() {

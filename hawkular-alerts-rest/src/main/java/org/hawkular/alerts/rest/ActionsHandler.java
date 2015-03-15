@@ -89,7 +89,7 @@ public class ActionsHandler {
                 log.debugf("GET - findAllActions - Empty");
                 response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
             } else {
-                log.debugf("GET - findAllActions - %s notifiers ", actions);
+                log.debugf("GET - findAllActions - %s actions ", actions);
                 response.resume(Response.status(Response.Status.OK)
                         .entity(actions).type(APPLICATION_JSON_TYPE).build());
             }
@@ -250,7 +250,7 @@ public class ActionsHandler {
     @ApiOperation(value = "Delete an existing action",
                   responseClass = "void")
     public void deleteAction(@Suspended final AsyncResponse response,
-                             @ApiParam(value = "Notifier id to be deleted",
+                             @ApiParam(value = "Action id to be deleted",
                                        required = true)
                              @PathParam("actionId") final String actionId) {
         try {
