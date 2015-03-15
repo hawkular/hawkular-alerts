@@ -168,69 +168,6 @@ public class TriggersHandler {
         }
     }
 
-    @GET
-    @Path("/{triggerId}/dampenings")
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get a list with all dampenings linked with a trigger.",
-                  responseClass = "Collection<Dampening>",
-                  notes = "Pagination is not yet implemented ")
-    public void getTriggerDampenings(@Suspended final AsyncResponse response,
-                                     @ApiParam(value = "Trigger definition id to be retrieved",
-                                               required = true)
-                                     @PathParam("triggerId") final String triggerId) {
-        try {
-            Collection<Dampening> dampeningList = definitions.getTriggerDampenings(triggerId, null);
-            if (dampeningList.isEmpty()) {
-                log.debugf("GET - getTriggerDampenings - Empty");
-                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
-            } else {
-                log.debugf("GET - getTriggerDampenings - %s conditions ", dampeningList.size());
-
-                response.resume(Response.status(Response.Status.OK)
-                                        .entity(dampeningList).type(APPLICATION_JSON_TYPE).build());
-            }
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Internal Error: " + e.getMessage());
-            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
-        }
-    }
-
-    @GET
-    @Path("/{triggerId}/dampening/{triggerMode}")
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get a dampening using triggerId and triggerMode",
-                  responseClass = "Dampening",
-                  notes = "Similar as getDampening(dampeningId)")
-    public void getTriggerModeDampenings(@Suspended final AsyncResponse response,
-                                     @ApiParam(value = "Trigger definition id to be retrieved",
-                                               required = true)
-                                     @PathParam("triggerId") final String triggerId,
-                                     @ApiParam(value = "Trigger mode",
-                                               required = true)
-                                     @PathParam("triggerMode") final Trigger.Mode triggerMode) {
-        try {
-            Collection<Dampening> dampeningList = definitions.getTriggerDampenings(triggerId, triggerMode);
-            if (dampeningList.isEmpty()) {
-                log.debugf("GET - getTriggerDampenings - Empty");
-                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
-            } else {
-                log.debugf("GET - getTriggerDampenings - %s dampenings ", dampeningList.size());
-                Dampening first = dampeningList.iterator().next();
-                response.resume(Response.status(Response.Status.OK)
-                                        .entity(first).type(APPLICATION_JSON_TYPE).build());
-            }
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Internal Error: " + e.getMessage());
-            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
-        }
-    }
-
     @PUT
     @Path("/{triggerId}")
     @Consumes(APPLICATION_JSON)
@@ -295,6 +232,219 @@ public class TriggersHandler {
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
+    @GET
+    @Path("/{triggerId}/dampenings")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get a list with all dampenings linked with a trigger.",
+                  responseClass = "Collection<Dampening>",
+                  notes = "Pagination is not yet implemented ")
+    public void getTriggerDampenings(@Suspended final AsyncResponse response,
+                                     @ApiParam(value = "Trigger definition id to be retrieved",
+                                               required = true)
+                                     @PathParam("triggerId") final String triggerId) {
+        try {
+            Collection<Dampening> dampeningList = definitions.getTriggerDampenings(triggerId, null);
+            if (dampeningList.isEmpty()) {
+                log.debugf("GET - getTriggerDampenings - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - getTriggerDampenings - %s conditions ", dampeningList.size());
+
+                response.resume(Response.status(Response.Status.OK)
+                                        .entity(dampeningList).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
+    @GET
+    @Path("/{triggerId}/dampening/mode/{triggerMode}")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get a dampening using triggerId and triggerMode",
+                  responseClass = "Dampening",
+                  notes = "Similar as getDampening(dampeningId)")
+    public void getTriggerModeDampenings(@Suspended final AsyncResponse response,
+                                         @ApiParam(value = "Trigger definition id to be retrieved",
+                                                   required = true)
+                                         @PathParam("triggerId") final String triggerId,
+                                         @ApiParam(value = "Trigger mode",
+                                                   required = true)
+                                         @PathParam("triggerMode") final Trigger.Mode triggerMode) {
+        try {
+            Collection<Dampening> dampeningList = definitions.getTriggerDampenings(triggerId, triggerMode);
+            if (dampeningList.isEmpty()) {
+                log.debugf("GET - getTriggerDampenings - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - getTriggerDampenings - %s dampenings ", dampeningList.size());
+                Dampening first = dampeningList.iterator().next();
+                response.resume(Response.status(Response.Status.OK)
+                                        .entity(first).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
+    @GET
+    @Path("/{triggerId}/dampening/{dampeningId}")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get an existing dampening",
+                  responseClass = "org.hawkular.alerts.api.model.dampening.Dampening")
+    public void getDampening(@Suspended final AsyncResponse response,
+                             @ApiParam(value = "Trigger definition id to be retrieved",
+                                       required = true)
+                             @PathParam("triggerId") final String triggerId,
+                             @ApiParam(value = "Dampening id",
+                                       required = true)
+                             @PathParam("dampeningId") final String dampeningId) {
+        try {
+            Dampening found = null;
+            if (dampeningId != null && !dampeningId.isEmpty() && dampeningId.startsWith(triggerId)) {
+                found = definitions.getDampening(dampeningId);
+            }
+            if (found != null) {
+                log.debugf("GET - getDampening - dampeningId: %s ", found.getDampeningId());
+                response.resume(Response.status(Response.Status.OK).entity(found).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - getDampening - dampeningId: %s not found or invalid. ", dampeningId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Dampening ID " + dampeningId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
+    @POST
+    @Path("/{triggerId}/dampening")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Create a new dampening",
+                  responseClass = "org.hawkular.alerts.api.model.dampening.Dampening",
+                  notes = "Returns Dampening created if operation finished correctly")
+    public void createDampening(@Suspended final AsyncResponse response,
+                                @ApiParam(value = "Trigger definition id attached to dampening",
+                                          required = true)
+                                @PathParam("triggerId") final String triggerId,
+                                @ApiParam(value = "Dampening definition to be created",
+                                          name = "dampening",
+                                          required = true)
+                                final Dampening dampening) {
+        try {
+            if (dampening != null && dampening.getTriggerId() != null &&
+                    triggerId != null && dampening.getTriggerId().equals(triggerId) &&
+                    definitions.getDampening(dampening.getDampeningId()) == null) {
+                log.debugf("POST - createDampening - triggerId %s ", dampening.getTriggerId());
+                definitions.addDampening(dampening);
+                response.resume(Response.status(Response.Status.OK)
+                                        .entity(dampening).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("POST - createDampening - ID not valid or existing dampening");
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Existing dampening or invalid ID");
+                response.resume(Response.status(Response.Status.BAD_REQUEST)
+                                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
+    @PUT
+    @Path("/{triggerId}/dampening/{dampeningId}")
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Update an existing dampening definition",
+                  responseClass = "void")
+    public void updateDampening(@Suspended final AsyncResponse response,
+                                @ApiParam(value = "Trigger definition id to be retrieved",
+                                          required = true)
+                                @PathParam("triggerId") final String triggerId,
+                                @ApiParam(value = "Dampening id",
+                                          required = true)
+                                @PathParam("dampeningId") final String dampeningId,
+                                @ApiParam(value = "Updated dampening definition",
+                                          name = "dampening",
+                                          required = true)
+                                final Dampening dampening) {
+        try {
+            if (dampeningId != null && !dampeningId.isEmpty() &&
+                    dampening != null && dampening.getDampeningId() != null &&
+                    dampeningId.equals(dampening.getDampeningId()) &&
+                    dampeningId.startsWith(triggerId) &&
+                    definitions.getDampening(dampeningId) != null) {
+                log.debugf("PUT - updateDampening - dampeningId: %s ", dampeningId);
+                definitions.updateDampening(dampening);
+                response.resume(Response.status(Response.Status.OK).build());
+            } else {
+                log.debugf("PUT - updateDampening - dampeningId: %s not found or invalid. ", dampeningId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Dampening ID " + dampeningId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
+    @DELETE
+    @Path("/{triggerId}/dampening/{dampeningId}")
+    @ApiOperation(value = "Delete an existing dampening definition",
+                  responseClass = "void")
+    public void deleteDampening(
+            @Suspended final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                      required = true)
+            @PathParam("triggerId") final String triggerId,
+            @ApiParam(value = "Dampening id for dampening definition to be deleted", required = true)
+            @PathParam("dampeningId") final String dampeningId) {
+        try {
+            if (dampeningId != null && !dampeningId.isEmpty() &&
+                    definitions.getDampening(dampeningId) != null &&
+                    dampeningId.startsWith(triggerId)) {
+                log.debugf("DELETE - deleteDampening - dampeningId: %s ", dampeningId);
+                definitions.removeDampening(dampeningId);
+                response.resume(Response.status(Response.Status.OK).build());
+            } else {
+                log.debugf("DELETE - deleteDampening - dampeningId: %s not found or invalid ", dampeningId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Trigger ID " + dampeningId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
