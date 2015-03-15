@@ -44,18 +44,18 @@ class DampeningTest extends AbstractTestBase {
 
         Dampening d = new Dampening("test-trigger-6", Mode.FIRE, Type.RELAXED_COUNT, 1, 1, 1);
 
-        resp = client.post(path: "triggers/test-trigger-6/dampening", body: d)
+        resp = client.post(path: "triggers/test-trigger-6/dampenings", body: d)
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "triggers/test-trigger-6/dampening/" + d.getDampeningId());
+        resp = client.get(path: "triggers/test-trigger-6/dampenings/" + d.getDampeningId());
         assertEquals(200, resp.status)
         assertEquals("RELAXED_COUNT", resp.data.type)
 
         d.setType(Type.STRICT)
-        resp = client.put(path: "triggers/test-trigger-6/dampening/" + d.getDampeningId(), body: d)
+        resp = client.put(path: "triggers/test-trigger-6/dampenings/" + d.getDampeningId(), body: d)
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "triggers/test-trigger-6/dampening/" + d.getDampeningId())
+        resp = client.get(path: "triggers/test-trigger-6/dampenings/" + d.getDampeningId())
         assertEquals(200, resp.status)
         assertEquals("STRICT", resp.data.type)
 
@@ -63,11 +63,11 @@ class DampeningTest extends AbstractTestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
-        resp = client.get(path: "triggers/test-trigger-6/dampening/mode/FIRE")
+        resp = client.get(path: "triggers/test-trigger-6/dampenings/mode/FIRE")
         assertEquals(200, resp.status)
         assertEquals("test-trigger-6", resp.data.triggerId)
 
-        resp = client.delete(path: "triggers/test-trigger-6/dampening/" + d.getDampeningId())
+        resp = client.delete(path: "triggers/test-trigger-6/dampenings/" + d.getDampeningId())
         assertEquals(200, resp.status)
     }
 
