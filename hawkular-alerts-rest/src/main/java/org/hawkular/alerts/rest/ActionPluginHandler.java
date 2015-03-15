@@ -40,7 +40,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 
 /**
- * REST endpoint for NotifierTypes
+ * REST endpoint for ActionPlugins
  *
  * @author Lucas Ponce
  */
