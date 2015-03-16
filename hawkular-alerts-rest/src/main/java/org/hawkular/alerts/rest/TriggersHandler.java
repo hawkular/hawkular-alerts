@@ -681,14 +681,11 @@ public class TriggersHandler {
     @ApiOperation(value = "Delete an existing condition for a specific trigger",
             responseContainer = "Collection<Condition>",
             response = Condition.class)
-    public void deleteCondition(@Suspended
-    final AsyncResponse response,
-            @ApiParam(value = "Trigger definition id to be retrieved",
-                    required = true)
-            @PathParam("triggerId")
-            final String triggerId,
-            @PathParam("conditionId")
-            final String conditionId) {
+    public void deleteCondition(@Suspended final AsyncResponse response,
+                                @ApiParam(value = "Trigger definition id to be retrieved",
+                                          required = true)
+                                @PathParam("triggerId") final String triggerId,
+                                @PathParam("conditionId") final String conditionId) {
         try {
             Condition test = definitions.getCondition(conditionId);
             if (test == null) {
