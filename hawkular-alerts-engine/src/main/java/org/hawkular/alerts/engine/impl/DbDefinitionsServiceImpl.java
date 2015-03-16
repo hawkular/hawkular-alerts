@@ -1293,7 +1293,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("SELECT actionPlugin FROM HWK_ALERTS_ACTION_PLUGIN ")
+            StringBuilder sql = new StringBuilder("SELECT actionPlugin FROM HWK_ALERTS_ACTION_PLUGINS ")
                     .append("ORDER BY actionPlugin");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
