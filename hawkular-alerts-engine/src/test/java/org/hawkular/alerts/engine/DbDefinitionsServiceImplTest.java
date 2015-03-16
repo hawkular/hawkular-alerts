@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.engine;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Collection;
@@ -31,6 +33,7 @@ import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
@@ -78,45 +81,89 @@ public class DbDefinitionsServiceImplTest {
         db.init();
 
         Trigger t = db.getTrigger("trigger-1");
-        assert t != null;
+        assertTrue(t != null);
 
         Collection<Condition> cs = db.getTriggerConditions(t.getId(), null);
-        assert cs.size() == 1 : cs;
+        assertTrue(cs.toString(), cs.size() == 1);
         Condition c = cs.iterator().next();
 
         Collection<Dampening> ds = db.getTriggerDampenings(t.getId(), null);
-        assert ds.size() == 1 : cs;
+        assertTrue(cs.toString(), ds.size() == 1);
         Dampening d = ds.iterator().next();
 
         Map<String, String> dataIdMap = new HashMap<>(1);
         dataIdMap.put(c.getDataId(), "NewDataId");
 
         Trigger nt = db.copyTrigger(t.getId(), dataIdMap);
-        assert nt != null;
-        assert !nt.getId().equals(t.getId()) : nt;
-        assert nt.getName().equals(t.getName()) : nt;
-        assert nt.getDescription().equals(t.getDescription()) : nt;
-        assert nt.getFiringMatch().equals(t.getFiringMatch()) : nt;
-        assert nt.getSafetyMatch().equals(t.getSafetyMatch()) : nt;
+        assertNotNull(nt);
+        assertTrue(nt.toString(), !nt.getId().equals(t.getId()));
+        assertTrue(nt.toString(), nt.getName().equals(t.getName()));
+        assertTrue(nt.toString(), nt.getDescription().equals(t.getDescription()));
+        assertTrue(nt.toString(), nt.getFiringMatch().equals(t.getFiringMatch()));
+        assertTrue(nt.toString(), nt.getSafetyMatch().equals(t.getSafetyMatch()));
 
         Collection<Condition> ncs = db.getTriggerConditions(nt.getId(), null);
-        assert ncs.size() == 1 : ncs;
+        assertTrue(ncs.toString(), ncs.size() == 1);
         Condition nc = ncs.iterator().next();
-        assert nc.getClass().equals(c.getClass()) : nc;
-        assert nc.getTriggerId().equals(nt.getId()) : nc;
-        assert nc.getTriggerMode().equals(c.getTriggerMode()) : nc;
-        assert nc.getDataId().equals("NewDataId") : nc;
-        assert nc.getConditionSetIndex() == c.getConditionSetIndex() : nc;
-        assert nc.getConditionSetSize() == c.getConditionSetSize() : nc;
+        assertTrue(nc.toString(), nc.getClass().equals(c.getClass()));
+        assertTrue(nc.toString(), nc.getTriggerId().equals(nt.getId()));
+        assertTrue(nc.toString(), nc.getTriggerMode().equals(c.getTriggerMode()));
+        assertTrue(nc.toString(), nc.getDataId().equals("NewDataId"));
+        assertTrue(nc.toString(), nc.getConditionSetIndex() == c.getConditionSetIndex());
+        assertTrue(nc.toString(), nc.getConditionSetSize() == c.getConditionSetSize());
 
         Collection<Dampening> nds = db.getTriggerDampenings(nt.getId(), null);
-        assert nds.size() == 1 : nds;
+        assertTrue(nds.toString(), nds.size() == 1);
         Dampening nd = nds.iterator().next();
-        assert nd.getTriggerId().equals(nt.getId()) : nd;
-        assert nd.getTriggerMode().equals(d.getTriggerMode()) : nd;
-        assert nd.getEvalTrueSetting() == d.getEvalTrueSetting() : nd;
-        assert nd.getEvalTotalSetting() == d.getEvalTotalSetting() : nd;
-        assert nd.getEvalTimeSetting() == d.getEvalTimeSetting() : nd;
+        assertTrue(nd.toString(), nd.getTriggerId().equals(nt.getId()));
+        assertTrue(nd.toString(), nd.getTriggerMode().equals(d.getTriggerMode()));
+        assertTrue(nd.toString(), nd.getEvalTrueSetting() == d.getEvalTrueSetting());
+        assertTrue(nd.toString(), nd.getEvalTotalSetting() == d.getEvalTotalSetting());
+        assertTrue(nd.toString(), nd.getEvalTimeSetting() == d.getEvalTimeSetting());
+    }
+
+    @Test
+    public void tagTest() throws Exception {
+
+        DbDefinitionsServiceImpl db = new DbDefinitionsServiceImpl(new TestAlertsService(), ds);
+        db.init();
+
+        Trigger t = db.getTrigger("trigger-1");
+        assertNotNull(t);
+
+        Collection<Condition> cs = db.getTriggerConditions(t.getId(), null);
+        assertTrue(cs.toString(), cs.size() == 1);
+        Condition c = cs.iterator().next();
+
+        // check for the implicit tag
+        List<Tag> tags = db.getTriggerTags("trigger-1", "dataId");
+        assertTrue(tags.toString(), tags.size() == 1);
+        Tag tag = tags.get(0);
+        assertEquals("trigger-1", tag.getTriggerId());
+        assertEquals("dataId", tag.getCategory());
+        assertEquals(c.getDataId(), tag.getName());
+        assertEquals(false, tag.isVisible());
+
+        Tag newTag = new Tag("trigger-1", "testcategory", "testname", true);
+        db.addTag(newTag);
+
+        tags = db.getTriggerTags("trigger-1", null);
+        assertTrue(tags.toString(), tags.size() == 2);
+        tag = tags.get(1); // new one should be second by the implicit sort
+        assertEquals("trigger-1", tag.getTriggerId());
+        assertEquals("testcategory", tag.getCategory());
+        assertEquals("testname", tag.getName());
+        assertEquals(true, tag.isVisible());
+
+        db.removeTags("trigger-1", "testcategory", "testname");
+        tags = db.getTriggerTags("trigger-1", null);
+        assertTrue(tags.toString(), tags.size() == 1);
+        tag = tags.get(0);
+        assertEquals("trigger-1", tag.getTriggerId());
+        assertEquals("dataId", tag.getCategory());
+
+        tags = db.getTriggerTags("dummy", null);
+        assertTrue(tags.toString(), tags.size() == 0);
     }
 
     private static class TestAlertsService implements AlertsService {

@@ -296,7 +296,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
     }
 
     private boolean isEmpty(String s) {
-        return null == s || s.isEmpty();
+        return null == s || s.trim().isEmpty();
     }
 
     private String toJson(Object resource) {
@@ -307,11 +307,6 @@ public class BasicAlertsServiceImpl implements AlertsService {
     }
 
     private <T> T fromJson(Reader json, Class<T> clazz) {
-
-        return gson.fromJson(json, clazz);
-    }
-
-    private <T> T fromJson(String json, Class<T> clazz) {
 
         return gson.fromJson(json, clazz);
     }

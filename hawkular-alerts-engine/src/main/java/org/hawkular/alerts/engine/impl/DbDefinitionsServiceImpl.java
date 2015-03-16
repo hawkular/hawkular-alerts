@@ -49,6 +49,7 @@ import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.TriggerTemplate;
@@ -196,7 +197,6 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         Used only for demo/poc purposes.
      */
     private void initFiles(String folder) {
-
         if (folder == null) {
             msgLog.errorFolderMustBeNotNull();
             return;
@@ -893,14 +893,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     dataIds.add(((CompareCondition) cond).getData2Id());
                 }
                 for (String dataId : dataIds) {
-                    sql = new StringBuilder("INSERT INTO HWK_ALERTS_TAGS VALUES (")
-                            .append("'").append(cond.getTriggerId()).append("', ")
-                            .append("'dataId', ")
-                            .append("'").append(dataId).append("', ")
-                            .append("false ")
-                            .append(")");
-                    log.debugf("SQL: " + sql);
-                    s.execute(sql.toString());
+                    insertTag(c, s, cond.getTriggerId(), "dataId", dataId, false);
                 }
                 dataIds.clear();
             }
@@ -1407,10 +1400,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s.execute(sql.toString());
 
             // if removing conditions remove the automatically-added dataId tags
-            sql = new StringBuilder("DELETE FROM HWK_ALERTS_TAGS WHERE ")
-                    .append("triggerId = '").append(triggerId).append("' ")
-                    .append(" AND category = 'dataId'");
-            s.execute(sql.toString());
+            deleteTags(c, s, triggerId, "dataId", null);
 
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1529,12 +1519,18 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         try {
             c = ds.getConnection();
             s = c.createStatement();
+
             StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_DAMPENINGS WHERE ")
                     .append("triggerId = '").append(triggerId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 
             sql = new StringBuilder("DELETE FROM HWK_ALERTS_CONDITIONS WHERE ")
+                    .append("triggerId = '").append(triggerId).append("' ");
+            log.debugf("SQL: " + sql);
+            s.execute(sql.toString());
+
+            sql = new StringBuilder("DELETE FROM HWK_ALERTS_TAGS WHERE ")
                     .append("triggerId = '").append(triggerId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
@@ -1758,6 +1754,134 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             }
         } catch (Exception ignored) {
         }
+    }
+
+    @Override
+    public void addTag(Tag tag) throws Exception {
+        if (tag == null) {
+            throw new IllegalArgumentException("Tag must be not null");
+        }
+        if (isEmpty(tag.getTriggerId())) {
+            throw new IllegalArgumentException("Tag TriggerId must be not null or empty");
+        }
+        if (isEmpty(tag.getName())) {
+            throw new IllegalArgumentException("Tag Name must be not null or empty");
+        }
+
+        // Now add the tag
+        Connection c = null;
+        Statement s = null;
+        try {
+            c = ds.getConnection();
+            s = c.createStatement();
+
+            insertTag(c, s, tag.getTriggerId(), tag.getCategory(), tag.getName(), tag.isVisible());
+
+        } catch (SQLException e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            close(c, s);
+        }
+    }
+
+    private void insertTag(Connection c, Statement s, String triggerId, String category, String name, boolean visible)
+            throws Exception {
+        StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_TAGS VALUES (");
+        sql.append("'").append(triggerId).append("', ");
+        if (isEmpty(category)) {
+            sql.append("NULL, ");
+        } else {
+            sql.append("'").append(category).append("', ");
+        }
+        sql.append("'").append(name).append("', ");
+        sql.append("'").append(String.valueOf(visible)).append("' ");
+        sql.append(")");
+        log.debugf("SQL: " + sql);
+        s = c.createStatement();
+        s.execute(sql.toString());
+    }
+
+    @Override
+    public void removeTags(String triggerId, String category, String name) throws Exception {
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("Tag TriggerId must be not null or empty");
+        }
+
+        // Now remove the tag(s)
+        Connection c = null;
+        Statement s = null;
+        try {
+            c = ds.getConnection();
+            s = c.createStatement();
+
+            deleteTags(c, s, triggerId, category, name);
+
+        } catch (SQLException e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            close(c, s);
+        }
+    }
+
+    private void deleteTags(Connection c, Statement s, String triggerId, String category, String name)
+            throws Exception {
+        StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_TAGS WHERE ");
+        sql.append("triggerId = '").append(triggerId).append("' ");
+        if (!isEmpty(category)) {
+            sql.append("AND category = '").append(category).append("' ");
+        }
+        if (!isEmpty(name)) {
+            sql.append("AND name = '").append(name).append("' ");
+        }
+        log.debugf("SQL: " + sql);
+        s = c.createStatement();
+        s.executeUpdate(sql.toString());
+    }
+
+    @Override
+    public List<Tag> getTriggerTags(String triggerId, String category) throws Exception {
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("Tag TriggerId must be not null or empty");
+        }
+        if (ds == null) {
+            throw new Exception("DataSource is null");
+        }
+
+        List<Tag> tags = new ArrayList<>();
+        Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
+        try {
+            c = ds.getConnection();
+            s = c.createStatement();
+
+            StringBuilder sql = new StringBuilder(
+                    "SELECT triggerId, category, name, visible FROM HWK_ALERTS_TAGS WHERE ");
+            sql.append("triggerId = '").append(triggerId).append("' ");
+            if (!isEmpty(category)) {
+                sql.append("AND category = '").append(category).append("' ");
+            }
+            sql.append("ORDER BY category, name");
+            log.debugf("SQL: " + sql);
+            rs = s.executeQuery(sql.toString());
+            while (rs.next()) {
+                Tag tag = new Tag(rs.getString(1), rs.getString(2), rs.getString(3), rs.getBoolean(4));
+                tags.add(tag);
+            }
+        } catch (SQLException e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            close(c, s, rs);
+        }
+
+        return tags;
+    }
+
+    private boolean isEmpty(String s) {
+        return null == s || s.trim().isEmpty();
     }
 
 }

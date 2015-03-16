@@ -17,7 +17,7 @@
 package org.hawkular.alerts.api.model.trigger;
 
 /**
- * An immutable class. Each instance is a tag
+ * Each instance is a tag
  *
  * @author jay shaughnessy
  * @author lucas ponce
@@ -28,6 +28,10 @@ public class Tag {
     private String category;
     private String name;
     private boolean visible;
+
+    public Tag() {
+        // for json only
+    }
 
     /**
      * Create a searchable Tag on name only
@@ -81,16 +85,32 @@ public class Tag {
         return triggerId;
     }
 
+    public void setTriggerId(String triggerId) {
+        this.triggerId = triggerId;
+    }
+
     public String getCategory() {
         return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public String getName() {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public boolean isVisible() {
         return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 
     @Override
