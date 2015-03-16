@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.rest;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
