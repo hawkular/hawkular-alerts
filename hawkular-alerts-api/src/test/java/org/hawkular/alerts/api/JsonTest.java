@@ -119,7 +119,7 @@ public class JsonTest {
     @Test
     public void jsonAvailabilityConditionTest() throws Exception {
         String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRE\",\"type\":\"AVAILABILITY\"," +
-                "\"dataId\":\"Default\",\"operator\":\"UP\"}";
+                "\"conditionId\":\"test-FIRE-1-1\",\"dataId\":\"Default\",\"operator\":\"UP\"}";
         AvailabilityCondition condition = objectMapper.readValue(str, AvailabilityCondition.class);
 
         assert condition.getTriggerId().equals("test");
@@ -191,6 +191,7 @@ public class JsonTest {
     @Test
     public void jsonCompareConditionTest() throws Exception {
         String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRE\",\"type\":\"COMPARE\"," +
+                "\"conditionId\":\"test-FIRE-1-1\"," +
                 "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         CompareCondition condition = objectMapper.readValue(str, CompareCondition.class);
 
@@ -294,6 +295,7 @@ public class JsonTest {
     @Test
     public void jsonStringConditionTest() throws Exception {
         String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRE\",\"type\":\"STRING\"," +
+                "\"conditionId\":\"test-FIRE-1-1\"," +
                 "\"dataId\":\"Default\",\"operator\":\"MATCH\",\"pattern\":\"test-pattern\",\"ignoreCase\":false}";
         StringCondition condition = objectMapper.readValue(str, StringCondition.class);
 
@@ -395,6 +397,7 @@ public class JsonTest {
     @Test
     public void jsonThresholdConditionTest() throws Exception {
         String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRE\",\"type\":\"THRESHOLD\"," +
+                "\"conditionId\":\"test-FIRE-1-1\"," +
                 "\"dataId\":\"Default\",\"operator\":\"LT\",\"threshold\":10.5}";
         ThresholdCondition condition = objectMapper.readValue(str, ThresholdCondition.class);
 
@@ -483,7 +486,8 @@ public class JsonTest {
     @Test
     public void jsonThresholdRangeConditionTest() throws Exception {
         String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRE\",\"type\":\"RANGE\"," +
-                "\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\",\"operatorHigh\":\"INCLUSIVE\"," +
+                "\"conditionId\":\"test-FIRE-1-1\",\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\"," +
+                "\"operatorHigh\":\"INCLUSIVE\"," +
                 "\"thresholdLow\":10.5,\"thresholdHigh\":20.5,\"inRange\":true}";
         ThresholdRangeCondition condition = objectMapper.readValue(str, ThresholdRangeCondition.class);
 
