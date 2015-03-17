@@ -26,6 +26,7 @@ import org.jboss.logging.Logger;
 import javax.ejb.EJB;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
@@ -80,6 +81,16 @@ public class AlertsHandler {
                           "between definitions and alerts services")
     public void reloadAlerts(@Suspended final AsyncResponse response) {
         alerts.reload();
+        response.resume(Response.status(Response.Status.OK).build());
+    }
+
+    @GET
+    @Path("/reload/{triggerId}")
+    @ApiOperation(value = "Reload a specific trigger into the alerts service",
+                  responseClass = "void")
+    public void reloadTrigger(@Suspended final AsyncResponse response,
+                              @PathParam("triggerId") String triggerId) {
+        alerts.reloadTrigger(triggerId);
         response.resume(Response.status(Response.Status.OK).build());
     }
 }
