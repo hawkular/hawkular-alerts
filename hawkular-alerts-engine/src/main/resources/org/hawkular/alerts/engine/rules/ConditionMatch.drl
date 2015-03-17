@@ -101,7 +101,7 @@ end
 rule Compare
     when 
         $t  : Trigger( $tid : id, $tmode : mode )
-        $c  : CompareCondition ( triggerId == $tid, triggerMode == $tmode, $d1id : data1Id, $d2id : data2Id )
+        $c  : CompareCondition ( triggerId == $tid, triggerMode == $tmode, $d1id : dataId, $d2id : data2Id )
         $d1 : NumericData( $d1id == id )
         $d2 : NumericData( $d2id == id )
     then

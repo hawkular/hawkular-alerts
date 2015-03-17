@@ -17,6 +17,7 @@
 package org.hawkular.alerts.api.services;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.data.Data;
@@ -32,8 +33,6 @@ public interface AlertsService {
     void sendData(Data data);
 
     void sendData(Collection<Data> data);
-
-    Collection<Alert> checkAlerts();
 
     /**
      * Reset session state.
@@ -51,4 +50,17 @@ public interface AlertsService {
      * @param triggerId
      */
     void reloadTrigger(String triggerId);
+
+    /**
+     * @param criteria If null returns all alerts (not recommended)
+     * @return NotNull, can be empty.
+     */
+    List<Alert> getAlerts(AlertsCriteria criteria) throws Exception;
+
+    /**
+     * Persist the provided alerts.
+     * @param alerts Set of unpersisted Alerts.
+     * @return
+     */
+    void addAlerts(Collection<Alert> alerts) throws Exception;
 }

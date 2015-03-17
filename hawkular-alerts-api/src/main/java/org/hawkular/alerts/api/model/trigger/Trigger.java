@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.trigger;
 
+import java.util.UUID;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -50,7 +52,11 @@ public class Trigger extends TriggerTemplate {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultId", null);
+        this("defaultName");
+    }
+
+    public Trigger(String name) {
+        this(UUID.randomUUID().toString(), name);
     }
 
     public Trigger(String id, String name) {

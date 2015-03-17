@@ -17,9 +17,9 @@
 package org.hawkular.alerts.api.model.condition;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.hawkular.alerts.api.model.data.NumericData;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.*;
+import org.hawkular.alerts.api.model.data.NumericData;
 
 /**
  * An evaluation state for threshold condition.
@@ -36,9 +36,7 @@ public class ThresholdConditionEval extends ConditionEval {
     private Double value;
 
     public ThresholdConditionEval() {
-        super(false, 0);
-        this.condition = null;
-        this.value = null;
+        super();
     }
 
     public ThresholdConditionEval(ThresholdCondition condition, NumericData data) {

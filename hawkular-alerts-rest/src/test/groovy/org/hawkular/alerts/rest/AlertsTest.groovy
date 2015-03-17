@@ -18,8 +18,11 @@ package org.hawkular.alerts.rest
 
 import org.junit.Test
 
+import org.hawkular.alerts.api.services.AlertsCriteria
+
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertEquals
+
 
 /**
  * Alerts REST tests.
@@ -29,9 +32,16 @@ import static org.junit.Assert.assertEquals
 class AlertsTest extends AbstractTestBase {
 
     @Test
-    void getAllAlertsTest() {
+    void getAlertsTest() {
         def resp = client.get(path: "")
-        assertTrue(resp.status == 200 || resp.status == 204)
+        assert resp.status == 200 || resp.status == 204 : resp.status
+    }
+
+    @Test
+    void getAlertsByCriteriaTest() {
+        String now = String.valueOf(System.currentTimeMillis());
+        def resp = client.get(path: "", query: [endTime:now, startTime:"0"] )
+        assert resp.status == 200 || resp.status == 204 : resp.status
     }
 
     @Test

@@ -32,6 +32,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
@@ -48,6 +49,7 @@ import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
 
@@ -61,7 +63,7 @@ import org.jboss.logging.Logger;
  */
 @Path("/triggers")
 @Api(value = "/triggers",
-     description = "Create/Read/Update/Delete operations for Triggers definitions")
+        description = "Create/Read/Update/Delete operations for Triggers definitions")
 public class TriggersHandler {
     private static final Logger log = Logger.getLogger(TriggersHandler.class);
 
@@ -79,9 +81,10 @@ public class TriggersHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all triggers definitions",
-                  responseClass = "Collection<org.hawkular.alerts.api.model.trigger.Trigger>",
-                  notes = "Pagination is not yet implemented")
-    public void findAllTriggers(@Suspended final AsyncResponse response) {
+            responseClass = "Collection<org.hawkular.alerts.api.model.trigger.Trigger>",
+            notes = "Pagination is not yet implemented")
+    public void findAllTriggers(@Suspended
+    final AsyncResponse response) {
         try {
             Collection<Trigger> triggerList = definitions.getAllTriggers();
             if (triggerList.isEmpty()) {
@@ -106,13 +109,14 @@ public class TriggersHandler {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Create a new trigger definitions",
-                  responseClass = "org.hawkular.alerts.api.model.trigger.Trigger",
-                  notes = "Returns Trigger created if operation finished correctly")
-    public void createTrigger(@Suspended final AsyncResponse response,
-                              @ApiParam(value = "Trigger definition to be created",
-                                        name = "trigger",
-                                        required = true)
-                              final Trigger trigger) {
+            responseClass = "org.hawkular.alerts.api.model.trigger.Trigger",
+            notes = "Returns Trigger created if operation finished correctly")
+    public void createTrigger(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition to be created",
+                    name = "trigger",
+                    required = true)
+            final Trigger trigger) {
         try {
             if (trigger != null && trigger.getId() != null && definitions.getTrigger(trigger.getId()) == null) {
                 log.debugf("POST - createTrigger - triggerId %s ", trigger.getId());
@@ -139,11 +143,13 @@ public class TriggersHandler {
     @Path("/{triggerId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get an existing trigger definition",
-                  responseClass = "org.hawkular.alerts.api.model.trigger.Trigger")
-    public void getTrigger(@Suspended final AsyncResponse response,
-                           @ApiParam(value = "Trigger definition id to be retrieved",
-                                     required = true)
-                           @PathParam("triggerId") final String triggerId) {
+            responseClass = "org.hawkular.alerts.api.model.trigger.Trigger")
+    public void getTrigger(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId) {
         try {
             Trigger found = null;
             if (triggerId != null && !triggerId.isEmpty()) {
@@ -172,15 +178,17 @@ public class TriggersHandler {
     @Path("/{triggerId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing trigger definition",
-                  responseClass = "void")
-    public void updateTrigger(@Suspended final AsyncResponse response,
-                              @ApiParam(value = "Trigger definition id to be updated",
-                                        required = true)
-                              @PathParam("triggerId") final String triggerId,
-                              @ApiParam(value = "Updated trigger definition",
-                                        name = "trigger",
-                                        required = true)
-                              final Trigger trigger) {
+            responseClass = "void")
+    public void updateTrigger(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be updated",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @ApiParam(value = "Updated trigger definition",
+                    name = "trigger",
+                    required = true)
+            final Trigger trigger) {
         try {
             if (triggerId != null && !triggerId.isEmpty() &&
                     trigger != null && trigger.getId() != null &&
@@ -209,11 +217,13 @@ public class TriggersHandler {
     @DELETE
     @Path("/{triggerId}")
     @ApiOperation(value = "Delete an existing trigger definition",
-                  responseClass = "void")
-    public void deleteTrigger(@Suspended final AsyncResponse response,
-                              @ApiParam(value = "Trigger definition id to be deleted",
-                                        required = true)
-                              @PathParam("triggerId") final String triggerId) {
+            responseClass = "void")
+    public void deleteTrigger(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be deleted",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId) {
         try {
             if (triggerId != null && !triggerId.isEmpty() && definitions.getTrigger(triggerId) != null) {
                 log.debugf("DELETE - deleteTrigger - triggerId: %s ", triggerId);
@@ -689,6 +699,116 @@ public class TriggersHandler {
             log.debugf(e.getMessage(), e);
         }
         return null;
+    }
+
+    @POST
+    @Path("/tags")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Create a new trigger tag",
+            responseClass = "org.hawkular.alerts.api.model.trigger.Tag",
+            notes = "Returns Tag created if operation finished correctly")
+    public void createTag(
+            @Suspended
+            final AsyncResponse response,
+            @ApiParam(value = "Tag to be created", name = "tag", required = true)
+            final Tag tag) {
+        try {
+            if (!isEmpty(tag.getTriggerId()) && !isEmpty(tag.getName())) {
+                log.debugf("POST - createTag: %s ", tag);
+                definitions.addTag(tag);
+                response.resume(Response.status(Response.Status.OK)
+                        .entity(tag).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("POST - createTag - Invalid Tag, trigger-id, name required");
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Invalid Tag, no trigger or missing required field");
+                response.resume(Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
+    @POST
+    @Path("/{triggerId}/tags")
+    @ApiOperation(value = "Delete an existing trigger definition",
+            responseClass = "void")
+    public void deleteTags(
+            @Suspended
+            final AsyncResponse response,
+            @ApiParam(value = "Trigger id of tags to be deleted", required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @ApiParam(value = "Category of tags to be deleted", required = false)
+            @QueryParam("category")
+            final String category,
+            @ApiParam(value = "Name of tags to be deleted", required = false)
+            @QueryParam("name")
+            final String name) {
+        try {
+            if (!isEmpty(triggerId)) {
+                log.debugf("DELETE - deleteTags - triggerId: %s, category: %s, name: %s ", triggerId, category, name);
+                definitions.removeTags(triggerId, category, name);
+                response.resume(Response.status(Response.Status.OK).build());
+            } else {
+                log.debugf("DELETE - deleteTags - triggerId: %s not found or invalid. ", triggerId);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", "Trigger ID " + triggerId + " not found or invalid ID");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
+    @GET
+    @Path("/{triggerId}/tags")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get tags for a trigger.",
+            responseClass = "Collection<Tag>")
+    public void getTriggerTags(
+            @Suspended
+            final AsyncResponse response,
+            @ApiParam(value = "Trigger id for the retrieved Tags", required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @ApiParam(value = "Category of tags to be retrieved", required = false)
+            @QueryParam("category")
+            final String category) {
+        try {
+            Collection<Tag> tagsList = definitions.getTriggerTags(triggerId, category);
+            if (tagsList.isEmpty()) {
+                log.debugf("GET - getTriggerTags - Empty");
+                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("GET - getTriggerTags - %s tags ", tagsList.size());
+
+                response.resume(Response.status(Response.Status.OK).entity(tagsList).type(APPLICATION_JSON_TYPE)
+                        .build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
+
+    private boolean isEmpty(String s) {
+        return null == s || s.trim().isEmpty();
     }
 
 }

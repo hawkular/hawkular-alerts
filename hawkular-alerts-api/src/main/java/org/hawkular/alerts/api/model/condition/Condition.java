@@ -18,6 +18,7 @@ package org.hawkular.alerts.api.model.condition;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 /**
@@ -66,6 +67,10 @@ public abstract class Condition {
      */
     @JsonInclude
     protected String conditionId;
+
+    public Condition() {
+        // for json assembly
+    }
 
     public Condition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex, Type type) {
         this.triggerId = triggerId;
@@ -153,4 +158,14 @@ public abstract class Condition {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return "Condition [triggerId=" + triggerId + ", triggerMode=" + triggerMode + ", conditionSetSize="
+                + conditionSetSize + ", conditionSetIndex=" + conditionSetIndex + "]";
+    }
+
+    /**
+     * @return The dataId, can be null if the Condition has no relevant dataId.
+     */
+    public abstract String getDataId();
 }

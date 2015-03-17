@@ -17,11 +17,13 @@
 package org.hawkular.alerts.api.services;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
@@ -67,6 +69,16 @@ public interface DefinitionsService {
     Trigger getTrigger(String triggerId) throws Exception;
 
     Collection<Trigger> getAllTriggers() throws Exception;
+
+    /**
+     * Used to generate an explicit Trigger from a Tokenized Trigger.  The dataIdMap replaces the tokens in the
+     * Conditions with actual dataIds.
+     * @param triggerId
+     * @param dataIdMap
+     * @return
+     * @throws Exception
+     */
+    Trigger copyTrigger(String triggerId, Map<String, String> dataIdMap) throws Exception;
 
     /*
         CRUD interface for Dampening
@@ -201,5 +213,28 @@ public interface DefinitionsService {
     Collection<String> getActions(String actionPlugin) throws Exception;
 
     Map<String, String> getAction(String actionId) throws Exception;
+
+    /*
+    CRUD interface for Tag
+    */
+
+    void addTag(Tag tag) throws Exception;
+
+    /**
+     * Delete tag(s) for the specified trigger, optionally filtered by category and/or name.
+     * @param triggerId NotEmpty
+     * @param category Nullable
+     * @param name Nullable
+     * @throws Exception
+     */
+    void removeTags(String triggerId, String category, String name) throws Exception;
+
+    /**
+     * @param triggerId NotEmpty
+     * @param category Nullable.
+     * @return The existing Tags for the trigger, optionally filtered by category. Sorted by category, name.
+     * @throws Exception
+     */
+    List<Tag> getTriggerTags(String triggerId, String category) throws Exception;
 
 }
