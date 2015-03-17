@@ -209,8 +209,7 @@ public class TriggersHandler {
                     triggerId.equals(trigger.getId()) &&
                     definitions.getTrigger(triggerId) != null) {
                 log.debugf("PUT - updateTrigger - triggerId: %s ", triggerId);
-                definitions.removeTrigger(triggerId);
-                definitions.addTrigger(trigger);
+                definitions.updateTrigger(trigger);
                 response.resume(Response.status(Response.Status.OK).build());
             } else {
                 log.debugf("PUT - updateTrigger - triggerId: %s not found or invalid. ", triggerId);
