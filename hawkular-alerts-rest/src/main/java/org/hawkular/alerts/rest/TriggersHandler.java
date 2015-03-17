@@ -594,21 +594,11 @@ public class TriggersHandler {
                     } else if (conditionType.equals(Condition.Type.RANGE)) {
                         condition = objectMapper.readValue(jsonCondition, ThresholdRangeCondition.class);
                     }
-                    Condition test = definitions.getCondition(condition.getConditionId());
-                    if (test != null) {
-                        log.debugf("POST - createCondition - Condition " + condition.getConditionId() +
-                                " already exists");
-                        Map<String, String> errors = new HashMap<String, String>();
-                        errors.put("errorMsg", "Condition " + condition.getConditionId() + " already exists");
-                        response.resume(Response.status(Response.Status.BAD_REQUEST)
-                                .entity(errors).type(APPLICATION_JSON_TYPE).build());
-                    } else {
-                        Collection<Condition> newConditions = definitions.addCondition(condition.getTriggerId(),
-                                condition.getTriggerMode(),
-                                condition);
-                        response.resume(Response.status(Response.Status.OK)
-                                .entity(newConditions).type(APPLICATION_JSON_TYPE).build());
-                    }
+                    Collection<Condition> newConditions = definitions.addCondition(condition.getTriggerId(),
+                            condition.getTriggerMode(),
+                            condition);
+                    response.resume(Response.status(Response.Status.OK)
+                            .entity(newConditions).type(APPLICATION_JSON_TYPE).build());
                 }
             }
         } catch (Exception e) {
