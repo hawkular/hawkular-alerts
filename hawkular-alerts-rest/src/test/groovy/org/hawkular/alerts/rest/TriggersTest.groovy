@@ -22,6 +22,7 @@ import org.jboss.logging.Logger
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNotNull
 
 /**
  * Triggers REST tests.
@@ -54,6 +55,10 @@ class TriggersTest extends AbstractTestBase {
         resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
+        // Should not be able to create the same triggerId again
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(400, resp.status)
+
         resp = client.get(path: "triggers/test-trigger-1");
         assertEquals(200, resp.status)
         assertEquals("No-Metric", resp.data.name)
@@ -67,6 +72,16 @@ class TriggersTest extends AbstractTestBase {
         assertEquals("No-Metric-Modified", resp.data.name)
 
         resp = client.delete(path: "triggers/test-trigger-1")
+        assertEquals(200, resp.status)
+
+        // Test create w/o assigning a TriggerId, it should generate a UUID
+        testTrigger.setId(null);
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+        assertNotNull(resp.data.id)
+
+        // Delete the trigger
+        resp = client.delete(path: "triggers/" + resp.data.id)
         assertEquals(200, resp.status)
     }
 

@@ -108,25 +108,39 @@ public class TriggersHandler {
     @Path("/")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Create a new trigger definitions",
+    @ApiOperation(
+            value = "Create a new trigger definitions. If trigger ID is null, a (likely) unique ID will be generated",
             responseClass = "org.hawkular.alerts.api.model.trigger.Trigger",
             notes = "Returns Trigger created if operation finished correctly")
-    public void createTrigger(@Suspended
-    final AsyncResponse response,
-            @ApiParam(value = "Trigger definition to be created",
-                    name = "trigger",
-                    required = true)
+    public void createTrigger(
+            @Suspended
+            final AsyncResponse response,
+            @ApiParam(value = "Trigger definition to be created", name = "trigger", required = true)
             final Trigger trigger) {
         try {
-            if (trigger != null && trigger.getId() != null && definitions.getTrigger(trigger.getId()) == null) {
+            if (null != trigger) {
+                if (isEmpty(trigger.getId())) {
+                    trigger.setId(Trigger.generateId());
+
+                } else if (definitions.getTrigger(trigger.getId()) != null) {
+                    String errorMsg = "POST - Trigger with ID [" + trigger.getId() + "] exists.";
+                    log.debugf(errorMsg);
+                    Map<String, String> errors = new HashMap<String, String>();
+                    errors.put("errorMsg", errorMsg);
+                    response.resume(Response.status(Response.Status.BAD_REQUEST)
+                            .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                }
+
                 log.debugf("POST - createTrigger - triggerId %s ", trigger.getId());
                 definitions.addTrigger(trigger);
                 response.resume(Response.status(Response.Status.OK)
                         .entity(trigger).type(APPLICATION_JSON_TYPE).build());
+
             } else {
-                log.debugf("POST - createTrigger - ID not valid or existing trigger");
+                String errorMsg = "POST - Trigger is null";
+                log.debugf(errorMsg);
                 Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "Existing trigger or invalid ID");
+                errors.put("errorMsg", errorMsg);
                 response.resume(Response.status(Response.Status.BAD_REQUEST)
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }
@@ -249,12 +263,14 @@ public class TriggersHandler {
     @Path("/{triggerId}/dampenings")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get a list with all dampenings linked with a trigger.",
-                  responseClass = "Collection<Dampening>",
-                  notes = "Pagination is not yet implemented ")
-    public void getTriggerDampenings(@Suspended final AsyncResponse response,
-                                     @ApiParam(value = "Trigger definition id to be retrieved",
-                                               required = true)
-                                     @PathParam("triggerId") final String triggerId) {
+            responseClass = "Collection<Dampening>",
+            notes = "Pagination is not yet implemented ")
+    public void getTriggerDampenings(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId) {
         try {
             Collection<Dampening> dampeningList = definitions.getTriggerDampenings(triggerId, null);
             if (dampeningList.isEmpty()) {
@@ -264,14 +280,14 @@ public class TriggersHandler {
                 log.debugf("GET - getTriggerDampenings - %s conditions ", dampeningList.size());
 
                 response.resume(Response.status(Response.Status.OK)
-                                        .entity(dampeningList).type(APPLICATION_JSON_TYPE).build());
+                        .entity(dampeningList).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -279,15 +295,18 @@ public class TriggersHandler {
     @Path("/{triggerId}/dampenings/mode/{triggerMode}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get a dampening using triggerId and triggerMode",
-                  responseClass = "Dampening",
-                  notes = "Similar as getDampening(dampeningId)")
-    public void getTriggerModeDampenings(@Suspended final AsyncResponse response,
-                                         @ApiParam(value = "Trigger definition id to be retrieved",
-                                                   required = true)
-                                         @PathParam("triggerId") final String triggerId,
-                                         @ApiParam(value = "Trigger mode",
-                                                   required = true)
-                                         @PathParam("triggerMode") final Trigger.Mode triggerMode) {
+            responseClass = "Dampening",
+            notes = "Similar as getDampening(dampeningId)")
+    public void getTriggerModeDampenings(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @ApiParam(value = "Trigger mode",
+                    required = true)
+            @PathParam("triggerMode")
+            final Trigger.Mode triggerMode) {
         try {
             Collection<Dampening> dampeningList = definitions.getTriggerDampenings(triggerId, triggerMode);
             if (dampeningList.isEmpty()) {
@@ -297,14 +316,14 @@ public class TriggersHandler {
                 log.debugf("GET - getTriggerDampenings - %s dampenings ", dampeningList.size());
                 Dampening first = dampeningList.iterator().next();
                 response.resume(Response.status(Response.Status.OK)
-                                        .entity(first).type(APPLICATION_JSON_TYPE).build());
+                        .entity(first).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -312,14 +331,17 @@ public class TriggersHandler {
     @Path("/{triggerId}/dampenings/{dampeningId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get an existing dampening",
-                  responseClass = "org.hawkular.alerts.api.model.dampening.Dampening")
-    public void getDampening(@Suspended final AsyncResponse response,
-                             @ApiParam(value = "Trigger definition id to be retrieved",
-                                       required = true)
-                             @PathParam("triggerId") final String triggerId,
-                             @ApiParam(value = "Dampening id",
-                                       required = true)
-                             @PathParam("dampeningId") final String dampeningId) {
+            responseClass = "org.hawkular.alerts.api.model.dampening.Dampening")
+    public void getDampening(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @ApiParam(value = "Dampening id",
+                    required = true)
+            @PathParam("dampeningId")
+            final String dampeningId) {
         try {
             Dampening found = null;
             if (dampeningId != null && !dampeningId.isEmpty() && dampeningId.startsWith(triggerId)) {
@@ -333,14 +355,14 @@ public class TriggersHandler {
                 Map<String, String> errors = new HashMap<String, String>();
                 errors.put("errorMsg", "Dampening ID " + dampeningId + " not found or invalid ID");
                 response.resume(Response.status(Response.Status.NOT_FOUND)
-                                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -349,16 +371,18 @@ public class TriggersHandler {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Create a new dampening",
-                  responseClass = "org.hawkular.alerts.api.model.dampening.Dampening",
-                  notes = "Returns Dampening created if operation finished correctly")
-    public void createDampening(@Suspended final AsyncResponse response,
-                                @ApiParam(value = "Trigger definition id attached to dampening",
-                                          required = true)
-                                @PathParam("triggerId") final String triggerId,
-                                @ApiParam(value = "Dampening definition to be created",
-                                          name = "dampening",
-                                          required = true)
-                                final Dampening dampening) {
+            responseClass = "org.hawkular.alerts.api.model.dampening.Dampening",
+            notes = "Returns Dampening created if operation finished correctly")
+    public void createDampening(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id attached to dampening",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @ApiParam(value = "Dampening definition to be created",
+                    name = "dampening",
+                    required = true)
+            final Dampening dampening) {
         try {
             if (dampening != null && dampening.getTriggerId() != null &&
                     triggerId != null && dampening.getTriggerId().equals(triggerId) &&
@@ -366,20 +390,20 @@ public class TriggersHandler {
                 log.debugf("POST - createDampening - triggerId %s ", dampening.getTriggerId());
                 definitions.addDampening(dampening);
                 response.resume(Response.status(Response.Status.OK)
-                                        .entity(dampening).type(APPLICATION_JSON_TYPE).build());
+                        .entity(dampening).type(APPLICATION_JSON_TYPE).build());
             } else {
                 log.debugf("POST - createDampening - ID not valid or existing dampening");
                 Map<String, String> errors = new HashMap<String, String>();
                 errors.put("errorMsg", "Existing dampening or invalid ID");
                 response.resume(Response.status(Response.Status.BAD_REQUEST)
-                                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -387,18 +411,21 @@ public class TriggersHandler {
     @Path("/{triggerId}/dampenings/{dampeningId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing dampening definition",
-                  responseClass = "void")
-    public void updateDampening(@Suspended final AsyncResponse response,
-                                @ApiParam(value = "Trigger definition id to be retrieved",
-                                          required = true)
-                                @PathParam("triggerId") final String triggerId,
-                                @ApiParam(value = "Dampening id",
-                                          required = true)
-                                @PathParam("dampeningId") final String dampeningId,
-                                @ApiParam(value = "Updated dampening definition",
-                                          name = "dampening",
-                                          required = true)
-                                final Dampening dampening) {
+            responseClass = "void")
+    public void updateDampening(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @ApiParam(value = "Dampening id",
+                    required = true)
+            @PathParam("dampeningId")
+            final String dampeningId,
+            @ApiParam(value = "Updated dampening definition",
+                    name = "dampening",
+                    required = true)
+            final Dampening dampening) {
         try {
             if (dampeningId != null && !dampeningId.isEmpty() &&
                     dampening != null && dampening.getDampeningId() != null &&
@@ -413,28 +440,31 @@ public class TriggersHandler {
                 Map<String, String> errors = new HashMap<String, String>();
                 errors.put("errorMsg", "Dampening ID " + dampeningId + " not found or invalid ID");
                 response.resume(Response.status(Response.Status.NOT_FOUND)
-                                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
     @DELETE
     @Path("/{triggerId}/dampenings/{dampeningId}")
     @ApiOperation(value = "Delete an existing dampening definition",
-                  responseClass = "void")
+            responseClass = "void")
     public void deleteDampening(
-            @Suspended final AsyncResponse response,
+            @Suspended
+            final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
-                      required = true)
-            @PathParam("triggerId") final String triggerId,
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId,
             @ApiParam(value = "Dampening id for dampening definition to be deleted", required = true)
-            @PathParam("dampeningId") final String dampeningId) {
+            @PathParam("dampeningId")
+            final String dampeningId) {
         try {
             if (dampeningId != null && !dampeningId.isEmpty() &&
                     definitions.getDampening(dampeningId) != null &&
@@ -447,14 +477,14 @@ public class TriggersHandler {
                 Map<String, String> errors = new HashMap<String, String>();
                 errors.put("errorMsg", "Trigger ID " + dampeningId + " not found or invalid ID");
                 response.resume(Response.status(Response.Status.NOT_FOUND)
-                                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -462,11 +492,13 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get a map with all conditions id an specific trigger.",
-                  responseClass = "Collection<Condition>")
-    public void getTriggerConditions(@Suspended final AsyncResponse response,
-                                     @ApiParam(value = "Trigger definition id to be retrieved",
-                                               required = true)
-                                     @PathParam("triggerId") final String triggerId) {
+            responseClass = "Collection<Condition>")
+    public void getTriggerConditions(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId) {
         try {
             Collection<Condition> conditionsList = definitions.getTriggerConditions(triggerId, null);
             if (conditionsList.isEmpty()) {
@@ -476,14 +508,14 @@ public class TriggersHandler {
                 log.debugf("GET - getTriggerConditions - %s conditions ", conditionsList.size());
 
                 response.resume(Response.status(Response.Status.OK)
-                                        .entity(conditionsList).type(APPLICATION_JSON_TYPE).build());
+                        .entity(conditionsList).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -491,12 +523,15 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get a condition for a specific trigger id.",
-                  responseClass = "Condition")
-    public void getTriggerCondition(@Suspended final AsyncResponse response,
-                                     @ApiParam(value = "Trigger definition id to be retrieved",
-                                               required = true)
-                                     @PathParam("triggerId") final String triggerId,
-                                     @PathParam("conditionId") final String conditionId) {
+            responseClass = "Condition")
+    public void getTriggerCondition(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @PathParam("conditionId")
+            final String conditionId) {
         try {
             Condition condition = null;
             if (conditionId.startsWith(triggerId)) {
@@ -508,14 +543,14 @@ public class TriggersHandler {
             } else {
                 log.debugf("GET - getTriggerCondition - %s condition ", conditionId);
                 response.resume(Response.status(Response.Status.OK)
-                                        .entity(condition).type(APPLICATION_JSON_TYPE).build());
+                        .entity(condition).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -523,20 +558,22 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Create a new condition for a specific trigger",
-                  responseClass = "Collection<Condition>")
-    public void createCondition(@Suspended final AsyncResponse response,
-                                @ApiParam(value = "Trigger definition id to be retrieved",
-                                          required = true)
-                                @PathParam("triggerId") final String triggerId,
-                                @ApiParam(value = "Json representation of a condition")
-                                String jsonCondition) {
+            responseClass = "Collection<Condition>")
+    public void createCondition(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @ApiParam(value = "Json representation of a condition")
+            String jsonCondition) {
         try {
             if (jsonCondition == null || jsonCondition.isEmpty() || !jsonCondition.contains("type")) {
                 log.debugf("POST - createCondition - json condition empty or without type");
                 Map<String, String> errors = new HashMap<String, String>();
                 errors.put("errorMsg", "Condition empty or without type");
                 response.resume(Response.status(Response.Status.BAD_REQUEST)
-                                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
             } else {
                 Condition.Type conditionType = conditionType(jsonCondition);
                 if (conditionType == null) {
@@ -544,7 +581,7 @@ public class TriggersHandler {
                     Map<String, String> errors = new HashMap<String, String>();
                     errors.put("errorMsg", "Condition with bad type");
                     response.resume(Response.status(Response.Status.BAD_REQUEST)
-                                            .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                            .entity(errors).type(APPLICATION_JSON_TYPE).build());
                 } else {
                     Condition condition = null;
                     if (conditionType.equals(Condition.Type.AVAILABILITY)) {
@@ -561,17 +598,17 @@ public class TriggersHandler {
                     Condition test = definitions.getCondition(condition.getConditionId());
                     if (test != null) {
                         log.debugf("POST - createCondition - Condition " + condition.getConditionId() +
-                                           " already exists");
+                                " already exists");
                         Map<String, String> errors = new HashMap<String, String>();
                         errors.put("errorMsg", "Condition " + condition.getConditionId() + " already exists");
                         response.resume(Response.status(Response.Status.BAD_REQUEST)
-                                                .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                                .entity(errors).type(APPLICATION_JSON_TYPE).build());
                     } else {
                         Collection<Condition> newConditions = definitions.addCondition(condition.getTriggerId(),
-                                                                                       condition.getTriggerMode(),
-                                                                                       condition);
+                                condition.getTriggerMode(),
+                                condition);
                         response.resume(Response.status(Response.Status.OK)
-                                                .entity(newConditions).type(APPLICATION_JSON_TYPE).build());
+                                .entity(newConditions).type(APPLICATION_JSON_TYPE).build());
                     }
                 }
             }
@@ -580,7 +617,7 @@ public class TriggersHandler {
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -588,21 +625,24 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing condition for a specific trigger",
-                  responseClass = "void")
-    public void updateCondition(@Suspended final AsyncResponse response,
-                                @ApiParam(value = "Trigger definition id to be retrieved",
-                                          required = true)
-                                @PathParam("triggerId") final String triggerId,
-                                @PathParam("conditionId") final String conditionId,
-                                @ApiParam(value = "Json representation of a condition")
-                                String jsonCondition) {
+            responseClass = "void")
+    public void updateCondition(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @PathParam("conditionId")
+            final String conditionId,
+            @ApiParam(value = "Json representation of a condition")
+            String jsonCondition) {
         try {
             if (jsonCondition == null || jsonCondition.isEmpty() || !jsonCondition.contains("type")) {
                 log.debugf("POST - updateCondition - json condition empty or without type");
                 Map<String, String> errors = new HashMap<String, String>();
                 errors.put("errorMsg", "Condition empty or without type");
                 response.resume(Response.status(Response.Status.BAD_REQUEST)
-                                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
             } else {
                 Condition.Type conditionType = conditionType(jsonCondition);
                 if (conditionType == null) {
@@ -610,7 +650,7 @@ public class TriggersHandler {
                     Map<String, String> errors = new HashMap<String, String>();
                     errors.put("errorMsg", "Condition with bad type");
                     response.resume(Response.status(Response.Status.BAD_REQUEST)
-                                            .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                            .entity(errors).type(APPLICATION_JSON_TYPE).build());
                 } else {
                     Condition condition = null;
                     if (conditionType.equals(Condition.Type.AVAILABILITY)) {
@@ -627,15 +667,15 @@ public class TriggersHandler {
                     Condition test = definitions.getCondition(condition.getConditionId());
                     if (test == null) {
                         log.debugf("PUT - updateCondition - Condition " + condition.getConditionId() +
-                                           " doesn't exist");
+                                " doesn't exist");
                         Map<String, String> errors = new HashMap<String, String>();
                         errors.put("errorMsg", "Condition " + condition.getConditionId() + " doesn't exist");
                         response.resume(Response.status(Response.Status.BAD_REQUEST)
-                                                .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                                .entity(errors).type(APPLICATION_JSON_TYPE).build());
                     } else {
                         Collection<Condition> updatedConditions = definitions.updateCondition(condition);
                         response.resume(Response.status(Response.Status.OK)
-                                                .entity(updatedConditions).type(APPLICATION_JSON_TYPE).build());
+                                .entity(updatedConditions).type(APPLICATION_JSON_TYPE).build());
                     }
                 }
             }
@@ -644,7 +684,7 @@ public class TriggersHandler {
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -652,12 +692,15 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Delete an existing condition for a specific trigger",
-                  responseClass = "Collection<Condition>")
-    public void deleteCondition(@Suspended final AsyncResponse response,
-                                @ApiParam(value = "Trigger definition id to be retrieved",
-                                          required = true)
-                                @PathParam("triggerId") final String triggerId,
-                                @PathParam("conditionId") final String conditionId) {
+            responseClass = "Collection<Condition>")
+    public void deleteCondition(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @PathParam("conditionId")
+            final String conditionId) {
         try {
             Condition test = definitions.getCondition(conditionId);
             if (test == null) {
@@ -665,18 +708,18 @@ public class TriggersHandler {
                 Map<String, String> errors = new HashMap<String, String>();
                 errors.put("errorMsg", "Condition " + conditionId + " doesn't exist");
                 response.resume(Response.status(Response.Status.BAD_REQUEST)
-                                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
             } else {
                 Collection<Condition> updatedConditions = definitions.removeCondition(conditionId);
                 response.resume(Response.status(Response.Status.OK)
-                                        .entity(updatedConditions).type(APPLICATION_JSON_TYPE).build());
+                        .entity(updatedConditions).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -805,7 +848,6 @@ public class TriggersHandler {
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
-
 
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();

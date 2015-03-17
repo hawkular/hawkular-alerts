@@ -56,7 +56,11 @@ public class Trigger extends TriggerTemplate {
     }
 
     public Trigger(String name) {
-        this(UUID.randomUUID().toString(), name);
+        this(generateId(), name);
+    }
+
+    public static String generateId() {
+        return UUID.randomUUID().toString();
     }
 
     public Trigger(String id, String name) {
