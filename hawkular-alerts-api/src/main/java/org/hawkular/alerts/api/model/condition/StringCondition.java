@@ -16,7 +16,10 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.hawkular.alerts.api.log.MsgLogger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 /**
  * A string comparison condition.
@@ -31,9 +34,16 @@ public class StringCondition extends Condition {
         EQUAL, NOT_EQUAL, STARTS_WITH, ENDS_WITH, CONTAINS, MATCH
     }
 
+    @JsonInclude(Include.NON_NULL)
     private String dataId;
+
+    @JsonInclude(Include.NON_NULL)
     private Operator operator;
+
+    @JsonInclude(Include.NON_NULL)
     private String pattern;
+
+    @JsonInclude
     private boolean ignoreCase;
 
     public StringCondition() {
@@ -43,9 +53,24 @@ public class StringCondition extends Condition {
         this("DefaultId", 1, 1, null, null, null, false);
     }
 
-    public StringCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
+    public StringCondition(String triggerId,
                            String dataId, Operator operator, String pattern, boolean ignoreCase) {
-        super(triggerId, conditionSetSize, conditionSetIndex);
+        this(triggerId, Mode.FIRE, 1, 1, dataId, operator, pattern, ignoreCase);
+    }
+
+    public StringCondition(String triggerId, Mode triggerMode,
+                           String dataId, Operator operator, String pattern, boolean ignoreCase) {
+        this(triggerId, triggerMode, 1, 1, dataId, operator, pattern, ignoreCase);
+    }
+
+    public StringCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operator, String pattern, boolean ignoreCase) {
+        this(triggerId, Mode.FIRE, conditionSetSize, conditionSetIndex, dataId, operator, pattern, ignoreCase);
+    }
+
+    public StringCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operator, String pattern, boolean ignoreCase) {
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.STRING);
         this.dataId = dataId;
         this.operator = operator;
         this.pattern = pattern;
@@ -116,16 +141,23 @@ public class StringCondition extends Condition {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         StringCondition that = (StringCondition) o;
 
-        if (ignoreCase != that.ignoreCase) return false;
-        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null) return false;
-        if (operator != that.operator) return false;
-        if (pattern != null ? !pattern.equals(that.pattern) : that.pattern != null) return false;
+        if (ignoreCase != that.ignoreCase)
+            return false;
+        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null)
+            return false;
+        if (operator != that.operator)
+            return false;
+        if (pattern != null ? !pattern.equals(that.pattern) : that.pattern != null)
+            return false;
 
         return true;
     }
@@ -142,8 +174,12 @@ public class StringCondition extends Condition {
 
     @Override
     public String toString() {
-        return "StringCondition [dataId=" + dataId + ", operator=" + operator + ", pattern=" + pattern
-                + ", ignoreCase=" + ignoreCase + ", toString()=" + super.toString() + "]";
+        return  "StringCondition [triggerId='" + triggerId + "', " +
+                "triggerMode=" + triggerMode + ", " +
+                "dataId=" + (dataId == null ? null : '\'' + dataId + '\'') + ", " +
+                "operator=" + (operator == null ? null : '\'' + operator.toString() + '\'') + ", " +
+                "pattern=" + (pattern == null ? null : '\'' + pattern + '\'') + ", " +
+                "ignoreCase=" + ignoreCase + "]";
     }
 
 }

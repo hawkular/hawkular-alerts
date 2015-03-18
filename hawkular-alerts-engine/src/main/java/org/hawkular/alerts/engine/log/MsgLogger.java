@@ -54,8 +54,8 @@ public interface MsgLogger extends BasicLogger {
     void errorFolderMustBeNotNull();
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 220006, value = "NotifierListener [%s] registered")
-    void infoNotifierListenerRegistered(String msg);
+    @Message(id = 220006, value = "ActionListener [%s] registered")
+    void infoActionListenerRegistered(String msg);
 
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 220007, value = "DataSource cannot be accessed. Msg: [%s]")

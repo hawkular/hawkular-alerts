@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import org.hawkular.alerts.api.model.data.NumericData;
 
 /**
@@ -26,13 +29,14 @@ import org.hawkular.alerts.api.model.data.NumericData;
  */
 public class ThresholdConditionEval extends ConditionEval {
 
+    @JsonInclude(Include.NON_NULL)
     private ThresholdCondition condition;
+
+    @JsonInclude(Include.NON_NULL)
     private Double value;
 
     public ThresholdConditionEval() {
-        super(false, 0);
-        this.condition = null;
-        this.value = null;
+        super();
     }
 
     public ThresholdConditionEval(ThresholdCondition condition, NumericData data) {
@@ -74,7 +78,7 @@ public class ThresholdConditionEval extends ConditionEval {
 
     @Override
     public String getLog() {
-        return condition.getLog(value);
+        return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp;
     }
 
     @Override
@@ -101,8 +105,10 @@ public class ThresholdConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "ThresholdConditionEval [condition=" + condition + ", value=" + value + ", toString()="
-                + super.toString() + "]";
+        return "ThresholdConditionEval [evalTimestamp=" + evalTimestamp + ", " +
+                "dataTimestamp=" + dataTimestamp + ", " +
+                "condition=" + condition + ", " +
+                "value=" + value + "]";
     }
 
 }

@@ -58,15 +58,14 @@
 
   <modules>
     <module>hawkular-alerts-api</module>
-    <module>hawkular-notifiers-api</module>
+    <module>hawkular-actions-api</module>
     <module>hawkular-alerts-engine</module>
     <module>hawkular-alerts-bus</module>
     <module>hawkular-alerts-rest</module>
     <module>hawkular-alerts-ear</module>
-    <module>hawkular-notifiers-email</module>
-    <module>hawkular-notifiers-sms</module>
-    <module>hawkular-notifiers-snmp</module>
-    <module>examples/example-alerts-ui</module>
+    <module>hawkular-actions-email</module>
+    <module>hawkular-actions-sms</module>
+    <module>hawkular-actions-snmp</module>
   </modules>
 
   <scm>

@@ -16,6 +16,11 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
+
 /**
  * A base class for condition definition.
  *
@@ -24,33 +29,56 @@ package org.hawkular.alerts.api.model.condition;
  */
 public abstract class Condition {
 
+    public enum Type {
+        AVAILABILITY, COMPARE, STRING, THRESHOLD, RANGE
+    }
+
     /**
      * The owning trigger
      */
+    @JsonInclude
     protected String triggerId;
+
+    /**
+     * The owning trigger's mode when this condition is active
+     */
+    @JsonInclude
+    protected Mode triggerMode;
+
+    @JsonInclude
+    protected Type type;
 
     /**
      * Number of conditions associated with a particular trigger.
      * i.e. 2 [ conditions ]
      */
+    @JsonIgnore
     protected int conditionSetSize;
 
     /**
      * Index of the current condition
      * i.e. 1 [ of 2 conditions ]
      */
+    @JsonIgnore
     protected int conditionSetIndex;
 
     /**
-     * A composed key for conditionId
+     * A composed key for the condition
      */
+    @JsonInclude
     protected String conditionId;
 
-    public Condition(String triggerId, int conditionSetSize, int conditionSetIndex) {
+    public Condition() {
+        // for json assembly
+    }
+
+    public Condition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex, Type type) {
         this.triggerId = triggerId;
+        this.triggerMode = triggerMode;
         this.conditionSetSize = conditionSetSize;
         this.conditionSetIndex = conditionSetIndex;
-        this.conditionId = triggerId + "-" + conditionSetSize + "-" + conditionSetIndex;
+        this.type = type;
+        updateId();
     }
 
     public int getConditionSetIndex() {
@@ -59,6 +87,7 @@ public abstract class Condition {
 
     public void setConditionSetIndex(int conditionSetIndex) {
         this.conditionSetIndex = conditionSetIndex;
+        updateId();
     }
 
     public int getConditionSetSize() {
@@ -67,6 +96,7 @@ public abstract class Condition {
 
     public void setConditionSetSize(int conditionSetSize) {
         this.conditionSetSize = conditionSetSize;
+        updateId();
     }
 
     public String getTriggerId() {
@@ -75,43 +105,67 @@ public abstract class Condition {
 
     public void setTriggerId(String triggerId) {
         this.triggerId = triggerId;
+        updateId();
+    }
+
+    public Mode getTriggerMode() {
+        return triggerMode;
+    }
+
+    public void setTriggerMode(Mode triggerMode) {
+        this.triggerMode = triggerMode;
+        updateId();
     }
 
     public String getConditionId() {
-        conditionId = triggerId + "-" + conditionSetSize + "-" + conditionSetIndex;
         return conditionId;
     }
 
-    public void setConditionId(String conditionId) {
-        this.conditionId = conditionId;
+    private void updateId() {
+        StringBuilder sb = new StringBuilder(triggerId);
+        sb.append("-").append(triggerMode.name());
+        sb.append("-").append(conditionSetSize);
+        sb.append("-").append(conditionSetIndex);
+        this.conditionId = sb.toString();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Condition condition = (Condition) o;
-
-        if (conditionSetIndex != condition.conditionSetIndex) return false;
-        if (conditionSetSize != condition.conditionSetSize) return false;
-        if (triggerId != null ? !triggerId.equals(condition.triggerId) : condition.triggerId != null) return false;
-
-        return true;
+    public Type getType() {
+        return type;
     }
 
     @Override
     public int hashCode() {
-        int result = triggerId != null ? triggerId.hashCode() : 0;
-        result = 31 * result + conditionSetSize;
-        result = 31 * result + conditionSetIndex;
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((conditionId == null) ? 0 : conditionId.hashCode());
         return result;
     }
 
     @Override
-    public String toString() {
-        return "Condition [triggerId=" + triggerId + ", conditionSetSize=" + conditionSetSize + ", conditionSetIndex="
-                + conditionSetIndex + ", conditionId=" + conditionId + "]";
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Condition other = (Condition) obj;
+        if (conditionId == null) {
+            if (other.conditionId != null)
+                return false;
+        } else if (!conditionId.equals(other.conditionId))
+            return false;
+        return true;
     }
 
+    @Override
+    public String toString() {
+        return "Condition [triggerId=" + triggerId + ", triggerMode=" + triggerMode + ", conditionSetSize="
+                + conditionSetSize + ", conditionSetIndex=" + conditionSetIndex + "]";
+    }
+
+    /**
+     * @return The dataId, can be null if the Condition has no relevant dataId.
+     */
+    public abstract String getDataId();
 }

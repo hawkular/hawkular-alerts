@@ -32,7 +32,7 @@ public class StringData extends Data {
     }
 
     public StringData(String id, long timestamp, String value) {
-        super(id, timestamp, (null == value) ? "" : value);
+        super(id, timestamp, (null == value) ? "" : value, Type.STRING);
     }
 
     public String getValue() {

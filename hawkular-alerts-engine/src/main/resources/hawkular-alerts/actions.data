@@ -1,0 +1,5 @@
+#action id, action plugin,propertyName1=propertyValue1,propertyName2=propertyValue2,propertyNameN=propertyValueN
+SNMP-Trap-1,snmp,host=snmp-host,port=1234,OID=1.2.3.4.5,description=This is an example of SNMP Action Plugin
+SNMP-Trap-2,snmp,host=snmp-host,port=1234,OID=1.2.3.5.5,description=This is an example of SNMP Action Plugin
+email-to-admin,email,to=admin@hawkular.org,cc=bigboss@hawkular.org,description=This is an example of Email Action Plugin
+sms-to-cio,sms,phone=555-12345,description=This is an example of SMS Action Plugin

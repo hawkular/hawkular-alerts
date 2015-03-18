@@ -16,8 +16,8 @@
  */
 package org.hawkular.alerts.bus.init;
 
-import org.hawkular.alerts.api.services.NotificationsService;
-import org.hawkular.alerts.bus.sender.NotificationSender;
+import org.hawkular.alerts.api.services.ActionsService;
+import org.hawkular.alerts.bus.sender.ActionSender;
 import org.jboss.logging.Logger;
 
 
@@ -38,12 +38,12 @@ public class AlertEngineRegister {
     private final Logger log = Logger.getLogger(AlertEngineRegister.class);
 
     @EJB
-    NotificationsService notifications;
+    ActionsService actions;
 
     @PostConstruct
     public void init() {
-        NotificationSender sender = new NotificationSender();
-        notifications.addListener(sender);
+        ActionSender sender = new ActionSender();
+        actions.addListener(sender);
         log.debugf("Registering sender: [%s]", sender);
     }
 }

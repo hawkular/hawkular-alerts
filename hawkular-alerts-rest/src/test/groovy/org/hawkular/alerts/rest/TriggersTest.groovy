@@ -16,11 +16,13 @@
  */
 package org.hawkular.alerts.rest
 
+import org.hawkular.alerts.api.model.trigger.Tag
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.jboss.logging.Logger
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNotNull
 
 /**
  * Triggers REST tests.
@@ -46,8 +48,16 @@ class TriggersTest extends AbstractTestBase {
     void createTrigger() {
         Trigger testTrigger = new Trigger("test-trigger-1", "No-Metric");
 
-        def resp = client.post(path: "triggers", body: testTrigger)
+        // remove if it exists
+        def resp = client.delete(path: "triggers/test-trigger-1")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
+
+        // Should not be able to create the same triggerId again
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(400, resp.status)
 
         resp = client.get(path: "triggers/test-trigger-1");
         assertEquals(200, resp.status)
@@ -60,6 +70,55 @@ class TriggersTest extends AbstractTestBase {
         resp = client.get(path: "triggers/test-trigger-1")
         assertEquals(200, resp.status)
         assertEquals("No-Metric-Modified", resp.data.name)
+
+        resp = client.delete(path: "triggers/test-trigger-1")
+        assertEquals(200, resp.status)
+
+        // Test create w/o assigning a TriggerId, it should generate a UUID
+        testTrigger.setId(null);
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+        assertNotNull(resp.data.id)
+
+        // Delete the trigger
+        resp = client.delete(path: "triggers/" + resp.data.id)
+        assertEquals(200, resp.status)
+    }
+
+    @Test
+    void testTag() {
+        Trigger testTrigger = new Trigger("test-trigger-1", "No-Metric");
+
+        // remove if it exists
+        def resp = client.delete(path: "triggers/test-trigger-1")
+        assert(200 == resp.status || 404 == resp.status)
+
+        // create the test trigger
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // make sure the test trigger exists
+        resp = client.get(path: "triggers/test-trigger-1");
+        assertEquals(200, resp.status)
+        assertEquals("No-Metric", resp.data.name)
+
+        Tag testTag = new Tag("test-trigger-1", "test-category", "test-name", true);
+        resp = client.post(path: "triggers/tags", body: testTag)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-1/tags", query: [category:"test-category"] );
+        assertEquals(200, resp.status)
+        assertEquals("test-name", resp.data.iterator().next().name)
+
+        resp = client.get(path: "triggers/test-trigger-1/tags");
+        assertEquals(200, resp.status)
+        assertEquals("test-name", resp.data.iterator().next().name)
+
+        resp = client.post(path: "triggers/test-trigger-1/tags", query: [category:"test-category"] )
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-1/tags");
+        assertEquals(204, resp.status)
 
         resp = client.delete(path: "triggers/test-trigger-1")
         assertEquals(200, resp.status)

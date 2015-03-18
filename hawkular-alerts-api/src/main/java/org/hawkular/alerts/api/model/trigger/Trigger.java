@@ -16,6 +16,11 @@
  */
 package org.hawkular.alerts.api.model.trigger;
 
+import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * A trigger definition.
  *
@@ -25,18 +30,37 @@ package org.hawkular.alerts.api.model.trigger;
 public class Trigger extends TriggerTemplate {
 
     public enum Mode {
-        FIRING, SAFETY
+        FIRE, SAFETY
     };
 
+    @JsonInclude
     private String id;
+
+    @JsonInclude
     private boolean enabled;
+
+    @JsonInclude
+    private boolean safetyEnabled;
+
+    @JsonIgnore
     private Mode mode;
+
+    @JsonIgnore
+    private transient Match match;
 
     public Trigger() {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultId", null);
+        this("defaultName");
+    }
+
+    public Trigger(String name) {
+        this(generateId(), name);
+    }
+
+    public static String generateId() {
+        return UUID.randomUUID().toString();
     }
 
     public Trigger(String id, String name) {
@@ -48,7 +72,9 @@ public class Trigger extends TriggerTemplate {
         this.id = id;
 
         this.enabled = false;
-        this.mode = Mode.FIRING;
+        this.safetyEnabled = false;
+        this.mode = Mode.FIRE;
+        this.match = getFiringMatch();
     }
 
     public boolean isEnabled() {
@@ -67,31 +93,79 @@ public class Trigger extends TriggerTemplate {
         this.id = id;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        if (!super.equals(o))
-            return false;
+    @JsonIgnore
+    public Mode getMode() {
+        return mode;
+    }
 
-        Trigger trigger = (Trigger) o;
+    public void setMode(Mode mode) {
+        this.mode = mode;
+        setMatch(this.mode == Mode.FIRE ? getFiringMatch() : getSafetyMatch());
+    }
 
-        if (enabled != trigger.enabled)
-            return false;
-        if (id != null ? !id.equals(trigger.id) : trigger.id != null)
-            return false;
+    /**
+     * This tells you whether the Trigger defines safety conditions and whether safety mode is enabled.
+     * This does NOT return the current <code>mode</code> of the Trigger.
+     * @return true if this Trigger supports safety mode and is it enabled.
+     * @see {@link #getMode()} to see the current <code>mode</code>.
+     */
+    public boolean isSafetyEnabled() {
+        return safetyEnabled;
+    }
 
-        return true;
+    /**
+     * Set true if safety conditions and dampening are fully defined and should be activated on a Trigger firing. Set
+     * false otherwise.
+     * @param safetyEnabled
+     */
+    public void setSafetyEnabled(boolean safetyEnabled) {
+        this.safetyEnabled = safetyEnabled;
+    }
+
+    @JsonIgnore
+    public Match getMatch() {
+        return match;
+    }
+
+    public void setMatch(Match match) {
+        this.match = match;
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (id != null ? id.hashCode() : 0);
-        result = 31 * result + (enabled ? 1 : 0);
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
         return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Trigger other = (Trigger) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Trigger [id=" + id + ", " +
+                "name=" + getName() + ", " +
+                "description=" + getDescription() + ", " +
+                "firingMatch=" + getFiringMatch() + ", " +
+                "safetyMatch=" + getSafetyMatch() + ", " +
+                "enabled=" + enabled + ", " +
+                "mode=" + mode + ", " +
+                "match=" + getMatch() + "]";
     }
 
 }

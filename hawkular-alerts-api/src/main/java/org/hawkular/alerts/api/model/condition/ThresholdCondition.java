@@ -16,7 +16,10 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.hawkular.alerts.api.log.MsgLogger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 /**
  * A numeric threshold condition.
@@ -31,8 +34,13 @@ public class ThresholdCondition extends Condition {
         LT, GT, LTE, GTE
     }
 
+    @JsonInclude(Include.NON_NULL)
     private String dataId;
+
+    @JsonInclude(Include.NON_NULL)
     private Operator operator;
+
+    @JsonInclude(Include.NON_NULL)
     private Double threshold;
 
     public ThresholdCondition() {
@@ -42,9 +50,27 @@ public class ThresholdCondition extends Condition {
         this("DefaultId", 1, 1, null, null, null);
     }
 
-    public ThresholdCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
+    public ThresholdCondition(String triggerId,
                               String dataId, Operator operator, Double threshold) {
-        super(triggerId, conditionSetSize, conditionSetIndex);
+
+        this(triggerId, Mode.FIRE, 1, 1, dataId, operator, threshold);
+    }
+
+    public ThresholdCondition(String triggerId, Mode triggerMode,
+                              String dataId, Operator operator, Double threshold) {
+
+        this(triggerId, triggerMode, 1, 1, dataId, operator, threshold);
+    }
+
+    public ThresholdCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operator, Double threshold) {
+
+        this(triggerId, Mode.FIRE, conditionSetSize, conditionSetIndex, dataId, operator, threshold);
+    }
+
+    public ThresholdCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operator, Double threshold) {
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.THRESHOLD);
         this.dataId = dataId;
         this.operator = operator;
         this.threshold = threshold;
@@ -96,15 +122,21 @@ public class ThresholdCondition extends Condition {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         ThresholdCondition that = (ThresholdCondition) o;
 
-        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null) return false;
-        if (operator != that.operator) return false;
-        if (threshold != null ? !threshold.equals(that.threshold) : that.threshold != null) return false;
+        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null)
+            return false;
+        if (operator != that.operator)
+            return false;
+        if (threshold != null ? !threshold.equals(that.threshold) : that.threshold != null)
+            return false;
 
         return true;
     }
@@ -120,8 +152,11 @@ public class ThresholdCondition extends Condition {
 
     @Override
     public String toString() {
-        return "ThresholdCondition [dataId=" + dataId + ", operator=" + operator + ", threshold=" + threshold
-                + ", toString()=" + super.toString() + "]";
+        return "ThresholdCondition [triggerId='" + triggerId + "', " +
+                "triggerMode=" + triggerMode + ", " +
+                "dataId=" + (dataId == null ? null : '\'' + dataId + '\'') + ", " +
+                "operator=" + (operator == null ? null : '\'' + operator.toString() + '\'') + ", " +
+                "threshold=" + threshold + "]";
     }
 
 }

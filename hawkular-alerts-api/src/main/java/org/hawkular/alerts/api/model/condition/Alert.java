@@ -19,6 +19,9 @@ package org.hawkular.alerts.api.model.condition;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 /**
  * A status of an alert thrown by several matched conditions.
  *
@@ -27,14 +30,23 @@ import java.util.Set;
  */
 public class Alert {
 
+    @JsonInclude
     private String triggerId;
+
+    @JsonInclude(Include.NON_EMPTY)
     private List<Set<ConditionEval>> evalSets;
-    private long time;
+
+    @JsonInclude
+    private long ctime;
+
+    public Alert() {
+        // for json assembly
+    }
 
     public Alert(String triggerId, List<Set<ConditionEval>> evalSets) {
         this.triggerId = triggerId;
         this.evalSets = evalSets;
-        this.time = System.currentTimeMillis();
+        this.ctime = System.currentTimeMillis();
     }
 
     public List<Set<ConditionEval>> getEvalSets() {
@@ -45,12 +57,12 @@ public class Alert {
         this.evalSets = evalSets;
     }
 
-    public long getTime() {
-        return time;
+    public long getCTime() {
+        return ctime;
     }
 
-    public void setTime(long time) {
-        this.time = time;
+    public void setCTime(long ctime) {
+        this.ctime = ctime;
     }
 
     public String getTriggerId() {
@@ -68,7 +80,8 @@ public class Alert {
 
         Alert alert = (Alert) o;
 
-        if (time != alert.time) return false;
+        if (ctime != alert.ctime)
+            return false;
         if (evalSets != null ? !evalSets.equals(alert.evalSets) : alert.evalSets != null) return false;
         if (triggerId != null ? !triggerId.equals(alert.triggerId) : alert.triggerId != null) return false;
 
@@ -79,13 +92,15 @@ public class Alert {
     public int hashCode() {
         int result = triggerId != null ? triggerId.hashCode() : 0;
         result = 31 * result + (evalSets != null ? evalSets.hashCode() : 0);
-        result = 31 * result + (int) (time ^ (time >>> 32));
+        result = 31 * result + (int) (ctime ^ (ctime >>> 32));
         return result;
     }
 
     @Override
     public String toString() {
-        return "Alert [triggerId=" + triggerId + ", evals=" + evalSets + ", time=" + time + "]";
+        return "Alert [triggerId=" + triggerId + ", " +
+                "evals=" + evalSets + ", " +
+                "ctime=" + ctime + "]";
     }
 
 }

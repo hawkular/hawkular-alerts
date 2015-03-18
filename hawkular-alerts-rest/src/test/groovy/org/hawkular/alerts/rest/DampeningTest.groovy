@@ -20,7 +20,9 @@ import org.hawkular.alerts.api.model.dampening.Dampening
 import org.jboss.logging.Logger
 import org.junit.Test
 
+import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.dampening.Dampening.Type
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode
 import static org.junit.Assert.assertEquals
 
 /**
@@ -32,37 +34,40 @@ class DampeningTest extends AbstractTestBase {
     private static final Logger log = Logger.getLogger(DampeningTest.class);
 
     @Test
-    void findInitialDampenings() {
-        def resp = client.get(path: "trigger/dampening")
-        def data = resp.data
-        assertEquals(200, resp.status)
-        assert data.size() > 0
-        for (int i = 0; i < data.size(); i++) {
-            Dampening d = data[i]
-            log.info(d.toString())
-        }
-    }
-
-    @Test
     void createDampening() {
-        Dampening d = new Dampening("test-trigger-6", Type.RELAXED_COUNT, 1, 1, 1);
+       Trigger testTrigger = new Trigger("test-trigger-6", "No-Metric");
 
-        def resp = client.post(path: "trigger/dampening", body: d)
+        // make sure clean test trigger exists
+        client.delete(path: "triggers/test-trigger-6")
+        def resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "trigger/dampening/" + d.getTriggerId());
+        Dampening d = new Dampening("test-trigger-6", Mode.FIRE, Type.RELAXED_COUNT, 1, 1, 1);
+
+        resp = client.post(path: "triggers/test-trigger-6/dampenings", body: d)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-6/dampenings/" + d.getDampeningId());
         assertEquals(200, resp.status)
         assertEquals("RELAXED_COUNT", resp.data.type)
 
         d.setType(Type.STRICT)
-        resp = client.put(path: "trigger/dampening/" + d.getTriggerId(), body: d)
+        resp = client.put(path: "triggers/test-trigger-6/dampenings/" + d.getDampeningId(), body: d)
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "trigger/dampening/" + d.getTriggerId())
+        resp = client.get(path: "triggers/test-trigger-6/dampenings/" + d.getDampeningId())
         assertEquals(200, resp.status)
         assertEquals("STRICT", resp.data.type)
 
-        resp = client.delete(path: "trigger/dampening/" + d.getTriggerId())
+        resp = client.get(path: "triggers/test-trigger-6/dampenings")
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        resp = client.get(path: "triggers/test-trigger-6/dampenings/mode/FIRE")
+        assertEquals(200, resp.status)
+        assertEquals("test-trigger-6", resp.data.triggerId)
+
+        resp = client.delete(path: "triggers/test-trigger-6/dampenings/" + d.getDampeningId())
         assertEquals(200, resp.status)
     }
 

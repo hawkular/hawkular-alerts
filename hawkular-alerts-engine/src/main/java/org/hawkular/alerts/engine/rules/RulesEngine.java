@@ -17,6 +17,7 @@
 package org.hawkular.alerts.engine.rules;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 
 import org.hawkular.alerts.api.model.data.Data;
 
@@ -26,6 +27,9 @@ import org.hawkular.alerts.api.model.data.Data;
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
+ */
+/**
+ * @author jshaughn
  */
 public interface RulesEngine {
 
@@ -40,6 +44,13 @@ public interface RulesEngine {
      * @throws IllegalArgumentExeption If <code>fact</code> instanceof <code>Data</code>.
      */
     void addFact(Object fact);
+
+    /**
+     * @param fact
+     * @return The implementation-specific Fact representing <object>, or null if <object> is not a Fact in the
+     * rules engine.
+     */
+    Object getFact(Object fact);
 
     /**
      * Retrieves the FactHandle for <code>fact</code> and then deletes the fact from the rules engine.
@@ -60,6 +71,13 @@ public interface RulesEngine {
      * @param facts
      */
     void removeFacts(Collection facts);
+
+    /**
+     * Retrieves the FactHandles for <code>facts</code> matching the <code>factFilter</code> and then
+     * deletes the facts from the rules engine.
+     * @param factFilter
+     */
+    void removeFacts(Predicate<Object> factFilter);
 
     /**
      * Add to the accumulated <code>Data</code> to be processed the next time {@link #fire()} is called. After the

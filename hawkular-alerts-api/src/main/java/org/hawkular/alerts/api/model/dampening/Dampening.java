@@ -22,7 +22,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 /**
  * A representation of dampening status.
@@ -35,43 +38,73 @@ public class Dampening {
         STRICT, RELAXED_COUNT, RELAXED_TIME, STRICT_TIME
     };
 
+    @JsonInclude
     private String triggerId;
+
+    @JsonInclude
+    private Mode triggerMode;
+
+    @JsonInclude
     private Type type;
+
+    @JsonInclude
     private int evalTrueSetting;
+
+    @JsonInclude
     private int evalTotalSetting;
+
+    @JsonInclude
     private long evalTimeSetting;
 
-    private int numTrueEvals;
-    private int numEvals;
-    private long trueEvalsStartTime;
-    private boolean satisfied;
-    private List<Set<ConditionEval>> satisfyingEvals = new ArrayList<Set<ConditionEval>>();
+    /**
+     * A composed key for the dampening
+     */
+    @JsonInclude
+    protected String dampeningId;
+
+    // The following fields are only relevant while the engine is executing.
+    @JsonIgnore
+    private transient int numTrueEvals;
+
+    @JsonIgnore
+    private transient int numEvals;
+
+    @JsonIgnore
+    private transient long trueEvalsStartTime;
+
+    @JsonIgnore
+    private transient boolean satisfied;
+
+    @JsonIgnore
+    private transient List<Set<ConditionEval>> satisfyingEvals = new ArrayList<Set<ConditionEval>>();
 
     public Dampening() {
-        this("Default", Type.RELAXED_COUNT, 0, 0, 0);
+        this("Default", Mode.FIRE, Type.STRICT, 1, 1, 0);
     }
 
     /**
      * Fire if we have <code>numTrueEvals</code> consecutive true evaluations of the condition set.  There is
      * no time limit for the evaluations.
      * @param triggerId
+     * @param triggerMode the trigger mode for when this dampening is active
      * @param numConsecutiveTrueEvals
      * @return
      */
-    public static Dampening forStrict(String triggerId, int numConsecutiveTrueEvals) {
-        return new Dampening(triggerId, Type.STRICT, numConsecutiveTrueEvals, numConsecutiveTrueEvals, 0);
+    public static Dampening forStrict(String triggerId, Mode triggerMode, int numConsecutiveTrueEvals) {
+        return new Dampening(triggerId, triggerMode, Type.STRICT, numConsecutiveTrueEvals, numConsecutiveTrueEvals, 0);
     }
 
     /**
      * Fire if we have <code>numTrueEvals</code> of the condition set out of <code>numTotalEvals</code>. There is
      * no time limit for the evaluations.
      * @param triggerId
+     * @param triggerMode the trigger mode for when this dampening is active
      * @param numTrueEvals
      * @param numTotalEvals
      * @return
      */
-    public static Dampening forRelaxedCount(String triggerId, int numTrueEvals, int numTotalEvals) {
-        return new Dampening(triggerId, Type.RELAXED_COUNT, numTrueEvals, numTotalEvals, 0);
+    public static Dampening forRelaxedCount(String triggerId, Mode triggerMode, int numTrueEvals, int numTotalEvals) {
+        return new Dampening(triggerId, triggerMode, Type.RELAXED_COUNT, numTrueEvals, numTotalEvals, 0);
     }
 
     /**
@@ -79,13 +112,14 @@ public class Dampening {
      * fire if the condition set is evaluated the required number of times in the given <code>evalPeriod</code>, so
      * the requisite data must be supplied in a timely manner.
      * @param triggerId
+     * @param triggerMode the trigger mode for when this dampening is active
      * @param numTrueEvals
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
      * @return
      */
-    public static Dampening forRelaxedTime(String triggerId, int numTrueEvals, long evalPeriod) {
-        return new Dampening(triggerId, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
+    public static Dampening forRelaxedTime(String triggerId, Mode triggerMode, int numTrueEvals, long evalPeriod) {
+        return new Dampening(triggerId, triggerMode, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
     }
 
     /**
@@ -93,21 +127,25 @@ public class Dampening {
      * words, fire the Trigger after N consecutive true condition set evaluations, such that N >= 2
      * and delta(evalTime-1,evalTime-N) >= <code>evalPeriod</code>.  Any false evaluation resets the dampening.
      * @param triggerId
+     * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
      * @return
      */
-    public static Dampening forStrictTime(String triggerId, long evalPeriod) {
-        return new Dampening(triggerId, Type.STRICT_TIME, 0, 0, evalPeriod);
+    public static Dampening forStrictTime(String triggerId, Mode triggerMode, long evalPeriod) {
+        return new Dampening(triggerId, triggerMode, Type.STRICT_TIME, 0, 0, evalPeriod);
     }
 
-    public Dampening(String triggerId, Type type, int evalTrueSetting, int evalTotalSetting, long evalTimeSetting) {
+    public Dampening(String triggerId, Mode triggerMode, Type type, int evalTrueSetting, int evalTotalSetting,
+            long evalTimeSetting) {
         super();
         this.triggerId = triggerId;
         this.type = type;
         this.evalTrueSetting = evalTrueSetting;
         this.evalTotalSetting = evalTotalSetting;
         this.evalTimeSetting = evalTimeSetting;
+        this.triggerMode = triggerMode;
+        updateId();
 
         reset();
     }
@@ -118,6 +156,16 @@ public class Dampening {
 
     public void setTriggerId(String triggerId) {
         this.triggerId = triggerId;
+        updateId();
+    }
+
+    public Mode getTriggerMode() {
+        return triggerMode;
+    }
+
+    public void setTriggerMode(Mode triggerMode) {
+        this.triggerMode = triggerMode;
+        updateId();
     }
 
     public void setEvalTimeSetting(long evalTimeSetting) {
@@ -144,6 +192,7 @@ public class Dampening {
         this.type = type;
     }
 
+    @JsonIgnore
     public int getNumTrueEvals() {
         return numTrueEvals;
     }
@@ -152,6 +201,7 @@ public class Dampening {
         this.numTrueEvals = numTrueEvals;
     }
 
+    @JsonIgnore
     public long getTrueEvalsStartTime() {
         return trueEvalsStartTime;
     }
@@ -160,6 +210,7 @@ public class Dampening {
         this.trueEvalsStartTime = trueEvalsStartTime;
     }
 
+    @JsonIgnore
     public int getNumEvals() {
         return numEvals;
     }
@@ -184,6 +235,7 @@ public class Dampening {
         return evalTimeSetting;
     }
 
+    @JsonIgnore
     public boolean isSatisfied() {
         return satisfied;
     }
@@ -191,6 +243,7 @@ public class Dampening {
     /**
      * @return a safe, but not deep, copy of the satisfying evals List
      */
+    @JsonIgnore
     public List<Set<ConditionEval>> getSatisfyingEvals() {
         return new ArrayList<Set<ConditionEval>>(satisfyingEvals);
     }
@@ -299,11 +352,46 @@ public class Dampening {
         return sb.toString();
     }
 
+    public String getDampeningId() {
+        return dampeningId;
+    }
+
+    private void updateId() {
+        StringBuilder sb = new StringBuilder(triggerId);
+        sb.append("-").append(triggerMode.name());
+        this.dampeningId = sb.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((dampeningId == null) ? 0 : dampeningId.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Dampening other = (Dampening) obj;
+        if (dampeningId == null) {
+            if (other.dampeningId != null)
+                return false;
+        } else if (!dampeningId.equals(other.dampeningId))
+            return false;
+        return true;
+    }
+
     @Override
     public String toString() {
-        return "Dampening [triggerId=" + triggerId + ", type=" + type + ", evalTrueSetting=" + evalTrueSetting
-                + ", evalTotalSetting=" + evalTotalSetting + ", evalTimeSetting=" + evalTimeSetting
-                + ", numTrueEvals="
+        return "Dampening [triggerId=" + triggerId + ", triggerMode=" + triggerMode + ", type=" + type
+                + ", evalTrueSetting=" + evalTrueSetting + ", evalTotalSetting=" + evalTotalSetting
+                + ", evalTimeSetting=" + evalTimeSetting + ", numTrueEvals="
                 + numTrueEvals + ", numEvals=" + numEvals + ", trueEvalsStartTime=" + trueEvalsStartTime
                 + ", satisfied=" + satisfied + ", satisfyingEvals=" + satisfyingEvals + "]";
     }
