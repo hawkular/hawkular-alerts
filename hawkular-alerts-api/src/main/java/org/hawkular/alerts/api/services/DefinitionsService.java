@@ -218,6 +218,12 @@ public interface DefinitionsService {
     CRUD interface for Tag
     */
 
+    /**
+     * Add Tag with the specified name to the specified Trigger. Category is optional. If the Tag exists the
+     * call returns successfully but has no effect.
+     * @param tag
+     * @throws Exception
+     */
     void addTag(Tag tag) throws Exception;
 
     /**

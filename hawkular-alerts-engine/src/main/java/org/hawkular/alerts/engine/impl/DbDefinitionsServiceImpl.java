@@ -1787,6 +1787,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
     private void insertTag(Connection c, Statement s, String triggerId, String category, String name, boolean visible)
             throws Exception {
+
+        // If the desired Tag already exists just return
+        if (!getTags(c, s, triggerId, category, name).isEmpty()) {
+            return;
+        }
+
         StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_TAGS VALUES (");
         sql.append("'").append(triggerId).append("', ");
         if (isEmpty(category)) {
@@ -1849,32 +1855,53 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             throw new Exception("DataSource is null");
         }
 
-        List<Tag> tags = new ArrayList<>();
+        List<Tag> tags = null;
         Connection c = null;
         Statement s = null;
-        ResultSet rs = null;
         try {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder(
-                    "SELECT triggerId, category, name, visible FROM HWK_ALERTS_TAGS WHERE ");
-            sql.append("triggerId = '").append(triggerId).append("' ");
-            if (!isEmpty(category)) {
-                sql.append("AND category = '").append(category).append("' ");
-            }
-            sql.append("ORDER BY category, name");
-            log.debugf("SQL: " + sql);
+            tags = getTags(c, s, triggerId, category, null);
+
+        } catch (SQLException e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            close(c, s);
+        }
+
+        return tags;
+    }
+
+    private List<Tag> getTags(Connection c, Statement s, String triggerId, String category, String name)
+            throws Exception {
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT triggerId, category, name, visible FROM HWK_ALERTS_TAGS WHERE ");
+        sql.append("triggerId = '").append(triggerId).append("' ");
+        if (!isEmpty(category)) {
+            sql.append("AND category = '").append(category).append("' ");
+        }
+        if (!isEmpty(name)) {
+            sql.append("AND name = '").append(name).append("' ");
+        }
+
+        sql.append("ORDER BY category, name");
+        log.debugf("SQL: " + sql);
+
+        List<Tag> tags = new ArrayList<>();
+        ResultSet rs = null;
+        try {
             rs = s.executeQuery(sql.toString());
             while (rs.next()) {
                 Tag tag = new Tag(rs.getString(1), rs.getString(2), rs.getString(3), rs.getBoolean(4));
                 tags.add(tag);
             }
-        } catch (SQLException e) {
-            msgLog.errorDatabaseException(e.getMessage());
-            throw e;
         } finally {
-            close(c, s, rs);
+            if (null != rs) {
+                rs.close();
+            }
         }
 
         return tags;
