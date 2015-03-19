@@ -47,11 +47,10 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.rules.RulesEngine;
+import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import org.jboss.logging.Logger;
 
 /**
  * Basic test of RulesEngine implementation.
@@ -63,19 +62,22 @@ public class RulesEngineTest {
     private static final Logger log = Logger.getLogger(RulesEngineTest.class);
 
     RulesEngine rulesEngine = new DroolsRulesEngineImpl();
-    List<Alert> alerts = new ArrayList();
+    List<Alert> alerts = new ArrayList<>();
+    Set<Dampening> pendingTimeouts = new HashSet<>();
     Set<Data> datums = new HashSet<Data>();
 
     @Before
     public void before() {
         rulesEngine.addGlobal("log", log);
         rulesEngine.addGlobal("alerts", alerts);
+        rulesEngine.addGlobal("pendingTimeouts", pendingTimeouts);
     }
 
     @After
     public void after() {
         rulesEngine.reset();
         alerts.clear();
+        pendingTimeouts.clear();
         datums.clear();
     }
 
@@ -1109,6 +1111,53 @@ public class RulesEngineTest {
     }
 
     @Test
+    public void DampeningStrictTimeoutTest() {
+        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
+                "AvailData-01", AvailabilityCondition.Operator.DOWN);
+
+        Dampening t1d = Dampening.forStrictTimeout("trigger-1", Mode.FIRE, 200L);
+
+        t1.setEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+        rulesEngine.addFact(t1d);
+
+        assert alerts.isEmpty();
+        assert pendingTimeouts.isEmpty();
+
+        rulesEngine.addData(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
+        rulesEngine.fire();
+
+        assert alerts.isEmpty();
+        assert pendingTimeouts.size() == 1 : pendingTimeouts;
+
+        Dampening pendingTimeout = pendingTimeouts.iterator().next();
+        pendingTimeout.setSatisfied(true);
+        rulesEngine.updateFact(pendingTimeout);
+
+        rulesEngine.fireNoData();
+
+        assert alerts.size() == 1 : alerts;
+
+        Alert a = alerts.get(0);
+        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
+        assert a.getEvalSets().size() == 1 : a.getEvalSets().size();
+        Set<ConditionEval> evalSet = a.getEvalSets().get(0);
+        assert evalSet.size() == 1 : evalSet;
+        AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
+        assert e.getConditionSetIndex() == 1 : e;
+        assert e.getConditionSetSize() == 1 : e;
+        assert e.getTriggerId().equals("trigger-1");
+        assert e.isMatch();
+        AvailabilityType v = e.getValue();
+        assert v == AvailabilityType.DOWN : e;
+        assert e.getCondition().getDataId().equals("AvailData-01") : e
+                .getCondition();
+    }
+
+    @Test
     public void multiConditionTest() {
         Trigger t1 = new Trigger("trigger-1", "Two-Conditions");
         ThresholdCondition t1c1 = new ThresholdCondition("trigger-1", 2, 1, "NumericData-01",
@@ -1201,7 +1250,6 @@ public class RulesEngineTest {
         AvailabilityCondition smt1c1 = new AvailabilityCondition("trigger-1", Mode.SAFETY, 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.UP);
         Dampening smt1d = Dampening.forStrict("trigger-1", Mode.SAFETY, 2);
-
 
         datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
         datums.add(new Availability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));

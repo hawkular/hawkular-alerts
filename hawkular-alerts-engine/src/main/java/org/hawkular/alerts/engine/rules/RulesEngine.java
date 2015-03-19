@@ -59,6 +59,12 @@ public interface RulesEngine {
     void removeFact(Object fact);
 
     /**
+     * Retrieves the FactHandle for <code>fact</code> and then updates the fact in the rules engine.
+     * @param fact
+     */
+    void updateFact(Object fact);
+
+    /**
      * Insert the provided <code>fact</code> into the rules engine. This method is not appropriate for
      * <code>Data</code>.  For <code>Data</code> use {@link #addData(Collection)}.
      * @param facts
@@ -97,6 +103,12 @@ public interface RulesEngine {
      * Fire all rules given the current set of added definitions and the currently accumulated <Data>.
      */
     void fire();
+
+    /**
+     * Fire all rules given the current set of added definitions and facts. Do not add the currently accumulated <Data>.
+     * This is an advanced feature and used only when Facts are manually manipulated.
+     */
+    void fireNoData();
 
     /**
      * Deletes all Facts from the rules engine.

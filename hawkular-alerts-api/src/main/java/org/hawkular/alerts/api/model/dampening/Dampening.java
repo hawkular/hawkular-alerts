@@ -22,10 +22,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * A representation of dampening status.
@@ -35,7 +36,7 @@ import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 public class Dampening {
 
     public enum Type {
-        STRICT, RELAXED_COUNT, RELAXED_TIME, STRICT_TIME
+        STRICT, RELAXED_COUNT, RELAXED_TIME, STRICT_TIME, STRICT_TIMEOUT
     };
 
     @JsonInclude
@@ -134,6 +135,20 @@ public class Dampening {
      */
     public static Dampening forStrictTime(String triggerId, Mode triggerMode, long evalPeriod) {
         return new Dampening(triggerId, triggerMode, Type.STRICT_TIME, 0, 0, evalPeriod);
+    }
+
+    /**
+     * Fire if we have only true evaluations of the condition set for <code>evalPeriod</code>.  In other
+     * words, fire the Trigger after N consecutive true condition set evaluations, such that N >= 1
+     * and delta(evalTime-1,currentTime) == <code>evalPeriod</code>.  Any false evaluation resets the dampening.
+     * @param triggerId
+     * @param triggerMode the trigger mode for when this dampening is active
+     * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
+     * collectionTimes (i.e. the timestamp on the data) but rather the clock starts at true-evaluation-time-1.
+     * @return
+     */
+    public static Dampening forStrictTimeout(String triggerId, Mode triggerMode, long evalPeriod) {
+        return new Dampening(triggerId, triggerMode, Type.STRICT_TIMEOUT, 0, 0, evalPeriod);
     }
 
     public Dampening(String triggerId, Mode triggerMode, Type type, int evalTrueSetting, int evalTotalSetting,
@@ -295,6 +310,7 @@ public class Dampening {
                     }
                     break;
                 case STRICT_TIME:
+                case STRICT_TIMEOUT:
                     if (trueEvalsStartTime == 0L) {
                         trueEvalsStartTime = now;
 
@@ -307,6 +323,7 @@ public class Dampening {
             switch (type) {
                 case STRICT:
                 case STRICT_TIME:
+                case STRICT_TIMEOUT:
                     reset();
                     break;
                 case RELAXED_COUNT:

@@ -26,10 +26,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Predicate;
 
 import javax.annotation.PostConstruct;
@@ -73,6 +76,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
 
     private final List<Data> pendingData;
     private final List<Alert> alerts;
+    private final Set<Dampening> pendingTimeouts;
 
     private final Timer wakeUpTimer;
     private TimerTask rulesTask;
@@ -111,6 +115,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
         log.debugf("Creating instance.");
         pendingData = new CopyOnWriteArrayList<Data>();
         alerts = new CopyOnWriteArrayList<Alert>();
+        pendingTimeouts = new CopyOnWriteArraySet<Dampening>();
         wakeUpTimer = new Timer("BasicAlertsServiceImpl-Timer");
 
         DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource", "java:jboss/datasources/HawkularDS");
@@ -339,6 +344,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
 
         pendingData.clear();
         alerts.clear();
+        pendingTimeouts.clear();
 
         rulesTask = new RulesInvoker();
         wakeUpTimer.schedule(rulesTask, DELAY, PERIOD);
@@ -369,6 +375,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
         rules.addGlobal("log", log);
         rules.addGlobal("actions", actions);
         rules.addGlobal("alerts", alerts);
+        rules.addGlobal("pendingTimeouts", pendingTimeouts);
 
         rulesTask = new RulesInvoker();
         wakeUpTimer.schedule(rulesTask, DELAY, PERIOD);
@@ -466,14 +473,21 @@ public class BasicAlertsServiceImpl implements AlertsService {
     private class RulesInvoker extends TimerTask {
         @Override
         public void run() {
-            if (!pendingData.isEmpty()) {
+            int numTimeouts = checkPendingTimeouts();
+            if (!pendingData.isEmpty() || numTimeouts > 0) {
 
-                log.debugf("Pending data [%1$d] found. Executing rules engine.", pendingData.size());
-
-                rules.addData(pendingData);
-                pendingData.clear();
+                log.debugf("Executing rules engine on [%1d] datums and [%2d] dampening timeouts.", pendingData.size(),
+                        numTimeouts);
 
                 try {
+                    if (pendingData.isEmpty()) {
+                        rules.fireNoData();
+
+                    } else {
+                        rules.addData(pendingData);
+                        pendingData.clear();
+                    }
+
                     rules.fire();
                     addAlerts(alerts);
                     alerts.clear();
@@ -487,5 +501,40 @@ public class BasicAlertsServiceImpl implements AlertsService {
                 }
             }
         }
+
+        private int checkPendingTimeouts() {
+            if (pendingTimeouts.isEmpty()) {
+                return 0;
+            }
+
+            long now = System.currentTimeMillis();
+            Set<Dampening> timeouts = null;
+            for (Dampening d : pendingTimeouts) {
+                if (now < d.getTrueEvalsStartTime() + d.getEvalTimeSetting()) {
+                    continue;
+                }
+
+                d.setSatisfied(true);
+                try {
+                    log.debugf("Dampening Timeout Hit! %s", d.toString());
+                    rules.updateFact(d);
+                    if (null == timeouts) {
+                        timeouts = new HashSet<Dampening>();
+                    }
+                    timeouts.add(d);
+                } catch (Exception e) {
+                    log.error("Unable to update Dampening Fact on Timeout! " + d.toString(), e);
+                }
+
+            }
+
+            if (null == timeouts) {
+                return 0;
+            }
+
+            pendingTimeouts.removeAll(timeouts);
+            return timeouts.size();
+        }
     }
+
 }
