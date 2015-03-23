@@ -32,6 +32,16 @@ public class Availability extends Data {
         this(null, 0, AvailabilityType.UP);
     }
 
+    /**
+     * @param id
+     * @param timestamp
+     * @param value Must be a valid {@link #Availability.AvailabilityType} name.
+     */
+    public Availability(String id, long timestamp, String value) {
+        super(id, timestamp, (null == value) ? AvailabilityType.UP : AvailabilityType.valueOf(value),
+                Type.AVAILABILITY);
+    }
+
     public Availability(String id, long timestamp, AvailabilityType value) {
         super(id, timestamp, (null == value) ? AvailabilityType.UP : value, Type.AVAILABILITY);
     }
