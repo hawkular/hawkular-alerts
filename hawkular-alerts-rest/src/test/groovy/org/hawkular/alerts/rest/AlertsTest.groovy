@@ -40,7 +40,13 @@ class AlertsTest extends AbstractTestBase {
     @Test
     void getAlertsByCriteriaTest() {
         String now = String.valueOf(System.currentTimeMillis());
-        def resp = client.get(path: "", query: [endTime:now, startTime:"0"] )
+        def resp = client.get(path: "", query: [endTime:now, startTime:"0",triggerIds:"Trigger-01,Trigger-02"] )
+        assert resp.status == 200 || resp.status == 204 : resp.status
+
+        resp = client.get(path: "", query: [tags:"data-01,data-02"] )
+        assert resp.status == 200 || resp.status == 204 : resp.status
+
+        resp = client.get(path: "", query: [tags:"dataId|data-01,dataId|data-02"] )
         assert resp.status == 200 || resp.status == 204 : resp.status
     }
 

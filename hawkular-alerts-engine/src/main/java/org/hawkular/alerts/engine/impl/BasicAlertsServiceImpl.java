@@ -39,9 +39,6 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
@@ -55,8 +52,10 @@ import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.rules.RulesEngine;
-
 import org.jboss.logging.Logger;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * Basic implementation for {@link org.hawkular.alerts.api.services.AlertsService}.
@@ -195,20 +194,20 @@ public class BasicAlertsServiceImpl implements AlertsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("SELECT triggerId, ctime, payload FROM HWK_ALERTS_ALERTS a");
+            StringBuilder sql = new StringBuilder("SELECT a.triggerId, a.ctime, a.payload FROM HWK_ALERTS_ALERTS a");
             if (filter) {
                 int filters = 0;
                 sql.append(" WHERE ");
                 if (isEmpty(criteria.getTriggerIds())) {
                     if (!isEmpty(criteria.getTriggerId())) {
                         sql.append(filters++ > 0 ? " AND " : " ");
-                        sql.append("( triggerId = '");
+                        sql.append("( a.triggerId = '");
                         sql.append(criteria.getTriggerId());
                         sql.append("' )");
                     }
                 } else {
                     sql.append(filters++ > 0 ? " AND " : " ");
-                    sql.append("( triggerId IN (");
+                    sql.append("( a.triggerId IN (");
                     int entries = 0;
                     for (String triggerId : criteria.getTriggerIds()) {
                         if (isEmpty(triggerId)) {
@@ -223,13 +222,13 @@ public class BasicAlertsServiceImpl implements AlertsService {
                 }
                 if (filter && null != criteria.getStartTime()) {
                     sql.append(filters++ > 0 ? " AND " : " ");
-                    sql.append("( ctime >= ");
+                    sql.append("( a.ctime >= ");
                     sql.append(criteria.getStartTime());
                     sql.append(" )");
                 }
                 if (filter && null != criteria.getEndTime()) {
                     sql.append(filters++ > 0 ? " AND " : " ");
-                    sql.append("( ctime <= ");
+                    sql.append("( a.ctime <= ");
                     sql.append(criteria.getEndTime());
                     sql.append(" )");
                 }
@@ -237,15 +236,15 @@ public class BasicAlertsServiceImpl implements AlertsService {
                     Tag tag = criteria.getTag();
                     if (null != tag) {
                         sql.append(filters++ > 0 ? " AND " : " ");
-                        sql.append("( EXIST ( SELECT * FROM HWL_ALERTS_TAGS WHERE");
+                        sql.append("( EXISTS ( SELECT * FROM HWK_ALERTS_TAGS t WHERE");
                         if (!isEmpty(tag.getCategory())) {
-                            sql.append(" category = '");
+                            sql.append(" t.triggerId = a.triggerId AND t.category = '");
                             sql.append(tag.getCategory());
                             sql.append("' AND");
                         }
-                        sql.append(" name = '");
+                        sql.append(" t.name = '");
                         sql.append(tag.getName());
-                        sql.append("' ) )");
+                        sql.append("' )");
                     }
                 } else {
                     sql.append(filters++ > 0 ? " AND " : " ");
@@ -253,13 +252,13 @@ public class BasicAlertsServiceImpl implements AlertsService {
                     int entries = 0;
                     for (Tag tag : criteria.getTags()) {
                         sql.append(entries++ > 0 ? " OR " : "");
-                        sql.append("( EXIST ( SELECT * FROM HWL_ALERTS_TAGS WHERE");
+                        sql.append("( EXISTS ( SELECT * FROM HWK_ALERTS_TAGS t WHERE");
                         if (!isEmpty(tag.getCategory())) {
-                            sql.append(" category = '");
+                            sql.append(" t.triggerId = a.triggerId AND t.category = '");
                             sql.append(tag.getCategory());
                             sql.append("' AND");
                         }
-                        sql.append(" name = '");
+                        sql.append(" t.name = '");
                         sql.append(tag.getName());
                         sql.append("' ) )");
                     }
@@ -287,7 +286,7 @@ public class BasicAlertsServiceImpl implements AlertsService {
             }
         }
 
-        log.debugf("Alerts Found! " + alerts);
+        log.debugf(alerts.isEmpty() ? "No Alerts Found" : "Alerts Found! " + alerts);
         return alerts;
     }
 
