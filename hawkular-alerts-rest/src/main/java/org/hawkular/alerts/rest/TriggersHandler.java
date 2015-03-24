@@ -81,7 +81,7 @@ public class TriggersHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all triggers definitions",
-                  responseContainer = "Collection",
+                  responseContainer = "Collection<Trigger>",
                   response = Trigger.class,
                   notes = "Pagination is not yet implemented")
     public void findAllTriggers(@Suspended final AsyncResponse response) {
