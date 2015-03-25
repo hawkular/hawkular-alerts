@@ -246,7 +246,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                 lines = Files.readAllLines(Paths.get(triggers.toURI()), Charset.forName("UTF-8"));
             } catch (IOException e) {
                 log.debugf(e.toString(), e);
-                msgLog.errorReadingFile("triggers.data");
+                msgLog.warningReadingFile("triggers.data");
             }
             if (lines != null && !lines.isEmpty()) {
                 for (String line : lines) {
@@ -280,7 +280,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                 }
             }
         } else {
-            msgLog.errorFileNotFound("triggers.data");
+            msgLog.warningFileNotFound("triggers.data");
         }
     }
 
@@ -294,7 +294,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             try {
                 lines = Files.readAllLines(Paths.get(conditions.toURI()), Charset.forName("UTF-8"));
             } catch (IOException e) {
-                msgLog.errorReadingFile("conditions.data");
+                msgLog.warningReadingFile("conditions.data");
             }
             if (lines != null && !lines.isEmpty()) {
                 for (String line : lines) {
@@ -405,7 +405,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                 }
             }
         } else {
-            msgLog.errorFileNotFound("conditions.data");
+            msgLog.warningFileNotFound("conditions.data");
         }
     }
 
@@ -425,7 +425,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             try {
                 lines = Files.readAllLines(Paths.get(dampening.toURI()), Charset.forName("UTF-8"));
             } catch (IOException e) {
-                msgLog.errorReadingFile("dampening.data");
+                msgLog.warningReadingFile("dampening.data");
             }
             if (lines != null && !lines.isEmpty()) {
                 for (String line : lines) {
@@ -450,7 +450,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                 }
             }
         } else {
-            msgLog.errorFileNotFound("dampening.data");
+            msgLog.warningFileNotFound("dampening.data");
         }
     }
 
@@ -493,7 +493,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                 }
             }
         } else {
-            msgLog.errorFileNotFound("actions.data");
+            msgLog.warningFileNotFound("actions.data");
         }
     }
 
