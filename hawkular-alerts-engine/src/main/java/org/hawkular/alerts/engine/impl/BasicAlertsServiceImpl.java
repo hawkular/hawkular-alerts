@@ -366,28 +366,6 @@ public class BasicAlertsServiceImpl implements AlertsService {
             }
         }
 
-        Collection<Dampening> dampenings = null;
-        try {
-            dampenings = definitions.getAllDampenings();
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            msgLog.errorDefinitionsService("Dampenings", e.getMessage());
-        }
-        if (dampenings != null && !dampenings.isEmpty()) {
-            rules.addFacts(dampenings);
-        }
-
-        Collection<Condition> conditions = null;
-        try {
-            conditions = definitions.getAllConditions();
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            msgLog.errorDefinitionsService("Conditions", e.getMessage());
-        }
-        if (conditions != null && !conditions.isEmpty()) {
-            rules.addFacts(conditions);
-        }
-
         rules.addGlobal("log", log);
         rules.addGlobal("actions", actions);
         rules.addGlobal("alerts", alerts);
@@ -464,6 +442,8 @@ public class BasicAlertsServiceImpl implements AlertsService {
                     return false;
                 }
             });
+        } else {
+            log.debugf("Trigger not found. Not removed from rulebase %s", trigger);
         }
     }
 
