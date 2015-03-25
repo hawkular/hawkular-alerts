@@ -18,7 +18,7 @@
 
 -->
 <kmodule xmlns="http://jboss.org/kie/6.0.0/kmodule">
-  <kbase name="hawkular-alerts-engine" packages="org.hawkular.alerts.engine.rules">
+  <kbase name="hawkular-alerts-engine" packages="org.hawkular.alerts.engine.rules" equalsBehavior="equality">
     <ksession name="hawkular-alerts-engine-session"/>
   </kbase>
 </kmodule>

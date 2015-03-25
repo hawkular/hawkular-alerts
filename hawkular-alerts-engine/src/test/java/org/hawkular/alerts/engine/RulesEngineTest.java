@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
@@ -1257,6 +1259,68 @@ public class RulesEngineTest {
         // The second consecutive UP should satisfy the safety requirements and return the Trigger to FIRE mode.
         assert alerts.size() == 0 : alerts;
         assert t1.getMode() == Mode.FIRE : t1;
+    }
+
+    @Test
+    public void checkEqualityInRulesEngine() throws Exception {
+
+        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        AvailabilityCondition fmt1c1 = new AvailabilityCondition("trigger-1", Mode.FIRE, 1, 1,
+                                                                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
+        Availability adata = new Availability("AvailData-01", System.currentTimeMillis(), AvailabilityType.UP);
+        AvailabilityConditionEval fmt1c1eval = new AvailabilityConditionEval(fmt1c1, adata);
+        Dampening fmt1d = Dampening.forStrict("trigger-1", Mode.FIRE, 2);
+
+        ThresholdCondition fmt1c2 = new ThresholdCondition("trigger-1", Mode.FIRE, 1, 1,
+                                                           "ThreData-01", ThresholdCondition.Operator.GT, 10d);
+        NumericData ndata = new NumericData("ThreData-01", System.currentTimeMillis(), 20d);
+        ThresholdConditionEval fmt1c2eval = new ThresholdConditionEval(fmt1c2, ndata);
+
+
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(fmt1c1);
+        rulesEngine.addFact(fmt1c1eval);
+        rulesEngine.addFact(fmt1d);
+        rulesEngine.addFact(fmt1c2);
+        rulesEngine.addFact(fmt1c2eval);
+
+        assert rulesEngine.getFact(t1) != null;
+        assert rulesEngine.getFact(fmt1c1) != null;
+        assert rulesEngine.getFact(fmt1c1eval) != null;
+        assert rulesEngine.getFact(fmt1d) != null;
+        assert rulesEngine.getFact(fmt1c2) != null;
+        assert rulesEngine.getFact(fmt1c2eval) != null;
+
+        Gson gson = new GsonBuilder().create();
+
+        String strt1 = gson.toJson(t1);
+        String strfmt1c1 = gson.toJson(fmt1c1);
+        String strfmt1c1eval = gson.toJson(fmt1c1eval);
+        String strfmt1d = gson.toJson(fmt1d);
+        String strfmt1c2 = gson.toJson(fmt1c2);
+        String strfmt1c2eval = gson.toJson(fmt1c2eval);
+
+        Trigger jsont1 = gson.fromJson(strt1, Trigger.class);
+        AvailabilityCondition jsonfmt1c1 = gson.fromJson(strfmt1c1, AvailabilityCondition.class);
+        AvailabilityConditionEval jsonfmt1c1eval = gson.fromJson(strfmt1c1eval, AvailabilityConditionEval.class);
+        Dampening jsonfmt1d = gson.fromJson(strfmt1d, Dampening.class);
+        ThresholdCondition jsonfmt1c2 = gson.fromJson(strfmt1c2, ThresholdCondition.class);
+        ThresholdConditionEval jsonfmt1c2eval = gson.fromJson(strfmt1c2eval, ThresholdConditionEval.class);
+
+        assert t1.equals(jsont1);
+        assert fmt1c1.equals(jsonfmt1c1);
+        assert fmt1c1eval.equals(jsonfmt1c1eval);
+        assert fmt1d.equals(jsonfmt1d);
+        assert fmt1c2.equals(jsonfmt1c2);
+        assert fmt1c2eval.equals(jsonfmt1c2eval);
+
+        assert rulesEngine.getFact(jsont1) != null;
+        assert rulesEngine.getFact(jsonfmt1c1) != null;
+        assert rulesEngine.getFact(jsonfmt1c1eval) != null;
+        assert rulesEngine.getFact(jsonfmt1d) != null;
+        assert rulesEngine.getFact(jsonfmt1c2) != null;
+        assert rulesEngine.getFact(jsonfmt1c2eval) != null;
     }
 
 }
