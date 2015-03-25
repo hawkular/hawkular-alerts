@@ -70,7 +70,8 @@ public class AlertsHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get alerts with optional filtering",
-            responseClass = "Collection<org.hawkular.alerts.api.model.condition.Alert>",
+            responseContainer = "Collection<Alert>",
+            response = Alert.class,
             notes = "Pagination is not yet implemented.")
     public void findAlerts(
             @Suspended
@@ -129,20 +130,16 @@ public class AlertsHandler {
     @GET
     @Path("/reload")
     @ApiOperation(value = "Reload all definitions into the alerts service",
-            responseClass = "void",
-            notes = "This service is temporal for demos/poc, this functionality will be handled internally" +
-                    "between definitions and alerts services")
-    public void reloadAlerts(
-            @Suspended
-            final AsyncResponse response) {
+                  notes = "This service is temporal for demos/poc, this functionality will be handled internally" +
+                          "between definitions and alerts services")
+    public void reloadAlerts(@Suspended final AsyncResponse response) {
         alerts.reload();
         response.resume(Response.status(Response.Status.OK).build());
     }
 
     @GET
     @Path("/reload/{triggerId}")
-    @ApiOperation(value = "Reload a specific trigger into the alerts service",
-                  responseClass = "void")
+    @ApiOperation(value = "Reload a specific trigger into the alerts service")
     public void reloadTrigger(@Suspended final AsyncResponse response,
                               @PathParam("triggerId") String triggerId) {
         alerts.reloadTrigger(triggerId);

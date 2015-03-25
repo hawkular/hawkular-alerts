@@ -261,8 +261,9 @@ rule DampenTriggerAny
         if (log != null && log.isDebugEnabled()) {
             log.debug( "Updating dampening (ANY) for: " + $ce );
         }
+        retract( $d );
         $d.perform( $ce );
-        update( $d );
+        insert( $d );
         if (log != null && log.isDebugEnabled()) {
             log.debug("Retracting multi-condition ANY trigger eval: " + $ce);
         }
@@ -278,8 +279,9 @@ rule DampenOneConditionTrigger
         if (log != null && log.isDebugEnabled()) {
             log.debug("Updating dampening for: " + $ce);
         }
+        retract( $d );
         $d.perform( $ce );
-        update( $d );
+        insert( $d );
         if (log != null && log.isDebugEnabled()) {
             log.debug("Retracting single-condition trigger eval: " + $ce);
         }
@@ -301,8 +303,9 @@ rule DampenTwoConditionTrigger
         update( $d );
         for( ConditionEval ce : new ConditionEval[] { $ce1, $ce2 } ) {
             if ( ! ce.isUsed() ) {
+                retract( ce );
                 ce.setUsed( true );
-                update( ce );
+                insert( ce );
             }
         }
 end
@@ -323,8 +326,9 @@ rule DampenThreeConditionTrigger
         update( $d );
         for( ConditionEval ce : new ConditionEval[] { $ce1, $ce2, $ce3 } ) {
             if ( ! ce.isUsed() ) {
+                retract( ce );
                 ce.setUsed( true );
-                update( ce );
+                insert( ce );
             }
         }
 end
@@ -346,8 +350,9 @@ rule DampenFourConditionTrigger
         update( $d );
         for( ConditionEval ce : new ConditionEval[] { $ce1, $ce2, $ce3, $ce4 } ) {
             if ( ! ce.isUsed() ) {
+                retract( ce );
                 ce.setUsed( true );
-                update( ce );
+                insert( ce );
             }
         }
 end
@@ -379,16 +384,17 @@ rule AlertOnSatisfiedDampening
         }
 
         //insert(  newAlert );
-
+        retract( $d );
         $d.reset();
-        update( $d )
+        insert( $d );
 
         if ($t.isSafetyEnabled()) {
             if (log != null && log.isDebugEnabled()) {
                 log.debug("Setting Trigger to Safety Mode! " + $t);
             }
+            retract( $t );
             $t.setMode(Mode.SAFETY);
-            update( $t )
+            insert( $t );
 
         } else if (log != null && log.isDebugEnabled()) {
             log.debug("Trigger remains in Fire mode, Safety Mode not enabled. " + $t);
@@ -404,10 +410,11 @@ rule SetFiringModeOnSatisfiedDampening
         if (log != null && log.isDebugEnabled()) {
             log.debug("SetFiringModeOnSatisfiedDampening! " + $d.log());
         }
-
+        retract( $d );
         $d.reset();
-        update( $d )
+        insert( $d );
 
+        retract( $t );
         $t.setMode(Mode.FIRE);
-        update( $t )
+        insert( $t );
 end

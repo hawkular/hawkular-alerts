@@ -61,7 +61,8 @@ public class ActionPluginHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all action plugins",
-                  responseClass = "Collection<String>",
+                  responseContainer = "Collection<String>",
+                  response = String.class,
                   notes = "Pagination is not yet implemented")
     public void findAllActionPlugins(@Suspended final AsyncResponse response) {
         try {
@@ -87,7 +88,8 @@ public class ActionPluginHandler {
     @Path("/{actionPlugin}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find list of properties to fill for a specific action plugin",
-                  responseClass = "Collection<String>",
+                  responseContainer = "Collection<String>",
+                  response = String.class,
                   notes = "Each action plugin can have a different and variable number of properties. " +
                           "This method should be invoked before of a creation of a new action.")
     public void getActionPlugin(@Suspended final AsyncResponse response,

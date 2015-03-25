@@ -41,13 +41,13 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 220002, value = "Folder [%s] not found for rules initialization.")
     void errorFolderNotFound(String folder);
 
-    @LogMessage(level = Logger.Level.ERROR)
+    @LogMessage(level = Logger.Level.WARN)
     @Message(id = 220003, value = "Error reading file [%s]")
-    void errorReadingFile(String file);
+    void warningReadingFile(String file);
 
-    @LogMessage(level = Logger.Level.ERROR)
+    @LogMessage(level = Logger.Level.WARN)
     @Message(id = 220004, value = "File [%s] not found")
-    void errorFileNotFound(String file);
+    void warningFileNotFound(String file);
 
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 220005, value = "Folder must be not null.")

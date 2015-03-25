@@ -72,7 +72,6 @@ public class ActionsHandler {
     @Path("/send")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Send an action to the ActionService.",
-                  responseClass = "void",
                   notes = "ActionService should not be invoked directly. This method is for demo/poc purposes.")
     public void send(@Suspended final AsyncResponse response, Action action) {
         actions.send(action);
@@ -83,7 +82,8 @@ public class ActionsHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all action ids",
-                  responseClass = "Collection<String>",
+                  responseContainer = "Collection",
+                  response = String.class,
                   notes = "Pagination is not yet implemented")
     public void findAllActions(@Suspended final AsyncResponse response) {
         try {
@@ -109,7 +109,8 @@ public class ActionsHandler {
     @Path("/plugin/{actionPlugin}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all action ids of an specific action plugin",
-                  responseClass = "Collection<String>",
+                  responseContainer = "Collection",
+                  response = String.class,
                   notes = "Pagination is not yet implemented")
     public void findAllActionsByPlugin(@Suspended final AsyncResponse response,
                                        @ApiParam(value = "Action plugin to filter query for action ids",
@@ -139,7 +140,8 @@ public class ActionsHandler {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Create a new action",
-                  responseClass = "Map<String, String>",
+                  responseContainer = "Map<String, String>",
+                  response = String.class,
                   notes = "Action properties are variable and depends on the action plugin. " +
                           "A user needs to request previously ActionPlugin API to get the list of properties to fill " +
                           "for a specific type. All actions should have actionId and actionPlugin as mandatory " +
@@ -178,7 +180,8 @@ public class ActionsHandler {
     @Path("/{actionId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get an existing action",
-                  responseClass = "Map<String, String>",
+                  responseContainer = "Map<String, String>",
+                  response = String.class,
                   notes = "Action is represented as a map of properties.")
     public void getAction(@Suspended final AsyncResponse response,
                           @ApiParam(value = "Action id to be retrieved",
@@ -208,7 +211,6 @@ public class ActionsHandler {
     @Path("/{actionId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing action",
-                  responseClass = "void",
                   notes = "Action properties are variable and depends on the action plugin. " +
                           "A user needs to request previously ActionPlugin API to get the list of properties to fill " +
                           "for a specific type. All actions should have actionId and actionPlugin as mandatory " +
@@ -250,8 +252,7 @@ public class ActionsHandler {
 
     @DELETE
     @Path("/{actionId}")
-    @ApiOperation(value = "Delete an existing action",
-                  responseClass = "void")
+    @ApiOperation(value = "Delete an existing action")
     public void deleteAction(@Suspended final AsyncResponse response,
                              @ApiParam(value = "Action id to be deleted",
                                        required = true)

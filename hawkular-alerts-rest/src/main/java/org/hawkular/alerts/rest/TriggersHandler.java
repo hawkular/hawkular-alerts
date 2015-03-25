@@ -81,10 +81,10 @@ public class TriggersHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all triggers definitions",
-            responseClass = "Collection<org.hawkular.alerts.api.model.trigger.Trigger>",
-            notes = "Pagination is not yet implemented")
-    public void findAllTriggers(@Suspended
-    final AsyncResponse response) {
+                  responseContainer = "Collection<Trigger>",
+                  response = Trigger.class,
+                  notes = "Pagination is not yet implemented")
+    public void findAllTriggers(@Suspended final AsyncResponse response) {
         try {
             Collection<Trigger> triggerList = definitions.getAllTriggers();
             if (triggerList.isEmpty()) {
@@ -110,7 +110,7 @@ public class TriggersHandler {
     @Produces(APPLICATION_JSON)
     @ApiOperation(
             value = "Create a new trigger definitions. If trigger ID is null, a (likely) unique ID will be generated",
-            responseClass = "org.hawkular.alerts.api.model.trigger.Trigger",
+            response= Trigger.class,
             notes = "Returns Trigger created if operation finished correctly")
     public void createTrigger(
             @Suspended
@@ -157,7 +157,7 @@ public class TriggersHandler {
     @Path("/{triggerId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get an existing trigger definition",
-            responseClass = "org.hawkular.alerts.api.model.trigger.Trigger")
+            response = Trigger.class)
     public void getTrigger(@Suspended
     final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
@@ -191,8 +191,7 @@ public class TriggersHandler {
     @PUT
     @Path("/{triggerId}")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing trigger definition",
-            responseClass = "void")
+    @ApiOperation(value = "Update an existing trigger definition")
     public void updateTrigger(@Suspended
     final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be updated",
@@ -229,8 +228,7 @@ public class TriggersHandler {
 
     @DELETE
     @Path("/{triggerId}")
-    @ApiOperation(value = "Delete an existing trigger definition",
-            responseClass = "void")
+    @ApiOperation(value = "Delete an existing trigger definition")
     public void deleteTrigger(@Suspended
     final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be deleted",
@@ -262,7 +260,8 @@ public class TriggersHandler {
     @Path("/{triggerId}/dampenings")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get a list with all dampenings linked with a trigger.",
-            responseClass = "Collection<Dampening>",
+            responseContainer = "Collection<Dampening>",
+            response = Dampening.class,
             notes = "Pagination is not yet implemented ")
     public void getTriggerDampenings(@Suspended
     final AsyncResponse response,
@@ -294,7 +293,7 @@ public class TriggersHandler {
     @Path("/{triggerId}/dampenings/mode/{triggerMode}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get a dampening using triggerId and triggerMode",
-            responseClass = "Dampening",
+            response = Dampening.class,
             notes = "Similar as getDampening(dampeningId)")
     public void getTriggerModeDampenings(@Suspended
     final AsyncResponse response,
@@ -330,7 +329,7 @@ public class TriggersHandler {
     @Path("/{triggerId}/dampenings/{dampeningId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get an existing dampening",
-            responseClass = "org.hawkular.alerts.api.model.dampening.Dampening")
+            response = Dampening.class)
     public void getDampening(@Suspended
     final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
@@ -370,7 +369,7 @@ public class TriggersHandler {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Create a new dampening",
-            responseClass = "org.hawkular.alerts.api.model.dampening.Dampening",
+            response = Dampening.class,
             notes = "Returns Dampening created if operation finished correctly")
     public void createDampening(@Suspended
     final AsyncResponse response,
@@ -409,8 +408,7 @@ public class TriggersHandler {
     @PUT
     @Path("/{triggerId}/dampenings/{dampeningId}")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing dampening definition",
-            responseClass = "void")
+    @ApiOperation(value = "Update an existing dampening definition")
     public void updateDampening(@Suspended
     final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
@@ -452,8 +450,7 @@ public class TriggersHandler {
 
     @DELETE
     @Path("/{triggerId}/dampenings/{dampeningId}")
-    @ApiOperation(value = "Delete an existing dampening definition",
-            responseClass = "void")
+    @ApiOperation(value = "Delete an existing dampening definition")
     public void deleteDampening(
             @Suspended
             final AsyncResponse response,
@@ -491,7 +488,8 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get a map with all conditions id an specific trigger.",
-            responseClass = "Collection<Condition>")
+            responseContainer = "Collection<Condition>",
+            response = Condition.class)
     public void getTriggerConditions(@Suspended
     final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
@@ -522,7 +520,7 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get a condition for a specific trigger id.",
-            responseClass = "Condition")
+            response = Condition.class)
     public void getTriggerCondition(@Suspended
     final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
@@ -557,7 +555,8 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Create a new condition for a specific trigger",
-            responseClass = "Collection<Condition>")
+            responseContainer = "Collection",
+            response = Condition.class)
     public void createCondition(@Suspended
     final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
@@ -613,8 +612,7 @@ public class TriggersHandler {
     @PUT
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing condition for a specific trigger",
-            responseClass = "void")
+    @ApiOperation(value = "Update an existing condition for a specific trigger")
     public void updateCondition(@Suspended
     final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
@@ -681,15 +679,13 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Delete an existing condition for a specific trigger",
-            responseClass = "Collection<Condition>")
-    public void deleteCondition(@Suspended
-    final AsyncResponse response,
-            @ApiParam(value = "Trigger definition id to be retrieved",
-                    required = true)
-            @PathParam("triggerId")
-            final String triggerId,
-            @PathParam("conditionId")
-            final String conditionId) {
+            responseContainer = "Collection<Condition>",
+            response = Condition.class)
+    public void deleteCondition(@Suspended final AsyncResponse response,
+                                @ApiParam(value = "Trigger definition id to be retrieved",
+                                          required = true)
+                                @PathParam("triggerId") final String triggerId,
+                                @PathParam("conditionId") final String conditionId) {
         try {
             Condition test = definitions.getCondition(conditionId);
             if (test == null) {
@@ -738,7 +734,7 @@ public class TriggersHandler {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Create a new trigger tag",
-            responseClass = "org.hawkular.alerts.api.model.trigger.Tag",
+            response = Tag.class,
             notes = "Returns Tag created if operation finished correctly")
     public void createTag(
             @Suspended
@@ -769,8 +765,7 @@ public class TriggersHandler {
 
     @POST
     @Path("/{triggerId}/tags")
-    @ApiOperation(value = "Delete an existing trigger definition",
-            responseClass = "void")
+    @ApiOperation(value = "Delete an existing trigger definition")
     public void deleteTags(
             @Suspended
             final AsyncResponse response,
@@ -808,7 +803,8 @@ public class TriggersHandler {
     @Path("/{triggerId}/tags")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get tags for a trigger.",
-            responseClass = "Collection<Tag>")
+            responseContainer = "Collection<Tag>",
+            response = Tag.class)
     public void getTriggerTags(
             @Suspended
             final AsyncResponse response,
