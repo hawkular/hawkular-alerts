@@ -176,7 +176,6 @@ rule RetractProcessedAvailabilityData
         retract ( $d );
 end
 
-
 ////// DAMPENING
 //
 // Dampening defines for each trigger how the number of positive, negative, and total evaluations determine
@@ -265,30 +264,34 @@ rule DampenTriggerAny
             log.debug( "Updating dampening (ANY) for: " + $ce );
         }
         retract( $d );
+        retract ( $ce );
+
         $d.perform( $ce );
         insert( $d );
         if (log != null && log.isDebugEnabled()) {
             log.debug("Retracting multi-condition ANY trigger eval: " + $ce);
         }
-        retract ( $ce );
+
 end
 
 rule DampenOneConditionTrigger
     when
         $t  : Trigger( match == Match.ALL, $tid : id, $tmode : mode )
-        $d  : Dampening( triggerId == $tid, triggerMode == $tmode, satisfied == false ) 
+        $d  : Dampening( triggerId == $tid, triggerMode == $tmode, satisfied == false )
         $ce : ConditionEval ( triggerId == $tid, conditionSetSize == 1, conditionSetIndex == 1 )
     then
         if (log != null && log.isDebugEnabled()) {
             log.debug("Updating dampening for: " + $ce);
         }
         retract( $d );
+        retract ( $ce );
+
         $d.perform( $ce );
         insert( $d );
         if (log != null && log.isDebugEnabled()) {
             log.debug("Retracting single-condition trigger eval: " + $ce);
         }
-        retract ( $ce );
+
 end
 
 rule DampenTwoConditionTrigger
@@ -302,8 +305,9 @@ rule DampenTwoConditionTrigger
         if (log != null && log.isDebugEnabled()) {
             log.debug("Updating dampening for: " + $ce1 + $ce2);
         }
+        retract( $d );
         $d.perform( $ce1, $ce2 );
-        update( $d );
+        insert( $d );
         for( ConditionEval ce : new ConditionEval[] { $ce1, $ce2 } ) {
             if ( ! ce.isUsed() ) {
                 retract( ce );
@@ -325,8 +329,9 @@ rule DampenThreeConditionTrigger
         if (log != null && log.isDebugEnabled()) {
             log.debug("Updating dampening for: " + $ce1 + $ce2 + $ce3);
         }
+        retract( $d )
         $d.perform( $ce1, $ce2, $ce3 );
-        update( $d );
+        insert( $d );
         for( ConditionEval ce : new ConditionEval[] { $ce1, $ce2, $ce3 } ) {
             if ( ! ce.isUsed() ) {
                 retract( ce );
@@ -349,8 +354,9 @@ rule DampenFourConditionTrigger
         if (log != null && log.isDebugEnabled()) {
             log.debug("Updating dampening for: " + $ce1 + $ce2 + $ce3 + $ce4);
         }
+        retract( $d )
         $d.perform( $ce1, $ce2, $ce3, $ce4 );
-        update( $d );
+        insert( $d );
         for( ConditionEval ce : new ConditionEval[] { $ce1, $ce2, $ce3, $ce4 } ) {
             if ( ! ce.isUsed() ) {
                 retract( ce );
@@ -392,7 +398,7 @@ end
 rule AlertOnSatisfiedDampening
     when
         $t  : Trigger( mode == Mode.FIRE, $tid : id )
-        $d  : Dampening( triggerMode == Mode.FIRE, triggerId == $tid, satisfied == true ) 
+        $d  : Dampening( triggerMode == Mode.FIRE, triggerId == $tid, satisfied == true )
     then
         if (log != null && log.isDebugEnabled()) {
             log.debug("AlertOnSatisfiedDampening! " + $d.log());
@@ -429,7 +435,7 @@ end
 rule SetFiringModeOnSatisfiedDampening
     when
         $t  : Trigger( mode == Mode.SAFETY, $tid : id )
-        $d  : Dampening( triggerMode == Mode.SAFETY, triggerId == $tid, satisfied == true ) 
+        $d  : Dampening( triggerMode == Mode.SAFETY, triggerId == $tid, satisfied == true )
     then
         if (log != null && log.isDebugEnabled()) {
             log.debug("SetFiringModeOnSatisfiedDampening! " + $d.log());

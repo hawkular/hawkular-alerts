@@ -22,6 +22,8 @@ import java.util.function.Predicate;
 
 import javax.ejb.Singleton;
 
+import org.drools.core.event.DebugAgendaEventListener;
+import org.drools.core.event.DebugRuleRuntimeEventListener;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.engine.rules.RulesEngine;
 import org.jboss.logging.Logger;
@@ -56,6 +58,11 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         ks = KieServices.Factory.get();
         kc = ks.getKieClasspathContainer();
         kSession = kc.newKieSession(SESSION_NAME);
+
+        if (log.isEnabled(Logger.Level.TRACE)) {
+            kSession.addEventListener(new DebugAgendaEventListener());
+            kSession.addEventListener(new DebugRuleRuntimeEventListener());
+        }
     }
 
     @Override
