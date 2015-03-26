@@ -18,19 +18,24 @@
 
 -->
 <jboss-deployment-structure>
+
   <deployment>
     <dependencies>
       <module name="org.hawkular.nest" />
+      <module name="org.infinispan" export="true" />
     </dependencies>
   </deployment>
+
   <sub-deployment name="hawkular-alerts-bus.jar">
     <dependencies>
       <module name="org.hawkular.nest" />
     </dependencies>
   </sub-deployment>
+
   <sub-deployment name="hawkular-alerts-engine.jar">
     <dependencies>
       <module name="org.hawkular.nest" />
     </dependencies>
   </sub-deployment>
+
 </jboss-deployment-structure>

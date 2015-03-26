@@ -17,9 +17,8 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -70,6 +69,14 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- place above active-mq in order to get the correct javax annotations used in the build path (for eclipse) -->
+    <dependency>
+      <groupId>javax</groupId>
+      <artifactId>javaee-api</artifactId>
+      <version>${version.javaee.spec}</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- these will be provided by our RA - the MDB itself will never need ActiveMQ specific classes -->
     <dependency>
       <groupId>org.apache.activemq</groupId>
@@ -103,9 +110,8 @@
     </dependency>
 
     <dependency>
-      <groupId>javax</groupId>
-      <artifactId>javaee-api</artifactId>
-      <version>${version.javaee.spec}</version>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-core</artifactId>
       <scope>provided</scope>
     </dependency>
 
