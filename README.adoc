@@ -1,4 +1,10 @@
 = hawkular-alerts
+:source-language: java
+
+ifdef::env-github[]
+[link=https://travis-ci.org/hawkular/hawkular-alerts]
+image::https://travis-ci.org/hawkular/hawkular-alerts.svg?branch=master[Build Status,70,18]
+endif::[]
 
 [.lead]
 *Hawkular Alerts* is the alerts module for Hawkular. It is responsible to define conditions rules over data events
