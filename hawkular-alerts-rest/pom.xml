@@ -83,12 +83,10 @@
     <dependency>
       <groupId>com.wordnik</groupId>
       <artifactId>swagger-annotations</artifactId>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.wordnik</groupId>
       <artifactId>swagger-core_2.10</artifactId>
-      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -157,7 +155,7 @@
                   <locations>org.hawkular.alerts.rest</locations>
                   <apiVersion>1.0</apiVersion>
                   <basePath>http://localhost:8080/hawkular/alerts</basePath>
-                  <outputTemplate>${basedir}/src/main/resources/rest-doc/asciidoc.mustache</outputTemplate>
+                  <outputTemplate>https://raw.githubusercontent.com/hawkular/hawkular.github.io/swagger/asciidoc.mustache</outputTemplate>
                   <swaggerDirectory>${project.build.directory}/generated/swagger-ui</swaggerDirectory>
                   <swaggerInternalFilter>org.hawkular.alerts.rest.swagger.filter.JaxRsFilter</swaggerInternalFilter>
                   <swaggerApiReader>com.wordnik.swagger.jaxrs.reader.DefaultJaxrsApiReader</swaggerApiReader>

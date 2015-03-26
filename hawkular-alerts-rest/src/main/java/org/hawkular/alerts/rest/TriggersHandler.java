@@ -63,7 +63,7 @@ import org.jboss.logging.Logger;
  */
 @Path("/triggers")
 @Api(value = "/triggers",
-        description = "Create/Read/Update/Delete operations for Triggers definitions")
+        description = "CRUD operations for Trigger defs")
 public class TriggersHandler {
     private static final Logger log = Logger.getLogger(TriggersHandler.class);
 

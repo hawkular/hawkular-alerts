@@ -23,15 +23,13 @@ import java.util.function.Predicate;
 import javax.ejb.Singleton;
 
 import org.hawkular.alerts.api.model.data.Data;
-import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.rules.RulesEngine;
+import org.jboss.logging.Logger;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.ObjectFilter;
 import org.kie.api.runtime.rule.FactHandle;
-
-import org.jboss.logging.Logger;
 
 /**
  * An implementation of RulesEngine based on drools framework.
@@ -43,7 +41,7 @@ import org.jboss.logging.Logger;
  */
 @Singleton
 public class DroolsRulesEngineImpl implements RulesEngine {
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    // private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(DroolsRulesEngineImpl.class);
     private static final String SESSION_NAME = "hawkular-alerts-engine-session";
 
@@ -144,6 +142,11 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     }
 
     @Override
+    public void fireNoData() {
+        kSession.fireAllRules();
+    }
+
+    @Override
     public Object getFact(Object o) {
         return kSession.getFactHandle(o);
     }
@@ -154,6 +157,15 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         if (factHandle != null) {
             log.debugf("Delete %s ", factHandle);
             kSession.delete(factHandle);
+        }
+    }
+
+    @Override
+    public void updateFact(Object fact) {
+        FactHandle factHandle = kSession.getFactHandle(fact);
+        if (factHandle != null) {
+            log.debugf("Update %s ", factHandle);
+            kSession.update(factHandle, fact);
         }
     }
 

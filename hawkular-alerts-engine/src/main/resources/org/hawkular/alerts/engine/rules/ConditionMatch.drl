@@ -29,6 +29,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.dampening.Dampening.Type;
 import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.Availability.AvailabilityType
 import org.hawkular.alerts.api.model.data.NumericData;
@@ -41,12 +42,14 @@ import org.hawkular.alerts.api.services.ActionsService;
 
 import org.jboss.logging.Logger;
 
-import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 
 global Logger log;
 global ActionsService actions;
 global List alerts;
+global Set pendingTimeouts;
+
 
 ////// CONDITION MATCHING
 //
@@ -356,6 +359,27 @@ rule DampenFourConditionTrigger
             }
         }
 end
+
+// Dampening with STRICT_TIMEOUT
+// Because we are not running the engine in Stream/CEP mode and instead use discrete rulebase executions, we
+// can not perform temporal reasoning inside the rules.  So, to perform timeouts we "post" STRICT_TIMEOUT
+// Dampening records when the timer should start, so that the timeouts  can be checked externally.  We remove
+// timeouts when the dampening is reset.
+rule DampeningTimeoutAdd
+    when
+        $d   : Dampening( type == Type.STRICT_TIMEOUT, numTrueEvals == 1, satisfied == false )
+    then
+        pendingTimeouts.add( $d );
+end 
+
+// TODO: does this rule fire too often? It may fire each time the condition set is evaluates to false. Although,
+//       it is fairly lightweight. 
+rule DampeningTimeoutRemove
+    when
+        $d   : Dampening( type == Type.STRICT_TIMEOUT, numTrueEvals == 0, satisfied == false )
+    then
+        pendingTimeouts.remove( $d );
+end 
 
 
 
