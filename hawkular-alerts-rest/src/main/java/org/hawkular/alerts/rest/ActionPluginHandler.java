@@ -46,7 +46,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
  */
 @Path("/plugins")
 @Api(value = "/plugins",
-     description = "Query operations for action plugins.")
+     description = "Query operations for action plugins")
 public class ActionPluginHandler {
     private final Logger log = Logger.getLogger(ActionPluginHandler.class);
 
