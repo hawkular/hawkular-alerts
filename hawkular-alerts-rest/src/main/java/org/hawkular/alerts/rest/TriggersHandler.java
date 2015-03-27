@@ -23,8 +23,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -49,8 +47,6 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.infinispan.Cache;
-import org.infinispan.manager.CacheContainer;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,14 +66,6 @@ import com.wordnik.swagger.annotations.ApiParam;
 public class TriggersHandler {
     private static final Logger log = Logger.getLogger(TriggersHandler.class);
 
-    public static final String CACHE_KEY_TRIGGER_UPDATE_TIME = "HawkularAlerts:TriggerUpdateTime";
-    public static final String CACHE_KEY_CONDITION_UPDATE_TIME = "HawkularAlerts:ConditionUpdateTime";
-    public static final String CACHE_KEY_DAMPENING_UPDATE_TIME = "HawkularAlerts:DampeningUpdateTime";
-
-    @Resource(lookup = "java:jboss/infinispan/container/hawkular")
-    private CacheContainer container;
-    protected Cache<String, Object> cache;
-
     @EJB
     DefinitionsService definitions;
 
@@ -86,11 +74,6 @@ public class TriggersHandler {
     public TriggersHandler() {
         log.debugf("Creating instance.");
         objectMapper = new ObjectMapper();
-    }
-
-    @PostConstruct
-    public void postContruct() {
-        cache = this.container.getCache("hawkular-cache");
     }
 
     @GET
@@ -150,9 +133,6 @@ public class TriggersHandler {
 
                 log.debugf("POST - createTrigger - triggerId %s ", trigger.getId());
                 definitions.addTrigger(trigger);
-                if (cache != null) {
-                    cache.put(CACHE_KEY_TRIGGER_UPDATE_TIME, Long.valueOf(System.currentTimeMillis()));
-                }
                 response.resume(Response.status(Response.Status.OK)
                         .entity(trigger).type(APPLICATION_JSON_TYPE).build());
 
@@ -229,9 +209,6 @@ public class TriggersHandler {
                     definitions.getTrigger(triggerId) != null) {
                 log.debugf("PUT - updateTrigger - triggerId: %s ", triggerId);
                 definitions.updateTrigger(trigger);
-                if (cache != null) {
-                    cache.put(CACHE_KEY_TRIGGER_UPDATE_TIME, Long.valueOf(System.currentTimeMillis()));
-                }
                 response.resume(Response.status(Response.Status.OK).build());
             } else {
                 log.debugf("PUT - updateTrigger - triggerId: %s not found or invalid. ", triggerId);
@@ -262,12 +239,6 @@ public class TriggersHandler {
             if (triggerId != null && !triggerId.isEmpty() && definitions.getTrigger(triggerId) != null) {
                 log.debugf("DELETE - deleteTrigger - triggerId: %s ", triggerId);
                 definitions.removeTrigger(triggerId);
-                if (cache != null) {
-                    Long now = Long.valueOf(System.currentTimeMillis());
-                    cache.put(CACHE_KEY_TRIGGER_UPDATE_TIME, now);
-                    cache.put(CACHE_KEY_CONDITION_UPDATE_TIME, now);
-                    cache.put(CACHE_KEY_DAMPENING_UPDATE_TIME, now);
-                }
 
                 response.resume(Response.status(Response.Status.OK).build());
             } else {
@@ -417,10 +388,6 @@ public class TriggersHandler {
                     definitions.getDampening(dampening.getDampeningId()) == null) {
                 log.debugf("POST - createDampening - triggerId %s ", dampening.getTriggerId());
                 definitions.addDampening(dampening);
-                if (cache != null) {
-                    Long now = Long.valueOf(System.currentTimeMillis());
-                    cache.put(CACHE_KEY_DAMPENING_UPDATE_TIME, now);
-                }
 
                 response.resume(Response.status(Response.Status.OK)
                         .entity(dampening).type(APPLICATION_JSON_TYPE).build());
@@ -466,10 +433,6 @@ public class TriggersHandler {
                     definitions.getDampening(dampeningId) != null) {
                 log.debugf("PUT - updateDampening - dampeningId: %s ", dampeningId);
                 definitions.updateDampening(dampening);
-                if (cache != null) {
-                    Long now = Long.valueOf(System.currentTimeMillis());
-                    cache.put(CACHE_KEY_DAMPENING_UPDATE_TIME, now);
-                }
 
                 response.resume(Response.status(Response.Status.OK).build());
             } else {
@@ -507,10 +470,6 @@ public class TriggersHandler {
                     dampeningId.startsWith(triggerId)) {
                 log.debugf("DELETE - deleteDampening - dampeningId: %s ", dampeningId);
                 definitions.removeDampening(dampeningId);
-                if (cache != null) {
-                    Long now = Long.valueOf(System.currentTimeMillis());
-                    cache.put(CACHE_KEY_DAMPENING_UPDATE_TIME, now);
-                }
 
                 response.resume(Response.status(Response.Status.OK).build());
             } else {
@@ -641,10 +600,6 @@ public class TriggersHandler {
                     Collection<Condition> newConditions = definitions.addCondition(condition.getTriggerId(),
                             condition.getTriggerMode(),
                             condition);
-                    if (cache != null) {
-                        Long now = Long.valueOf(System.currentTimeMillis());
-                        cache.put(CACHE_KEY_CONDITION_UPDATE_TIME, now);
-                    }
 
                     response.resume(Response.status(Response.Status.OK)
                             .entity(newConditions).type(APPLICATION_JSON_TYPE).build());
@@ -711,10 +666,6 @@ public class TriggersHandler {
                                 .entity(errors).type(APPLICATION_JSON_TYPE).build());
                     } else {
                         Collection<Condition> updatedConditions = definitions.updateCondition(condition);
-                        if (cache != null) {
-                            Long now = Long.valueOf(System.currentTimeMillis());
-                            cache.put(CACHE_KEY_CONDITION_UPDATE_TIME, now);
-                        }
 
                         response.resume(Response.status(Response.Status.OK)
                                 .entity(updatedConditions).type(APPLICATION_JSON_TYPE).build());
@@ -754,10 +705,6 @@ public class TriggersHandler {
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             } else {
                 Collection<Condition> updatedConditions = definitions.removeCondition(conditionId);
-                if (cache != null) {
-                    Long now = Long.valueOf(System.currentTimeMillis());
-                    cache.put(CACHE_KEY_CONDITION_UPDATE_TIME, now);
-                }
 
                 response.resume(Response.status(Response.Status.OK)
                         .entity(updatedConditions).type(APPLICATION_JSON_TYPE).build());
