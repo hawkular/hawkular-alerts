@@ -39,9 +39,6 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -54,10 +51,15 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.TriggerTemplate;
 import org.hawkular.alerts.api.services.AlertsService;
+import org.hawkular.alerts.api.services.DefinitionsEvent;
+import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
+import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
-
 import org.jboss.logging.Logger;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * A database implementation of {@link org.hawkular.alerts.api.services.DefinitionsService}.
@@ -77,6 +79,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     private DataSource ds;
     private AlertsService alertsService;
     private boolean initialized = false;
+
+    private List<DefinitionsListener> listeners = new ArrayList<>();
 
     public DbDefinitionsServiceImpl() {
         DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource", "java:jboss/datasources/HawkularDS");
@@ -908,6 +912,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             alertsService.reloadTrigger(triggerId);
         }
 
+        notifyListeners(DefinitionsEvent.EventType.CONDITION_CHANGE);
+
         return conditions;
     }
 
@@ -945,6 +951,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (initialized && null != alertsService) {
             alertsService.reloadTrigger(dampening.getTriggerId());
         }
+
+        notifyListeners(EventType.DAMPENING_CHANGE);
 
         return dampening;
     }
@@ -1048,6 +1056,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         } finally {
             close(c, s);
         }
+
+        notifyListeners(EventType.TRIGGER_CHANGE);
     }
 
     @Override
@@ -1446,6 +1456,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (initialized && null != alertsService) {
             alertsService.reloadTrigger(dampening.getTriggerId());
         }
+
+        notifyListeners(EventType.DAMPENING_CHANGE);
     }
 
     @Override
@@ -1550,6 +1562,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (initialized && null != alertsService) {
             alertsService.reloadTrigger(triggerId);
         }
+
+        notifyListeners(EventType.TRIGGER_CHANGE);
     }
 
     @Override
@@ -1583,6 +1597,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (initialized && null != alertsService) {
             alertsService.reloadTrigger(dampening.getTriggerId());
         }
+
+        notifyListeners(EventType.DAMPENING_CHANGE);
 
         return dampening;
     }
@@ -1682,6 +1698,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (initialized && null != alertsService) {
             alertsService.reloadTrigger(trigger.getId());
         }
+
+        notifyListeners(EventType.TRIGGER_CHANGE);
 
         return trigger;
     }
@@ -1909,6 +1927,19 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();
+    }
+
+    private void notifyListeners(EventType eventType) {
+        DefinitionsEvent de = new DefinitionsEvent(eventType);
+        for (DefinitionsListener dl : listeners) {
+            log.debugf("Notified Listener %s", eventType.name());
+            dl.onChange(de);
+        }
+    }
+
+    @Override
+    public void registerListener(DefinitionsListener listener) {
+        listeners.add(listener);
     }
 
 }

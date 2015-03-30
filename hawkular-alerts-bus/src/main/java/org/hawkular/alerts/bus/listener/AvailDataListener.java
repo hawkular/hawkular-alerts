@@ -18,8 +18,8 @@ package org.hawkular.alerts.bus.listener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
@@ -29,6 +29,7 @@ import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.bus.init.CacheManager;
 import org.hawkular.alerts.bus.messages.AvailDataMessage;
 import org.hawkular.alerts.bus.messages.AvailDataMessage.AvailData;
 import org.hawkular.alerts.bus.messages.AvailDataMessage.SingleAvail;
@@ -68,15 +69,17 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
     @EJB
     DefinitionsService definitions;
 
-    @PostConstruct
-    public void postContruct() {
+    @EJB
+    CacheManager cacheManager;
 
+    private boolean isNeeded(Set<String> activeAvailabilityIds, String id) {
+        if (null == activeAvailabilityIds) {
+            return true;
+        }
+
+        return activeAvailabilityIds.contains(id);
     }
 
-    private boolean isNeeded(String metricId) {
-        // TODO: probably a Map lookup
-        return true;
-    }
 
     @Override
     protected void onBasicMessage(AvailDataMessage msg) {
@@ -86,8 +89,9 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
 
         List<SingleAvail> data = availData.getData();
         List<Data> alertData = new ArrayList<>(data.size());
+        Set<String> activeAvailabilityIds = cacheManager.getActiveAvailabilityIds();
         for (SingleAvail a : data) {
-            if (isNeeded(a.getId())) {
+            if (isNeeded(activeAvailabilityIds, a.getId())) {
                 alertData.add(new Availability(a.getId(), a.getTimestamp(), a.getAvail()));
             }
         }

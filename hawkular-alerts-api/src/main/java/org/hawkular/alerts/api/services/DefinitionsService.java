@@ -243,4 +243,5 @@ public interface DefinitionsService {
      */
     List<Tag> getTriggerTags(String triggerId, String category) throws Exception;
 
+    void registerListener(DefinitionsListener listener);
 }

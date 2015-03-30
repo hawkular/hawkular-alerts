@@ -18,8 +18,8 @@ package org.hawkular.alerts.bus.listener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
@@ -29,11 +29,11 @@ import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.bus.init.CacheManager;
 import org.hawkular.alerts.bus.messages.MetricDataMessage;
 import org.hawkular.alerts.bus.messages.MetricDataMessage.MetricData;
 import org.hawkular.alerts.bus.messages.MetricDataMessage.SingleMetric;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
-
 import org.jboss.logging.Logger;
 
 /**
@@ -61,20 +61,23 @@ import org.jboss.logging.Logger;
 public class MetricDataListener extends BasicMessageListener<MetricDataMessage> {
     private final Logger log = Logger.getLogger(MetricDataListener.class);
 
+
     @EJB
     AlertsService alerts;
 
     @EJB
     DefinitionsService definitions;
 
-    @PostConstruct
-    public void postContruct() {
+    @EJB
+    CacheManager cacheManager;
 
-    }
 
-    private boolean isNeeded(String metricId) {
-        // TODO: probably a Map lookup
-        return true;
+    private boolean isNeeded(Set<String> activeMetricIds, String metricId) {
+        if (null == activeMetricIds) {
+            return true;
+        }
+
+        return activeMetricIds.contains(metricId);
     }
 
     @Override
@@ -86,9 +89,12 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
 
         List<SingleMetric> data = metricData.getData();
         List<Data> alertData = new ArrayList<>(data.size());
+        Set<String> activeMetricIds = cacheManager.getActiveDataIds();
         for (SingleMetric m : data) {
-            if (isNeeded(m.getSource())) {
+            if (isNeeded(activeMetricIds, m.getSource())) {
                 alertData.add(new NumericData(m.getSource(), m.getTimestamp(), m.getValue()));
+            } else {
+                log.debugf("Filtering data not used in Triggers. MetricId=%s", m.getSource());
             }
         }
 

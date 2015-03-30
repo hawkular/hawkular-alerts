@@ -37,11 +37,6 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wordnik.swagger.annotations.Api;
-import com.wordnik.swagger.annotations.ApiOperation;
-import com.wordnik.swagger.annotations.ApiParam;
-
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -52,8 +47,12 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
-
 import org.jboss.logging.Logger;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
 
 /**
  * REST endpoint for triggers
@@ -81,10 +80,11 @@ public class TriggersHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all triggers definitions",
-                  responseContainer = "Collection<Trigger>",
-                  response = Trigger.class,
-                  notes = "Pagination is not yet implemented")
-    public void findAllTriggers(@Suspended final AsyncResponse response) {
+            responseContainer = "Collection<Trigger>",
+            response = Trigger.class,
+            notes = "Pagination is not yet implemented")
+    public void findAllTriggers(@Suspended
+    final AsyncResponse response) {
         try {
             Collection<Trigger> triggerList = definitions.getAllTriggers();
             if (triggerList.isEmpty()) {
@@ -110,7 +110,7 @@ public class TriggersHandler {
     @Produces(APPLICATION_JSON)
     @ApiOperation(
             value = "Create a new trigger definitions. If trigger ID is null, a (likely) unique ID will be generated",
-            response= Trigger.class,
+            response = Trigger.class,
             notes = "Returns Trigger created if operation finished correctly")
     public void createTrigger(
             @Suspended
@@ -239,6 +239,7 @@ public class TriggersHandler {
             if (triggerId != null && !triggerId.isEmpty() && definitions.getTrigger(triggerId) != null) {
                 log.debugf("DELETE - deleteTrigger - triggerId: %s ", triggerId);
                 definitions.removeTrigger(triggerId);
+
                 response.resume(Response.status(Response.Status.OK).build());
             } else {
                 log.debugf("DELETE - deleteTrigger - triggerId: %s not found or invalid. ", triggerId);
@@ -387,6 +388,7 @@ public class TriggersHandler {
                     definitions.getDampening(dampening.getDampeningId()) == null) {
                 log.debugf("POST - createDampening - triggerId %s ", dampening.getTriggerId());
                 definitions.addDampening(dampening);
+
                 response.resume(Response.status(Response.Status.OK)
                         .entity(dampening).type(APPLICATION_JSON_TYPE).build());
             } else {
@@ -431,6 +433,7 @@ public class TriggersHandler {
                     definitions.getDampening(dampeningId) != null) {
                 log.debugf("PUT - updateDampening - dampeningId: %s ", dampeningId);
                 definitions.updateDampening(dampening);
+
                 response.resume(Response.status(Response.Status.OK).build());
             } else {
                 log.debugf("PUT - updateDampening - dampeningId: %s not found or invalid. ", dampeningId);
@@ -467,6 +470,7 @@ public class TriggersHandler {
                     dampeningId.startsWith(triggerId)) {
                 log.debugf("DELETE - deleteDampening - dampeningId: %s ", dampeningId);
                 definitions.removeDampening(dampeningId);
+
                 response.resume(Response.status(Response.Status.OK).build());
             } else {
                 log.debugf("DELETE - deleteDampening - dampeningId: %s not found or invalid ", dampeningId);
@@ -596,6 +600,7 @@ public class TriggersHandler {
                     Collection<Condition> newConditions = definitions.addCondition(condition.getTriggerId(),
                             condition.getTriggerMode(),
                             condition);
+
                     response.resume(Response.status(Response.Status.OK)
                             .entity(newConditions).type(APPLICATION_JSON_TYPE).build());
                 }
@@ -661,6 +666,7 @@ public class TriggersHandler {
                                 .entity(errors).type(APPLICATION_JSON_TYPE).build());
                     } else {
                         Collection<Condition> updatedConditions = definitions.updateCondition(condition);
+
                         response.resume(Response.status(Response.Status.OK)
                                 .entity(updatedConditions).type(APPLICATION_JSON_TYPE).build());
                     }
@@ -681,11 +687,14 @@ public class TriggersHandler {
     @ApiOperation(value = "Delete an existing condition for a specific trigger",
             responseContainer = "Collection<Condition>",
             response = Condition.class)
-    public void deleteCondition(@Suspended final AsyncResponse response,
-                                @ApiParam(value = "Trigger definition id to be retrieved",
-                                          required = true)
-                                @PathParam("triggerId") final String triggerId,
-                                @PathParam("conditionId") final String conditionId) {
+    public void deleteCondition(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved",
+                    required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @PathParam("conditionId")
+            final String conditionId) {
         try {
             Condition test = definitions.getCondition(conditionId);
             if (test == null) {
@@ -696,6 +705,7 @@ public class TriggersHandler {
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             } else {
                 Collection<Condition> updatedConditions = definitions.removeCondition(conditionId);
+
                 response.resume(Response.status(Response.Status.OK)
                         .entity(updatedConditions).type(APPLICATION_JSON_TYPE).build());
             }
