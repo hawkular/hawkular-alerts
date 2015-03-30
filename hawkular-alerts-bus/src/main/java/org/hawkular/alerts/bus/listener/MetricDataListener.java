@@ -40,17 +40,8 @@ import org.jboss.logging.Logger;
  * An adapter that processes Hawkular Metrics data, extracts relevant metric datums, translates them to Alerting
  * Data format, and forwards them for Alert processing.
  * </p>
- * This is useful only when deploying into the Hawkular Bus with Hawkular Metrics. The expected format of the
- * data is JSON like:
- * </p>
- * <code>
- *  { tenantId , List<org.rhq.metrics.client.common.SingleMetric> }
- * </code>
- * </p>
- * TODO: Add filtering of relevant Metric Ids.  This means fetching the active triggers, running through the conditions,
- * and collecting the dataIds.  Then using thise to filter the metricIds converted and forwarded to the engine. Note
- * that we will need a way to update that Id set as changes occur to the Trigger population. Changes are
- * rare so we don't want it to be too cumbersome.
+ * This is useful only when deploying into the Hawkular Bus with Hawkular Metrics. The expected message payload should
+ * be JSON representation of {@link MetricDataMessage}.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
