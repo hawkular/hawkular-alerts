@@ -29,9 +29,9 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.hawkular.actions.api.log.MsgLogger;
 import org.hawkular.actions.api.model.ActionMessage;
+import org.hawkular.bus.common.consumer.BasicMessageListener;
 
 /**
  * An example of listener for emails processing.
@@ -68,13 +68,13 @@ public class EmailListener extends BasicMessageListener<ActionMessage> {
         }
         if (msg.getProperties() != null && msg.getProperties().get("cc") != null) {
             Address toAddress = new InternetAddress(msg.getProperties().get("cc"));
-            message.addRecipient(RecipientType.TO, toAddress);
+            message.addRecipient(RecipientType.CC, toAddress);
         }
-        String description = "";
+        String description = "Hawkular alert";
         if (msg.getProperties() != null && msg.getProperties().get("description") != null) {
-            description = msg.getProperties().get("description");
+            description += " - " + msg.getProperties().get("description");
         }
-        message.setSubject("Hawkular alert - " + description);
+        message.setSubject(description);
         message.setContent(msg.getMessage(), "text/plain");
         return message;
     }
