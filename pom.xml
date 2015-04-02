@@ -63,9 +63,7 @@
     <module>hawkular-alerts-bus</module>
     <module>hawkular-alerts-rest</module>
     <module>hawkular-alerts-ear</module>
-    <module>hawkular-actions-email</module>
-    <module>hawkular-actions-sms</module>
-    <module>hawkular-actions-snmp</module>
+    <module>hawkular-actions-plugins</module>
   </modules>
 
   <scm>
