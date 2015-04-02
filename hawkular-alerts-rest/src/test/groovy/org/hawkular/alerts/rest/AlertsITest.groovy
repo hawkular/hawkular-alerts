@@ -16,20 +16,16 @@
  */
 package org.hawkular.alerts.rest
 
-import org.junit.Test
-
-import org.hawkular.alerts.api.services.AlertsCriteria
-
-import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertEquals
 
+import org.junit.Test
 
 /**
  * Alerts REST tests.
  *
  * @author Lucas Ponce
  */
-class AlertsTest extends AbstractTestBase {
+class AlertsITest extends AbstractITestBase {
 
     @Test
     void getAlertsTest() {

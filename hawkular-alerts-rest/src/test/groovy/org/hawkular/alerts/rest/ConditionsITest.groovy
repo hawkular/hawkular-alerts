@@ -16,25 +16,25 @@
  */
 package org.hawkular.alerts.rest
 
+import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
+import static org.junit.Assert.assertEquals
+
+import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.CompareCondition
 import org.hawkular.alerts.api.model.condition.StringCondition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.jboss.logging.Logger
 import org.junit.Test
-
-import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
-import static org.junit.Assert.assertEquals
 
 /**
  * Conditions REST tests.
  *
  * @author Lucas Ponce
  */
-class ConditionsTest extends AbstractTestBase {
-    private static final Logger log = Logger.getLogger(ConditionsTest.class);
+class ConditionsITest extends AbstractITestBase {
+    private static final Logger log = Logger.getLogger(ConditionsITest.class);
 
     @Test
     void createAvailabilityCondition() {

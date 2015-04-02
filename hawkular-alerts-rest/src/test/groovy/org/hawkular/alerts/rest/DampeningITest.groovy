@@ -16,22 +16,22 @@
  */
 package org.hawkular.alerts.rest
 
+import static org.junit.Assert.assertEquals
+
 import org.hawkular.alerts.api.model.dampening.Dampening
+import org.hawkular.alerts.api.model.dampening.Dampening.Type
+import org.hawkular.alerts.api.model.trigger.Trigger
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode
 import org.jboss.logging.Logger
 import org.junit.Test
-
-import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.api.model.dampening.Dampening.Type
-import org.hawkular.alerts.api.model.trigger.Trigger.Mode
-import static org.junit.Assert.assertEquals
 
 /**
  * Dampening REST tests.
  *
  * @author Lucas Ponce
  */
-class DampeningTest extends AbstractTestBase {
-    private static final Logger log = Logger.getLogger(DampeningTest.class);
+class DampeningITest extends AbstractITestBase {
+ private static final Logger log = Logger.getLogger(DampeningITest.class);
 
     @Test
     void createDampening() {

@@ -16,21 +16,21 @@
  */
 package org.hawkular.alerts.rest
 
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNotNull
+
 import org.hawkular.alerts.api.model.trigger.Tag
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.jboss.logging.Logger
 import org.junit.Test
-
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertNotNull
 
 /**
  * Triggers REST tests.
  *
  * @author Lucas Ponce
  */
-class TriggersTest extends AbstractTestBase {
-    private static final Logger log = Logger.getLogger(TriggersTest.class);
+class TriggersITest extends AbstractITestBase {
+    private static final Logger log = Logger.getLogger(TriggersITest.class);
 
     @Test
     void findInitialTriggers() {

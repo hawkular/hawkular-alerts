@@ -16,20 +16,18 @@
  */
 package org.hawkular.alerts.rest
 
-import org.hawkular.alerts.api.model.condition.StringCondition
+import static org.junit.Assert.assertEquals
+
 import org.jboss.logging.Logger
 import org.junit.Test
-
-import static org.hawkular.alerts.api.model.condition.StringCondition.Operator
-import static org.junit.Assert.assertEquals
 
 /**
  * Actions REST tests.
  *
  * @author Lucas Ponce
  */
-class ActionsTest extends AbstractTestBase {
-    private static final Logger log = Logger.getLogger(ActionsTest.class);
+class ActionsITest extends AbstractITestBase {
+    private static final Logger log = Logger.getLogger(ActionsITest.class);
 
     @Test
     void findInitialActions() {

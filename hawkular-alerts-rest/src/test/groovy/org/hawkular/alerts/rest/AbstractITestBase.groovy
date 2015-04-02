@@ -16,16 +16,17 @@
  */
 package org.hawkular.alerts.rest
 
+import org.junit.BeforeClass
+
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
-import org.junit.BeforeClass
 
 /**
  * Base class for REST tests.
  *
  * @author Lucas Ponce
  */
-class AbstractTestBase {
+class AbstractITestBase {
 
     static baseURI = System.getProperty('hawkular.base-uri') ?: 'http://127.0.0.1:8080/hawkular/alerts/'
     static RESTClient client
