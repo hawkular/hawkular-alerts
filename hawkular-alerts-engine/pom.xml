@@ -176,11 +176,11 @@
                 <id>deploy</id>
                 <phase>install</phase>
                 <configuration>
-                  <tasks>
+                  <target>
                     <copy todir="${org.hawkular.wildfly.home}/standalone/data/hawkular-alerts">
                       <fileset dir="${basedir}/src/main/resources/hawkular-alerts" includes="**"/>
                     </copy>
-                  </tasks>
+                  </target>
                 </configuration>
                 <goals>
                   <goal>run</goal>
