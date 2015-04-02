@@ -33,8 +33,15 @@
   <packaging>war</packaging>
 
   <name>Hawkular Action Sms Plugin</name>
+  <description>An action plugin to send SMS with Twilio</description>
 
   <dependencies>
+
+    <dependency>
+      <groupId>com.twilio.sdk</groupId>
+      <artifactId>twilio-java-sdk</artifactId>
+      <version>3.8.0</version>
+    </dependency>
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
@@ -104,9 +111,17 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- Tests -->
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
 

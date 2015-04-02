@@ -45,4 +45,8 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 240005, value = "Plugin [%s] cannot send a message to the bus. Error: [%s]")
     void errorCannotSendMessage(String actionPlugin, String msg);
 
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 240006, value = "Plugin [%s] cannot be started. Error: [%s]")
+    void errorCannotBeStarted(String actionPlugin, String msg);
+
 }
