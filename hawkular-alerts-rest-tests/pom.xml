@@ -95,6 +95,31 @@
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>copy-data-dir</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${project.build.directory}/wildfly-data</outputDirectory>
+                  <overwrite>true</overwrite>
+                  <resources>
+                    <resource>
+                      <directory>${project.basedir}/src/test/wildfly-data</directory>
+                      <includes>
+                        <include>**/*</include>
+                      </includes>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
               <includes>
@@ -140,6 +165,7 @@
                     <javaOpt>-Dsun.rmi.dgc.client.gcInterval=3600000</javaOpt>
                     <javaOpt>-Dsun.rmi.dgc.server.gcInterval=3600000</javaOpt>
                     <javaOpt>-Djboss.socket.binding.port-offset=${wildfly.port.offset}</javaOpt>
+                    <javaOpt>-Djboss.server.data.dir=${project.build.directory}/wildfly-data</javaOpt>
                     <javaOpt>-Xdebug</javaOpt>
                     <javaOpt>-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8787</javaOpt>
                   </javaOpts>
