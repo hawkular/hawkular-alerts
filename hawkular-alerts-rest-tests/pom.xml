@@ -17,8 +17,9 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -27,10 +28,9 @@
     <version>1.0.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>hawkular-alerts-rest</artifactId>
-  <packaging>war</packaging>
+  <artifactId>hawkular-alerts-rest-tests</artifactId>
 
-  <name>Hawkular Alerts REST Api</name>
+  <name>Hawkular Alerts REST Api integration tests</name>
 
   <dependencies>
 
@@ -84,16 +84,6 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- documentation -->
-    <dependency>
-      <groupId>com.wordnik</groupId>
-      <artifactId>swagger-annotations</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.wordnik</groupId>
-      <artifactId>swagger-core_2.10</artifactId>
-    </dependency>
-
     <!-- Tests -->
 
     <dependency>
@@ -102,7 +92,33 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-all</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.groovy.modules.http-builder</groupId>
+      <artifactId>http-builder</artifactId>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/*ITest*</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
   <profiles>
     <profile>
@@ -122,40 +138,6 @@
                 <goals>
                   <goal>integration-test</goal>
                   <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>docgen</id>
-      <build>
-        <!-- Document generation from the Annotations on the REST-API. -->
-        <plugins>
-          <plugin>
-            <groupId>com.github.kongchen</groupId>
-            <artifactId>swagger-maven-plugin</artifactId>
-            <configuration>
-              <apiSources>
-                <apiSource>
-                  <locations>org.hawkular.alerts.rest</locations>
-                  <apiVersion>1.0</apiVersion>
-                  <basePath>http://localhost:8080/hawkular/alerts</basePath>
-                  <outputTemplate>https://raw.githubusercontent.com/hawkular/hawkular.github.io/swagger/asciidoc.mustache</outputTemplate>
-                  <swaggerDirectory>${project.build.directory}/generated/swagger-ui</swaggerDirectory>
-                  <swaggerInternalFilter>org.hawkular.alerts.rest.swagger.filter.JaxRsFilter</swaggerInternalFilter>
-                  <swaggerApiReader>com.wordnik.swagger.jaxrs.reader.DefaultJaxrsApiReader</swaggerApiReader>
-                  <outputPath>${project.build.directory}/generated/rest-alerts.adoc</outputPath>
-                </apiSource>
-              </apiSources>
-            </configuration>
-            <executions>
-              <execution>
-                <phase>compile</phase>
-                <goals>
-                  <goal>generate</goal>
                 </goals>
               </execution>
             </executions>

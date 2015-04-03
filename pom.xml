@@ -64,6 +64,7 @@
     <module>hawkular-alerts-rest</module>
     <module>hawkular-alerts-ear</module>
     <module>hawkular-actions-plugins</module>
+    <module>hawkular-alerts-rest-tests</module>
   </modules>
 
   <scm>
