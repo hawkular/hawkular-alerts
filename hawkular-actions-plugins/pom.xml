@@ -39,6 +39,7 @@
     <module>hawkular-actions-email</module>
     <module>hawkular-actions-sms</module>
     <module>hawkular-actions-snmp</module>
+    <module>hawkular-actions-aerogear</module>
   </modules>
 
   <dependencies>
