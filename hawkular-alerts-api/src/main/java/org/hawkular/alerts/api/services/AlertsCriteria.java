@@ -147,13 +147,16 @@ public class AlertsCriteria {
                 null != triggerId || //
                 (null != triggerIds && !triggerIds.isEmpty()) || //
                 null != tag || //
-                (null != tags && !tags.isEmpty());
+                (null != tags && !tags.isEmpty()) ||
+                null != status ||
+                (null != statusSet && !statusSet.isEmpty());
     }
 
     @Override
     public String toString() {
         return "AlertsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", triggerId=" + triggerId
-                + ", triggerIds=" + triggerIds + ", tag=" + tag + ", tags=" + tags + "]";
+                + ", triggerIds=" + triggerIds + ", tag=" + tag + ", tags=" + tags + ", status=" + status + ", " +
+                "statusSet=" + statusSet + "]";
     }
 
 }

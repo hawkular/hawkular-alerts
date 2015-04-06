@@ -171,16 +171,10 @@ public class DbDefinitionsServiceImplTest {
     private static class TestAlertsService implements AlertsService {
 
         @Override
-        public void sendData(Data data) {
-            // TODO Auto-generated method stub
-
-        }
+        public void sendData(Collection<Data> data) { }
 
         @Override
-        public void sendData(Collection<Data> data) {
-            // TODO Auto-generated method stub
-
-        }
+        public void sendData(Data data) { }
 
         @Override
         public List<Alert> getAlerts(AlertsCriteria criteria) {
@@ -188,48 +182,27 @@ public class DbDefinitionsServiceImplTest {
         }
 
         @Override
-        public void clear() {
-            // TODO Auto-generated method stub
-
-        }
+        public void clear() { }
 
         @Override
-        public void reload() {
-            // TODO Auto-generated method stub
-
-        }
+        public void reload() { }
 
         @Override
-        public void reloadTrigger(String triggerId) {
-            // TODO Auto-generated method stub
-
-        }
+        public void reloadTrigger(String triggerId) { }
 
         @Override
-        public void addAlerts(Collection<Alert> alerts) throws Exception {
-            // TODO Auto-generated method stub
-
-        }
+        public void addAlerts(Collection<Alert> alerts) throws Exception { }
 
         @Override
-        public void ackAlerts(Collection<String> alertIds, String ackBy, String ackNotes) throws Exception {
-            // TODO Auto-generated method stub
-
-        }
+        public void ackAlerts(Collection<String> alertIds, String ackBy, String ackNotes) throws Exception { }
 
         @Override
         public void resolveAlerts(Collection<String> alertIds, String resolvedBy, String resolvedNotes,
-                List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
-            // TODO Auto-generated method stub
-
-        }
+                List<Set<ConditionEval>> resolvedEvalSets) throws Exception { }
 
         @Override
         public void resolveAlertsForTrigger(String triggerId, String resolvedBy, String resolvedNotes,
-                List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
-            // TODO Auto-generated method stub
-
-        }
+                List<Set<ConditionEval>> resolvedEvalSets) throws Exception { }
 
     }
 }

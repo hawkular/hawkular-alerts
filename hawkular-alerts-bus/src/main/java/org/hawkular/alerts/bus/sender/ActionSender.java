@@ -46,7 +46,7 @@ public class ActionSender implements ActionListener {
     private final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
     private final String ACTIONS_TOPIC = "HawkularAlertsActionsTopic";
     private final String DEFINITIONS_SERVICE =
-            "java:app/hawkular-alerts-engine/DbDefinitionsServiceImpl";
+            "java:app/hawkular-alerts-engine/CassDefinitionsServiceImpl";
 
     private TopicConnectionFactory conFactory;
     private ConnectionContextFactory ccf;

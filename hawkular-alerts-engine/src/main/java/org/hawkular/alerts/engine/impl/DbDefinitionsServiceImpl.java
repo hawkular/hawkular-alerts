@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Singleton;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -66,7 +65,6 @@ import com.google.gson.GsonBuilder;
  *
  * @author Lucas Ponce
  */
-@Singleton
 public class DbDefinitionsServiceImpl implements DefinitionsService {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(DbDefinitionsServiceImpl.class);
@@ -112,7 +110,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             .lookup("java:app/hawkular-alerts-engine/BasicAlertsServiceImpl");
                 } catch (NamingException e) {
                     log.debugf(e.getMessage(), e);
-                    msgLog.errorCannotConnectWithDatasource(e.getMessage());
+                    msgLog.errorCannotWithAlertsService(e.getMessage());
                 }
             }
 
@@ -127,7 +125,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             initFiles(folder);
             initialized = true;
         } catch (Throwable t) {
-            System.out.println(" !!!!!!!!!!!! " + t);
+            msgLog.errorCannotInitializeDefinitionsService(t.getMessage());
             t.printStackTrace();
         }
     }
@@ -167,7 +165,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_ACTIONS " +
                     "( actionId VARCHAR(250) NOT NULL," +
-                    "  actionPLugin VARCHAR(250)," +
+                    "  actionPlugin VARCHAR(250)," +
                     "  payload VARCHAR(1024)," +
                     "  PRIMARY KEY(actionId, actionPlugin))");
 
@@ -1195,11 +1193,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
-        if (ds == null) {
-            throw new Exception("DataSource is null");
-        }
 
-        List<String> actions = null;
+        List<String> actions = new ArrayList();
         Connection c = null;
         Statement s = null;
         ResultSet rs = null;
@@ -1210,7 +1205,6 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             StringBuilder sql = new StringBuilder("SELECT actionId FROM HWK_ALERTS_ACTIONS ORDER BY actionId ");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
-            actions = new ArrayList();
             while (rs.next()) {
                 actions.add(rs.getString(1));
             }

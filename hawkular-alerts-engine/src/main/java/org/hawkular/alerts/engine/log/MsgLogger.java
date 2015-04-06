@@ -69,5 +69,18 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 220009, value = "Definitions Service error in [%s]. Msg: [%s]")
     void errorDefinitionsService(String msg, String errorMsg);
 
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 220010, value = "AlertsService cannot be accessed. Msg: [%s]")
+    void errorCannotWithAlertsService(String msg);
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 220011, value = "DefinitionsService cannot be initialized. Msg: [%s]")
+    void errorCannotInitializeDefinitionsService(String msg);
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 220012, value = "AlertsService cannot be initialized. Msg: [%s]")
+    void errorCannotInitializeAlertsService(String msg);
+
+
 
 }

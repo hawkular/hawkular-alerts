@@ -137,6 +137,7 @@ public class AlertsHandler {
             }
 
             List<Alert> alertList = alerts.getAlerts(criteria);
+
             if (alertList.isEmpty()) {
                 log.debugf("GET - findAlerts - Empty");
                 response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());

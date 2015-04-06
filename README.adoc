@@ -37,20 +37,77 @@ This component is responsible for the communication between the alerts engine an
 | hawkular-actions-api |
 Common API for action plugins. +
 An action plugin will be deployed as a .war artifact and it will interact with the bus via this API.
-| hawkular-actions-email +
+| hawkular-actions-aerogear +
+hawkular-actions-email +
 hawkular-actions-sms +
 hawkular-actions-snmp |
 Project examples with the skeleton of a action plugin. +
 Main responsabilities are: +
 - Register at deployment time into the alerts-engine. +
-- Process actions messages.
+- Process actions messages with specific plugin semantic.
 |=======================
 
-== Setup
+== Getting started
 
-Hawkular Alerts can be easily deployed using Hawkular Bus as main container.
+*Hawkular Alerts* can be built with the following steps:
 
-1. Prepare *hawkular-bus* in your local environment
+```shell
+    git clone https://github.com/hawkular/hawkular-alerts.git
+    cd hawkular-alerts
+    mvn clean install
+```
+
+== Integration tests
+
+There are integration tests suite that downloads a wildfly server and deploys *hawkular-alerts* with an embedded
+cassandra service.
+These integration tests can be executed using *-Prest* profile:
+
+```shell
+mvn clean install -Prest
+```
+
+== Performance tests
+
+There are performance test focus in the *hawkular-alerts-engine* project.
+These tests are not active by default, we can run them using *-Pperf* profile:
+
+```shell
+mvn clean install -Pperf
+```
+
+== Documentation
+
+REST API documentation can be generated using *-Pdocgen* profile. +
+The doc is generated under *hawkular-alerts-rest/target* folder.
+
+```shell
+mvn clean install -Pdocgen
+```
+
+== Manual setup (optional)
+
+By default, the *-Prest* profile has all necessary to launch a server with dependencies to run the project.
+
+For development/debuggin scenarios it might be useful to create a manual setup of the environment required to run the
+ project.
+
+*Hawkular Alerts* has a dependency on Cassandra 2.1.1 or later. A running Cassandra cluster, which can be a single node,
+is required for unit and integration tests.
+
+1. Setting up Cassandra
+
+```shell
+1.1. Install https://github.com/pcmanus/ccm
+     a. Review its build/install instructions for python package dependencies
+        that need to be installed, namely six and pyYaml.
+1.2. ccm create -v 2.1.2 hawkular
+1.3. ccm populate -n 1
+1.4. ccm start
+1.5. mvn install
+```
+
+2. Prepare *hawkular-bus* in your local environment
 
 ```shell
 git clone https://github.com/hawkular/hawkular-bus.git
@@ -66,8 +123,8 @@ $YOUR_FOLDER/hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-8.2.
 
 We will call this wildfly server as *$NEST_HOME*
 
-[start=2]
-2. Prepare *hawkular-alerts* in your local environment
+[start=3]
+3. Prepare *hawkular-alerts* in your local environment
 
 ```shell
 git clone https://github.com/hawkular/hawkular-alerts.git
@@ -83,29 +140,12 @@ NEST_HOME=$PATH_TO/hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfl
 mvn clean install -Pdev -Dorg.hawkular.wildfly.home=$NEST_HOME
 ```
 
-[start=3]
-3. Start the nest:
+[start=4]
+4. Start the nest:
 
 ```shell
 cd $NEST_HOME
 bin/standalone.sh
-```
-
-== Integration tests
-
-Once the nest is up and running we can run the integration tests using *-Prest* profile:
-
-```shell
-mvn clean install -Prest
-```
-
-== Documentation
-
-REST API documentation can be generated using *-Pdocgen* profile. +
-The doc is generated under *hawkular-alerts-rest/target* folder.
-
-```shell
-mvn clean install -Pdocgen
 ```
 
 == Debug

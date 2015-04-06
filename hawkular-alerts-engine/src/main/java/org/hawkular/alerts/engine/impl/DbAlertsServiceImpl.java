@@ -40,7 +40,6 @@ import java.util.function.Predicate;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
-import javax.ejb.Singleton;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -71,10 +70,9 @@ import com.google.gson.GsonBuilder;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
-public class BasicAlertsServiceImpl implements AlertsService {
+public class DbAlertsServiceImpl implements AlertsService {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(BasicAlertsServiceImpl.class);
+    private final Logger log = Logger.getLogger(DbAlertsServiceImpl.class);
     private static final int DELAY;
     private static final int PERIOD;
 
@@ -117,14 +115,14 @@ public class BasicAlertsServiceImpl implements AlertsService {
         PERIOD = dPeriod;
     }
 
-    public BasicAlertsServiceImpl() {
+    public DbAlertsServiceImpl() {
         log.debugf("Creating instance.");
         pendingData = new CopyOnWriteArrayList<Data>();
         alerts = new CopyOnWriteArrayList<Alert>();
         pendingTimeouts = new CopyOnWriteArraySet<Dampening>();
         autoResolvedTriggers = new HashMap<Trigger, List<Set<ConditionEval>>>();
         disabledTriggers = new CopyOnWriteArraySet<Trigger>();
-        wakeUpTimer = new Timer("BasicAlertsServiceImpl-Timer");
+        wakeUpTimer = new Timer("DbAlertsServiceImpl-Timer");
 
         DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource", "java:jboss/datasources/HawkularDS");
     }
