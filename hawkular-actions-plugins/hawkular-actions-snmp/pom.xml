@@ -24,48 +24,42 @@
 
   <parent>
     <groupId>org.hawkular.alerts</groupId>
-    <artifactId>hawkular-alerts</artifactId>
+    <artifactId>hawkular-actions-plugins</artifactId>
     <version>1.0.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>hawkular-actions-api</artifactId>
-  <packaging>jar</packaging>
+  <artifactId>hawkular-actions-snmp</artifactId>
+  <packaging>war</packaging>
 
-  <name>Hawkular Actions Api</name>
+  <name>Hawkular Action Snmp Plugin</name>
 
-  <dependencies>
-
-    <!-- The hawkular platform will provide these -->
-    <dependency>
-      <groupId>org.hawkular.bus</groupId>
-      <artifactId>hawkular-bus-mdb</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-annotations</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-processor</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-  </dependencies>
+  <profiles>
+    <profile>
+      <id>dev</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>deploy</id>
+                <phase>install</phase>
+                <configuration>
+                  <target>
+                    <copy file="${project.build.directory}/${project.build.finalName}.war"
+                          todir="${org.hawkular.wildfly.deployments}" />
+                  </target>
+                </configuration>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

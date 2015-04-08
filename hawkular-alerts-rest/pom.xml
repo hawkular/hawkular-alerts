@@ -94,6 +94,8 @@
       <artifactId>swagger-core_2.10</artifactId>
     </dependency>
 
+    <!-- Tests -->
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -105,38 +107,21 @@
   <profiles>
     <profile>
       <id>rest</id>
-
-      <dependencies>
-
-        <dependency>
-          <groupId>org.codehaus.groovy</groupId>
-          <artifactId>groovy-all</artifactId>
-          <version>${version.org.codehaus.groovy}</version>
-          <scope>test</scope>
-        </dependency>
-
-        <dependency>
-          <groupId>org.codehaus.groovy.modules.http-builder</groupId>
-          <artifactId>http-builder</artifactId>
-          <version>${version.org.codehaus.groovy.modules.http-builder}</version>
-          <scope>test</scope>
-        </dependency>
-
-      </dependencies>
-
       <build>
         <plugins>
           <plugin>
-            <groupId>org.codehaus.gmavenplus</groupId>
-            <artifactId>gmavenplus-plugin</artifactId>
-            <version>${version.org.codehaus.gmavenplus}</version>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*ITest*</include>
+              </includes>
+            </configuration>
             <executions>
               <execution>
                 <goals>
-                  <goal>addSources</goal>
-                  <goal>addTestSources</goal>
-                  <goal>compile</goal>
-                  <goal>testCompile</goal>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
                 </goals>
               </execution>
             </executions>
@@ -144,10 +129,8 @@
         </plugins>
       </build>
     </profile>
-
     <profile>
       <id>docgen</id>
-
       <build>
         <!-- Document generation from the Annotations on the REST-API. -->
         <plugins>
@@ -180,7 +163,6 @@
         </plugins>
       </build>
     </profile>
-
   </profiles>
 
 </project>

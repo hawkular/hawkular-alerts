@@ -129,6 +129,7 @@ public class TriggersHandler {
                     errors.put("errorMsg", errorMsg);
                     response.resume(Response.status(Response.Status.BAD_REQUEST)
                             .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    return;
                 }
 
                 log.debugf("POST - createTrigger - triggerId %s ", trigger.getId());
