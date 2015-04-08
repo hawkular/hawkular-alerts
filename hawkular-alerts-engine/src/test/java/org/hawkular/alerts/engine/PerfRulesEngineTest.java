@@ -465,47 +465,47 @@ public class PerfRulesEngineTest {
         /*
             We use 5000 as nData as internally we feed 2 * nData so we compare same # objects inside the rule engine.
          */
-        perfMixedTwoConditions("perf017MixedTwoConditionsNoQueueMedium", 10000, 5000, 0);
+        perfMixedTwoConditions("perf017MixedTwoConditionsNoQueueLarge", 10000, 5000, 0);
     }
 
     @Test
-    public void per018ThresholdQueue() throws Exception {
+    public void perf018ThresholdQueue() throws Exception {
         /*
             We have 10 data in the queue
          */
-        perfThreshold("per018ThresholdQueue", 1000, 1000, 10);
+        perfThreshold("perf018ThresholdQueue", 1000, 1000, 10);
     }
 
     @Test
-    public void per019RangeQueue() throws Exception {
+    public void perf019RangeQueue() throws Exception {
         /*
             We have 10 data in the queue
          */
-        perfRange("per019RangeQueue", 1000, 1000, 10);
+        perfRange("perf019RangeQueue", 1000, 1000, 10);
     }
 
     @Test
-    public void per020CompareQueue() throws Exception {
+    public void perf020CompareQueue() throws Exception {
         /*
             We have 10 data in the queue
          */
-        perfCompare("per020CompareQueue", 1000, 1000, 10);
+        perfCompare("perf020CompareQueue", 1000, 1000, 10);
     }
 
     @Test
-    public void per021StringQueue() throws Exception {
+    public void perf021StringQueue() throws Exception {
         /*
             We have 10 data in the queue
          */
-        perfCompare("per021StringQueue", 1000, 1000, 10);
+        perfCompare("perf021StringQueue", 1000, 1000, 10);
     }
 
     @Test
-    public void per022AvailabilityQueue() throws Exception {
+    public void perf022AvailabilityQueue() throws Exception {
         /*
             We have 10 data in the queue
          */
-        perfCompare("per022AvailabilityQueue", 1000, 1000, 10);
+        perfCompare("perf022AvailabilityQueue", 1000, 1000, 10);
     }
 
     public class PerfLogger extends Logger {
