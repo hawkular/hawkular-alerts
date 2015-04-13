@@ -80,6 +80,7 @@ public class SmsListener extends BasicMessageListener<ActionMessage> {
 
         if (messageFactory == null) {
             msgLog.errorCannotSendMessage("sms", "Plugin is not started");
+            return;
         }
 
         Map<String, String> properties = msg.getProperties();

@@ -35,10 +35,15 @@
   <name>Hawkular Action Plugins</name>
   <description>Parent module of all Action Plugins</description>
 
+  <properties>
+    <org.hawkular.wildfly.home>${project.basedir}/../../../hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-${version.org.wildfly}</org.hawkular.wildfly.home>
+  </properties>
+
   <modules>
     <module>hawkular-actions-email</module>
     <module>hawkular-actions-sms</module>
     <module>hawkular-actions-snmp</module>
+    <module>hawkular-actions-aerogear</module>
   </modules>
 
   <dependencies>
