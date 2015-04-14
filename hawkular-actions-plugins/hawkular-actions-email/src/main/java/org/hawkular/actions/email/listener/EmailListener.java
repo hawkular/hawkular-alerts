@@ -61,7 +61,7 @@ public class EmailListener extends BasicMessageListener<ActionMessage> {
 
     Message createMimeMessage(ActionMessage msg) throws MessagingException {
         Message message = new MimeMessage(mailSession);
-        message.setFrom(new InternetAddress("noreply@hawkular"));
+        message.setFrom(new InternetAddress("noreply@hawkular.org"));
         if (msg.getProperties() != null && msg.getProperties().get("to") != null) {
             Address toAddress = new InternetAddress(msg.getProperties().get("to"));
             message.addRecipient(RecipientType.TO, toAddress);

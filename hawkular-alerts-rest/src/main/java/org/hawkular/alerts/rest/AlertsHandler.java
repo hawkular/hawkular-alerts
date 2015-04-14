@@ -35,17 +35,16 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
-import com.wordnik.swagger.annotations.Api;
-import com.wordnik.swagger.annotations.ApiOperation;
-import com.wordnik.swagger.annotations.ApiParam;
-
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.rest.log.MsgLogger;
-
 import org.jboss.logging.Logger;
+
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
 
 /**
  * REST endpoint for alerts
@@ -110,10 +109,10 @@ public class AlertsHandler {
 
             List<Alert> alertList = alerts.getAlerts(criteria);
             if (alertList.isEmpty()) {
-                log.debugf("GET - findAllAlerts - Empty");
+                log.debugf("GET - findAlerts - Empty");
                 response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
             } else {
-                log.debugf("GET - findAllAlerts - %s alerts", alertList.size());
+                log.debugf("GET - findAlerts - %s alerts", alertList.size());
                 response.resume(Response.status(Response.Status.OK).entity(alertList).type(APPLICATION_JSON_TYPE)
                         .build());
             }
