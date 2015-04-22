@@ -55,7 +55,7 @@ public class StringCondition extends Condition {
 
     public StringCondition(String triggerId,
                            String dataId, Operator operator, String pattern, boolean ignoreCase) {
-        this(triggerId, Mode.FIRE, 1, 1, dataId, operator, pattern, ignoreCase);
+        this(triggerId, Mode.FIRING, 1, 1, dataId, operator, pattern, ignoreCase);
     }
 
     public StringCondition(String triggerId, Mode triggerMode,
@@ -65,7 +65,7 @@ public class StringCondition extends Condition {
 
     public StringCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator, String pattern, boolean ignoreCase) {
-        this(triggerId, Mode.FIRE, conditionSetSize, conditionSetIndex, dataId, operator, pattern, ignoreCase);
+        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, operator, pattern, ignoreCase);
     }
 
     public StringCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,

@@ -30,14 +30,46 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class Alert {
 
+    public enum Status {
+        OPEN, ACKNOWLEDGED, RESOLVED
+    };
+
+    // This is a generated composite of form: triggerId|ctime
+    @JsonInclude
+    private String alertId;
+
     @JsonInclude
     private String triggerId;
+
+    @JsonInclude
+    private long ctime;
 
     @JsonInclude(Include.NON_EMPTY)
     private List<Set<ConditionEval>> evalSets;
 
     @JsonInclude
-    private long ctime;
+    private Status status;
+
+    @JsonInclude
+    private long ackTime;
+
+    @JsonInclude
+    private String ackBy;
+
+    @JsonInclude
+    private String ackNotes;
+
+    @JsonInclude
+    private long resolvedTime;
+
+    @JsonInclude
+    private String resolvedBy;
+
+    @JsonInclude
+    private String resolvedNotes;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private List<Set<ConditionEval>> resolvedEvalSets;
 
     public Alert() {
         // for json assembly
@@ -47,6 +79,17 @@ public class Alert {
         this.triggerId = triggerId;
         this.evalSets = evalSets;
         this.ctime = System.currentTimeMillis();
+        this.status = Status.OPEN;
+
+        this.alertId = triggerId + "|" + ctime;
+    }
+
+    public String getAlertId() {
+        return alertId;
+    }
+
+    public void setAlertId(String alertId) {
+        this.alertId = alertId;
     }
 
     public List<Set<ConditionEval>> getEvalSets() {
@@ -57,11 +100,11 @@ public class Alert {
         this.evalSets = evalSets;
     }
 
-    public long getCTime() {
+    public long getCtime() {
         return ctime;
     }
 
-    public void setCTime(long ctime) {
+    public void setCtime(long ctime) {
         this.ctime = ctime;
     }
 
@@ -73,34 +116,99 @@ public class Alert {
         this.triggerId = triggerId;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public Status getStatus() {
+        return status;
+    }
 
-        Alert alert = (Alert) o;
+    public void setStatus(Status status) {
+        this.status = status;
+    }
 
-        if (ctime != alert.ctime)
-            return false;
-        if (evalSets != null ? !evalSets.equals(alert.evalSets) : alert.evalSets != null) return false;
-        if (triggerId != null ? !triggerId.equals(alert.triggerId) : alert.triggerId != null) return false;
+    public long getAckTime() {
+        return ackTime;
+    }
 
-        return true;
+    public void setAckTime(long ackTime) {
+        this.ackTime = ackTime;
+    }
+
+    public String getAckBy() {
+        return ackBy;
+    }
+
+    public void setAckBy(String ackBy) {
+        this.ackBy = ackBy;
+    }
+
+    public String getAckNotes() {
+        return ackNotes;
+    }
+
+    public void setAckNotes(String ackNotes) {
+        this.ackNotes = ackNotes;
+    }
+
+    public long getResolvedTime() {
+        return resolvedTime;
+    }
+
+    public void setResolvedTime(long resolvedTime) {
+        this.resolvedTime = resolvedTime;
+    }
+
+    public String getResolvedBy() {
+        return resolvedBy;
+    }
+
+    public void setResolvedBy(String resolvedBy) {
+        this.resolvedBy = resolvedBy;
+    }
+
+    public String getResolvedNotes() {
+        return resolvedNotes;
+    }
+
+    public void setResolvedNotes(String resolvedNotes) {
+        this.resolvedNotes = resolvedNotes;
+    }
+
+    public List<Set<ConditionEval>> getResolvedEvalSets() {
+        return resolvedEvalSets;
+    }
+
+    public void setResolvedEvalSets(List<Set<ConditionEval>> resolvedEvalSets) {
+        this.resolvedEvalSets = resolvedEvalSets;
     }
 
     @Override
     public int hashCode() {
-        int result = triggerId != null ? triggerId.hashCode() : 0;
-        result = 31 * result + (evalSets != null ? evalSets.hashCode() : 0);
-        result = 31 * result + (int) (ctime ^ (ctime >>> 32));
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((alertId == null) ? 0 : alertId.hashCode());
         return result;
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Alert other = (Alert) obj;
+        if (alertId == null) {
+            if (other.alertId != null)
+                return false;
+        } else if (!alertId.equals(other.alertId))
+            return false;
+        return true;
+    }
+
+    @Override
     public String toString() {
-        return "Alert [triggerId=" + triggerId + ", " +
-                "evals=" + evalSets + ", " +
-                "ctime=" + ctime + "]";
+        return "Alert [alertId=" + alertId + ", status=" + status + ", ackTime=" + ackTime
+                + ", ackBy=" + ackBy + ", resolvedTime=" + resolvedTime + ", resolvedBy=" + resolvedBy + "]";
     }
 
 }

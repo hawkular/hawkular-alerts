@@ -16,7 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import static org.hawkular.alerts.api.model.trigger.Trigger.Mode.FIRE;
+import static org.hawkular.alerts.api.model.trigger.Trigger.Mode.FIRING;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -52,7 +52,7 @@ public class AvailabilityCondition extends Condition {
 
     public AvailabilityCondition(String triggerId,
                                  String dataId, Operator operator) {
-        this(triggerId, FIRE, 1, 1, dataId, operator);
+        this(triggerId, FIRING, 1, 1, dataId, operator);
     }
 
     public AvailabilityCondition(String triggerId, Mode triggerMode,
@@ -62,7 +62,7 @@ public class AvailabilityCondition extends Condition {
 
     public AvailabilityCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator) {
-        this(triggerId, FIRE, conditionSetSize, conditionSetIndex, dataId, operator);
+        this(triggerId, FIRING, conditionSetSize, conditionSetIndex, dataId, operator);
     }
 
     public AvailabilityCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,

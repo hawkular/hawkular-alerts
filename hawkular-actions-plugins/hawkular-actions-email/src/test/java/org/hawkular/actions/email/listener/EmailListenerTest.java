@@ -25,10 +25,10 @@ import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.Message.RecipientType;
 
-import com.google.common.collect.ImmutableMap;
-
 import org.hawkular.actions.api.model.ActionMessage;
 import org.junit.Test;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * @author Thomas Segismont
@@ -49,7 +49,7 @@ public class EmailListenerTest {
 
         Message mimeMessage = emailListener.createMimeMessage(actionMessage);
 
-        assertAddressIs("sender", "noreply@hawkular", mimeMessage.getFrom());
+        assertAddressIs("sender", "noreply@hawkular.org", mimeMessage.getFrom());
         assertAddressIs("recipient", expectedRecipient, mimeMessage.getRecipients(RecipientType.TO));
         assertAddressIs("carbon copy", expectedCarbonCopy, mimeMessage.getRecipients(RecipientType.CC));
 

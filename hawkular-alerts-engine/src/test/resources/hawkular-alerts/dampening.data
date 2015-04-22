@@ -1,2 +1,2 @@
 # <triggerId>,<triggerMode>,<type>,<evalTrueSetting>,<evalTotalSetting>,<evalTimeSetting>
-trigger-1,FIRE,STRICT,2,2,0
+trigger-1,FIRING,STRICT,2,2,0

@@ -179,10 +179,11 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     "  PRIMARY KEY(triggerId, category, name) )");
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_ALERTS " +
-                    "( triggerId VARCHAR2(250) NOT NULL, " +
+                    "( alertId VARCHAR2(300) PRIMARY KEY, " +
+                    "  triggerId VARCHAR2(250) NOT NULL, " +
                     "  ctime long NOT NULL," +
-                    "  payload CLOB," +
-                    "  PRIMARY KEY(triggerId, ctime) )");
+                    "  status VARCHAR2(20) NOT NULL," +
+                    "  payload CLOB )");
 
             s.close();
 
@@ -258,22 +259,26 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length == 8) {
+                    if (fields.length == 10) {
                         String triggerId = fields[0];
                         boolean enabled = new Boolean(fields[1]).booleanValue();
-                        boolean safetyEnabled = new Boolean(fields[2]).booleanValue();
-                        String name = fields[3];
-                        String description = fields[4];
-                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[5]);
-                        TriggerTemplate.Match safetyMatch = TriggerTemplate.Match.valueOf(fields[6]);
-                        String[] notifiers = fields[7].split("\\|");
+                        String name = fields[2];
+                        String description = fields[3];
+                        boolean autoDisable = new Boolean(fields[4]).booleanValue();
+                        boolean autoResolve = new Boolean(fields[5]).booleanValue();
+                        boolean autoResolveAlerts = new Boolean(fields[6]).booleanValue();
+                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[7]);
+                        TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match.valueOf(fields[8]);
+                        String[] notifiers = fields[9].split("\\|");
 
                         Trigger trigger = new Trigger(triggerId, name);
                         trigger.setEnabled(enabled);
-                        trigger.setSafetyEnabled(safetyEnabled);
+                        trigger.setAutoDisable(autoDisable);
+                        trigger.setAutoResolve(autoResolve);
+                        trigger.setAutoResolveAlerts(autoResolveAlerts);
                         trigger.setDescription(description);
                         trigger.setFiringMatch(firingMatch);
-                        trigger.setSafetyMatch(safetyMatch);
+                        trigger.setAutoResolveMatch(autoResolveMatch);
                         for (String notifier : notifiers) {
                             trigger.addAction(notifier);
                         }
@@ -1095,7 +1100,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         newTrigger.setName(trigger.getName());
         newTrigger.setDescription(trigger.getDescription());
         newTrigger.setFiringMatch(trigger.getFiringMatch());
-        newTrigger.setSafetyMatch(trigger.getSafetyMatch());
+        newTrigger.setAutoResolveMatch(trigger.getAutoResolveMatch());
         newTrigger.setActions(trigger.getActions());
 
         addTrigger(newTrigger);

@@ -25,12 +25,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
 import org.h2.jdbcx.JdbcDataSource;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Tag;
@@ -100,7 +102,7 @@ public class DbDefinitionsServiceImplTest {
         assertTrue(nt.toString(), nt.getName().equals(t.getName()));
         assertTrue(nt.toString(), nt.getDescription().equals(t.getDescription()));
         assertTrue(nt.toString(), nt.getFiringMatch().equals(t.getFiringMatch()));
-        assertTrue(nt.toString(), nt.getSafetyMatch().equals(t.getSafetyMatch()));
+        assertTrue(nt.toString(), nt.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
 
         Collection<Condition> ncs = db.getTriggerConditions(nt.getId(), null);
         assertTrue(ncs.toString(), ncs.size() == 1);
@@ -205,6 +207,26 @@ public class DbDefinitionsServiceImplTest {
 
         @Override
         public void addAlerts(Collection<Alert> alerts) throws Exception {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void ackAlerts(Collection<String> alertIds, String ackBy, String ackNotes) throws Exception {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void resolveAlerts(Collection<String> alertIds, String resolvedBy, String resolvedNotes,
+                List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void resolveAlertsForTrigger(String triggerId, String resolvedBy, String resolvedNotes,
+                List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
             // TODO Auto-generated method stub
 
         }

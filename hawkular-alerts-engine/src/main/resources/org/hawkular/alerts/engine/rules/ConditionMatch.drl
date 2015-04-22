@@ -44,11 +44,14 @@ import org.jboss.logging.Logger;
 
 import java.util.Set;
 import java.util.List;
+import java.util.Map;
 
 global Logger log;
 global ActionsService actions;
 global List alerts;
 global Set pendingTimeouts;
+global Map autoResolvedTriggers;
+global Set disabledTriggers;
 
 
 ////// CONDITION MATCHING
@@ -397,8 +400,8 @@ end
 // until the safety mode Dampening is satisfied and the Trigger returns to FIRE mode.
 rule AlertOnSatisfiedDampening
     when
-        $t  : Trigger( mode == Mode.FIRE, $tid : id )
-        $d  : Dampening( triggerMode == Mode.FIRE, triggerId == $tid, satisfied == true )
+        $t  : Trigger( mode == Mode.FIRING, $tid : id )
+        $d  : Dampening( triggerMode == Mode.FIRING, triggerId == $tid, satisfied == true )
     then
         if (log != null && log.isDebugEnabled()) {
             log.debug("AlertOnSatisfiedDampening! " + $d.log());
@@ -418,33 +421,45 @@ rule AlertOnSatisfiedDampening
         $d.reset();
         insert( $d );
 
-        if ($t.isSafetyEnabled()) {
+        if ($t.isAutoResolve()) {
             if (log != null && log.isDebugEnabled()) {
-                log.debug("Setting Trigger to Safety Mode! " + $t);
+                log.debug("Setting Trigger to AutoResolve Mode! " + $t);
             }
             retract( $t );
-            $t.setMode(Mode.SAFETY);
+            $t.setMode(Mode.AUTORESOLVE);
             insert( $t );
 
+        } else if ($t.isAutoDisable()) {
+            if (log != null && log.isDebugEnabled()) {
+                log.debug("Setting Trigger Disabled! " + $t);
+            }
+            retract( $t );
+            $t.setEnabled( false );
+
+            disabledTriggers.add( $t );
+
         } else if (log != null && log.isDebugEnabled()) {
-            log.debug("Trigger remains in Fire mode, Safety Mode not enabled. " + $t);
+            log.debug("Trigger remains in Firing mode, AutoDisable and AutoResolve not set. " + $t);
         }
 end
 
 
 rule SetFiringModeOnSatisfiedDampening
     when
-        $t  : Trigger( mode == Mode.SAFETY, $tid : id )
-        $d  : Dampening( triggerMode == Mode.SAFETY, triggerId == $tid, satisfied == true )
+        $t  : Trigger( mode == Mode.AUTORESOLVE, $tid : id )
+        $d  : Dampening( triggerMode == Mode.AUTORESOLVE, triggerId == $tid, satisfied == true )
     then
         if (log != null && log.isDebugEnabled()) {
             log.debug("SetFiringModeOnSatisfiedDampening! " + $d.log());
         }
+
+        autoResolvedTriggers.put( $t, $d.getSatisfyingEvals() );
+
         retract( $d );
         $d.reset();
         insert( $d );
 
         retract( $t );
-        $t.setMode(Mode.FIRE);
+        $t.setMode(Mode.FIRING);
         insert( $t );
 end
