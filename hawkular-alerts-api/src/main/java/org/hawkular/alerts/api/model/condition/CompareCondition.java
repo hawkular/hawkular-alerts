@@ -16,7 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import static org.hawkular.alerts.api.model.trigger.Trigger.Mode.FIRE;
+import static org.hawkular.alerts.api.model.trigger.Trigger.Mode.FIRING;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -59,7 +59,7 @@ public class CompareCondition extends Condition {
 
     public CompareCondition(String triggerId,
                             String dataId, Operator operator, Double data2Multiplier, String data2Id) {
-        this(triggerId, FIRE, 1, 1, dataId, operator, data2Multiplier, data2Id);
+        this(triggerId, FIRING, 1, 1, dataId, operator, data2Multiplier, data2Id);
     }
 
     public CompareCondition(String triggerId, Mode triggerMode,
@@ -69,7 +69,7 @@ public class CompareCondition extends Condition {
 
     public CompareCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator, Double data2Multiplier, String data2Id) {
-        this(triggerId, FIRE, conditionSetSize, conditionSetIndex, dataId, operator, data2Multiplier, data2Id);
+        this(triggerId, FIRING, conditionSetSize, conditionSetIndex, dataId, operator, data2Multiplier, data2Id);
     }
 
     public CompareCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,

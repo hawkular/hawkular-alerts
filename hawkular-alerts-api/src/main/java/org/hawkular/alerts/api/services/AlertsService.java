@@ -18,8 +18,10 @@ package org.hawkular.alerts.api.services;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
 
 /**
@@ -63,4 +65,39 @@ public interface AlertsService {
      * @return
      */
     void addAlerts(Collection<Alert> alerts) throws Exception;
+
+    /**
+     * The alerts must already have been added. Set the alerts to ACKNOWLEDGED status. The ackTime will be set to the
+     * system time.
+     * @param alerts Alerts to be acknowledged.
+     * @param ackBy Optional. Typically the user acknowledging the alerts.
+     * @param ackNotes Optional notes about the acknowledgement.
+     * @return
+     */
+    void ackAlerts(Collection<String> alertIds, String ackBy, String ackNotes) throws Exception;
+
+    /**
+     * The alerts must already have been added. Set the alerts to RESOLVED status. The resolvedTime will be set to the
+     * system time.
+     * @param alerts Alerts to be acknowledged.
+     * @param resolvedBy Optional. Typically the user resolving the alerts.
+     * @param resolvedNotes Optional notes about the resolution.
+     * @param resolvedEvalSets Optional. Typically the evalSets leading to an auto-resolved alert.
+     * @return
+     */
+    void resolveAlerts(Collection<String> alertIds, String resolvedBy, String resolvedNotes,
+            List<Set<ConditionEval>> resolvedEvalSets) throws Exception;
+
+    /**
+     * Set unresolved alerts for the provided trigger to RESOLVED status. The resolvedTime will be set to the
+     * system time.
+     * @param triggerId
+     * @param resolvedBy Optional. Typically the user resolving the alerts.
+     * @param resolvedNotes Optional notes about the resolution.
+     * @param resolvedEvalSets Optional. Typically the evalSets leading to an auto-resolved alert.
+     * @return
+     */
+    void resolveAlertsForTrigger(String triggerId, String resolvedBy, String resolvedNotes,
+            List<Set<ConditionEval>> resolvedEvalSets) throws Exception;
+
 }

@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class Trigger extends TriggerTemplate {
 
     public enum Mode {
-        FIRE, SAFETY
+        FIRING, AUTORESOLVE
     };
 
     @JsonInclude
@@ -38,9 +38,6 @@ public class Trigger extends TriggerTemplate {
 
     @JsonInclude
     private boolean enabled;
-
-    @JsonInclude
-    private boolean safetyEnabled;
 
     @JsonIgnore
     private Mode mode;
@@ -72,8 +69,7 @@ public class Trigger extends TriggerTemplate {
         this.id = id;
 
         this.enabled = false;
-        this.safetyEnabled = false;
-        this.mode = Mode.FIRE;
+        this.mode = Mode.FIRING;
         this.match = getFiringMatch();
     }
 
@@ -100,26 +96,7 @@ public class Trigger extends TriggerTemplate {
 
     public void setMode(Mode mode) {
         this.mode = mode;
-        setMatch(this.mode == Mode.FIRE ? getFiringMatch() : getSafetyMatch());
-    }
-
-    /**
-     * This tells you whether the Trigger defines safety conditions and whether safety mode is enabled.
-     * This does NOT return the current <code>mode</code> of the Trigger.
-     * @return true if this Trigger supports safety mode and is it enabled.
-     * @see {@link #getMode()} to see the current <code>mode</code>.
-     */
-    public boolean isSafetyEnabled() {
-        return safetyEnabled;
-    }
-
-    /**
-     * Set true if safety conditions and dampening are fully defined and should be activated on a Trigger firing. Set
-     * false otherwise.
-     * @param safetyEnabled
-     */
-    public void setSafetyEnabled(boolean safetyEnabled) {
-        this.safetyEnabled = safetyEnabled;
+        setMatch(this.mode == Mode.FIRING ? getFiringMatch() : getAutoResolveMatch());
     }
 
     @JsonIgnore
@@ -158,14 +135,8 @@ public class Trigger extends TriggerTemplate {
 
     @Override
     public String toString() {
-        return "Trigger [id=" + id + ", " +
-                "name=" + getName() + ", " +
-                "description=" + getDescription() + ", " +
-                "firingMatch=" + getFiringMatch() + ", " +
-                "safetyMatch=" + getSafetyMatch() + ", " +
-                "enabled=" + enabled + ", " +
-                "mode=" + mode + ", " +
-                "match=" + getMatch() + "]";
+        return "Trigger [id=" + id + ", enabled=" + enabled + ", mode=" + mode + ", getName()=" + getName()
+                + ", isAutoDisable()=" + isAutoDisable() + ", isAutoResolve()=" + isAutoResolve() + "]";
     }
 
 }

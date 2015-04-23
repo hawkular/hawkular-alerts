@@ -18,6 +18,7 @@ package org.hawkular.alerts.api.services;
 
 import java.util.Collection;
 
+import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.trigger.Tag;
 
 /**
@@ -29,6 +30,10 @@ import org.hawkular.alerts.api.model.trigger.Tag;
 public class AlertsCriteria {
     Long startTime = null;
     Long endTime = null;
+    String alertId = null;
+    Collection<String> alertIds = null;
+    Alert.Status status = null;
+    Collection<Alert.Status> statusSet = null;
     String triggerId = null;
     Collection<String> triggerIds = null;
     Tag tag = null;
@@ -58,6 +63,38 @@ public class AlertsCriteria {
      */
     public void setEndTime(Long endTime) {
         this.endTime = endTime;
+    }
+
+    public String getAlertId() {
+        return alertId;
+    }
+
+    public void setAlertId(String alertId) {
+        this.alertId = alertId;
+    }
+
+    public Collection<String> getAlertIds() {
+        return alertIds;
+    }
+
+    public void setAlertIds(Collection<String> alertIds) {
+        this.alertIds = alertIds;
+    }
+
+    public Alert.Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Alert.Status status) {
+        this.status = status;
+    }
+
+    public Collection<Alert.Status> getStatusSet() {
+        return statusSet;
+    }
+
+    public void setStatusSet(Collection<Alert.Status> statusSet) {
+        this.statusSet = statusSet;
     }
 
     public String getTriggerId() {

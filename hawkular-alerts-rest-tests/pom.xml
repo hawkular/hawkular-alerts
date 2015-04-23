@@ -42,6 +42,20 @@
     </dependency>
 
     <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-bus</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hawkular.bus</groupId>
+      <artifactId>hawkular-bus-rest-client</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>hawkular-alerts-ear</artifactId>
       <version>${project.version}</version>
@@ -92,10 +106,76 @@
 
   <profiles>
     <profile>
-      <id>rest</id>
+      <id>rest-only</id>
       <properties>
         <!-- IMPORTANT: The port must be the port offset + 8080. -->
-        <hawkular.base-uri>http://127.0.0.1:9977/hawkular/alerts/</hawkular.base-uri>
+        <hawkular.host>127.0.0.1</hawkular.host>
+        <hawkular.port>9977</hawkular.port>
+        <hawkular.path>/hawkular/alerts/</hawkular.path>
+        <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
+        <!-- IMPORTANT: The management port must be the port offset + 9990. -->
+        <wildfly.management.port>11887</wildfly.management.port>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>copy-data-dir</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${project.build.directory}/wildfly-data</outputDirectory>
+                  <overwrite>true</overwrite>
+                  <resources>
+                    <resource>
+                      <directory>${project.basedir}/src/test/wildfly-data</directory>
+                      <includes>
+                        <include>**/*</include>
+                      </includes>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*ITest*</include>
+              </includes>
+              <systemPropertyVariables>
+                <hawkular.host>${hawkular.host}</hawkular.host>
+                <hawkular.port>${hawkular.port}</hawkular.port>
+                <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
+              </systemPropertyVariables>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>rest</id>
+      <properties>
+        <hawkular.host>127.0.0.1</hawkular.host>
+        <hawkular.port>9977</hawkular.port>
+        <hawkular.path>/hawkular/alerts/</hawkular.path>
+        <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
+        <!-- IMPORTANT: The port must be the port offset + 8080. -->
         <wildfly.port.offset>1897</wildfly.port.offset>
         <!-- IMPORTANT: The management port must be the port offset + 9990. -->
         <wildfly.management.port>11887</wildfly.management.port>
@@ -135,6 +215,8 @@
                 <include>**/*ITest*</include>
               </includes>
               <systemPropertyVariables>
+                <hawkular.host>${hawkular.host}</hawkular.host>
+                <hawkular.port>${hawkular.port}</hawkular.port>
                 <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
               </systemPropertyVariables>
             </configuration>

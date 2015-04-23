@@ -39,6 +39,12 @@ class AlertsITest extends AbstractITestBase {
         def resp = client.get(path: "", query: [endTime:now, startTime:"0",triggerIds:"Trigger-01,Trigger-02"] )
         assert resp.status == 200 || resp.status == 204 : resp.status
 
+        resp = client.get(path: "", query: [endTime:now, startTime:"0",alertIds:"Trigger-01|"+now+","+"Trigger-02|"+now] )
+        assert resp.status == 200 || resp.status == 204 : resp.status
+
+        resp = client.get(path: "", query: [endTime:now, startTime:"0",statuses:"OPEN,ACKNOWLEDGED,RESOLVED"] )
+        assert resp.status == 200 || resp.status == 204 : resp.status
+
         resp = client.get(path: "", query: [tags:"data-01,data-02"] )
         assert resp.status == 200 || resp.status == 204 : resp.status
 

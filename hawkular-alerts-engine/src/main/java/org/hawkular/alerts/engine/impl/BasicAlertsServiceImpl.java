@@ -26,8 +26,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -43,6 +46,7 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.condition.Alert.Status;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
@@ -77,6 +81,8 @@ public class BasicAlertsServiceImpl implements AlertsService {
     private final List<Data> pendingData;
     private final List<Alert> alerts;
     private final Set<Dampening> pendingTimeouts;
+    private final Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers;
+    private final Set<Trigger> disabledTriggers;
 
     private final Timer wakeUpTimer;
     private TimerTask rulesTask;
@@ -116,6 +122,8 @@ public class BasicAlertsServiceImpl implements AlertsService {
         pendingData = new CopyOnWriteArrayList<Data>();
         alerts = new CopyOnWriteArrayList<Alert>();
         pendingTimeouts = new CopyOnWriteArraySet<Dampening>();
+        autoResolvedTriggers = new HashMap<Trigger, List<Set<ConditionEval>>>();
+        disabledTriggers = new CopyOnWriteArraySet<Trigger>();
         wakeUpTimer = new Timer("BasicAlertsServiceImpl-Timer");
 
         DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource", "java:jboss/datasources/HawkularDS");
@@ -155,14 +163,16 @@ public class BasicAlertsServiceImpl implements AlertsService {
 
         try {
             c = ds.getConnection();
-            String sql = "INSERT INTO HWK_ALERTS_ALERTS VALUES (?,?,?)";
+            String sql = "INSERT INTO HWK_ALERTS_ALERTS VALUES (?,?,?,?,?)";
             ps = c.prepareStatement(sql);
 
             for (Alert a : alerts) {
-                ps.setString(1, a.getTriggerId());
-                ps.setLong(2, a.getCTime());
+                ps.setString(1, a.getAlertId());
+                ps.setString(2, a.getTriggerId());
+                ps.setLong(3, a.getCtime());
+                ps.setString(4, a.getStatus().name());
                 sr = new StringReader(toJson(a));
-                ps.setCharacterStream(3, sr);
+                ps.setCharacterStream(5, sr);
                 log.debugf("SQL: " + sql);
                 ps.executeUpdate();
                 sr.close();
@@ -203,6 +213,28 @@ public class BasicAlertsServiceImpl implements AlertsService {
             if (filter) {
                 int filters = 0;
                 sql.append(" WHERE ");
+                if (isEmpty(criteria.getAlertIds())) {
+                    if (!isEmpty(criteria.getAlertId())) {
+                        sql.append(filters++ > 0 ? " AND " : " ");
+                        sql.append("( a.alertId = '");
+                        sql.append(criteria.getAlertId());
+                        sql.append("' )");
+                    }
+                } else {
+                    sql.append(filters++ > 0 ? " AND " : " ");
+                    sql.append("( a.alertId IN (");
+                    int entries = 0;
+                    for (String alertId : criteria.getAlertIds()) {
+                        if (isEmpty(alertId)) {
+                            continue;
+                        }
+                        sql.append(entries++ > 0 ? "," : "");
+                        sql.append("'");
+                        sql.append(alertId);
+                        sql.append("'");
+                    }
+                    sql.append(") )");
+                }
                 if (isEmpty(criteria.getTriggerIds())) {
                     if (!isEmpty(criteria.getTriggerId())) {
                         sql.append(filters++ > 0 ? " AND " : " ");
@@ -221,6 +253,25 @@ public class BasicAlertsServiceImpl implements AlertsService {
                         sql.append(entries++ > 0 ? "," : "");
                         sql.append("'");
                         sql.append(triggerId);
+                        sql.append("'");
+                    }
+                    sql.append(") )");
+                }
+                if (isEmpty(criteria.getStatusSet())) {
+                    if (null != criteria.getStatus()) {
+                        sql.append(filters++ > 0 ? " AND " : " ");
+                        sql.append("( a.status = '");
+                        sql.append(criteria.getStatus().name());
+                        sql.append("' )");
+                    }
+                } else {
+                    sql.append(filters++ > 0 ? " AND " : " ");
+                    sql.append("( a.status IN (");
+                    int entries = 0;
+                    for (Alert.Status status : criteria.getStatusSet()) {
+                        sql.append(entries++ > 0 ? "," : "");
+                        sql.append("'");
+                        sql.append(status.name());
                         sql.append("'");
                     }
                     sql.append(") )");
@@ -345,6 +396,8 @@ public class BasicAlertsServiceImpl implements AlertsService {
         pendingData.clear();
         alerts.clear();
         pendingTimeouts.clear();
+        autoResolvedTriggers.clear();
+        disabledTriggers.clear();
 
         rulesTask = new RulesInvoker();
         wakeUpTimer.schedule(rulesTask, DELAY, PERIOD);
@@ -376,6 +429,8 @@ public class BasicAlertsServiceImpl implements AlertsService {
         rules.addGlobal("actions", actions);
         rules.addGlobal("alerts", alerts);
         rules.addGlobal("pendingTimeouts", pendingTimeouts);
+        rules.addGlobal("autoResolvedTriggers", autoResolvedTriggers);
+        rules.addGlobal("disabledTriggers", disabledTriggers);
 
         rulesTask = new RulesInvoker();
         wakeUpTimer.schedule(rulesTask, DELAY, PERIOD);
@@ -491,6 +546,8 @@ public class BasicAlertsServiceImpl implements AlertsService {
                     rules.fire();
                     addAlerts(alerts);
                     alerts.clear();
+                    handleDisabledTriggers();
+                    handleAutoResolvedTriggers();
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -535,6 +592,140 @@ public class BasicAlertsServiceImpl implements AlertsService {
             pendingTimeouts.removeAll(timeouts);
             return timeouts.size();
         }
+    }
+
+    private void handleDisabledTriggers() {
+        try {
+            for (Trigger t : disabledTriggers) {
+                try {
+                    t.setEnabled(false);
+                    definitions.updateTrigger(t);
+
+                } catch (Exception e) {
+                    log.errorf("Failed to persist updated trigger. Could not autoDisable %s", t);
+                }
+            }
+        } finally {
+            disabledTriggers.clear();
+        }
+    }
+
+    private void handleAutoResolvedTriggers() {
+        try {
+            for (Map.Entry<Trigger, List<Set<ConditionEval>>> entry : autoResolvedTriggers.entrySet()) {
+                Trigger t = entry.getKey();
+                try {
+                    if (t.isAutoResolveAlerts()) {
+                        resolveAlertsForTrigger(t.getId(), "AUTO", null, entry.getValue());
+                    }
+                } catch (Exception e) {
+                    log.errorf("Failed to resolve Alerts. Could not AutoResolve alerts for trigger %s", t);
+                }
+            }
+        } finally {
+            autoResolvedTriggers.clear();
+        }
+    }
+
+    @Override
+    public void ackAlerts(Collection<String> alertIds, String ackBy, String ackNotes) throws Exception {
+        if (isEmpty(alertIds)) {
+            return;
+        }
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setAlertIds(alertIds);
+        List<Alert> alertsToAck = getAlerts(criteria);
+
+        for (Alert a : alertsToAck) {
+            a.setStatus(Status.ACKNOWLEDGED);
+            a.setAckBy(ackBy);
+            a.setAckNotes(ackNotes);
+            updateAlertStatus(a);
+        }
+    }
+
+    @Override
+    public void resolveAlerts(Collection<String> alertIds, String resolvedBy, String resolvedNotes,
+            List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
+
+        if (isEmpty(alertIds)) {
+            return;
+        }
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setAlertIds(alertIds);
+        List<Alert> alertsToResolve = getAlerts(criteria);
+
+        for (Alert a : alertsToResolve) {
+            a.setStatus(Status.RESOLVED);
+            a.setResolvedBy(resolvedBy);
+            a.setResolvedNotes(resolvedNotes);
+            a.setResolvedEvalSets(resolvedEvalSets);
+            updateAlertStatus(a);
+        }
+    }
+
+    @Override
+    public void resolveAlertsForTrigger(String triggerId, String resolvedBy, String resolvedNotes,
+            List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
+
+        if (isEmpty(triggerId)) {
+            return;
+        }
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setTriggerId(triggerId);
+        criteria.setStatusSet(EnumSet.complementOf(EnumSet.of(Alert.Status.RESOLVED)));
+        List<Alert> alertsToResolve = getAlerts(criteria);
+
+        for (Alert a : alertsToResolve) {
+            a.setStatus(Status.RESOLVED);
+            a.setResolvedBy(resolvedBy);
+            a.setResolvedNotes(resolvedNotes);
+            a.setResolvedEvalSets(resolvedEvalSets);
+            updateAlertStatus(a);
+        }
+    }
+
+    private Alert updateAlertStatus(Alert alert) throws Exception {
+        if (alert == null || alert.getAlertId() == null || alert.getAlertId().isEmpty()) {
+            throw new IllegalArgumentException("AlertId must be not null");
+        }
+        if (ds == null) {
+            throw new Exception("DataSource is null");
+        }
+
+        Connection c = null;
+        PreparedStatement ps = null;
+        StringReader sr = null;
+        try {
+            c = ds.getConnection();
+
+            StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_ALERTS SET ")
+                    .append("status = '").append(alert.getStatus().name()).append("', ")
+                    .append("payload = ? ")
+                    .append("WHERE alertId = '").append(alert.getAlertId()).append("' ");
+            log.debugf("SQL: " + sql);
+            ps = c.prepareStatement(sql.toString());
+            sr = new StringReader(toJson(alert));
+            ps.setCharacterStream(1, sr);
+            log.debugf("SQL: " + sql);
+            ps.executeUpdate();
+            sr.close();
+            sr = null;
+
+        } catch (SQLException e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            close(c, ps, null);
+            if (null != sr) {
+                sr.close();
+            }
+        }
+
+        return alert;
     }
 
 }

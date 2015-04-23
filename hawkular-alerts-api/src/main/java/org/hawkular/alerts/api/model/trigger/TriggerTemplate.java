@@ -40,6 +40,15 @@ public abstract class TriggerTemplate {
     @JsonInclude
     private String description;
 
+    @JsonInclude
+    private boolean autoDisable;
+
+    @JsonInclude
+    private boolean autoResolve;
+
+    @JsonInclude
+    private boolean autoResolveAlerts;
+
     /** A group of actions's ids. */
     @JsonInclude(Include.NON_EMPTY)
     private Set<String> actions;
@@ -48,13 +57,16 @@ public abstract class TriggerTemplate {
     private Match firingMatch;
 
     @JsonInclude
-    private Match safetyMatch;
+    private Match autoResolveMatch;
 
     public TriggerTemplate(String name) {
         this.name = name;
 
+        this.autoDisable = false;
+        this.autoResolve = false;
+        this.autoResolveAlerts = true;
         this.firingMatch = Match.ALL;
-        this.safetyMatch = Match.ALL;
+        this.autoResolveMatch = Match.ALL;
         this.actions = new HashSet();
     }
 
@@ -77,6 +89,30 @@ public abstract class TriggerTemplate {
         this.description = description;
     }
 
+    public boolean isAutoDisable() {
+        return autoDisable;
+    }
+
+    public void setAutoDisable(boolean autoDisable) {
+        this.autoDisable = autoDisable;
+    }
+
+    public boolean isAutoResolve() {
+        return autoResolve;
+    }
+
+    public void setAutoResolve(boolean autoResolve) {
+        this.autoResolve = autoResolve;
+    }
+
+    public boolean isAutoResolveAlerts() {
+        return autoResolveAlerts;
+    }
+
+    public void setAutoResolveAlerts(boolean autoResolveAlerts) {
+        this.autoResolveAlerts = autoResolveAlerts;
+    }
+
     public Match getFiringMatch() {
         return firingMatch;
     }
@@ -85,12 +121,12 @@ public abstract class TriggerTemplate {
         this.firingMatch = firingMatch;
     }
 
-    public Match getSafetyMatch() {
-        return safetyMatch;
+    public Match getAutoResolveMatch() {
+        return autoResolveMatch;
     }
 
-    public void setSafetyMatch(Match safetyMatch) {
-        this.safetyMatch = safetyMatch;
+    public void setAutoResolveMatch(Match autoResolveMatch) {
+        this.autoResolveMatch = autoResolveMatch;
     }
 
     public Set<String> getActions() {
@@ -127,7 +163,7 @@ public abstract class TriggerTemplate {
         return "TriggerTemplate [name=" + name + ", " +
                 "description=" + description + ", " +
                 "firingMatch=" + firingMatch + ", " +
-                "safetyMatch=" + safetyMatch + "]";
+                "safetyMatch=" + autoResolveMatch + "]";
     }
 
 }

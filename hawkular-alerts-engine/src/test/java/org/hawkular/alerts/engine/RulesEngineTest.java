@@ -16,15 +16,19 @@
  */
 package org.hawkular.alerts.engine;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
@@ -52,6 +56,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 /**
  * Basic test of RulesEngine implementation.
  *
@@ -64,6 +71,8 @@ public class RulesEngineTest {
     RulesEngine rulesEngine = new DroolsRulesEngineImpl();
     List<Alert> alerts = new ArrayList<>();
     Set<Dampening> pendingTimeouts = new HashSet<>();
+    Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers = new HashMap<>();
+    Set<Trigger> disabledTriggers = new CopyOnWriteArraySet<>();
     Set<Data> datums = new HashSet<Data>();
 
     @Before
@@ -71,6 +80,8 @@ public class RulesEngineTest {
         rulesEngine.addGlobal("log", log);
         rulesEngine.addGlobal("alerts", alerts);
         rulesEngine.addGlobal("pendingTimeouts", pendingTimeouts);
+        rulesEngine.addGlobal("autoResolvedTriggers", autoResolvedTriggers);
+        rulesEngine.addGlobal("disabledTriggers", disabledTriggers);
     }
 
     @After
@@ -128,98 +139,96 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assert alerts.size() == 6 : alerts;
+        assertEquals(alerts.toString(), 6, alerts.size());
         Collections.sort(alerts, (Alert a1, Alert a2) -> a1.getTriggerId().compareTo(a2.getTriggerId()));
 
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals(a.getTriggerId(), "trigger-1", a.getTriggerId());
+        assertEquals(a.getEvalSets().toString(), 1, a.getEvalSets().size());
         Set<ConditionEval> eval = a.getEvalSets().get(0);
-        assert eval.size() == 1 : eval;
+        assertEquals(eval.toString(), 1, eval.size());
         ThresholdConditionEval e = (ThresholdConditionEval) eval.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
+        assertEquals(e.toString(), 1, e.getConditionSetIndex());
+        assertEquals(e.toString(), 1, e.getConditionSetSize());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
         Double v = e.getValue();
-        assert v.equals(5.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e.getCondition();
+        assertTrue(e.toString(), v.equals(5.0D));
+        assertEquals(e.getCondition().toString(), "NumericData-01", e.getCondition().getDataId());
 
         a = alerts.get(1);
-        assert a.getTriggerId().equals("trigger-2") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals(a.getTriggerId(), "trigger-2", a.getTriggerId());
+        assertEquals(a.getEvalSets().toString(), 1, a.getEvalSets().size());
         eval = a.getEvalSets().get(0);
-        assert eval.size() == 1 : eval;
+        assertEquals(eval.toString(), 1, eval.size());
         e = (ThresholdConditionEval) eval.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-2");
-        assert e.isMatch();
+        assertEquals(e.toString(), 1, e.getConditionSetIndex());
+        assertEquals(e.toString(), 1, e.getConditionSetSize());
+        assertEquals("trigger-2", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals(5.0D) || v.equals(10.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e.getCondition();
+        assertTrue(e.toString(), v.equals(5.0D) || v.equals(10.0D));
+        assertEquals(e.getCondition().toString(), "NumericData-01", e.getCondition().getDataId());
 
         a = alerts.get(2);
-        assert a.getTriggerId().equals("trigger-2") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals(a.getTriggerId(), "trigger-2", a.getTriggerId());
+        assertEquals(a.getEvalSets().toString(), 1, a.getEvalSets().size());
         eval = a.getEvalSets().get(0);
-        assert eval.size() == 1 : eval;
+        assertEquals(eval.toString(), 1, eval.size());
         e = (ThresholdConditionEval) eval.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-2");
-        assert e.isMatch();
-        assert !v.equals(e.getValue());
+        assertEquals(e.toString(), 1, e.getConditionSetIndex());
+        assertEquals(e.toString(), 1, e.getConditionSetSize());
+        assertEquals("trigger-2", e.getTriggerId());
+        assertTrue(e.isMatch());
+        assertTrue(!v.equals(e.getValue()));
         v = e.getValue();
-        assert v.equals(5.0D) || v.equals(10.0D) : e;
+        assertTrue(e.toString(), v.equals(5.0D) || v.equals(10.0D));
+        assertEquals(e.getCondition().toString(), "NumericData-01", e.getCondition().getDataId());
 
-        assert e.getCondition().getDataId().equals("NumericData-01") : e.getCondition();
+        assertTrue(e.getCondition().getDataId().equals("NumericData-01"));
 
         a = alerts.get(3);
-        assert a.getTriggerId().equals("trigger-3") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals(a.getTriggerId(), "trigger-3", a.getTriggerId());
+        assertEquals(a.getEvalSets().toString(), 1, a.getEvalSets().size());
         eval = a.getEvalSets().get(0);
-        assert eval.size() == 1 : eval;
+        assertEquals(eval.toString(), 1, eval.size());
         e = (ThresholdConditionEval) eval.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-3");
-        assert e.isMatch();
+        assertEquals(e.toString(), 1, e.getConditionSetIndex());
+        assertEquals(e.toString(), 1, e.getConditionSetSize());
+        assertEquals("trigger-3", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals(15.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
+        assertTrue(e.toString(), v.equals(15.0D));
+        assertEquals(e.getCondition().toString(), "NumericData-01", e.getCondition().getDataId());
 
         a = alerts.get(4);
-        assert a.getTriggerId().equals("trigger-4") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals(a.getTriggerId(), "trigger-4", a.getTriggerId());
+        assertEquals(a.getEvalSets().toString(), 1, a.getEvalSets().size());
         eval = a.getEvalSets().get(0);
-        assert eval.size() == 1 : eval;
+        assertEquals(eval.toString(), 1, eval.size());
         e = (ThresholdConditionEval) eval.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-4");
-        assert e.isMatch();
+        assertEquals(e.toString(), 1, e.getConditionSetIndex());
+        assertEquals(e.toString(), 1, e.getConditionSetSize());
+        assertEquals("trigger-4", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals(15.0D) || v.equals(10.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
+        assertTrue(e.toString(), v.equals(15.0D) || v.equals(10.0D));
+        assertEquals(e.getCondition().toString(), "NumericData-01", e.getCondition().getDataId());
 
         a = alerts.get(5);
-        assert a.getTriggerId().equals("trigger-4") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals(a.getTriggerId(), "trigger-4", a.getTriggerId());
+        assertEquals(a.getEvalSets().toString(), 1, a.getEvalSets().size());
         eval = a.getEvalSets().get(0);
-        assert eval.size() == 1 : eval;
+        assertEquals(eval.toString(), 1, eval.size());
         e = (ThresholdConditionEval) eval.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-4");
-        assert e.isMatch();
-        assert !v.equals(e.getValue());
+        assertEquals(e.toString(), 1, e.getConditionSetIndex());
+        assertEquals(e.toString(), 1, e.getConditionSetSize());
+        assertEquals("trigger-4", e.getTriggerId());
+        assertTrue(e.isMatch());
+        assertTrue(!v.equals(e.getValue()));
         v = e.getValue();
-        assert v.equals(15.0D) || v.equals(10.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
+        assertTrue(e.toString(), v.equals(15.0D) || v.equals(10.0D));
+        assertEquals(e.getCondition().toString(), "NumericData-01", e.getCondition().getDataId());
     }
 
     @Test
@@ -270,53 +279,50 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assert alerts.size() == 3 : alerts;
+        assertEquals(alerts.toString(), 3, alerts.size());
         Collections.sort(alerts, (Alert a1, Alert a2) -> a1.getTriggerId().compareTo(a2.getTriggerId()));
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-1"));
+        assertEquals(1, a.getEvalSets().size());
         Set<ConditionEval> evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(evals.toString(), 1, evals.size());
         ThresholdRangeConditionEval e = (ThresholdRangeConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertTrue(e.toString(), e.getTriggerId().equals("trigger-1"));
+        assertTrue(e.isMatch());
         Double v = e.getValue();
-        assert v.equals(10.0D) || v.equals(15.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
+        assertTrue(e.toString(), v.equals(10.0D) || v.equals(15.0D));
+        assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
 
         a = alerts.get(1);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-1"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(evals.toString(), 1, evals.size());
         e = (ThresholdRangeConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
-        assert !v.equals(e.getValue()) : e;
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertTrue(e.toString(), e.getTriggerId().equals("trigger-1"));
+        assertTrue(e.isMatch());
+        assertTrue(!v.equals(e.getValue()));
         v = e.getValue();
-        assert v.equals(10.0D) || v.equals(15.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
+        assertTrue(e.toString(), v.equals(10.0D) || v.equals(15.0D));
+        assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
 
         a = alerts.get(2);
-        assert a.getTriggerId().equals("trigger-3") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-3"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(evals.toString(), 1, evals.size());
         e = (ThresholdRangeConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-3");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertTrue(e.toString(), e.getTriggerId().equals("trigger-3"));
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals(5.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
+        assertTrue(e.toString(), v.equals(5.0D));
+        assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
     }
 
     @Test
@@ -366,46 +372,42 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assert alerts.size() == 2 : alerts;
+        assertEquals(alerts.toString(), 2, alerts.size());
         Collections.sort(alerts, (Alert a1, Alert a2) -> a1.getTriggerId().compareTo(a2.getTriggerId()));
 
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-1"));
+        assertEquals(1, a.getEvalSets().size());
         Set<ConditionEval> evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(evals.toString(), 1, evals.size());
         CompareConditionEval e = (CompareConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertTrue(e.toString(), e.getTriggerId().equals("trigger-1"));
+        assertTrue(e.isMatch());
         Double v1 = e.getValue1();
         Double v2 = e.getValue2();
-        assert v1.equals(10.0D) : e;
-        assert v2.equals(30.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
-        assert e.getCondition().getData2Id().equals("NumericData-02") : e
-                .getCondition();
+        assertTrue(e.toString(), v1.equals(10.0D));
+        assertTrue(e.toString(), v2.equals(30.0D));
+        assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
+        assertTrue(e.getCondition().toString(), e.getCondition().getData2Id().equals("NumericData-02"));
 
         a = alerts.get(1);
-        assert a.getTriggerId().equals("trigger-2") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-2"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(evals.toString(), 1, evals.size());
         e = (CompareConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-2");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertTrue(e.toString(), e.getTriggerId().equals("trigger-2"));
+        assertTrue(e.isMatch());
         v1 = e.getValue1();
         v2 = e.getValue2();
-        assert v1.equals(10.0D) : e;
-        assert v2.equals(30.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
-        assert e.getCondition().getData2Id().equals("NumericData-02") : e
-                .getCondition();
+        assertTrue(e.toString(), v1.equals(10.0D));
+        assertTrue(e.toString(), v2.equals(30.0D));
+        assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
+        assertTrue(e.getCondition().toString(), e.getCondition().getData2Id().equals("NumericData-02"));
 
         // Test LTE + GTE
         datums.clear();
@@ -417,46 +419,42 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assert alerts.size() == 2 : alerts;
+        assertEquals(alerts.toString(), 2, alerts.size());
         Collections.sort(alerts, (Alert a1, Alert a2) -> a1.getTriggerId().compareTo(a2.getTriggerId()));
 
         a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-2") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-2"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(evals.toString(), 1, evals.size());
         e = (CompareConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-2");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertTrue(e.toString(), e.getTriggerId().equals("trigger-2"));
+        assertTrue(e.isMatch());
         v1 = e.getValue1();
         v2 = e.getValue2();
-        assert v1.equals(10.0D) : e;
-        assert v2.equals(20.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
-        assert e.getCondition().getData2Id().equals("NumericData-02") : e
-                .getCondition();
+        assertTrue(e.toString(), v1.equals(10.0D));
+        assertTrue(e.toString(), v2.equals(20.0D));
+        assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
+        assertTrue(e.getCondition().toString(), e.getCondition().getData2Id().equals("NumericData-02"));
 
         a = alerts.get(1);
-        assert a.getTriggerId().equals("trigger-4") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-4"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(evals.toString(), 1, evals.size());
         e = (CompareConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-4");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertTrue(e.toString(), e.getTriggerId().equals("trigger-4"));
+        assertTrue(e.isMatch());
         v1 = e.getValue1();
         v2 = e.getValue2();
-        assert v1.equals(10.0D) : e;
-        assert v2.equals(20.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
-        assert e.getCondition().getData2Id().equals("NumericData-02") : e
-                .getCondition();
+        assertTrue(e.toString(), v1.equals(10.0D));
+        assertTrue(e.toString(), v2.equals(20.0D));
+        assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
+        assertTrue(e.getCondition().toString(), e.getCondition().getData2Id().equals("NumericData-02"));
 
         // Test GT (also GTE)
         datums.clear();
@@ -468,46 +466,42 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assert alerts.size() == 2 : alerts;
+        assertEquals(alerts.toString(), 2, alerts.size());
         Collections.sort(alerts, (Alert a1, Alert a2) -> a1.getTriggerId().compareTo(a2.getTriggerId()));
 
         a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-3") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-3"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(evals.toString(), 1, evals.size());
         e = (CompareConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-3");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertTrue(e.toString(), e.getTriggerId().equals("trigger-3"));
+        assertTrue(e.isMatch());
         v1 = e.getValue1();
         v2 = e.getValue2();
-        assert v1.equals(15.0D) : e;
-        assert v2.equals(20.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
-        assert e.getCondition().getData2Id().equals("NumericData-02") : e
-                .getCondition();
+        assertTrue(e.toString(), v1.equals(15.0D));
+        assertTrue(e.toString(), v2.equals(20.0D));
+        assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
+        assertTrue(e.getCondition().toString(), e.getCondition().getData2Id().equals("NumericData-02"));
 
         a = alerts.get(1);
-        assert a.getTriggerId().equals("trigger-4") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-4"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(evals.toString(), 1, evals.size());
         e = (CompareConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-4");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertTrue(e.toString(), e.getTriggerId().equals("trigger-4"));
+        assertTrue(e.isMatch());
         v1 = e.getValue1();
         v2 = e.getValue2();
-        assert v1.equals(15.0D) : e;
-        assert v2.equals(20.0D) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e
-                .getCondition();
-        assert e.getCondition().getData2Id().equals("NumericData-02") : e
-                .getCondition();
+        assertTrue(e.toString(), v1.equals(15.0D));
+        assertTrue(e.toString(), v2.equals(20.0D));
+        assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
+        assertTrue(e.getCondition().toString(), e.getCondition().getData2Id().equals("NumericData-02"));
     }
 
     @Test
@@ -577,113 +571,106 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assert alerts.size() == 7 : alerts;
+        assertEquals(alerts.toString(), 7, alerts.size());
         Collections.sort(alerts, (Alert a1, Alert a2) -> a1.getTriggerId().compareTo(a2.getTriggerId()));
 
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-1"));
+        assertEquals(1, a.getEvalSets().size());
         Set<ConditionEval> evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         StringConditionEval e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
         String v = e.getValue();
-        assert v.equals("Fred") : e;
-        assert e.getCondition().getDataId().equals("StringData-01") : e
-                .getCondition();
+        assertEquals("Fred", v);
+        assertEquals("StringData-01", e.getCondition().getDataId());
 
         a = alerts.get(1);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-1"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Fred And Barney") : e;
-        assert e.getCondition().getDataId().equals("StringData-01") : e
-                .getCondition();
+        assertEquals("Fred And Barney", v);
+        assertEquals("StringData-01", e.getCondition().getDataId());
 
         a = alerts.get(2);
-        assert a.getTriggerId().equals("trigger-2") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-2"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-2");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-2", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Fred") : e;
-        assert e.getCondition().getDataId().equals("StringData-01") : e
-                .getCondition();
+        assertEquals("Fred", v);
+        assertEquals("StringData-01", e.getCondition().getDataId());
 
         a = alerts.get(3);
-        assert a.getTriggerId().equals("trigger-3") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-3"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-3");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-3", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Fred And Barney") : e;
-        assert e.getCondition().getDataId().equals("StringData-01") : e
-                .getCondition();
+        assertEquals("Fred And Barney", v);
+        assertEquals("StringData-01", e.getCondition().getDataId());
 
         a = alerts.get(4);
-        assert a.getTriggerId().equals("trigger-4") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-4"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-4");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-4", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Fred And Barney") : e;
-        assert e.getCondition().getDataId().equals("StringData-01") : e
-                .getCondition();
+        assertEquals("Fred And Barney", v);
+        assertEquals("StringData-01", e.getCondition().getDataId());
 
         a = alerts.get(5);
-        assert a.getTriggerId().equals("trigger-5") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-5"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-5");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-5", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Barney And Fred") : e;
-        assert e.getCondition().getDataId().equals("StringData-02") : e
-                .getCondition();
+        assertEquals("Barney And Fred", v);
+        assertEquals("StringData-02", e.getCondition().getDataId());
 
         a = alerts.get(6);
-        assert a.getTriggerId().equals("trigger-6") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-6"));
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-6");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-6", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Barney And Fred") : e;
-        assert e.getCondition().getDataId().equals("StringData-02") : e
-                .getCondition();
+        assertEquals("Barney And Fred", v);
+        assertEquals("StringData-02", e.getCondition().getDataId());
     }
 
     @Test
@@ -753,114 +740,106 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assert alerts.size() == 7 : alerts;
+        assertEquals(alerts.toString(), 7, alerts.size());
         Collections.sort(alerts, (Alert a1, Alert a2) -> a1.getTriggerId().compareTo(a2.getTriggerId()));
 
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
         Set<ConditionEval> evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         StringConditionEval e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
         String v = e.getValue();
-        assert v.equals("Fred") : e;
-        assert e.getCondition().getDataId().equals("StringData-01") : e
-                .getCondition();
+        assertEquals("Fred", v);
+        assertEquals("StringData-01", e.getCondition().getDataId());
 
         a = alerts.get(1);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Fred And Barney") : e;
-        assert e.getCondition().getDataId().equals("StringData-01") : e
-                .getCondition();
+        assertEquals("Fred And Barney", v);
+        assertEquals("StringData-01", e.getCondition().getDataId());
 
         a = alerts.get(2);
-        assert a.getTriggerId().equals("trigger-2") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals("trigger-2", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-2");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-2", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Fred") : e;
-        assert e.getCondition().getDataId().equals("StringData-01") : e
-                .getCondition();
+        assertEquals("Fred", v);
+        assertEquals("StringData-01", e.getCondition().getDataId());
 
         a = alerts.get(3);
-        assert a.getTriggerId().equals("trigger-3") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals("trigger-3", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-3");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-3", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Fred And Barney") : e;
-        assert e.getCondition().getDataId().equals("StringData-01") : e
-                .getCondition();
+        assertEquals("Fred And Barney", v);
+        assertEquals("StringData-01", e.getCondition().getDataId());
 
         a = alerts.get(4);
-        assert a.getTriggerId().equals("trigger-4") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals("trigger-4", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-4");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-4", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Fred And Barney") : e;
-        assert e.getCondition().getDataId().equals("StringData-01") : e
-                .getCondition();
+        assertEquals("Fred And Barney", v);
+        assertEquals("StringData-01", e.getCondition().getDataId());
 
         a = alerts.get(5);
-        assert a.getTriggerId().equals("trigger-5") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals("trigger-5", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-5");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-5", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Barney And Fred") : e;
-        assert e.getCondition().getDataId().equals("StringData-02") : e
-                .getCondition();
+        assertEquals("Barney And Fred", v);
+        assertEquals("StringData-02", e.getCondition().getDataId());
 
         a = alerts.get(6);
-        assert a.getTriggerId().equals("trigger-6") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals("trigger-6", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (StringConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-6");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-6", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v.equals("Barney And Fred") : e;
-        assert e.getCondition().getDataId().equals("StringData-02") : e
-                .getCondition();
-
+        assertEquals("Barney And Fred", v);
+        assertEquals("StringData-02", e.getCondition().getDataId());
     }
 
     @Test
@@ -884,37 +863,35 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assert alerts.size() == 2 : alerts;
+        assertEquals(alerts.toString(), 2, alerts.size());
 
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
         Set<ConditionEval> evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         AvailabilityConditionEval e = (AvailabilityConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
         AvailabilityType v = e.getValue();
-        assert v == AvailabilityType.DOWN : e;
-        assert e.getCondition().getDataId().equals("AvailData-01") : e
-                .getCondition();
+        assertEquals(AvailabilityType.DOWN, v);
+        assertEquals("AvailData-01", e.getCondition().getDataId());
 
         a = alerts.get(1);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
         evals = a.getEvalSets().get(0);
-        assert evals.size() == 1 : evals;
+        assertEquals(1, evals.size());
         e = (AvailabilityConditionEval) evals.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
         v = e.getValue();
-        assert v == AvailabilityType.UNAVAILABLE : e;
-        assert e.getCondition().getDataId().equals("AvailData-01") : e
-                .getCondition();
+        assertEquals(AvailabilityType.UNAVAILABLE, v);
+        assertEquals("AvailData-01", e.getCondition().getDataId());
     }
 
     @Test
@@ -923,7 +900,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forStrict("trigger-1", Mode.FIRE, 3);
+        Dampening t1d = Dampening.forStrict("trigger-1", Mode.FIRING, 3);
 
         datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
         datums.add(new Availability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
@@ -943,24 +920,23 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assert alerts.size() == 1 : alerts;
+        assertEquals(alerts.toString(), 1, alerts.size());
 
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 3 : a.getEvalSets();
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(3, a.getEvalSets().size());
         long expectedTimestamp = 4;
         for (Set<ConditionEval> evalSet : a.getEvalSets()) {
-            assert evalSet.size() == 1 : evalSet;
+            assertEquals(1, evalSet.size());
             AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
-            assert e.getConditionSetIndex() == 1 : e;
-            assert e.getConditionSetSize() == 1 : e;
-            assert e.getTriggerId().equals("trigger-1");
-            assert e.isMatch();
-            assert e.getDataTimestamp() == expectedTimestamp++;
+            assertEquals(1, e.getConditionSetIndex());
+            assertEquals(1, e.getConditionSetSize());
+            assertEquals("trigger-1", e.getTriggerId());
+            assertTrue(e.isMatch());
+            assertEquals(expectedTimestamp++, e.getDataTimestamp());
             AvailabilityType v = e.getValue();
-            assert v == AvailabilityType.DOWN : e;
-            assert e.getCondition().getDataId().equals("AvailData-01") : e
-                    .getCondition();
+            assertEquals(AvailabilityType.DOWN, v);
+            assertEquals("AvailData-01", e.getCondition().getDataId());
         }
     }
 
@@ -970,7 +946,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forRelaxedCount("trigger-1", Mode.FIRE, 3, 5);
+        Dampening t1d = Dampening.forRelaxedCount("trigger-1", Mode.FIRING, 3, 5);
 
         datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
         datums.add(new Availability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
@@ -990,25 +966,24 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assert alerts.size() == 1 : alerts;
+        assertEquals(alerts.toString(), 1, alerts.size());
 
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 3 : a.getEvalSets();
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(3, a.getEvalSets().size());
         int i = 0;
         long[] expectedTimestamps = new long[] { 1, 4, 5 };
         for (Set<ConditionEval> evalSet : a.getEvalSets()) {
-            assert evalSet.size() == 1 : evalSet;
+            assertEquals(1, evalSet.size());
             AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
-            assert e.getConditionSetIndex() == 1 : e;
-            assert e.getConditionSetSize() == 1 : e;
-            assert e.getTriggerId().equals("trigger-1");
-            assert e.isMatch();
-            assert e.getDataTimestamp() == expectedTimestamps[i++];
+            assertEquals(1, e.getConditionSetIndex());
+            assertEquals(1, e.getConditionSetSize());
+            assertEquals("trigger-1", e.getTriggerId());
+            assertTrue(e.isMatch());
+            assertEquals(expectedTimestamps[i++], e.getDataTimestamp());
             AvailabilityType v = e.getValue();
-            assert v == AvailabilityType.DOWN : e;
-            assert e.getCondition().getDataId().equals("AvailData-01") : e
-                    .getCondition();
+            assertEquals(AvailabilityType.DOWN, v);
+            assertEquals("AvailData-01", e.getCondition().getDataId());
         }
     }
 
@@ -1018,7 +993,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forRelaxedTime("trigger-1", Mode.FIRE, 2, 500L);
+        Dampening t1d = Dampening.forRelaxedTime("trigger-1", Mode.FIRING, 2, 500L);
 
         t1.setEnabled(true);
 
@@ -1031,7 +1006,7 @@ public class RulesEngineTest {
         rulesEngine.addData(datums);
         rulesEngine.fire();
 
-        assert alerts.size() == 0 : alerts;
+        assertEquals(alerts.toString(), 0, alerts.size());
 
         try {
             Thread.sleep(750L);
@@ -1047,25 +1022,24 @@ public class RulesEngineTest {
         rulesEngine.addData(datums);
         rulesEngine.fire();
 
-        assert alerts.size() == 1 : alerts;
+        assertEquals(alerts.toString(), 1, alerts.size());
 
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 2 : a.getEvalSets();
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(2, a.getEvalSets().size());
         int i = 0;
         long[] expectedTimestamps = new long[] { 2, 4 };
         for (Set<ConditionEval> evalSet : a.getEvalSets()) {
-            assert evalSet.size() == 1 : evalSet;
+            assertEquals(1, evalSet.size());
             AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
-            assert e.getConditionSetIndex() == 1 : e;
-            assert e.getConditionSetSize() == 1 : e;
-            assert e.getTriggerId().equals("trigger-1");
-            assert e.isMatch();
-            assert e.getDataTimestamp() == expectedTimestamps[i++];
+            assertEquals(1, e.getConditionSetIndex());
+            assertEquals(1, e.getConditionSetSize());
+            assertEquals("trigger-1", e.getTriggerId());
+            assertTrue(e.isMatch());
+            assertEquals(expectedTimestamps[i++], e.getDataTimestamp());
             AvailabilityType v = e.getValue();
-            assert v == AvailabilityType.DOWN : e;
-            assert e.getCondition().getDataId().equals("AvailData-01") : e
-                    .getCondition();
+            assertEquals(AvailabilityType.DOWN, v);
+            assertEquals("AvailData-01", e.getCondition().getDataId());
         }
     }
 
@@ -1075,7 +1049,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forStrictTime("trigger-1", Mode.FIRE, 250L);
+        Dampening t1d = Dampening.forStrictTime("trigger-1", Mode.FIRING, 250L);
 
         t1.setEnabled(true);
 
@@ -1090,23 +1064,22 @@ public class RulesEngineTest {
             rulesEngine.fire();
         }
 
-        assert alerts.size() == 1 : alerts;
+        assertEquals(alerts.toString(), 1, alerts.size());
 
         Alert a = alerts.get(0);
-        assert (alerts.get(0).getCTime() - start) >= 250 : (alerts.get(0).getCTime() - start);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() >= 2 : a.getEvalSets().size();
+        assertTrue(String.valueOf((alerts.get(0).getCtime() - start)), (alerts.get(0).getCtime() - start) >= 250);
+        assertEquals("trigger-1", a.getTriggerId());
+        assertTrue(String.valueOf(a.getEvalSets().size()), a.getEvalSets().size() >= 2);
         for (Set<ConditionEval> evalSet : a.getEvalSets()) {
-            assert evalSet.size() == 1 : evalSet;
+            assertEquals(1, evalSet.size());
             AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
-            assert e.getConditionSetIndex() == 1 : e;
-            assert e.getConditionSetSize() == 1 : e;
-            assert e.getTriggerId().equals("trigger-1");
-            assert e.isMatch();
+            assertEquals(1, e.getConditionSetIndex());
+            assertEquals(1, e.getConditionSetSize());
+            assertEquals("trigger-1", e.getTriggerId());
+            assertTrue(e.isMatch());
             AvailabilityType v = e.getValue();
-            assert v == AvailabilityType.DOWN : e;
-            assert e.getCondition().getDataId().equals("AvailData-01") : e
-                    .getCondition();
+            assertEquals(AvailabilityType.DOWN, v);
+            assertEquals("AvailData-01", e.getCondition().getDataId());
         }
     }
 
@@ -1116,7 +1089,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forStrictTimeout("trigger-1", Mode.FIRE, 200L);
+        Dampening t1d = Dampening.forStrictTimeout("trigger-1", Mode.FIRING, 200L);
 
         t1.setEnabled(true);
 
@@ -1124,14 +1097,14 @@ public class RulesEngineTest {
         rulesEngine.addFact(t1c1);
         rulesEngine.addFact(t1d);
 
-        assert alerts.isEmpty();
-        assert pendingTimeouts.isEmpty();
+        assertTrue(alerts.isEmpty());
+        assertTrue(pendingTimeouts.isEmpty());
 
         rulesEngine.addData(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
         rulesEngine.fire();
 
-        assert alerts.isEmpty();
-        assert pendingTimeouts.size() == 1 : pendingTimeouts;
+        assertTrue(alerts.isEmpty());
+        assertEquals(String.valueOf(pendingTimeouts), 1, pendingTimeouts.size());
 
         Dampening pendingTimeout = pendingTimeouts.iterator().next();
         pendingTimeout.setSatisfied(true);
@@ -1139,22 +1112,21 @@ public class RulesEngineTest {
 
         rulesEngine.fireNoData();
 
-        assert alerts.size() == 1 : alerts;
+        assertEquals(alerts.toString(), 1, alerts.size());
 
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets().size();
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
         Set<ConditionEval> evalSet = a.getEvalSets().get(0);
-        assert evalSet.size() == 1 : evalSet;
+        assertEquals(1, evalSet.size());
         AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getConditionSetSize() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
         AvailabilityType v = e.getValue();
-        assert v == AvailabilityType.DOWN : e;
-        assert e.getCondition().getDataId().equals("AvailData-01") : e
-                .getCondition();
+        assertEquals(AvailabilityType.DOWN, v);
+        assertEquals("AvailData-01", e.getCondition().getDataId());
     }
 
     @Test
@@ -1186,7 +1158,7 @@ public class RulesEngineTest {
         rulesEngine.addData(datums);
         rulesEngine.fire();
 
-        assert alerts.size() == 0 : alerts;
+        assertEquals(alerts.toString(), 0, alerts.size());
 
         datums.clear();
         // eval(d2,t4) = no match, tuple(eval(d1,t3), eval(d2,t4)) = false
@@ -1197,7 +1169,7 @@ public class RulesEngineTest {
         rulesEngine.addData(datums);
         rulesEngine.fire();
 
-        assert alerts.size() == 0 : alerts;
+        assertEquals(alerts.toString(), 0, alerts.size());
 
         datums.clear();
         // eval(d1,t6) =    match, tuple(eval(d1,t6), eval(d2,t5)) = true
@@ -1206,13 +1178,13 @@ public class RulesEngineTest {
         rulesEngine.addData(datums);
         rulesEngine.fire();
 
-        assert alerts.size() == 1 : alerts;
+        assertEquals(alerts.toString(), 1, alerts.size());
 
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 1 : a.getEvalSets();
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
         Set<ConditionEval> evals = a.getEvalSets().get(0);
-        assert evals.size() == 2 : evals;
+        assertEquals(2, evals.size());
         List<ConditionEval> evalsList = new ArrayList<>(evals);
         Collections.sort(
                 evalsList,
@@ -1220,36 +1192,38 @@ public class RulesEngineTest {
                         c2.getConditionSetIndex()));
         Iterator<ConditionEval> i = evalsList.iterator();
         ThresholdConditionEval e = (ThresholdConditionEval) i.next();
-        assert e.getConditionSetSize() == 2 : e;
-        assert e.getConditionSetIndex() == 1 : e;
-        assert e.getTriggerId().equals("trigger-1");
-        assert e.isMatch();
+        assertEquals(2, e.getConditionSetSize());
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
         Double v = e.getValue();
-        assert v.equals(8.0) : e;
-        assert e.getCondition().getDataId().equals("NumericData-01") : e.getCondition();
+        assertTrue(v.equals(8.0));
+        assertEquals("NumericData-01", e.getCondition().getDataId());
+
         ThresholdRangeConditionEval e2 = (ThresholdRangeConditionEval) i.next();
-        assert e2.getConditionSetSize() == 2 : e2;
-        assert e2.getConditionSetIndex() == 2 : e2;
-        assert e2.getTriggerId().equals("trigger-1");
-        assert e2.isMatch();
+        assertEquals(2, e2.getConditionSetSize());
+        assertEquals(2, e2.getConditionSetIndex());
+        assertEquals("trigger-1", e2.getTriggerId());
+        assertTrue(e2.isMatch());
         v = e2.getValue();
-        assert v.equals(150.0) : e2;
-        assert e2.getCondition().getDataId().equals("NumericData-02") : e2.getCondition();
+        assertTrue(v.equals(150.0));
+        assertEquals("NumericData-02", e2.getCondition().getDataId());
     }
 
     @Test
-    public void SafetyModeTest() {
-        // The single trigger has definitions for both FIRE and SAFETY modes
+    public void autoResolveTest() {
+        // The single trigger has definitions for both FIRING and AUTORESOLVE modes
         Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
-        // Fire Mode
-        AvailabilityCondition fmt1c1 = new AvailabilityCondition("trigger-1", Mode.FIRE, 1, 1,
-                "AvailData-01", AvailabilityCondition.Operator.DOWN);
-        Dampening fmt1d = Dampening.forStrict("trigger-1", Mode.FIRE, 2);
 
-        // Safety Mode
-        AvailabilityCondition smt1c1 = new AvailabilityCondition("trigger-1", Mode.SAFETY, 1, 1,
+        // Firing Mode
+        AvailabilityCondition fmt1c1 = new AvailabilityCondition("trigger-1", Mode.FIRING, 1, 1,
+                "AvailData-01", AvailabilityCondition.Operator.DOWN);
+        Dampening fmt1d = Dampening.forStrict("trigger-1", Mode.FIRING, 2);
+
+        // AutoResolve Mode
+        AvailabilityCondition smt1c1 = new AvailabilityCondition("trigger-1", Mode.AUTORESOLVE, 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.UP);
-        Dampening smt1d = Dampening.forStrict("trigger-1", Mode.SAFETY, 2);
+        Dampening smt1d = Dampening.forStrict("trigger-1", Mode.AUTORESOLVE, 2);
 
         datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
         datums.add(new Availability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
@@ -1261,7 +1235,9 @@ public class RulesEngineTest {
         datums.add(new Availability("AvailData-01", 8, AvailabilityType.UP));
 
         t1.setEnabled(true);
-        t1.setSafetyEnabled(true);
+        t1.setAutoDisable(false);
+        t1.setAutoResolve(true);
+        t1.setAutoResolveAlerts(true);
 
         rulesEngine.addFact(t1);
         rulesEngine.addFact(fmt1c1);
@@ -1270,32 +1246,34 @@ public class RulesEngineTest {
         rulesEngine.addFact(smt1d);
 
         // The Trigger should fire on the consecutive DOWN datums at T4,T5. It should then switch to
-        // safety mode and not fire again at the next two consecutive down datums at T6,T7.  T8 should be the
-        // first match for the safety dampening but it should not yet be satisfied until T9 (see below).
+        // AutoResolve mode and not fire again at the next two consecutive down datums at T6,T7.  T8 should be the
+        // first match for the AutoResolve dampening but it should not yet be satisfied until T9 (see below).
         rulesEngine.addData(datums);
         rulesEngine.fire();
 
-        assert alerts.size() == 1 : alerts;
+        assertEquals(alerts.toString(), 1, alerts.size());
+        assertTrue(disabledTriggers.toString(), disabledTriggers.isEmpty());
+        assertTrue(autoResolvedTriggers.toString(), autoResolvedTriggers.isEmpty());
 
         Alert a = alerts.get(0);
-        assert a.getTriggerId().equals("trigger-1") : a.getTriggerId();
-        assert a.getEvalSets().size() == 2 : a.getEvalSets();
+        assertTrue(a.getStatus() == Alert.Status.OPEN);
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-1"));
+        assertTrue(a.getEvalSets().toString(), a.getEvalSets().size() == 2);
         long expectedTimestamp = 4;
         for (Set<ConditionEval> evalSet : a.getEvalSets()) {
-            assert evalSet.size() == 1 : evalSet;
+            assertEquals(evalSet.toString(), 1, evalSet.size());
             AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
-            assert e.getConditionSetIndex() == 1 : e;
-            assert e.getConditionSetSize() == 1 : e;
-            assert e.getTriggerId().equals("trigger-1");
-            assert e.isMatch();
-            assert e.getDataTimestamp() == expectedTimestamp++;
+            assertEquals(e.toString(), 1, e.getConditionSetIndex());
+            assertEquals(e.toString(), 1, e.getConditionSetSize());
+            assertEquals("trigger-1", e.getTriggerId());
+            assertTrue(e.isMatch());
+            assertEquals(expectedTimestamp++, e.getDataTimestamp());
             AvailabilityType v = e.getValue();
-            assert v == AvailabilityType.DOWN : e;
-            assert e.getCondition().getDataId().equals("AvailData-01") : e
-                    .getCondition();
+            assertEquals(AvailabilityType.DOWN, v);
+            assertEquals("AvailData-01", e.getCondition().getDataId());
         }
 
-        assert t1.getMode() == Mode.SAFETY : t1;
+        assertTrue(t1.toString(), t1.getMode() == Mode.AUTORESOLVE);
 
         alerts.clear();
         datums.clear();
@@ -1304,27 +1282,28 @@ public class RulesEngineTest {
         rulesEngine.addData(datums);
         rulesEngine.fire();
 
-        // The second consecutive UP should satisfy the safety requirements and return the Trigger to FIRE mode.
-        assert alerts.size() == 0 : alerts;
-        assert t1.getMode() == Mode.FIRE : t1;
+        // The second consecutive UP should satisfy the AutoResolve requirements and return the Trigger to FIRING mode.
+        assertTrue(alerts.isEmpty());
+        assertTrue(disabledTriggers.isEmpty());
+        assertEquals(1, autoResolvedTriggers.size());
+
+        assertTrue(t1.toString(), t1.getMode() == Mode.FIRING);
     }
 
     @Test
     public void checkEqualityInRulesEngine() throws Exception {
 
         Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
-        AvailabilityCondition fmt1c1 = new AvailabilityCondition("trigger-1", Mode.FIRE, 1, 1,
-                                                                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
+        AvailabilityCondition fmt1c1 = new AvailabilityCondition("trigger-1", Mode.FIRING, 1, 1,
+                "AvailData-01", AvailabilityCondition.Operator.DOWN);
         Availability adata = new Availability("AvailData-01", System.currentTimeMillis(), AvailabilityType.UP);
         AvailabilityConditionEval fmt1c1eval = new AvailabilityConditionEval(fmt1c1, adata);
-        Dampening fmt1d = Dampening.forStrict("trigger-1", Mode.FIRE, 2);
+        Dampening fmt1d = Dampening.forStrict("trigger-1", Mode.FIRING, 2);
 
-        ThresholdCondition fmt1c2 = new ThresholdCondition("trigger-1", Mode.FIRE, 1, 1,
-                                                           "ThreData-01", ThresholdCondition.Operator.GT, 10d);
+        ThresholdCondition fmt1c2 = new ThresholdCondition("trigger-1", Mode.FIRING, 1, 1,
+                "ThreData-01", ThresholdCondition.Operator.GT, 10d);
         NumericData ndata = new NumericData("ThreData-01", System.currentTimeMillis(), 20d);
         ThresholdConditionEval fmt1c2eval = new ThresholdConditionEval(fmt1c2, ndata);
-
-
 
         rulesEngine.addFact(t1);
         rulesEngine.addFact(fmt1c1);
@@ -1333,12 +1312,12 @@ public class RulesEngineTest {
         rulesEngine.addFact(fmt1c2);
         rulesEngine.addFact(fmt1c2eval);
 
-        assert rulesEngine.getFact(t1) != null;
-        assert rulesEngine.getFact(fmt1c1) != null;
-        assert rulesEngine.getFact(fmt1c1eval) != null;
-        assert rulesEngine.getFact(fmt1d) != null;
-        assert rulesEngine.getFact(fmt1c2) != null;
-        assert rulesEngine.getFact(fmt1c2eval) != null;
+        assertTrue(rulesEngine.getFact(t1) != null);
+        assertTrue(rulesEngine.getFact(fmt1c1) != null);
+        assertTrue(rulesEngine.getFact(fmt1c1eval) != null);
+        assertTrue(rulesEngine.getFact(fmt1d) != null);
+        assertTrue(rulesEngine.getFact(fmt1c2) != null);
+        assertTrue(rulesEngine.getFact(fmt1c2eval) != null);
 
         Gson gson = new GsonBuilder().create();
 
@@ -1356,19 +1335,18 @@ public class RulesEngineTest {
         ThresholdCondition jsonfmt1c2 = gson.fromJson(strfmt1c2, ThresholdCondition.class);
         ThresholdConditionEval jsonfmt1c2eval = gson.fromJson(strfmt1c2eval, ThresholdConditionEval.class);
 
-        assert t1.equals(jsont1);
-        assert fmt1c1.equals(jsonfmt1c1);
-        assert fmt1c1eval.equals(jsonfmt1c1eval);
-        assert fmt1d.equals(jsonfmt1d);
-        assert fmt1c2.equals(jsonfmt1c2);
-        assert fmt1c2eval.equals(jsonfmt1c2eval);
+        assertTrue(t1.equals(jsont1));
+        assertTrue(fmt1c1.equals(jsonfmt1c1));
+        assertTrue(fmt1c1eval.equals(jsonfmt1c1eval));
+        assertTrue(fmt1d.equals(jsonfmt1d));
+        assertTrue(fmt1c2.equals(jsonfmt1c2));
+        assertTrue(fmt1c2eval.equals(jsonfmt1c2eval));
 
-        assert rulesEngine.getFact(jsont1) != null;
-        assert rulesEngine.getFact(jsonfmt1c1) != null;
-        assert rulesEngine.getFact(jsonfmt1c1eval) != null;
-        assert rulesEngine.getFact(jsonfmt1d) != null;
-        assert rulesEngine.getFact(jsonfmt1c2) != null;
-        assert rulesEngine.getFact(jsonfmt1c2eval) != null;
+        assertTrue(rulesEngine.getFact(jsont1) != null);
+        assertTrue(rulesEngine.getFact(jsonfmt1c1) != null);
+        assertTrue(rulesEngine.getFact(jsonfmt1c1eval) != null);
+        assertTrue(rulesEngine.getFact(jsonfmt1d) != null);
+        assertTrue(rulesEngine.getFact(jsonfmt1c2) != null);
+        assertTrue(rulesEngine.getFact(jsonfmt1c2eval) != null);
     }
-
 }

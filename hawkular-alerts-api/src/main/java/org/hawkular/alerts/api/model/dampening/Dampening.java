@@ -80,7 +80,7 @@ public class Dampening {
     private transient List<Set<ConditionEval>> satisfyingEvals = new ArrayList<Set<ConditionEval>>();
 
     public Dampening() {
-        this("Default", Mode.FIRE, Type.STRICT, 1, 1, 0);
+        this("Default", Mode.FIRING, Type.STRICT, 1, 1, 0);
     }
 
     /**

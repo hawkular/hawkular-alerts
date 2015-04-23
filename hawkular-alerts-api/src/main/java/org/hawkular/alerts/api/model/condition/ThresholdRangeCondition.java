@@ -77,7 +77,7 @@ public class ThresholdRangeCondition extends Condition {
                                    String dataId, Operator operatorLow, Operator operatorHigh,
                                    Double thresholdLow, Double thresholdHigh, boolean inRange) {
 
-        this(triggerId, Mode.FIRE, 1, 1, dataId, operatorLow, operatorHigh,
+        this(triggerId, Mode.FIRING, 1, 1, dataId, operatorLow, operatorHigh,
              thresholdLow, thresholdHigh, inRange);
     }
 
@@ -93,7 +93,7 @@ public class ThresholdRangeCondition extends Condition {
             String dataId, Operator operatorLow, Operator operatorHigh,
             Double thresholdLow, Double thresholdHigh, boolean inRange) {
 
-        this(triggerId, Mode.FIRE, conditionSetSize, conditionSetIndex, dataId, operatorLow, operatorHigh,
+        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, operatorLow, operatorHigh,
                 thresholdLow, thresholdHigh, inRange);
     }
 
