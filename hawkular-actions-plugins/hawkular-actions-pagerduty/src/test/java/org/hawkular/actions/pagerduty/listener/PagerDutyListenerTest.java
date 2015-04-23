@@ -16,40 +16,44 @@
  */
 package org.hawkular.actions.pagerduty.listener;
 
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.hawkular.actions.pagerduty.listener.PagerDutyListener.API_KEY_PROPERTY;
+import static org.junit.Assert.assertEquals;
 
-import java.util.List;
+import com.squareup.pagerduty.incidents.FakePagerDuty;
 
 import org.hawkular.actions.api.model.ActionMessage;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
 
 /**
  * @author Thomas Segismont
  */
-@RunWith(MockitoJUnitRunner.class)
 public class PagerDutyListenerTest {
 
     @BeforeClass
     public static void configureListener() {
-        // TODO configure listener with system properties
+        System.setProperty(API_KEY_PROPERTY, "test");
     }
 
+    private FakePagerDuty fakePagerDuty;
     private PagerDutyListener pagerDutyListener;
 
     @Before
     public void setup() {
         pagerDutyListener = new PagerDutyListener();
+        fakePagerDuty = new FakePagerDuty();
+        pagerDutyListener.pagerDuty = fakePagerDuty;
     }
 
     @Test
     public void testSend() throws Exception {
-        // TODO test
+        ActionMessage actionMessage = new ActionMessage();
+        actionMessage.setMessage("GRAVE");
+
+        pagerDutyListener.onBasicMessage(actionMessage);
+
+        assertEquals("Expected PagerDuty incident to be created", 1, fakePagerDuty.openIncidents().size());
+        assertEquals("GRAVE", fakePagerDuty.openIncidents().values().iterator().next());
     }
 }
