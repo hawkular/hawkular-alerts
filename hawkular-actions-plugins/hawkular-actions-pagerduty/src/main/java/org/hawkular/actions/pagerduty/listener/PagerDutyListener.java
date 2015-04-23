@@ -16,14 +16,14 @@
  */
 package org.hawkular.actions.pagerduty.listener;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import javax.annotation.PostConstruct;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.jms.MessageListener;
+
+import com.squareup.pagerduty.incidents.NotifyResult;
+import com.squareup.pagerduty.incidents.PagerDuty;
+import com.squareup.pagerduty.incidents.Trigger;
 
 import org.hawkular.actions.api.log.MsgLogger;
 import org.hawkular.actions.api.model.ActionMessage;
@@ -39,17 +39,43 @@ import org.hawkular.bus.common.consumer.BasicMessageListener;
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAlertsActionsTopic"),
     @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = "actionPlugin like 'pagerduty'") })
 public class PagerDutyListener extends BasicMessageListener<ActionMessage> {
+    static final String API_KEY_PROPERTY = "org.hawkular.actions.pagerduty.api.key";
+    static final String API_KEY = System.getProperty(API_KEY_PROPERTY);
 
     private final MsgLogger msgLog = MsgLogger.LOGGER;
 
+    PagerDuty pagerDuty;
+
     @PostConstruct
     void setup() {
-        // TODO initialize REST client
+        if (isBlank(API_KEY)) {
+            String msg = "Configure " + API_KEY;
+            msgLog.errorCannotBeStarted("pagerduty", msg);
+            return;
+        }
+        try {
+            pagerDuty = PagerDuty.create(API_KEY);
+        } catch (Exception e) {
+            msgLog.errorCannotBeStarted("pagerduty", e.getLocalizedMessage());
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     protected void onBasicMessage(ActionMessage msg) {
         msgLog.infoActionReceived("pagerduty", msg.toString());
 
-        // TODO implement
+        if (pagerDuty == null) {
+            msgLog.errorCannotSendMessage("pagerduty", "Plugin is not started");
+            return;
+        }
+
+        Trigger trigger = new Trigger.Builder(msg.getMessage()).build();
+        NotifyResult result = pagerDuty.notify(trigger);
+        if (!"success".equals(result.status())) {
+            msgLog.errorCannotSendMessage("pagerduty", result.message());
+        }
     }
 }

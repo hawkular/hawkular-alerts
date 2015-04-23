@@ -34,7 +34,11 @@
   <name>Hawkular Action PagerDuty Plugin</name>
 
   <dependencies>
-    <!-- TODO PagderDuty Java Client or HTTP client? -->
+    <dependency>
+      <groupId>com.squareup.pagerduty</groupId>
+      <artifactId>pagerduty-incidents</artifactId>
+      <version>1.0.1</version>
+    </dependency>
   </dependencies>
 
   <profiles>

@@ -16,14 +16,8 @@
  */
 package org.hawkular.actions.pagerduty.registration;
 
-import org.hawkular.bus.common.ConnectionContextFactory;
-import org.hawkular.bus.common.Endpoint;
-import org.hawkular.bus.common.MessageId;
-import org.hawkular.bus.common.MessageProcessor;
-import org.hawkular.bus.common.producer.ProducerConnectionContext;
-import org.hawkular.actions.api.log.MsgLogger;
-import org.hawkular.actions.api.model.ActionPluginMessage;
-import org.jboss.logging.Logger;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -31,8 +25,16 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.jms.JMSException;
 import javax.jms.QueueConnectionFactory;
-import java.util.HashSet;
-import java.util.Set;
+
+import org.hawkular.actions.api.log.MsgLogger;
+import org.hawkular.actions.api.model.ActionPluginMessage;
+import org.hawkular.bus.common.ConnectionContextFactory;
+import org.hawkular.bus.common.Endpoint;
+import org.hawkular.bus.common.MessageId;
+import org.hawkular.bus.common.MessageProcessor;
+import org.hawkular.bus.common.producer.ProducerConnectionContext;
+
+import org.jboss.logging.Logger;
 
 /**
  * A initialization class to init the pagerduty plugin
@@ -61,7 +63,6 @@ public class RegistrationInit {
             apMsg.setOp("init");
             apMsg.setActionPlugin("pagerduty");
             Set<String> properties = new HashSet<String>();
-            // TODO describe plugin properties
             properties.add("description");
             apMsg.setProperties(properties);
 
