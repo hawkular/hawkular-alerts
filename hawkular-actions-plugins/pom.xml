@@ -26,7 +26,7 @@
   <parent>
     <artifactId>hawkular-alerts</artifactId>
     <groupId>org.hawkular.alerts</groupId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>hawkular-actions-plugins</artifactId>
@@ -58,7 +58,7 @@
     <dependency>
       <groupId>org.hawkular.bus</groupId>
       <artifactId>hawkular-bus-mdb</artifactId>
-      <version>${project.version}</version>
+      <version>${version.org.hawkular.bus}</version>
       <scope>provided</scope>
     </dependency>
 
