@@ -48,6 +48,8 @@ import org.jboss.logging.Logger;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
+import com.wordnik.swagger.annotations.ApiResponse;
+import com.wordnik.swagger.annotations.ApiResponses;
 
 /**
  * REST endpoint for alerts
@@ -56,7 +58,7 @@ import com.wordnik.swagger.annotations.ApiParam;
  * @author Lucas Ponce
  */
 @Path("/")
-@Api(value = "/", description = "Operations about alerts")
+@Api(value = "/", description = "Hawkular-Alerts REST API for Alert Handling")
 public class AlertsHandler {
     // private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(AlertsHandler.class);
@@ -71,10 +73,16 @@ public class AlertsHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get alerts with optional filtering",
+    @ApiOperation(
+            value = "Get alerts with optional filtering",
             responseContainer = "Collection<Alert>",
             response = Alert.class,
             notes = "Pagination is not yet implemented.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Alerts found and returned"),
+            @ApiResponse(code = 204, message = "Success, no Alerts found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void findAlerts(
             @Suspended
             final AsyncResponse response,
@@ -149,9 +157,14 @@ public class AlertsHandler {
 
     @GET
     @Path("/reload")
-    @ApiOperation(value = "Reload all definitions into the alerts service",
+    @ApiOperation(
+            value = "Reload all definitions into the alerts service",
             notes = "This service is temporal for demos/poc, this functionality will be handled internally" +
                     "between definitions and alerts services")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void reloadAlerts(
             @Suspended
             final AsyncResponse response) {
@@ -162,6 +175,10 @@ public class AlertsHandler {
     @GET
     @Path("/reload/{triggerId}")
     @ApiOperation(value = "Reload a specific trigger into the alerts service")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void reloadTrigger(
             @Suspended
             final AsyncResponse response,
@@ -175,6 +192,11 @@ public class AlertsHandler {
     @Path("/ack")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Set one or more alerts Acknowledged")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Alerts Acknowledged"),
+            @ApiResponse(code = 404, message = "AlertIds invalid or not found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void ackAlerts(
             @Suspended
             final AsyncResponse response,
@@ -212,6 +234,11 @@ public class AlertsHandler {
     @Path("/resolve")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Set one or more alerts Resolved")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Alerts Resolveded"),
+            @ApiResponse(code = 404, message = "AlertIds invalid or not found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void resolveAlerts(
             @Suspended
             final AsyncResponse response,

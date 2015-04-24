@@ -36,15 +36,16 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
-import com.wordnik.swagger.annotations.Api;
-import com.wordnik.swagger.annotations.ApiOperation;
-import com.wordnik.swagger.annotations.ApiParam;
-
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
-
 import org.jboss.logging.Logger;
+
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
+import com.wordnik.swagger.annotations.ApiResponse;
+import com.wordnik.swagger.annotations.ApiResponses;
 
 /**
  * REST endpoint for Actions
@@ -53,7 +54,7 @@ import org.jboss.logging.Logger;
  */
 @Path("/actions")
 @Api(value = "/actions",
-     description = "Operations for actions")
+        description = "Hawkular-Alerts REST API for Action Handling")
 public class ActionsHandler {
     private final Logger log = Logger.getLogger(ActionsHandler.class);
 
@@ -63,7 +64,6 @@ public class ActionsHandler {
     @EJB
     ActionsService actions;
 
-
     public ActionsHandler() {
         log.debugf("Creating instance.");
     }
@@ -72,8 +72,9 @@ public class ActionsHandler {
     @Path("/send")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Send an action to the ActionService.",
-                  notes = "ActionService should not be invoked directly. This method is for demo/poc purposes.")
-    public void send(@Suspended final AsyncResponse response, Action action) {
+            notes = "ActionService should not be invoked directly. This method is for demo/poc purposes.")
+    public void send(@Suspended
+    final AsyncResponse response, Action action) {
         actions.send(action);
         response.resume(Response.status(Response.Status.OK).build());
     }
@@ -82,10 +83,17 @@ public class ActionsHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all action ids",
-                  responseContainer = "Collection",
-                  response = String.class,
-                  notes = "Pagination is not yet implemented")
-    public void findAllActions(@Suspended final AsyncResponse response) {
+            responseContainer = "Collection",
+            response = String.class,
+            notes = "Pagination is not yet implemented")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Actions Found"),
+            @ApiResponse(code = 204, message = "Success, No Actions Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void findAllActions(
+            @Suspended
+            final AsyncResponse response) {
         try {
             Collection<String> actions = definitions.getAllActions();
             if (actions == null || actions.isEmpty()) {
@@ -109,13 +117,21 @@ public class ActionsHandler {
     @Path("/plugin/{actionPlugin}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all action ids of an specific action plugin",
-                  responseContainer = "Collection",
-                  response = String.class,
-                  notes = "Pagination is not yet implemented")
-    public void findAllActionsByPlugin(@Suspended final AsyncResponse response,
-                                       @ApiParam(value = "Action plugin to filter query for action ids",
-                                                 required = true)
-                                       @PathParam("actionPlugin") final String actionPlugin) {
+            responseContainer = "Collection",
+            response = String.class,
+            notes = "Pagination is not yet implemented")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Actions Found"),
+            @ApiResponse(code = 204, message = "Success, No Actions Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void findAllActionsByPlugin(
+            @Suspended
+            final AsyncResponse response,
+            @ApiParam(value = "Action plugin to filter query for action ids",
+                    required = true)
+            @PathParam("actionPlugin")
+            final String actionPlugin) {
         try {
             Collection<String> actions = definitions.getActions(actionPlugin);
             if (actions == null || actions.isEmpty()) {
@@ -124,14 +140,14 @@ public class ActionsHandler {
             } else {
                 log.debugf("GET - findAllActions - %s notifiers ", actions);
                 response.resume(Response.status(Response.Status.OK)
-                                        .entity(actions).type(APPLICATION_JSON_TYPE).build());
+                        .entity(actions).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             Map<String, String> errors = new HashMap<String, String>();
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
     }
 
@@ -140,17 +156,23 @@ public class ActionsHandler {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Create a new action",
-                  responseContainer = "Map<String, String>",
-                  response = String.class,
-                  notes = "Action properties are variable and depends on the action plugin. " +
-                          "A user needs to request previously ActionPlugin API to get the list of properties to fill " +
-                          "for a specific type. All actions should have actionId and actionPlugin as mandatory " +
-                          "properties")
-    public void createAction(@Suspended final AsyncResponse response,
-                             @ApiParam(value = "Action properties. Properties depend of specific ActionPlugin.",
-                                       name = "actionProperties",
-                                       required = true)
-                             final Map<String, String> actionProperties) {
+            responseContainer = "Map<String, String>",
+            response = String.class,
+            notes = "Action properties are variable and depends on the action plugin. " +
+                    "A user needs to request previously ActionPlugin API to get the list of properties to fill " +
+                    "for a specific type. All actions should have actionId and actionPlugin as mandatory " +
+                    "properties")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Action Created"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void createAction(
+            @Suspended
+            final AsyncResponse response,
+            @ApiParam(value = "Action properties. Properties depend of specific ActionPlugin.",
+                    name = "actionProperties",
+                    required = true)
+            final Map<String, String> actionProperties) {
         try {
             if (actionProperties != null && !actionProperties.isEmpty() &&
                     actionProperties.containsKey("actionId") &&
@@ -180,18 +202,25 @@ public class ActionsHandler {
     @Path("/{actionId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get an existing action",
-                  responseContainer = "Map<String, String>",
-                  response = String.class,
-                  notes = "Action is represented as a map of properties.")
-    public void getAction(@Suspended final AsyncResponse response,
-                          @ApiParam(value = "Action id to be retrieved",
-                                    required = true)
-                          @PathParam("actionId") final String actionId) {
+            responseContainer = "Map<String, String>",
+            response = String.class,
+            notes = "Action is represented as a map of properties.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Action Found"),
+            @ApiResponse(code = 404, message = "No Action Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void getAction(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Action id to be retrieved",
+                    required = true)
+            @PathParam("actionId")
+            final String actionId) {
         try {
-             Map<String, String> actionProps = definitions.getAction(actionId);
+            Map<String, String> actionProps = definitions.getAction(actionId);
             if (actionProps == null || actionProps.isEmpty()) {
                 log.debugf("GET - getAction - Empty");
-                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+                response.resume(Response.status(Response.Status.NOT_FOUND).type(APPLICATION_JSON_TYPE).build());
             } else {
                 log.debugf("GET - getAction - actionId: %s - properties: %s ",
                         actionId, actionProps);
@@ -211,18 +240,26 @@ public class ActionsHandler {
     @Path("/{actionId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing action",
-                  notes = "Action properties are variable and depends on the action plugin. " +
-                          "A user needs to request previously ActionPlugin API to get the list of properties to fill " +
-                          "for a specific type. All actions should have actionId and actionPlugin as mandatory " +
-                          "properties")
-    public void updateAction(@Suspended final AsyncResponse response,
-                             @ApiParam(value = "action id to be updated",
-                                       required = true)
-                             @PathParam("actionId") final String actionId,
-                             @ApiParam(value = "Action properties. Properties depend of specific ActionPlugin.",
-                                       name = "actionProperties",
-                                       required = true)
-                             final Map<String, String> actionProperties) {
+            notes = "Action properties are variable and depends on the action plugin. " +
+                    "A user needs to request previously ActionPlugin API to get the list of properties to fill " +
+                    "for a specific type. All actions should have actionId and actionPlugin as mandatory " +
+                    "properties")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Action Updated"),
+            @ApiResponse(code = 404, message = "No Action Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void updateAction(
+            @Suspended
+            final AsyncResponse response,
+            @ApiParam(value = "action id to be updated", required = true)
+            @PathParam("actionId")
+            final String actionId,
+            @ApiParam(
+                    value = "Action properties. Properties depend of specific ActionPlugin.",
+                    name = "actionProperties",
+                    required = true)
+            final Map<String, String> actionProperties) {
         try {
             if (actionId != null && !actionId.isEmpty() &&
                     actionProperties != null && !actionProperties.isEmpty() &&
@@ -238,7 +275,7 @@ public class ActionsHandler {
                 Map<String, String> errors = new HashMap<String, String>();
                 errors.put("errorMsg", "actionId  " + actionId + " not found or invalid Id");
                 errors.put("errorMsg", "Existing action or invalid Id");
-                response.resume(Response.status(Response.Status.BAD_REQUEST)
+                response.resume(Response.status(Response.Status.NOT_FOUND)
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }
         } catch (Exception e) {
@@ -253,10 +290,17 @@ public class ActionsHandler {
     @DELETE
     @Path("/{actionId}")
     @ApiOperation(value = "Delete an existing action")
-    public void deleteAction(@Suspended final AsyncResponse response,
-                             @ApiParam(value = "Action id to be deleted",
-                                       required = true)
-                             @PathParam("actionId") final String actionId) {
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Action Deleted"),
+            @ApiResponse(code = 404, message = "No Action Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void deleteAction(@Suspended
+    final AsyncResponse response,
+            @ApiParam(value = "Action id to be deleted",
+                    required = true)
+            @PathParam("actionId")
+            final String actionId) {
         try {
             if (actionId != null && !actionId.isEmpty() && definitions.getAction(actionId) != null) {
                 log.debugf("DELETE - deleteAction - actionId: %s ", actionId);
