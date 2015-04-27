@@ -53,6 +53,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
+import com.wordnik.swagger.annotations.ApiResponse;
+import com.wordnik.swagger.annotations.ApiResponses;
 
 /**
  * REST endpoint for triggers
@@ -62,7 +64,7 @@ import com.wordnik.swagger.annotations.ApiParam;
  */
 @Path("/triggers")
 @Api(value = "/triggers",
-        description = "CRUD operations for Trigger defs")
+        description = "Hawkular-Alerts REST API for Trigger Handling")
 public class TriggersHandler {
     private static final Logger log = Logger.getLogger(TriggersHandler.class);
 
@@ -79,10 +81,16 @@ public class TriggersHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Find all triggers definitions",
+    @ApiOperation(
+            value = "Find all Trigger definitions",
             responseContainer = "Collection<Trigger>",
             response = Trigger.class,
             notes = "Pagination is not yet implemented")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Triggers Found"),
+            @ApiResponse(code = 204, message = "Success, No Triggers Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void findAllTriggers(@Suspended
     final AsyncResponse response) {
         try {
@@ -112,6 +120,10 @@ public class TriggersHandler {
             value = "Create a new trigger definitions. If trigger ID is null, a (likely) unique ID will be generated",
             response = Trigger.class,
             notes = "Returns Trigger created if operation finished correctly")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Trigger Created"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void createTrigger(
             @Suspended
             final AsyncResponse response,
@@ -159,8 +171,14 @@ public class TriggersHandler {
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get an existing trigger definition",
             response = Trigger.class)
-    public void getTrigger(@Suspended
-    final AsyncResponse response,
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Trigger Found"),
+            @ApiResponse(code = 404, message = "Success, No Trigger Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void getTrigger(
+            @Suspended
+            final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
                     required = true)
             @PathParam("triggerId")
@@ -193,8 +211,14 @@ public class TriggersHandler {
     @Path("/{triggerId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing trigger definition")
-    public void updateTrigger(@Suspended
-    final AsyncResponse response,
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Trigger Updated"),
+            @ApiResponse(code = 404, message = "No Trigger Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void updateTrigger(
+            @Suspended
+            final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be updated",
                     required = true)
             @PathParam("triggerId")
@@ -230,8 +254,14 @@ public class TriggersHandler {
     @DELETE
     @Path("/{triggerId}")
     @ApiOperation(value = "Delete an existing trigger definition")
-    public void deleteTrigger(@Suspended
-    final AsyncResponse response,
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Trigger Deleted"),
+            @ApiResponse(code = 404, message = "No Trigger Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void deleteTrigger(
+            @Suspended
+            final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be deleted",
                     required = true)
             @PathParam("triggerId")
@@ -261,12 +291,17 @@ public class TriggersHandler {
     @GET
     @Path("/{triggerId}/dampenings")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get a list with all dampenings linked with a trigger.",
+    @ApiOperation(value = "Get all Dampenings for a Trigger (1 Dampening per mode).",
             responseContainer = "Collection<Dampening>",
-            response = Dampening.class,
-            notes = "Pagination is not yet implemented ")
-    public void getTriggerDampenings(@Suspended
-    final AsyncResponse response,
+            response = Dampening.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Dampenings Found"),
+            @ApiResponse(code = 204, message = "Success, No Dampenings Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void getTriggerDampenings(
+            @Suspended
+            final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
                     required = true)
             @PathParam("triggerId")
@@ -297,8 +332,14 @@ public class TriggersHandler {
     @ApiOperation(value = "Get a dampening using triggerId and triggerMode",
             response = Dampening.class,
             notes = "Similar as getDampening(dampeningId)")
-    public void getTriggerModeDampenings(@Suspended
-    final AsyncResponse response,
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Dampening Found"),
+            @ApiResponse(code = 204, message = "Success, No Dampening Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void getTriggerModeDampenings(
+            @Suspended
+            final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
                     required = true)
             @PathParam("triggerId")
@@ -332,8 +373,14 @@ public class TriggersHandler {
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get an existing dampening",
             response = Dampening.class)
-    public void getDampening(@Suspended
-    final AsyncResponse response,
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Dampening Found"),
+            @ApiResponse(code = 404, message = "No Dampening Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void getDampening(
+            @Suspended
+            final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
                     required = true)
             @PathParam("triggerId")
@@ -373,8 +420,13 @@ public class TriggersHandler {
     @ApiOperation(value = "Create a new dampening",
             response = Dampening.class,
             notes = "Returns Dampening created if operation finished correctly")
-    public void createDampening(@Suspended
-    final AsyncResponse response,
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Dampening Created"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void createDampening(
+            @Suspended
+            final AsyncResponse response,
             @ApiParam(value = "Trigger definition id attached to dampening",
                     required = true)
             @PathParam("triggerId")
@@ -412,19 +464,21 @@ public class TriggersHandler {
     @Path("/{triggerId}/dampenings/{dampeningId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing dampening definition")
-    public void updateDampening(@Suspended
-    final AsyncResponse response,
-            @ApiParam(value = "Trigger definition id to be retrieved",
-                    required = true)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Dampening Updated"),
+            @ApiResponse(code = 404, message = "No Dampening Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void updateDampening(
+            @Suspended
+            final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId,
-            @ApiParam(value = "Dampening id",
-                    required = true)
+            @ApiParam(value = "Dampening id", required = true)
             @PathParam("dampeningId")
             final String dampeningId,
-            @ApiParam(value = "Updated dampening definition",
-                    name = "dampening",
-                    required = true)
+            @ApiParam(value = "Updated dampening definition", name = "dampening", required = true)
             final Dampening dampening) {
         try {
             if (dampeningId != null && !dampeningId.isEmpty() &&
@@ -455,6 +509,11 @@ public class TriggersHandler {
     @DELETE
     @Path("/{triggerId}/dampenings/{dampeningId}")
     @ApiOperation(value = "Delete an existing dampening definition")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Dampening Deleted"),
+            @ApiResponse(code = 404, message = "No Dampening Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void deleteDampening(
             @Suspended
             final AsyncResponse response,
@@ -476,7 +535,7 @@ public class TriggersHandler {
             } else {
                 log.debugf("DELETE - deleteDampening - dampeningId: %s not found or invalid ", dampeningId);
                 Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "Trigger ID " + dampeningId + " not found or invalid ID");
+                errors.put("errorMsg", "Dampening ID " + dampeningId + " not found or invalid ID");
                 response.resume(Response.status(Response.Status.NOT_FOUND)
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             }
@@ -492,9 +551,14 @@ public class TriggersHandler {
     @GET
     @Path("/{triggerId}/conditions")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get a map with all conditions id an specific trigger.",
+    @ApiOperation(value = "Get a map with all conditions for a specific trigger.",
             responseContainer = "Collection<Condition>",
             response = Condition.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Conditions Found"),
+            @ApiResponse(code = 204, message = "Success, No Conditions Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void getTriggerConditions(@Suspended
     final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
@@ -526,10 +590,15 @@ public class TriggersHandler {
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get a condition for a specific trigger id.",
             response = Condition.class)
-    public void getTriggerCondition(@Suspended
-    final AsyncResponse response,
-            @ApiParam(value = "Trigger definition id to be retrieved",
-                    required = true)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Condition Found"),
+            @ApiResponse(code = 404, message = "No Condition Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void getTriggerCondition(
+            @Suspended
+            final AsyncResponse response,
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @PathParam("conditionId")
@@ -541,7 +610,7 @@ public class TriggersHandler {
             }
             if (condition == null) {
                 log.debugf("GET - getTriggerCondition - Empty");
-                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
+                response.resume(Response.status(Response.Status.NOT_FOUND).type(APPLICATION_JSON_TYPE).build());
             } else {
                 log.debugf("GET - getTriggerCondition - %s condition ", conditionId);
                 response.resume(Response.status(Response.Status.OK)
@@ -562,8 +631,13 @@ public class TriggersHandler {
     @ApiOperation(value = "Create a new condition for a specific trigger",
             responseContainer = "Collection",
             response = Condition.class)
-    public void createCondition(@Suspended
-    final AsyncResponse response,
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Condition Created"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void createCondition(
+            @Suspended
+            final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
                     required = true)
             @PathParam("triggerId")
@@ -619,8 +693,14 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing condition for a specific trigger")
-    public void updateCondition(@Suspended
-    final AsyncResponse response,
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Condition Updated"),
+            @ApiResponse(code = 404, message = "No Condition Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void updateCondition(
+            @Suspended
+            final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
                     required = true)
             @PathParam("triggerId")
@@ -663,7 +743,7 @@ public class TriggersHandler {
                                 " doesn't exist");
                         Map<String, String> errors = new HashMap<String, String>();
                         errors.put("errorMsg", "Condition " + condition.getConditionId() + " doesn't exist");
-                        response.resume(Response.status(Response.Status.BAD_REQUEST)
+                        response.resume(Response.status(Response.Status.NOT_FOUND)
                                 .entity(errors).type(APPLICATION_JSON_TYPE).build());
                     } else {
                         Collection<Condition> updatedConditions = definitions.updateCondition(condition);
@@ -688,8 +768,14 @@ public class TriggersHandler {
     @ApiOperation(value = "Delete an existing condition for a specific trigger",
             responseContainer = "Collection<Condition>",
             response = Condition.class)
-    public void deleteCondition(@Suspended
-    final AsyncResponse response,
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Condition Deleted"),
+            @ApiResponse(code = 404, message = "No Condition Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void deleteCondition(
+            @Suspended
+            final AsyncResponse response,
             @ApiParam(value = "Trigger definition id to be retrieved",
                     required = true)
             @PathParam("triggerId")
@@ -699,10 +785,10 @@ public class TriggersHandler {
         try {
             Condition test = definitions.getCondition(conditionId);
             if (test == null) {
-                log.debugf("POST - deleteCondition - Condition " + conditionId + " doesn't exist");
+                log.debugf("POST - deleteCondition - Condition " + conditionId + " not found or invalid");
                 Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "Condition " + conditionId + " doesn't exist");
-                response.resume(Response.status(Response.Status.BAD_REQUEST)
+                errors.put("errorMsg", "Condition " + conditionId + " not found or invalid");
+                response.resume(Response.status(Response.Status.NOT_FOUND)
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             } else {
                 Collection<Condition> updatedConditions = definitions.removeCondition(conditionId);
@@ -747,6 +833,10 @@ public class TriggersHandler {
     @ApiOperation(value = "Create a new trigger tag",
             response = Tag.class,
             notes = "Returns Tag created if operation finished correctly")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Tag Created"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void createTag(
             @Suspended
             final AsyncResponse response,
@@ -776,7 +866,12 @@ public class TriggersHandler {
 
     @POST
     @Path("/{triggerId}/tags")
-    @ApiOperation(value = "Delete an existing trigger definition")
+    @ApiOperation(value = "Delete existing Tags from a Trigger")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Tags Deleted"),
+            @ApiResponse(code = 404, message = "No Trigger Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void deleteTags(
             @Suspended
             final AsyncResponse response,
@@ -816,6 +911,11 @@ public class TriggersHandler {
     @ApiOperation(value = "Get tags for a trigger.",
             responseContainer = "Collection<Tag>",
             response = Tag.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Tags Found"),
+            @ApiResponse(code = 204, message = "Success, No Tags Found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public void getTriggerTags(
             @Suspended
             final AsyncResponse response,
