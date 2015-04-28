@@ -439,11 +439,14 @@ public class TriggersHandler {
             if (dampening != null && dampening.getTriggerId() != null &&
                     triggerId != null && dampening.getTriggerId().equals(triggerId) &&
                     definitions.getDampening(dampening.getDampeningId()) == null) {
-                log.debugf("POST - createDampening - triggerId %s ", dampening.getTriggerId());
-                definitions.addDampening(dampening);
+
+                // make sure we have the best chance of clean data..
+                Dampening d = getCleanDampening(dampening);
+                log.debugf("POST - createDampening - triggerId %s ", d.getTriggerId());
+                definitions.addDampening(d);
 
                 response.resume(Response.status(Response.Status.OK)
-                        .entity(dampening).type(APPLICATION_JSON_TYPE).build());
+                        .entity(d).type(APPLICATION_JSON_TYPE).build());
             } else {
                 log.debugf("POST - createDampening - ID not valid or existing dampening");
                 Map<String, String> errors = new HashMap<String, String>();
@@ -457,6 +460,32 @@ public class TriggersHandler {
             errors.put("errorMsg", "Internal Error: " + e.getMessage());
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
+    private Dampening getCleanDampening(Dampening dampening) throws Exception {
+        switch (dampening.getType()) {
+            case STRICT:
+                return Dampening.forStrict(dampening.getTriggerId(), dampening.getTriggerMode(),
+                        dampening.getEvalTrueSetting());
+
+            case STRICT_TIME:
+                return Dampening.forStrictTime(dampening.getTriggerId(), dampening.getTriggerMode(),
+                        dampening.getEvalTimeSetting());
+
+            case STRICT_TIMEOUT:
+                return Dampening.forStrictTimeout(dampening.getTriggerId(), dampening.getTriggerMode(),
+                        dampening.getEvalTimeSetting());
+            case RELAXED_COUNT:
+                return Dampening.forRelaxedCount(dampening.getTriggerId(), dampening.getTriggerMode(),
+                        dampening.getEvalTrueSetting(),
+                        dampening.getEvalTotalSetting());
+            case RELAXED_TIME:
+                return Dampening.forRelaxedTime(dampening.getTriggerId(), dampening.getTriggerMode(),
+                        dampening.getEvalTrueSetting(), dampening.getEvalTimeSetting());
+
+            default:
+                throw new Exception("Unhandled Dampening Type: " + dampening.toString());
         }
     }
 
@@ -486,10 +515,15 @@ public class TriggersHandler {
                     dampeningId.equals(dampening.getDampeningId()) &&
                     dampeningId.startsWith(triggerId) &&
                     definitions.getDampening(dampeningId) != null) {
+
                 log.debugf("PUT - updateDampening - dampeningId: %s ", dampeningId);
-                definitions.updateDampening(dampening);
+
+                // make sure we have the best chance of clean data..
+                Dampening d = getCleanDampening(dampening);
+                definitions.updateDampening(d);
 
                 response.resume(Response.status(Response.Status.OK).build());
+
             } else {
                 log.debugf("PUT - updateDampening - dampeningId: %s not found or invalid. ", dampeningId);
                 Map<String, String> errors = new HashMap<String, String>();
@@ -642,7 +676,9 @@ public class TriggersHandler {
                     required = true)
             @PathParam("triggerId")
             final String triggerId,
-            @ApiParam(value = "Json representation of a condition")
+            @ApiParam(value = "Json representation of a condition. For examples of Condition types, See "
+                    + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
+                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
             String jsonCondition) {
         try {
             if (jsonCondition == null || jsonCondition.isEmpty() || !jsonCondition.contains("type")) {

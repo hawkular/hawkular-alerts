@@ -16,10 +16,10 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 /**
  * A base class for condition definition.

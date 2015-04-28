@@ -27,6 +27,7 @@ import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.wordnik.swagger.annotations.ApiModelProperty;
 
 /**
  * A representation of dampening status.
@@ -49,12 +50,21 @@ public class Dampening {
     private Type type;
 
     @JsonInclude
+    @ApiModelProperty(
+            value = "Number of required true evaluations for STRICT, RELAXED_COUNT, RELAXED_TIME",
+            allowableValues = ">= 1")
     private int evalTrueSetting;
 
     @JsonInclude
+    @ApiModelProperty(
+            value = "Number of allowed evaluation attempts for RELAXED_COUNT",
+            allowableValues = "> evalTrueSetting")
     private int evalTotalSetting;
 
     @JsonInclude
+    @ApiModelProperty(
+            value = "Time period in milliseconds for RELAXED_TIME, STRICT_TIME, STRICT_TIMEOUT",
+            allowableValues = "> 0")
     private long evalTimeSetting;
 
     /**
