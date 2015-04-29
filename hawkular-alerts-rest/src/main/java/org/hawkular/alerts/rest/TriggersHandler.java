@@ -185,7 +185,7 @@ public class TriggersHandler {
             final String triggerId) {
         try {
             Trigger found = null;
-            if (triggerId != null && !triggerId.isEmpty()) {
+            if (!isEmpty(triggerId)) {
                 found = definitions.getTrigger(triggerId);
             }
             if (found != null) {
@@ -228,10 +228,12 @@ public class TriggersHandler {
                     required = true)
             final Trigger trigger) {
         try {
-            if (triggerId != null && !triggerId.isEmpty() &&
-                    trigger != null && trigger.getId() != null &&
-                    triggerId.equals(trigger.getId()) &&
-                    definitions.getTrigger(triggerId) != null) {
+            boolean exists = false;
+            if (trigger != null && !isEmpty(triggerId)) {
+                trigger.setId(triggerId);
+                exists = (definitions.getTrigger(triggerId) != null);
+            }
+            if (exists) {
                 log.debugf("PUT - updateTrigger - triggerId: %s ", triggerId);
                 definitions.updateTrigger(trigger);
                 response.resume(Response.status(Response.Status.OK).build());
@@ -267,7 +269,7 @@ public class TriggersHandler {
             @PathParam("triggerId")
             final String triggerId) {
         try {
-            if (triggerId != null && !triggerId.isEmpty() && definitions.getTrigger(triggerId) != null) {
+            if (!isEmpty(triggerId) && definitions.getTrigger(triggerId) != null) {
                 log.debugf("DELETE - deleteTrigger - triggerId: %s ", triggerId);
                 definitions.removeTrigger(triggerId);
 
@@ -391,7 +393,7 @@ public class TriggersHandler {
             final String dampeningId) {
         try {
             Dampening found = null;
-            if (dampeningId != null && !dampeningId.isEmpty() && dampeningId.startsWith(triggerId)) {
+            if (!isEmpty(dampeningId) && dampeningId.startsWith(triggerId)) {
                 found = definitions.getDampening(dampeningId);
             }
             if (found != null) {
@@ -436,10 +438,12 @@ public class TriggersHandler {
                     required = true)
             final Dampening dampening) {
         try {
-            if (dampening != null && dampening.getTriggerId() != null &&
-                    triggerId != null && dampening.getTriggerId().equals(triggerId) &&
-                    definitions.getDampening(dampening.getDampeningId()) == null) {
-
+            boolean exists = false;
+            if (dampening != null && !isEmpty(triggerId)) {
+                dampening.setTriggerId(triggerId);
+                exists = (definitions.getDampening(dampening.getDampeningId()) != null);
+            }
+            if (!exists) {
                 // make sure we have the best chance of clean data..
                 Dampening d = getCleanDampening(dampening);
                 log.debugf("POST - createDampening - triggerId %s ", d.getTriggerId());
@@ -492,7 +496,7 @@ public class TriggersHandler {
     @PUT
     @Path("/{triggerId}/dampenings/{dampeningId}")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing dampening definition")
+    @ApiOperation(value = "Update an existing dampening definition. Note that the trigger mode can not be changed.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampening Updated"),
             @ApiResponse(code = 404, message = "No Dampening Found"),
@@ -510,12 +514,15 @@ public class TriggersHandler {
             @ApiParam(value = "Updated dampening definition", name = "dampening", required = true)
             final Dampening dampening) {
         try {
-            if (dampeningId != null && !dampeningId.isEmpty() &&
-                    dampening != null && dampening.getDampeningId() != null &&
-                    dampeningId.equals(dampening.getDampeningId()) &&
-                    dampeningId.startsWith(triggerId) &&
-                    definitions.getDampening(dampeningId) != null) {
-
+            boolean exists = false;
+            if (dampening != null && !isEmpty(triggerId) && !isEmpty(dampeningId)) {
+                // dampening has a composed key. Make sure the triggerId and trigger mode is valid.
+                dampening.setTriggerId(triggerId);
+                if (dampeningId.equals(dampening.getDampeningId())) {
+                    exists = (definitions.getDampening(dampeningId) != null);
+                }
+            }
+            if (exists) {
                 log.debugf("PUT - updateDampening - dampeningId: %s ", dampeningId);
 
                 // make sure we have the best chance of clean data..
@@ -559,9 +566,8 @@ public class TriggersHandler {
             @PathParam("dampeningId")
             final String dampeningId) {
         try {
-            if (dampeningId != null && !dampeningId.isEmpty() &&
-                    definitions.getDampening(dampeningId) != null &&
-                    dampeningId.startsWith(triggerId)) {
+            if (!isEmpty(dampeningId) && dampeningId.startsWith(triggerId)
+                    && definitions.getDampening(dampeningId) != null) {
                 log.debugf("DELETE - deleteDampening - dampeningId: %s ", dampeningId);
                 definitions.removeDampening(dampeningId);
 
@@ -681,7 +687,7 @@ public class TriggersHandler {
                     + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
             String jsonCondition) {
         try {
-            if (jsonCondition == null || jsonCondition.isEmpty() || !jsonCondition.contains("type")) {
+            if (isEmpty(jsonCondition) || !jsonCondition.contains("type")) {
                 log.debugf("POST - createCondition - json condition empty or without type");
                 Map<String, String> errors = new HashMap<String, String>();
                 errors.put("errorMsg", "Condition empty or without type");
@@ -689,8 +695,8 @@ public class TriggersHandler {
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             } else {
                 Condition.Type conditionType = conditionType(jsonCondition);
-                if (conditionType == null) {
-                    log.debugf("POST - createCondition - bad type ");
+                if (conditionType == null || isEmpty(triggerId)) {
+                    log.debugf("POST - createCondition - bad type or bad triggerId ");
                     Map<String, String> errors = new HashMap<String, String>();
                     errors.put("errorMsg", "Condition with bad type");
                     response.resume(Response.status(Response.Status.BAD_REQUEST)
@@ -708,6 +714,7 @@ public class TriggersHandler {
                     } else if (conditionType.equals(Condition.Type.RANGE)) {
                         condition = objectMapper.readValue(jsonCondition, ThresholdRangeCondition.class);
                     }
+                    condition.setTriggerId(triggerId);
                     Collection<Condition> newConditions = definitions.addCondition(condition.getTriggerId(),
                             condition.getTriggerMode(),
                             condition);
@@ -746,7 +753,7 @@ public class TriggersHandler {
             @ApiParam(value = "Json representation of a condition")
             String jsonCondition) {
         try {
-            if (jsonCondition == null || jsonCondition.isEmpty() || !jsonCondition.contains("type")) {
+            if (isEmpty(jsonCondition) || !jsonCondition.contains("type")) {
                 log.debugf("POST - updateCondition - json condition empty or without type");
                 Map<String, String> errors = new HashMap<String, String>();
                 errors.put("errorMsg", "Condition empty or without type");
@@ -754,8 +761,8 @@ public class TriggersHandler {
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
             } else {
                 Condition.Type conditionType = conditionType(jsonCondition);
-                if (conditionType == null) {
-                    log.debugf("POST - createCondition - bad type ");
+                if (conditionType == null || isEmpty(conditionId)) {
+                    log.debugf("POST - createCondition - bad type or invalid conditionId ");
                     Map<String, String> errors = new HashMap<String, String>();
                     errors.put("errorMsg", "Condition with bad type");
                     response.resume(Response.status(Response.Status.BAD_REQUEST)
@@ -773,8 +780,11 @@ public class TriggersHandler {
                     } else if (conditionType.equals(Condition.Type.RANGE)) {
                         condition = objectMapper.readValue(jsonCondition, ThresholdRangeCondition.class);
                     }
-                    Condition test = definitions.getCondition(condition.getConditionId());
-                    if (test == null) {
+                    boolean exists = false;
+                    if (conditionId.equals(condition.getConditionId())) {
+                        exists = (definitions.getCondition(condition.getConditionId()) != null);
+                    }
+                    if (!exists) {
                         log.debugf("PUT - updateCondition - Condition " + condition.getConditionId() +
                                 " doesn't exist");
                         Map<String, String> errors = new HashMap<String, String>();
@@ -962,8 +972,11 @@ public class TriggersHandler {
             @QueryParam("category")
             final String category) {
         try {
-            Collection<Tag> tagsList = definitions.getTriggerTags(triggerId, category);
-            if (tagsList.isEmpty()) {
+            Collection<Tag> tagsList = null;
+            if (!isEmpty(triggerId)) {
+                tagsList = definitions.getTriggerTags(triggerId, category);
+            }
+            if (null == tagsList || tagsList.isEmpty()) {
                 log.debugf("GET - getTriggerTags - Empty");
                 response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
             } else {
