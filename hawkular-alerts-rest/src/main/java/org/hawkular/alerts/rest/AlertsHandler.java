@@ -58,7 +58,7 @@ import com.wordnik.swagger.annotations.ApiResponses;
  * @author Lucas Ponce
  */
 @Path("/")
-@Api(value = "/", description = "Hawkular-Alerts REST API for Alert Handling")
+@Api(value = "/", description = "Alert Handling")
 public class AlertsHandler {
     // private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(AlertsHandler.class);

@@ -64,7 +64,7 @@ import com.wordnik.swagger.annotations.ApiResponses;
  */
 @Path("/triggers")
 @Api(value = "/triggers",
-        description = "Hawkular-Alerts REST API for Trigger Handling")
+        description = "Trigger Handling")
 public class TriggersHandler {
     private static final Logger log = Logger.getLogger(TriggersHandler.class);
 

@@ -54,7 +54,7 @@ import com.wordnik.swagger.annotations.ApiResponses;
  */
 @Path("/actions")
 @Api(value = "/actions",
-        description = "Hawkular-Alerts REST API for Action Handling")
+        description = "Action Handling")
 public class ActionsHandler {
     private final Logger log = Logger.getLogger(ActionsHandler.class);
 
