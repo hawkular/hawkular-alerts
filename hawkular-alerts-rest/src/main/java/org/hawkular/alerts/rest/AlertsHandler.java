@@ -30,6 +30,7 @@ import java.util.Set;
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -40,6 +41,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
 import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.data.MixedData;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
@@ -88,26 +90,26 @@ public class AlertsHandler {
             final AsyncResponse response,
             @ApiParam(required = false, value = "filter out alerts created before this time, millisecond since epoch")
             @QueryParam("startTime")
-            Long startTime,
+            final Long startTime,
             @ApiParam(required = false, value = "filter out alerts created after this time, millisecond since epoch")
             @QueryParam("endTime")
-            Long endTime,
+            final Long endTime,
             @ApiParam(required = false, value = "filter out alerts for unspecified alertIds, " +
                     "comma separated list of alert IDs")
             @QueryParam("alertIds")
-            String alertIds,
+            final String alertIds,
             @ApiParam(required = false, value = "filter out alerts for unspecified triggers, " +
                     "comma separated list of trigger IDs")
             @QueryParam("triggerIds")
-            String triggerIds,
+            final String triggerIds,
             @ApiParam(required = false, value = "filter out alerts for unspecified lifecycle status, " +
                     "comma separated list of status values")
             @QueryParam("statuses")
-            String statuses,
+            final String statuses,
             @ApiParam(required = false, value = "filter out alerts for unspecified tags, comma separated list of tags, "
                     + "each tag of format [category|]name")
             @QueryParam("tags")
-            String tags) {
+            final String tags) {
 
         try {
             AlertsCriteria criteria = new AlertsCriteria();
@@ -153,7 +155,6 @@ public class AlertsHandler {
             response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errors).type(APPLICATION_JSON_TYPE).build());
         }
-
     }
 
     @GET
@@ -184,7 +185,7 @@ public class AlertsHandler {
             @Suspended
             final AsyncResponse response,
             @PathParam("triggerId")
-            String triggerId) {
+            final String triggerId) {
         alerts.reloadTrigger(triggerId);
         response.resume(Response.status(Response.Status.OK).build());
     }
@@ -203,13 +204,13 @@ public class AlertsHandler {
             final AsyncResponse response,
             @ApiParam(required = true, value = "comma separated list of alertIds to Ack")
             @QueryParam("alertIds")
-            String alertIds,
+            final String alertIds,
             @ApiParam(required = false, value = "user acknowledging the alerts")
             @QueryParam("ackBy")
-            String ackBy,
+            final String ackBy,
             @ApiParam(required = false, value = "additional notes asscoiated with the acknowledgement")
             @QueryParam("ackNotes")
-            String ackNotes) {
+            final String ackNotes) {
         try {
             if (alertIds != null && !alertIds.isEmpty()) {
                 log.debugf("PUT - ackAlerts : %s ", alertIds);
@@ -245,13 +246,13 @@ public class AlertsHandler {
             final AsyncResponse response,
             @ApiParam(required = true, value = "comma separated list of alertIds to set Resolved")
             @QueryParam("alertIds")
-            String alertIds,
+            final String alertIds,
             @ApiParam(required = false, value = "user resolving the alerts")
             @QueryParam("resolvedBy")
-            String resolvedBy,
+            final String resolvedBy,
             @ApiParam(required = false, value = "additional notes asscoiated with the resolution")
             @QueryParam("resolvedNotes")
-            String resolvedNotes) {
+            final String resolvedNotes) {
         try {
             if (alertIds != null && !alertIds.isEmpty()) {
                 log.debugf("PUT - resolveAlerts : %s ", alertIds);
@@ -263,6 +264,41 @@ public class AlertsHandler {
                 errors.put("errorMsg", "alertIds required");
                 response.resume(Response.status(Response.Status.NOT_FOUND)
                         .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            Map<String, String> errors = new HashMap<String, String>();
+            errors.put("errorMsg", "Internal Error: " + e.getMessage());
+            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+        }
+    }
+
+    @POST
+    @Path("/data")
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Send data for alert processing/condition evaluation.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, data added."),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public void sendData(
+            @Suspended
+            final AsyncResponse response,
+            @ApiParam(required = true, name = "mixedData", value = "data to be processed by alerting")
+            final MixedData mixedData) {
+        try {
+            if (null == mixedData || mixedData.isEmpty()) {
+                String errorMsg = "POST - Data is empty";
+                log.debugf(errorMsg);
+                Map<String, String> errors = new HashMap<String, String>();
+                errors.put("errorMsg", errorMsg);
+                response.resume(Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            } else {
+                log.debugf("POST - sendData - %s datums ", mixedData.size());
+                alerts.sendData(mixedData.asCollection());
+                response.resume(Response.status(Response.Status.OK).build());
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);

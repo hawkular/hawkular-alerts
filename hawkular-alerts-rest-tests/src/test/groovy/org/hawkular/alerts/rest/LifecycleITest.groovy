@@ -16,6 +16,10 @@
  */
 package org.hawkular.alerts.rest
 
+import java.util.List
+
+import org.hawkular.alerts.api.model.data.Availability
+import org.hawkular.alerts.api.model.data.MixedData
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.bus.messages.AlertData
@@ -182,13 +186,12 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(204, resp.status)
 
         // Send in DOWN avail data to fire the trigger
-        // Note, the groovyx rest c;lient seems incapable of allowing a JSON payload and a TEXT response (which is what
-        // we get back from the activemq rest client used by the bus), so use the bus' java rest client to do this.
-        RestClient busClient = new RestClient(host, port);
-        String json = "{\"data\":[{\"id\":\"test-lifecycle-avail\",\"timestamp\":" + System.currentTimeMillis() +
-                      ",\"value\"=\"DOWN\",\"type\"=\"availability\"}]}";
-        busClient.postTopicMessage("HawkularAlertData", json, null);
-        //assertEquals(200, resp.status)
+        // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
+        Availability avail = new Availability("test-lifecycle-avail", System.currentTimeMillis(), "DOWN");
+        MixedData mixedData = new MixedData();
+        mixedData.getAvailability().add(avail);
+        resp = client.post(path: "data", body: mixedData);
+        assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
@@ -224,10 +227,12 @@ class LifecycleITest extends AbstractITestBase {
         //assertEquals(Mode.AUTORESOLVE, resp.data.mode)
 
         // Send in UP avail data to autoresolve the trigger
-        json = "{\"data\":[{\"id\":\"test-lifecycle-avail\",\"timestamp\":" + System.currentTimeMillis() +
-                      ",\"value\"=\"UP\",\"type\"=\"availability\"}]}";
-        busClient.postTopicMessage("HawkularAlertData", json, null);
-        //assertEquals(200, resp.status)
+        // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
+        avail = new Availability("test-lifecycle-avail", System.currentTimeMillis(), "UP");
+        mixedData.clear();
+        mixedData.getAvailability().add(avail);
+        resp = client.post(path: "data", body: mixedData);
+        assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
