@@ -86,7 +86,7 @@ public class MixedData {
         }
     }
 
-    // to be safe, slap some JsonIgnore annotations on these helper methods, I know the "isEmpty()" method screwed 
+    // to be safe, slap some JsonIgnore annotations on these helper methods, I know the "isEmpty()" method screwed
     // up jax-rs, because it thought 'empty' was a field...
 
     @JsonIgnore
