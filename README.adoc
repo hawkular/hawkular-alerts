@@ -59,7 +59,7 @@ Main responsabilities are: +
 
 == Integration tests
 
-There are integration tests suite that downloads a wildfly server and deploys *hawkular-alerts* with an embedded
+There is a integration test suite that downloads a wildfly server and deploys *hawkular-alerts* with an embedded
 cassandra service.
 These integration tests can be executed using *-Prest* profile:
 
@@ -69,8 +69,8 @@ mvn clean install -Prest
 
 == Performance tests
 
-There are performance test focus in the *hawkular-alerts-engine* project.
-These tests are not active by default, we can run them using *-Pperf* profile:
+There is a performance test suite focus in the *hawkular-alerts-engine* project.
+These tests are not active by default, they can be run using *-Pperf* profile:
 
 ```shell
 mvn clean install -Pperf
@@ -89,7 +89,7 @@ mvn clean install -Pdocgen
 
 By default, the *-Prest* profile has all necessary to launch a server with dependencies to run the project.
 
-For development/debuggin scenarios it might be useful to create a manual setup of the environment required to run the
+For development/debug scenarios it might be useful to create a manual setup of the environment required to run the
  project.
 
 *Hawkular Alerts* has a dependency on Cassandra 2.1.1 or later. A running Cassandra cluster, which can be a single node,
