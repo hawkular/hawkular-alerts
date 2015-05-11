@@ -115,14 +115,29 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private PreparedStatement selectTag;
     private PreparedStatement deleteTagsTriggers;
 
-    public CassDefinitionsServiceImpl() {
+    public CassDefinitionsServiceImpl() { }
 
+    public AlertsService getAlertsService() {
+        return alertsService;
     }
 
-    public CassDefinitionsServiceImpl(AlertsService alertsService, Session session, String keyspace) {
-        this();
+    public void setAlertsService(AlertsService alertsService) {
         this.alertsService = alertsService;
+    }
+
+    public Session getSession() {
+        return session;
+    }
+
+    public void setSession(Session session) {
         this.session = session;
+    }
+
+    public String getKeyspace() {
+        return keyspace;
+    }
+
+    public void setKeyspace(String keyspace) {
         this.keyspace = keyspace;
     }
 

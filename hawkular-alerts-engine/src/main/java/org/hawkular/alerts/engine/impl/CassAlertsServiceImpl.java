@@ -116,6 +116,30 @@ public class CassAlertsServiceImpl implements AlertsService {
         period = new Integer(AlertProperties.getProperty(ENGINE_PERIOD, "2000"));
     }
 
+    public ActionsService getActions() {
+        return actions;
+    }
+
+    public void setActions(ActionsService actions) {
+        this.actions = actions;
+    }
+
+    public DefinitionsService getDefinitions() {
+        return definitions;
+    }
+
+    public void setDefinitions(DefinitionsService definitions) {
+        this.definitions = definitions;
+    }
+
+    public RulesEngine getRules() {
+        return rules;
+    }
+
+    public void setRules(RulesEngine rules) {
+        this.rules = rules;
+    }
+
     @PostConstruct
     public void initServices() {
         try {
