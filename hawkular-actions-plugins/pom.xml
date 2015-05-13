@@ -44,6 +44,7 @@
     <module>hawkular-actions-sms</module>
     <module>hawkular-actions-snmp</module>
     <module>hawkular-actions-aerogear</module>
+    <module>hawkular-actions-pagerduty</module>
   </modules>
 
   <dependencies>
