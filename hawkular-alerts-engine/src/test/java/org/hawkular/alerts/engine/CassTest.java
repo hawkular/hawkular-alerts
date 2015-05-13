@@ -40,9 +40,8 @@ import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
+import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.impl.AlertProperties;
-import org.hawkular.alerts.engine.impl.CassAlertsServiceImpl;
-import org.hawkular.alerts.engine.impl.CassDefinitionsServiceImpl;
 import org.hawkular.alerts.engine.impl.CassCluster;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -60,8 +59,8 @@ import com.datastax.driver.core.Session;
 public class CassTest {
 
     static Session session;
-    static CassDefinitionsServiceImpl cassDefinitions;
-    static CassAlertsServiceImpl cassAlerts;
+    static DefinitionsService cassDefinitions;
+    static AlertsService cassAlerts;
     static String keyspace;
 
     @BeforeClass
@@ -73,12 +72,8 @@ public class CassTest {
         session = CassCluster.getSession();
         keyspace = AlertProperties.getProperty("hawkular-alerts.cassandra-keyspace", "hawkular_alerts_test");
 
-        AlertsService emptyAlertsService = new EmptyAlertsService();
-        cassDefinitions = new CassDefinitionsServiceImpl(emptyAlertsService, session, keyspace);
-        cassAlerts = new CassAlertsServiceImpl();
-
-        cassDefinitions.init();
-        cassAlerts.initServices();
+        cassDefinitions = StandaloneAlerts.getDefinitionsService();
+        cassAlerts = StandaloneAlerts.getAlertsService();
     }
 
     @Test
