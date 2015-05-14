@@ -107,21 +107,21 @@ is required for unit and integration tests.
 1.5. mvn install
 ```
 
-2. Prepare *hawkular-bus* in your local environment
+2. Prepare *hawkular* in your local environment
 
 ```shell
-git clone https://github.com/hawkular/hawkular-bus.git
-cd hawkular-bus
+git clone https://github.com/hawkular/hawkular.git
+cd hawkular
 mvn clean install -Pdev
 ```
 
 Profile *-Pdev* creates a pre-configured wildfly-8.2.0.Final server with all dependencies needed in
 
 ```shell
-$YOUR_FOLDER/hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-8.2.0.Final
+$YOUR_FOLDER/hawkular/dist/target/hawkular-1.0.0-SNAPSHOT/wildfly-8.2.0.Final
 ```
 
-We will call this wildfly server as *$NEST_HOME*
+We will call this wildfly server as *$HAWKULAR_HOME*
 
 [start=3]
 3. Prepare *hawkular-alerts* in your local environment
@@ -132,19 +132,19 @@ cd hawkular-alerts
 mvn clean install -Pdev
 ```
 
-Profile *-Pdev* copies *hawkular-alerts* artifacts into *$NEST_HOME*. +
-If *hawkular-bus* and *hawkular-alerts* are not in the same folder, you can define the location of wildfly server like:
+Profile *-Pdev* copies *hawkular-alerts* artifacts into *$HAWKULAR_HOME*. +
+If *hawkular* and *hawkular-alerts* are not in the same folder, you can define the location of wildfly server like:
 
 ```shell
-NEST_HOME=$PATH_TO/hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-8.2.0.Final
-mvn clean install -Pdev -Dorg.hawkular.wildfly.home=$NEST_HOME
+HAWKULAR_HOME=$PATH_TO/hawkular/dist/target/hawkular-1.0.0-SNAPSHOT/wildfly-8.2.0.Final
+mvn clean install -Pdev -Dorg.hawkular.wildfly.home=$HAWKULAR_HOME
 ```
 
 [start=4]
-4. Start the nest:
+4. Start hawkular with your local :
 
 ```shell
-cd $NEST_HOME
+cd $HAWKULAR_HOME
 bin/standalone.sh
 ```
 

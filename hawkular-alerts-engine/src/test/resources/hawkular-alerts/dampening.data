@@ -1,2 +1,3 @@
-# <triggerId>,<triggerMode>,<type>,<evalTrueSetting>,<evalTotalSetting>,<evalTimeSetting>
-trigger-1,FIRING,STRICT,2,2,0
+### Important, the IDE shouldn't break the lines or the data file won't be correctly processed, 1 line per entry ###
+# <tenantId>,<triggerId>,<triggerMode>,<type>,<evalTrueSetting>,<evalTotalSetting>,<evalTimeSetting>
+28026b36-8fe4-4332-84c8-524e173a68bf,trigger-1,FIRING,STRICT,2,2,0

@@ -43,65 +43,100 @@ public interface DefinitionsService {
     /**
      * Create a new <code>Trigger</code>.  <code>Conditions</code> and <code>Actions</code> are manipulated in separate
      * calls. The new <code>Trigger</code> will be persisted.  When fully defined a call to
-     * {@link #updateTrigger(Trigger)}
+     * {@link #updateTrigger(String, Trigger)}
      * is needed to enable the <code>Trigger</code>.
-     * @param trigger the trigger
+     * @param tenantId Tenant where trigger is created
+     * @param trigger New trigger definition to be added
      * @throws Exception If the <code>Trigger</code> already exists.
      */
-    void addTrigger(Trigger trigger) throws Exception;
+    void addTrigger(String tenantId, Trigger trigger) throws Exception;
 
     /**
      * The <code>Trigger</code> will be removed from the Alerts engine, as needed, and will no longer be persisted.
-     * @param triggerId the triggerId
+     * @param tenantId Tenant where trigger is stored
+     * @param triggerId Trigger to be removed
      * @throws Exception on any problem
      */
-    void removeTrigger(String triggerId) throws Exception;
+    void removeTrigger(String tenantId, String triggerId) throws Exception;
 
     /**
      * Update the <code>Trigger</code>. <code>Conditions</code> and <code>Actions</code> are manipulated in separate
      * calls. The updated <code>Trigger</code> will be persisted.  If enabled the <code>Trigger</code>
      * will be [re-]inserted into the Alerts engine and any prior dampening will be reset.
-     * @param trigger the trigger
-     * @return the updated Trigger
+     * @param tenantId Tenant where trigger is updated
+     * @param trigger Existing trigger to be updated
      * @throws Exception If the <code>Trigger</code> does not exist.
      */
-    Trigger updateTrigger(Trigger trigger) throws Exception;
+    Trigger updateTrigger(String tenantId, Trigger trigger) throws Exception;
 
-    Trigger getTrigger(String triggerId) throws Exception;
+    /**
+     * Get a stored Trigger for a specific Tenant.
+     * @param tenantId Tenant where trigger is stored
+     * @param triggerId Given trigger to be retrieved
+     * @throws Exception
+     */
+    Trigger getTrigger(String tenantId, String triggerId) throws Exception;
 
+    /**
+     * Get all stored Triggers for a specific Tenant.
+     * @param tenantId Tenant where triggers are stored
+     * @throws Exception
+     */
+    Collection<Trigger> getTriggers(String tenantId) throws Exception;
+
+    /**
+     * Get all stored Triggers for all Tenants
+     * @throws Exception
+     */
     Collection<Trigger> getAllTriggers() throws Exception;
+
 
     /**
      * Used to generate an explicit Trigger from a Tokenized Trigger.  The dataIdMap replaces the tokens in the
      * Conditions with actual dataIds.
-     * @param triggerId the triggerId
-     * @param dataIdMap the dataIdMap
-     * @return The copy
+     * @param tenantId Tenant where trigger is stored
+     * @param triggerId Trigger to be copied
+     * @param dataIdMap Tokens to be replaced in the new trigger
+     * @return a copy of original trigger
      * @throws Exception on any problem
      */
-    Trigger copyTrigger(String triggerId, Map<String, String> dataIdMap) throws Exception;
+    Trigger copyTrigger(String tenantId, String triggerId, Map<String, String> dataIdMap) throws Exception;
 
     /*
         CRUD interface for Dampening
      */
 
-    Dampening addDampening(Dampening dampening) throws Exception;
+    Dampening addDampening(String tenantId, Dampening dampening) throws Exception;
 
-    void removeDampening(String dampeningId) throws Exception;
+    void removeDampening(String tenantId, String dampeningId) throws Exception;
 
-    Dampening updateDampening(Dampening dampening) throws Exception;
+    Dampening updateDampening(String tenantId, Dampening dampening) throws Exception;
 
-    Dampening getDampening(String dampeningId) throws Exception;
+    Dampening getDampening(String tenantId, String dampeningId) throws Exception;
 
     /**
-     * @param triggerId the triggerId
+     * @param tenantId Tenant where trigger is stored
+     * @param triggerId Given trigger
      * @param triggerMode Return only dampenings for the given trigger mode. Return all if null.
      * @return The existing dampenings for the trigger. Not null.
      * @throws Exception on any problem
      */
-    Collection<Dampening> getTriggerDampenings(String triggerId, Trigger.Mode triggerMode) throws Exception;
+    Collection<Dampening> getTriggerDampenings(String tenantId, String triggerId, Trigger.Mode triggerMode)
+            throws Exception;
 
+    /**
+     * @return The existing dampenings stored under a tenant
+     * @throws Exception
+     */
     Collection<Dampening> getAllDampenings() throws Exception;
+
+    /**
+     * @param tenantId Tenant where dampening are stored
+     * @return The existing dampenings stored under a tenant
+     * @throws Exception
+     */
+    Collection<Dampening> getDampenings(String tenantId) throws Exception;
+
 
     /*
         CRUD interface for Condition
@@ -118,33 +153,34 @@ public interface DefinitionsService {
      *   conditionSetSize
      *   conditionSetIndex
      * </pre>
-     * @param triggerId the triggerId
-     * @param triggerMode the triggerMode
+     * @param tenantId Tenant where trigger is stored
+     * @param triggerId Trigger where condition will be stored
+     * @param triggerMode Mode where condition is applied
      * @param condition Not null
      * @return The updated, persisted condition set
      * @throws Exception on any problem
      */
-    Collection<Condition> addCondition(String triggerId, Trigger.Mode triggerMode, Condition condition)
+    Collection<Condition> addCondition(String tenantId, String triggerId, Trigger.Mode triggerMode, Condition condition)
             throws Exception;
 
     /**
      * A convenience method that removes a Condition from an existing condition set. This will update the
      * conditionSetSize and possibly the conditionSetIndex for any remaining conditions.
-     * @param conditionId the conditionId
+     * @param tenantId Tenant where trigger and his conditions are stored
+     * @param conditionId Condition id to be removed
      * @return The updated, persisted condition set. Not null. Can be empty.
      * @throws Exception on any problem
      */
-    Collection<Condition> removeCondition(String conditionId)
-            throws Exception;
+    Collection<Condition> removeCondition(String tenantId, String conditionId) throws Exception;
 
     /**
      * A convenience method that updates an existing Condition from an existing condition set.
+     * @param tenantId
      * @param condition Not null. conditionId must be for an existing condition.
      * @return The updated, persisted condition set. Not null. Can be empty.
      * @throws Exception on any problem
      */
-    Collection<Condition> updateCondition(Condition condition)
-            throws Exception;
+    Collection<Condition> updateCondition(String tenantId, Condition condition) throws Exception;
 
     /**
      * The condition set for a trigger's trigger mode is treated as a whole.  When making any change to the
@@ -156,24 +192,29 @@ public interface DefinitionsService {
      *   conditionSetSize
      *   conditionSetIndex
      * </pre>
-     * @param triggerId the triggerId
-     * @param triggerMode the triggerMode
+     * @param tenantId Tenant where trigger and his conditions are stored
+     * @param triggerId Trigger where conditions will be stored
+     * @param triggerMode Mode where conditions are applied
      * @param conditions Not null, Not Empty
      * @return The persisted condition set
      * @throws Exception on any problem
      */
-    Collection<Condition> setConditions(String triggerId, Trigger.Mode triggerMode, Collection<Condition> conditions)
-            throws Exception;
+    Collection<Condition> setConditions(String tenantId, String triggerId, Trigger.Mode triggerMode,
+            Collection<Condition> conditions) throws Exception;
 
-    Condition getCondition(String conditionId) throws Exception;
+    Condition getCondition(String tenantId, String conditionId) throws Exception;
 
     /**
-     * @param triggerId the triggerId
+     * @param tenantId Tenant where trigger and his conditions are stored
+     * @param triggerId Trigger where conditions are stored
      * @param triggerMode Return only conditions for the given trigger mode. Return all if null.
      * @return The existing conditions for the trigger. Not null.
      * @throws Exception on any problem
      */
-    Collection<Condition> getTriggerConditions(String triggerId, Trigger.Mode triggerMode) throws Exception;
+    Collection<Condition> getTriggerConditions(String tenantId, String triggerId, Trigger.Mode triggerMode)
+            throws Exception;
+
+    Collection<Condition> getConditions(String tenantId) throws Exception;
 
     Collection<Condition> getAllConditions() throws Exception;
 
@@ -203,17 +244,40 @@ public interface DefinitionsService {
              send a specific TRAP with specific details.
              send a SMS mobile to an admin number.
      */
-    void addAction(String actionId, Map<String, String> properties) throws Exception;
 
-    void removeAction(String actionId) throws Exception;
+    /**
+     * Create a new Action.
+     *
+     * @param tenantId Tenant where actions are stored
+     * @param actionPlugin Action plugin where this action is stored
+     * @param actionId Id of new action
+     * @param properties the properties of the action
+     * @throws Exception
+     */
+    void addAction(String tenantId, String actionPlugin, String actionId, Map<String, String> properties)
+            throws Exception;
 
-    void updateAction(String actionId, Map<String, String> properties) throws Exception;
+    void removeAction(String tenantId, String actionPlugin, String actionId) throws Exception;
 
-    Collection<String> getAllActions() throws Exception;
+    void updateAction(String tenantId, String actionPlugin, String actionId, Map<String, String> properties)
+            throws Exception;
 
-    Collection<String> getActions(String actionPlugin) throws Exception;
+    /**
+     * @return Map where key is a tenantId and value is a Map with actionPlugin as key and a set of actionsId as value
+     * @throws Exception
+     */
+    Map<String, Map<String, Set<String>>> getAllActions() throws Exception;
 
-    Map<String, String> getAction(String actionId) throws Exception;
+    /**
+     * @param tenantId Tenant where actions are stored.
+     * @return Map where key represents an actionPlugin and value a Set of actionsId per actionPlugin
+     * @throws Exception
+     */
+    Map<String, Set<String>> getActions(String tenantId) throws Exception;
+
+    Collection<String> getActions(String tenantId, String actionPlugin) throws Exception;
+
+    Map<String, String> getAction(String tenantId, String actionPlugin, String actionId) throws Exception;
 
     /*
     CRUD interface for Tag
@@ -222,10 +286,11 @@ public interface DefinitionsService {
     /**
      * Add Tag with the specified name to the specified Trigger. Category is optional. If the Tag exists the
      * call returns successfully but has no effect.
-     * @param tag the tag
+     * @param tenantId Tenant where tag is stored
+     * @param tag New tag to be created
      * @throws Exception on any problem
      */
-    void addTag(Tag tag) throws Exception;
+    void addTag(String tenantId, Tag tag) throws Exception;
 
     /**
      * Delete tag(s) for the specified trigger, optionally filtered by category and/or name.
@@ -234,7 +299,7 @@ public interface DefinitionsService {
      * @param name Nullable
      * @throws Exception on any problem
      */
-    void removeTags(String triggerId, String category, String name) throws Exception;
+    void removeTags(String tenantId, String triggerId, String category, String name) throws Exception;
 
     /**
      * @param triggerId NotEmpty
@@ -242,7 +307,7 @@ public interface DefinitionsService {
      * @return The existing Tags for the trigger, optionally filtered by category. Sorted by category, name.
      * @throws Exception on any problem
      */
-    List<Tag> getTriggerTags(String triggerId, String category) throws Exception;
+    List<Tag> getTriggerTags(String tenantId, String triggerId, String category) throws Exception;
 
     void registerListener(DefinitionsListener listener);
 }

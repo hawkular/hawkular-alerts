@@ -29,22 +29,33 @@ CREATE KEYSPACE ${keyspace} WITH replication = {'class': 'SimpleStrategy', 'repl
 -- #
 
 CREATE TABLE ${keyspace}.triggers (
+    tenantId text,
     name text,
     description text,
     autoDisable boolean,
     autoResolve boolean,
     autoResolveAlerts boolean,
-    actions set<text>,
     firingMatch text,
     autoResolveMatch text,
     id text,
     enabled boolean,
-    PRIMARY KEY (id)
+    PRIMARY KEY (tenantId, id)
+);
+
+-- #
+
+CREATE TABLE ${keyspace}.triggers_actions (
+    tenantId text,
+    triggerId text,
+    actionPlugin text,
+    actions set<text>,
+    PRIMARY KEY (tenantId, triggerId, actionPlugin)
 );
 
 -- #
 
 CREATE TABLE ${keyspace}.conditions (
+    tenantId text,
     triggerId text,
     triggerMode text,
     type text,
@@ -63,7 +74,7 @@ CREATE TABLE ${keyspace}.conditions (
     thresholdLow double,
     thresholdHigh double,
     inRange boolean,
-    PRIMARY KEY (triggerId, triggerMode, type, conditionId)
+    PRIMARY KEY (tenantId, triggerId, triggerMode, type, conditionId)
 );
 
 -- #
@@ -73,6 +84,7 @@ CREATE INDEX conditions_id ON ${keyspace}.conditions(conditionId);
 -- #
 
 CREATE TABLE ${keyspace}.dampenings (
+    tenantId text,
     triggerId text,
     triggerMode text,
     type text,
@@ -80,7 +92,7 @@ CREATE TABLE ${keyspace}.dampenings (
     evalTotalSetting int,
     evalTimeSetting bigint,
     dampeningId text,
-    PRIMARY KEY (triggerId, triggerMode, dampeningId)
+    PRIMARY KEY (tenantId, triggerId, triggerMode, dampeningId)
 );
 
 -- #
@@ -98,63 +110,76 @@ CREATE TABLE ${keyspace}.action_plugins (
 -- #
 
 CREATE TABLE ${keyspace}.actions (
+    tenantId text,
     actionId text,
     actionPlugin text,
     properties map<text, text>,
-    PRIMARY KEY (actionId)
+    PRIMARY KEY (tenantId, actionPlugin, actionId)
 );
-
--- #
-
-CREATE INDEX action_plugin ON ${keyspace}.actions(actionPlugin);
 
 -- #
 
 CREATE TABLE ${keyspace}.tags (
+    tenantId text,
     triggerId text,
     category text,
     name text,
     visible boolean,
-    PRIMARY KEY (triggerId, category, name)
+    PRIMARY KEY (tenantId, triggerId, name)
 );
+
+-- #
+
+CREATE INDEX tags_category ON ${keyspace}.tags(category);
 
 -- #
 
 CREATE TABLE ${keyspace}.tags_triggers (
+    tenantId text,
     category text,
     name text,
     triggers set<text>,
-    PRIMARY KEY (category, name)
+    PRIMARY KEY (tenantId, name)
 );
 
 -- #
 
+CREATE INDEX tags_triggers_category ON ${keyspace}.tags_triggers(category);
+
+-- #
+
 CREATE TABLE ${keyspace}.alerts (
+    tenantId text,
     alertId text,
     payload text,
-    PRIMARY KEY (alertId)
+    PRIMARY KEY (tenantId, alertId)
 );
 
 -- #
 
 CREATE TABLE ${keyspace}.alerts_triggers (
+    tenantId text,
     alertId text,
     triggerId text,
-    PRIMARY KEY (triggerId, alertId)
+    PRIMARY KEY (tenantId, triggerId, alertId)
 );
 
 -- #
 
 CREATE TABLE ${keyspace}.alerts_ctimes (
+    tenantId text,
     alertId text,
     ctime bigint,
-    PRIMARY KEY (alertId, ctime)
+    PRIMARY KEY (tenantId, ctime, alertId)
 );
 
 -- #
 
 CREATE TABLE ${keyspace}.alerts_statuses (
+    tenantId text,
     alertId text,
     status text,
-    PRIMARY KEY (status, alertId)
+    PRIMARY KEY (tenantId, status, alertId)
 );
+
+-- #

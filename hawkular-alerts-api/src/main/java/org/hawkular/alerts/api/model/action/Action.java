@@ -34,6 +34,12 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 public class Action {
 
     @JsonInclude
+    private String tenantId;
+
+    @JsonInclude
+    private String actionPlugin;
+
+    @JsonInclude
     private String actionId;
 
     @JsonInclude(Include.NON_NULL)
@@ -41,9 +47,19 @@ public class Action {
 
     public Action() { }
 
-    public Action(String actionId, String message) {
+    public Action(String tenantId, String actionPlugin, String actionId, String message) {
+        this.tenantId = tenantId;
+        this.actionPlugin = actionPlugin;
         this.actionId = actionId;
         this.message = message;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 
     public String getMessage() {
@@ -62,22 +78,34 @@ public class Action {
         this.actionId = actionId;
     }
 
+    public String getActionPlugin() {
+        return actionPlugin;
+    }
+
+    public void setActionPlugin(String actionPlugin) {
+        this.actionPlugin = actionPlugin;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Action that = (Action) o;
+        Action action = (Action) o;
 
-        if (message != null ? !message.equals(that.message) : that.message != null) return false;
-        if (actionId != null ? !actionId.equals(that.actionId) : that.actionId != null) return false;
+        if (tenantId != null ? !tenantId.equals(action.tenantId) : action.tenantId != null) return false;
+        if (actionPlugin != null ? !actionPlugin.equals(action.actionPlugin) : action.actionPlugin != null)
+            return false;
+        if (actionId != null ? !actionId.equals(action.actionId) : action.actionId != null) return false;
+        return !(message != null ? !message.equals(action.message) : action.message != null);
 
-        return true;
     }
 
     @Override
     public int hashCode() {
-        int result = actionId != null ? actionId.hashCode() : 0;
+        int result = tenantId != null ? tenantId.hashCode() : 0;
+        result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
+        result = 31 * result + (actionId != null ? actionId.hashCode() : 0);
         result = 31 * result + (message != null ? message.hashCode() : 0);
         return result;
     }
@@ -85,8 +113,10 @@ public class Action {
     @Override
     public String toString() {
         return "Action{" +
-                "message=" + (message == null ? null : '\'' + message + '\'') +
+                "tenantId='" + tenantId + '\'' +
+                ", actionPlugin='" + actionPlugin + '\'' +
                 ", actionId='" + actionId + '\'' +
+                ", message='" + message + '\'' +
                 '}';
     }
 }

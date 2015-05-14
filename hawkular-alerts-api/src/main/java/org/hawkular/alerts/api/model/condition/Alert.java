@@ -34,6 +34,9 @@ public class Alert {
         OPEN, ACKNOWLEDGED, RESOLVED
     };
 
+    @JsonInclude
+    private String tenantId;
+
     // This is a generated composite of form: triggerId|ctime
     @JsonInclude
     private String alertId;
@@ -75,13 +78,22 @@ public class Alert {
         // for json assembly
     }
 
-    public Alert(String triggerId, List<Set<ConditionEval>> evalSets) {
+    public Alert(String tenantId, String triggerId, List<Set<ConditionEval>> evalSets) {
+        this.tenantId = tenantId;
         this.triggerId = triggerId;
         this.evalSets = evalSets;
         this.ctime = System.currentTimeMillis();
         this.status = Status.OPEN;
 
         this.alertId = triggerId + "|" + ctime;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 
     public String getAlertId() {

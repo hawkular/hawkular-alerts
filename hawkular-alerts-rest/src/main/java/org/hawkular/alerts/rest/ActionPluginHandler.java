@@ -16,28 +16,28 @@
  */
 package org.hawkular.alerts.rest;
 
-import com.wordnik.swagger.annotations.Api;
-import com.wordnik.swagger.annotations.ApiOperation;
-import com.wordnik.swagger.annotations.ApiParam;
-import org.hawkular.alerts.api.services.DefinitionsService;
-import org.jboss.logging.Logger;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+
+import com.wordnik.swagger.annotations.ApiResponse;
+import com.wordnik.swagger.annotations.ApiResponses;
+import java.util.Collection;
+import java.util.Set;
 
 import javax.ejb.EJB;
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import org.hawkular.accounts.api.model.Persona;
+import org.hawkular.alerts.api.services.DefinitionsService;
+import org.jboss.logging.Logger;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
+import com.wordnik.swagger.annotations.ApiParam;
 
 /**
  * REST endpoint for ActionPlugins
@@ -50,6 +50,9 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 public class ActionPluginHandler {
     private final Logger log = Logger.getLogger(ActionPluginHandler.class);
 
+    @Inject
+    Persona persona;
+
     @EJB
     DefinitionsService definitions;
 
@@ -61,26 +64,25 @@ public class ActionPluginHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all action plugins",
-                  responseContainer = "Collection<String>",
-                  response = String.class,
                   notes = "Pagination is not yet implemented")
-    public void findAllActionPlugins(@Suspended final AsyncResponse response) {
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success. Plugins found."),
+            @ApiResponse(code = 204, message = "Success. No plugins found."),
+            @ApiResponse(code = 500, message = "Internal server error")})
+    public Response findActionPlugins() {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
         try {
             Collection<String> actionPlugins = definitions.getActionPlugins();
-            if (actionPlugins == null || actionPlugins.isEmpty()) {
-                log.debugf("GET - findAllActionPlugins - Empty");
-                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
-            } else {
-                log.debugf("GET - findAllActionPlugins - %s action plugins ", actionPlugins);
-                response.resume(Response.status(Response.Status.OK)
-                        .entity(actionPlugins).type(APPLICATION_JSON_TYPE).build());
+            log.debugf("ActionPlugins: %s ", actionPlugins);
+            if (isEmpty(actionPlugins)) {
+                return ResponseUtil.noContent();
             }
+            return ResponseUtil.ok(actionPlugins);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
-            Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Internal Error: " + e.getMessage());
-            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            return ResponseUtil.internalError(e.getMessage());
         }
     }
 
@@ -88,34 +90,44 @@ public class ActionPluginHandler {
     @Path("/{actionPlugin}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find list of properties to fill for a specific action plugin",
-                  responseContainer = "Collection<String>",
-                  response = String.class,
                   notes = "Each action plugin can have a different and variable number of properties. " +
                           "This method should be invoked before of a creation of a new action.")
-    public void getActionPlugin(@Suspended final AsyncResponse response,
-                                @ApiParam(value = "Action plugin to query",
-                                          required = true)
-                                @PathParam("actionPlugin") final String actionPlugin) {
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Action Plugin found."),
+            @ApiResponse(code = 404, message = "Action Plugin not found."),
+            @ApiResponse(code = 500, message = "Internal server error")})
+    public Response getActionPlugin(@ApiParam(value = "Action plugin to query", required = true)
+                                        @PathParam ("actionPlugin")
+                                        final String actionPlugin) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
         try {
             Set<String> actionPluginProps = definitions.getActionPlugin(actionPlugin);
-            if (actionPluginProps == null || actionPluginProps.isEmpty()) {
-                log.debugf("GET - getActionPlugin - Empty");
-                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
-            } else {
-                log.debugf("GET - getActionPlugin - actionPlugin: %s - properties: %s ",
-                        actionPlugin, actionPluginProps);
-                response.resume(Response.status(Response.Status.OK)
-                        .entity(actionPluginProps).type(APPLICATION_JSON_TYPE).build());
+            log.debugf("ActionPlugin: %s - Properties: %s ", actionPlugin, actionPluginProps);
+            if (isEmpty(actionPluginProps)) {
+                return ResponseUtil.notFound("actionPlugin: " + actionPlugin + " not found");
             }
+            return ResponseUtil.ok(actionPluginProps);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
-            Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Internal Error: " + e.getMessage());
-            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            return ResponseUtil.internalError(e.getMessage());
         }
     }
 
+    private boolean checkPersona() {
+        if (persona == null) {
+            log.warn("Persona is null. Possible issue with accounts integration ? ");
+            return false;
+        } else if (persona.getId().trim().isEmpty()) {
+            log.warn("Persona is empty. Possible issue with accounts integration ? ");
+            return false;
+        }
+        return true;
+    }
 
+    private boolean isEmpty(Collection collection) {
+        return collection == null || collection.isEmpty();
+    }
 
 }

@@ -89,6 +89,9 @@ public class Dampening {
     @JsonIgnore
     private transient List<Set<ConditionEval>> satisfyingEvals = new ArrayList<Set<ConditionEval>>();
 
+    @JsonInclude
+    private String tenantId;
+
     public Dampening() {
         this("Default", Mode.FIRING, Type.STRICT, 1, 1, 0);
     }
@@ -279,6 +282,14 @@ public class Dampening {
 
     public void addSatisfyingEvals(ConditionEval... satisfyingEvals) {
         this.satisfyingEvals.add(new HashSet<ConditionEval>(Arrays.asList(satisfyingEvals)));
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 
     public void perform(ConditionEval... conditionEvals) {

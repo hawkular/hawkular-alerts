@@ -16,8 +16,11 @@
  */
 package org.hawkular.alerts.api;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -59,6 +62,8 @@ public class JsonTest {
 
     ObjectMapper objectMapper;
 
+    private static final String TEST_TENANT = "jdoe";
+
     @Before
     public void before() {
         objectMapper = new ObjectMapper();
@@ -66,15 +71,18 @@ public class JsonTest {
 
     @Test
     public void jsonActionTest() throws Exception {
-        String str = "{\"actionId\":\"test\",\"message\":\"test-msg\"}";
+        String str = "{\"tenantId\":\"tenantTest\",\"actionPlugin\":\"plugin\"," +
+                "\"actionId\":\"test\",\"message\":\"test-msg\"}";
         Action action = objectMapper.readValue(str, Action.class);
 
-        assertTrue(action.getActionId().equals("test"));
-        assertTrue(action.getMessage().equals("test-msg"));
+        assertEquals("tenantTest", action.getTenantId());
+        assertEquals("plugin", action.getActionPlugin());
+        assertEquals("test", action.getActionId());
+        assertEquals("test-msg", action.getMessage());
 
         String output = objectMapper.writeValueAsString(action);
 
-        assertTrue(str.equals(output));
+        assertEquals(str, output);
 
         str = "{\"actionId\":\"test\"}";
         action = objectMapper.readValue(str, Action.class);
@@ -85,7 +93,7 @@ public class JsonTest {
 
     @Test
     public void jsonAlertTest() throws Exception {
-        Alert alert = new Alert("trigger-test", null);
+        Alert alert = new Alert(TEST_TENANT, "trigger-test", null);
 
         String output = objectMapper.writeValueAsString(alert);
 
@@ -120,10 +128,12 @@ public class JsonTest {
 
     @Test
     public void jsonAvailabilityConditionTest() throws Exception {
-        String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"AVAILABILITY\"," +
+        String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
+                "\"type\":\"AVAILABILITY\"," +
                 "\"conditionId\":\"test-FIRING-1-1\",\"dataId\":\"Default\",\"operator\":\"UP\"}";
         AvailabilityCondition condition = objectMapper.readValue(str, AvailabilityCondition.class);
 
+        assertTrue(condition.getTenantId().equals("test"));
         assertTrue(condition.getTriggerId().equals("test"));
         assertTrue(condition.getTriggerMode().equals(Mode.FIRING));
         assertTrue(condition.getDataId().equals("Default"));
@@ -135,19 +145,19 @@ public class JsonTest {
 
         // Check bad mode and operator
 
-        str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"dataId\":\"Default\",\"operator\":\"UP\"}";
+        str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRINGX\",\"dataId\":\"Default\",\"operator\":\"UP\"}";
         try {
-            condition = objectMapper.readValue(str, AvailabilityCondition.class);
+            objectMapper.readValue(str, AvailabilityCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"dataId\":\"Default\",\"operator\":\"UPX\"}";
         try {
-            condition = objectMapper.readValue(str, AvailabilityCondition.class);
+            objectMapper.readValue(str, AvailabilityCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
@@ -192,11 +202,12 @@ public class JsonTest {
 
     @Test
     public void jsonCompareConditionTest() throws Exception {
-        String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"COMPARE\"," +
+        String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"COMPARE\"," +
                 "\"conditionId\":\"test-FIRING-1-1\"," +
                 "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         CompareCondition condition = objectMapper.readValue(str, CompareCondition.class);
 
+        assertTrue(condition.getTenantId().equals("test"));
         assertTrue(condition.getTriggerId().equals("test"));
         assertTrue(condition.getTriggerMode().equals(Mode.FIRING));
         assertTrue(condition.getDataId().equals("Default1"));
@@ -213,18 +224,18 @@ public class JsonTest {
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRINGX\"," +
                 "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         try {
-            condition = objectMapper.readValue(str, CompareCondition.class);
+            objectMapper.readValue(str, CompareCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default1\",\"operator\":\"LTX\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         try {
-            condition = objectMapper.readValue(str, CompareCondition.class);
+            objectMapper.readValue(str, CompareCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
@@ -296,17 +307,18 @@ public class JsonTest {
 
     @Test
     public void jsonStringConditionTest() throws Exception {
-        String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"STRING\"," +
+        String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"STRING\"," +
                 "\"conditionId\":\"test-FIRING-1-1\"," +
                 "\"dataId\":\"Default\",\"operator\":\"MATCH\",\"pattern\":\"test-pattern\",\"ignoreCase\":false}";
         StringCondition condition = objectMapper.readValue(str, StringCondition.class);
 
+        assertTrue(condition.getTenantId().equals("test"));
         assertTrue(condition.getTriggerId().equals("test"));
         assertTrue(condition.getTriggerMode().equals(Mode.FIRING));
         assertTrue(condition.getDataId().equals("Default"));
         assertTrue(condition.getOperator().equals(StringCondition.Operator.MATCH));
         assertTrue(condition.getPattern().equals("test-pattern"));
-        assertTrue(condition.isIgnoreCase() == false);
+        assertFalse(condition.isIgnoreCase());
 
         String output = objectMapper.writeValueAsString(condition);
 
@@ -317,18 +329,18 @@ public class JsonTest {
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRINGX\"," +
                 "\"dataId\":\"Default\",\"operator\":\"MATCH\",\"pattern\":\"test-pattern\",\"ignoreCase\":false}";
         try {
-            condition = objectMapper.readValue(str, StringCondition.class);
+            objectMapper.readValue(str, StringCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default\",\"operator\":\"MATCHX\",\"pattern\":\"test-pattern\",\"ignoreCase\":false}";
         try {
-            condition = objectMapper.readValue(str, StringCondition.class);
+            objectMapper.readValue(str, StringCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
@@ -367,7 +379,7 @@ public class JsonTest {
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"}";
         condition = objectMapper.readValue(str, StringCondition.class);
 
-        assertTrue(condition.isIgnoreCase() == false);
+        assertFalse(condition.isIgnoreCase());
 
         output = objectMapper.writeValueAsString(condition);
 
@@ -392,17 +404,19 @@ public class JsonTest {
         assertTrue(eval.getCondition().getDataId().equals("Default"));
         assertTrue(eval.getCondition().getOperator().equals(StringCondition.Operator.MATCH));
         assertTrue(eval.getCondition().getPattern().equals("test-pattern"));
-        assertTrue(eval.getCondition().isIgnoreCase() == false);
+        assertFalse(eval.getCondition().isIgnoreCase());
         assertTrue(eval.getValue().equals("test-value"));
     }
 
     @Test
     public void jsonThresholdConditionTest() throws Exception {
-        String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"THRESHOLD\"," +
+        String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
+                "\"type\":\"THRESHOLD\"," +
                 "\"conditionId\":\"test-FIRING-1-1\"," +
                 "\"dataId\":\"Default\",\"operator\":\"LT\",\"threshold\":10.5}";
         ThresholdCondition condition = objectMapper.readValue(str, ThresholdCondition.class);
 
+        assertTrue(condition.getTenantId().equals("test"));
         assertTrue(condition.getTriggerId().equals("test"));
         assertTrue(condition.getTriggerMode().equals(Mode.FIRING));
         assertTrue(condition.getDataId().equals("Default"));
@@ -418,18 +432,18 @@ public class JsonTest {
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRINGX\"," +
                 "\"dataId\":\"Default\",\"operator\":\"LT\",\"threshold\":10.5}";
         try {
-            condition = objectMapper.readValue(str, ThresholdCondition.class);
+            objectMapper.readValue(str, ThresholdCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default\",\"operator\":\"LTX\",\"threshold\":10.5}";
         try {
-            condition = objectMapper.readValue(str, ThresholdCondition.class);
+            objectMapper.readValue(str, ThresholdCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
@@ -487,12 +501,13 @@ public class JsonTest {
 
     @Test
     public void jsonThresholdRangeConditionTest() throws Exception {
-        String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"RANGE\"," +
+        String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"RANGE\"," +
                 "\"conditionId\":\"test-FIRING-1-1\",\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\"," +
                 "\"operatorHigh\":\"INCLUSIVE\"," +
                 "\"thresholdLow\":10.5,\"thresholdHigh\":20.5,\"inRange\":true}";
         ThresholdRangeCondition condition = objectMapper.readValue(str, ThresholdRangeCondition.class);
 
+        assertTrue(condition.getTenantId().equals("test"));
         assertTrue(condition.getTriggerId().equals("test"));
         assertTrue(condition.getTriggerMode().equals(Mode.FIRING));
         assertTrue(condition.getDataId().equals("Default"));
@@ -511,9 +526,9 @@ public class JsonTest {
                 "\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\",\"operatorHigh\":\"INCLUSIVE\"," +
                 "\"thresholdLow\":10.5,\"thresholdHigh\":20.5,\"inRange\":true}";
         try {
-            condition = objectMapper.readValue(str, ThresholdRangeCondition.class);
+            objectMapper.readValue(str, ThresholdRangeCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
@@ -521,9 +536,9 @@ public class JsonTest {
                 "\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVEX\",\"operatorHigh\":\"INCLUSIVE\"," +
                 "\"thresholdLow\":10.5,\"thresholdHigh\":20.5,\"inRange\":true}";
         try {
-            condition = objectMapper.readValue(str, ThresholdRangeCondition.class);
+            objectMapper.readValue(str, ThresholdRangeCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
@@ -531,9 +546,9 @@ public class JsonTest {
                 "\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\",\"operatorHigh\":\"INCLUSIVEX\"," +
                 "\"thresholdLow\":10.5,\"thresholdHigh\":20.5,\"inRange\":true}";
         try {
-            condition = objectMapper.readValue(str, ThresholdRangeCondition.class);
+            objectMapper.readValue(str, ThresholdRangeCondition.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
@@ -594,7 +609,7 @@ public class JsonTest {
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"}";
         condition = objectMapper.readValue(str, ThresholdRangeCondition.class);
 
-        assertTrue(condition.isInRange() == false);
+        assertFalse(condition.isInRange());
 
         output = objectMapper.writeValueAsString(condition);
 
@@ -654,18 +669,18 @@ public class JsonTest {
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRINGX\",\"type\":\"STRICT\"," +
                 "\"evalTrueSetting\":1,\"evalTotalSetting\":1,\"evalTimeSetting\":1}";
         try {
-            damp = objectMapper.readValue(str, Dampening.class);
+            objectMapper.readValue(str, Dampening.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
 
         str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"STRICTX\"," +
                 "\"evalTrueSetting\":1,\"evalTotalSetting\":1,\"evalTimeSetting\":1}";
         try {
-            damp = objectMapper.readValue(str, Dampening.class);
+            objectMapper.readValue(str, Dampening.class);
             throw new Exception("It should throw an InvalidFormatException");
-        } catch (Exception e) {
+        } catch (InvalidFormatException e) {
             // Expected
         }
     }
@@ -712,7 +727,7 @@ public class JsonTest {
     @Test
     public void jsonTriggerTest() throws Exception {
         String str = "{\"name\":\"test-name\",\"description\":\"test-description\"," +
-                "\"actions\":[\"uno\",\"dos\",\"tres\"]," +
+                "\"actions\":{\"plugin1\":[\"uno\",\"dos\",\"tres\"]}," +
                 "\"firingMatch\":\"ALL\"," +
                 "\"autoResolveMatch\":\"ALL\"," +
                 "\"id\":\"test\"," +
@@ -724,14 +739,15 @@ public class JsonTest {
 
         assertTrue(trigger.getName().equals("test-name"));
         assertTrue(trigger.getDescription().equals("test-description"));
-        assertTrue(trigger.getActions() != null && trigger.getActions().size() == 3);
+        assertEquals(1, trigger.getActions().size());
+        assertEquals(3, trigger.getActions().get("plugin1").size());
         assertTrue(trigger.getFiringMatch().equals(Match.ALL));
         assertTrue(trigger.getAutoResolveMatch().equals(Match.ALL));
         assertTrue(trigger.getId().equals("test"));
-        assertTrue(trigger.isEnabled() == true);
-        assertTrue(trigger.isAutoDisable() == true);
-        assertTrue(trigger.isAutoResolve() == true);
-        assertTrue(trigger.isAutoResolveAlerts() == true);
+        assertTrue(trigger.isEnabled());
+        assertTrue(trigger.isAutoDisable());
+        assertTrue(trigger.isAutoResolve());
+        assertTrue(trigger.isAutoResolveAlerts());
 
         String output = objectMapper.writeValueAsString(trigger);
 
