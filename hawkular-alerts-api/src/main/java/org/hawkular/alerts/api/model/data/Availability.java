@@ -35,7 +35,7 @@ public class Availability extends Data {
     /**
      * @param id
      * @param timestamp
-     * @param value Must be a valid {@link #Availability.AvailabilityType} name.
+     * @param value Must be a valid {@link AvailabilityType} name.
      */
     public Availability(String id, long timestamp, String value) {
         super(id, timestamp, (null == value) ? AvailabilityType.UP : AvailabilityType.valueOf(value),

@@ -40,7 +40,7 @@ public interface RulesEngine {
     /**
      * Insert the provided <code>fact</code> into the rules engine. This method is not appropriate for
      * <code>Data</code>.  For <code>Data</code> use {@link #addData(Data)}.
-     * @param facts
+     * @param fact
      * @throws IllegalArgumentExeption If <code>fact</code> instanceof <code>Data</code>.
      */
     void addFact(Object fact);

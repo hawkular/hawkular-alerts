@@ -108,13 +108,13 @@ public class AlertsCriteria {
         this.triggerId = triggerId;
     }
 
-    /**
-     * @param triggerId fetched Alerts must be for any of the specified triggers.
-     */
     public Collection<String> getTriggerIds() {
         return triggerIds;
     }
 
+    /**
+     * @param triggerIds fetched alerts must be for one of the specified triggers.
+     */
     public void setTriggerIds(Collection<String> triggerIds) {
         this.triggerIds = triggerIds;
     }
@@ -124,7 +124,7 @@ public class AlertsCriteria {
     }
 
     /**
-     * @param triggerId fetched Alerts must be for triggers with the specified Tag. Ignored if Tags is not empty.
+     * @param tag fetched Alerts must be for triggers with the specified Tag. Ignored if Tags filter is set.
      */
     public void setTag(Tag tag) {
         this.tag = tag;
@@ -135,7 +135,7 @@ public class AlertsCriteria {
     }
 
     /**
-     * @param triggerId fetched Alerts must be for trigger with any of the specified Tags.
+     * @param tags fetched Alerts must be for trigger with any of the specified Tags.
      */
     public void setTags(Collection<Tag> tags) {
         this.tags = tags;

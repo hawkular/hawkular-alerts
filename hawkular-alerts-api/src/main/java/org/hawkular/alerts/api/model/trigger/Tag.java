@@ -36,7 +36,7 @@ public class Tag {
     /**
      * Create a searchable Tag on name only
      *
-     * @param tag @NotEmpty
+     * @param name @NotEmpty
      */
     public Tag(String name) {
         this(null, null, name, false);
