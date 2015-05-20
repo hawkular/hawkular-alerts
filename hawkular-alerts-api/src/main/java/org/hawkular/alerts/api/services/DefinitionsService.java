@@ -61,7 +61,7 @@ public interface DefinitionsService {
      * Update the <code>Trigger</code>. <code>Conditions</code> and <code>Actions</code> are manipulated in separate
      * calls. The updated </code>Trigger</code> will be persisted.  If enabled the </code>Trigger</code>
      * will be [re-]inserted into the Alerts engine and any prior dampening will be reset.
-     * @param triggerId
+     * @param trigger
      * @throws Exception If the </code>Trigger</code> does not exist.
      */
     Trigger updateTrigger(Trigger trigger) throws Exception;
@@ -75,7 +75,7 @@ public interface DefinitionsService {
      * Conditions with actual dataIds.
      * @param triggerId
      * @param dataIdMap
-     * @return
+     * @return The copy
      * @throws Exception
      */
     Trigger copyTrigger(String triggerId, Map<String, String> dataIdMap) throws Exception;

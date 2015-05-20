@@ -99,7 +99,7 @@ public class Dampening {
      * @param triggerId
      * @param triggerMode the trigger mode for when this dampening is active
      * @param numConsecutiveTrueEvals
-     * @return
+     * @return the configured Dampening
      */
     public static Dampening forStrict(String triggerId, Mode triggerMode, int numConsecutiveTrueEvals) {
         return new Dampening(triggerId, triggerMode, Type.STRICT, numConsecutiveTrueEvals, numConsecutiveTrueEvals, 0);
@@ -112,7 +112,7 @@ public class Dampening {
      * @param triggerMode the trigger mode for when this dampening is active
      * @param numTrueEvals
      * @param numTotalEvals
-     * @return
+     * @return the configured Dampening
      */
     public static Dampening forRelaxedCount(String triggerId, Mode triggerMode, int numTrueEvals, int numTotalEvals) {
         return new Dampening(triggerId, triggerMode, Type.RELAXED_COUNT, numTrueEvals, numTotalEvals, 0);
@@ -127,7 +127,7 @@ public class Dampening {
      * @param numTrueEvals
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
-     * @return
+     * @return the configured Dampening
      */
     public static Dampening forRelaxedTime(String triggerId, Mode triggerMode, int numTrueEvals, long evalPeriod) {
         return new Dampening(triggerId, triggerMode, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
@@ -141,7 +141,7 @@ public class Dampening {
      * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
-     * @return
+     * @return the configured Dampening
      */
     public static Dampening forStrictTime(String triggerId, Mode triggerMode, long evalPeriod) {
         return new Dampening(triggerId, triggerMode, Type.STRICT_TIME, 0, 0, evalPeriod);
@@ -155,7 +155,7 @@ public class Dampening {
      * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the clock starts at true-evaluation-time-1.
-     * @return
+     * @return the configured Dampening
      */
     public static Dampening forStrictTimeout(String triggerId, Mode triggerMode, long evalPeriod) {
         return new Dampening(triggerId, triggerMode, Type.STRICT_TIMEOUT, 0, 0, evalPeriod);

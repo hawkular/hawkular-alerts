@@ -17,7 +17,7 @@
 package org.hawkular.alerts.api.services;
 
 /**
- * A listener that will process a action sent to the ActionsService.
+ * A listener for reacting to definitions changes.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -25,9 +25,9 @@ package org.hawkular.alerts.api.services;
 public interface DefinitionsListener {
 
     /**
-     * Process a action sent to {@link ActionListener}.
+     * Process a change event sent to {@link DefinitionsListener}.
      *
-     * @param action Action to be processed.
+     * @param event event to be processed.
      */
     void onChange(DefinitionsEvent event);
 }

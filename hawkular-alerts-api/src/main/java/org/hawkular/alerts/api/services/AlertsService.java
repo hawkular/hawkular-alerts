@@ -62,28 +62,25 @@ public interface AlertsService {
     /**
      * Persist the provided alerts.
      * @param alerts Set of unpersisted Alerts.
-     * @return
      */
     void addAlerts(Collection<Alert> alerts) throws Exception;
 
     /**
      * The alerts must already have been added. Set the alerts to ACKNOWLEDGED status. The ackTime will be set to the
      * system time.
-     * @param alerts Alerts to be acknowledged.
+     * @param alertIds Alerts to be acknowledged.
      * @param ackBy Optional. Typically the user acknowledging the alerts.
      * @param ackNotes Optional notes about the acknowledgement.
-     * @return
      */
     void ackAlerts(Collection<String> alertIds, String ackBy, String ackNotes) throws Exception;
 
     /**
      * The alerts must already have been added. Set the alerts to RESOLVED status. The resolvedTime will be set to the
      * system time.
-     * @param alerts Alerts to be acknowledged.
+     * @param alertIds AlertIds to be acknowledged.
      * @param resolvedBy Optional. Typically the user resolving the alerts.
      * @param resolvedNotes Optional notes about the resolution.
      * @param resolvedEvalSets Optional. Typically the evalSets leading to an auto-resolved alert.
-     * @return
      */
     void resolveAlerts(Collection<String> alertIds, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception;
@@ -95,7 +92,6 @@ public interface AlertsService {
      * @param resolvedBy Optional. Typically the user resolving the alerts.
      * @param resolvedNotes Optional notes about the resolution.
      * @param resolvedEvalSets Optional. Typically the evalSets leading to an auto-resolved alert.
-     * @return
      */
     void resolveAlertsForTrigger(String triggerId, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception;
