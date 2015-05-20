@@ -71,8 +71,9 @@
     <connection>scm:git:git@github.com:hawkular/hawkular-alerts.git</connection>
     <developerConnection>scm:git:git@github.com:hawkular/hawkular-alerts.git</developerConnection>
     <url>https://github.com/hawkular/hawkular-alerts</url>
-    <tag>HEAD</tag>
+    <tag>head</tag>
   </scm>
+
   <issueManagement>
     <url>https://issues.jboss.org/browse/HWKALERTS</url>
     <system>jira</system>
