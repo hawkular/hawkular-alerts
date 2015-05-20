@@ -17,15 +17,13 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
   </parent>
 
   <artifactId>hawkular-alerts-ear</artifactId>
@@ -110,8 +108,7 @@
                 <phase>install</phase>
                 <configuration>
                   <target>
-                    <copy file="${project.build.directory}/${project.build.finalName}.ear"
-                          todir="${org.hawkular.wildfly.deployments}" />
+                    <copy file="${project.build.directory}/${project.build.finalName}.ear" todir="${org.hawkular.wildfly.deployments}" />
                   </target>
                 </configuration>
                 <goals>
