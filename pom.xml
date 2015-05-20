@@ -68,8 +68,8 @@
   </modules>
 
   <scm>
-    <connection>scm:git:git://github.com/hawkular/hawkular-alerts.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/hawkular/hawkular-alerts.git</developerConnection>
+    <connection>scm:git:git@github.com:hawkular/hawkular-alerts.git</connection>
+    <developerConnection>scm:git:git@github.com:hawkular/hawkular-alerts.git</developerConnection>
     <url>https://github.com/hawkular/hawkular-alerts</url>
     <tag>HEAD</tag>
   </scm>
