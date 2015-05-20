@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.util.Map;
-import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.util.TokenReplacingReader;
 import org.jboss.logging.Logger;
 
@@ -37,11 +36,12 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class CassCluster {
-    private static final MsgLogger msgLog = MsgLogger.LOGGER;
     private static final Logger log = Logger.getLogger(CassDefinitionsServiceImpl.class);
     private static final String ALERTS_CASSANDRA_PORT = "hawkular-alerts.cassandra-cql-port";
     private static final String ALERTS_CASSANDRA_NODES = "hawkular-alerts.cassandra-nodes";
-    private static final String CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
+    private static final String ALERTS_CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
+    private static final String ALERTS_CASSANDRA_RETRY_ATTEMPTS = "hawkular-alerts.cassandra-retry-attempts";
+    private static final String ALERTS_CASSANDRA_RETRY_TIMEOUT = "hawkular-alerts.cassandra-retry-timeout";
 
     private static Cluster cluster = null;
 
@@ -52,7 +52,7 @@ public class CassCluster {
     private void initScheme(Session session, String keyspace) throws IOException {
 
         if (keyspace == null) {
-            keyspace = AlertProperties.getProperty(CASSANDRA_KEYSPACE, "hawkular_alerts");
+            keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
         }
 
         log.debugf("Creating Schema for keyspace " + keyspace);
@@ -98,14 +98,42 @@ public class CassCluster {
         if (cluster == null) {
             String cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, "9042");
             String nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, "127.0.0.1");
-            cluster = new Cluster.Builder()
-                    .addContactPoints(nodes.split(","))
-                    .withPort(new Integer(cqlPort))
-                    .withProtocolVersion(ProtocolVersion.V3)
-                    .build();
-            Session session = cluster.connect();
-            String keyspace = AlertProperties.getProperty(CASSANDRA_KEYSPACE, "hawkular_alerts");
-            instance.initScheme(session, keyspace);
+            int attempts = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_ATTEMPTS, "5"));
+            int timeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_TIMEOUT, "2000"));
+            Session session = null;
+            /*
+                It might happen that alerts component is faster than embedded cassandra deployed in hawkular.
+                We will provide a simple attempt/retry loop to avoid issues at initialization.
+             */
+            while(session == null && !Thread.currentThread().isInterrupted() && attempts >= 0) {
+                try {
+                    cluster = new Cluster.Builder()
+                            .addContactPoints(nodes.split(","))
+                            .withPort(new Integer(cqlPort))
+                            .withProtocolVersion(ProtocolVersion.V3)
+                            .build();
+                    session = cluster.connect();
+                } catch (Exception e) {
+                    log.warn("Could not connect to Cassandra cluster - assuming is not up yet. Cause: " +
+                            ((e.getCause() == null) ? e : e.getCause()));
+                    if (attempts == 0) {
+                        throw e;
+                    }
+                }
+                if (session == null) {
+                    log.warn("[" + attempts + "] Retrying connecting to Cassandra cluster in [" + timeout + "]ms...");
+                    attempts--;
+                    try {
+                        Thread.sleep(timeout);
+                    } catch(InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+            if (session != null) {
+                String keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
+                instance.initScheme(session, keyspace);
+            }
             return session;
         }
         return cluster.newSession();
