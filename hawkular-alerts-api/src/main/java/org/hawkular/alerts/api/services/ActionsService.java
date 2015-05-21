@@ -37,8 +37,9 @@ public interface ActionsService {
     void send(Action action);
 
     /**
-     * Register a listener that will process asynchronously:
-     * - An action message
+     * Register a listener that will process asynchronously.
+     *
+     * @param listener the listener
      */
     void addListener(ActionListener listener);
 }

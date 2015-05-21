@@ -39,6 +39,7 @@ import org.jboss.logging.Logger;
 import com.google.gson.GsonBuilder;
 
 /**
+ * <p>
  * An adapter that processes Hawkular Availability data, extracts relevant avail datums, translates them to Alerting
  * Data format, and forwards them for Alert processing.
  * </p>

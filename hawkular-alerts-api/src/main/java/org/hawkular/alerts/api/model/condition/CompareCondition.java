@@ -18,15 +18,15 @@ package org.hawkular.alerts.api.model.condition;
 
 import static org.hawkular.alerts.api.model.trigger.Trigger.Mode.FIRING;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 /**
- * A numeric comparison condition.
- * i.e. "X > 80% of Y" or "FreeSpace < 20% of TotalSpace"
+ * A numeric comparison condition. Examples:
+ * <code>"X GT 80% of Y"</code>,  <code>"FreeSpace LT 20% of TotalSpace"</code>
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce

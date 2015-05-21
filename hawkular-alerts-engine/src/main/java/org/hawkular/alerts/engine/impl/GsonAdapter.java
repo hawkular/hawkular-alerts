@@ -31,14 +31,14 @@ import com.google.gson.JsonSerializer;
 
 
 /**
- * Adapted from http://blog.xurmo.ai/2014/03/03/handle-java-interfaces-using-gson/
- * <p/>
+ * <p>
+ * Adapted from http://blog.xurmo.ai/2014/03/03/handle-java-interfaces-using-gson/.
+ * </p>
  * To be used with:
- * <pre>
  * <code>
- * gsonBuilder.registerTypeHierarchyAdapter(T, new GsonAdapter<T>());
- * </pre>
- * @param <T>
+ * gsonBuilder.registerTypeHierarchyAdapter(T, new GsonAdapter());
+ * </code>
+ * @param T type parameter
  * @author SAURABH SANTHOSH
  * @author jay shaughnessy
  */

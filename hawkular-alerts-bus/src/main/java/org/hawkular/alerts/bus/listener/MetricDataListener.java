@@ -37,6 +37,7 @@ import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
 
 /**
+ * <p>
  * An adapter that processes Hawkular Metrics data, extracts relevant metric datums, translates them to Alerting
  * Data format, and forwards them for Alert processing.
  * </p>

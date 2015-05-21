@@ -40,73 +40,73 @@ public interface RulesEngine {
     /**
      * Insert the provided <code>fact</code> into the rules engine. This method is not appropriate for
      * <code>Data</code>.  For <code>Data</code> use {@link #addData(Data)}.
-     * @param fact
-     * @throws IllegalArgumentExeption If <code>fact</code> instanceof <code>Data</code>.
+     * @param fact the fact
+     * @throws IllegalArgumentException If <code>fact</code> instanceof <code>Data</code>.
      */
     void addFact(Object fact);
 
     /**
-     * @param fact
-     * @return The implementation-specific Fact representing <object>, or null if <object> is not a Fact in the
-     * rules engine.
+     * @param fact the fact
+     * @return The implementation-specific Fact representing <code>object</code>, or null if <code>object</code> is
+     * not a Fact in the rules engine.
      */
     Object getFact(Object fact);
 
     /**
      * Retrieves the FactHandle for <code>fact</code> and then deletes the fact from the rules engine.
-     * @param fact
+     * @param fact the fact
      */
     void removeFact(Object fact);
 
     /**
      * Retrieves the FactHandle for <code>fact</code> and then updates the fact in the rules engine.
-     * @param fact
+     * @param fact the fact
      */
     void updateFact(Object fact);
 
     /**
      * Insert the provided <code>fact</code> into the rules engine. This method is not appropriate for
      * <code>Data</code>.  For <code>Data</code> use {@link #addData(Collection)}.
-     * @param facts
-     * @throws IllegalArgumentExeption If any <code>fact</code> instanceof <code>Data</code>.
+     * @param facts the facts
+     * @throws IllegalArgumentException If any <code>fact</code> instanceof <code>Data</code>.
      */
     void addFacts(Collection facts);
 
     /**
      * Retrieves the FactHandles for <code>facts</code> and then deletes the facts from the rules engine.
-     * @param facts
+     * @param facts the facts
      */
     void removeFacts(Collection facts);
 
     /**
      * Retrieves the FactHandles for <code>facts</code> matching the <code>factFilter</code> and then
      * deletes the facts from the rules engine.
-     * @param factFilter
+     * @param factFilter the factFilter
      */
     void removeFacts(Predicate<Object> factFilter);
 
     /**
      * Add to the accumulated <code>Data</code> to be processed the next time {@link #fire()} is called. After the
      * rules are fired on the accumulated <code>Data</code> it will be cleared.
-     * @param data
+     * @param data the data
      */
     void addData(Data data);
 
     /**
      * Add to the accumulated <code>Data</code> to be processed the next time {@link #fire()} is called. After the
      * rules are fired on the accumulated <code>Data</code> it will be cleared.
-     * @param data
+     * @param data the data
      */
     void addData(Collection<Data> data);
 
     /**
-     * Fire all rules given the current set of added definitions and the currently accumulated <Data>.
+     * Fire all rules given the current set of added definitions and the currently accumulated <code>Data</code>.
      */
     void fire();
 
     /**
-     * Fire all rules given the current set of added definitions and facts. Do not add the currently accumulated <Data>.
-     * This is an advanced feature and used only when Facts are manually manipulated.
+     * Fire all rules given the current set of added definitions and facts. Do not add the currently accumulated
+     * <code>Data</code>. This is an advanced feature and used only when Facts are manually manipulated.
      */
     void fireNoData();
 

@@ -49,19 +49,21 @@ public interface AlertsService {
     /**
      * Reload the specified Trigger.  Removes any existing definition from the engine.  If enabled then loads the firing
      * condition set and dampening.  If safetyEnabled then also loads the safety condition set and dampening.
-     * @param triggerId
+     * @param triggerId the triggerId
      */
     void reloadTrigger(String triggerId);
 
     /**
      * @param criteria If null returns all alerts (not recommended)
      * @return NotNull, can be empty.
+     * @throws Exception any problem
      */
     List<Alert> getAlerts(AlertsCriteria criteria) throws Exception;
 
     /**
      * Persist the provided alerts.
      * @param alerts Set of unpersisted Alerts.
+     * @throws Exception any problem
      */
     void addAlerts(Collection<Alert> alerts) throws Exception;
 
@@ -71,6 +73,7 @@ public interface AlertsService {
      * @param alertIds Alerts to be acknowledged.
      * @param ackBy Optional. Typically the user acknowledging the alerts.
      * @param ackNotes Optional notes about the acknowledgement.
+     * @throws Exception any problem
      */
     void ackAlerts(Collection<String> alertIds, String ackBy, String ackNotes) throws Exception;
 
@@ -81,6 +84,7 @@ public interface AlertsService {
      * @param resolvedBy Optional. Typically the user resolving the alerts.
      * @param resolvedNotes Optional notes about the resolution.
      * @param resolvedEvalSets Optional. Typically the evalSets leading to an auto-resolved alert.
+     * @throws Exception any problem
      */
     void resolveAlerts(Collection<String> alertIds, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception;
@@ -88,10 +92,11 @@ public interface AlertsService {
     /**
      * Set unresolved alerts for the provided trigger to RESOLVED status. The resolvedTime will be set to the
      * system time.
-     * @param triggerId
+     * @param triggerId the triggerId
      * @param resolvedBy Optional. Typically the user resolving the alerts.
      * @param resolvedNotes Optional notes about the resolution.
      * @param resolvedEvalSets Optional. Typically the evalSets leading to an auto-resolved alert.
+     * @throws Exception any problem
      */
     void resolveAlertsForTrigger(String triggerId, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception;

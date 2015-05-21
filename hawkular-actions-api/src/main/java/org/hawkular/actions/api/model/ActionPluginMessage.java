@@ -16,10 +16,11 @@
  */
 package org.hawkular.actions.api.model;
 
-import com.google.gson.annotations.Expose;
+import java.util.Set;
+
 import org.hawkular.bus.common.BasicMessage;
 
-import java.util.Set;
+import com.google.gson.annotations.Expose;
 
 /**
  * An action plugin registration message.
@@ -30,7 +31,7 @@ import java.util.Set;
  *
  * "op" parameter define the operation (register a plugin, re-register a plugin).
  * Current values are:
- * - "init" -> register and initializes a plugin
+ * "init" : register and initializes a plugin
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce

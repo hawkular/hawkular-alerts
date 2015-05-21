@@ -48,7 +48,7 @@ public class AlertsCriteria {
     }
 
     /**
-     * @param startTime fetched Alerts must have cTime >= startTime
+     * @param startTime fetched Alerts must have cTime greater than or equal to startTime
      */
     public void setStartTime(Long startTime) {
         this.startTime = startTime;
@@ -59,7 +59,7 @@ public class AlertsCriteria {
     }
 
     /**
-     * @param endTime fetched Alerts must have cTime <= endTime
+     * @param endTime fetched Alerts must have cTime less than or equal to endTime
      */
     public void setEndTime(Long endTime) {
         this.endTime = endTime;

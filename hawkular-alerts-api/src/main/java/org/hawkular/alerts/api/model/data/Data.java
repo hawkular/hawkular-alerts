@@ -23,11 +23,10 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * A base class for incoming data into alerts subsystem.  All {@link Data} has an Id and a timestamp. The
  * timestamp is used to ensure that data is time-ordered when being sent into the alerting engine.  If
  * not assigned the timestamp will be assigned to current time.
- * <br/><br/>
+ * <p>
  * This provides a  default implementation of {@link #compareTo(Data)}.  Subclasses must Override this if
- * they are unhappy with the Natural Ordering provided:
- *   Id asc, Timestamp asc, Value asc
- *
+ * they are unhappy with the Natural Ordering provided: Id asc, Timestamp asc, Value asc
+ * </p>
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
@@ -57,8 +56,10 @@ public abstract class Data implements Comparable<Data> {
     }
 
     /**
-     * @param id not null.
-     * @param timestamp if <=0 assigned currentTime.
+     * @param id not null
+     * @param timestamp in millis, if less than 1 assigned currentTime.
+     * @param value the value
+     * @param type the type of data
      */
     public Data(String id, long timestamp, Object value, Type type) {
         this.id = id;
@@ -80,7 +81,7 @@ public abstract class Data implements Comparable<Data> {
     }
 
     /**
-     * @param timestamp if <=0 assigned currentTime.
+     * @param timestamp in millis, if less than 1 assigned currentTime.
      */
     public void setTimestamp(long timestamp) {
         this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
@@ -157,8 +158,8 @@ public abstract class Data implements Comparable<Data> {
     /**
      * Subclasses must provide the natural comparison of their value type. Or, override {@link #compare(Data, Data)}
      * completely.
-     * @param value1
-     * @param value2
+     * @param value1 the value1
+     * @param value2 the value2
      * @return standard -1, 0, 1 compare value
      */
     abstract int compareValue(Object value1, Object value2);
