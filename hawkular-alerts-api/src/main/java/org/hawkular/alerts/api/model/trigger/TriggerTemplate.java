@@ -21,6 +21,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.hawkular.alerts.api.model.Severity;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -51,6 +53,9 @@ public abstract class TriggerTemplate {
     @JsonInclude
     private boolean autoResolveAlerts;
 
+    @JsonInclude
+    private Severity severity;
+
     /** A map with key based on actionPlugin and value a set of action's ids */
     @JsonInclude(Include.NON_EMPTY)
     private Map<String, Set<String>> actions;
@@ -67,6 +72,7 @@ public abstract class TriggerTemplate {
         this.autoDisable = false;
         this.autoResolve = false;
         this.autoResolveAlerts = true;
+        this.severity = Severity.MEDIUM;
         this.firingMatch = Match.ALL;
         this.autoResolveMatch = Match.ALL;
         this.actions = new HashMap<>();
@@ -113,6 +119,14 @@ public abstract class TriggerTemplate {
 
     public void setAutoResolveAlerts(boolean autoResolveAlerts) {
         this.autoResolveAlerts = autoResolveAlerts;
+    }
+
+    public Severity getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(Severity severity) {
+        this.severity = severity;
     }
 
     public Match getFiringMatch() {

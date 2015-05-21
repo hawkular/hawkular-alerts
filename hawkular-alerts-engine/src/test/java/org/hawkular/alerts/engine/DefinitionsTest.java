@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
@@ -163,7 +164,7 @@ public abstract class DefinitionsTest {
         evalSet.add(eval);
         List<Set<ConditionEval>> evals = new ArrayList<>();
         evals.add(evalSet);
-        Alert alert = new Alert(TEST_TENANT, t.getId(), evals);
+        Alert alert = new Alert(TEST_TENANT, t.getId(), t.getSeverity(), evals);
         List<Alert> alerts = new ArrayList<>();
         alerts.add(alert);
 

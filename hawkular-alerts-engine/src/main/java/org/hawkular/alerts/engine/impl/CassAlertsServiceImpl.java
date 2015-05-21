@@ -16,12 +16,6 @@
  */
 package org.hawkular.alerts.engine.impl;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
-import com.google.common.util.concurrent.Futures;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -35,10 +29,13 @@ import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
+
+import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
@@ -53,7 +50,14 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.rules.RulesEngine;
 import org.jboss.logging.Logger;
+
+import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.ResultSetFuture;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.google.common.util.concurrent.Futures;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -83,6 +87,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     private PreparedStatement insertAlertTrigger;
     private PreparedStatement insertAlertCtime;
     private PreparedStatement insertAlertStatus;
+    private PreparedStatement insertAlertSeverity;
     private PreparedStatement updateAlert;
     private PreparedStatement selectAlertStatus;
     private PreparedStatement deleteAlertStatus;
@@ -93,6 +98,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     private PreparedStatement selectAlertCTimeStart;
     private PreparedStatement selectAlertCTimeEnd;
     private PreparedStatement selectAlertStatusByTenantAndStatus;
+    private PreparedStatement selectAlertSeverityByTenantAndSeverity;
     private PreparedStatement selectTagsTriggersByCategoryAndName;
     private PreparedStatement selectTagsTriggersByCategory;
     private PreparedStatement selectTagsTriggersByName;
@@ -102,7 +108,6 @@ public class CassAlertsServiceImpl implements AlertsService {
     private final Set<Dampening> pendingTimeouts;
     private final Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers;
     private final Set<Trigger> disabledTriggers;
-
 
     private final Timer wakeUpTimer;
     private TimerTask rulesTask;
@@ -129,7 +134,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         period = new Integer(AlertProperties.getProperty(ENGINE_PERIOD, "2000"));
     }
 
-    @SuppressWarnings("unused")
     public ActionsService getActions() {
         return actions;
     }
@@ -205,6 +209,10 @@ public class CassAlertsServiceImpl implements AlertsService {
             insertAlertStatus = session.prepare("INSERT INTO " + keyspace + ".alerts_statuses " +
                     "(tenantId, alertId, status) VALUES (?, ?, ?) ");
         }
+        if (insertAlertSeverity == null) {
+            insertAlertSeverity = session.prepare("INSERT INTO " + keyspace + ".alerts_severities " +
+                    "(alertId, severity) VALUES (?, ?) ");
+        }
         if (updateAlert == null) {
             updateAlert = session.prepare("UPDATE " + keyspace + ".alerts " +
                     "SET payload = ? WHERE tenantId = ? AND alertId = ? ");
@@ -245,6 +253,10 @@ public class CassAlertsServiceImpl implements AlertsService {
             selectAlertStatusByTenantAndStatus = session.prepare("SELECT alertId FROM " + keyspace + "" +
                     ".alerts_statuses WHERE tenantId = ? AND status = ?");
         }
+        if (selectAlertSeverityByTenantAndSeverity == null) {
+            selectAlertSeverityByTenantAndSeverity = session.prepare("SELECT alertId FROM " + keyspace + "" +
+                    ".alerts_severities WHERE tenantId = ? AND severity = ?");
+        }
         if (selectTagsTriggersByCategoryAndName == null) {
             selectTagsTriggersByCategoryAndName = session.prepare("SELECT triggers FROM " + keyspace + "" +
                     ".tags_triggers WHERE tenantId = ? AND category = ? AND name = ?");
@@ -272,14 +284,23 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
-            alerts.stream().forEach(a -> {
-                futures.add(session.executeAsync(insertAlert.bind(a.getTenantId(), a.getAlertId(), toJson(a))));
-                futures.add(session.executeAsync(insertAlertTrigger.bind(a.getTenantId(), a.getAlertId(),
-                        a.getTriggerId())));
-                futures.add(session.executeAsync(insertAlertCtime.bind(a.getTenantId(), a.getAlertId(), a.getCtime())));
-                futures.add(session.executeAsync(insertAlertStatus.bind(a.getTenantId(), a.getAlertId(),
-                        a.getStatus().name())));
-            });
+            alerts.stream()
+                    .forEach(
+                            a -> {
+                                futures.add(session.executeAsync(insertAlert.bind(a.getTenantId(), a.getAlertId(),
+                                        toJson(a))));
+                                futures.add(session.executeAsync(insertAlertTrigger.bind(a.getTenantId(),
+                                        a.getAlertId(),
+                                        a.getTriggerId())));
+                                futures.add(session.executeAsync(insertAlertCtime.bind(a.getTenantId(),
+                                        a.getAlertId(), a.getCtime())));
+                                futures.add(session.executeAsync(insertAlertStatus.bind(a.getTenantId(),
+                                        a.getAlertId(),
+                                        a.getStatus().name())));
+                                futures.add(session.executeAsync(insertAlertSeverity.bind(a.getTenantId(),
+                                        a.getAlertId(),
+                                        a.getSeverity().name())));
+                            });
             /*
                 main method is synchronous so we need to wait until futures are completed
              */
@@ -328,6 +349,12 @@ public class CassAlertsServiceImpl implements AlertsService {
                 boolean filterByStatus = filterByStatuses(tenantId, alertIdsFilteredByStatus, criteria);
 
                 /*
+                    Get alertsIds filtered by severities clause
+                */
+                Set<String> alertIdsFilteredBySeverity = new HashSet<>();
+                boolean filterBySeverity = filterBySeverities(tenantId, alertIdsFilteredBySeverity, criteria);
+
+                /*
                     Get alertsIds explicitly added into the criteria
                  */
                 Set<String> alertIdsFilteredByAlerts = new HashSet<>();
@@ -357,6 +384,14 @@ public class CassAlertsServiceImpl implements AlertsService {
                     }
                     firstJoin = false;
                 }
+                if (filterBySeverity) {
+                    if (firstJoin) {
+                        alertIds.addAll(alertIdsFilteredBySeverity);
+                    } else {
+                        alertIds.retainAll(alertIdsFilteredBySeverity);
+                    }
+                    firstJoin = false;
+                }
                 if (filterByAlerts) {
                     if (firstJoin) {
                         alertIds.addAll(alertIdsFilteredByAlerts);
@@ -383,7 +418,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 List<ResultSetFuture> futures = alertIds.stream().map(alertId ->
                         session.executeAsync(selectAlertsByTenantAndAlert.bind(tenantId, alertId)))
                         .collect(Collectors.toList());
-                List <ResultSet> rsAlerts = Futures.allAsList(futures).get();
+                List<ResultSet> rsAlerts = Futures.allAsList(futures).get();
                 rsAlerts.stream().forEach(r -> {
                     for (Row row : r) {
                         String payload = row.getString("payload");
@@ -427,7 +462,7 @@ public class CassAlertsServiceImpl implements AlertsService {
          */
         if (!isEmpty(criteria.getTags()) || criteria.getTag() != null) {
             Set<Tag> tags = new HashSet<>();
-            if (criteria.getTags() != null)  {
+            if (criteria.getTags() != null) {
                 tags.addAll(criteria.getTags());
             }
             Tag tag = criteria.getTag();
@@ -537,6 +572,42 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
         }
         return filterByStatus;
+    }
+
+    private boolean filterBySeverities(String tenantId, Set<String> alertsId, AlertsCriteria criteria)
+            throws Exception {
+        boolean filterBySeverity = false;
+        Set<Severity> severities = new HashSet<>();
+        if (isEmpty(criteria.getSeverities())) {
+            if (criteria.getSeverity() != null) {
+                severities.add(criteria.getSeverity());
+            }
+        } else {
+            severities.addAll(criteria.getSeverities());
+        }
+
+        if (severities.size() > 0) {
+            filterBySeverity = true;
+            List<ResultSetFuture> futures = severities.stream().map(severity ->
+                    session.executeAsync(selectAlertSeverityByTenantAndSeverity.bind(tenantId, severity.name())))
+                    .collect(Collectors.toList());
+
+            List<ResultSet> rsAlertSeverities = Futures.allAsList(futures).get();
+            rsAlertSeverities.stream().forEach(r -> {
+                for (Row row : r) {
+                    String alertId = row.getString("alertId");
+                    alertsId.add(alertId);
+                }
+            });
+            /*
+                If there is not alertId but we have triggersId means that we have an empty result.
+                So we need to sure a alertId to mark that we have an empty result for future joins.
+             */
+            if (alertsId.isEmpty()) {
+                alertsId.add("no-result-fake-alert-id");
+            }
+        }
+        return filterBySeverity;
     }
 
     private boolean filterByAlerts(Set<String> alertsId, AlertsCriteria criteria) {
@@ -827,7 +898,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         return null == s || s.trim().isEmpty();
     }
 
-
     private class RulesInvoker extends TimerTask {
         @Override
         public void run() {
@@ -929,6 +999,5 @@ public class CassAlertsServiceImpl implements AlertsService {
             autoResolvedTriggers.clear();
         }
     }
-
 
 }

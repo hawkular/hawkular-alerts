@@ -20,12 +20,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
@@ -52,6 +52,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 /**
  * Validation of JSON serialization/deserialization
@@ -93,7 +94,7 @@ public class JsonTest {
 
     @Test
     public void jsonAlertTest() throws Exception {
-        Alert alert = new Alert(TEST_TENANT, "trigger-test", null);
+        Alert alert = new Alert(TEST_TENANT, "trigger-test", Severity.MEDIUM, null);
 
         String output = objectMapper.writeValueAsString(alert);
 
@@ -734,7 +735,8 @@ public class JsonTest {
                 "\"enabled\":true," +
                 "\"autoDisable\":true," +
                 "\"autoResolve\":true," +
-                "\"autoResolveAlerts\":true}";
+                "\"autoResolveAlerts\":true," +
+                "\"severity\":\"HIGH\"}";
         Trigger trigger = objectMapper.readValue(str, Trigger.class);
 
         assertTrue(trigger.getName().equals("test-name"));
@@ -748,6 +750,7 @@ public class JsonTest {
         assertTrue(trigger.isAutoDisable());
         assertTrue(trigger.isAutoResolve());
         assertTrue(trigger.isAutoResolveAlerts());
+        assertTrue(trigger.getSeverity() == Severity.HIGH);
 
         String output = objectMapper.writeValueAsString(trigger);
 

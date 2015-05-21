@@ -16,9 +16,6 @@
  */
 package org.hawkular.alerts.engine.impl;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.ResultSetFuture;
-import com.google.common.util.concurrent.Futures;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -33,11 +30,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.Singleton;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+
+import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -54,10 +54,14 @@ import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.jboss.logging.Logger;
+
+import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.google.common.util.concurrent.Futures;
 
 /**
  * A Cassandra implementation of {@link org.hawkular.alerts.api.services.DefinitionsService}.
@@ -133,9 +137,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private PreparedStatement deleteTags;
     private PreparedStatement deleteTagsByName;
 
-    public CassDefinitionsServiceImpl() { }
+    public CassDefinitionsServiceImpl() {
+    }
 
-    @SuppressWarnings("unused")
     public AlertsService getAlertsService() {
         return alertsService;
     }
@@ -144,22 +148,18 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         this.alertsService = alertsService;
     }
 
-    @SuppressWarnings("unused")
     public Session getSession() {
         return session;
     }
 
-    @SuppressWarnings("unused")
     public void setSession(Session session) {
         this.session = session;
     }
 
-    @SuppressWarnings("unused")
     public String getKeyspace() {
         return keyspace;
     }
 
-    @SuppressWarnings("unused")
     public void setKeyspace(String keyspace) {
         this.keyspace = keyspace;
     }
@@ -184,7 +184,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     InitialContext ctx = new InitialContext();
                     alertsService = (AlertsService) ctx
                             .lookup(AlertProperties.getProperty(ALERTS_SERVICE,
-                                            "java:app/hawkular-alerts-engine/CassAlertsServiceImpl"));
+                                    "java:app/hawkular-alerts-engine/CassAlertsServiceImpl"));
                 } catch (NamingException e) {
                     log.debugf(e.getMessage(), e);
                     msgLog.errorCannotWithAlertsService(e.getMessage());
@@ -217,9 +217,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private void initPreparedStatements() {
         if (insertTrigger == null) {
             insertTrigger = session.prepare("INSERT INTO " + keyspace + ".triggers " +
-                    "(name, description, autoDisable, autoResolve, autoResolveAlerts, firingMatch, " +
+                    "(name, description, autoDisable, autoResolve, autoResolveAlerts, severity, firingMatch, " +
                     "autoResolveMatch, id, enabled, tenantId) " +
-                    "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
+                    "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
         }
         if (insertTriggerActions == null) {
             insertTriggerActions = session.prepare("INSERT INTO " + keyspace + ".triggers_actions " +
@@ -228,14 +228,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (selectTriggerConditions == null) {
             selectTriggerConditions = session.prepare("SELECT triggerId, triggerMode, type, conditionSetSize, " +
                     "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, " +
-                    "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId" +
+                    "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId"
+                    +
                     " FROM " + keyspace + ".conditions " +
                     "WHERE tenantId = ? AND triggerId = ? ORDER BY triggerId, triggerMode, type");
         }
         if (selectTriggerConditionsTriggerMode == null) {
             selectTriggerConditionsTriggerMode = session.prepare("SELECT triggerId, triggerMode, type, " +
                     "conditionSetSize, conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, " +
-                    "pattern, ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange," +
+                    "pattern, ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange,"
+                    +
                     " tenantId " +
                     "FROM " + keyspace + ".conditions " +
                     "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? " +
@@ -286,7 +288,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         if (selectAllTriggers == null) {
             selectAllTriggers = session.prepare("SELECT name, description, autoDisable, autoResolve, " +
-                    "autoResolveAlerts, firingMatch, autoResolveMatch, id, enabled, tenantId " +
+                    "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId " +
                     "FROM " + keyspace + ".triggers ");
         }
         if (selectTriggerActions == null) {
@@ -332,7 +334,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         if (selectTrigger == null) {
             selectTrigger = session.prepare("SELECT name, description, autoDisable, autoResolve, " +
-                    "autoResolveAlerts, firingMatch, autoResolveMatch, id, enabled, tenantId " +
+                    "autoResolveAlerts, firingMatch, autoResolveMatch, severity, id, enabled, tenantId " +
                     "FROM " + keyspace + ".triggers WHERE tenantId = ? AND id = ? ");
         }
         if (selectTriggerDampenings == null) {
@@ -362,7 +364,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (updateTrigger == null) {
             updateTrigger = session.prepare("UPDATE " + keyspace + ".triggers " +
                     "SET name = ?, description = ?, autoDisable = ?, autoResolve = ?, autoResolveAlerts = ?, " +
-                    "firingMatch = ?, autoResolveMatch = ?, enabled = ? " +
+                    "firingMatch = ?, autoResolveMatch = ?, severity = ?, enabled = ? " +
                     "WHERE tenantId = ? AND id = ? ");
         }
         if (deleteTriggerActions == null) {
@@ -395,7 +397,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     "properties) VALUES (?, ?) ");
         }
         if (deleteActionPlugin == null) {
-            deleteActionPlugin = session.prepare("DELETE FROM " + keyspace + ".action_plugins WHERE actionPlugin = ? ");
+            deleteActionPlugin = session
+                    .prepare("DELETE FROM " + keyspace + ".action_plugins WHERE actionPlugin = ? ");
         }
         if (updateActionPlugin == null) {
             updateActionPlugin = session.prepare("UPDATE " + keyspace + ".action_plugins " +
@@ -513,7 +516,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length == 11) {
+                    if (fields.length == 12) {
                         String tenantId = fields[0];
                         String triggerId = fields[1];
                         boolean enabled = Boolean.parseBoolean(fields[2]);
@@ -522,15 +525,17 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         boolean autoDisable = Boolean.parseBoolean(fields[5]);
                         boolean autoResolve = Boolean.parseBoolean(fields[6]);
                         boolean autoResolveAlerts = Boolean.parseBoolean(fields[7]);
-                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[8]);
-                        TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match.valueOf(fields[9]);
-                        String[] notifiers = fields[10].split("\\|");
+                        Severity severity = Severity.valueOf(fields[8]);
+                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[9]);
+                        TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match.valueOf(fields[10]);
+                        String[] notifiers = fields[11].split("\\|");
 
                         Trigger trigger = new Trigger(triggerId, name);
                         trigger.setEnabled(enabled);
                         trigger.setAutoDisable(autoDisable);
                         trigger.setAutoResolve(autoResolve);
                         trigger.setAutoResolveAlerts(autoResolveAlerts);
+                        trigger.setSeverity(severity);
                         trigger.setDescription(description);
                         trigger.setFiringMatch(firingMatch);
                         trigger.setAutoResolveMatch(autoResolveMatch);
@@ -818,7 +823,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         try {
             session.execute(insertTrigger.bind(trigger.getName(), trigger.getDescription(),
-                    trigger.isAutoDisable(), trigger.isAutoResolve(), trigger.isAutoResolveAlerts(),
+                    trigger.isAutoDisable(), trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger
+                            .getSeverity().name(),
                     trigger.getFiringMatch().name(), trigger.getAutoResolveMatch().name(),
                     trigger.getId(), trigger.isEnabled(), trigger.getTenantId()));
 
@@ -827,7 +833,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
-
     }
 
     private void insertTriggerActions(Trigger trigger) throws Exception {
@@ -889,7 +894,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         try {
             session.execute(updateTrigger.bind(trigger.getName(), trigger.getDescription(), trigger.isAutoDisable(),
-                    trigger.isAutoResolve(), trigger.isAutoResolveAlerts(),
+                    trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger.getSeverity().name(),
                     trigger.getFiringMatch().name(), trigger.getAutoResolveMatch().name(), trigger.isEnabled(),
                     trigger.getTenantId(), trigger.getId()));
             deleteTriggerActions(trigger);
@@ -1001,13 +1006,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (selectTriggerActions == null) {
             throw new RuntimeException("selectTriggerActions PreparedStatement is null");
         }
-        ResultSet rsTriggerActions = session.execute(selectTriggerActions.bind(trigger.getTenantId(), trigger.getId()));
+        ResultSet rsTriggerActions = session
+                .execute(selectTriggerActions.bind(trigger.getTenantId(), trigger.getId()));
         for (Row row : rsTriggerActions) {
             String actionPlugin = row.getString("actionPlugin");
             Set<String> actions = row.getSet("actions", String.class);
             trigger.addActions(actionPlugin, actions);
         }
-     }
+    }
 
     private Trigger mapTrigger(Row row) {
         Trigger trigger = new Trigger();
@@ -1017,6 +1023,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         trigger.setAutoDisable(row.getBool("autoDisable"));
         trigger.setAutoResolve(row.getBool("autoResolve"));
         trigger.setAutoResolveAlerts(row.getBool("autoResolveAlerts"));
+        trigger.setSeverity(Severity.valueOf(row.getString("severity")));
         trigger.setFiringMatch(TriggerTemplate.Match.valueOf(row.getString("firingMatch")));
         trigger.setAutoResolveMatch(TriggerTemplate.Match.valueOf(row.getString("autoResolveMatch")));
         trigger.setId(row.getString("id"));
@@ -1063,6 +1070,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         Trigger newTrigger = new Trigger(trigger.getName());
         newTrigger.setName(trigger.getName());
         newTrigger.setDescription(trigger.getDescription());
+        newTrigger.setSeverity(trigger.getSeverity());
         newTrigger.setFiringMatch(trigger.getFiringMatch());
         newTrigger.setAutoResolveMatch(trigger.getAutoResolveMatch());
         newTrigger.setActions(trigger.getActions());
@@ -1280,7 +1288,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         triggerMode.name()));
             }
             mapDampenings(rsDampenings, dampenings);
-        } catch(Exception e) {
+        } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
@@ -1487,32 +1495,32 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
                 if (cond instanceof AvailabilityCondition) {
 
-                    AvailabilityCondition aCond = (AvailabilityCondition)cond;
+                    AvailabilityCondition aCond = (AvailabilityCondition) cond;
                     futures.add(session.executeAsync(insertAvailabilityCondition.bind(aCond.getTenantId(), aCond
-                                    .getTriggerId(),
+                            .getTriggerId(),
                             aCond.getTriggerMode().name(), aCond.getConditionSetSize(), aCond.getConditionSetIndex(),
                             aCond.getConditionId(), aCond.getDataId(), aCond.getOperator().name())));
 
                 } else if (cond instanceof CompareCondition) {
 
-                    CompareCondition cCond = (CompareCondition)cond;
+                    CompareCondition cCond = (CompareCondition) cond;
                     dataIds.add(cCond.getData2Id());
                     futures.add(session.executeAsync(insertCompareCondition.bind(cCond.getTenantId(),
                             cCond.getTriggerId(), cCond.getTriggerMode().name(), cCond.getConditionSetSize(),
                             cCond.getConditionSetIndex(), cCond.getConditionId(), cCond.getDataId(),
-                            cCond.getOperator().name(), cCond.getData2Id(),cCond.getData2Multiplier())));
+                            cCond.getOperator().name(), cCond.getData2Id(), cCond.getData2Multiplier())));
 
                 } else if (cond instanceof StringCondition) {
 
-                    StringCondition sCond = (StringCondition)cond;
+                    StringCondition sCond = (StringCondition) cond;
                     futures.add(session.executeAsync(insertStringCondition.bind(sCond.getTenantId(), sCond
-                                    .getTriggerId(), sCond.getTriggerMode().name(), sCond.getConditionSetSize(),
+                            .getTriggerId(), sCond.getTriggerMode().name(), sCond.getConditionSetSize(),
                             sCond.getConditionSetIndex(), sCond.getConditionId(), sCond.getDataId(),
                             sCond.getOperator().name(), sCond.getPattern(), sCond.isIgnoreCase())));
 
                 } else if (cond instanceof ThresholdCondition) {
 
-                    ThresholdCondition tCond = (ThresholdCondition)cond;
+                    ThresholdCondition tCond = (ThresholdCondition) cond;
                     futures.add(session.executeAsync(insertThresholdCondition.bind(tCond.getTenantId(),
                             tCond.getTriggerId(), tCond.getTriggerMode().name(), tCond.getConditionSetSize(),
                             tCond.getConditionSetIndex(), tCond.getConditionId(), tCond.getDataId(),
@@ -1520,13 +1528,12 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
                 } else if (cond instanceof ThresholdRangeCondition) {
 
-                    ThresholdRangeCondition rCond = (ThresholdRangeCondition)cond;
+                    ThresholdRangeCondition rCond = (ThresholdRangeCondition) cond;
                     futures.add(session.executeAsync(insertThresholdRangeCondition.bind(rCond.getTenantId(),
                             rCond.getTriggerId(), rCond.getTriggerMode().name(), rCond.getConditionSetSize(),
                             rCond.getConditionSetIndex(), rCond.getConditionId(), rCond.getDataId(),
                             rCond.getOperatorLow().name(), rCond.getOperatorHigh().name(), rCond.getThresholdLow(),
                             rCond.getThresholdHigh(), rCond.isInRange())));
-
                 }
 
                 // generate the automatic dataId tags for search
@@ -1799,7 +1806,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         return conditions;
     }
-
 
     private void mapConditions(ResultSet rsConditions, List<Condition> conditions) throws Exception {
         for (Row row : rsConditions) {
@@ -2251,7 +2257,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return id == null || id.trim().isEmpty();
     }
 
-    public boolean isEmpty (Map<String, String> map) {
+    public boolean isEmpty(Map<String, String> map) {
         return map == null || map.isEmpty();
     }
 
@@ -2269,17 +2275,17 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             return;
         }
         if (obj instanceof Trigger) {
-            Trigger trigger = (Trigger)obj;
+            Trigger trigger = (Trigger) obj;
             if (trigger.getTenantId() == null || !trigger.getTenantId().equals(tenantId)) {
                 trigger.setTenantId(tenantId);
             }
         } else if (obj instanceof Dampening) {
-            Dampening dampening = (Dampening)obj;
+            Dampening dampening = (Dampening) obj;
             if (dampening.getTenantId() == null || !dampening.getTenantId().equals(tenantId)) {
                 dampening.setTenantId(tenantId);
             }
         } else if (obj instanceof Tag) {
-            Tag tag = (Tag)obj;
+            Tag tag = (Tag) obj;
             if (tag.getTenantId() == null || !tag.getTenantId().equals(tenantId)) {
                 tag.setTenantId(tenantId);
             }

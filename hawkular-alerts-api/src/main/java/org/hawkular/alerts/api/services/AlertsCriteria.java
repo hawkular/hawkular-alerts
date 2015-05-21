@@ -18,6 +18,7 @@ package org.hawkular.alerts.api.services;
 
 import java.util.Collection;
 
+import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.trigger.Tag;
 
@@ -34,6 +35,8 @@ public class AlertsCriteria {
     Collection<String> alertIds = null;
     Alert.Status status = null;
     Collection<Alert.Status> statusSet = null;
+    Severity severity = null;
+    Collection<Severity> severities = null;
     String triggerId = null;
     Collection<String> triggerIds = null;
     Tag tag = null;
@@ -141,22 +144,41 @@ public class AlertsCriteria {
         this.tags = tags;
     }
 
+    public Severity getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(Severity severity) {
+        this.severity = severity;
+    }
+
+    public Collection<Severity> getSeverities() {
+        return severities;
+    }
+
+    public void setSeverities(Collection<Severity> severities) {
+        this.severities = severities;
+    }
+
     public boolean hasCriteria() {
-        return null != startTime || //
-                null != endTime || //
-                null != triggerId || //
-                (null != triggerIds && !triggerIds.isEmpty()) || //
-                null != tag || //
-                (null != tags && !tags.isEmpty()) ||
-                null != status ||
-                (null != statusSet && !statusSet.isEmpty());
+        return null != startTime //
+                || null != endTime
+                || null != status
+                || null != severity
+                || null != triggerId
+                || null != tag
+                || (null != statusSet && !statusSet.isEmpty())
+                || (null != severities && !severities.isEmpty())
+                || (null != triggerIds && !triggerIds.isEmpty())
+                || (null != tags && !tags.isEmpty());
     }
 
     @Override
     public String toString() {
-        return "AlertsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", triggerId=" + triggerId
-                + ", triggerIds=" + triggerIds + ", tag=" + tag + ", tags=" + tags + ", status=" + status + ", " +
-                "statusSet=" + statusSet + "]";
+        return "AlertsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", alertId=" + alertId
+                + ", alertIds=" + alertIds + ", status=" + status + ", statusSet=" + statusSet + ", severity="
+                + severity + ", severities=" + severities + ", triggerId=" + triggerId + ", triggerIds=" + triggerIds
+                + ", tag=" + tag + ", tags=" + tags + "]";
     }
 
 }

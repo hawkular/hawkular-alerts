@@ -19,6 +19,8 @@ package org.hawkular.alerts.api.model.condition;
 import java.util.List;
 import java.util.Set;
 
+import org.hawkular.alerts.api.model.Severity;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -51,6 +53,9 @@ public class Alert {
     private List<Set<ConditionEval>> evalSets;
 
     @JsonInclude
+    private Severity severity;
+
+    @JsonInclude
     private Status status;
 
     @JsonInclude
@@ -78,9 +83,10 @@ public class Alert {
         // for json assembly
     }
 
-    public Alert(String tenantId, String triggerId, List<Set<ConditionEval>> evalSets) {
+    public Alert(String tenantId, String triggerId, Severity severity, List<Set<ConditionEval>> evalSets) {
         this.tenantId = tenantId;
         this.triggerId = triggerId;
+        this.severity = (null == severity) ? Severity.MEDIUM : severity;
         this.evalSets = evalSets;
         this.ctime = System.currentTimeMillis();
         this.status = Status.OPEN;
@@ -126,6 +132,14 @@ public class Alert {
 
     public void setTriggerId(String triggerId) {
         this.triggerId = triggerId;
+    }
+
+    public Severity getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(Severity severity) {
+        this.severity = severity;
     }
 
     public Status getStatus() {

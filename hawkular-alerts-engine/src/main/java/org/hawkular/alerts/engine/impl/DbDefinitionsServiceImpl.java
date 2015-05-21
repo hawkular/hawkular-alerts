@@ -38,6 +38,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -280,7 +281,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length == 11) {
+                    if (fields.length == 12) {
                         String tenantId = fields[0];
                         String triggerId = fields[1];
                         boolean enabled = Boolean.parseBoolean(fields[2]);
@@ -289,15 +290,17 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         boolean autoDisable = Boolean.parseBoolean(fields[5]);
                         boolean autoResolve = Boolean.parseBoolean(fields[6]);
                         boolean autoResolveAlerts = Boolean.parseBoolean(fields[7]);
-                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[8]);
-                        TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match.valueOf(fields[9]);
-                        String[] notifiers = fields[10].split("\\|");
+                        Severity severity = Severity.valueOf(fields[8]);
+                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[9]);
+                        TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match.valueOf(fields[10]);
+                        String[] notifiers = fields[11].split("\\|");
 
                         Trigger trigger = new Trigger(triggerId, name);
                         trigger.setEnabled(enabled);
                         trigger.setAutoDisable(autoDisable);
                         trigger.setAutoResolve(autoResolve);
                         trigger.setAutoResolveAlerts(autoResolveAlerts);
+                        trigger.setSeverity(severity);
                         trigger.setDescription(description);
                         trigger.setFiringMatch(firingMatch);
                         trigger.setAutoResolveMatch(autoResolveMatch);

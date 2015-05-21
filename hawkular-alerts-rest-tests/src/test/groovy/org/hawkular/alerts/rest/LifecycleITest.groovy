@@ -18,6 +18,7 @@ package org.hawkular.alerts.rest
 
 import java.util.List
 
+import org.hawkular.alerts.api.model.Severity
 import org.hawkular.alerts.api.model.data.Availability
 import org.hawkular.alerts.api.model.data.MixedData
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
@@ -146,6 +147,7 @@ class LifecycleITest extends AbstractITestBase {
         testTrigger.setAutoDisable(false);
         testTrigger.setAutoResolve(true);
         testTrigger.setAutoResolveAlerts(true);
+        testTrigger.setSeverity(Severity.HIGH);
 
         resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
@@ -180,6 +182,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(false, resp.data.autoDisable);
         assertEquals(true, resp.data.autoResolve);
         assertEquals(true, resp.data.autoResolveAlerts);
+        assertEquals("HIGH", resp.data.severity);
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
@@ -199,7 +202,8 @@ class LifecycleITest extends AbstractITestBase {
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
-            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
+            resp = client.get(path: "",
+                query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"OPEN",severities:"HIGH"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
@@ -207,6 +211,7 @@ class LifecycleITest extends AbstractITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals("OPEN", resp.data[0].status)
+        assertEquals("HIGH", resp.data[0].severity)
 
         // ACK the alert
         resp = client.put(path: "ack", query: [alertIds:resp.data[0].alertId,ackBy:"testUser",ackNotes:"testNotes"] )

@@ -38,6 +38,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
 import org.hawkular.accounts.api.model.Persona;
+import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.data.MixedData;
 import org.hawkular.alerts.api.model.trigger.Tag;
@@ -101,6 +102,10 @@ public class AlertsHandler {
                     "comma separated list of status values")
             @QueryParam("statuses")
             final String statuses,
+            @ApiParam(required = false, value = "filter out alerts for unspecified severity, " +
+                    "comma separated list of severity values")
+            @QueryParam("severities")
+            final String severities,
             @ApiParam(required = false, value = "filter out alerts for unspecified tags, comma separated list of tags, "
                     + "each tag of format [category|]name")
             @QueryParam("tags")
@@ -124,6 +129,13 @@ public class AlertsHandler {
                     statusSet.add(Alert.Status.valueOf(s));
                 }
                 criteria.setStatusSet(statusSet);
+            }
+            if (null != severities && !severities.trim().isEmpty()) {
+                Set<Severity> severitySet = new HashSet<>();
+                for (String s : severities.split(",")) {
+                    severitySet.add(Severity.valueOf(s));
+                }
+                criteria.setSeverities(severitySet);
             }
             if (!isEmpty(tags)) {
                 String[] tagTokens = tags.split(",");
