@@ -36,7 +36,7 @@ public class Tag {
     /**
      * Create a searchable Tag on name only
      *
-     * @param name @NotEmpty
+     * @param name NotEmpty
      */
     public Tag(String name) {
         this(null, null, name, false);
@@ -45,8 +45,8 @@ public class Tag {
     /**
      * Create a searchable Tag on category + name
      *
-     * @param category @Nullable
-     * @param tag @NotEmpty
+     * @param category Nullable
+     * @param tag NotEmpty
      */
     public Tag(String category, String tag) {
         this(null, category, tag, false);
@@ -55,18 +55,18 @@ public class Tag {
     /**
      * Create an invisible Tag for persisting.
      *
-     * @param triggerId @Nullable Note, required for storage but not search.
-     * @param category @Nullable
-     * @param tag @NotEmpty
+     * @param triggerId Nullable Note, required for storage but not search.
+     * @param category Nullable
+     * @param tag NotEmpty
      */
     public Tag(String triggerId, String category, String tag) {
         this(triggerId, category, tag, false);
     }
 
     /**
-     * @param triggerId @Nullable Note, required for storage but not search.
-     * @param category @Nullable
-     * @param name @NotEmpty
+     * @param triggerId Nullable Note, required for storage but not search.
+     * @param category Nullable
+     * @param name NotEmpty
      * @param visible flag indicating whether this tag is available for display
      */
     public Tag(String triggerId, String category, String name, boolean visible) {

@@ -96,9 +96,9 @@ public class Dampening {
     /**
      * Fire if we have <code>numTrueEvals</code> consecutive true evaluations of the condition set.  There is
      * no time limit for the evaluations.
-     * @param triggerId
+     * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
-     * @param numConsecutiveTrueEvals
+     * @param numConsecutiveTrueEvals the numConsecutiveTrueEvals
      * @return the configured Dampening
      */
     public static Dampening forStrict(String triggerId, Mode triggerMode, int numConsecutiveTrueEvals) {
@@ -108,10 +108,10 @@ public class Dampening {
     /**
      * Fire if we have <code>numTrueEvals</code> of the condition set out of <code>numTotalEvals</code>. There is
      * no time limit for the evaluations.
-     * @param triggerId
+     * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
-     * @param numTrueEvals
-     * @param numTotalEvals
+     * @param numTrueEvals the numTrueEvals
+     * @param numTotalEvals the numTotalEvals
      * @return the configured Dampening
      */
     public static Dampening forRelaxedCount(String triggerId, Mode triggerMode, int numTrueEvals, int numTotalEvals) {
@@ -122,9 +122,9 @@ public class Dampening {
      * Fire if we have <code>numTrueEvals</code> of the condition set within <code>evalPeriod</code>. This can only
      * fire if the condition set is evaluated the required number of times in the given <code>evalPeriod</code>, so
      * the requisite data must be supplied in a timely manner.
-     * @param triggerId
+     * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
-     * @param numTrueEvals
+     * @param numTrueEvals the numTrueEvals
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
      * @return the configured Dampening
@@ -135,9 +135,9 @@ public class Dampening {
 
     /**
      * Fire if we have only true evaluations of the condition set for at least <code>evalPeriod</code>.  In other
-     * words, fire the Trigger after N consecutive true condition set evaluations, such that N >= 2
-     * and delta(evalTime-1,evalTime-N) >= <code>evalPeriod</code>.  Any false evaluation resets the dampening.
-     * @param triggerId
+     * words, fire the Trigger after N consecutive true condition set evaluations, such that <code>N GTE 2</code>
+     * and <code>delta(evalTime-1,evalTime-N) GTE evalPeriod</code>.  Any false evaluation resets the dampening.
+     * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
@@ -149,9 +149,9 @@ public class Dampening {
 
     /**
      * Fire if we have only true evaluations of the condition set for <code>evalPeriod</code>.  In other
-     * words, fire the Trigger after N consecutive true condition set evaluations, such that N >= 1
-     * and delta(evalTime-1,currentTime) == <code>evalPeriod</code>.  Any false evaluation resets the dampening.
-     * @param triggerId
+     * words, fire the Trigger after N consecutive true condition set evaluations, such that <code>N GTE 1</code>
+     * and <code>delta(evalTime-1,currentTime) == evalPeriod</code>.  Any false evaluation resets the dampening.
+     * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the clock starts at true-evaluation-time-1.

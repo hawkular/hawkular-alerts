@@ -98,8 +98,8 @@
     <version.org.codehaus.groovy.maven>1.0</version.org.codehaus.groovy.maven>
     <version.org.codehaus.groovy.modules.http-builder>0.7</version.org.codehaus.groovy.modules.http-builder>
     <version.org.drools>6.1.0.Final</version.org.drools>
-    <version.org.hawkular.bus>0.0.5</version.org.hawkular.bus>
-    <version.org.hawkular.nest>0.0.5</version.org.hawkular.nest>
+    <version.org.hawkular.bus>0.0.6</version.org.hawkular.bus>
+    <version.org.hawkular.nest>0.0.6</version.org.hawkular.nest>
     <version.org.hawkular.metrics>0.3.3</version.org.hawkular.metrics>
     <version.org.rhq.helpers>4.11.0</version.org.rhq.helpers>
     <version.org.slf4j>1.7.2</version.org.slf4j>

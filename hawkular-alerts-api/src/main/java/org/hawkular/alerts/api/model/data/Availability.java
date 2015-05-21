@@ -33,8 +33,8 @@ public class Availability extends Data {
     }
 
     /**
-     * @param id
-     * @param timestamp
+     * @param id the id
+     * @param timestamp the timestamp
      * @param value Must be a valid {@link AvailabilityType} name.
      */
     public Availability(String id, long timestamp, String value) {

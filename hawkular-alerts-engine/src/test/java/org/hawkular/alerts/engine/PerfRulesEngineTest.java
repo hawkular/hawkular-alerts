@@ -43,8 +43,9 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 /**
+ * <p>
  * Performance tests of RulesEngine implementation.
- * <p/>
+ * </p>
  * These tests are intended to be used to validate the rules design under heavy load of data and rules.
  * These are unit tests, so the focus is on the rules engine process itself it is not tested the integration between
  * other components.

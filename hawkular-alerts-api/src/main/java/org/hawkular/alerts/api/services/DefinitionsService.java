@@ -42,27 +42,28 @@ public interface DefinitionsService {
 
     /**
      * Create a new <code>Trigger</code>.  <code>Conditions</code> and <code>Actions</code> are manipulated in separate
-     * calls. The new </code>Trigger</code> will be persisted.  When fully defined a call to
+     * calls. The new <code>Trigger</code> will be persisted.  When fully defined a call to
      * {@link #updateTrigger(Trigger)}
-     * is needed to enable the </code>Trigger</code>.
-     * @param trigger
-     * @throws Exception If the </code>Trigger</code> already exists.
+     * is needed to enable the <code>Trigger</code>.
+     * @param trigger the trigger
+     * @throws Exception If the <code>Trigger</code> already exists.
      */
     void addTrigger(Trigger trigger) throws Exception;
 
     /**
      * The <code>Trigger</code> will be removed from the Alerts engine, as needed, and will no longer be persisted.
-     * @param triggerId
-     * @throws Exception
+     * @param triggerId the triggerId
+     * @throws Exception on any problem
      */
     void removeTrigger(String triggerId) throws Exception;
 
     /**
      * Update the <code>Trigger</code>. <code>Conditions</code> and <code>Actions</code> are manipulated in separate
-     * calls. The updated </code>Trigger</code> will be persisted.  If enabled the </code>Trigger</code>
+     * calls. The updated <code>Trigger</code> will be persisted.  If enabled the <code>Trigger</code>
      * will be [re-]inserted into the Alerts engine and any prior dampening will be reset.
-     * @param trigger
-     * @throws Exception If the </code>Trigger</code> does not exist.
+     * @param trigger the trigger
+     * @return the updated Trigger
+     * @throws Exception If the <code>Trigger</code> does not exist.
      */
     Trigger updateTrigger(Trigger trigger) throws Exception;
 
@@ -73,10 +74,10 @@ public interface DefinitionsService {
     /**
      * Used to generate an explicit Trigger from a Tokenized Trigger.  The dataIdMap replaces the tokens in the
      * Conditions with actual dataIds.
-     * @param triggerId
-     * @param dataIdMap
+     * @param triggerId the triggerId
+     * @param dataIdMap the dataIdMap
      * @return The copy
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Trigger copyTrigger(String triggerId, Map<String, String> dataIdMap) throws Exception;
 
@@ -93,10 +94,10 @@ public interface DefinitionsService {
     Dampening getDampening(String dampeningId) throws Exception;
 
     /**
-     * @param triggerId
+     * @param triggerId the triggerId
      * @param triggerMode Return only dampenings for the given trigger mode. Return all if null.
      * @return The existing dampenings for the trigger. Not null.
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Collection<Dampening> getTriggerDampenings(String triggerId, Trigger.Mode triggerMode) throws Exception;
 
@@ -117,11 +118,11 @@ public interface DefinitionsService {
      *   conditionSetSize
      *   conditionSetIndex
      * </pre>
-     * @param triggerId
-     * @param triggerMode
+     * @param triggerId the triggerId
+     * @param triggerMode the triggerMode
      * @param condition Not null
      * @return The updated, persisted condition set
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Collection<Condition> addCondition(String triggerId, Trigger.Mode triggerMode, Condition condition)
             throws Exception;
@@ -129,9 +130,9 @@ public interface DefinitionsService {
     /**
      * A convenience method that removes a Condition from an existing condition set. This will update the
      * conditionSetSize and possibly the conditionSetIndex for any remaining conditions.
-     * @param conditionId
+     * @param conditionId the conditionId
      * @return The updated, persisted condition set. Not null. Can be empty.
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Collection<Condition> removeCondition(String conditionId)
             throws Exception;
@@ -140,7 +141,7 @@ public interface DefinitionsService {
      * A convenience method that updates an existing Condition from an existing condition set.
      * @param condition Not null. conditionId must be for an existing condition.
      * @return The updated, persisted condition set. Not null. Can be empty.
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Collection<Condition> updateCondition(Condition condition)
             throws Exception;
@@ -155,11 +156,11 @@ public interface DefinitionsService {
      *   conditionSetSize
      *   conditionSetIndex
      * </pre>
-     * @param triggerId
-     * @param triggerMode
+     * @param triggerId the triggerId
+     * @param triggerMode the triggerMode
      * @param conditions Not null, Not Empty
      * @return The persisted condition set
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Collection<Condition> setConditions(String triggerId, Trigger.Mode triggerMode, Collection<Condition> conditions)
             throws Exception;
@@ -167,10 +168,10 @@ public interface DefinitionsService {
     Condition getCondition(String conditionId) throws Exception;
 
     /**
-     * @param triggerId
+     * @param triggerId the triggerId
      * @param triggerMode Return only conditions for the given trigger mode. Return all if null.
      * @return The existing conditions for the trigger. Not null.
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Collection<Condition> getTriggerConditions(String triggerId, Trigger.Mode triggerMode) throws Exception;
 
@@ -221,8 +222,8 @@ public interface DefinitionsService {
     /**
      * Add Tag with the specified name to the specified Trigger. Category is optional. If the Tag exists the
      * call returns successfully but has no effect.
-     * @param tag
-     * @throws Exception
+     * @param tag the tag
+     * @throws Exception on any problem
      */
     void addTag(Tag tag) throws Exception;
 
@@ -231,7 +232,7 @@ public interface DefinitionsService {
      * @param triggerId NotEmpty
      * @param category Nullable
      * @param name Nullable
-     * @throws Exception
+     * @throws Exception on any problem
      */
     void removeTags(String triggerId, String category, String name) throws Exception;
 
@@ -239,7 +240,7 @@ public interface DefinitionsService {
      * @param triggerId NotEmpty
      * @param category Nullable.
      * @return The existing Tags for the trigger, optionally filtered by category. Sorted by category, name.
-     * @throws Exception
+     * @throws Exception on any problem
      */
     List<Tag> getTriggerTags(String triggerId, String category) throws Exception;
 
