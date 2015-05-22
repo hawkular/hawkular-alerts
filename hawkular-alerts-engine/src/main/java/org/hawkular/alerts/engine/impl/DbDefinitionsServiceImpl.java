@@ -85,7 +85,6 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource", "java:jboss/datasources/HawkularDS");
     }
 
-    @SuppressWarnings("unused")
     public AlertsService getAlertsService() {
         return alertsService;
     }
@@ -94,7 +93,6 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         this.alertsService = alertsService;
     }
 
-    @SuppressWarnings("unused")
     public DataSource getDatasource() {
         return ds;
     }
@@ -203,6 +201,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     "  triggerId VARCHAR2(250) NOT NULL, " +
                     "  ctime long NOT NULL," +
                     "  status VARCHAR2(20) NOT NULL," +
+                    "  severity VARCHAR2(20) NOT NULL," +
                     "  payload CLOB, " +
                     "  PRIMARY KEY(tenantId, alertId) )"
             );
