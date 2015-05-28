@@ -131,7 +131,7 @@ public class TriggersHandler {
                     return ResponseUtil.badRequest("Trigger with ID [" + trigger.getId() + "] exists.");
                 }
                 definitions.addTrigger(persona.getId(), trigger);
-                log.debugf("Trigger: %s ", trigger);
+                log.debugf("Trigger: %s ", trigger.toString());
                 return ResponseUtil.ok(trigger);
             } else {
                 return ResponseUtil.badRequest("Trigger is null");
@@ -179,7 +179,7 @@ public class TriggersHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Trigger updated"),
             @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Trigger doesn't exist/Invalid Parameters") })
+            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters") })
     public Response updateTrigger(@ApiParam(value = "Trigger definition id to be updated", required = true)
             @PathParam("triggerId")
             final String triggerId,
@@ -199,7 +199,7 @@ public class TriggersHandler {
                 log.debugf("Trigger: %s ", trigger);
                 return ResponseUtil.ok();
             } else {
-                return ResponseUtil.badRequest("Trigger " + triggerId + " doesn't exist for update");
+                return ResponseUtil.notFound("Trigger " + triggerId + " doesn't exist for update");
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
@@ -240,7 +240,7 @@ public class TriggersHandler {
     @ApiOperation(value = "Get all Dampenings for a Trigger (1 Dampening per mode).")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampenings found"),
-            @ApiResponse(code = 404, message = "No Dampenings found for trigger."),
+            @ApiResponse(code = 204, message = "No Dampenings found for trigger."),
             @ApiResponse(code = 500, message = "Internal server error")})
     public Response getTriggerDampenings(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
@@ -252,7 +252,7 @@ public class TriggersHandler {
             Collection<Dampening> dampenings = definitions.getTriggerDampenings(persona.getId(), triggerId, null);
             log.debugf("Dampenings: %s ", dampenings);
             if (dampenings.isEmpty()) {
-                return ResponseUtil.notFound("No dampenings found for triggerId: " + triggerId);
+                return ResponseUtil.noContent();
             }
             return ResponseUtil.ok(dampenings);
         } catch (Exception e) {
@@ -267,7 +267,7 @@ public class TriggersHandler {
     @ApiOperation(value = "Get a dampening using triggerId and triggerMode")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampening found"),
-            @ApiResponse(code = 404, message = "No Dampening found for triggerId/triggerMode"),
+            @ApiResponse(code = 204, message = "No Dampening found for triggerId/triggerMode"),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response getTriggerModeDampenings(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
@@ -283,8 +283,7 @@ public class TriggersHandler {
                     triggerMode);
             log.debugf("Dampenings: %s ", dampenings);
             if (dampenings.isEmpty()) {
-                return ResponseUtil.notFound("No Dampening found for triggerId: " + triggerId + " triggerMode: " +
-                        triggerMode);
+                return ResponseUtil.noContent();
             }
             return ResponseUtil.ok(dampenings);
         } catch (Exception e) {
@@ -458,7 +457,7 @@ public class TriggersHandler {
     @ApiOperation(value = "Get a map with all conditions for a specific trigger.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Conditions found"),
-            @ApiResponse(code = 404, message = "Success, no Conditions found"),
+            @ApiResponse(code = 204, message = "Success, no Conditions found"),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response getTriggerConditions(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
@@ -470,7 +469,7 @@ public class TriggersHandler {
             Collection<Condition> conditions = definitions.getTriggerConditions(persona.getId(), triggerId, null);
             log.debugf("Conditions: %s ", conditions);
             if (isEmpty(conditions)) {
-                return ResponseUtil.notFound("No conditions found for triggerId: " + triggerId);
+                return ResponseUtil.noContent();
             }
             return ResponseUtil.ok(conditions);
         } catch (Exception e) {
@@ -763,7 +762,7 @@ public class TriggersHandler {
             response = Tag.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Tags found"),
-            @ApiResponse(code = 404, message = "No Tags found"),
+            @ApiResponse(code = 204, message = "No Tags found"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public Response getTriggerTags(@ApiParam(value = "Trigger id for the retrieved Tags", required = true)
@@ -779,8 +778,7 @@ public class TriggersHandler {
             Collection<Tag> tags = definitions.getTriggerTags(persona.getId(), triggerId, category);
             log.debugf("Tags: " + tags);
             if (isEmpty(tags)) {
-                return ResponseUtil.notFound("No tags found for triggerId: " + triggerId + " and category: " +
-                        category);
+                return ResponseUtil.noContent();
             }
             return ResponseUtil.ok(tags);
         } catch (Exception e) {

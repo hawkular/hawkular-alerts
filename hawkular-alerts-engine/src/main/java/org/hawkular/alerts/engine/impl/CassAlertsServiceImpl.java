@@ -36,6 +36,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import org.hawkular.alerts.api.model.condition.Alert;
@@ -176,6 +177,13 @@ public class CassAlertsServiceImpl implements AlertsService {
                 t.printStackTrace();
             }
             msgLog.errorCannotInitializeAlertsService(t.getMessage());
+        }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        if (session != null) {
+            session.close();
         }
     }
 

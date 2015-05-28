@@ -73,20 +73,20 @@ public interface DefinitionsService {
      * Get a stored Trigger for a specific Tenant.
      * @param tenantId Tenant where trigger is stored
      * @param triggerId Given trigger to be retrieved
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Trigger getTrigger(String tenantId, String triggerId) throws Exception;
 
     /**
      * Get all stored Triggers for a specific Tenant.
      * @param tenantId Tenant where triggers are stored
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Collection<Trigger> getTriggers(String tenantId) throws Exception;
 
     /**
      * Get all stored Triggers for all Tenants
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Collection<Trigger> getAllTriggers() throws Exception;
 
@@ -126,14 +126,14 @@ public interface DefinitionsService {
 
     /**
      * @return The existing dampenings stored under a tenant
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Collection<Dampening> getAllDampenings() throws Exception;
 
     /**
      * @param tenantId Tenant where dampening are stored
      * @return The existing dampenings stored under a tenant
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Collection<Dampening> getDampenings(String tenantId) throws Exception;
 
@@ -252,7 +252,7 @@ public interface DefinitionsService {
      * @param actionPlugin Action plugin where this action is stored
      * @param actionId Id of new action
      * @param properties the properties of the action
-     * @throws Exception
+     * @throws Exception on any problem
      */
     void addAction(String tenantId, String actionPlugin, String actionId, Map<String, String> properties)
             throws Exception;
@@ -264,14 +264,14 @@ public interface DefinitionsService {
 
     /**
      * @return Map where key is a tenantId and value is a Map with actionPlugin as key and a set of actionsId as value
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Map<String, Map<String, Set<String>>> getAllActions() throws Exception;
 
     /**
      * @param tenantId Tenant where actions are stored.
      * @return Map where key represents an actionPlugin and value a Set of actionsId per actionPlugin
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Map<String, Set<String>> getActions(String tenantId) throws Exception;
 

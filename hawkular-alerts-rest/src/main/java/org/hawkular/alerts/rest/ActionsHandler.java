@@ -123,7 +123,7 @@ public class ActionsHandler {
             notes = "Pagination is not yet implemented")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Actions Found"),
-            @ApiResponse(code = 404, message = "No Actions Found"),
+            @ApiResponse(code = 204, message = "No Actions Found"),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response findActionsByPlugin(@ApiParam(value = "Action plugin to filter query for action ids",
             required = true)
@@ -136,7 +136,7 @@ public class ActionsHandler {
             Collection<String> actions = definitions.getActions(persona.getId(), actionPlugin);
             log.debugf("Actions: %s ", actions);
             if (isEmpty(actions)) {
-                return ResponseUtil.notFound("No actions found for actionPlugin: " + actionPlugin + " ");
+                return ResponseUtil.noContent();
             }
             return ResponseUtil.ok(actions);
         } catch (Exception e) {
@@ -232,7 +232,7 @@ public class ActionsHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Action Updated"),
             @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 404, message = "Action not found for update") })
     public Response updateAction(@ApiParam(value = "Action plugin", required = true)
             @PathParam("actionPlugin")
             final String actionPlugin,
@@ -250,7 +250,7 @@ public class ActionsHandler {
                 log.debugf("ActionId: %s - Properties: %s ", actionId, actionProperties);
                 return ResponseUtil.ok(actionProperties);
             } else {
-                return ResponseUtil.badRequest("ActionId: " + actionId + " not found for update");
+                return ResponseUtil.notFound("ActionId: " + actionId + " not found for update");
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
@@ -264,7 +264,7 @@ public class ActionsHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Action Deleted"),
             @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 404, message = "ActionId not found for delete") })
     public Response deleteAction(@ApiParam(value = "Action plugin", required = true)
             @PathParam("actionPlugin")
             final String actionPlugin,
@@ -280,7 +280,7 @@ public class ActionsHandler {
                 log.debugf("ActionId: %s ", actionId);
                 return ResponseUtil.ok();
             } else {
-                return ResponseUtil.badRequest("ActionId: " + actionId + " not found for delete");
+                return ResponseUtil.notFound("ActionId: " + actionId + " not found for delete");
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);

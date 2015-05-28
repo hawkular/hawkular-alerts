@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ejb.Singleton;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -192,6 +193,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         } catch (Throwable t) {
             msgLog.errorCannotInitializeDefinitionsService(t.getMessage());
             t.printStackTrace();
+        }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        if (session != null) {
+            session.close();
         }
     }
 
