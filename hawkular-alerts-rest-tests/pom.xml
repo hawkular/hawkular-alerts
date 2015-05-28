@@ -54,14 +54,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.hawkular</groupId>
-      <artifactId>hawkular-dist</artifactId>
-      <version>${version.org.hawkular}</version>
-      <type>tar.gz</type>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>hawkular-alerts-ear</artifactId>
       <version>${project.version}</version>
@@ -166,6 +158,15 @@
         <hawkular.data>${hawkular.wildfly}/standalone/data</hawkular.data>
         <hawkular.deployments>${hawkular.wildfly}/modules/org/hawkular/nest/main/deployments</hawkular.deployments>
       </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.hawkular</groupId>
+          <artifactId>hawkular-dist</artifactId>
+          <version>${version.org.hawkular}</version>
+          <type>tar.gz</type>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>
