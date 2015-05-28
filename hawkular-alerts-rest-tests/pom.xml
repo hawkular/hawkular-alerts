@@ -108,7 +108,7 @@
       <properties>
         <!-- IMPORTANT: The port must be the port offset + 8080. -->
         <hawkular.host>127.0.0.1</hawkular.host>
-        <hawkular.port>9977</hawkular.port>
+        <hawkular.port>8080</hawkular.port>
         <hawkular.path>/hawkular/alerts/</hawkular.path>
         <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
         <!-- IMPORTANT: The management port must be the port offset + 9990. -->
