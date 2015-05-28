@@ -29,6 +29,26 @@ import org.junit.Test
 class ActionsITest extends AbstractITestBase {
 
     @Test
+    void findPlugins() {
+        def resp = client.get(path: "plugins")
+        def data = resp.data
+        assertEquals(200, resp.status)
+        assertTrue(data.size() > 0)
+        println "Plugins: " + data
+    }
+
+    @Test
+    void findEmailPlugin() {
+        /*
+            Email plugin should be pre-installed on hawkular
+         */
+        def resp =client.get(path: "plugins/email")
+        def data = resp.data
+        assertEquals(200, resp.status)
+        println "Email plugin: " + data
+    }
+
+    @Test
     void findInitialActions() {
         def resp = client.get(path: "actions")
         def data = resp.data
