@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>0.0.3</version>
   </parent>
 
   <artifactId>hawkular-alerts-rest-tests</artifactId>
@@ -240,10 +240,8 @@
                 </goals>
                 <configuration>
                   <target>
-                    <copy file="${hawkular.configuration}/hawkular-realm.json"
-                          tofile="${hawkular.configuration}/hawkular-realm.json.backup" />
-                    <copy file="${hawkular.configuration}/hawkular-realm-dev.json"
-                          tofile="${hawkular.configuration}/hawkular-realm.json" />
+                    <copy file="${hawkular.configuration}/hawkular-realm.json" tofile="${hawkular.configuration}/hawkular-realm.json.backup" />
+                    <copy file="${hawkular.configuration}/hawkular-realm-dev.json" tofile="${hawkular.configuration}/hawkular-realm.json" />
                   </target>
                 </configuration>
               </execution>
