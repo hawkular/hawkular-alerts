@@ -17,8 +17,8 @@
 package org.hawkular.alerts.rest
 
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
 
-import org.jboss.logging.Logger
 import org.junit.Test
 
 /**
@@ -27,44 +27,48 @@ import org.junit.Test
  * @author Lucas Ponce
  */
 class ActionsITest extends AbstractITestBase {
-    private static final Logger log = Logger.getLogger(ActionsITest.class);
 
     @Test
     void findInitialActions() {
         def resp = client.get(path: "actions")
         def data = resp.data
         assertEquals(200, resp.status)
-        assert data.size() > 0
-        for (int i = 0; i < data.size(); i++) {
-            log.info(data[i])
+        assertTrue(data.size() > 0)
+        Map map = (Map)data;
+        for (String actionPlugin : map.keySet()) {
+            println "ActionPlugin: " + actionPlugin + " - Plugins: " + map.get(actionPlugin)
         }
     }
 
     @Test
     void createAction() {
-        Map<String, String> action = new HashMap<>();
-        action.put("actionId", "test-action");
-        action.put("actionPlugin", "email");
-        action.put("prop1", "value1");
-        action.put("prop2", "value2");
-        action.put("prop3", "value3");
 
-        def resp = client.post(path: "actions", body: action)
+        String actionPlugin = "email"
+        String actionId = "test-action";
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("actionPlugin", actionPlugin);
+        actionProperties.put("actionId", actionId);
+        actionProperties.put("prop1", "value1");
+        actionProperties.put("prop2", "value2");
+        actionProperties.put("prop3", "value3");
+
+        def resp = client.post(path: "actions", body: actionProperties)
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "actions/" + action.get("actionId"));
+        resp = client.get(path: "actions/" + actionPlugin + "/" + actionId);
         assertEquals(200, resp.status)
         assertEquals("value1", resp.data.prop1)
 
-        action.put("prop3", "value3Modified")
-        resp = client.put(path: "actions/" + action.get("actionId"), body: action)
+        actionProperties.put("prop3", "value3Modified")
+        resp = client.put(path: "actions/" + actionPlugin + "/" + actionId, body: actionProperties)
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "actions/" + action.get("actionId"))
+        resp = client.get(path: "actions/" + actionPlugin + "/" + actionId)
         assertEquals(200, resp.status)
         assertEquals("value3Modified", resp.data.prop3)
 
-        resp = client.delete(path: "actions/" + action.get("actionId"))
+        resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
         assertEquals(200, resp.status)
     }
 

@@ -22,7 +22,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,73 +33,53 @@ import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.engine.impl.AlertProperties;
-import org.hawkular.alerts.engine.impl.CassCluster;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.runners.MethodSorters;
-import com.datastax.driver.core.Session;
 
 /**
- * Basic tests for CassDefinitionsServiceImpl
  *
  * @author Lucas Ponce
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class CassTest {
+public abstract class DefinitionsTest {
 
-    static Session session;
-    static DefinitionsService cassDefinitions;
-    static AlertsService cassAlerts;
-    static String keyspace;
-
-    @BeforeClass
-    public static void initSessionAndResetTestSchema() throws Exception {
-
-        String testFolder = CassTest.class.getResource("/").getPath();
-        System.setProperty("jboss.server.data.dir", testFolder);
-
-        session = CassCluster.getSession();
-        keyspace = AlertProperties.getProperty("hawkular-alerts.cassandra-keyspace", "hawkular_alerts_test");
-
-        cassDefinitions = StandaloneAlerts.getDefinitionsService();
-        cassAlerts = StandaloneAlerts.getAlertsService();
-    }
+    /*
+        TenantId = 28026b36-8fe4-4332-84c8-524e173a68bf
+        User = jdoe
+     */
+    private final String TEST_TENANT = "28026b36-8fe4-4332-84c8-524e173a68bf";
+    static DefinitionsService definitionsService;
+    static AlertsService alertsService;
 
     @Test
     public void test000InitScheme() throws Exception {
-        assertTrue(cassDefinitions.getAllTriggers().size() > 0);
-        assertTrue(cassDefinitions.getAllConditions().size() > 0);
-        assertTrue(cassDefinitions.getAllDampenings().size() > 0);
-        assertTrue(cassDefinitions.getAllActions().size() > 0);
+        assertTrue(definitionsService.getAllTriggers().size() > 0);
+        assertTrue(definitionsService.getAllConditions().size() > 0);
+        assertTrue(definitionsService.getAllDampenings().size() > 0);
+        assertTrue(definitionsService.getAllActions().size() > 0);
     }
 
     @Test
     public void test001CopyTrigger() throws Exception {
-        Trigger t = cassDefinitions.getTrigger("trigger-1");
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-1");
         assertTrue(t != null);
 
-        Collection<Condition> cs = cassDefinitions.getTriggerConditions(t.getId(), null);
+        Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
         assertTrue(cs.toString(), cs.size() == 1);
         Condition c = cs.iterator().next();
 
-        Collection<Dampening> ds = cassDefinitions.getTriggerDampenings(t.getId(), null);
+        Collection<Dampening> ds = definitionsService.getTriggerDampenings(TEST_TENANT, t.getId(), null);
         assertTrue(cs.toString(), ds.size() == 1);
         Dampening d = ds.iterator().next();
 
         Map<String, String> dataIdMap = new HashMap<>(1);
         dataIdMap.put(c.getDataId(), "NewDataId");
 
-        Trigger nt = cassDefinitions.copyTrigger(t.getId(), dataIdMap);
+        Trigger nt = definitionsService.copyTrigger(TEST_TENANT, t.getId(), dataIdMap);
         assertNotNull(nt);
         assertTrue(nt.toString(), !nt.getId().equals(t.getId()));
         assertTrue(nt.toString(), nt.getName().equals(t.getName()));
@@ -108,7 +87,7 @@ public class CassTest {
         assertTrue(nt.toString(), nt.getFiringMatch().equals(t.getFiringMatch()));
         assertTrue(nt.toString(), nt.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
 
-        Collection<Condition> ncs = cassDefinitions.getTriggerConditions(nt.getId(), null);
+        Collection<Condition> ncs = definitionsService.getTriggerConditions(TEST_TENANT, nt.getId(), null);
         assertTrue(ncs.toString(), ncs.size() == 1);
         Condition nc = ncs.iterator().next();
         assertTrue(nc.toString(), nc.getClass().equals(c.getClass()));
@@ -118,7 +97,7 @@ public class CassTest {
         assertTrue(nc.toString(), nc.getConditionSetIndex() == c.getConditionSetIndex());
         assertTrue(nc.toString(), nc.getConditionSetSize() == c.getConditionSetSize());
 
-        Collection<Dampening> nds = cassDefinitions.getTriggerDampenings(nt.getId(), null);
+        Collection<Dampening> nds = definitionsService.getTriggerDampenings(TEST_TENANT, nt.getId(), null);
         assertTrue(nds.toString(), nds.size() == 1);
         Dampening nd = nds.iterator().next();
         assertTrue(nd.toString(), nd.getTriggerId().equals(nt.getId()));
@@ -130,15 +109,15 @@ public class CassTest {
 
     @Test
     public void test002BasicTags() throws Exception {
-        Trigger t = cassDefinitions.getTrigger("trigger-1");
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-1");
         assertNotNull(t);
 
-        Collection<Condition> cs = cassDefinitions.getTriggerConditions(t.getId(), null);
+        Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
         assertTrue(cs.toString(), cs.size() == 1);
         Condition c = cs.iterator().next();
 
         // check for the implicit tag
-        List<Tag> tags = cassDefinitions.getTriggerTags("trigger-1", "dataId");
+        List<Tag> tags = definitionsService.getTriggerTags(TEST_TENANT, "trigger-1", "dataId");
         assertTrue(tags.toString(), tags.size() == 1);
         Tag tag = tags.get(0);
         assertEquals("trigger-1", tag.getTriggerId());
@@ -147,9 +126,9 @@ public class CassTest {
         assertEquals(false, tag.isVisible());
 
         Tag newTag = new Tag("trigger-1", "testcategory", "testname", true);
-        cassDefinitions.addTag(newTag);
+        definitionsService.addTag(TEST_TENANT, newTag);
 
-        tags = cassDefinitions.getTriggerTags("trigger-1", null);
+        tags = definitionsService.getTriggerTags(TEST_TENANT, "trigger-1", null);
         assertTrue(tags.toString(), tags.size() == 2);
         tag = tags.get(1); // new one should be second by the implicit sort
         assertEquals("trigger-1", tag.getTriggerId());
@@ -157,23 +136,23 @@ public class CassTest {
         assertEquals("testname", tag.getName());
         assertEquals(true, tag.isVisible());
 
-        cassDefinitions.removeTags("trigger-1", "testcategory", "testname");
-        tags = cassDefinitions.getTriggerTags("trigger-1", null);
+        definitionsService.removeTags(TEST_TENANT, "trigger-1", "testcategory", "testname");
+        tags = definitionsService.getTriggerTags(TEST_TENANT, "trigger-1", null);
         assertTrue(tags.toString(), tags.size() == 1);
         tag = tags.get(0);
         assertEquals("trigger-1", tag.getTriggerId());
         assertEquals("dataId", tag.getCategory());
 
-        tags = cassDefinitions.getTriggerTags("dummy", null);
+        tags = definitionsService.getTriggerTags(TEST_TENANT, "dummy", null);
         assertTrue(tags.toString(), tags.size() == 0);
     }
 
     @Test
     public void test003BasicAlert() throws Exception {
-        Trigger t = cassDefinitions.getTrigger("trigger-1");
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-1");
         assertNotNull(t);
 
-        Collection<Condition> cs = cassDefinitions.getTriggerConditions(t.getId(), null);
+        Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
         assertTrue(cs.toString(), cs.size() == 1);
 
         ThresholdCondition threshold = (ThresholdCondition)cs.iterator().next();
@@ -184,20 +163,20 @@ public class CassTest {
         evalSet.add(eval);
         List<Set<ConditionEval>> evals = new ArrayList<>();
         evals.add(evalSet);
-        Alert alert = new Alert(t.getId(), evals);
+        Alert alert = new Alert(TEST_TENANT, t.getId(), evals);
         List<Alert> alerts = new ArrayList<>();
         alerts.add(alert);
 
-        cassAlerts.addAlerts(alerts);
+        alertsService.addAlerts(alerts);
 
         // No filter
-        List<Alert> result = cassAlerts.getAlerts(null);
+        List<Alert> result = alertsService.getAlerts(TEST_TENANT, null);
         assertTrue(result.toString(), result.size() == 1);
 
         // Specific trigger
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setTriggerId("trigger-1");
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 1);
 
         criteria = new AlertsCriteria();
@@ -205,13 +184,13 @@ public class CassTest {
         triggerIds.add("trigger-1");
         triggerIds.add("trigger-2");
         criteria.setTriggerIds(triggerIds);
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 1);
 
         // No trigger
         criteria = new AlertsCriteria();
         criteria.setTriggerId("trigger-2");
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 0);
 
         criteria = new AlertsCriteria();
@@ -219,61 +198,63 @@ public class CassTest {
         triggerIds.add("trigger-2");
         triggerIds.add("trigger-3");
         criteria.setTriggerIds(triggerIds);
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 0);
 
         // Specific time
         criteria = new AlertsCriteria();
         criteria.setStartTime(dataTime - 100);
         criteria.setEndTime(dataTime + 100);
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 1);
 
         // Out of time interval
         criteria = new AlertsCriteria();
         criteria.setStartTime(dataTime + 10000);
         criteria.setEndTime(dataTime + 20000);
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 0);
 
         // Using tags
         criteria = new AlertsCriteria();
         Tag tag = new Tag();
+        tag.setTenantId(TEST_TENANT);
         tag.setCategory("dataId");
         criteria.setTag(tag);
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 1);
 
         // More specific tags
         criteria = new AlertsCriteria();
         tag = new Tag();
+        tag.setTenantId(TEST_TENANT);
         tag.setName("NumericData-01");
         criteria.setTag(tag);
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 1);
 
         // Using alertId
         criteria = new AlertsCriteria();
         criteria.setAlertId(alert.getAlertId());
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 1);
 
         // Using status
         criteria = new AlertsCriteria();
         criteria.setStatus(alert.getStatus());
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 1);
 
         criteria = new AlertsCriteria();
         criteria.setStatus(Alert.Status.RESOLVED);
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 0);
 
         // Combine triggerId and ctime
         criteria = new AlertsCriteria();
         criteria.setTriggerId(alert.getTriggerId());
         criteria.setStartTime(dataTime - 100);
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 1);
 
         // Combine triggerId, ctime and alertsId
@@ -281,7 +262,7 @@ public class CassTest {
         criteria.setTriggerId(alert.getTriggerId());
         criteria.setStartTime(dataTime - 100);
         criteria.setAlertId(alert.getAlertId());
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 1);
 
         // Combine triggerIds, ctime and statuses
@@ -293,50 +274,10 @@ public class CassTest {
         HashSet<Alert.Status> statuses = new HashSet<>();
         statuses.add(Alert.Status.RESOLVED);
         criteria.setStatusSet(statuses);
-        result = cassAlerts.getAlerts(criteria);
+        result = alertsService.getAlerts(TEST_TENANT, criteria);
         assertTrue(result.toString(), result.size() == 0);
     }
 
-    @AfterClass
-    public static void cleanTestSchema() throws Exception {
-        session.execute("DROP KEYSPACE " + keyspace);
-    }
 
-    private static class EmptyAlertsService implements AlertsService {
-
-        @Override
-        public void sendData(Data data) { }
-
-        @Override
-        public void sendData(Collection<Data> data) { }
-
-        @Override
-        public List<Alert> getAlerts(AlertsCriteria criteria) {
-            return Collections.EMPTY_LIST;
-        }
-
-        @Override
-        public void clear() { }
-
-        @Override
-        public void reload() { }
-
-        @Override
-        public void reloadTrigger(String triggerId) { }
-
-        @Override
-        public void addAlerts(Collection<Alert> alerts) throws Exception { }
-
-        @Override
-        public void resolveAlertsForTrigger(String triggerId, String resolvedBy, String resolvedNotes,
-                List<Set<ConditionEval>> resolvedEvalSets) throws Exception { }
-
-        @Override
-        public void resolveAlerts(Collection<String> alertIds, String resolvedBy, String resolvedNotes,
-                List<Set<ConditionEval>> resolvedEvalSets) throws Exception { }
-
-        @Override
-        public void ackAlerts(Collection<String> alertIds, String ackBy, String ackNotes) throws Exception { }
-    }
 
 }

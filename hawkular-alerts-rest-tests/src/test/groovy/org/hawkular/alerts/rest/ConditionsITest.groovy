@@ -34,7 +34,6 @@ import org.junit.Test
  * @author Lucas Ponce
  */
 class ConditionsITest extends AbstractITestBase {
-    private static final Logger log = Logger.getLogger(ConditionsITest.class);
 
     @Test
     void createAvailabilityCondition() {

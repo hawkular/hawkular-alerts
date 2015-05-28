@@ -28,13 +28,13 @@ import org.junit.Test
 class AlertsITest extends AbstractITestBase {
 
     @Test
-    void getAlertsTest() {
+    void findAlerts() {
         def resp = client.get(path: "")
         assert resp.status == 200 || resp.status == 204 : resp.status
     }
 
     @Test
-    void getAlertsByCriteriaTest() {
+    void findAlertsByCriteria() {
         String now = String.valueOf(System.currentTimeMillis());
         def resp = client.get(path: "", query: [endTime:now, startTime:"0",triggerIds:"Trigger-01,Trigger-02"] )
         assert resp.status == 200 || resp.status == 204 : resp.status

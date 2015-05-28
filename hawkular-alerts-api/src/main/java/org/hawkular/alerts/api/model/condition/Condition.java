@@ -33,6 +33,9 @@ public abstract class Condition {
         AVAILABILITY, COMPARE, STRING, THRESHOLD, RANGE
     }
 
+    @JsonInclude
+    protected String tenantId;
+
     /**
      * The owning trigger
      */
@@ -119,6 +122,14 @@ public abstract class Condition {
 
     public String getConditionId() {
         return conditionId;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 
     private void updateId() {

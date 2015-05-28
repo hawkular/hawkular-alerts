@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull
 
 import org.hawkular.alerts.api.model.trigger.Tag
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.jboss.logging.Logger
 import org.junit.Test
 
 /**
@@ -30,7 +29,6 @@ import org.junit.Test
  * @author Lucas Ponce
  */
 class TriggersITest extends AbstractITestBase {
-    private static final Logger log = Logger.getLogger(TriggersITest.class);
 
     @Test
     void findInitialTriggers() {
@@ -40,7 +38,7 @@ class TriggersITest extends AbstractITestBase {
         assert data.size() > 0
         for (int i = 0; i < data.size(); i++) {
             Trigger t = data[i]
-            log.info(t.toString())
+            println t.toString()
         }
     }
 

@@ -45,6 +45,9 @@ public class Trigger extends TriggerTemplate {
     @JsonIgnore
     private transient Match match;
 
+    @JsonInclude
+    private String tenantId;
+
     public Trigger() {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
@@ -108,35 +111,38 @@ public class Trigger extends TriggerTemplate {
         this.match = match;
     }
 
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Trigger trigger = (Trigger) o;
+
+        if (id != null ? !id.equals(trigger.id) : trigger.id != null) return false;
+        return !(tenantId != null ? !tenantId.equals(trigger.tenantId) : trigger.tenantId != null);
+
+    }
+
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (tenantId != null ? tenantId.hashCode() : 0);
         return result;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        Trigger other = (Trigger) obj;
-        if (id == null) {
-            if (other.id != null)
-                return false;
-        } else if (!id.equals(other.id))
-            return false;
-        return true;
-    }
-
-    @Override
     public String toString() {
-        return "Trigger [id=" + id + ", enabled=" + enabled + ", mode=" + mode + ", getName()=" + getName()
-                + ", isAutoDisable()=" + isAutoDisable() + ", isAutoResolve()=" + isAutoResolve() + "]";
+        return "Trigger [tenantId="+ tenantId + " id=" + id + ", enabled=" + enabled + ", mode=" + mode +
+                ", getName()=" + getName() + ", isAutoDisable()=" + isAutoDisable() + ", isAutoResolve()=" +
+                isAutoResolve() + "]";
     }
 
 }

@@ -36,7 +36,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.function.Predicate;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -107,8 +106,8 @@ public class DbAlertsServiceImpl implements AlertsService {
         int dDelay = 1000;
         int dPeriod = 2000;
         try {
-            dDelay = new Integer(sDelay).intValue();
-            dPeriod = new Integer(sPeriod).intValue();
+            dDelay = Integer.parseInt(sDelay);
+            dPeriod = Integer.parseInt(sPeriod);
         } catch (Exception ignored) {
         }
         DELAY = dDelay;
@@ -117,14 +116,48 @@ public class DbAlertsServiceImpl implements AlertsService {
 
     public DbAlertsServiceImpl() {
         log.debugf("Creating instance.");
-        pendingData = new CopyOnWriteArrayList<Data>();
-        alerts = new CopyOnWriteArrayList<Alert>();
-        pendingTimeouts = new CopyOnWriteArraySet<Dampening>();
-        autoResolvedTriggers = new HashMap<Trigger, List<Set<ConditionEval>>>();
-        disabledTriggers = new CopyOnWriteArraySet<Trigger>();
+        pendingData = new CopyOnWriteArrayList<>();
+        alerts = new CopyOnWriteArrayList<>();
+        pendingTimeouts = new CopyOnWriteArraySet<>();
+        autoResolvedTriggers = new HashMap<>();
+        disabledTriggers = new CopyOnWriteArraySet<>();
         wakeUpTimer = new Timer("DbAlertsServiceImpl-Timer");
 
         DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource", "java:jboss/datasources/HawkularDS");
+    }
+
+    @SuppressWarnings("unused")
+    public ActionsService getActions() {
+        return actions;
+    }
+
+    public void setActions(ActionsService actions) {
+        this.actions = actions;
+    }
+
+    public DefinitionsService getDefinitions() {
+        return definitions;
+    }
+
+    public void setDefinitions(DefinitionsService definitions) {
+        this.definitions = definitions;
+    }
+
+    public RulesEngine getRules() {
+        return rules;
+    }
+
+    public void setRules(RulesEngine rules) {
+        this.rules = rules;
+    }
+
+    @SuppressWarnings("unused")
+    public DataSource getDatasource() {
+        return ds;
+    }
+
+    public void setDatasource(DataSource ds) {
+        this.ds = ds;
     }
 
     @PostConstruct
@@ -161,16 +194,17 @@ public class DbAlertsServiceImpl implements AlertsService {
 
         try {
             c = ds.getConnection();
-            String sql = "INSERT INTO HWK_ALERTS_ALERTS VALUES (?,?,?,?,?)";
+            String sql = "INSERT INTO HWK_ALERTS_ALERTS VALUES (?,?,?,?,?,?)";
             ps = c.prepareStatement(sql);
 
             for (Alert a : alerts) {
-                ps.setString(1, a.getAlertId());
-                ps.setString(2, a.getTriggerId());
-                ps.setLong(3, a.getCtime());
-                ps.setString(4, a.getStatus().name());
+                ps.setString(1, a.getTenantId());
+                ps.setString(2, a.getAlertId());
+                ps.setString(3, a.getTriggerId());
+                ps.setLong(4, a.getCtime());
+                ps.setString(5, a.getStatus().name());
                 sr = new StringReader(toJson(a));
-                ps.setCharacterStream(5, sr);
+                ps.setCharacterStream(6, sr);
                 log.debugf("SQL: " + sql);
                 ps.executeUpdate();
                 sr.close();
@@ -189,12 +223,16 @@ public class DbAlertsServiceImpl implements AlertsService {
     }
 
     @Override
-    public List<Alert> getAlerts(AlertsCriteria criteria) throws Exception {
+    public List<Alert> getAlerts(String tenantId, AlertsCriteria criteria) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
-
-        log.debugf("getAlerts criteria: %s", criteria.toString());
+        if (criteria != null) {
+            log.debugf("getAlerts criteria: %s", criteria.toString());
+        }
 
         boolean filter = (null != criteria && criteria.hasCriteria());
 
@@ -274,13 +312,13 @@ public class DbAlertsServiceImpl implements AlertsService {
                     }
                     sql.append(") )");
                 }
-                if (filter && null != criteria.getStartTime()) {
+                if (null != criteria.getStartTime()) {
                     sql.append(filters++ > 0 ? " AND " : " ");
                     sql.append("( a.ctime >= ");
                     sql.append(criteria.getStartTime());
                     sql.append(" )");
                 }
-                if (filter && null != criteria.getEndTime()) {
+                if (null != criteria.getEndTime()) {
                     sql.append(filters++ > 0 ? " AND " : " ");
                     sql.append("( a.ctime <= ");
                     sql.append(criteria.getEndTime());
@@ -289,32 +327,50 @@ public class DbAlertsServiceImpl implements AlertsService {
                 if (isEmpty(criteria.getTags())) {
                     Tag tag = criteria.getTag();
                     if (null != tag) {
-                        sql.append(filters++ > 0 ? " AND " : " ");
-                        sql.append("( EXISTS ( SELECT * FROM HWK_ALERTS_TAGS t WHERE");
-                        if (!isEmpty(tag.getCategory())) {
-                            sql.append(" t.triggerId = a.triggerId AND t.category = '");
+                        sql.append(filters > 0 ? " AND " : " ");
+                        sql.append("( EXISTS ( SELECT * FROM HWK_ALERTS_TAGS t WHERE t.triggerId = a.triggerId ");
+                        if (!isEmpty(tag.getCategory()) && !isEmpty(tag.getName())) {
+                            sql.append(" AND t.category = '");
                             sql.append(tag.getCategory());
-                            sql.append("' AND");
+                            sql.append("' AND t.name = '");
+                            sql.append(tag.getName());
+                            sql.append("' ");
+
+                        } else if (!isEmpty(tag.getCategory())) {
+                            sql.append(" AND t.category = '");
+                            sql.append(tag.getCategory());
+                            sql.append("' ");
+                        } else if (!isEmpty(tag.getName())) {
+                            sql.append(" AND t.name = '");
+                            sql.append(tag.getName());
+                            sql.append("' ");
                         }
-                        sql.append(" t.name = '");
-                        sql.append(tag.getName());
-                        sql.append("' )");
+                        sql.append(" ) )");
                     }
                 } else {
-                    sql.append(filters++ > 0 ? " AND " : " ");
+                    sql.append(filters > 0 ? " AND " : " ");
                     sql.append("(");
                     int entries = 0;
                     for (Tag tag : criteria.getTags()) {
                         sql.append(entries++ > 0 ? " OR " : "");
-                        sql.append("( EXISTS ( SELECT * FROM HWK_ALERTS_TAGS t WHERE");
-                        if (!isEmpty(tag.getCategory())) {
-                            sql.append(" t.triggerId = a.triggerId AND t.category = '");
+                        sql.append("( EXISTS ( SELECT * FROM HWK_ALERTS_TAGS t WHERE t.triggerId = a.triggerId ");
+                        if (!isEmpty(tag.getCategory()) && !isEmpty(tag.getName())) {
+                            sql.append(" AND t.category = '");
                             sql.append(tag.getCategory());
-                            sql.append("' AND");
+                            sql.append("' AND t.name = '");
+                            sql.append(tag.getName());
+                            sql.append("' ");
+
+                        } else if (!isEmpty(tag.getCategory())) {
+                            sql.append(" AND t.category = '");
+                            sql.append(tag.getCategory());
+                            sql.append("' ");
+                        } else if (!isEmpty(tag.getName())) {
+                            sql.append(" AND t.name = '");
+                            sql.append(tag.getName());
+                            sql.append("' ");
                         }
-                        sql.append(" t.name = '");
-                        sql.append(tag.getName());
-                        sql.append("' ) )");
+                        sql.append(" ) )");
                     }
                     sql.append(")");
                 }
@@ -416,11 +472,7 @@ public class DbAlertsServiceImpl implements AlertsService {
             msgLog.errorDefinitionsService("Triggers", e.getMessage());
         }
         if (triggers != null && !triggers.isEmpty()) {
-            for (Trigger trigger : triggers) {
-                if (trigger.isEnabled()) {
-                    reloadTrigger(trigger);
-                }
-            }
+            triggers.stream().filter(Trigger::isEnabled).forEach(this::reloadTrigger);
         }
 
         rules.addGlobal("log", log);
@@ -435,14 +487,17 @@ public class DbAlertsServiceImpl implements AlertsService {
     }
 
     @Override
-    public void reloadTrigger(final String triggerId) {
-        if (null == triggerId) {
+    public void reloadTrigger(final String tenantId, final String triggerId) {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
 
         Trigger trigger = null;
         try {
-            trigger = definitions.getTrigger(triggerId);
+            trigger = definitions.getTrigger(tenantId, triggerId);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             msgLog.errorDefinitionsService("Trigger", e.getMessage());
@@ -450,7 +505,7 @@ public class DbAlertsServiceImpl implements AlertsService {
         if (null == trigger) {
             log.debugf("Trigger not found for triggerId [" + triggerId + "], removing from rulebase if it exists");
             Trigger doomedTrigger = new Trigger(triggerId, "doomed");
-            removeTrigger(trigger);
+            removeTrigger(doomedTrigger);
             return;
         }
 
@@ -467,8 +522,10 @@ public class DbAlertsServiceImpl implements AlertsService {
 
         if (trigger.isEnabled()) {
             try {
-                Collection<Condition> conditionSet = definitions.getTriggerConditions(trigger.getId(), null);
-                Collection<Dampening> dampenings = definitions.getTriggerDampenings(trigger.getId(), null);
+                Collection<Condition> conditionSet = definitions.getTriggerConditions(trigger.getTenantId(),
+                        trigger.getId(), null);
+                Collection<Dampening> dampenings = definitions.getTriggerDampenings(trigger.getTenantId(),
+                        trigger.getId(), null);
 
                 rules.addFact(trigger);
                 rules.addFacts(conditionSet);
@@ -488,19 +545,16 @@ public class DbAlertsServiceImpl implements AlertsService {
             rules.removeFact(trigger);
 
             // then remove everything else.
-            // TODO: We may want to do this with rules, because as is, we need to loop through every Fact in
+            // We may want to do this with rules, because as is, we need to loop through every Fact in
             // the rules engine doing a relatively slow check.
             final String triggerId = trigger.getId();
-            rules.removeFacts(new Predicate<Object>() {
-                @Override
-                public boolean test(Object t) {
-                    if (t instanceof Dampening) {
-                        return ((Dampening) t).getTriggerId().equals(triggerId);
-                    } else if (t instanceof Condition) {
-                        return ((Condition) t).getTriggerId().equals(triggerId);
-                    }
-                    return false;
+            rules.removeFacts(t -> {
+                if (t instanceof Dampening) {
+                    return ((Dampening) t).getTriggerId().equals(triggerId);
+                } else if (t instanceof Condition) {
+                    return ((Condition) t).getTriggerId().equals(triggerId);
                 }
+                return false;
             });
         } else {
             log.debugf("Trigger not found. Not removed from rulebase %s", trigger);
@@ -574,7 +628,7 @@ public class DbAlertsServiceImpl implements AlertsService {
                     log.debugf("Dampening Timeout Hit! %s", d.toString());
                     rules.updateFact(d);
                     if (null == timeouts) {
-                        timeouts = new HashSet<Dampening>();
+                        timeouts = new HashSet<>();
                     }
                     timeouts.add(d);
                 } catch (Exception e) {
@@ -597,7 +651,7 @@ public class DbAlertsServiceImpl implements AlertsService {
             for (Trigger t : disabledTriggers) {
                 try {
                     t.setEnabled(false);
-                    definitions.updateTrigger(t);
+                    definitions.updateTrigger(t.getTenantId(), t);
 
                 } catch (Exception e) {
                     log.errorf("Failed to persist updated trigger. Could not autoDisable %s", t);
@@ -614,7 +668,7 @@ public class DbAlertsServiceImpl implements AlertsService {
                 Trigger t = entry.getKey();
                 try {
                     if (t.isAutoResolveAlerts()) {
-                        resolveAlertsForTrigger(t.getId(), "AUTO", null, entry.getValue());
+                        resolveAlertsForTrigger(t.getTenantId(), t.getId(), "AUTO", null, entry.getValue());
                     }
                 } catch (Exception e) {
                     log.errorf("Failed to resolve Alerts. Could not AutoResolve alerts for trigger %s", t);
@@ -626,14 +680,18 @@ public class DbAlertsServiceImpl implements AlertsService {
     }
 
     @Override
-    public void ackAlerts(Collection<String> alertIds, String ackBy, String ackNotes) throws Exception {
+    public void ackAlerts(String tenantId, Collection<String> alertIds, String ackBy, String ackNotes)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
         if (isEmpty(alertIds)) {
             return;
         }
 
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setAlertIds(alertIds);
-        List<Alert> alertsToAck = getAlerts(criteria);
+        List<Alert> alertsToAck = getAlerts(tenantId, criteria);
 
         for (Alert a : alertsToAck) {
             a.setStatus(Status.ACKNOWLEDGED);
@@ -644,16 +702,18 @@ public class DbAlertsServiceImpl implements AlertsService {
     }
 
     @Override
-    public void resolveAlerts(Collection<String> alertIds, String resolvedBy, String resolvedNotes,
+    public void resolveAlerts(String tenantId, Collection<String> alertIds, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
-
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
         if (isEmpty(alertIds)) {
             return;
         }
 
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setAlertIds(alertIds);
-        List<Alert> alertsToResolve = getAlerts(criteria);
+        List<Alert> alertsToResolve = getAlerts(tenantId, criteria);
 
         for (Alert a : alertsToResolve) {
             a.setStatus(Status.RESOLVED);
@@ -665,9 +725,11 @@ public class DbAlertsServiceImpl implements AlertsService {
     }
 
     @Override
-    public void resolveAlertsForTrigger(String triggerId, String resolvedBy, String resolvedNotes,
+    public void resolveAlertsForTrigger(String tenantId, String triggerId, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
-
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
         if (isEmpty(triggerId)) {
             return;
         }
@@ -675,7 +737,7 @@ public class DbAlertsServiceImpl implements AlertsService {
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setTriggerId(triggerId);
         criteria.setStatusSet(EnumSet.complementOf(EnumSet.of(Alert.Status.RESOLVED)));
-        List<Alert> alertsToResolve = getAlerts(criteria);
+        List<Alert> alertsToResolve = getAlerts(tenantId, criteria);
 
         for (Alert a : alertsToResolve) {
             a.setStatus(Status.RESOLVED);

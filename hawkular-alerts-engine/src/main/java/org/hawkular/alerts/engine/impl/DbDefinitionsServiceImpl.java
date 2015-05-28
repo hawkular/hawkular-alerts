@@ -84,10 +84,22 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource", "java:jboss/datasources/HawkularDS");
     }
 
-    public DbDefinitionsServiceImpl(AlertsService alertsService, DataSource ds) {
-        this();
-        this.ds = ds;
+    @SuppressWarnings("unused")
+    public AlertsService getAlertsService() {
+        return alertsService;
+    }
+
+    public void setAlertsService(AlertsService alertsService) {
         this.alertsService = alertsService;
+    }
+
+    @SuppressWarnings("unused")
+    public DataSource getDatasource() {
+        return ds;
+    }
+
+    public void setDatasource(DataSource ds) {
+        this.ds = ds;
     }
 
     @PostConstruct
@@ -107,7 +119,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                 try {
                     InitialContext ctx = new InitialContext();
                     alertsService = (AlertsService) ctx
-                            .lookup("java:app/hawkular-alerts-engine/BasicAlertsServiceImpl");
+                            .lookup("java:app/hawkular-alerts-engine/DbAlertsServiceImpl");
                 } catch (NamingException e) {
                     log.debugf(e.getMessage(), e);
                     msgLog.errorCannotWithAlertsService(e.getMessage());
@@ -118,7 +130,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
             String data = System.getProperty(JBOSS_DATA_DIR);
             if (data == null) {
-                msgLog.errorFolderNotFound(data);
+                msgLog.errorFolderNotFound(JBOSS_DATA_DIR);
                 return;
             }
             String folder = data + "/" + INIT_FOLDER;
@@ -143,45 +155,56 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_TRIGGERS " +
-                    "( triggerId VARCHAR2(250) PRIMARY KEY, " +
-                    "  payload VARCHAR2(1024) )");
+                    "( tenantId VARCHAR(250) NOT NULL, " +
+                    "  triggerId VARCHAR2(250) NOT NULL, " +
+                    "  payload VARCHAR2(1024)," +
+                    "  PRIMARY KEY(tenantId, triggerId) )");
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_CONDITIONS " +
-                    "( conditionId VARCHAR2(250) PRIMARY KEY," +
+                    "( tenantId  VARCHAR(250) NOT NULL, " +
+                    "  conditionId VARCHAR2(250) NOT NULL," +
                     "  triggerId VARCHAR2(250) NOT NULL," +
                     "  triggerMode VARCHAR2(20) NOT NULL," +
                     "  className VARCHAR2(250) NOT NULL," +
-                    "  payload VARCHAR2(1024) )");
+                    "  payload VARCHAR2(1024)," +
+                    "  PRIMARY KEY(tenantId, conditionId) )");
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_DAMPENINGS " +
-                    "( dampeningId VARCHAR2(250) PRIMARY KEY," +
+                    "( tenantId VARCHAR(250) NOT NULL, "  +
+                    "  dampeningId VARCHAR2(250) NOT NULL," +
                     "  triggerId VARCHAR2(250) NOT NULL," +
                     "  triggerMode VARCHAR2(20) NOT NULL," +
-                    "  payload VARCHAR2(1024) )");
+                    "  payload VARCHAR2(1024)," +
+                    "  PRIMARY KEY(tenantId, dampeningId) )");
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_ACTION_PLUGINS " +
                     "( actionPlugin VARCHAR(250) PRIMARY KEY," +
                     "  payload VARCHAR(1024) )");
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_ACTIONS " +
-                    "( actionId VARCHAR(250) NOT NULL," +
+                    "( tenantId VARCHAR(250) NOT NULL," +
+                    "  actionId VARCHAR(250) NOT NULL," +
                     "  actionPlugin VARCHAR(250)," +
                     "  payload VARCHAR(1024)," +
-                    "  PRIMARY KEY(actionId, actionPlugin))");
+                    "  PRIMARY KEY(tenantId, actionId, actionPlugin))");
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_TAGS " +
-                    "( triggerId VARCHAR2(250) NOT NULL, " +
+                    "( tenantId VARCHAR2(250) NOT NULL," +
+                    "  triggerId VARCHAR2(250) NOT NULL, " +
                     "  category VARCHAR2(250)," +
                     "  name VARCHAR2(1024) NOT NULL, " +
                     "  visible BOOLEAN NOT NULL, " +
-                    "  PRIMARY KEY(triggerId, category, name) )");
+                    "  PRIMARY KEY(tenantId, triggerId, category, name) )");
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_ALERTS " +
-                    "( alertId VARCHAR2(300) PRIMARY KEY, " +
+                    "( tenantId VARCHAR2(250) NOT NULL, " +
+                    "  alertId VARCHAR2(300) NOT NULL, " +
                     "  triggerId VARCHAR2(250) NOT NULL, " +
                     "  ctime long NOT NULL," +
                     "  status VARCHAR2(20) NOT NULL," +
-                    "  payload CLOB )");
+                    "  payload CLOB, " +
+                    "  PRIMARY KEY(tenantId, alertId) )"
+            );
 
             s.close();
 
@@ -257,17 +280,18 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length == 10) {
-                        String triggerId = fields[0];
-                        boolean enabled = new Boolean(fields[1]).booleanValue();
-                        String name = fields[2];
-                        String description = fields[3];
-                        boolean autoDisable = new Boolean(fields[4]).booleanValue();
-                        boolean autoResolve = new Boolean(fields[5]).booleanValue();
-                        boolean autoResolveAlerts = new Boolean(fields[6]).booleanValue();
-                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[7]);
-                        TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match.valueOf(fields[8]);
-                        String[] notifiers = fields[9].split("\\|");
+                    if (fields.length == 11) {
+                        String tenantId = fields[0];
+                        String triggerId = fields[1];
+                        boolean enabled = Boolean.parseBoolean(fields[2]);
+                        String name = fields[3];
+                        String description = fields[4];
+                        boolean autoDisable = Boolean.parseBoolean(fields[5]);
+                        boolean autoResolve = Boolean.parseBoolean(fields[6]);
+                        boolean autoResolveAlerts = Boolean.parseBoolean(fields[7]);
+                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[8]);
+                        TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match.valueOf(fields[9]);
+                        String[] notifiers = fields[10].split("\\|");
 
                         Trigger trigger = new Trigger(triggerId, name);
                         trigger.setEnabled(enabled);
@@ -277,11 +301,15 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         trigger.setDescription(description);
                         trigger.setFiringMatch(firingMatch);
                         trigger.setAutoResolveMatch(autoResolveMatch);
+                        trigger.setTenantId(tenantId);
                         for (String notifier : notifiers) {
-                            trigger.addAction(notifier);
+                            String[] actions = notifier.split("#");
+                            String actionPlugin = actions[0];
+                            String actionId = actions[1];
+                            trigger.addAction(actionPlugin, actionId);
                         }
 
-                        addTrigger(trigger);
+                        addTrigger(tenantId, trigger);
                         log.debugf("Init file - Inserting [%s]", trigger);
                     }
                 }
@@ -309,16 +337,17 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length > 4) {
-                        String triggerId = fields[0];
-                        Mode triggerMode = Mode.valueOf(fields[1]);
-                        int conditionSetSize = new Integer(fields[2]).intValue();
-                        int conditionSetIndex = new Integer(fields[3]).intValue();
-                        String type = fields[4];
-                        if (type != null && !type.isEmpty() && type.equals("threshold") && fields.length == 8) {
-                            String dataId = fields[5];
-                            String operator = fields[6];
-                            Double threshold = new Double(fields[7]).doubleValue();
+                    if (fields.length > 5) {
+                        String tenantId = fields[0];
+                        String triggerId = fields[1];
+                        Trigger.Mode triggerMode = Trigger.Mode.valueOf(fields[2]);
+                        int conditionSetSize = Integer.parseInt(fields[3]);
+                        int conditionSetIndex = Integer.parseInt(fields[4]);
+                        String type = fields[5];
+                        if (type != null && !type.isEmpty() && type.equals("threshold") && fields.length == 9) {
+                            String dataId = fields[6];
+                            String operator = fields[7];
+                            Double threshold = Double.parseDouble(fields[8]);
 
                             ThresholdCondition newCondition = new ThresholdCondition();
                             newCondition.setTriggerId(triggerId);
@@ -328,17 +357,18 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             newCondition.setDataId(dataId);
                             newCondition.setOperator(ThresholdCondition.Operator.valueOf(operator));
                             newCondition.setThreshold(threshold);
+                            newCondition.setTenantId(tenantId);
 
                             initCondition(newCondition);
                             log.debugf("Init file - Inserting [%s]", newCondition);
                         }
-                        if (type != null && !type.isEmpty() && type.equals("range") && fields.length == 11) {
-                            String dataId = fields[5];
-                            String operatorLow = fields[6];
-                            String operatorHigh = fields[7];
-                            Double thresholdLow = new Double(fields[8]).doubleValue();
-                            Double thresholdHigh = new Double(fields[9]).doubleValue();
-                            boolean inRange = new Boolean(fields[10]).booleanValue();
+                        if (type != null && !type.isEmpty() && type.equals("range") && fields.length == 12) {
+                            String dataId = fields[6];
+                            String operatorLow = fields[7];
+                            String operatorHigh = fields[8];
+                            Double thresholdLow = Double.parseDouble(fields[9]);
+                            Double thresholdHigh = Double.parseDouble(fields[10]);
+                            boolean inRange = Boolean.parseBoolean(fields[11]);
 
                             ThresholdRangeCondition newCondition = new ThresholdRangeCondition();
                             newCondition.setTriggerId(triggerId);
@@ -351,15 +381,16 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             newCondition.setThresholdLow(thresholdLow);
                             newCondition.setThresholdHigh(thresholdHigh);
                             newCondition.setInRange(inRange);
+                            newCondition.setTenantId(tenantId);
 
                             initCondition(newCondition);
                             log.debugf("Init file - Inserting [%s]", newCondition);
                         }
-                        if (type != null && !type.isEmpty() && type.equals("compare") && fields.length == 9) {
-                            String dataId = fields[5];
-                            String operator = fields[6];
-                            Double data2Multiplier = new Double(fields[7]).doubleValue();
-                            String data2Id = fields[8];
+                        if (type != null && !type.isEmpty() && type.equals("compare") && fields.length == 10) {
+                            String dataId = fields[6];
+                            String operator = fields[7];
+                            Double data2Multiplier = Double.parseDouble(fields[8]);
+                            String data2Id = fields[9];
 
                             CompareCondition newCondition = new CompareCondition();
                             newCondition.setTriggerId(triggerId);
@@ -370,15 +401,16 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             newCondition.setOperator(CompareCondition.Operator.valueOf(operator));
                             newCondition.setData2Multiplier(data2Multiplier);
                             newCondition.setData2Id(data2Id);
+                            newCondition.setTenantId(tenantId);
 
                             initCondition(newCondition);
                             log.debugf("Init file - Inserting [%s]", newCondition);
                         }
-                        if (type != null && !type.isEmpty() && type.equals("string") && fields.length == 9) {
-                            String dataId = fields[5];
-                            String operator = fields[6];
-                            String pattern = fields[7];
-                            boolean ignoreCase = new Boolean(fields[8]).booleanValue();
+                        if (type != null && !type.isEmpty() && type.equals("string") && fields.length == 10) {
+                            String dataId = fields[6];
+                            String operator = fields[7];
+                            String pattern = fields[8];
+                            boolean ignoreCase = Boolean.parseBoolean(fields[9]);
 
                             StringCondition newCondition = new StringCondition();
                             newCondition.setTriggerId(triggerId);
@@ -389,13 +421,14 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             newCondition.setOperator(StringCondition.Operator.valueOf(operator));
                             newCondition.setPattern(pattern);
                             newCondition.setIgnoreCase(ignoreCase);
+                            newCondition.setTenantId(tenantId);
 
                             initCondition(newCondition);
                             log.debugf("Init file - Inserting [%s]", newCondition);
                         }
-                        if (type != null && !type.isEmpty() && type.equals("availability") && fields.length == 7) {
-                            String dataId = fields[5];
-                            String operator = fields[6];
+                        if (type != null && !type.isEmpty() && type.equals("availability") && fields.length == 8) {
+                            String dataId = fields[6];
+                            String operator = fields[7];
 
                             AvailabilityCondition newCondition = new AvailabilityCondition();
                             newCondition.setTriggerId(triggerId);
@@ -404,6 +437,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                             newCondition.setConditionSetIndex(conditionSetIndex);
                             newCondition.setDataId(dataId);
                             newCondition.setOperator(AvailabilityCondition.Operator.valueOf(operator));
+                            newCondition.setTenantId(tenantId);
 
                             initCondition(newCondition);
                             log.debugf("Init file - Inserting [%s]", newCondition);
@@ -417,9 +451,10 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void initCondition(Condition condition) throws Exception {
-        Collection<Condition> conditions = getTriggerConditions(condition.getTriggerId(), condition.getTriggerMode());
+        Collection<Condition> conditions = getTriggerConditions(condition.getTenantId(), condition.getTriggerId(),
+                condition.getTriggerMode());
         conditions.add(condition);
-        setConditions(condition.getTriggerId(), condition.getTriggerMode(), conditions);
+        setConditions(condition.getTenantId(), condition.getTriggerId(), condition.getTriggerMode(), conditions);
     }
 
     private void initDampening(File initFolder) throws Exception {
@@ -440,20 +475,22 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length == 6) {
-                        String triggerId = fields[0];
-                        Mode triggerMode = Mode.valueOf(fields[1]);
-                        String type = fields[2];
-                        int evalTrueSetting = new Integer(fields[3]);
-                        int evalTotalSetting = new Integer(fields[4]);
-                        int evalTimeSetting = new Integer(fields[5]);
+                    if (fields.length == 7) {
+                        String tenantId = fields[0];
+                        String triggerId = fields[1];
+                        Trigger.Mode triggerMode = Trigger.Mode.valueOf(fields[2]);
+                        String type = fields[3];
+                        int evalTrueSetting = Integer.parseInt(fields[4]);
+                        int evalTotalSetting = Integer.parseInt(fields[5]);
+                        int evalTimeSetting = Integer.parseInt(fields[6]);
 
                         Dampening newDampening = new Dampening(triggerId, triggerMode, Dampening.Type.valueOf(type),
                                 evalTrueSetting, evalTotalSetting, evalTimeSetting);
 
-                        addDampening(newDampening);
+                        addDampening(tenantId, newDampening);
                         log.debugf("Init file - Inserting [%s]", newDampening);
                     }
+
                 }
             }
         } else {
@@ -479,24 +516,27 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length > 2) {
-                        String actionId = fields[0];
+                    if (fields.length > 3) {
+                        String tenantId = fields[0];
                         String actionPlugin = fields[1];
+                        String actionId = fields[2];
 
-                        Map<String, String> newAction = new HashMap<String, String>();
-                        newAction.put("actionId", actionId);
+                        Map<String, String> newAction = new HashMap<>();
+                        newAction.put("tenantId", tenantId);
                         newAction.put("actionPlugin", actionPlugin);
+                        newAction.put("actionId", actionId);
 
-                        for (int i = 2; i < fields.length; i++) {
+                        for (int i = 3; i < fields.length; i++) {
                             String property = fields[i];
                             String[] properties = property.split("=");
                             if (properties.length == 2) {
                                 newAction.put(properties[0], properties[1]);
                             }
                         }
-                        addAction(actionId, newAction);
+                        addAction(tenantId, actionPlugin, actionId, newAction);
                         log.debugf("Init file - Inserting [%s]", newAction);
                     }
+
                 }
             }
         } else {
@@ -509,7 +549,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
-        List<Condition> conditions = new ArrayList<Condition>();
+        List<Condition> conditions = new ArrayList<>();
         Connection c = null;
         Statement s = null;
         ResultSet rs = null;
@@ -524,19 +564,25 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             while (rs.next()) {
                 String className = rs.getString(2);
                 Condition condition;
-                if (className.equals("AvailabilityCondition")) {
-                    condition = fromJson(rs.getString(3), AvailabilityCondition.class);
-                } else if (className.equals("CompareCondition")) {
-                    condition = fromJson(rs.getString(3), CompareCondition.class);
-                } else if (className.equals("StringCondition")) {
-                    condition = fromJson(rs.getString(3), StringCondition.class);
-                } else if (className.equals("ThresholdCondition")) {
-                    condition = fromJson(rs.getString(3), ThresholdCondition.class);
-                } else if (className.equals("ThresholdRangeCondition")) {
-                    condition = fromJson(rs.getString(3), ThresholdRangeCondition.class);
-                } else {
-                    log.debugf("Condition type: " + className + " not found");
-                    condition = null;
+                switch (className) {
+                    case "AvailabilityCondition":
+                        condition = fromJson(rs.getString(3), AvailabilityCondition.class);
+                        break;
+                    case "CompareCondition":
+                        condition = fromJson(rs.getString(3), CompareCondition.class);
+                        break;
+                    case "StringCondition":
+                        condition = fromJson(rs.getString(3), StringCondition.class);
+                        break;
+                    case "ThresholdCondition":
+                        condition = fromJson(rs.getString(3), ThresholdCondition.class);
+                        break;
+                    case "ThresholdRangeCondition":
+                        condition = fromJson(rs.getString(3), ThresholdRangeCondition.class);
+                        break;
+                    default:
+                        log.debugf("Condition type: " + className + " not found");
+                        condition = null;
                 }
                 if (condition != null) {
                     conditions.add(condition);
@@ -553,8 +599,69 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Condition getCondition(String conditionId) throws Exception {
-        if (conditionId == null || conditionId.isEmpty()) {
+    public Collection<Condition> getConditions(String tenantId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (ds == null) {
+            throw new Exception("DataSource is null");
+        }
+        List<Condition> conditions = new ArrayList<>();
+        Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
+        try {
+            c = ds.getConnection();
+            s = c.createStatement();
+
+            StringBuilder sql = new StringBuilder("SELECT conditionId, className, payload FROM HWK_ALERTS_CONDITIONS ")
+                    .append("WHERE tenantId = '").append(tenantId).append("' ")
+                    .append("ORDER BY conditionId");
+            log.debugf("SQL: " + sql);
+            rs = s.executeQuery(sql.toString());
+            while (rs.next()) {
+                String className = rs.getString(2);
+                Condition condition;
+                switch (className) {
+                    case "AvailabilityCondition":
+                        condition = fromJson(rs.getString(3), AvailabilityCondition.class);
+                        break;
+                    case "CompareCondition":
+                        condition = fromJson(rs.getString(3), CompareCondition.class);
+                        break;
+                    case "StringCondition":
+                        condition = fromJson(rs.getString(3), StringCondition.class);
+                        break;
+                    case "ThresholdCondition":
+                        condition = fromJson(rs.getString(3), ThresholdCondition.class);
+                        break;
+                    case "ThresholdRangeCondition":
+                        condition = fromJson(rs.getString(3), ThresholdRangeCondition.class);
+                        break;
+                    default:
+                        log.debugf("Condition type: " + className + " not found");
+                        condition = null;
+                }
+                if (condition != null) {
+                    conditions.add(condition);
+                }
+            }
+        } catch (SQLException e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            close(c, s, rs);
+        }
+
+        return conditions;
+    }
+
+    @Override
+    public Condition getCondition(String tenantId, String conditionId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(conditionId)) {
             throw new IllegalArgumentException("ConditionId must be not null");
         }
         if (ds == null) {
@@ -571,25 +678,32 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
             StringBuilder sql = new StringBuilder("SELECT conditionId, className, payload FROM HWK_ALERTS_CONDITIONS "
                     + "WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("conditionId = '").append(conditionId).append("' ")
                     .append("ORDER BY triggerId");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
             if (rs.next()) {
                 String className = rs.getString(2);
-                if (className.equals("AvailabilityCondition")) {
-                    condition = fromJson(rs.getString(3), AvailabilityCondition.class);
-                } else if (className.equals("CompareCondition")) {
-                    condition = fromJson(rs.getString(3), CompareCondition.class);
-                } else if (className.equals("StringCondition")) {
-                    condition = fromJson(rs.getString(3), StringCondition.class);
-                } else if (className.equals("ThresholdCondition")) {
-                    condition = fromJson(rs.getString(3), ThresholdCondition.class);
-                } else if (className.equals("ThresholdRangeCondition")) {
-                    condition = fromJson(rs.getString(3), ThresholdRangeCondition.class);
-                } else {
-                    log.debugf("Condition type: " + className + " not found");
-                    condition = null;
+                switch(className) {
+                    case "AvailabilityCondition":
+                        condition = fromJson(rs.getString(3), AvailabilityCondition.class);
+                        break;
+                    case "CompareCondition":
+                        condition = fromJson(rs.getString(3), CompareCondition.class);
+                        break;
+                    case "StringCondition":
+                        condition = fromJson(rs.getString(3), StringCondition.class);
+                        break;
+                    case "ThresholdCondition":
+                        condition = fromJson(rs.getString(3), ThresholdCondition.class);
+                        break;
+                    case "ThresholdRangeCondition":
+                        condition = fromJson(rs.getString(3), ThresholdRangeCondition.class);
+                        break;
+                    default:
+                        log.debugf("Condition type: " + className + " not found");
+                        condition = null;
                 }
             }
         } catch (SQLException e) {
@@ -603,8 +717,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Condition> getTriggerConditions(String triggerId, Trigger.Mode triggerMode) throws Exception {
-        if (triggerId == null || triggerId.isEmpty()) {
+    public Collection<Condition> getTriggerConditions(String tenantId, String triggerId, Trigger.Mode triggerMode)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         if (ds == null) {
@@ -621,6 +739,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
             StringBuilder sql = new StringBuilder("SELECT triggerId, className, payload FROM HWK_ALERTS_CONDITIONS " +
                     "WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("triggerId = '").append(triggerId).append("' ");
             if (null != triggerMode) {
                 sql.append("AND triggerMode = '").append(triggerMode.name()).append("' ");
@@ -631,19 +750,25 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             while (rs.next()) {
                 String className = rs.getString(2);
                 Condition condition;
-                if (className.equals("AvailabilityCondition")) {
-                    condition = fromJson(rs.getString(3), AvailabilityCondition.class);
-                } else if (className.equals("CompareCondition")) {
-                    condition = fromJson(rs.getString(3), CompareCondition.class);
-                } else if (className.equals("StringCondition")) {
-                    condition = fromJson(rs.getString(3), StringCondition.class);
-                } else if (className.equals("ThresholdCondition")) {
-                    condition = fromJson(rs.getString(3), ThresholdCondition.class);
-                } else if (className.equals("ThresholdRangeCondition")) {
-                    condition = fromJson(rs.getString(3), ThresholdRangeCondition.class);
-                } else {
-                    log.debugf("Condition type: " + className + " not found");
-                    condition = null;
+                switch (className) {
+                    case "AvailabilityCondition":
+                        condition = fromJson(rs.getString(3), AvailabilityCondition.class);
+                        break;
+                    case "CompareCondition":
+                        condition = fromJson(rs.getString(3), CompareCondition.class);
+                        break;
+                    case "StringCondition":
+                        condition = fromJson(rs.getString(3), StringCondition.class);
+                        break;
+                    case "ThresholdCondition":
+                        condition = fromJson(rs.getString(3), ThresholdCondition.class);
+                        break;
+                    case "ThresholdRangeCondition":
+                        condition = fromJson(rs.getString(3), ThresholdRangeCondition.class);
+                        break;
+                    default:
+                        log.debugf("Condition type: " + className + " not found");
+                        condition = null;
                 }
                 if (condition != null) {
                     conditions.add(condition);
@@ -660,8 +785,11 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Dampening getDampening(String dampeningId) throws Exception {
-        if (dampeningId == null || dampeningId.isEmpty()) {
+    public Dampening getDampening(String tenantId, String dampeningId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(dampeningId)) {
             throw new IllegalArgumentException("dampeningId must be not null");
         }
         if (ds == null) {
@@ -677,6 +805,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT dampeningId, payload FROM HWK_ALERTS_DAMPENINGS WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("dampeningId = '").append(dampeningId).append("' ");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
@@ -694,8 +823,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Dampening> getTriggerDampenings(String triggerId, Trigger.Mode triggerMode) throws Exception {
-        if (triggerId == null || triggerId.isEmpty()) {
+    public Collection<Dampening> getTriggerDampenings(String tenantId, String triggerId, Trigger.Mode triggerMode)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         if (ds == null) {
@@ -712,6 +845,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
             StringBuilder sql = new StringBuilder("SELECT triggerId, payload FROM HWK_ALERTS_DAMPENINGS " +
                     "WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("triggerId = '").append(triggerId).append("' ");
             if (null != triggerMode) {
                 sql.append("AND triggerMode = '").append(triggerMode.name()).append("' ");
@@ -738,7 +872,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
-        List<Dampening> dampenings = new ArrayList<Dampening>();
+        List<Dampening> dampenings = new ArrayList<>();
         Connection c = null;
         Statement s = null;
         ResultSet rs = null;
@@ -765,9 +899,48 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Condition> addCondition(String triggerId, Mode triggerMode, Condition condition)
+    public Collection<Dampening> getDampenings(String tenantId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (ds == null) {
+            throw new Exception("DataSource is null");
+        }
+        List<Dampening> dampenings = new ArrayList<>();
+        Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
+        try {
+            c = ds.getConnection();
+            s = c.createStatement();
+
+            StringBuilder sql = new StringBuilder("SELECT triggerId, payload FROM HWK_ALERTS_DAMPENINGS ")
+                    .append("WHERE tenantId = '").append(tenantId).append("' ")
+                    .append("ORDER BY triggerId");
+            log.debugf("SQL: " + sql);
+            rs = s.executeQuery(sql.toString());
+            while (rs.next()) {
+                Dampening dampening = fromJson(rs.getString(2), Dampening.class);
+                dampenings.add(dampening);
+            }
+        } catch (SQLException e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            close(c, s, rs);
+        }
+
+        return dampenings;
+    }
+
+
+    @Override
+    public Collection<Condition> addCondition(String tenantId, String triggerId, Mode triggerMode, Condition condition)
             throws Exception {
-        if (triggerId == null || triggerId.isEmpty()) {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         if (triggerMode == null) {
@@ -776,8 +949,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (condition == null) {
             throw new IllegalArgumentException("Condition must be not null");
         }
+        condition.setTenantId(tenantId);
 
-        Collection<Condition> conditions = getTriggerConditions(triggerId, triggerMode);
+        Collection<Condition> conditions = getTriggerConditions(tenantId, triggerId, triggerMode);
         conditions.add(condition);
         int i = 0;
         for (Condition c : conditions) {
@@ -785,23 +959,27 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c.setConditionSetIndex(++i);
         }
 
-        return setConditions(triggerId, triggerMode, conditions);
+        return setConditions(tenantId, triggerId, triggerMode, conditions);
     }
 
     @Override
-    public Collection<Condition> removeCondition(String conditionId) throws Exception {
-        if (conditionId == null || conditionId.isEmpty()) {
+    public Collection<Condition> removeCondition(String tenantId, String conditionId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(conditionId)) {
             throw new IllegalArgumentException("ConditionId must be not null");
         }
 
-        Condition condition = getCondition(conditionId);
+        Condition condition = getCondition(tenantId, conditionId);
         if (null == condition) {
             log.debugf("Ignoring removeCondition [%s], the condition does not exist.", conditionId);
+            return null;
         }
 
         String triggerId = condition.getTriggerId();
         Trigger.Mode triggerMode = condition.getTriggerMode();
-        Collection<Condition> conditions = getTriggerConditions(triggerId, triggerMode);
+        Collection<Condition> conditions = getTriggerConditions(tenantId, triggerId, triggerMode);
 
         int i = 0;
         int size = conditions.size() - 1;
@@ -814,28 +992,32 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             }
         }
 
-        return setConditions(triggerId, triggerMode, newConditions);
+        return setConditions(tenantId, triggerId, triggerMode, newConditions);
     }
 
     @Override
-    public Collection<Condition> updateCondition(Condition condition) throws Exception {
+    public Collection<Condition> updateCondition(String tenantId, Condition condition) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
         if (condition == null) {
             throw new IllegalArgumentException("Condition must be not null");
         }
 
         String conditionId = condition.getConditionId();
-        if (conditionId == null || conditionId.isEmpty()) {
+        if (isEmpty(conditionId)) {
             throw new IllegalArgumentException("ConditionId must be not null");
         }
 
-        Condition existingCondition = getCondition(conditionId);
-        if (null == condition) {
-            throw new IllegalArgumentException("ConditionId [" + conditionId + "] does not exist.");
+        Condition existingCondition = getCondition(tenantId, conditionId);
+        if (null == existingCondition) {
+            throw new IllegalArgumentException("ConditionId [" + conditionId + "] in tenant [ " + tenantId +
+                    " does not exist.");
         }
 
         String triggerId = existingCondition.getTriggerId();
         Trigger.Mode triggerMode = existingCondition.getTriggerMode();
-        Collection<Condition> conditions = getTriggerConditions(triggerId, triggerMode);
+        Collection<Condition> conditions = getTriggerConditions(tenantId, triggerId, triggerMode);
 
         int size = conditions.size();
         Collection<Condition> newConditions = new ArrayList<>(size);
@@ -847,13 +1029,16 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             }
         }
 
-        return setConditions(triggerId, triggerMode, newConditions);
+        return setConditions(tenantId, triggerId, triggerMode, newConditions);
     }
 
     @Override
-    public Collection<Condition> setConditions(String triggerId, Trigger.Mode triggerMode,
+    public Collection<Condition> setConditions(String tenantId, String triggerId, Trigger.Mode triggerMode,
             Collection<Condition> conditions) throws Exception {
-        if (triggerId == null || triggerId.isEmpty()) {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         if (triggerMode == null) {
@@ -867,7 +1052,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
 
         // Get rid of the prior condition set
-        removeConditions(triggerId, triggerMode);
+        removeConditions(tenantId, triggerId, triggerMode);
 
         // Now add the new condition set
         Connection c = null;
@@ -885,6 +1070,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                 cond.setConditionSetIndex(++i);
 
                 StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_CONDITIONS VALUES (")
+                        .append("'").append(cond.getTenantId()).append("', ")
                         .append("'").append(cond.getConditionId()).append("', ")
                         .append("'").append(cond.getTriggerId()).append("', ")
                         .append("'").append(cond.getTriggerMode().name()).append("', ")
@@ -900,7 +1086,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     dataIds.add(((CompareCondition) cond).getData2Id());
                 }
                 for (String dataId : dataIds) {
-                    insertTag(c, s, cond.getTriggerId(), "dataId", dataId, false);
+                    insertTag(c, s, cond.getTenantId(), cond.getTriggerId(), "dataId", dataId, false);
                 }
                 dataIds.clear();
             }
@@ -912,7 +1098,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
 
         if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(triggerId);
+            alertsService.reloadTrigger(tenantId, triggerId);
         }
 
         notifyListeners(DefinitionsEvent.EventType.CONDITION_CHANGE);
@@ -921,10 +1107,18 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Dampening addDampening(Dampening dampening) throws Exception {
-        if (dampening == null || dampening.getTriggerId() == null || dampening.getTriggerId().isEmpty()) {
+    public Dampening addDampening(String tenantId, Dampening dampening) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (dampening == null) {
+            throw new IllegalArgumentException("Dampening must be not null");
+        }
+        String triggerId = dampening.getTriggerId();
+        if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
+        dampening.setTenantId(tenantId);
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
@@ -936,6 +1130,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_DAMPENINGS VALUES (")
+                    .append("'").append(dampening.getTenantId()).append("', ")
                     .append("'").append(dampening.getDampeningId()).append("', ")
                     .append("'").append(dampening.getTriggerId()).append("', ")
                     .append("'").append(dampening.getTriggerMode().name()).append("', ")
@@ -952,7 +1147,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
 
         if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(dampening.getTriggerId());
+            alertsService.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
         notifyListeners(EventType.DAMPENING_CHANGE);
@@ -961,17 +1156,24 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void addAction(String actionId, Map<String, String> properties) throws Exception {
-        if (actionId == null || actionId.isEmpty()) {
+    public void addAction(String tenantId, String actionPlugin, String actionId, Map<String, String> properties)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
+        }
+        if (isEmpty(actionId)) {
             throw new IllegalArgumentException("actionId must be not null");
         }
         if (properties == null || properties.isEmpty()) {
             throw new IllegalArgumentException("Properties must be not null");
         }
-        String actionPlugin = properties.get("actionPlugin");
-        if (actionPlugin == null) {
-            throw new IllegalArgumentException("Action has not actionPlugin property");
-        }
+        properties.put("tenantId", tenantId);
+        properties.put("actionPlugin", actionPlugin);
+        properties.put("actionId", actionId);
+
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
@@ -983,6 +1185,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_ACTIONS VALUES (")
+                    .append("'").append(tenantId).append("', ")
                     .append("'").append(actionId).append("', ")
                     .append("'").append(actionPlugin).append("', ")
                     .append("'").append(toJson(properties)).append("'")
@@ -1000,7 +1203,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void addActionPlugin(String actionPlugin, Set<String> properties) throws Exception {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
+        if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("ActionPlugin must be not null");
         }
         if (properties == null || properties.isEmpty()) {
@@ -1032,10 +1235,15 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void addTrigger(Trigger trigger) throws Exception {
-        if (trigger == null || trigger.getId() == null || trigger.getId().isEmpty()) {
+    public void addTrigger(String tenantId, Trigger trigger) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(trigger)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
+        trigger.setTenantId(tenantId);
+
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
@@ -1047,6 +1255,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_TRIGGERS VALUES (")
+                    .append("'").append(tenantId).append("', ")
                     .append("'").append(trigger.getId()).append("', ")
                     .append("'").append(toJson(trigger)).append("'")
                     .append(")");
@@ -1064,24 +1273,28 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Trigger copyTrigger(String triggerId, Map<String, String> dataIdMap) throws Exception {
-        if (triggerId == null || triggerId.isEmpty()) {
+    public Trigger copyTrigger(String tenantId, String triggerId, Map<String, String> dataIdMap) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         if (dataIdMap == null || dataIdMap.isEmpty()) {
             throw new IllegalArgumentException("DataIdMap must be not null");
         }
 
-        Trigger trigger = getTrigger(triggerId);
+        Trigger trigger = getTrigger(tenantId, triggerId);
         if (trigger == null) {
-            throw new IllegalArgumentException("Trigger not found for triggerId [" + triggerId + "]");
+            throw new IllegalArgumentException("Trigger not found for triggerId [" + triggerId + "] in tenant " +
+                    tenantId);
         }
         // ensure we have a 1-1 mapping for the dataId substitution
         Set<String> dataIdTokens = new HashSet<>();
-        Collection<Condition> conditions = getTriggerConditions(triggerId, null);
+        Collection<Condition> conditions = getTriggerConditions(tenantId, triggerId, null);
         for (Condition c : conditions) {
             if (c instanceof CompareCondition) {
-                dataIdTokens.add(((CompareCondition) c).getDataId());
+                dataIdTokens.add(c.getDataId());
                 dataIdTokens.add(((CompareCondition) c).getData2Id());
             } else {
                 dataIdTokens.add(c.getDataId());
@@ -1092,7 +1305,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     "DataIdMap must contain the exact dataIds (keyset) expected by the condition set. Expected: "
                             + dataIdMap.keySet() + ", dataIdMap: " + dataIdMap.keySet());
         }
-        Collection<Dampening> dampenings = getTriggerDampenings(triggerId, null);
+        Collection<Dampening> dampenings = getTriggerDampenings(tenantId, triggerId, null);
 
         Trigger newTrigger = new Trigger(trigger.getName());
         newTrigger.setName(trigger.getName());
@@ -1100,8 +1313,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         newTrigger.setFiringMatch(trigger.getFiringMatch());
         newTrigger.setAutoResolveMatch(trigger.getAutoResolveMatch());
         newTrigger.setActions(trigger.getActions());
+        newTrigger.setTenantId(trigger.getTenantId());
 
-        addTrigger(newTrigger);
+        addTrigger(tenantId, newTrigger);
 
         for (Condition c : conditions) {
             Condition newCondition = null;
@@ -1126,8 +1340,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
             } else if (c instanceof CompareCondition) {
                 newCondition = new CompareCondition(newTrigger.getId(), c.getTriggerMode(),
-                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(((CompareCondition) c)
-                                .getDataId()),
+                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
                         ((CompareCondition) c).getOperator(),
                         ((CompareCondition) c).getData2Multiplier(),
                         dataIdMap.get(((CompareCondition) c).getData2Id()));
@@ -1138,23 +1351,33 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                         ((StringCondition) c).getOperator(), ((StringCondition) c).getPattern(),
                         ((StringCondition) c).isIgnoreCase());
             }
-
-            addCondition(newTrigger.getId(), newCondition.getTriggerMode(), newCondition);
+            if (newCondition != null) {
+                newCondition.setTenantId(newTrigger.getTenantId());
+                addCondition(newTrigger.getTenantId(), newTrigger.getId(), newCondition.getTriggerMode(), newCondition);
+            }
         }
 
         for (Dampening d : dampenings) {
             Dampening newDampening = new Dampening(newTrigger.getId(), d.getTriggerMode(), d.getType(),
                     d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
+            newDampening.setTenantId(newTrigger.getTenantId());
 
-            addDampening(newDampening);
+            addDampening(newDampening.getTenantId(), newDampening);
         }
 
         return newTrigger;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Map<String, String> getAction(String actionId) throws Exception {
-        if (actionId == null || actionId.isEmpty()) {
+    public Map<String, String> getAction(String tenantId, String actionPlugin, String actionId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
+        }
+        if (isEmpty(actionId)) {
             throw new IllegalArgumentException("ActionId must be not null");
         }
         if (ds == null) {
@@ -1170,6 +1393,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT actionId, payload FROM HWK_ALERTS_ACTIONS WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
+                    .append("actionPlugin = '").append(actionPlugin).append("' AND ")
                     .append("actionId = '").append(actionId).append("'");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
@@ -1189,12 +1414,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<String> getAllActions() throws Exception {
+    public Map<String, Map<String, Set<String>>> getAllActions() throws Exception {
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
 
-        List<String> actions = new ArrayList();
+        Map<String, Map<String, Set<String>>> actions = new HashMap<>();
         Connection c = null;
         Statement s = null;
         ResultSet rs = null;
@@ -1202,11 +1427,21 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("SELECT actionId FROM HWK_ALERTS_ACTIONS ORDER BY actionId ");
+            StringBuilder sql = new StringBuilder("SELECT tenantId, actionPlugin, actionId FROM HWK_ALERTS_ACTIONS ")
+                    .append("ORDER BY tenantId, actionPlugin, actionId ");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
             while (rs.next()) {
-                actions.add(rs.getString(1));
+                String tenantId = rs.getString(1);
+                String actionPlugin = rs.getString(2);
+                String actionId = rs.getString(3);
+                if (actions.get(tenantId) == null) {
+                    actions.put(tenantId, new HashMap<>());
+                }
+                if (actions.get(tenantId).get(actionPlugin) == null) {
+                    actions.get(tenantId).put(actionPlugin, new HashSet<>());
+                }
+                actions.get(tenantId).get(actionPlugin).add(actionId);
             }
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1219,8 +1454,51 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<String> getActions(String actionPlugin) throws Exception {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
+    public Map<String, Set<String>> getActions(String tenantId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (ds == null) {
+            throw new Exception("DataSource is null");
+        }
+
+        Map<String, Set<String>> actions = new HashMap<>();
+        Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
+        try {
+            c = ds.getConnection();
+            s = c.createStatement();
+
+            StringBuilder sql = new StringBuilder("SELECT actionPlugin, actionId FROM HWK_ALERTS_ACTIONS ")
+                    .append("WHERE tenantId = '").append(tenantId).append("' ")
+                    .append("ORDER BY actionId ");
+            log.debugf("SQL: " + sql);
+            rs = s.executeQuery(sql.toString());
+            while (rs.next()) {
+                String actionPlugin = rs.getString(1);
+                String actionId = rs.getString(2);
+                if (actions.get(actionPlugin) == null) {
+                    actions.put(actionPlugin, new HashSet<>());
+                }
+                actions.get(actionPlugin).add(actionId);
+            }
+        } catch (SQLException e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            close(c, s, rs);
+        }
+
+        return actions;
+    }
+
+    @Override
+    public Collection<String> getActions(String tenantId, String actionPlugin) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("ActionPlugin must be not null");
         }
         if (ds == null) {
@@ -1236,11 +1514,12 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT actionId FROM HWK_ALERTS_ACTIONS WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("actionPlugin = '").append(actionPlugin).append("' ")
                     .append("ORDER BY actionId");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
-            actions = new ArrayList();
+            actions = new ArrayList<>();
             while (rs.next()) {
                 actions.add(rs.getString(1));
             }
@@ -1254,6 +1533,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         return actions;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Set<String> getActionPlugin(String actionPlugin) throws Exception {
         if (actionPlugin == null || actionPlugin.isEmpty()) {
@@ -1294,7 +1574,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             throw new Exception("DataSource is null");
         }
 
-        List<String> actionPlugins = new ArrayList<String>();
+        List<String> actionPlugins = new ArrayList<>();
         Connection c = null;
         Statement s = null;
         ResultSet rs = null;
@@ -1320,8 +1600,11 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Trigger getTrigger(String triggerId) throws Exception {
-        if (triggerId == null || triggerId.isEmpty()) {
+    public Trigger getTrigger(String tenantId, String triggerId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         if (ds == null) {
@@ -1337,6 +1620,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("SELECT triggerId, payload FROM HWK_ALERTS_TRIGGERS WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("triggerId = '").append(triggerId).append("' ");
             log.debugf("SQL: " + sql);
             rs = s.executeQuery(sql.toString());
@@ -1359,7 +1643,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             throw new Exception("DataSource is null");
         }
 
-        List<Trigger> triggers = new ArrayList<Trigger>();
+        List<Trigger> triggers = new ArrayList<>();
         Connection c = null;
         Statement s = null;
         ResultSet rs = null;
@@ -1385,9 +1669,48 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         return triggers;
     }
 
-    private void removeConditions(String triggerId, Trigger.Mode triggerMode) throws Exception {
-        if (triggerId == null || triggerId.isEmpty()) {
-            throw new IllegalArgumentException("TriggerId must not be null");
+    @Override
+    public Collection<Trigger> getTriggers(String tenantId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (ds == null) {
+            throw new Exception("DataSource is null");
+        }
+
+        List<Trigger> triggers = new ArrayList<>();
+        Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
+        try {
+            c = ds.getConnection();
+            s = c.createStatement();
+
+            StringBuilder sql = new StringBuilder("SELECT triggerId, payload FROM HWK_ALERTS_TRIGGERS ")
+                    .append("WHERE tenantId = '").append(tenantId).append("' ")
+                    .append("ORDER BY triggerId");
+            log.debugf("SQL: " + sql);
+            rs = s.executeQuery(sql.toString());
+            while (rs.next()) {
+                Trigger trigger = fromJson(rs.getString(2), Trigger.class);
+                triggers.add(trigger);
+            }
+        } catch (SQLException e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            close(c, s, rs);
+        }
+
+        return triggers;
+    }
+
+    private void removeConditions(String tenantId, String triggerId, Trigger.Mode triggerMode) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
         }
         if (triggerMode == null) {
             throw new IllegalArgumentException("TriggerMode must not be null");
@@ -1403,13 +1726,14 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_CONDITIONS WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("triggerId = '").append(triggerId).append("' ")
                     .append(" AND triggerMode = '").append(triggerMode.name()).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 
             // if removing conditions remove the automatically-added dataId tags
-            deleteTags(c, s, triggerId, "dataId", null);
+            deleteTags(c, tenantId, triggerId, "dataId", null);
 
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1420,15 +1744,18 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void removeDampening(String dampeningId) throws Exception {
-        if (dampeningId == null || dampeningId.isEmpty()) {
+    public void removeDampening(String tenantId, String dampeningId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(dampeningId)) {
             throw new IllegalArgumentException("dampeningId must not be null");
         }
         if (ds == null) {
             throw new Exception("DataSource is null");
         }
 
-        Dampening dampening = getDampening(dampeningId);
+        Dampening dampening = getDampening(tenantId, dampeningId);
         if (null == dampening) {
             log.debugf("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
             return;
@@ -1441,6 +1768,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_DAMPENINGS WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("dampeningId = '").append(dampeningId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
@@ -1453,16 +1781,22 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
 
         if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(dampening.getTriggerId());
+            alertsService.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
         notifyListeners(EventType.DAMPENING_CHANGE);
     }
 
     @Override
-    public void removeAction(String actionId) throws Exception {
-        if (actionId == null || actionId.isEmpty()) {
-            throw new IllegalArgumentException("ActionId must not be null");
+    public void removeAction(String tenantId, String actionPlugin, String actionId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
+        }
+        if (isEmpty(actionId)) {
+            throw new IllegalArgumentException("ActionId must be not null");
         }
         if (ds == null) {
             throw new Exception("DataSource is null");
@@ -1475,6 +1809,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_ACTIONS WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
+                    .append("actionPlugin = '").append(actionPlugin).append("' AND ")
                     .append("actionId = '").append(actionId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
@@ -1516,8 +1852,11 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void removeTrigger(String triggerId) throws Exception {
-        if (triggerId == null || triggerId.isEmpty()) {
+    public void removeTrigger(String tenantId, String triggerId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
 
@@ -1532,21 +1871,25 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             s = c.createStatement();
 
             StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_DAMPENINGS WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("triggerId = '").append(triggerId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 
             sql = new StringBuilder("DELETE FROM HWK_ALERTS_CONDITIONS WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("triggerId = '").append(triggerId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 
             sql = new StringBuilder("DELETE FROM HWK_ALERTS_TAGS WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("triggerId = '").append(triggerId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 
             sql = new StringBuilder("DELETE FROM HWK_ALERTS_TRIGGERS WHERE ")
+                    .append("tenantId = '").append(tenantId).append("' AND ")
                     .append("triggerId = '").append(triggerId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
@@ -1559,14 +1902,14 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
 
         if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(triggerId);
+            alertsService.reloadTrigger(tenantId, triggerId);
         }
 
         notifyListeners(EventType.TRIGGER_CHANGE);
     }
 
     @Override
-    public Dampening updateDampening(Dampening dampening) throws Exception {
+    public Dampening updateDampening(String tenantId, Dampening dampening) throws Exception {
         if (dampening == null) {
             throw new IllegalArgumentException("DampeningId must be not null");
         }
@@ -1580,9 +1923,10 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_DAMPENINGS SET ")
-                    .append("payload = '").append(toJson(dampening)).append("' ")
-                    .append("WHERE dampeningId = '").append(dampening.getDampeningId()).append("' ");
+            StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_DAMPENINGS ")
+                    .append("SET payload = '").append(toJson(dampening)).append("' ")
+                    .append("WHERE tenantId = '").append(tenantId).append("' AND ")
+                    .append("dampeningId = '").append(dampening.getDampeningId()).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 
@@ -1594,7 +1938,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
 
         if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(dampening.getTriggerId());
+            alertsService.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
         notifyListeners(EventType.DAMPENING_CHANGE);
@@ -1603,8 +1947,15 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void updateAction(String actionId, Map<String, String> properties) throws Exception {
-        if (actionId == null || actionId.isEmpty()) {
+    public void updateAction(String tenantId, String actionPlugin, String actionId, Map<String, String> properties)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
+        }
+        if (isEmpty(actionId)) {
             throw new IllegalArgumentException("ActionId must be not null");
         }
         if (properties == null || properties.isEmpty()) {
@@ -1622,7 +1973,9 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
             StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_ACTIONS SET ")
                     .append("payload = '").append(toJson(properties)).append("' ")
-                    .append("WHERE actionId = '").append(actionId).append("' ");
+                    .append("WHERE tenantId = '").append(tenantId).append("' AND ")
+                    .append("actionPlugin = '").append(actionPlugin).append("' AND ")
+                    .append("actionId = '").append(actionId).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 
@@ -1636,7 +1989,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void updateActionPlugin(String actionPlugin, Set<String> properties) throws Exception {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
+        if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("ActionPlugin must be not null");
         }
         if (properties == null || properties.isEmpty()) {
@@ -1667,8 +2020,11 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Trigger updateTrigger(Trigger trigger) throws Exception {
-        if (trigger == null || trigger.getId() == null || trigger.getId().isEmpty()) {
+    public Trigger updateTrigger(String tenantId, Trigger trigger) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(trigger)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         if (ds == null) {
@@ -1683,7 +2039,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
             StringBuilder sql = new StringBuilder("UPDATE HWK_ALERTS_TRIGGERS SET ")
                     .append("payload = '").append(toJson(trigger)).append("' ")
-                    .append("WHERE triggerId = '").append(trigger.getId()).append("' ");
+                    .append("WHERE tenantId = '").append(tenantId).append("' AND ")
+                    .append("triggerId = '").append(trigger.getId()).append("' ");
             log.debugf("SQL: " + sql);
             s.execute(sql.toString());
 
@@ -1695,7 +2052,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
 
         if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(trigger.getId());
+            alertsService.reloadTrigger(trigger.getTenantId(), trigger.getId());
         }
 
         notifyListeners(EventType.TRIGGER_CHANGE);
@@ -1714,7 +2071,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         int numRows = -1;
         Connection c = null;
         Statement s = null;
-        ResultSet rs = null;
+        ResultSet rs;
         try {
             c = ds.getConnection();
             s = c.createStatement();
@@ -1774,7 +2131,10 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void addTag(Tag tag) throws Exception {
+    public void addTag(String tenantId, Tag tag) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
         if (tag == null) {
             throw new IllegalArgumentException("Tag must be not null");
         }
@@ -1784,6 +2144,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(tag.getName())) {
             throw new IllegalArgumentException("Tag Name must be not null or empty");
         }
+        tag.setTenantId(tenantId);
 
         // Now add the tag
         Connection c = null;
@@ -1792,7 +2153,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            insertTag(c, s, tag.getTriggerId(), tag.getCategory(), tag.getName(), tag.isVisible());
+            insertTag(c, s, tag.getTenantId(), tag.getTriggerId(), tag.getCategory(), tag.getName(), tag.isVisible());
 
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1802,16 +2163,17 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
-    private void insertTag(Connection c, Statement s, String triggerId, String category, String name, boolean visible)
-            throws Exception {
+    private void insertTag(Connection c, Statement s, String tenantId, String triggerId, String category, String name,
+            boolean visible) throws Exception {
 
         // If the desired Tag already exists just return
-        if (!getTags(c, s, triggerId, category, name).isEmpty()) {
+        if (!getTags(s, tenantId, triggerId, category, name).isEmpty()) {
             return;
         }
 
         StringBuilder sql = new StringBuilder("INSERT INTO HWK_ALERTS_TAGS VALUES (");
-        sql.append("'").append(triggerId).append("', ");
+        sql.append("'").append(tenantId).append("', ")
+                .append("'").append(triggerId).append("', ");
         if (isEmpty(category)) {
             sql.append("NULL, ");
         } else {
@@ -1826,7 +2188,10 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void removeTags(String triggerId, String category, String name) throws Exception {
+    public void removeTags(String tenantId, String triggerId, String category, String name) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
         if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("Tag TriggerId must be not null or empty");
         }
@@ -1838,7 +2203,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            deleteTags(c, s, triggerId, category, name);
+            deleteTags(c, tenantId, triggerId, category, name);
 
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1848,10 +2213,11 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
-    private void deleteTags(Connection c, Statement s, String triggerId, String category, String name)
+    private void deleteTags(Connection c, String tenantId, String triggerId, String category, String name)
             throws Exception {
         StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_TAGS WHERE ");
-        sql.append("triggerId = '").append(triggerId).append("' ");
+        sql.append("tenantId = '").append(tenantId).append("' AND ")
+            .append("triggerId = '").append(triggerId).append("' ");
         if (!isEmpty(category)) {
             sql.append("AND category = '").append(category).append("' ");
         }
@@ -1859,12 +2225,16 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             sql.append("AND name = '").append(name).append("' ");
         }
         log.debugf("SQL: " + sql);
-        s = c.createStatement();
+        Statement s = c.createStatement();
         s.executeUpdate(sql.toString());
+        s.close();
     }
 
     @Override
-    public List<Tag> getTriggerTags(String triggerId, String category) throws Exception {
+    public List<Tag> getTriggerTags(String tenantId, String triggerId, String category) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
         if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("Tag TriggerId must be not null or empty");
         }
@@ -1879,7 +2249,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             c = ds.getConnection();
             s = c.createStatement();
 
-            tags = getTags(c, s, triggerId, category, null);
+            tags = getTags(s, tenantId, triggerId, category, null);
 
         } catch (SQLException e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1891,12 +2261,13 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         return tags;
     }
 
-    private List<Tag> getTags(Connection c, Statement s, String triggerId, String category, String name)
-            throws Exception {
+    private List<Tag> getTags(Statement s, String tenantId, String triggerId, String category,
+            String name) throws Exception {
 
-        StringBuilder sql = new StringBuilder(
-                "SELECT triggerId, category, name, visible FROM HWK_ALERTS_TAGS WHERE ");
-        sql.append("triggerId = '").append(triggerId).append("' ");
+        StringBuilder sql = new StringBuilder("SELECT triggerId, category, name, visible FROM HWK_ALERTS_TAGS ");
+        sql.append("WHERE tenantId = '").append(tenantId).append("' AND ")
+                .append(" triggerId = '").append(triggerId).append("' ");
+
         if (!isEmpty(category)) {
             sql.append("AND category = '").append(category).append("' ");
         }
@@ -1913,6 +2284,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             rs = s.executeQuery(sql.toString());
             while (rs.next()) {
                 Tag tag = new Tag(rs.getString(1), rs.getString(2), rs.getString(3), rs.getBoolean(4));
+                tag.setTenantId(tenantId);
                 tags.add(tag);
             }
         } finally {
@@ -1926,6 +2298,10 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
 
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();
+    }
+
+    private boolean isEmpty(Trigger trigger) {
+        return trigger == null || trigger.getId() == null || trigger.getId().trim().isEmpty();
     }
 
     private void notifyListeners(EventType eventType) {

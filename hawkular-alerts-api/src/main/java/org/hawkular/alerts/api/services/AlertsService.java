@@ -49,16 +49,18 @@ public interface AlertsService {
     /**
      * Reload the specified Trigger.  Removes any existing definition from the engine.  If enabled then loads the firing
      * condition set and dampening.  If safetyEnabled then also loads the safety condition set and dampening.
-     * @param triggerId the triggerId
+     * @param tenantId Tenant where Trigger is stored
+     * @param triggerId Trigger id to be reloaded
      */
-    void reloadTrigger(String triggerId);
+    void reloadTrigger(String tenantId, String triggerId);
 
     /**
+     * @param tenantId Tenant where alerts are stored
      * @param criteria If null returns all alerts (not recommended)
      * @return NotNull, can be empty.
      * @throws Exception any problem
      */
-    List<Alert> getAlerts(AlertsCriteria criteria) throws Exception;
+    List<Alert> getAlerts(String tenantId, AlertsCriteria criteria) throws Exception;
 
     /**
      * Persist the provided alerts.
@@ -70,35 +72,38 @@ public interface AlertsService {
     /**
      * The alerts must already have been added. Set the alerts to ACKNOWLEDGED status. The ackTime will be set to the
      * system time.
+     * @param tenantId Tenant where alerts are stored
      * @param alertIds Alerts to be acknowledged.
      * @param ackBy Optional. Typically the user acknowledging the alerts.
      * @param ackNotes Optional notes about the acknowledgement.
      * @throws Exception any problem
      */
-    void ackAlerts(Collection<String> alertIds, String ackBy, String ackNotes) throws Exception;
+    void ackAlerts(String tenantId, Collection<String> alertIds, String ackBy, String ackNotes) throws Exception;
 
     /**
      * The alerts must already have been added. Set the alerts to RESOLVED status. The resolvedTime will be set to the
      * system time.
-     * @param alertIds AlertIds to be acknowledged.
+     * @param tenantId Tenant where alerts are stored
+     * @param alertIds Alerts to be acknowledged.
      * @param resolvedBy Optional. Typically the user resolving the alerts.
      * @param resolvedNotes Optional notes about the resolution.
      * @param resolvedEvalSets Optional. Typically the evalSets leading to an auto-resolved alert.
      * @throws Exception any problem
      */
-    void resolveAlerts(Collection<String> alertIds, String resolvedBy, String resolvedNotes,
+    void resolveAlerts(String tenantId, Collection<String> alertIds, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception;
 
     /**
      * Set unresolved alerts for the provided trigger to RESOLVED status. The resolvedTime will be set to the
      * system time.
-     * @param triggerId the triggerId
+     * @param tenantId Tenant where alerts are stored
+     * @param triggerId Tenant where alerts are stored
      * @param resolvedBy Optional. Typically the user resolving the alerts.
      * @param resolvedNotes Optional notes about the resolution.
      * @param resolvedEvalSets Optional. Typically the evalSets leading to an auto-resolved alert.
      * @throws Exception any problem
      */
-    void resolveAlertsForTrigger(String triggerId, String resolvedBy, String resolvedNotes,
+    void resolveAlertsForTrigger(String tenantId, String triggerId, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception;
 
 }

@@ -24,6 +24,7 @@ package org.hawkular.alerts.api.model.trigger;
  */
 public class Tag {
 
+    private String tenantId;
     private String triggerId;
     private String category;
     private String name;
@@ -46,10 +47,10 @@ public class Tag {
      * Create a searchable Tag on category + name
      *
      * @param category Nullable
-     * @param tag NotEmpty
+     * @param name NotEmpty
      */
-    public Tag(String category, String tag) {
-        this(null, category, tag, false);
+    public Tag(String category, String name) {
+        this(null, category, name, false);
     }
 
     /**
@@ -57,10 +58,10 @@ public class Tag {
      *
      * @param triggerId Nullable Note, required for storage but not search.
      * @param category Nullable
-     * @param tag NotEmpty
+     * @param name NotEmpty
      */
-    public Tag(String triggerId, String category, String tag) {
-        this(triggerId, category, tag, false);
+    public Tag(String triggerId, String category, String name) {
+        this(triggerId, category, name, false);
     }
 
     /**
@@ -113,47 +114,47 @@ public class Tag {
         this.visible = visible;
     }
 
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+
     @Override
-    public String toString() {
-        return "Tag [triggerId=" + triggerId + ", category=" + category + ", name=" + name + ", visible=" + visible
-                + "]";
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Tag tag = (Tag) o;
+
+        if (visible != tag.visible) return false;
+        if (tenantId != null ? !tenantId.equals(tag.tenantId) : tag.tenantId != null) return false;
+        if (triggerId != null ? !triggerId.equals(tag.triggerId) : tag.triggerId != null) return false;
+        if (category != null ? !category.equals(tag.category) : tag.category != null) return false;
+        return !(name != null ? !name.equals(tag.name) : tag.name != null);
+
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((category == null) ? 0 : category.hashCode());
-        result = prime * result + ((name == null) ? 0 : name.hashCode());
-        result = prime * result + ((triggerId == null) ? 0 : triggerId.hashCode());
+        int result = tenantId != null ? tenantId.hashCode() : 0;
+        result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);
+        result = 31 * result + (category != null ? category.hashCode() : 0);
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (visible ? 1 : 0);
         return result;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        Tag other = (Tag) obj;
-        if (category == null) {
-            if (other.category != null)
-                return false;
-        } else if (!category.equals(other.category))
-            return false;
-        if (name == null) {
-            if (other.name != null)
-                return false;
-        } else if (!name.equals(other.name))
-            return false;
-        if (triggerId == null) {
-            if (other.triggerId != null)
-                return false;
-        } else if (!triggerId.equals(other.triggerId))
-            return false;
-        return true;
+    public String toString() {
+        return "Tag{" +
+                "tenantId='" + tenantId + '\'' +
+                ", triggerId='" + triggerId + '\'' +
+                ", category='" + category + '\'' +
+                ", name='" + name + '\'' +
+                ", visible=" + visible +
+                '}';
     }
-
 }

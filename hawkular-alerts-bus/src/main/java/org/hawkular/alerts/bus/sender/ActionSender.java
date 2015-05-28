@@ -43,9 +43,9 @@ import java.util.Map;
 public class ActionSender implements ActionListener {
     private final MsgLogger msgLogger = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(ActionSender.class);
-    private final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
-    private final String ACTIONS_TOPIC = "HawkularAlertsActionsTopic";
-    private final String DEFINITIONS_SERVICE =
+    private static final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
+    private static final String ACTIONS_TOPIC = "HawkularAlertsActionsTopic";
+    private static final String DEFINITIONS_SERVICE =
             "java:app/hawkular-alerts-engine/CassDefinitionsServiceImpl";
 
     private TopicConnectionFactory conFactory;
@@ -70,15 +70,10 @@ public class ActionSender implements ActionListener {
             nMsg.setActionId(action.getActionId());
             nMsg.setMessage(action.getMessage());
             if (definitions != null) {
-                Map<String, String> properties = definitions.getAction(action.getActionId());
-                MessageId mid;
-                if (properties != null && properties.containsKey("actionPlugin")) {
-                    String notifierType = properties.get("actionPlugin");
-                    nMsg.setProperties(properties);
-                    mid = new MessageProcessor().send(pcc, nMsg, actionPluginFilter(notifierType));
-                } else {
-                    mid = new MessageProcessor().send(pcc, nMsg);
-                }
+                Map<String, String> properties = definitions.getAction(action.getTenantId(),
+                        action.getActionPlugin(), action.getActionId());
+                nMsg.setProperties(properties);
+                MessageId mid = new MessageProcessor().send(pcc, nMsg, actionPluginFilter(action.getActionPlugin()));
                 msgLogger.infoSentActionMessage(mid.getId());
             } else {
                 msgLogger.warnCannotAccessToDefinitionsService();

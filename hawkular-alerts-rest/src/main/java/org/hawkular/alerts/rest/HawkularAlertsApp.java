@@ -29,7 +29,7 @@ import javax.ws.rs.core.Application;
  */
 @ApplicationPath("/")
 public class HawkularAlertsApp extends Application {
-    private final Logger log = Logger.getLogger(HawkularAlertsApp.class);
+    private static final Logger log = Logger.getLogger(HawkularAlertsApp.class);
 
     public HawkularAlertsApp() {
         log.debugf("Hawkular Alerts REST starting...");

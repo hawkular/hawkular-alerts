@@ -31,7 +31,6 @@ import org.junit.Test
  * @author Lucas Ponce
  */
 class DampeningITest extends AbstractITestBase {
- private static final Logger log = Logger.getLogger(DampeningITest.class);
 
     @Test
     void createDampening() {
@@ -65,7 +64,8 @@ class DampeningITest extends AbstractITestBase {
 
         resp = client.get(path: "triggers/test-trigger-6/dampenings/mode/FIRING")
         assertEquals(200, resp.status)
-        assertEquals("test-trigger-6", resp.data.triggerId)
+        assertEquals(1, resp.data.size())
+        assertEquals("test-trigger-6", resp.data[0].triggerId)
 
         resp = client.delete(path: "triggers/test-trigger-6/dampenings/" + d.getDampeningId())
         assertEquals(200, resp.status)

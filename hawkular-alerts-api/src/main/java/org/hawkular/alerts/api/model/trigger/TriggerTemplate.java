@@ -16,7 +16,9 @@
  */
 package org.hawkular.alerts.api.model.trigger;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -49,9 +51,9 @@ public abstract class TriggerTemplate {
     @JsonInclude
     private boolean autoResolveAlerts;
 
-    /** A group of actions's ids. */
+    /** A map with key based on actionPlugin and value a set of action's ids */
     @JsonInclude(Include.NON_EMPTY)
-    private Set<String> actions;
+    private Map<String, Set<String>> actions;
 
     @JsonInclude
     private Match firingMatch;
@@ -67,7 +69,7 @@ public abstract class TriggerTemplate {
         this.autoResolveAlerts = true;
         this.firingMatch = Match.ALL;
         this.autoResolveMatch = Match.ALL;
-        this.actions = new HashSet();
+        this.actions = new HashMap<>();
     }
 
     public String getName() {
@@ -129,33 +131,50 @@ public abstract class TriggerTemplate {
         this.autoResolveMatch = autoResolveMatch;
     }
 
-    public Set<String> getActions() {
+    public Map<String, Set<String>> getActions() {
         return actions;
     }
 
-    public void setActions(Set<String> actions) {
+    public void setActions(Map<String, Set<String>> actions) {
         this.actions = actions;
     }
 
-    public void addAction(String actionId) {
+    public void addAction(String actionPlugin, String actionId) {
+        if (actionPlugin == null || actionPlugin.isEmpty()) {
+            throw new IllegalArgumentException("ActionPlugin must be non-empty.");
+        }
         if (actionId == null || actionId.isEmpty()) {
             throw new IllegalArgumentException("ActionId must be non-empty.");
         }
-        actions.add(actionId);
+        if (actions.get(actionPlugin) == null) {
+            actions.put(actionPlugin, new HashSet<>());
+        }
+        actions.get(actionPlugin).add(actionId);
     }
 
-    public void addActions(Set<String> actionIds) {
+    public void addActions(String actionPlugin, Set<String> actionIds) {
+        if (actionPlugin == null || actionPlugin.isEmpty()) {
+            throw new IllegalArgumentException("ActionPlugin must be non-empty.");
+        }
         if (actionIds == null) {
-            return;
+            throw new IllegalArgumentException("ActionIds must be non null");
         }
-        actions.addAll(actionIds);
+        if (actions.get(actionPlugin) == null) {
+            actions.put(actionPlugin, new HashSet<>());
+        }
+        actions.get(actionPlugin).addAll(actionIds);
     }
 
-    public void removeAction(String actionId) {
+    public void removeAction(String actionPlugin, String actionId) {
+        if (actionPlugin == null || actionPlugin.isEmpty()) {
+            throw new IllegalArgumentException("actionPlugin must be non-empty.");
+        }
         if (actionId == null || actionId.isEmpty()) {
             throw new IllegalArgumentException("ActionId must be non-empty.");
         }
-        actions.remove(actionId);
+        if (actions.get(actionPlugin) != null) {
+            actions.get(actionPlugin).remove(actionId);
+        }
     }
 
     @Override

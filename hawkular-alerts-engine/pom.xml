@@ -117,14 +117,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.hawkular.metrics</groupId>
-      <artifactId>hawkular-metrics-embedded-cassandra-ear</artifactId>
-      <version>${version.org.hawkular.metrics}</version>
-      <type>ear</type>
-      <scope>test</scope>
-    </dependency>
-
   </dependencies>
 
   <build>
@@ -171,7 +163,7 @@
               </systemProperties>
               <excludes>
                 <exclude>**/*/PerfRulesEngineTest.java</exclude>
-                <exclude>**/*/CassTest.java</exclude>
+                <exclude>**/*/CassDefinitionsTest.java</exclude>
               </excludes>
             </configuration>
           </plugin>
@@ -214,7 +206,7 @@
               </systemProperties>
               <excludes>
                 <exclude>**/*/PerfRulesEngineTest.java</exclude>
-                <exclude>**/*/CassTest.java</exclude>
+                <exclude>**/*/CassDefinitionsTest.java</exclude>
               </excludes>
             </configuration>
           </plugin>
@@ -272,7 +264,7 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
               <includes>
-                <include>**/CassTest.java</include>
+                <include>**/CassDefinitionsTest.java</include>
               </includes>
             </configuration>
             <executions>
@@ -288,10 +280,10 @@
             <groupId>org.wildfly.plugins</groupId>
             <artifactId>wildfly-maven-plugin</artifactId>
             <configuration>
-              <groupId>org.hawkular.nest</groupId>
-              <artifactId>hawkular-nest-distro</artifactId>
-              <version>${version.org.hawkular.nest}</version>
-              <classifier>distribution</classifier>
+              <groupId>org.hawkular</groupId>
+              <artifactId>hawkular-dist</artifactId>
+              <version>${version.org.hawkular}</version>
+              <!-- <classifier>distribution</classifier> -->
               <skip>${skipTests}</skip>
               <port>${wildfly.management.port}</port>
             </configuration>
@@ -316,17 +308,6 @@
                     <javaOpt>-Xdebug</javaOpt>
                     <javaOpt>-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8787</javaOpt>
                   </javaOpts>
-                </configuration>
-              </execution>
-              <execution>
-                <id>deploy-cassandra</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>deploy-artifact</goal>
-                </goals>
-                <configuration>
-                  <groupId>org.hawkular.metrics</groupId>
-                  <artifactId>hawkular-metrics-embedded-cassandra-ear</artifactId>
                 </configuration>
               </execution>
               <execution>

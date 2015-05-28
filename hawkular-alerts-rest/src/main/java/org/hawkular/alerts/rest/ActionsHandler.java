@@ -17,13 +17,13 @@
 package org.hawkular.alerts.rest;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
+import java.util.Set;
 import javax.ejb.EJB;
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -32,10 +32,9 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Response;
 
+import org.hawkular.accounts.api.model.Persona;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
@@ -53,10 +52,12 @@ import com.wordnik.swagger.annotations.ApiResponses;
  * @author Lucas Ponce
  */
 @Path("/actions")
-@Api(value = "/actions",
-        description = "Action Handling")
+@Api(value = "/actions", description = "Action Handling")
 public class ActionsHandler {
     private final Logger log = Logger.getLogger(ActionsHandler.class);
+
+    @Inject
+    Persona persona;
 
     @EJB
     DefinitionsService definitions;
@@ -73,43 +74,45 @@ public class ActionsHandler {
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Send an action to the ActionService.",
             notes = "ActionService should not be invoked directly. This method is for demo/poc purposes.")
-    public void send(@Suspended
-    final AsyncResponse response, Action action) {
-        actions.send(action);
-        response.resume(Response.status(Response.Status.OK).build());
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Action sent succesfully."),
+            @ApiResponse(code = 500, message = "Internal server error")})
+    public Response send(Action action) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
+        try {
+            actions.send(action);
+            return ResponseUtil.ok();
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
     }
 
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Find all action ids",
-            responseContainer = "Collection",
-            response = String.class,
+    @ApiOperation(value = "Find all action ids grouped by plugin",
             notes = "Pagination is not yet implemented")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Actions Found"),
-            @ApiResponse(code = 204, message = "Success, No Actions Found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public void findAllActions(
-            @Suspended
-            final AsyncResponse response) {
+            @ApiResponse(code = 200, message = "Success. Actions found."),
+            @ApiResponse(code = 204, message = "Success. No actions found."),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response findActions() {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
         try {
-            Collection<String> actions = definitions.getAllActions();
-            if (actions == null || actions.isEmpty()) {
-                log.debugf("GET - findAllActions - Empty");
-                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
-            } else {
-                log.debugf("GET - findAllActions - %s actions ", actions);
-                response.resume(Response.status(Response.Status.OK)
-                        .entity(actions).type(APPLICATION_JSON_TYPE).build());
+            Map<String, Set<String>> actions = definitions.getActions(persona.getId());
+            log.debugf("Actions: ", actions);
+            if (isEmpty(actions)) {
+                return ResponseUtil.noContent();
             }
+            return ResponseUtil.ok(actions);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
-            Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Internal Error: " + e.getMessage());
-            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            return ResponseUtil.internalError(e.getMessage());
         }
     }
 
@@ -117,37 +120,28 @@ public class ActionsHandler {
     @Path("/plugin/{actionPlugin}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find all action ids of an specific action plugin",
-            responseContainer = "Collection",
-            response = String.class,
             notes = "Pagination is not yet implemented")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Actions Found"),
-            @ApiResponse(code = 204, message = "Success, No Actions Found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public void findAllActionsByPlugin(
-            @Suspended
-            final AsyncResponse response,
-            @ApiParam(value = "Action plugin to filter query for action ids",
-                    required = true)
+            @ApiResponse(code = 204, message = "No Actions Found"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response findActionsByPlugin(@ApiParam(value = "Action plugin to filter query for action ids",
+            required = true)
             @PathParam("actionPlugin")
             final String actionPlugin) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
         try {
-            Collection<String> actions = definitions.getActions(actionPlugin);
-            if (actions == null || actions.isEmpty()) {
-                log.debugf("GET - findAllActions - Empty");
-                response.resume(Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build());
-            } else {
-                log.debugf("GET - findAllActions - %s notifiers ", actions);
-                response.resume(Response.status(Response.Status.OK)
-                        .entity(actions).type(APPLICATION_JSON_TYPE).build());
+            Collection<String> actions = definitions.getActions(persona.getId(), actionPlugin);
+            log.debugf("Actions: %s ", actions);
+            if (isEmpty(actions)) {
+                return ResponseUtil.noContent();
             }
+            return ResponseUtil.ok(actions);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
-            Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Internal Error: " + e.getMessage());
-            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            return ResponseUtil.internalError(e.getMessage());
         }
     }
 
@@ -156,8 +150,6 @@ public class ActionsHandler {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Create a new action",
-            responseContainer = "Map<String, String>",
-            response = String.class,
             notes = "Action properties are variable and depends on the action plugin. " +
                     "A user needs to request previously ActionPlugin API to get the list of properties to fill " +
                     "for a specific type. All actions should have actionId and actionPlugin as mandatory " +
@@ -165,41 +157,38 @@ public class ActionsHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Action Created"),
             @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public void createAction(
-            @Suspended
-            final AsyncResponse response,
-            @ApiParam(value = "Action properties. Properties depend of specific ActionPlugin.",
+            @ApiResponse(code = 400, message = "Existing action/Invalid Parameters") })
+    public Response createAction(@ApiParam(value = "Action properties. Properties depend of specific ActionPlugin.",
                     name = "actionProperties",
                     required = true)
             final Map<String, String> actionProperties) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
+        String actionPlugin = actionProperties.get("actionPlugin");
+        String actionId = actionProperties.get("actionId");
+        if (isEmpty(actionPlugin)) {
+            return ResponseUtil.badRequest("actionPlugin must be not null");
+        }
+        if (isEmpty(actionId)) {
+            return ResponseUtil.badRequest("actionId must be not null");
+        }
         try {
-            if (actionProperties != null && !actionProperties.isEmpty() &&
-                    actionProperties.containsKey("actionId") &&
-                    definitions.getAction(actionProperties.get("actionId")) == null) {
-                String actionId = actionProperties.get("actionId");
-                log.debugf("POST - createAction - actionId %s - properties %s ", actionId, actionProperties);
-                definitions.addAction(actionId, actionProperties);
-                response.resume(Response.status(Response.Status.OK)
-                        .entity(actionProperties).type(APPLICATION_JSON_TYPE).build());
+            if (definitions.getAction(persona.getId(), actionPlugin, actionId) != null) {
+                return ResponseUtil.badRequest("Existing action:  " + actionId);
             } else {
-                log.debugf("POST - createAction - ID not valid or existing condition");
-                Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "Existing action or invalid actionId");
-                response.resume(Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                definitions.addAction(persona.getId(), actionPlugin, actionId, actionProperties);
+                log.debugf("ActionId: %s - Properties: %s ", actionId, actionProperties);
+                return ResponseUtil.ok(actionProperties);
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
-            Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Internal Error: " + e.getMessage());
-            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            return ResponseUtil.internalError(e.getMessage());
         }
     }
 
     @GET
-    @Path("/{actionId}")
+    @Path("/{actionPlugin}/{actionId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get an existing action",
             responseContainer = "Map<String, String>",
@@ -208,36 +197,32 @@ public class ActionsHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Action Found"),
             @ApiResponse(code = 404, message = "No Action Found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public void getAction(@Suspended
-    final AsyncResponse response,
-            @ApiParam(value = "Action id to be retrieved",
-                    required = true)
+            @ApiResponse(code = 500, message = "Internal server error")})
+    public Response getAction(@ApiParam(value = "Action plugin", required = true)
+            @PathParam("actionPlugin")
+            final String actionPlugin,
+            @ApiParam(value = "Action id to be retrieved", required = true)
             @PathParam("actionId")
             final String actionId) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
         try {
-            Map<String, String> actionProps = definitions.getAction(actionId);
-            if (actionProps == null || actionProps.isEmpty()) {
-                log.debugf("GET - getAction - Empty");
-                response.resume(Response.status(Response.Status.NOT_FOUND).type(APPLICATION_JSON_TYPE).build());
-            } else {
-                log.debugf("GET - getAction - actionId: %s - properties: %s ",
-                        actionId, actionProps);
-                response.resume(Response.status(Response.Status.OK)
-                        .entity(actionProps).type(APPLICATION_JSON_TYPE).build());
+            Map<String, String> actionProperties = definitions.getAction(persona.getId(), actionPlugin, actionId);
+            log.debugf("ActionId: %s - Properties: %s ", actionId, actionProperties);
+            if (isEmpty(actionProperties)) {
+                return ResponseUtil.notFound("Not action found for actionPlugin: " + actionPlugin + " and actionId: "
+                        + actionId);
             }
+            return ResponseUtil.ok(actionProperties);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
-            Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Internal Error: " + e.getMessage());
-            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            return ResponseUtil.internalError(e.getMessage());
         }
     }
 
     @PUT
-    @Path("/{actionId}")
+    @Path("/{actionPlugin}/{actionId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing action",
             notes = "Action properties are variable and depends on the action plugin. " +
@@ -246,80 +231,84 @@ public class ActionsHandler {
                     "properties")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Action Updated"),
-            @ApiResponse(code = 404, message = "No Action Found"),
             @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public void updateAction(
-            @Suspended
-            final AsyncResponse response,
+            @ApiResponse(code = 404, message = "Action not found for update") })
+    public Response updateAction(@ApiParam(value = "Action plugin", required = true)
+            @PathParam("actionPlugin")
+            final String actionPlugin,
             @ApiParam(value = "action id to be updated", required = true)
             @PathParam("actionId")
             final String actionId,
-            @ApiParam(
-                    value = "Action properties. Properties depend of specific ActionPlugin.",
-                    name = "actionProperties",
-                    required = true)
+            @ApiParam(value = "Action properties. Properties depend of specific ActionPlugin.", required = true)
             final Map<String, String> actionProperties) {
         try {
-            if (actionId != null && !actionId.isEmpty() &&
-                    actionProperties != null && !actionProperties.isEmpty() &&
-                    actionProperties.containsKey("actionId") &&
-                    actionProperties.get("actionId").equals(actionId) &&
-                    definitions.getAction(actionId) != null) {
-                log.debugf("POST - updateAction - actionId %s - properties: %s ", actionId, actionProperties);
-                definitions.updateAction(actionId, actionProperties);
-                response.resume(Response.status(Response.Status.OK)
-                        .entity(actionProperties).type(APPLICATION_JSON_TYPE).build());
+            if (!checkPersona()) {
+                return ResponseUtil.internalError("No persona found");
+            }
+            if (definitions.getAction(persona.getId(), actionPlugin, actionId) != null) {
+                definitions.updateAction(persona.getId(), actionPlugin, actionId, actionProperties);
+                log.debugf("ActionId: %s - Properties: %s ", actionId, actionProperties);
+                return ResponseUtil.ok(actionProperties);
             } else {
-                log.debugf("PUT - updateAction - actionId: %s not found or invalid. ", actionId);
-                Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "actionId  " + actionId + " not found or invalid Id");
-                errors.put("errorMsg", "Existing action or invalid Id");
-                response.resume(Response.status(Response.Status.NOT_FOUND)
-                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                return ResponseUtil.notFound("ActionId: " + actionId + " not found for update");
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
-            Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Internal Error: " + e.getMessage());
-            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            return ResponseUtil.internalError(e.getMessage());
         }
     }
 
     @DELETE
-    @Path("/{actionId}")
+    @Path("/{actionPlugin}/{actionId}")
     @ApiOperation(value = "Delete an existing action")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Action Deleted"),
-            @ApiResponse(code = 404, message = "No Action Found"),
             @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public void deleteAction(@Suspended
-    final AsyncResponse response,
-            @ApiParam(value = "Action id to be deleted",
-                    required = true)
+            @ApiResponse(code = 404, message = "ActionId not found for delete") })
+    public Response deleteAction(@ApiParam(value = "Action plugin", required = true)
+            @PathParam("actionPlugin")
+            final String actionPlugin,
+            @ApiParam(value = "Action id to be deleted", required = true)
             @PathParam("actionId")
             final String actionId) {
         try {
-            if (actionId != null && !actionId.isEmpty() && definitions.getAction(actionId) != null) {
-                log.debugf("DELETE - deleteAction - actionId: %s ", actionId);
-                definitions.removeAction(actionId);
-                response.resume(Response.status(Response.Status.OK).build());
+            if (!checkPersona()) {
+                return ResponseUtil.internalError("No persona found");
+            }
+            if (definitions.getAction(persona.getId(), actionPlugin, actionId) != null) {
+                definitions.removeAction(persona.getId(), actionPlugin, actionId);
+                log.debugf("ActionId: %s ", actionId);
+                return ResponseUtil.ok();
             } else {
-                log.debugf("DELETE - deleteAction - actionId: %s not found or invalid. ", actionId);
-                Map<String, String> errors = new HashMap<String, String>();
-                errors.put("errorMsg", "actionId " + actionId + " not found or invalid Id");
-                response.resume(Response.status(Response.Status.NOT_FOUND)
-                        .entity(errors).type(APPLICATION_JSON_TYPE).build());
+                return ResponseUtil.notFound("ActionId: " + actionId + " not found for delete");
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
-            Map<String, String> errors = new HashMap<String, String>();
-            errors.put("errorMsg", "Internal Error: " + e.getMessage());
-            response.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errors).type(APPLICATION_JSON_TYPE).build());
+            return ResponseUtil.internalError(e.getMessage());
         }
+    }
+
+    private boolean checkPersona() {
+        if (persona == null) {
+            log.warn("Persona is null. Possible issue with accounts integration ? ");
+            return false;
+        } else if (persona.getId().trim().isEmpty()) {
+            log.warn("Persona is empty. Possible issue with accounts integration ? ");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isEmpty(Map map) {
+        return map == null || map.isEmpty();
+    }
+
+    private boolean isEmpty(Collection collection) {
+        return collection == null || collection.isEmpty();
+    }
+
+    private boolean isEmpty(String s) {
+        return s == null || s.trim().isEmpty();
     }
 
 }

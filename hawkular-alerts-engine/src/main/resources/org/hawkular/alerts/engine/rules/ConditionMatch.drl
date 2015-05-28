@@ -407,12 +407,14 @@ rule AlertOnSatisfiedDampening
             log.debug("AlertOnSatisfiedDampening! " + $d.log());
         }
 
-        Alert newAlert = new Alert( $tid, $d.getSatisfyingEvals() );
+        Alert newAlert = new Alert( $t.getTenantId(), $tid, $d.getSatisfyingEvals() );
         alerts.add(newAlert);
         if (actions != null) {
-            for (String actionId : $t.getActions()) {
-                Action action = new Action(actionId, newAlert.toString());
-                actions.send(action);
+            for (String actionPlugin : $t.getActions().keySet()) {
+                for (String actionId : $t.getActions().get(actionPlugin)) {
+                    Action action = new Action($t.getTenantId(), actionPlugin, actionId, newAlert.toString());
+                    actions.send(action);
+                }
             }
         }
 

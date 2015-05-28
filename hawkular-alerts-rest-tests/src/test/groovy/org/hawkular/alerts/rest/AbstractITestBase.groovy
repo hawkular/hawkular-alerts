@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.rest
 
+import org.junit.AfterClass
 import org.junit.BeforeClass
 
 import groovyx.net.http.ContentType
@@ -33,8 +34,17 @@ class AbstractITestBase {
 
     @BeforeClass
     static void initClient() {
-            client = new RESTClient(baseURI, ContentType.JSON)
-            // this prevents 404 from being wrapped in an Exception, just return the response, better for testing
-            client.handler.failure = { it }
+
+        client = new RESTClient(baseURI, ContentType.JSON)
+        // this prevents 404 from being wrapped in an Exception, just return the response, better for testing
+        client.handler.failure = { it }
+
+        /*
+            User: jdoe
+            Password: password
+            String encodedCredentials = Base64.getMimeEncoder()
+            .encodeToString("$testUser:$testPasword".getBytes("utf-8"))
+         */
+        client.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
     }
 }

@@ -1,7 +1,7 @@
-#action id, action plugin,propertyName1=propertyValue1,propertyName2=propertyValue2,propertyNameN=propertyValueN
-SNMP-Trap-1,snmp,host=snmp-host,port=1234,OID=1.2.3.4.5,description=This is an example of SNMP Action Plugin
-SNMP-Trap-2,snmp,host=snmp-host,port=1234,OID=1.2.3.5.5,description=This is an example of SNMP Action Plugin
-email-to-admin,email,to=admin@hawkular.org,cc=bigboss@hawkular.org,description=This is an example of Email Action Plugin
-sms-to-cio,sms,phone=+15005550006,description=This is an example of SMS Action Plugin
-agpush-to-admin,aerogear,alias=GeorgeAbitbol,description=This is an example of Aerogear Action Plugin
-pd,pagerduty,description=This is an example of PagerDuty Action Plugin
+### Important, the IDE shouldn't break the lines or the data file won't be correctly processed, 1 line per entry ###
+#tenant id,action plugin,action id,propertyName1=propertyValue1,propertyName2=propertyValue2,propertyNameN=propertyValueN
+28026b36-8fe4-4332-84c8-524e173a68bf,snmp,SNMP-Trap-1,host=snmp-host,port=1234,OID=1.2.3.4.5,description=This is an example of SNMP Action Plugin
+28026b36-8fe4-4332-84c8-524e173a68bf,snmp,SNMP-Trap-2,host=snmp-host,port=1234,OID=1.2.3.5.5,description=This is an example of SNMP Action Plugin
+28026b36-8fe4-4332-84c8-524e173a68bf,email,email-to-admin,to=admin@hawkular.org,cc=bigboss@hawkular.org,description=This is an example of Email Action Plugin
+28026b36-8fe4-4332-84c8-524e173a68bf,sms,sms-to-cio,phone=+15005550006,description=This is an example of SMS Action Plugin
+28026b36-8fe4-4332-84c8-524e173a68bf,aerogear,agpush-to-admin,alias=GeorgeAbitbol,description=This is an example of Aerogear Action Plugin
