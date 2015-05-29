@@ -210,26 +210,6 @@
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-patch-plugin</artifactId>
-            <version>${version.maven-patch-plugin}</version>
-            <executions>
-              <execution>
-                <id>add-demo-user-realm</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>apply</goal>
-                </goals>
-                <configuration>
-                  <patchFile>src/test/resources/hawkular-realm-patch.json</patchFile>
-                  <originalFile>${hawkular.configuration}/hawkular-realm.json</originalFile>
-                  <targetDirectory>${hawkular.configuration}</targetDirectory>
-                  <destFile>${hawkular.configuration}/hawkular-realm-dev.json</destFile>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
             <executions>
               <execution>
@@ -240,8 +220,11 @@
                 </goals>
                 <configuration>
                   <target>
-                    <copy file="${hawkular.configuration}/hawkular-realm.json" tofile="${hawkular.configuration}/hawkular-realm.json.backup" />
-                    <copy file="${hawkular.configuration}/hawkular-realm-dev.json" tofile="${hawkular.configuration}/hawkular-realm.json" />
+                    <copy file="${hawkular.configuration}/hawkular-realm.json"
+                          tofile="${hawkular.configuration}/hawkular-realm.json.backup" />
+                    <copy file="${hawkular.configuration}/hawkular-realm-for-dev.json"
+                          tofile="${hawkular.configuration}/hawkular-realm.json"
+                          overwrite="true" />
                   </target>
                 </configuration>
               </execution>
