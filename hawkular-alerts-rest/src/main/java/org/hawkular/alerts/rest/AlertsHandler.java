@@ -297,7 +297,8 @@ public class AlertsHandler {
         if (persona == null) {
             log.warn("Persona is null. Possible issue with accounts integration ? ");
             return false;
-        } else if (persona.getId().trim().isEmpty()) {
+        }
+        if (isEmpty(persona.getId())) {
             log.warn("Persona is empty. Possible issue with accounts integration ? ");
             return false;
         }
