@@ -68,6 +68,13 @@
       <type>ejb</type>
     </dependency>
 
+    <dependency>
+      <groupId>org.hawkular.accounts</groupId>
+      <artifactId>hawkular-accounts-api</artifactId>
+      <version>${version.org.hawkular.accounts}</version>
+      <type>ejb</type>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -86,6 +93,10 @@
               <artifactId>hawkular-alerts-rest</artifactId>
               <contextRoot>/hawkular/alerts</contextRoot>
             </webModule>
+            <ejbModule>
+              <groupId>org.hawkular.accounts</groupId>
+              <artifactId>hawkular-accounts-api</artifactId>
+            </ejbModule>
           </modules>
           <fileNameMapping>no-version</fileNameMapping>
         </configuration>
