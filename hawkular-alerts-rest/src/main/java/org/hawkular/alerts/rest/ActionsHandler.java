@@ -20,8 +20,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import java.util.Collection;
 import java.util.Map;
-
 import java.util.Set;
+
 import javax.ejb.EJB;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -292,7 +292,8 @@ public class ActionsHandler {
         if (persona == null) {
             log.warn("Persona is null. Possible issue with accounts integration ? ");
             return false;
-        } else if (persona.getId().trim().isEmpty()) {
+        }
+        if (isEmpty(persona.getId())) {
             log.warn("Persona is empty. Possible issue with accounts integration ? ");
             return false;
         }
