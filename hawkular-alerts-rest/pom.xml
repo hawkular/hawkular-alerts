@@ -51,6 +51,7 @@
       <groupId>org.hawkular.accounts</groupId>
       <artifactId>hawkular-accounts-api</artifactId>
       <version>${version.org.hawkular.accounts}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
