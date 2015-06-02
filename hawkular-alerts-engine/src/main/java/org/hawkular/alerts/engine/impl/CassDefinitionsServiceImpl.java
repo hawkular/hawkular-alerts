@@ -71,7 +71,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
     private static final String INIT_FOLDER = "hawkular-alerts";
     private static final String CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
-    private static final String ALERTS_SERVICE = "hawkular-alerts.alerts-service-jndi";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassDefinitionsServiceImpl.class);
     private Session session;
@@ -123,7 +122,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private PreparedStatement updateAction;
     private PreparedStatement selectActionsPlugin;
     private PreparedStatement selectAction;
-    private PreparedStatement selectTagsTriggers;
     private PreparedStatement insertTagsTriggers;
     private PreparedStatement updateTagsTriggers;
     private PreparedStatement deleteTagsTriggers;
@@ -187,6 +185,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         initialized = true;
     }
 
+    // TODO: This approach is fine because this is a singleton bean and therefore the statements are not
+    // repeatedly prepared by numerous pooled beans.  But, to avoid duplication and consolidate prepared
+    // statements it make sense to move these to CassStatement...
     private void initPreparedStatements() {
         if (insertTrigger == null) {
             insertTrigger = session.prepare("INSERT INTO " + keyspace + ".triggers " +
@@ -400,10 +401,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (selectAction == null) {
             selectAction = session.prepare("SELECT properties FROM " + keyspace + ".actions " +
                     "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ");
-        }
-        if (selectTagsTriggers == null) {
-            selectTagsTriggers = session.prepare("SELECT triggers FROM " + keyspace + ".tags_triggers " +
-                    "WHERE tenantId = ? AND category = ? AND name = ? ");
         }
         if (insertTagsTriggers == null) {
             insertTagsTriggers = session.prepare("INSERT INTO " + keyspace + ".tags_triggers " +
@@ -1558,6 +1555,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private Set<String> getTriggersByTags(String tenantId, String category, String name) {
         Set triggerTags = new HashSet<>();
 
+        PreparedStatement selectTagsTriggers = CassStatement.get(session,
+                CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME);
         ResultSet rsTriggersTags = session.execute(selectTagsTriggers.bind(tenantId, category, name));
         for (Row row : rsTriggersTags) {
             triggerTags = row.getSet("triggers", String.class);
