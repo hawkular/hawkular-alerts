@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -49,12 +50,12 @@ import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.TriggerTemplate;
-import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
+import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.jboss.logging.Logger;
 
 import com.google.gson.Gson;
@@ -75,31 +76,31 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
     private Gson gson;
     private final String DS_NAME;
     private DataSource ds;
-    private AlertsService alertsService;
     private boolean initialized = false;
 
     private List<DefinitionsListener> listeners = new ArrayList<>();
+
+    @EJB
+    AlertsEngine alertsEngine;
 
     public DbDefinitionsServiceImpl() {
         DS_NAME = System.getProperty("org.hawkular.alerts.engine.datasource", "java:jboss/datasources/HawkularDS");
     }
 
-    @SuppressWarnings("unused")
-    public AlertsService getAlertsService() {
-        return alertsService;
-    }
-
-    public void setAlertsService(AlertsService alertsService) {
-        this.alertsService = alertsService;
-    }
-
-    @SuppressWarnings("unused")
-    public DataSource getDatasource() {
+    public DataSource getDs() {
         return ds;
     }
 
-    public void setDatasource(DataSource ds) {
+    public void setDs(DataSource ds) {
         this.ds = ds;
+    }
+
+    public AlertsEngine getAlertsEngine() {
+        return alertsEngine;
+    }
+
+    public void setAlertsEngine(AlertsEngine alertsEngine) {
+        this.alertsEngine = alertsEngine;
     }
 
     @PostConstruct
@@ -113,16 +114,6 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                 } catch (NamingException e) {
                     log.debugf(e.getMessage(), e);
                     msgLog.errorCannotConnectWithDatasource(e.getMessage());
-                }
-            }
-            if (alertsService == null) {
-                try {
-                    InitialContext ctx = new InitialContext();
-                    alertsService = (AlertsService) ctx
-                            .lookup("java:app/hawkular-alerts-engine/DbAlertsServiceImpl");
-                } catch (NamingException e) {
-                    log.debugf(e.getMessage(), e);
-                    msgLog.errorCannotWithAlertsService(e.getMessage());
                 }
             }
 
@@ -170,7 +161,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     "  PRIMARY KEY(tenantId, conditionId) )");
 
             s.execute("CREATE TABLE IF NOT EXISTS HWK_ALERTS_DAMPENINGS " +
-                    "( tenantId VARCHAR(250) NOT NULL, "  +
+                    "( tenantId VARCHAR(250) NOT NULL, " +
                     "  dampeningId VARCHAR2(250) NOT NULL," +
                     "  triggerId VARCHAR2(250) NOT NULL," +
                     "  triggerMode VARCHAR2(20) NOT NULL," +
@@ -204,7 +195,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
                     "  status VARCHAR2(20) NOT NULL," +
                     "  payload CLOB, " +
                     "  PRIMARY KEY(tenantId, alertId) )"
-            );
+                    );
 
             s.close();
 
@@ -685,7 +676,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             rs = s.executeQuery(sql.toString());
             if (rs.next()) {
                 String className = rs.getString(2);
-                switch(className) {
+                switch (className) {
                     case "AvailabilityCondition":
                         condition = fromJson(rs.getString(3), AvailabilityCondition.class);
                         break;
@@ -933,7 +924,6 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
         return dampenings;
     }
 
-
     @Override
     public Collection<Condition> addCondition(String tenantId, String triggerId, Mode triggerMode, Condition condition)
             throws Exception {
@@ -1097,8 +1087,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(tenantId, triggerId);
+        if (initialized && null != alertsEngine) {
+            alertsEngine.reloadTrigger(tenantId, triggerId);
         }
 
         notifyListeners(DefinitionsEvent.EventType.CONDITION_CHANGE);
@@ -1146,8 +1136,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        if (initialized && null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
         notifyListeners(EventType.DAMPENING_CHANGE);
@@ -1780,8 +1770,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        if (initialized && null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
         notifyListeners(EventType.DAMPENING_CHANGE);
@@ -1901,8 +1891,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(tenantId, triggerId);
+        if (initialized && null != alertsEngine) {
+            alertsEngine.reloadTrigger(tenantId, triggerId);
         }
 
         notifyListeners(EventType.TRIGGER_CHANGE);
@@ -1937,8 +1927,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        if (initialized && null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
         notifyListeners(EventType.DAMPENING_CHANGE);
@@ -2051,8 +2041,8 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             close(c, s);
         }
 
-        if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(trigger.getTenantId(), trigger.getId());
+        if (initialized && null != alertsEngine) {
+            alertsEngine.reloadTrigger(trigger.getTenantId(), trigger.getId());
         }
 
         notifyListeners(EventType.TRIGGER_CHANGE);
@@ -2217,7 +2207,7 @@ public class DbDefinitionsServiceImpl implements DefinitionsService {
             throws Exception {
         StringBuilder sql = new StringBuilder("DELETE FROM HWK_ALERTS_TAGS WHERE ");
         sql.append("tenantId = '").append(tenantId).append("' AND ")
-            .append("triggerId = '").append(triggerId).append("' ");
+                .append("triggerId = '").append(triggerId).append("' ");
         if (!isEmpty(category)) {
             sql.append("AND category = '").append(category).append("' ");
         }

@@ -24,7 +24,6 @@ import javax.jms.MessageListener;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.bus.messages.AlertDataMessage;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
-
 import org.jboss.logging.Logger;
 
 /**
@@ -45,6 +44,10 @@ public class AlertDataListener extends BasicMessageListener<AlertDataMessage> {
     @Override
     protected void onBasicMessage(AlertDataMessage msg) {
         log.debugf("Message received: [%s]", msg);
-        alerts.sendData(msg.getData());
+        try {
+            alerts.sendData(msg.getData());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

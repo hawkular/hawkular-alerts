@@ -16,142 +16,79 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.ejb.EJB;
+import javax.ejb.Stateless;
+
+import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.trigger.Tag;
+import org.hawkular.alerts.api.services.AlertsCriteria;
+import org.hawkular.alerts.api.services.AlertsService;
+import org.hawkular.alerts.engine.log.MsgLogger;
+import org.hawkular.alerts.engine.service.AlertsEngine;
+import org.jboss.logging.Logger;
+
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
-import com.google.common.util.concurrent.Futures;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.ejb.EJB;
-import javax.ejb.Singleton;
-import org.hawkular.alerts.api.model.condition.Alert;
-import org.hawkular.alerts.api.model.condition.Condition;
-import org.hawkular.alerts.api.model.condition.ConditionEval;
-import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.Data;
-import org.hawkular.alerts.api.model.trigger.Tag;
-import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.services.ActionsService;
-import org.hawkular.alerts.api.services.AlertsCriteria;
-import org.hawkular.alerts.api.services.AlertsService;
-import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.engine.log.MsgLogger;
-import org.hawkular.alerts.engine.rules.RulesEngine;
-import org.jboss.logging.Logger;
 import com.datastax.driver.core.Session;
+import com.google.common.util.concurrent.Futures;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
  * Cassandra implementation for {@link org.hawkular.alerts.api.services.AlertsService}.
- * This implementation processes data asynchronously using a buffer queue.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
+@Stateless
 public class CassAlertsServiceImpl implements AlertsService {
+    private static final String CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
+
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassAlertsServiceImpl.class);
-    private static final String ENGINE_DELAY = "hawkular-alerts.engine-delay";
-    private static final String ENGINE_PERIOD = "hawkular-alerts.engine-period";
-    private static final String CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
-    private int delay;
-    private int period;
 
     private Session session;
     private String keyspace;
 
     private Gson gson;
 
-    private PreparedStatement insertAlert;
-    private PreparedStatement insertAlertTrigger;
-    private PreparedStatement insertAlertCtime;
-    private PreparedStatement insertAlertStatus;
-    private PreparedStatement updateAlert;
-    private PreparedStatement selectAlertStatus;
-    private PreparedStatement deleteAlertStatus;
-    private PreparedStatement selectAlertsByTenant;
-    private PreparedStatement selectAlertsByTenantAndAlert;
-    private PreparedStatement selectAlertsTriggers;
-    private PreparedStatement selectAlertCTimeStartEnd;
-    private PreparedStatement selectAlertCTimeStart;
-    private PreparedStatement selectAlertCTimeEnd;
-    private PreparedStatement selectAlertStatusByTenantAndStatus;
-    private PreparedStatement selectTagsTriggersByCategoryAndName;
-    private PreparedStatement selectTagsTriggersByCategory;
-    private PreparedStatement selectTagsTriggersByName;
-
-    private final List<Data> pendingData;
-    private final List<Alert> alerts;
-    private final Set<Dampening> pendingTimeouts;
-    private final Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers;
-    private final Set<Trigger> disabledTriggers;
-
-
-    private final Timer wakeUpTimer;
-    private TimerTask rulesTask;
+    private static PreparedStatement insertAlert = null;
+    private static PreparedStatement insertAlertTrigger = null;
+    private static PreparedStatement insertAlertCtime = null;
+    private static PreparedStatement insertAlertStatus = null;
+    private static PreparedStatement updateAlert = null;
+    private static PreparedStatement selectAlertStatus = null;
+    private static PreparedStatement deleteAlertStatus = null;
+    private static PreparedStatement selectAlertsByTenant = null;
+    private static PreparedStatement selectAlertsByTenantAndAlert = null;
+    private static PreparedStatement selectAlertsTriggers = null;
+    private static PreparedStatement selectAlertCTimeStartEnd = null;
+    private static PreparedStatement selectAlertCTimeStart = null;
+    private static PreparedStatement selectAlertCTimeEnd = null;
+    private static PreparedStatement selectAlertStatusByTenantAndStatus = null;
+    private static PreparedStatement selectTagsTriggersByCategoryAndName = null;
+    private static PreparedStatement selectTagsTriggersByCategory = null;
+    private static PreparedStatement selectTagsTriggersByName = null;
 
     @EJB
-    RulesEngine rules;
-
-    @EJB
-    DefinitionsService definitions;
-
-    @EJB
-    ActionsService actions;
+    AlertsEngine alertsEngine;
 
     public CassAlertsServiceImpl() {
-        pendingData = new CopyOnWriteArrayList<>();
-        alerts = new CopyOnWriteArrayList<>();
-        pendingTimeouts = new CopyOnWriteArraySet<>();
-        autoResolvedTriggers = new HashMap<>();
-        disabledTriggers = new CopyOnWriteArraySet<>();
-
-        wakeUpTimer = new Timer("CassAlertsServiceImpl-Timer");
-
-        delay = new Integer(AlertProperties.getProperty(ENGINE_DELAY, "1000"));
-        period = new Integer(AlertProperties.getProperty(ENGINE_PERIOD, "2000"));
-    }
-
-    @SuppressWarnings("unused")
-    public ActionsService getActions() {
-        return actions;
-    }
-
-    public void setActions(ActionsService actions) {
-        this.actions = actions;
-    }
-
-    public DefinitionsService getDefinitions() {
-        return definitions;
-    }
-
-    public void setDefinitions(DefinitionsService definitions) {
-        this.definitions = definitions;
-    }
-
-    public RulesEngine getRules() {
-        return rules;
-    }
-
-    public void setRules(RulesEngine rules) {
-        this.rules = rules;
     }
 
     @PostConstruct
@@ -171,7 +108,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             gsonBuilder.registerTypeHierarchyAdapter(ConditionEval.class, new GsonAdapter<ConditionEval>());
             gson = gsonBuilder.create();
 
-            reload();
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
                 t.printStackTrace();
@@ -201,6 +137,11 @@ public class CassAlertsServiceImpl implements AlertsService {
                     "(tenantId, alertId, ctime) VALUES (?, ?, ?) ");
 
         }
+        if (insertAlertStatus == null) {
+            insertAlertStatus = session.prepare("INSERT INTO " + keyspace + ".alerts_statuses " +
+                    "(tenantId, alertId, status) VALUES (?, ?, ?) ");
+        }
+
         if (insertAlertStatus == null) {
             insertAlertStatus = session.prepare("INSERT INTO " + keyspace + ".alerts_statuses " +
                     "(tenantId, alertId, status) VALUES (?, ?, ?) ");
@@ -272,14 +213,20 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
-            alerts.stream().forEach(a -> {
-                futures.add(session.executeAsync(insertAlert.bind(a.getTenantId(), a.getAlertId(), toJson(a))));
-                futures.add(session.executeAsync(insertAlertTrigger.bind(a.getTenantId(), a.getAlertId(),
-                        a.getTriggerId())));
-                futures.add(session.executeAsync(insertAlertCtime.bind(a.getTenantId(), a.getAlertId(), a.getCtime())));
-                futures.add(session.executeAsync(insertAlertStatus.bind(a.getTenantId(), a.getAlertId(),
-                        a.getStatus().name())));
-            });
+            alerts.stream()
+                    .forEach(
+                            a -> {
+                                futures.add(session.executeAsync(insertAlert.bind(a.getTenantId(), a.getAlertId(),
+                                        toJson(a))));
+                                futures.add(session.executeAsync(insertAlertTrigger.bind(a.getTenantId(),
+                                        a.getAlertId(),
+                                        a.getTriggerId())));
+                                futures.add(session.executeAsync(insertAlertCtime.bind(a.getTenantId(),
+                                        a.getAlertId(), a.getCtime())));
+                                futures.add(session.executeAsync(insertAlertStatus.bind(a.getTenantId(),
+                                        a.getAlertId(),
+                                        a.getStatus().name())));
+                            });
             /*
                 main method is synchronous so we need to wait until futures are completed
              */
@@ -383,7 +330,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 List<ResultSetFuture> futures = alertIds.stream().map(alertId ->
                         session.executeAsync(selectAlertsByTenantAndAlert.bind(tenantId, alertId)))
                         .collect(Collectors.toList());
-                List <ResultSet> rsAlerts = Futures.allAsList(futures).get();
+                List<ResultSet> rsAlerts = Futures.allAsList(futures).get();
                 rsAlerts.stream().forEach(r -> {
                     for (Row row : r) {
                         String payload = row.getString("payload");
@@ -427,7 +374,7 @@ public class CassAlertsServiceImpl implements AlertsService {
          */
         if (!isEmpty(criteria.getTags()) || criteria.getTag() != null) {
             Set<Tag> tags = new HashSet<>();
-            if (criteria.getTags() != null)  {
+            if (criteria.getTags() != null) {
                 tags.addAll(criteria.getTags());
             }
             Tag tag = criteria.getTag();
@@ -580,138 +527,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         return triggerIds;
     }
 
-    public void clear() {
-        rulesTask.cancel();
-
-        rules.clear();
-
-        pendingData.clear();
-        alerts.clear();
-        pendingTimeouts.clear();
-        autoResolvedTriggers.clear();
-        disabledTriggers.clear();
-
-        rulesTask = new RulesInvoker();
-        wakeUpTimer.schedule(rulesTask, delay, period);
-    }
-
-    @Override
-    public void reload() {
-        rules.reset();
-        if (rulesTask != null) {
-            rulesTask.cancel();
-        }
-
-        Collection<Trigger> triggers = null;
-        try {
-            triggers = definitions.getAllTriggers();
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            msgLog.errorDefinitionsService("Triggers", e.getMessage());
-        }
-        if (triggers != null && !triggers.isEmpty()) {
-            triggers.stream().filter(Trigger::isEnabled).forEach(this::reloadTrigger);
-        }
-
-        rules.addGlobal("log", log);
-        rules.addGlobal("actions", actions);
-        rules.addGlobal("alerts", alerts);
-        rules.addGlobal("pendingTimeouts", pendingTimeouts);
-        rules.addGlobal("autoResolvedTriggers", autoResolvedTriggers);
-        rules.addGlobal("disabledTriggers", disabledTriggers);
-
-        rulesTask = new RulesInvoker();
-        wakeUpTimer.schedule(rulesTask, delay, period);
-    }
-
-    public void reloadTrigger(final String tenantId, final String triggerId) {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
-        }
-        if (isEmpty(triggerId)) {
-            throw new IllegalArgumentException("TriggerId must be not null");
-        }
-
-        Trigger trigger = null;
-        try {
-            trigger = definitions.getTrigger(tenantId, triggerId);
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            msgLog.errorDefinitionsService("Trigger", e.getMessage());
-        }
-        if (null == trigger) {
-            log.debugf("Trigger not found for triggerId [" + triggerId + "], removing from rulebase if it exists");
-            Trigger doomedTrigger = new Trigger(triggerId, "doomed");
-            removeTrigger(doomedTrigger);
-            return;
-        }
-
-        reloadTrigger(trigger);
-    }
-
-    private void reloadTrigger(Trigger trigger) {
-        if (null == trigger) {
-            throw new IllegalArgumentException("Trigger must be not null");
-        }
-
-        // Look for the Trigger in the rules engine, if it is there then remove everything about it
-        removeTrigger(trigger);
-
-        if (trigger.isEnabled()) {
-            try {
-                Collection<Condition> conditionSet = definitions.getTriggerConditions(trigger.getTenantId(),
-                        trigger.getId(), null);
-                Collection<Dampening> dampenings = definitions.getTriggerDampenings(trigger.getTenantId(),
-                        trigger.getId(), null);
-
-                rules.addFact(trigger);
-                rules.addFacts(conditionSet);
-                if (!dampenings.isEmpty()) {
-                    rules.addFacts(dampenings);
-                }
-            } catch (Exception e) {
-                log.debugf(e.getMessage(), e);
-                msgLog.errorDefinitionsService("Conditions/Dampening", e.getMessage());
-            }
-        }
-    }
-
-    private void removeTrigger(Trigger trigger) {
-        if (null != rules.getFact(trigger)) {
-            // First remove the related Trigger facts from the engine
-            rules.removeFact(trigger);
-
-            // then remove everything else.
-            // We may want to do this with rules, because as is, we need to loop through every Fact in
-            // the rules engine doing a relatively slow check.
-            final String triggerId = trigger.getId();
-            rules.removeFacts(t -> {
-                if (t instanceof Dampening) {
-                    return ((Dampening) t).getTriggerId().equals(triggerId);
-                } else if (t instanceof Condition) {
-                    return ((Condition) t).getTriggerId().equals(triggerId);
-                }
-                return false;
-            });
-        } else {
-            log.debugf("Trigger not found. Not removed from rulebase %s", trigger);
-        }
-    }
-
-    public void sendData(Collection<Data> data) {
-        if (data == null) {
-            throw new IllegalArgumentException("Data must be not null");
-        }
-        pendingData.addAll(data);
-    }
-
-    public void sendData(Data data) {
-        if (data == null) {
-            throw new IllegalArgumentException("Data must be not null");
-        }
-        pendingData.add(data);
-    }
-
     @Override
     public void ackAlerts(String tenantId, Collection<String> alertIds, String ackBy, String ackNotes)
             throws Exception {
@@ -817,6 +632,16 @@ public class CassAlertsServiceImpl implements AlertsService {
         return alert;
     }
 
+    @Override
+    public void sendData(Data data) throws Exception {
+        alertsEngine.sendData(data);
+    }
+
+    @Override
+    public void sendData(Collection<Data> data) throws Exception {
+        alertsEngine.sendData(data);
+    }
+
     private String toJson(Object resource) {
 
         log.debugf(gson.toJson(resource));
@@ -836,109 +661,5 @@ public class CassAlertsServiceImpl implements AlertsService {
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();
     }
-
-
-    private class RulesInvoker extends TimerTask {
-        @Override
-        public void run() {
-            int numTimeouts = checkPendingTimeouts();
-            if (!pendingData.isEmpty() || numTimeouts > 0) {
-
-                log.debugf("Executing rules engine on [%1d] datums and [%2d] dampening timeouts.", pendingData.size(),
-                        numTimeouts);
-
-                try {
-                    if (pendingData.isEmpty()) {
-                        rules.fireNoData();
-
-                    } else {
-                        rules.addData(pendingData);
-                        pendingData.clear();
-                    }
-
-                    rules.fire();
-                    addAlerts(alerts);
-                    alerts.clear();
-                    handleDisabledTriggers();
-                    handleAutoResolvedTriggers();
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    log.debugf("Error on rules processing: " + e);
-                    msgLog.errorProcessingRules(e.getMessage());
-                } finally {
-                    alerts.clear();
-                }
-            }
-        }
-
-        private int checkPendingTimeouts() {
-            if (pendingTimeouts.isEmpty()) {
-                return 0;
-            }
-
-            long now = System.currentTimeMillis();
-            Set<Dampening> timeouts = null;
-            for (Dampening d : pendingTimeouts) {
-                if (now < d.getTrueEvalsStartTime() + d.getEvalTimeSetting()) {
-                    continue;
-                }
-
-                d.setSatisfied(true);
-                try {
-                    log.debugf("Dampening Timeout Hit! %s", d.toString());
-                    rules.updateFact(d);
-                    if (null == timeouts) {
-                        timeouts = new HashSet<>();
-                    }
-                    timeouts.add(d);
-                } catch (Exception e) {
-                    log.error("Unable to update Dampening Fact on Timeout! " + d.toString(), e);
-                }
-
-            }
-
-            if (null == timeouts) {
-                return 0;
-            }
-
-            pendingTimeouts.removeAll(timeouts);
-            return timeouts.size();
-        }
-    }
-
-    private void handleDisabledTriggers() {
-        try {
-            for (Trigger t : disabledTriggers) {
-                try {
-                    t.setEnabled(false);
-                    definitions.updateTrigger(t.getTenantId(), t);
-
-                } catch (Exception e) {
-                    log.errorf("Failed to persist updated trigger. Could not autoDisable %s", t);
-                }
-            }
-        } finally {
-            disabledTriggers.clear();
-        }
-    }
-
-    private void handleAutoResolvedTriggers() {
-        try {
-            for (Map.Entry<Trigger, List<Set<ConditionEval>>> entry : autoResolvedTriggers.entrySet()) {
-                Trigger t = entry.getKey();
-                try {
-                    if (t.isAutoResolveAlerts()) {
-                        resolveAlertsForTrigger(t.getTenantId(), t.getId(), "AUTO", null, entry.getValue());
-                    }
-                } catch (Exception e) {
-                    log.errorf("Failed to resolve Alerts. Could not AutoResolve alerts for trigger %s", t);
-                }
-            }
-        } finally {
-            autoResolvedTriggers.clear();
-        }
-    }
-
 
 }

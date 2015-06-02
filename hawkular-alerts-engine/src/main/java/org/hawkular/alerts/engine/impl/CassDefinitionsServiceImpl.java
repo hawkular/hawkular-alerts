@@ -16,9 +16,6 @@
  */
 package org.hawkular.alerts.engine.impl;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.ResultSetFuture;
-import com.google.common.util.concurrent.Futures;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -33,11 +30,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.ejb.EJB;
 import javax.ejb.Singleton;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
+
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -48,16 +46,20 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerTemplate;
-import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
+import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.jboss.logging.Logger;
+
+import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.google.common.util.concurrent.Futures;
 
 /**
  * A Cassandra implementation of {@link org.hawkular.alerts.api.services.DefinitionsService}.
@@ -72,7 +74,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private static final String ALERTS_SERVICE = "hawkular-alerts.alerts-service-jndi";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassDefinitionsServiceImpl.class);
-    private AlertsService alertsService;
     private Session session;
     private String keyspace;
     private boolean initialized = false;
@@ -133,35 +134,18 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private PreparedStatement deleteTags;
     private PreparedStatement deleteTagsByName;
 
-    public CassDefinitionsServiceImpl() { }
+    @EJB
+    AlertsEngine alertsEngine;
 
-    @SuppressWarnings("unused")
-    public AlertsService getAlertsService() {
-        return alertsService;
+    public CassDefinitionsServiceImpl() {
     }
 
-    public void setAlertsService(AlertsService alertsService) {
-        this.alertsService = alertsService;
+    public AlertsEngine getAlertsEngine() {
+        return alertsEngine;
     }
 
-    @SuppressWarnings("unused")
-    public Session getSession() {
-        return session;
-    }
-
-    @SuppressWarnings("unused")
-    public void setSession(Session session) {
-        this.session = session;
-    }
-
-    @SuppressWarnings("unused")
-    public String getKeyspace() {
-        return keyspace;
-    }
-
-    @SuppressWarnings("unused")
-    public void setKeyspace(String keyspace) {
-        this.keyspace = keyspace;
+    public void setAlertsEngine(AlertsEngine alertsEngine) {
+        this.alertsEngine = alertsEngine;
     }
 
     @PostConstruct
@@ -179,17 +163,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
             initialData();
 
-            if (alertsService == null) {
-                try {
-                    InitialContext ctx = new InitialContext();
-                    alertsService = (AlertsService) ctx
-                            .lookup(AlertProperties.getProperty(ALERTS_SERVICE,
-                                            "java:app/hawkular-alerts-engine/CassAlertsServiceImpl"));
-                } catch (NamingException e) {
-                    log.debugf(e.getMessage(), e);
-                    msgLog.errorCannotWithAlertsService(e.getMessage());
-                }
-            }
         } catch (Throwable t) {
             msgLog.errorCannotInitializeDefinitionsService(t.getMessage());
             t.printStackTrace();
@@ -228,14 +201,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (selectTriggerConditions == null) {
             selectTriggerConditions = session.prepare("SELECT triggerId, triggerMode, type, conditionSetSize, " +
                     "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, " +
-                    "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId" +
+                    "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId"
+                    +
                     " FROM " + keyspace + ".conditions " +
                     "WHERE tenantId = ? AND triggerId = ? ORDER BY triggerId, triggerMode, type");
         }
         if (selectTriggerConditionsTriggerMode == null) {
             selectTriggerConditionsTriggerMode = session.prepare("SELECT triggerId, triggerMode, type, " +
                     "conditionSetSize, conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, " +
-                    "pattern, ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange," +
+                    "pattern, ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange,"
+                    +
                     " tenantId " +
                     "FROM " + keyspace + ".conditions " +
                     "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? " +
@@ -395,7 +370,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     "properties) VALUES (?, ?) ");
         }
         if (deleteActionPlugin == null) {
-            deleteActionPlugin = session.prepare("DELETE FROM " + keyspace + ".action_plugins WHERE actionPlugin = ? ");
+            deleteActionPlugin = session
+                    .prepare("DELETE FROM " + keyspace + ".action_plugins WHERE actionPlugin = ? ");
         }
         if (updateActionPlugin == null) {
             updateActionPlugin = session.prepare("UPDATE " + keyspace + ".action_plugins " +
@@ -899,8 +875,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(trigger.getTenantId(), trigger.getId());
+        if (initialized && null != alertsEngine) {
+            alertsEngine.reloadTrigger(trigger.getTenantId(), trigger.getId());
         }
 
         notifyListeners(DefinitionsEvent.EventType.TRIGGER_CHANGE);
@@ -1001,13 +977,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (selectTriggerActions == null) {
             throw new RuntimeException("selectTriggerActions PreparedStatement is null");
         }
-        ResultSet rsTriggerActions = session.execute(selectTriggerActions.bind(trigger.getTenantId(), trigger.getId()));
+        ResultSet rsTriggerActions = session
+                .execute(selectTriggerActions.bind(trigger.getTenantId(), trigger.getId()));
         for (Row row : rsTriggerActions) {
             String actionPlugin = row.getString("actionPlugin");
             Set<String> actions = row.getSet("actions", String.class);
             trigger.addActions(actionPlugin, actions);
         }
-     }
+    }
 
     private Trigger mapTrigger(Row row) {
         Trigger trigger = new Trigger();
@@ -1146,8 +1123,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        if (initialized && null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
         notifyListeners(DefinitionsEvent.EventType.DAMPENING_CHANGE);
@@ -1184,8 +1161,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        if (initialized && null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
         notifyListeners(DefinitionsEvent.EventType.DAMPENING_CHANGE);
@@ -1216,8 +1193,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (initialized && null != alertsService) {
-            alertsService.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        if (initialized && null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
         notifyListeners(DefinitionsEvent.EventType.DAMPENING_CHANGE);
@@ -1280,7 +1257,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         triggerMode.name()));
             }
             mapDampenings(rsDampenings, dampenings);
-        } catch(Exception e) {
+        } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
@@ -1487,32 +1464,32 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
                 if (cond instanceof AvailabilityCondition) {
 
-                    AvailabilityCondition aCond = (AvailabilityCondition)cond;
+                    AvailabilityCondition aCond = (AvailabilityCondition) cond;
                     futures.add(session.executeAsync(insertAvailabilityCondition.bind(aCond.getTenantId(), aCond
-                                    .getTriggerId(),
+                            .getTriggerId(),
                             aCond.getTriggerMode().name(), aCond.getConditionSetSize(), aCond.getConditionSetIndex(),
                             aCond.getConditionId(), aCond.getDataId(), aCond.getOperator().name())));
 
                 } else if (cond instanceof CompareCondition) {
 
-                    CompareCondition cCond = (CompareCondition)cond;
+                    CompareCondition cCond = (CompareCondition) cond;
                     dataIds.add(cCond.getData2Id());
                     futures.add(session.executeAsync(insertCompareCondition.bind(cCond.getTenantId(),
                             cCond.getTriggerId(), cCond.getTriggerMode().name(), cCond.getConditionSetSize(),
                             cCond.getConditionSetIndex(), cCond.getConditionId(), cCond.getDataId(),
-                            cCond.getOperator().name(), cCond.getData2Id(),cCond.getData2Multiplier())));
+                            cCond.getOperator().name(), cCond.getData2Id(), cCond.getData2Multiplier())));
 
                 } else if (cond instanceof StringCondition) {
 
-                    StringCondition sCond = (StringCondition)cond;
+                    StringCondition sCond = (StringCondition) cond;
                     futures.add(session.executeAsync(insertStringCondition.bind(sCond.getTenantId(), sCond
-                                    .getTriggerId(), sCond.getTriggerMode().name(), sCond.getConditionSetSize(),
+                            .getTriggerId(), sCond.getTriggerMode().name(), sCond.getConditionSetSize(),
                             sCond.getConditionSetIndex(), sCond.getConditionId(), sCond.getDataId(),
                             sCond.getOperator().name(), sCond.getPattern(), sCond.isIgnoreCase())));
 
                 } else if (cond instanceof ThresholdCondition) {
 
-                    ThresholdCondition tCond = (ThresholdCondition)cond;
+                    ThresholdCondition tCond = (ThresholdCondition) cond;
                     futures.add(session.executeAsync(insertThresholdCondition.bind(tCond.getTenantId(),
                             tCond.getTriggerId(), tCond.getTriggerMode().name(), tCond.getConditionSetSize(),
                             tCond.getConditionSetIndex(), tCond.getConditionId(), tCond.getDataId(),
@@ -1520,7 +1497,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
                 } else if (cond instanceof ThresholdRangeCondition) {
 
-                    ThresholdRangeCondition rCond = (ThresholdRangeCondition)cond;
+                    ThresholdRangeCondition rCond = (ThresholdRangeCondition) cond;
                     futures.add(session.executeAsync(insertThresholdRangeCondition.bind(rCond.getTenantId(),
                             rCond.getTriggerId(), rCond.getTriggerMode().name(), rCond.getConditionSetSize(),
                             rCond.getConditionSetIndex(), rCond.getConditionId(), rCond.getDataId(),
@@ -1542,8 +1519,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (initialized && alertsService != null) {
-            alertsService.reloadTrigger(tenantId, triggerId);
+        if (initialized && alertsEngine != null) {
+            alertsEngine.reloadTrigger(tenantId, triggerId);
         }
 
         notifyListeners(DefinitionsEvent.EventType.CONDITION_CHANGE);
@@ -1799,7 +1776,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         return conditions;
     }
-
 
     private void mapConditions(ResultSet rsConditions, List<Condition> conditions) throws Exception {
         for (Row row : rsConditions) {
@@ -2251,7 +2227,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return id == null || id.trim().isEmpty();
     }
 
-    public boolean isEmpty (Map<String, String> map) {
+    public boolean isEmpty(Map<String, String> map) {
         return map == null || map.isEmpty();
     }
 
@@ -2269,17 +2245,17 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             return;
         }
         if (obj instanceof Trigger) {
-            Trigger trigger = (Trigger)obj;
+            Trigger trigger = (Trigger) obj;
             if (trigger.getTenantId() == null || !trigger.getTenantId().equals(tenantId)) {
                 trigger.setTenantId(tenantId);
             }
         } else if (obj instanceof Dampening) {
-            Dampening dampening = (Dampening)obj;
+            Dampening dampening = (Dampening) obj;
             if (dampening.getTenantId() == null || !dampening.getTenantId().equals(tenantId)) {
                 dampening.setTenantId(tenantId);
             }
         } else if (obj instanceof Tag) {
-            Tag tag = (Tag)obj;
+            Tag tag = (Tag) obj;
             if (tag.getTenantId() == null || !tag.getTenantId().equals(tenantId)) {
                 tag.setTenantId(tenantId);
             }
