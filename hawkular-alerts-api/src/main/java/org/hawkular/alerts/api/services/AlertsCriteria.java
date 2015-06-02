@@ -146,6 +146,8 @@ public class AlertsCriteria {
                 null != endTime || //
                 null != triggerId || //
                 (null != triggerIds && !triggerIds.isEmpty()) || //
+                null != alertId || //
+                (null != alertIds && !alertIds.isEmpty()) || //
                 null != tag || //
                 (null != tags && !tags.isEmpty()) ||
                 null != status ||
