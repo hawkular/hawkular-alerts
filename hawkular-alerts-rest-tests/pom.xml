@@ -253,31 +253,6 @@
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>xml-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>transform-standalone-xml</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>transform</goal>
-                </goals>
-                <configuration>
-                  <transformationSets>
-                    <transformationSet>
-                      <dir>${hawkular.wildfly}/standalone/configuration</dir>
-                      <stylesheet>src/test/resources/standalone.xsl</stylesheet>
-                      <includes>
-                        <include>standalone.xml</include>
-                      </includes>
-                      <outputDir>${hawkular.wildfly}/standalone/configuration</outputDir>
-                    </transformationSet>
-                  </transformationSets>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
