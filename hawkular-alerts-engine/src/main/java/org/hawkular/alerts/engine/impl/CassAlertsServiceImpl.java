@@ -791,13 +791,23 @@ public class CassAlertsServiceImpl implements AlertsService {
                 Not sure if these queries can be wrapped in an async way as they have dependencies with results.
                 Async pattern could bring race hazards here.
              */
-            ResultSet rsAlertsStatusToDelete = session.execute(selectAlertStatus.bind(alert.getTenantId(),
-                    alert.getStatus().name(), alert.getAlertId()));
-            for (Row row : rsAlertsStatusToDelete) {
-                String alertIdToDelete = row.getString("alertId");
-                String statusToDelete = row.getString("status");
-                session.execute(deleteAlertStatus.bind(alert.getTenantId(), statusToDelete, alertIdToDelete));
-            }
+
+            List<ResultSetFuture> futures = new ArrayList<>();
+            futures.add(session.executeAsync(selectAlertStatus.bind(alert.getTenantId(), Alert.Status.OPEN.name(),
+                    alert.getAlertId())));
+            futures.add(session.executeAsync(selectAlertStatus.bind(alert.getTenantId(),
+                    Alert.Status.ACKNOWLEDGED.name(), alert.getAlertId())));
+            futures.add(session.executeAsync(selectAlertStatus.bind(alert.getTenantId(), Alert.Status.RESOLVED.name(),
+                    alert.getAlertId())));
+
+            List<ResultSet> rsAlertsStatusToDelete = Futures.allAsList(futures).get();
+            rsAlertsStatusToDelete.stream().forEach(r -> {
+                for (Row row : r) {
+                    String alertIdToDelete = row.getString("alertId");
+                    String statusToDelete = row.getString("status");
+                    session.execute(deleteAlertStatus.bind(alert.getTenantId(), statusToDelete, alertIdToDelete));
+                }
+            });
             session.execute(insertAlertStatus.bind(alert.getTenantId(), alert.getAlertId(), alert.getStatus().name()));
             session.execute(updateAlert.bind(toJson(alert), alert.getTenantId(), alert.getAlertId()));
         } catch (Exception e) {

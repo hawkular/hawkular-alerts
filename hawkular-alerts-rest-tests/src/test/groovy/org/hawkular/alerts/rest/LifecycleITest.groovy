@@ -250,6 +250,9 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("RESOLVED", resp.data[0].status)
         assertEquals("AUTO", resp.data[0].resolvedBy)
         assert null != resp.data[0].resolvedEvalSets
+
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"OPEN"] )
+        assertEquals(204, resp.status)
     }
 
 }
