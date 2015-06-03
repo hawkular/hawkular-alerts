@@ -217,9 +217,20 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.put(path: "ack", query: [alertIds:resp.data[0].alertId,ackBy:"testUser",ackNotes:"testNotes"] )
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
+        // Take this opportunity to do some negative query tests...
+        resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"OPEN,RESOLVED"] )
+        assertEquals(204, resp.status)
+        resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-autoresolve-trigger",severities:"LOW,MEDIUM,CRITICAL"] )
+        assertEquals(204, resp.status)
+
+        // Now proceed...
+        resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"ACKNOWLEDGED",severities:"HIGH"] )
         assertEquals(200, resp.status)
         assertEquals("ACKNOWLEDGED", resp.data[0].status)
+        assertEquals("HIGH", resp.data[0].severity)
         assertEquals("testUser", resp.data[0].ackBy)
         assertEquals("testNotes", resp.data[0].ackNotes)
 
