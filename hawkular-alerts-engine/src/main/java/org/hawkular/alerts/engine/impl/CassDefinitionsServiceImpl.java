@@ -626,7 +626,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectTenantTriggers = CassStatement.get(session, CassStatement.SELECT_TENANT_TRIGGERS);
+        PreparedStatement selectTenantTriggers = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
         if (selectTenantTriggers == null) {
             throw new RuntimeException("selectTenantTriggers PreparedStatement is null");
         }
@@ -650,7 +650,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectAllTriggers = CassStatement.get(session, CassStatement.SELECT_ALL_TRIGGERS);
+        PreparedStatement selectAllTriggers = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_ALL);
         if (selectAllTriggers == null) {
             throw new RuntimeException("selectAllTriggers PreparedStatement is null");
         }
@@ -976,7 +976,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectAllDampenings = CassStatement.get(session, CassStatement.SELECT_ALL_DAMPENINGS);
+        PreparedStatement selectAllDampenings = CassStatement.get(session, CassStatement.SELECT_DAMPENINGS_ALL);
         if (selectAllDampenings == null) {
             throw new RuntimeException("selectAllDampenings PreparedStatement is null");
         }
@@ -1000,7 +1000,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new RuntimeException("Cassandra session is null");
         }
         PreparedStatement selectAllDampeningsByTenant = CassStatement.get(session,
-                CassStatement.SELECT_ALL_DAMPENINGS_BY_TENANT);
+                CassStatement.SELECT_DAMPENINGS_TENANT);
         if (selectAllDampeningsByTenant == null) {
             throw new RuntimeException("selectAllDampeningsByTenant PreparedStatement is null");
         }
@@ -1147,13 +1147,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new RuntimeException("Cassandra session is null");
         }
         PreparedStatement insertAvailabilityCondition = CassStatement.get(session,
-                CassStatement.INSERT_AVAILABILITY_CONDITION);
-        PreparedStatement insertCompareCondition = CassStatement.get(session, CassStatement.INSERT_COMPARE_CONDITION);
-        PreparedStatement insertStringCondition = CassStatement.get(session, CassStatement.INSERT_STRING_CONDITION);
+                CassStatement.INSERT_CONDITION_AVAILABILITY);
+        PreparedStatement insertCompareCondition = CassStatement.get(session, CassStatement.INSERT_CONDITION_COMPARE);
+        PreparedStatement insertStringCondition = CassStatement.get(session, CassStatement.INSERT_CONDITION_STRING);
         PreparedStatement insertThresholdCondition = CassStatement.get(session,
-                CassStatement.INSERT_THRESHOLD_CONDITION);
+                CassStatement.INSERT_CONDITION_THRESHOLD);
         PreparedStatement insertThresholdRangeCondition = CassStatement.get(session,
-                CassStatement.INSERT_THRESHOLD_RANGE_CONDITION);
+                CassStatement.INSERT_CONDITION_THRESHOLD_RANGE);
         if (insertAvailabilityCondition == null
                 || insertCompareCondition == null
                 || insertStringCondition == null
@@ -1510,7 +1510,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectAllConditions = CassStatement.get(session, CassStatement.SELECT_ALL_CONDITIONS);
+        PreparedStatement selectAllConditions = CassStatement.get(session, CassStatement.SELECT_CONDITIONS_ALL);
         if (selectAllConditions == null) {
             throw new RuntimeException("selectAllConditions PreparedStatement is null");
         }
@@ -1534,7 +1534,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new RuntimeException("Cassandra session is null");
         }
         PreparedStatement selectAllConditionsByTenant = CassStatement.get(session,
-                CassStatement.SELECT_ALL_CONDITIONS_BY_TENANT);
+                CassStatement.SELECT_CONDITIONS_TENANT);
         if (selectAllConditionsByTenant == null) {
             throw new RuntimeException("selectAllConditionsByTenant PreparedStatement is null");
         }
@@ -1811,7 +1811,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectAllActions = CassStatement.get(session, CassStatement.SELECT_ALL_ACTIONS);
+        PreparedStatement selectAllActions = CassStatement.get(session, CassStatement.SELECT_ACTIONS_ALL);
         if (selectAllActions == null) {
             throw new RuntimeException("selectAllActions PreparedStatement is null");
         }
@@ -1846,7 +1846,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new RuntimeException("Cassandra session is null");
         }
         PreparedStatement selectAllActionsByTenant = CassStatement.get(session,
-                CassStatement.SELECT_ALL_ACTIONS_BY_TENANT);
+                CassStatement.SELECT_ACTIONS_BY_TENANT);
         if (selectAllActionsByTenant == null) {
             throw new RuntimeException("selectAllActionsByTenant PreparedStatement is null");
         }
