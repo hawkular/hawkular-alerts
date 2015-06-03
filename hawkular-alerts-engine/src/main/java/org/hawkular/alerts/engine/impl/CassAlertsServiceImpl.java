@@ -19,36 +19,24 @@ package org.hawkular.alerts.engine.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
-import javax.ejb.Singleton;
+import javax.ejb.Stateless;
 
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
-import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
-import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Tag;
-import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
-import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
-import org.hawkular.alerts.engine.rules.RulesEngine;
+import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BoundStatement;
@@ -63,211 +51,41 @@ import com.google.gson.GsonBuilder;
 
 /**
  * Cassandra implementation for {@link org.hawkular.alerts.api.services.AlertsService}.
- * This implementation processes data asynchronously using a buffer queue.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
+@Stateless
 public class CassAlertsServiceImpl implements AlertsService {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassAlertsServiceImpl.class);
-    private static final String ENGINE_DELAY = "hawkular-alerts.engine-delay";
-    private static final String ENGINE_PERIOD = "hawkular-alerts.engine-period";
-    private static final String CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
-    private int delay;
-    private int period;
 
     private Session session;
-    private String keyspace;
 
     private Gson gson;
 
-    private PreparedStatement insertAlert;
-    private PreparedStatement insertAlertTrigger;
-    private PreparedStatement insertAlertCtime;
-    private PreparedStatement insertAlertStatus;
-    private PreparedStatement insertAlertSeverity;
-    private PreparedStatement updateAlert;
-    private PreparedStatement selectAlertStatus;
-    private PreparedStatement deleteAlertStatus;
-    private PreparedStatement selectAlertsByTenant;
-    private PreparedStatement selectAlertsByTenantAndAlert;
-    private PreparedStatement selectAlertsTriggers;
-    private PreparedStatement selectAlertCTimeStartEnd;
-    private PreparedStatement selectAlertCTimeStart;
-    private PreparedStatement selectAlertCTimeEnd;
-    private PreparedStatement selectAlertStatusByTenantAndStatus;
-    private PreparedStatement selectAlertSeverityByTenantAndSeverity;
-    private PreparedStatement selectTagsTriggersByCategoryAndName;
-    private PreparedStatement selectTagsTriggersByCategory;
-    private PreparedStatement selectTagsTriggersByName;
-
-    private final List<Data> pendingData;
-    private final List<Alert> alerts;
-    private final Set<Dampening> pendingTimeouts;
-    private final Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers;
-    private final Set<Trigger> disabledTriggers;
-
-    private final Timer wakeUpTimer;
-    private TimerTask rulesTask;
-
     @EJB
-    RulesEngine rules;
-
-    @EJB
-    DefinitionsService definitions;
-
-    @EJB
-    ActionsService actions;
+    AlertsEngine alertsEngine;
 
     public CassAlertsServiceImpl() {
-        pendingData = new CopyOnWriteArrayList<>();
-        alerts = new CopyOnWriteArrayList<>();
-        pendingTimeouts = new CopyOnWriteArraySet<>();
-        autoResolvedTriggers = new HashMap<>();
-        disabledTriggers = new CopyOnWriteArraySet<>();
-
-        wakeUpTimer = new Timer("CassAlertsServiceImpl-Timer");
-
-        delay = new Integer(AlertProperties.getProperty(ENGINE_DELAY, "1000"));
-        period = new Integer(AlertProperties.getProperty(ENGINE_PERIOD, "2000"));
-    }
-
-    public ActionsService getActions() {
-        return actions;
-    }
-
-    public void setActions(ActionsService actions) {
-        this.actions = actions;
-    }
-
-    public DefinitionsService getDefinitions() {
-        return definitions;
-    }
-
-    public void setDefinitions(DefinitionsService definitions) {
-        this.definitions = definitions;
-    }
-
-    public RulesEngine getRules() {
-        return rules;
-    }
-
-    public void setRules(RulesEngine rules) {
-        this.rules = rules;
     }
 
     @PostConstruct
     public void initServices() {
         try {
-            if (this.keyspace == null) {
-                this.keyspace = AlertProperties.getProperty(CASSANDRA_KEYSPACE, "hawkular_alerts");
-            }
-
             if (session == null) {
                 session = CassCluster.getSession();
             }
-
-            initPreparedStatements();
 
             GsonBuilder gsonBuilder = new GsonBuilder();
             gsonBuilder.registerTypeHierarchyAdapter(ConditionEval.class, new GsonAdapter<ConditionEval>());
             gson = gsonBuilder.create();
 
-            reload();
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
                 t.printStackTrace();
             }
             msgLog.errorCannotInitializeAlertsService(t.getMessage());
-        }
-    }
-
-    @PreDestroy
-    public void shutdown() {
-        if (session != null) {
-            session.close();
-        }
-    }
-
-    private void initPreparedStatements() throws Exception {
-        if (insertAlert == null) {
-            insertAlert = session.prepare("INSERT INTO " + keyspace + ".alerts " +
-                    "(tenantId, alertId, payload) VALUES (?, ?, ?) ");
-        }
-        if (insertAlertTrigger == null) {
-            insertAlertTrigger = session.prepare("INSERT INTO " + keyspace + ".alerts_triggers " +
-                    "(tenantId, alertId, triggerId) VALUES (?, ?, ?) ");
-        }
-        if (insertAlertCtime == null) {
-            insertAlertCtime = session.prepare("INSERT INTO " + keyspace + ".alerts_ctimes " +
-                    "(tenantId, alertId, ctime) VALUES (?, ?, ?) ");
-
-        }
-        if (insertAlertStatus == null) {
-            insertAlertStatus = session.prepare("INSERT INTO " + keyspace + ".alerts_statuses " +
-                    "(tenantId, alertId, status) VALUES (?, ?, ?) ");
-        }
-        if (insertAlertSeverity == null) {
-            insertAlertSeverity = session.prepare("INSERT INTO " + keyspace + ".alerts_severities " +
-                    "(tenantId, alertId, severity) VALUES (?, ?, ?) ");
-        }
-        if (updateAlert == null) {
-            updateAlert = session.prepare("UPDATE " + keyspace + ".alerts " +
-                    "SET payload = ? WHERE tenantId = ? AND alertId = ? ");
-        }
-        if (selectAlertStatus == null) {
-            selectAlertStatus = session.prepare("SELECT alertId, status FROM " + keyspace + ".alerts_statuses " +
-                    "WHERE tenantId = ? AND status = ? AND alertId = ? ");
-        }
-        if (deleteAlertStatus == null) {
-            deleteAlertStatus = session.prepare("DELETE FROM " + keyspace + ".alerts_statuses " +
-                    "WHERE tenantId = ? AND status = ? AND alertId = ? ");
-        }
-        if (selectAlertsByTenant == null) {
-            selectAlertsByTenant = session.prepare("SELECT payload FROM " + keyspace + ".alerts " +
-                    "WHERE tenantId = ? ");
-        }
-        if (selectAlertsByTenantAndAlert == null) {
-            selectAlertsByTenantAndAlert = session.prepare("SELECT payload FROM " + keyspace + ".alerts " +
-                    "WHERE tenantId = ? AND alertId = ? ");
-        }
-        if (selectAlertsTriggers == null) {
-            selectAlertsTriggers = session.prepare("SELECT alertId FROM " + keyspace + ".alerts_triggers " +
-                    "WHERE tenantId = ? AND " + "triggerId = ? ");
-        }
-        if (selectAlertCTimeStartEnd == null) {
-            selectAlertCTimeStartEnd = session.prepare("SELECT alertId FROM " + keyspace + ".alerts_ctimes " +
-                    "WHERE tenantId = ? AND ctime >= ? AND ctime <= ?");
-        }
-        if (selectAlertCTimeStart == null) {
-            selectAlertCTimeStart = session.prepare("SELECT alertId FROM " + keyspace + ".alerts_ctimes " +
-                    "WHERE tenantId = ? AND ctime >= ?");
-        }
-        if (selectAlertCTimeEnd == null) {
-            selectAlertCTimeEnd = session.prepare("SELECT alertId FROM " + keyspace + ".alerts_ctimes " +
-                    "WHERE tenantId = ? AND ctime <= ?");
-        }
-        if (selectAlertStatusByTenantAndStatus == null) {
-            selectAlertStatusByTenantAndStatus = session.prepare("SELECT alertId FROM " + keyspace + "" +
-                    ".alerts_statuses WHERE tenantId = ? AND status = ?");
-        }
-        if (selectAlertSeverityByTenantAndSeverity == null) {
-            selectAlertSeverityByTenantAndSeverity = session.prepare("SELECT alertId FROM " + keyspace + "" +
-                    ".alerts_severities WHERE tenantId = ? AND severity = ?");
-        }
-        if (selectTagsTriggersByCategoryAndName == null) {
-            selectTagsTriggersByCategoryAndName = session.prepare("SELECT triggers FROM " + keyspace + "" +
-                    ".tags_triggers WHERE tenantId = ? AND category = ? AND name = ?");
-        }
-        if (selectTagsTriggersByCategory == null) {
-            selectTagsTriggersByCategory = session.prepare("SELECT triggers FROM " + keyspace + "" +
-                    ".tags_triggers WHERE tenantId = ? AND category = ?");
-        }
-        if (selectTagsTriggersByName == null) {
-            selectTagsTriggersByName = session.prepare("SELECT triggers FROM " + keyspace + "" +
-                    ".tags_triggers WHERE tenantId = ? AND name = ?");
         }
     }
 
@@ -279,28 +97,29 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        if (insertAlert == null) {
-            throw new RuntimeException("insertAlert PreparedStatement is null");
-        }
+        PreparedStatement insertAlert = CassStatement.get(session, CassStatement.INSERT_ALERT);
+        PreparedStatement insertAlertTrigger = CassStatement.get(session, CassStatement.INSERT_ALERT_TRIGGER);
+        PreparedStatement insertAlertCtime = CassStatement.get(session, CassStatement.INSERT_ALERT_CTIME);
+        PreparedStatement insertAlertStatus = CassStatement.get(session, CassStatement.INSERT_ALERT_STATUS);
+        PreparedStatement insertAlertSeverity = CassStatement.get(session, CassStatement.INSERT_ALERT_SEVERITY);
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
             alerts.stream()
-                    .forEach(
-                            a -> {
-                                futures.add(session.executeAsync(insertAlert.bind(a.getTenantId(), a.getAlertId(),
-                                        toJson(a))));
-                                futures.add(session.executeAsync(insertAlertTrigger.bind(a.getTenantId(),
-                                        a.getAlertId(),
-                                        a.getTriggerId())));
-                                futures.add(session.executeAsync(insertAlertCtime.bind(a.getTenantId(),
-                                        a.getAlertId(), a.getCtime())));
-                                futures.add(session.executeAsync(insertAlertStatus.bind(a.getTenantId(),
-                                        a.getAlertId(),
-                                        a.getStatus().name())));
-                                futures.add(session.executeAsync(insertAlertSeverity.bind(a.getTenantId(),
-                                        a.getAlertId(),
-                                        a.getSeverity().name())));
-                            });
+                    .forEach(a -> {
+                        futures.add(session.executeAsync(insertAlert.bind(a.getTenantId(), a.getAlertId(),
+                                toJson(a))));
+                        futures.add(session.executeAsync(insertAlertTrigger.bind(a.getTenantId(),
+                                a.getAlertId(),
+                                a.getTriggerId())));
+                        futures.add(session.executeAsync(insertAlertCtime.bind(a.getTenantId(),
+                                a.getAlertId(), a.getCtime())));
+                        futures.add(session.executeAsync(insertAlertStatus.bind(a.getTenantId(),
+                                a.getAlertId(),
+                                a.getStatus().name())));
+                        futures.add(session.executeAsync(insertAlertSeverity.bind(a.getTenantId(),
+                                a.getAlertId(),
+                                a.getSeverity().name())));
+                    });
             /*
                 main method is synchronous so we need to wait until futures are completed
              */
@@ -311,6 +130,16 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
     }
 
+    // TODO (jshaughn) The DB-Level filtering approach implemented below is a best-practice for dealing
+    // with Cassandra.  It's basically a series of queries, one for each filter, with a progressive
+    // intersection of the resulting ID set.  This will work well in most cases but we may want to consider
+    // an optimization for dealing with large Alert populations.  Certain filters dealing with low-cardinality
+    // values, like status and severity, could start pulling a large number if alert ids.  If we have reduced the
+    // result set to a small number, via the more narrowing filters, (TBD via perf tests, a threshold that makes
+    // sense), we may want to pull the resulting alerts and apply the low-cardinality filters here in the code,
+    // in a post-fetch step. For example, if we have filters "ctime > 123" and "status == Resolved", and the ctime
+    // filter returns 10 alertIds. We may want to pull the 10 alerts and apply the status filter in the code. For
+    // large Alert history, the status filter applied to the DB could return a huge set of ids.
     @Override
     public List<Alert> getAlerts(String tenantId, AlertsCriteria criteria) throws Exception {
         if (isEmpty(tenantId)) {
@@ -405,6 +234,8 @@ public class CassAlertsServiceImpl implements AlertsService {
                 /*
                     Get all alerts - Single query
                  */
+                PreparedStatement selectAlertsByTenant = CassStatement.get(session,
+                        CassStatement.SELECT_ALERTS_BY_TENANT);
                 ResultSet rsAlerts = session.execute(selectAlertsByTenant.bind(tenantId));
                 for (Row row : rsAlerts) {
                     String payload = row.getString("payload");
@@ -415,6 +246,8 @@ public class CassAlertsServiceImpl implements AlertsService {
                 /*
                     We have a filter, so we are going to perform several queries with alertsIds filtering
                  */
+                PreparedStatement selectAlertsByTenantAndAlert = CassStatement.get(session,
+                        CassStatement.SELECT_ALERTS_BY_TENANT_AND_ALERT);
                 List<ResultSetFuture> futures = alertIds.stream().map(alertId ->
                         session.executeAsync(selectAlertsByTenantAndAlert.bind(tenantId, alertId)))
                         .collect(Collectors.toList());
@@ -483,6 +316,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (triggerIds.size() > 0) {
             filterByTriggers = true;
             List<ResultSetFuture> futures = new ArrayList<>();
+            PreparedStatement selectAlertsTriggers = CassStatement.get(session, CassStatement.SELECT_ALERTS_TRIGGERS);
 
             for (String triggerId : triggerIds) {
                 if (isEmpty(triggerId)) {
@@ -518,11 +352,17 @@ public class CassAlertsServiceImpl implements AlertsService {
 
             BoundStatement boundCtime;
             if (criteria.getStartTime() != null && criteria.getEndTime() != null) {
+                PreparedStatement selectAlertCTimeStartEnd = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_CTIME_START_END);
                 boundCtime = selectAlertCTimeStartEnd.bind(tenantId, criteria.getStartTime(),
                         criteria.getEndTime());
             } else if (criteria.getStartTime() != null) {
+                PreparedStatement selectAlertCTimeStart = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_CTIME_START);
                 boundCtime = selectAlertCTimeStart.bind(tenantId, criteria.getStartTime());
             } else {
+                PreparedStatement selectAlertCTimeEnd = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_CTIME_END);
                 boundCtime = selectAlertCTimeEnd.bind(tenantId, criteria.getEndTime());
             }
 
@@ -552,6 +392,8 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         if (statuses.size() > 0) {
             filterByStatus = true;
+            PreparedStatement selectAlertStatusByTenantAndStatus = CassStatement.get(session,
+                    CassStatement.SELECT_ALERT_STATUS_BY_TENANT_AND_STATUS);
             List<ResultSetFuture> futures = statuses.stream().map(status ->
                     session.executeAsync(selectAlertStatusByTenantAndStatus.bind(tenantId, status.name())))
                     .collect(Collectors.toList());
@@ -588,6 +430,8 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         if (severities.size() > 0) {
             filterBySeverity = true;
+            PreparedStatement selectAlertSeverityByTenantAndSeverity = CassStatement.get(session,
+                    CassStatement.SELECT_ALERT_SEVERITY_BY_TENANT_AND_SEVERITY);
             List<ResultSetFuture> futures = severities.stream().map(severity ->
                     session.executeAsync(selectAlertSeverityByTenantAndSeverity.bind(tenantId, severity.name())))
                     .collect(Collectors.toList());
@@ -627,6 +471,13 @@ public class CassAlertsServiceImpl implements AlertsService {
     private Collection<String> getTriggersIdByTags(Collection<Tag> tags) throws Exception {
         Set<String> triggerIds = new HashSet<>();
         List<ResultSetFuture> futures = new ArrayList<>();
+        PreparedStatement selectTagsTriggersByCategoryAndName = CassStatement.get(session,
+                CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME);
+        PreparedStatement selectTagsTriggersByCategory = CassStatement.get(session,
+                CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY);
+        PreparedStatement selectTagsTriggersByName = CassStatement.get(session,
+                CassStatement.SELECT_TAGS_TRIGGERS_BY_NAME);
+
         for (Tag tag : tags) {
             if (tag.getCategory() != null || tag.getName() != null) {
                 BoundStatement boundTag;
@@ -649,138 +500,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
         });
         return triggerIds;
-    }
-
-    public void clear() {
-        rulesTask.cancel();
-
-        rules.clear();
-
-        pendingData.clear();
-        alerts.clear();
-        pendingTimeouts.clear();
-        autoResolvedTriggers.clear();
-        disabledTriggers.clear();
-
-        rulesTask = new RulesInvoker();
-        wakeUpTimer.schedule(rulesTask, delay, period);
-    }
-
-    @Override
-    public void reload() {
-        rules.reset();
-        if (rulesTask != null) {
-            rulesTask.cancel();
-        }
-
-        Collection<Trigger> triggers = null;
-        try {
-            triggers = definitions.getAllTriggers();
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            msgLog.errorDefinitionsService("Triggers", e.getMessage());
-        }
-        if (triggers != null && !triggers.isEmpty()) {
-            triggers.stream().filter(Trigger::isEnabled).forEach(this::reloadTrigger);
-        }
-
-        rules.addGlobal("log", log);
-        rules.addGlobal("actions", actions);
-        rules.addGlobal("alerts", alerts);
-        rules.addGlobal("pendingTimeouts", pendingTimeouts);
-        rules.addGlobal("autoResolvedTriggers", autoResolvedTriggers);
-        rules.addGlobal("disabledTriggers", disabledTriggers);
-
-        rulesTask = new RulesInvoker();
-        wakeUpTimer.schedule(rulesTask, delay, period);
-    }
-
-    public void reloadTrigger(final String tenantId, final String triggerId) {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
-        }
-        if (isEmpty(triggerId)) {
-            throw new IllegalArgumentException("TriggerId must be not null");
-        }
-
-        Trigger trigger = null;
-        try {
-            trigger = definitions.getTrigger(tenantId, triggerId);
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            msgLog.errorDefinitionsService("Trigger", e.getMessage());
-        }
-        if (null == trigger) {
-            log.debugf("Trigger not found for triggerId [" + triggerId + "], removing from rulebase if it exists");
-            Trigger doomedTrigger = new Trigger(triggerId, "doomed");
-            removeTrigger(doomedTrigger);
-            return;
-        }
-
-        reloadTrigger(trigger);
-    }
-
-    private void reloadTrigger(Trigger trigger) {
-        if (null == trigger) {
-            throw new IllegalArgumentException("Trigger must be not null");
-        }
-
-        // Look for the Trigger in the rules engine, if it is there then remove everything about it
-        removeTrigger(trigger);
-
-        if (trigger.isEnabled()) {
-            try {
-                Collection<Condition> conditionSet = definitions.getTriggerConditions(trigger.getTenantId(),
-                        trigger.getId(), null);
-                Collection<Dampening> dampenings = definitions.getTriggerDampenings(trigger.getTenantId(),
-                        trigger.getId(), null);
-
-                rules.addFact(trigger);
-                rules.addFacts(conditionSet);
-                if (!dampenings.isEmpty()) {
-                    rules.addFacts(dampenings);
-                }
-            } catch (Exception e) {
-                log.debugf(e.getMessage(), e);
-                msgLog.errorDefinitionsService("Conditions/Dampening", e.getMessage());
-            }
-        }
-    }
-
-    private void removeTrigger(Trigger trigger) {
-        if (null != rules.getFact(trigger)) {
-            // First remove the related Trigger facts from the engine
-            rules.removeFact(trigger);
-
-            // then remove everything else.
-            // We may want to do this with rules, because as is, we need to loop through every Fact in
-            // the rules engine doing a relatively slow check.
-            final String triggerId = trigger.getId();
-            rules.removeFacts(t -> {
-                if (t instanceof Dampening) {
-                    return ((Dampening) t).getTriggerId().equals(triggerId);
-                } else if (t instanceof Condition) {
-                    return ((Condition) t).getTriggerId().equals(triggerId);
-                }
-                return false;
-            });
-        } else {
-            log.debugf("Trigger not found. Not removed from rulebase %s", trigger);
-        }
-    }
-
-    public void sendData(Collection<Data> data) {
-        if (data == null) {
-            throw new IllegalArgumentException("Data must be not null");
-        }
-        pendingData.addAll(data);
-    }
-
-    public void sendData(Data data) {
-        if (data == null) {
-            throw new IllegalArgumentException("Data must be not null");
-        }
-        pendingData.add(data);
     }
 
     @Override
@@ -862,13 +581,31 @@ public class CassAlertsServiceImpl implements AlertsService {
                 Not sure if these queries can be wrapped in an async way as they have dependencies with results.
                 Async pattern could bring race hazards here.
              */
-            ResultSet rsAlertsStatusToDelete = session.execute(selectAlertStatus.bind(alert.getTenantId(),
-                    alert.getStatus().name(), alert.getAlertId()));
-            for (Row row : rsAlertsStatusToDelete) {
-                String alertIdToDelete = row.getString("alertId");
-                String statusToDelete = row.getString("status");
-                session.execute(deleteAlertStatus.bind(alert.getTenantId(), statusToDelete, alertIdToDelete));
-            }
+            PreparedStatement selectAlertStatus = CassStatement.get(session,
+                    CassStatement.SELECT_ALERT_STATUS);
+            PreparedStatement insertAlertStatus = CassStatement.get(session,
+                    CassStatement.INSERT_ALERT_STATUS);
+            PreparedStatement deleteAlertStatus = CassStatement.get(session,
+                    CassStatement.DELETE_ALERT_STATUS);
+            PreparedStatement updateAlert = CassStatement.get(session,
+                    CassStatement.UPDATE_ALERT);
+
+            List<ResultSetFuture> futures = new ArrayList<>();
+            futures.add(session.executeAsync(selectAlertStatus.bind(alert.getTenantId(), Alert.Status.OPEN.name(),
+                    alert.getAlertId())));
+            futures.add(session.executeAsync(selectAlertStatus.bind(alert.getTenantId(),
+                    Alert.Status.ACKNOWLEDGED.name(), alert.getAlertId())));
+            futures.add(session.executeAsync(selectAlertStatus.bind(alert.getTenantId(), Alert.Status.RESOLVED.name(),
+                    alert.getAlertId())));
+
+            List<ResultSet> rsAlertsStatusToDelete = Futures.allAsList(futures).get();
+            rsAlertsStatusToDelete.stream().forEach(r -> {
+                for (Row row : r) {
+                    String alertIdToDelete = row.getString("alertId");
+                    String statusToDelete = row.getString("status");
+                    session.execute(deleteAlertStatus.bind(alert.getTenantId(), statusToDelete, alertIdToDelete));
+                }
+            });
             session.execute(insertAlertStatus.bind(alert.getTenantId(), alert.getAlertId(), alert.getStatus().name()));
             session.execute(updateAlert.bind(toJson(alert), alert.getTenantId(), alert.getAlertId()));
         } catch (Exception e) {
@@ -876,6 +613,16 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw e;
         }
         return alert;
+    }
+
+    @Override
+    public void sendData(Data data) throws Exception {
+        alertsEngine.sendData(data);
+    }
+
+    @Override
+    public void sendData(Collection<Data> data) throws Exception {
+        alertsEngine.sendData(data);
     }
 
     private String toJson(Object resource) {
@@ -897,107 +644,4 @@ public class CassAlertsServiceImpl implements AlertsService {
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();
     }
-
-    private class RulesInvoker extends TimerTask {
-        @Override
-        public void run() {
-            int numTimeouts = checkPendingTimeouts();
-            if (!pendingData.isEmpty() || numTimeouts > 0) {
-
-                log.debugf("Executing rules engine on [%1d] datums and [%2d] dampening timeouts.", pendingData.size(),
-                        numTimeouts);
-
-                try {
-                    if (pendingData.isEmpty()) {
-                        rules.fireNoData();
-
-                    } else {
-                        rules.addData(pendingData);
-                        pendingData.clear();
-                    }
-
-                    rules.fire();
-                    addAlerts(alerts);
-                    alerts.clear();
-                    handleDisabledTriggers();
-                    handleAutoResolvedTriggers();
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    log.debugf("Error on rules processing: " + e);
-                    msgLog.errorProcessingRules(e.getMessage());
-                } finally {
-                    alerts.clear();
-                }
-            }
-        }
-
-        private int checkPendingTimeouts() {
-            if (pendingTimeouts.isEmpty()) {
-                return 0;
-            }
-
-            long now = System.currentTimeMillis();
-            Set<Dampening> timeouts = null;
-            for (Dampening d : pendingTimeouts) {
-                if (now < d.getTrueEvalsStartTime() + d.getEvalTimeSetting()) {
-                    continue;
-                }
-
-                d.setSatisfied(true);
-                try {
-                    log.debugf("Dampening Timeout Hit! %s", d.toString());
-                    rules.updateFact(d);
-                    if (null == timeouts) {
-                        timeouts = new HashSet<>();
-                    }
-                    timeouts.add(d);
-                } catch (Exception e) {
-                    log.error("Unable to update Dampening Fact on Timeout! " + d.toString(), e);
-                }
-
-            }
-
-            if (null == timeouts) {
-                return 0;
-            }
-
-            pendingTimeouts.removeAll(timeouts);
-            return timeouts.size();
-        }
-    }
-
-    private void handleDisabledTriggers() {
-        try {
-            for (Trigger t : disabledTriggers) {
-                try {
-                    t.setEnabled(false);
-                    definitions.updateTrigger(t.getTenantId(), t);
-
-                } catch (Exception e) {
-                    log.errorf("Failed to persist updated trigger. Could not autoDisable %s", t);
-                }
-            }
-        } finally {
-            disabledTriggers.clear();
-        }
-    }
-
-    private void handleAutoResolvedTriggers() {
-        try {
-            for (Map.Entry<Trigger, List<Set<ConditionEval>>> entry : autoResolvedTriggers.entrySet()) {
-                Trigger t = entry.getKey();
-                try {
-                    if (t.isAutoResolveAlerts()) {
-                        resolveAlertsForTrigger(t.getTenantId(), t.getId(), "AUTO", null, entry.getValue());
-                    }
-                } catch (Exception e) {
-                    log.errorf("Failed to resolve Alerts. Could not AutoResolve alerts for trigger %s", t);
-                }
-            }
-        } finally {
-            autoResolvedTriggers.clear();
-        }
-    }
-
 }

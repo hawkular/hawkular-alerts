@@ -31,7 +31,7 @@ public class ResponseUtil {
 
     public static Response internalError(String message) {
         Map<String, String> errors = new HashMap<>();
-        errors.put("errorMsg", "Internal Error: " + message);
+        errors.put("errorMsg", "Internal error: " + message);
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity(errors).type(APPLICATION_JSON_TYPE).build();
     }
@@ -40,8 +40,11 @@ public class ResponseUtil {
         return Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build();
     }
 
-    public static Response notFound(Object entity) {
-        return Response.status(Response.Status.NOT_FOUND).entity(entity).type(APPLICATION_JSON_TYPE).build();
+    public static Response notFound(String message) {
+        Map<String, String> errors = new HashMap<>();
+        errors.put("errorMsg", "Not found: " + message);
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity(errors).type(APPLICATION_JSON_TYPE).build();
     }
 
     public static Response ok(Object entity) {
@@ -54,7 +57,7 @@ public class ResponseUtil {
 
     public static Response badRequest(String message) {
         Map<String, String> errors = new HashMap<>();
-        errors.put("errorMsg", "Internal Error: " + message);
+        errors.put("errorMsg", "Bad request: " + message);
         return Response.status(Response.Status.BAD_REQUEST)
                 .entity(errors).type(APPLICATION_JSON_TYPE).build();
     }

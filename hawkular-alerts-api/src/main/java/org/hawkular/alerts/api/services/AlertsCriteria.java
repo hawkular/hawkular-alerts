@@ -166,10 +166,12 @@ public class AlertsCriteria {
                 || null != status
                 || null != severity
                 || null != triggerId
+                || null != alertId
                 || null != tag
                 || (null != statusSet && !statusSet.isEmpty())
                 || (null != severities && !severities.isEmpty())
                 || (null != triggerIds && !triggerIds.isEmpty())
+                || (null != alertIds && !alertIds.isEmpty())
                 || (null != tags && !tags.isEmpty());
     }
 

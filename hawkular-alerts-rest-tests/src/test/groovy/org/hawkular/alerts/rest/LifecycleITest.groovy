@@ -255,6 +255,98 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("RESOLVED", resp.data[0].status)
         assertEquals("AUTO", resp.data[0].resolvedBy)
         assert null != resp.data[0].resolvedEvalSets
+
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"OPEN"] )
+        assertEquals(204, resp.status)
     }
+
+
+    @Test
+    void manualResolutionTest() {
+        String start = String.valueOf(System.currentTimeMillis());
+
+        // CREATE the trigger
+        def resp = client.get(path: "")
+        assert resp.status == 200 || resp.status == 204 : resp.status
+
+        Trigger testTrigger = new Trigger("test-manual-trigger", "test-manual-trigger");
+
+        // remove if it exists
+        resp = client.delete(path: "triggers/test-manual-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        testTrigger.setAutoDisable(false);
+        testTrigger.setAutoResolve(false);
+        testTrigger.setAutoResolveAlerts(false);
+
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // ADD Firing condition
+        AvailabilityCondition firingCond = new AvailabilityCondition("test-manual-trigger",
+                Mode.FIRING, "test-lifecycle-avail", Operator.NOT_UP);
+
+        resp = client.post(path: "triggers/test-manual-trigger/conditions", body: firingCond)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // ENABLE Trigger
+        testTrigger.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-manual-trigger", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // FETCH trigger and make sure it's as expected
+        resp = client.get(path: "triggers/test-manual-trigger");
+        assertEquals(200, resp.status)
+        assertEquals("test-manual-trigger", resp.data.name)
+        assertEquals(true, resp.data.enabled)
+        assertEquals(false, resp.data.autoDisable);
+        assertEquals(false, resp.data.autoResolve);
+        assertEquals(false, resp.data.autoResolveAlerts);
+
+        // FETCH recent alerts for trigger, should not be any
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger"] )
+        assertEquals(204, resp.status)
+
+        // Send in DOWN avail data to fire the trigger
+        // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
+        for (int i=0; i<5; i++) {
+            Availability avail = new Availability("test-lifecycle-avail", System.currentTimeMillis(), "DOWN");
+            MixedData mixedData = new MixedData();
+            mixedData.getAvailability().add(avail);
+            resp = client.post(path: "data", body: mixedData);
+            assertEquals(200, resp.status)
+        }
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 10; ++i ) {
+            println "SLEEP!" ;
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 5
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger"] )
+            if ( resp.status == 200 && resp.data.size() == 5 ) {
+                break;
+            }
+        }
+        assertEquals(200, resp.status)
+        assertEquals(5, resp.data.size())
+        assertEquals("OPEN", resp.data[0].status)
+
+        // RESOLVE manually the alert
+        resp = client.put(path: "resolve", query: [alertIds:resp.data[0].alertId,resolvedBy:"testUser",
+                resolvedNotes:"testNotes"] )
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN"] )
+        assertEquals(200, resp.status)
+        assertEquals(4, resp.data.size())
+
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"RESOLVED"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+    }
+
 
 }

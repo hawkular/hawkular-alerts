@@ -44,6 +44,7 @@ import org.hawkular.alerts.api.model.data.MixedData;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
+import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.jboss.logging.Logger;
 
 import com.wordnik.swagger.annotations.Api;
@@ -67,7 +68,10 @@ public class AlertsHandler {
     Persona persona;
 
     @EJB
-    AlertsService alerts;
+    AlertsService alertsService;
+
+    @EJB
+    AlertsEngine alertsEngine;
 
     public AlertsHandler() {
         log.debugf("Creating instance.");
@@ -156,53 +160,12 @@ public class AlertsHandler {
                 criteria.setTags(tagList);
             }
 
-            List<Alert> alertList = alerts.getAlerts(persona.getId(), criteria);
+            List<Alert> alertList = alertsService.getAlerts(persona.getId(), criteria);
             log.debugf("Alerts: %s ", alertList);
             if (isEmpty(alertList)) {
                 return ResponseUtil.noContent();
             }
             return ResponseUtil.ok(alertList);
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
-    @GET
-    @Path("/reload")
-    @ApiOperation(
-            value = "Reload all definitions into the alerts service",
-            notes = "This service is temporal for demos/poc, this functionality will be handled internally" +
-                    "between definitions and alerts services")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success. Reload invoked successfully."),
-            @ApiResponse(code = 500, message = "Internal server error")})
-    public Response reloadAlerts() {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
-        try {
-            alerts.reload();
-            return ResponseUtil.ok();
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
-    @GET
-    @Path("/reload/{triggerId}")
-    @ApiOperation(value = "Reload a specific trigger into the alerts service")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success. Reload invoked successfully."),
-            @ApiResponse(code = 500, message = "Internal server error") })
-    public Response reloadTrigger(@PathParam("triggerId") final String triggerId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
-        try {
-            alerts.reloadTrigger(persona.getId(), triggerId);
-            return ResponseUtil.ok();
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
@@ -231,7 +194,7 @@ public class AlertsHandler {
         }
         try {
             if (!isEmpty(alertIds)) {
-                alerts.ackAlerts(persona.getId(), Arrays.asList(alertIds.split(",")), ackBy, ackNotes);
+                alertsService.ackAlerts(persona.getId(), Arrays.asList(alertIds.split(",")), ackBy, ackNotes);
                 log.debugf("AlertsIds: %s ", alertIds);
                 return ResponseUtil.ok();
             } else {
@@ -265,8 +228,8 @@ public class AlertsHandler {
         }
         try {
             if (!isEmpty(alertIds)) {
-                alerts.resolveAlerts(persona.getId(), Arrays.asList(alertIds.split(",")), resolvedBy, resolvedNotes,
-                        null);
+                alertsService.resolveAlerts(persona.getId(), Arrays.asList(alertIds.split(",")), resolvedBy,
+                        resolvedNotes, null);
                 log.debugf("AlertsIds: %s ", alertIds);
                 return ResponseUtil.ok();
             } else {
@@ -295,10 +258,52 @@ public class AlertsHandler {
             if (isEmpty(mixedData)) {
                 return ResponseUtil.badRequest("Data is empty");
             } else {
-                alerts.sendData(mixedData.asCollection());
+                alertsEngine.sendData(mixedData.asCollection());
                 log.debugf("MixedData: %s ", mixedData);
                 return ResponseUtil.ok();
             }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/reload")
+    @ApiOperation(
+            value = "Reload all definitions into the alerts service",
+            notes = "This service is temporal for demos/poc, this functionality will be handled internally" +
+                    "between definitions and alerts services")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success. Reload invoked successfully."),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response reloadAlerts() {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
+        try {
+            alertsEngine.reload();
+            return ResponseUtil.ok();
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/reload/{triggerId}")
+    @ApiOperation(value = "Reload a specific trigger into the alerts service")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success. Reload invoked successfully."),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response reloadTrigger(@PathParam("triggerId")
+    final String triggerId) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
+        try {
+            alertsEngine.reloadTrigger(persona.getId(), triggerId);
+            return ResponseUtil.ok();
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
@@ -309,7 +314,8 @@ public class AlertsHandler {
         if (persona == null) {
             log.warn("Persona is null. Possible issue with accounts integration ? ");
             return false;
-        } else if (persona.getId().trim().isEmpty()) {
+        }
+        if (isEmpty(persona.getId())) {
             log.warn("Persona is empty. Possible issue with accounts integration ? ");
             return false;
         }

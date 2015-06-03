@@ -28,7 +28,6 @@ import javax.jms.MessageListener;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.services.AlertsService;
-import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.bus.init.CacheManager;
 import org.hawkular.alerts.bus.messages.MetricDataMessage;
 import org.hawkular.alerts.bus.messages.MetricDataMessage.MetricData;
@@ -56,9 +55,6 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
 
     @EJB
     AlertsService alerts;
-
-    @EJB
-    DefinitionsService definitions;
 
     @EJB
     CacheManager cacheManager;
@@ -91,6 +87,10 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
         }
 
         log.debugf("Sending: [%s]", alertData);
-        alerts.sendData(alertData);
+        try {
+            alerts.sendData(alertData);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

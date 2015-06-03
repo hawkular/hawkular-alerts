@@ -39,7 +39,11 @@ public class AlertProperties {
         if (alertsProperties == null) {
             initConfiguration();
         }
-        return alertsProperties.getProperty(key, defaultValue);
+        String value = System.getProperty(key);
+        if (value == null) {
+            value = alertsProperties.getProperty(key, defaultValue);
+        }
+        return value;
     }
 
     private static void initConfiguration() {

@@ -32,27 +32,12 @@ import org.hawkular.alerts.api.model.data.Data;
  */
 public interface AlertsService {
 
-    void sendData(Data data);
-
-    void sendData(Collection<Data> data);
-
     /**
-     * Reset session state.
+     * Persist the provided alerts.
+     * @param alerts Set of unpersisted Alerts.
+     * @throws Exception any problem
      */
-    void clear();
-
-    /**
-     * Reload all Triggers.
-     */
-    void reload();
-
-    /**
-     * Reload the specified Trigger.  Removes any existing definition from the engine.  If enabled then loads the firing
-     * condition set and dampening.  If safetyEnabled then also loads the safety condition set and dampening.
-     * @param tenantId Tenant where Trigger is stored
-     * @param triggerId Trigger id to be reloaded
-     */
-    void reloadTrigger(String tenantId, String triggerId);
+    void addAlerts(Collection<Alert> alerts) throws Exception;
 
     /**
      * @param tenantId Tenant where alerts are stored
@@ -61,13 +46,6 @@ public interface AlertsService {
      * @throws Exception any problem
      */
     List<Alert> getAlerts(String tenantId, AlertsCriteria criteria) throws Exception;
-
-    /**
-     * Persist the provided alerts.
-     * @param alerts Set of unpersisted Alerts.
-     * @throws Exception any problem
-     */
-    void addAlerts(Collection<Alert> alerts) throws Exception;
 
     /**
      * The alerts must already have been added. Set the alerts to ACKNOWLEDGED status. The ackTime will be set to the
@@ -105,5 +83,21 @@ public interface AlertsService {
      */
     void resolveAlertsForTrigger(String tenantId, String triggerId, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception;
+
+    /**
+     * Send data into the alerting system for evaluation.
+     *
+     * @param data Not Null.  The data to be evaluated by the alerting engine.
+     * @throws Exception any problem.
+     */
+    void sendData(Data data) throws Exception;
+
+    /**
+     * Send data into the alerting system for evaluation.
+     *
+     * @param data Not Null.  The data to be evaluated by the alerting engine.
+     * @throws Exception any problem.
+     */
+    void sendData(Collection<Data> data) throws Exception;
 
 }

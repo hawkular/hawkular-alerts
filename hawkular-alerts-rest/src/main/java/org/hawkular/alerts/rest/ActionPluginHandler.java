@@ -18,8 +18,6 @@ package org.hawkular.alerts.rest;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-import com.wordnik.swagger.annotations.ApiResponse;
-import com.wordnik.swagger.annotations.ApiResponses;
 import java.util.Collection;
 import java.util.Set;
 
@@ -38,6 +36,8 @@ import org.jboss.logging.Logger;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
+import com.wordnik.swagger.annotations.ApiResponse;
+import com.wordnik.swagger.annotations.ApiResponses;
 
 /**
  * REST endpoint for ActionPlugins
@@ -119,11 +119,16 @@ public class ActionPluginHandler {
         if (persona == null) {
             log.warn("Persona is null. Possible issue with accounts integration ? ");
             return false;
-        } else if (persona.getId().trim().isEmpty()) {
+        }
+        if (isEmpty(persona.getId())) {
             log.warn("Persona is empty. Possible issue with accounts integration ? ");
             return false;
         }
         return true;
+    }
+
+    private boolean isEmpty(String s) {
+        return s == null || s.trim().isEmpty();
     }
 
     private boolean isEmpty(Collection collection) {
