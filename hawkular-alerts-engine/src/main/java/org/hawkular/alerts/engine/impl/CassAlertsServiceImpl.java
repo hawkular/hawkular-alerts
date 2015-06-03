@@ -211,7 +211,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
         if (insertAlertSeverity == null) {
             insertAlertSeverity = session.prepare("INSERT INTO " + keyspace + ".alerts_severities " +
-                    "(alertId, severity) VALUES (?, ?) ");
+                    "(tenantId, alertId, severity) VALUES (?, ?, ?) ");
         }
         if (updateAlert == null) {
             updateAlert = session.prepare("UPDATE " + keyspace + ".alerts " +
