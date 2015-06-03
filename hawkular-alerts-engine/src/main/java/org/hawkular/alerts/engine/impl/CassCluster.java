@@ -45,6 +45,8 @@ public class CassCluster {
 
     private static Cluster cluster = null;
 
+    private static Session session = null;
+
     private static CassCluster instance = new CassCluster();
 
     private CassCluster() { }
@@ -95,12 +97,11 @@ public class CassCluster {
     }
 
     public static Session getSession() throws Exception {
-        if (cluster == null) {
+        if (cluster == null && session == null) {
             String cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, "9042");
             String nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, "127.0.0.1");
             int attempts = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_ATTEMPTS, "5"));
             int timeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_TIMEOUT, "2000"));
-            Session session = null;
             /*
                 It might happen that alerts component is faster than embedded cassandra deployed in hawkular.
                 We will provide a simple attempt/retry loop to avoid issues at initialization.
@@ -134,8 +135,13 @@ public class CassCluster {
                 String keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
                 instance.initScheme(session, keyspace);
             }
-            return session;
         }
-        return cluster.newSession();
+        return session;
+    }
+
+    public static void shutdown() {
+        if (session != null && !session.isClosed()) {
+            session.close();
+        }
     }
 }

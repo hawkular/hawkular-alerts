@@ -169,9 +169,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @PreDestroy
     public void shutdown() {
-        if (session != null) {
-            session.close();
-        }
+        CassCluster.shutdown();
     }
 
     private void initialData() throws IOException {

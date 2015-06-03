@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 
@@ -86,13 +85,6 @@ public class CassAlertsServiceImpl implements AlertsService {
                 t.printStackTrace();
             }
             msgLog.errorCannotInitializeAlertsService(t.getMessage());
-        }
-    }
-
-    @PreDestroy
-    public void shutdown() {
-        if (session != null) {
-            session.close();
         }
     }
 
