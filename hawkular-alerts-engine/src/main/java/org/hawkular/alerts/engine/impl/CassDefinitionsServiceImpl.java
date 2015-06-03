@@ -79,59 +79,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     private List<DefinitionsListener> listeners = new ArrayList<>();
 
-    private PreparedStatement insertTrigger;
-    private PreparedStatement insertTriggerActions;
-    private PreparedStatement selectTriggerConditions;
-    private PreparedStatement selectTriggerConditionsTriggerMode;
-    private PreparedStatement deleteConditionsMode;
-    private PreparedStatement insertAvailabilityCondition;
-    private PreparedStatement insertCompareCondition;
-    private PreparedStatement insertStringCondition;
-    private PreparedStatement insertThresholdCondition;
-    private PreparedStatement insertThresholdRangeCondition;
-    private PreparedStatement insertTag;
-    private PreparedStatement insertDampening;
-    private PreparedStatement insertAction;
-    private PreparedStatement selectAllTriggers;
-    private PreparedStatement selectTriggerActions;
-    private PreparedStatement selectTenantTriggers;
-    private PreparedStatement selectAllConditions;
-    private PreparedStatement selectAllConditionsByTenant;
-    private PreparedStatement selectAllDampenings;
-    private PreparedStatement selectAllDampeningsByTenant;
-    private PreparedStatement selectAllActions;
-    private PreparedStatement selectAllActionsByTenant;
-    private PreparedStatement selectTrigger;
-    private PreparedStatement selectTriggerDampenings;
-    private PreparedStatement selectTriggerDampeningsMode;
-    private PreparedStatement deleteDampenings;
-    private PreparedStatement deleteConditions;
-    private PreparedStatement deleteTriggers;
-    private PreparedStatement updateTrigger;
-    private PreparedStatement deleteTriggerActions;
-    private PreparedStatement deleteDampeningId;
-    private PreparedStatement selectDampeningId;
-    private PreparedStatement updateDampeningId;
-    private PreparedStatement selectConditionId;
-    private PreparedStatement insertActionPlugin;
-    private PreparedStatement deleteActionPlugin;
-    private PreparedStatement updateActionPlugin;
-    private PreparedStatement selectActionPlugins;
-    private PreparedStatement selectActionPlugin;
-    private PreparedStatement deleteAction;
-    private PreparedStatement updateAction;
-    private PreparedStatement selectActionsPlugin;
-    private PreparedStatement selectAction;
-    private PreparedStatement insertTagsTriggers;
-    private PreparedStatement updateTagsTriggers;
-    private PreparedStatement deleteTagsTriggers;
-    private PreparedStatement selectTags;
-    private PreparedStatement selectTagsByCategoryAndName;
-    private PreparedStatement selectTagsByCategory;
-    private PreparedStatement selectTagsByName;
-    private PreparedStatement deleteTags;
-    private PreparedStatement deleteTagsByName;
-
     @EJB
     AlertsEngine alertsEngine;
 
@@ -157,8 +104,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 session = CassCluster.getSession();
             }
 
-            initPreparedStatements();
-
+            /*
+                Initial data works here because we are in a singleton
+             */
             initialData();
 
         } catch (Throwable t) {
@@ -181,261 +129,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         String folder = data + "/" + INIT_FOLDER;
         initFiles(folder);
         initialized = true;
-    }
-
-    // TODO: This approach is fine because this is a singleton bean and therefore the statements are not
-    // repeatedly prepared by numerous pooled beans.  But, to avoid duplication and consolidate prepared
-    // statements it make sense to move these to CassStatement...
-    private void initPreparedStatements() {
-        if (insertTrigger == null) {
-            insertTrigger = session.prepare("INSERT INTO " + keyspace + ".triggers " +
-                    "(name, description, autoDisable, autoResolve, autoResolveAlerts, firingMatch, " +
-                    "autoResolveMatch, id, enabled, tenantId) " +
-                    "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
-        }
-        if (insertTriggerActions == null) {
-            insertTriggerActions = session.prepare("INSERT INTO " + keyspace + ".triggers_actions " +
-                    "(tenantId, triggerId, actionPlugin, actions) VALUES (?, ?, ?, ?) ");
-        }
-        if (selectTriggerConditions == null) {
-            selectTriggerConditions = session.prepare("SELECT triggerId, triggerMode, type, conditionSetSize, " +
-                    "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, " +
-                    "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId"
-                    +
-                    " FROM " + keyspace + ".conditions " +
-                    "WHERE tenantId = ? AND triggerId = ? ORDER BY triggerId, triggerMode, type");
-        }
-        if (selectTriggerConditionsTriggerMode == null) {
-            selectTriggerConditionsTriggerMode = session.prepare("SELECT triggerId, triggerMode, type, " +
-                    "conditionSetSize, conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, " +
-                    "pattern, ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange,"
-                    +
-                    " tenantId " +
-                    "FROM " + keyspace + ".conditions " +
-                    "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? " +
-                    "ORDER BY triggerId, triggerMode, type");
-        }
-        if (deleteConditionsMode == null) {
-            deleteConditionsMode = session.prepare("DELETE FROM " + keyspace + ".conditions " +
-                    "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? ");
-        }
-        if (insertAvailabilityCondition == null) {
-            insertAvailabilityCondition = session.prepare("INSERT INTO " + keyspace + ".conditions " +
-                    "(tenantId, triggerId, triggerMode, type, conditionSetSize, conditionSetIndex, conditionId, " +
-                    "dataId, operator) VALUES (?, ?, ?, 'AVAILABILITY', ?, ?, ?, ?, ?) ");
-        }
-        if (insertCompareCondition == null) {
-            insertCompareCondition = session.prepare("INSERT INTO " + keyspace + ".conditions " +
-                    "(tenantId, triggerId, triggerMode, type, conditionSetSize, conditionSetIndex, conditionId, " +
-                    "dataId, operator, data2Id, data2Multiplier) VALUES (?, ?, ?, 'COMPARE', ?, ?, ?, ?, ?, ?, ?) ");
-        }
-        if (insertStringCondition == null) {
-            insertStringCondition = session.prepare("INSERT INTO " + keyspace + ".conditions " +
-                    "(tenantId, triggerId, triggerMode, type, conditionSetSize, conditionSetIndex, conditionId, " +
-                    "dataId, operator, pattern, ignoreCase) VALUES (?, ?, ?, 'STRING', ?, ?, ?, ?, ?, ?, ?) ");
-        }
-        if (insertThresholdCondition == null) {
-            insertThresholdCondition = session.prepare("INSERT INTO " + keyspace + ".conditions " +
-                    "(tenantId, triggerId, triggerMode, type, conditionSetSize, conditionSetIndex, conditionId, " +
-                    "dataId, operator, threshold) VALUES (?, ?, ?, 'THRESHOLD', ?, ?, ?, ?, ?, ?) ");
-        }
-        if (insertThresholdRangeCondition == null) {
-            insertThresholdRangeCondition = session.prepare("INSERT INTO " + keyspace + ".conditions " +
-                    "(tenantId, triggerId, triggerMode, type, conditionSetSize, conditionSetIndex, conditionId, " +
-                    "dataId, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange) " +
-                    "VALUES (?, ?, ?, 'RANGE', ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
-        }
-        if (insertTag == null) {
-            insertTag = session.prepare("INSERT INTO " + keyspace + ".tags " +
-                    "(tenantId, triggerId, category, name, visible) VALUES (?, ?, ?, ?, ?) ");
-        }
-        if (insertDampening == null) {
-            insertDampening = session.prepare("INSERT INTO " + keyspace + ".dampenings " +
-                    "(triggerId, triggerMode, type, evalTrueSetting, evalTotalSetting, evalTimeSetting, " +
-                    "dampeningId, tenantId) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ");
-        }
-        if (insertAction == null) {
-            insertAction = session.prepare("INSERT INTO " + keyspace + ".actions " +
-                    "(tenantId, actionPlugin, actionId, properties) VALUES (?, ?, ?, ?) ");
-        }
-        if (selectAllTriggers == null) {
-            selectAllTriggers = session.prepare("SELECT name, description, autoDisable, autoResolve, " +
-                    "autoResolveAlerts, firingMatch, autoResolveMatch, id, enabled, tenantId " +
-                    "FROM " + keyspace + ".triggers ");
-        }
-        if (selectTriggerActions == null) {
-            selectTriggerActions = session.prepare("SELECT tenantId, triggerId, actionPlugin, actions " +
-                    "FROM " + keyspace + ".triggers_actions " +
-                    "WHERE tenantId = ? AND triggerId = ? ");
-        }
-
-        if (selectTenantTriggers == null) {
-            selectTenantTriggers = session.prepare("SELECT name, description, autoDisable, autoResolve, " +
-                    "autoResolveAlerts, firingMatch, autoResolveMatch, id, enabled, tenantId " +
-                    "FROM " + keyspace + ".triggers WHERE tenantId = ? ");
-        }
-        if (selectAllConditions == null) {
-            selectAllConditions = session.prepare("SELECT triggerId, triggerMode, type, conditionSetSize, " +
-                    "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, " +
-                    "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange," +
-                    "tenantId FROM " + keyspace + ".conditions ");
-        }
-        if (selectAllConditionsByTenant == null) {
-            selectAllConditionsByTenant = session.prepare("SELECT triggerId, triggerMode, type, conditionSetSize, " +
-                    "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, " +
-                    "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange," +
-                    "tenantId FROM " + keyspace + ".conditions WHERE tenantId = ? ");
-        }
-        if (selectAllDampenings == null) {
-            selectAllDampenings = session.prepare("SELECT tenantId, triggerId, triggerMode, type, evalTrueSetting, " +
-                    "evalTotalSetting, evalTimeSetting, dampeningId FROM " + keyspace + ".dampenings ");
-        }
-        if (selectAllDampeningsByTenant == null) {
-            selectAllDampeningsByTenant = session.prepare("SELECT tenantId, triggerId, triggerMode, type, " +
-                    "evalTrueSetting, " +
-                    "evalTotalSetting, evalTimeSetting, dampeningId FROM " + keyspace + ".dampenings " +
-                    "WHERE tenantId = ? ");
-        }
-        if (selectAllActions == null) {
-            selectAllActions = session.prepare("SELECT tenantId, actionPlugin, actionId " +
-                    "FROM " + keyspace + ".actions ");
-        }
-        if (selectAllActionsByTenant == null) {
-            selectAllActionsByTenant = session.prepare("SELECT actionPlugin, actionId " +
-                    "FROM " + keyspace + ".actions WHERE tenantId = ? ");
-        }
-        if (selectTrigger == null) {
-            selectTrigger = session.prepare("SELECT name, description, autoDisable, autoResolve, " +
-                    "autoResolveAlerts, firingMatch, autoResolveMatch, id, enabled, tenantId " +
-                    "FROM " + keyspace + ".triggers WHERE tenantId = ? AND id = ? ");
-        }
-        if (selectTriggerDampenings == null) {
-            selectTriggerDampenings = session.prepare("SELECT tenantId, triggerId, triggerMode, type, " +
-                    "evalTrueSetting, evalTotalSetting, evalTimeSetting, dampeningId " +
-                    "FROM " + keyspace + ".dampenings " +
-                    "WHERE tenantId = ? AND triggerId = ? ");
-        }
-        if (selectTriggerDampeningsMode == null) {
-            selectTriggerDampeningsMode = session.prepare("SELECT tenantId, triggerId, triggerMode, type, " +
-                    "evalTrueSetting, evalTotalSetting, evalTimeSetting, dampeningId " +
-                    "FROM " + keyspace + ".dampenings " +
-                    "WHERE tenantId = ? AND triggerId = ? and triggerMode = ? ");
-        }
-        if (deleteDampenings == null) {
-            deleteDampenings = session.prepare("DELETE FROM " + keyspace + ".dampenings " +
-                    "WHERE tenantId = ? AND triggerId = ? ");
-        }
-        if (deleteConditions == null) {
-            deleteConditions = session.prepare("DELETE FROM " + keyspace + ".conditions " +
-                    "WHERE tenantId = ? AND triggerId = ? ");
-        }
-        if (deleteTriggers == null) {
-            deleteTriggers = session.prepare("DELETE FROM " + keyspace + ".triggers " +
-                    "WHERE tenantId = ? AND id = ? ");
-        }
-        if (updateTrigger == null) {
-            updateTrigger = session.prepare("UPDATE " + keyspace + ".triggers " +
-                    "SET name = ?, description = ?, autoDisable = ?, autoResolve = ?, autoResolveAlerts = ?, " +
-                    "firingMatch = ?, autoResolveMatch = ?, enabled = ? " +
-                    "WHERE tenantId = ? AND id = ? ");
-        }
-        if (deleteTriggerActions == null) {
-            deleteTriggerActions = session.prepare("DELETE FROM " + keyspace + ".triggers_actions " +
-                    "WHERE tenantId = ? AND triggerId = ? ");
-        }
-        if (deleteDampeningId == null) {
-            deleteDampeningId = session.prepare("DELETE FROM " + keyspace + ".dampenings " +
-                    "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? AND dampeningId = ? ");
-        }
-        if (selectDampeningId == null) {
-            selectDampeningId = session.prepare("SELECT triggerId, triggerMode, type, evalTrueSetting, " +
-                    "evalTotalSetting, evalTimeSetting, dampeningId, tenantId FROM " + keyspace + ".dampenings " +
-                    "WHERE tenantId = ? AND dampeningId = ? ");
-        }
-        if (updateDampeningId == null) {
-            updateDampeningId = session.prepare("UPDATE " + keyspace + ".dampenings " +
-                    "SET type = ?, evalTrueSetting = ?, evalTotalSetting = ?, evalTimeSetting = ? " +
-                    "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? AND dampeningId = ? ");
-        }
-        if (selectConditionId == null) {
-            selectConditionId = session.prepare("SELECT triggerId, triggerMode, type, conditionSetSize, " +
-                    "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, " +
-                    "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, " +
-                    "tenantId " +
-                    "FROM " + keyspace + ".conditions WHERE tenantId = ? AND conditionId = ? ");
-        }
-        if (insertActionPlugin == null) {
-            insertActionPlugin = session.prepare("INSERT INTO " + keyspace + ".action_plugins (actionPlugin, " +
-                    "properties) VALUES (?, ?) ");
-        }
-        if (deleteActionPlugin == null) {
-            deleteActionPlugin = session
-                    .prepare("DELETE FROM " + keyspace + ".action_plugins WHERE actionPlugin = ? ");
-        }
-        if (updateActionPlugin == null) {
-            updateActionPlugin = session.prepare("UPDATE " + keyspace + ".action_plugins " +
-                    "SET properties = ? WHERE actionPlugin = ? ");
-        }
-        if (selectActionPlugins == null) {
-            selectActionPlugins = session.prepare("SELECT actionPlugin FROM " + keyspace + ".action_plugins ");
-        }
-        if (selectActionPlugin == null) {
-            selectActionPlugin = session.prepare("SELECT properties FROM " + keyspace + ".action_plugins " +
-                    "WHERE actionPlugin = ? ");
-        }
-        if (deleteAction == null) {
-            deleteAction = session.prepare("DELETE FROM " + keyspace + ".actions " +
-                    "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ");
-        }
-        if (updateAction == null) {
-            updateAction = session.prepare("UPDATE " + keyspace + ".actions " +
-                    "SET properties = ? " +
-                    "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ");
-        }
-        if (selectActionsPlugin == null) {
-            selectActionsPlugin = session.prepare("SELECT actionId FROM " + keyspace + ".actions " +
-                    "WHERE tenantId = ? AND actionPlugin = ? ");
-        }
-        if (selectAction == null) {
-            selectAction = session.prepare("SELECT properties FROM " + keyspace + ".actions " +
-                    "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ");
-        }
-        if (insertTagsTriggers == null) {
-            insertTagsTriggers = session.prepare("INSERT INTO " + keyspace + ".tags_triggers " +
-                    "(tenantId, category, name, triggers) VALUES (?, ?, ?, ?) ");
-        }
-        if (updateTagsTriggers == null) {
-            updateTagsTriggers = session.prepare("UPDATE " + keyspace + ".tags_triggers " +
-                    "SET triggers = ? " +
-                    "WHERE tenantId = ? AND name = ? ");
-        }
-        if (deleteTagsTriggers == null) {
-            deleteTagsTriggers = session.prepare("DELETE FROM " + keyspace + ".tags_triggers " +
-                    "WHERE tenantId = ? AND name = ? ");
-        }
-        if (selectTags == null) {
-            selectTags = session.prepare("SELECT tenantId, triggerId, category, name, visible FROM " + keyspace +
-                    ".tags WHERE tenantId = ? AND triggerId = ? ORDER BY triggerId, name ");
-        }
-        if (selectTagsByCategoryAndName == null) {
-            selectTagsByCategoryAndName = session.prepare("SELECT tenantId, triggerId, category, name, visible FROM " +
-                    keyspace + ".tags WHERE tenantId = ? AND triggerId = ? AND category = ? AND name = ? ");
-        }
-        if (selectTagsByCategory == null) {
-            selectTagsByCategory = session.prepare("SELECT tenantId, triggerId, category, name, visible FROM " +
-                    keyspace + ".tags WHERE tenantId = ? AND triggerId = ? AND category = ? ");
-        }
-        if (selectTagsByName == null) {
-            selectTagsByName = session.prepare("SELECT tenantId, triggerId, category, name, visible FROM " +
-                    keyspace + ".tags WHERE tenantId = ? AND triggerId = ? AND name = ? ");
-        }
-        if (deleteTags == null) {
-            deleteTags = session.prepare("DELETE FROM " + keyspace + ".tags WHERE tenantId = ? AND triggerId = ? ");
-        }
-        if (deleteTagsByName == null) {
-            deleteTagsByName = session.prepare("DELETE FROM " + keyspace + ".tags " +
-                    "WHERE tenantId = ? AND triggerId = ? AND name = ?");
-        }
     }
 
     private void initFiles(String folder) {
@@ -759,6 +452,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement insertAction = CassStatement.get(session, CassStatement.INSERT_ACTION);
         if (insertAction == null) {
             throw new RuntimeException("insertAction PreparedStatement is null");
         }
@@ -783,6 +477,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement insertTrigger = CassStatement.get(session, CassStatement.INSERT_TRIGGER);
         if (insertTrigger == null) {
             throw new RuntimeException("insertTrigger PreparedStatement is null");
         }
@@ -802,6 +497,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void insertTriggerActions(Trigger trigger) throws Exception {
+        PreparedStatement insertTriggerActions = CassStatement.get(session, CassStatement.INSERT_TRIGGER_ACTIONS);
         if (insertTriggerActions == null) {
             throw new RuntimeException("insertTriggerActions PreparedStatement is null");
         }
@@ -827,6 +523,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement deleteDampenings = CassStatement.get(session, CassStatement.DELETE_DAMPENINGS);
+        PreparedStatement deleteConditions = CassStatement.get(session, CassStatement.DELETE_CONDITIONS);
+        PreparedStatement deleteTriggers = CassStatement.get(session, CassStatement.DELETE_TRIGGERS);
         if (deleteDampenings == null || deleteConditions == null || deleteTriggers == null) {
             throw new RuntimeException("delete*Triggers PreparedStatement is null");
         }
@@ -855,6 +554,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement updateTrigger = CassStatement.get(session, CassStatement.UPDATE_TRIGGER);
         if (updateTrigger == null) {
             throw new RuntimeException("updateTrigger PreparedStatement is null");
         }
@@ -880,6 +580,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void deleteTriggerActions(Trigger trigger) throws Exception {
+        PreparedStatement deleteTriggerActions = CassStatement.get(session, CassStatement.DELETE_TRIGGER_ACTIONS);
         if (deleteTriggerActions == null) {
             throw new RuntimeException("updateTrigger PreparedStatement is null");
         }
@@ -897,6 +598,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectTrigger = CassStatement.get(session, CassStatement.SELECT_TRIGGER);
         if (selectTrigger == null) {
             throw new RuntimeException("selectTrigger PreparedStatement is null");
         }
@@ -924,6 +626,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectTenantTriggers = CassStatement.get(session, CassStatement.SELECT_TENANT_TRIGGERS);
         if (selectTenantTriggers == null) {
             throw new RuntimeException("selectTenantTriggers PreparedStatement is null");
         }
@@ -947,6 +650,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectAllTriggers = CassStatement.get(session, CassStatement.SELECT_ALL_TRIGGERS);
         if (selectAllTriggers == null) {
             throw new RuntimeException("selectAllTriggers PreparedStatement is null");
         }
@@ -969,6 +673,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (trigger == null) {
             throw new IllegalArgumentException("Trigger must be not null");
         }
+        PreparedStatement selectTriggerActions = CassStatement.get(session, CassStatement.SELECT_TRIGGER_ACTIONS);
         if (selectTriggerActions == null) {
             throw new RuntimeException("selectTriggerActions PreparedStatement is null");
         }
@@ -1105,6 +810,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement insertDampening = CassStatement.get(session, CassStatement.INSERT_DAMPENING);
         if (insertDampening == null) {
             throw new RuntimeException("insertDampening PreparedStatement is null");
         }
@@ -1138,6 +844,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement deleteDampeningId = CassStatement.get(session, CassStatement.DELETE_DAMPENING_ID);
         if (deleteDampeningId == null) {
             throw new RuntimeException("deleteDampeningId PreparedStatement is null");
         }
@@ -1175,6 +882,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement updateDampeningId = CassStatement.get(session, CassStatement.UPDATE_DAMPENING_ID);
         if (updateDampeningId == null) {
             throw new RuntimeException("updateDampeningId PreparedStatement is null");
         }
@@ -1208,6 +916,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectDampeningId = CassStatement.get(session, CassStatement.SELECT_DAMPENING_ID);
         if (selectDampeningId == null) {
             throw new RuntimeException("selectDampeningId PreparedStatement is null");
         }
@@ -1239,6 +948,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectTriggerDampenings = CassStatement.get(session, CassStatement.SELECT_TRIGGER_DAMPENINGS);
+        PreparedStatement selectTriggerDampeningsMode = CassStatement.get(session,
+                CassStatement.SELECT_TRIGGER_DAMPENINGS_MODE);
         if (selectTriggerDampenings == null || selectTriggerDampeningsMode == null) {
             throw new RuntimeException("selectTriggerDampenings* PreparedStatement is null");
         }
@@ -1264,6 +976,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectAllDampenings = CassStatement.get(session, CassStatement.SELECT_ALL_DAMPENINGS);
         if (selectAllDampenings == null) {
             throw new RuntimeException("selectAllDampenings PreparedStatement is null");
         }
@@ -1286,6 +999,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectAllDampeningsByTenant = CassStatement.get(session,
+                CassStatement.SELECT_ALL_DAMPENINGS_BY_TENANT);
         if (selectAllDampeningsByTenant == null) {
             throw new RuntimeException("selectAllDampeningsByTenant PreparedStatement is null");
         }
@@ -1431,6 +1146,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement insertAvailabilityCondition = CassStatement.get(session,
+                CassStatement.INSERT_AVAILABILITY_CONDITION);
+        PreparedStatement insertCompareCondition = CassStatement.get(session, CassStatement.INSERT_COMPARE_CONDITION);
+        PreparedStatement insertStringCondition = CassStatement.get(session, CassStatement.INSERT_STRING_CONDITION);
+        PreparedStatement insertThresholdCondition = CassStatement.get(session,
+                CassStatement.INSERT_THRESHOLD_CONDITION);
+        PreparedStatement insertThresholdRangeCondition = CassStatement.get(session,
+                CassStatement.INSERT_THRESHOLD_RANGE_CONDITION);
         if (insertAvailabilityCondition == null
                 || insertCompareCondition == null
                 || insertStringCondition == null
@@ -1530,7 +1253,10 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (!getTags(tenantId, triggerId, category, name).isEmpty()) {
             return;
         }
-
+        PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
+        if (insertTag == null)  {
+            throw new RuntimeException("insertTag PreparedStatement is null");
+        }
         session.execute(insertTag.bind(tenantId, triggerId, category, name, visible));
         insertTriggerByTagIndex(tenantId, category, name, triggerId);
     }
@@ -1540,10 +1266,18 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         triggers = new HashSet<>(triggers);
         if (triggers.isEmpty()) {
             triggers.add(triggerId);
+            PreparedStatement insertTagsTriggers = CassStatement.get(session, CassStatement.INSERT_TAGS_TRIGGERS);
+            if (insertTagsTriggers == null) {
+                throw new RuntimeException("insertTagsTriggers PreparedStatement is null");
+            }
             session.execute(insertTagsTriggers.bind(tenantId, category, name, triggers));
         } else {
             if (!triggers.contains(triggerId)) {
                 triggers.add(triggerId);
+                PreparedStatement updateTagsTriggers = CassStatement.get(session, CassStatement.UPDATE_TAGS_TRIGGERS);
+                if (updateTagsTriggers  == null) {
+                    throw new RuntimeException("updateTagsTriggers PreparedStatement is null");
+                }
                 session.execute(updateTagsTriggers.bind(triggers, tenantId, name));
             }
         }
@@ -1555,6 +1289,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         PreparedStatement selectTagsTriggers = CassStatement.get(session,
                 CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME);
+        if (selectTagsTriggers == null) {
+            throw new RuntimeException("selectTagsTriggers PreparedStatement is null");
+        }
         ResultSet rsTriggersTags = session.execute(selectTagsTriggers.bind(tenantId, category, name));
         for (Row row : rsTriggersTags) {
             triggerTags = row.getSet("triggers", String.class);
@@ -1566,12 +1303,26 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throws Exception {
         BoundStatement boundTags;
         if (!isEmpty(category) && !isEmpty(name)) {
+            PreparedStatement selectTagsByCategoryAndName = CassStatement.get(session,
+                    CassStatement.SELECT_TAGS_BY_CATEGORY_AND_NAME);
+            if (selectTagsByCategoryAndName == null) {
+                throw new RuntimeException("selectTagsByCategoryAndName PreparedStatement is null");
+            }
             boundTags = selectTagsByCategoryAndName.bind(tenantId, triggerId, category, name);
         } else if (!isEmpty(category)) {
+            PreparedStatement selectTagsByCategory = CassStatement.get(session, CassStatement.SELECT_TAGS_BY_CATEGORY);
+            if (selectTagsByCategory == null) {
+                throw new RuntimeException("selectTagsByCategory PreparedStatement is null");
+            }
             boundTags = selectTagsByCategory.bind(tenantId, triggerId, category);
         } else if (!isEmpty(name)) {
+            PreparedStatement selectTagsByName = CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME);
+            if (selectTagsByName == null) {
+                throw new RuntimeException("selectTagsByName PreparedStatement is null");
+            }
             boundTags = selectTagsByName.bind(tenantId, triggerId, name);
         } else {
+            PreparedStatement selectTags = CassStatement.get(session, CassStatement.SELECT_TAGS);
             boundTags = selectTags.bind(tenantId, triggerId);
         }
 
@@ -1610,6 +1361,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement deleteConditionsMode = CassStatement.get(session, CassStatement.DELETE_CONDITIONS_MODE);
         if (deleteConditionsMode == null) {
             throw new RuntimeException("deleteConditionsMode PreparedStatement is null");
         }
@@ -1631,8 +1383,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         BoundStatement boundTags;
         if (!isEmpty(name)) {
+            PreparedStatement deleteTagsByName = CassStatement.get(session, CassStatement.DELETE_TAGS_BY_NAME);
+            if (deleteTagsByName == null) {
+                throw new RuntimeException("deleteTagsByName PreparedStatement is null");
+            }
             boundTags = deleteTagsByName.bind(tenantId, triggerId, name);
         } else {
+            PreparedStatement deleteTags = CassStatement.get(session, CassStatement.DELETE_TAGS);
+            if (deleteTags == null) {
+                throw new RuntimeException("deleteTags PreparedStatement is null");
+            }
             boundTags = deleteTags.bind(tenantId, triggerId);
         }
         try {
@@ -1663,8 +1423,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             if (triggers.size() > 1) {
                 Set<String> updateTriggers = new HashSet<>(triggers);
                 updateTriggers.remove(triggerId);
+                PreparedStatement updateTagsTriggers = CassStatement.get(session, CassStatement.UPDATE_TAGS_TRIGGERS);
+                if (updateTagsTriggers == null) {
+                    throw new RuntimeException("updateTagsTriggers PreparedStatement is null");
+                }
                 session.execute(updateTagsTriggers.bind(triggers, tag.getTenantId(), tag.getName()));
             } else {
+                PreparedStatement deleteTagsTriggers = CassStatement.get(session, CassStatement.DELETE_TAGS_TRIGGERS);
+                if (deleteTagsTriggers  == null) {
+                    throw new RuntimeException("deleteTagsTriggers PreparedStatement is null");
+                }
                 session.execute(deleteTagsTriggers.bind(tag.getTenantId(), tag.getName()));
             }
         }
@@ -1681,6 +1449,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectConditionId = CassStatement.get(session, CassStatement.SELECT_CONDITION_ID);
         if (selectConditionId == null) {
             throw new RuntimeException("selectConditionId PreparedStatement is null");
         }
@@ -1712,6 +1481,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectTriggerConditions = CassStatement.get(session, CassStatement.SELECT_TRIGGER_CONDITIONS);
+        PreparedStatement selectTriggerConditionsTriggerMode = CassStatement.get(session,
+                CassStatement.SELECT_TRIGGER_CONDITIONS_TRIGGER_MODE);
         if (selectTriggerConditions == null || selectTriggerConditionsTriggerMode == null) {
             throw new RuntimeException("selectTriggerConditions* PreparedStatement is null");
         }
@@ -1738,6 +1510,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectAllConditions = CassStatement.get(session, CassStatement.SELECT_ALL_CONDITIONS);
         if (selectAllConditions == null) {
             throw new RuntimeException("selectAllConditions PreparedStatement is null");
         }
@@ -1760,6 +1533,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectAllConditionsByTenant = CassStatement.get(session,
+                CassStatement.SELECT_ALL_CONDITIONS_BY_TENANT);
         if (selectAllConditionsByTenant == null) {
             throw new RuntimeException("selectAllConditionsByTenant PreparedStatement is null");
         }
@@ -1868,6 +1643,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement insertActionPlugin = CassStatement.get(session, CassStatement.INSERT_ACTION_PLUGIN);
         if (insertActionPlugin == null) {
             throw new RuntimeException("insertActionPlugin PreparedStatement is null");
         }
@@ -1887,6 +1663,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement deleteActionPlugin = CassStatement.get(session, CassStatement.DELETE_ACTION_PLUGIN);
         if (deleteActionPlugin == null) {
             throw new RuntimeException("deleteActionPlugin PreparedStatement is null");
         }
@@ -1909,6 +1686,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement updateActionPlugin = CassStatement.get(session, CassStatement.UPDATE_ACTION_PLUGIN);
         if (updateActionPlugin == null) {
             throw new RuntimeException("updateActionPlugin PreparedStatement is null");
         }
@@ -1925,6 +1703,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectActionPlugins = CassStatement.get(session, CassStatement.SELECT_ACTION_PLUGINS);
         if (selectActionPlugins == null) {
             throw new RuntimeException("selectActionPlugins PreparedStatement is null");
         }
@@ -1949,6 +1728,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectActionPlugin = CassStatement.get(session, CassStatement.SELECT_ACTION_PLUGIN);
         if (selectActionPlugin == null) {
             throw new RuntimeException("selectActionPlugin PreparedStatement is null");
         }
@@ -1981,6 +1761,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement deleteAction = CassStatement.get(session, CassStatement.DELETE_ACTION);
         if (deleteAction == null) {
             throw new RuntimeException("deleteAction PreparedStatement is null");
         }
@@ -2013,6 +1794,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement updateAction = CassStatement.get(session, CassStatement.UPDATE_ACTION);
         if (updateAction == null) {
             throw new RuntimeException("updateAction PreparedStatement is null");
         }
@@ -2029,6 +1811,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectAllActions = CassStatement.get(session, CassStatement.SELECT_ALL_ACTIONS);
         if (selectAllActions == null) {
             throw new RuntimeException("selectAllActions PreparedStatement is null");
         }
@@ -2062,6 +1845,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectAllActionsByTenant = CassStatement.get(session,
+                CassStatement.SELECT_ALL_ACTIONS_BY_TENANT);
         if (selectAllActionsByTenant == null) {
             throw new RuntimeException("selectAllActionsByTenant PreparedStatement is null");
         }
@@ -2094,6 +1879,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectActionsPlugin = CassStatement.get(session, CassStatement.SELECT_ACTIONS_PLUGIN);
         if (selectActionsPlugin == null) {
             throw new RuntimeException("selectActionsPlugin PreparedStatement is null");
         }
@@ -2124,6 +1910,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
+        PreparedStatement selectAction = CassStatement.get(session, CassStatement.SELECT_ACTION);
         if (selectAction == null) {
             throw new RuntimeException("selectAction PreparedStatement is null");
         }
