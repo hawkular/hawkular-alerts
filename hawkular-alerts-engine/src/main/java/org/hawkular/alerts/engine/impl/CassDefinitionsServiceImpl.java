@@ -117,7 +117,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @PreDestroy
     public void shutdown() {
-        CassCluster.shutdown();
+        if (session != null) {
+            session.close();
+        }
     }
 
     private void initialData() throws IOException {
@@ -948,7 +950,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectTriggerDampenings = CassStatement.get(session, CassStatement.SELECT_TRIGGER_DAMPENINGS);
+        PreparedStatement selectTriggerDampenings = CassStatement
+                .get(session, CassStatement.SELECT_TRIGGER_DAMPENINGS);
         PreparedStatement selectTriggerDampeningsMode = CassStatement.get(session,
                 CassStatement.SELECT_TRIGGER_DAMPENINGS_MODE);
         if (selectTriggerDampenings == null || selectTriggerDampeningsMode == null) {
@@ -1254,7 +1257,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             return;
         }
         PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
-        if (insertTag == null)  {
+        if (insertTag == null) {
             throw new RuntimeException("insertTag PreparedStatement is null");
         }
         session.execute(insertTag.bind(tenantId, triggerId, category, name, visible));
@@ -1275,7 +1278,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             if (!triggers.contains(triggerId)) {
                 triggers.add(triggerId);
                 PreparedStatement updateTagsTriggers = CassStatement.get(session, CassStatement.UPDATE_TAGS_TRIGGERS);
-                if (updateTagsTriggers  == null) {
+                if (updateTagsTriggers == null) {
                     throw new RuntimeException("updateTagsTriggers PreparedStatement is null");
                 }
                 session.execute(updateTagsTriggers.bind(triggers, tenantId, name));
@@ -1430,7 +1433,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 session.execute(updateTagsTriggers.bind(triggers, tag.getTenantId(), tag.getName()));
             } else {
                 PreparedStatement deleteTagsTriggers = CassStatement.get(session, CassStatement.DELETE_TAGS_TRIGGERS);
-                if (deleteTagsTriggers  == null) {
+                if (deleteTagsTriggers == null) {
                     throw new RuntimeException("deleteTagsTriggers PreparedStatement is null");
                 }
                 session.execute(deleteTagsTriggers.bind(tag.getTenantId(), tag.getName()));
@@ -1481,7 +1484,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectTriggerConditions = CassStatement.get(session, CassStatement.SELECT_TRIGGER_CONDITIONS);
+        PreparedStatement selectTriggerConditions = CassStatement
+                .get(session, CassStatement.SELECT_TRIGGER_CONDITIONS);
         PreparedStatement selectTriggerConditionsTriggerMode = CassStatement.get(session,
                 CassStatement.SELECT_TRIGGER_CONDITIONS_TRIGGER_MODE);
         if (selectTriggerConditions == null || selectTriggerConditionsTriggerMode == null) {

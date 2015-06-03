@@ -159,11 +159,11 @@ public class AlertsEngineImpl implements AlertsEngine {
         }
     }
 
+    // Note, the cassandra cluster shutdown should be performed only once and is performed here because
+    // this is a singleton bean and is likely to stay that way.
     @PreDestroy
     public void shutdown() {
-        if (session != null) {
-            session.close();
-        }
+        CassCluster.shutdown();
     }
 
     public void clear() {
