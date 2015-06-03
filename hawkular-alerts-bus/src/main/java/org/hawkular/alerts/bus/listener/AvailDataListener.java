@@ -72,7 +72,6 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
         return activeAvailabilityIds.contains(id);
     }
 
-
     @Override
     protected void onBasicMessage(AvailDataMessage msg) {
         log.debugf("Message received: [%s]", msg);
@@ -89,7 +88,11 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
         }
 
         log.debugf("Sending: [%s]", alertData);
-        alerts.sendData(alertData);
+        try {
+            alerts.sendData(alertData);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // just dumps the expected json

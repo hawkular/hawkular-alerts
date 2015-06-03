@@ -19,6 +19,7 @@ package org.hawkular.alerts.engine;
 import javax.sql.DataSource;
 
 import org.h2.jdbcx.JdbcDataSource;
+import org.hawkular.alerts.engine.impl.AlertsEngineImpl;
 import org.hawkular.alerts.engine.impl.DbAlertsServiceImpl;
 import org.hawkular.alerts.engine.impl.DbDefinitionsServiceImpl;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
@@ -39,6 +40,7 @@ public class DbDefinitionsTest extends DefinitionsTest {
     static DroolsRulesEngineImpl rules = null;
     static DbDefinitionsServiceImpl dbDefinitions;
     static DbAlertsServiceImpl dbAlerts;
+    static AlertsEngineImpl engine = null;
     static DataSource ds;
 
     @BeforeClass
@@ -56,13 +58,13 @@ public class DbDefinitionsTest extends DefinitionsTest {
         rules = new DroolsRulesEngineImpl();
         dbDefinitions = new DbDefinitionsServiceImpl();
         dbAlerts = new DbAlertsServiceImpl();
+        engine = new AlertsEngineImpl();
 
-        dbDefinitions.setDatasource(ds);
-        dbDefinitions.setAlertsService(dbAlerts);
-        dbAlerts.setDatasource(ds);
-        dbAlerts.setDefinitions(dbDefinitions);
-        dbAlerts.setActions(actions);
-        dbAlerts.setRules(rules);
+        dbDefinitions.setDs(ds);
+        dbDefinitions.setAlertsEngine(engine);
+        dbAlerts.setDs(ds);
+        dbAlerts.setAlertsEngine(engine);
+        engine.setRules(rules);
 
         dbDefinitions.init();
         dbAlerts.initServices();

@@ -19,6 +19,7 @@ package org.hawkular.alerts.engine;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.engine.impl.AlertsEngineImpl;
 import org.hawkular.alerts.engine.impl.CassAlertsServiceImpl;
 import org.hawkular.alerts.engine.impl.CassDefinitionsServiceImpl;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
@@ -36,18 +37,20 @@ public class StandaloneAlerts {
     private MemActionsServiceImpl actions = null;
     private CassAlertsServiceImpl alerts = null;
     private CassDefinitionsServiceImpl definitions = null;
+    private AlertsEngineImpl engine = null;
     private DroolsRulesEngineImpl rules = null;
 
     private StandaloneAlerts() {
         actions = new MemActionsServiceImpl();
         rules = new DroolsRulesEngineImpl();
+        engine = new AlertsEngineImpl();
         definitions = new CassDefinitionsServiceImpl();
         alerts = new CassAlertsServiceImpl();
 
-        definitions.setAlertsService(alerts);
-        alerts.setDefinitions(definitions);
-        alerts.setActions(actions);
-        alerts.setRules(rules);
+        definitions.setAlertsEngine(engine);
+        engine.setDefinitions(definitions);
+        engine.setActions(actions);
+        engine.setRules(rules);
 
         definitions.init();
         alerts.initServices();
