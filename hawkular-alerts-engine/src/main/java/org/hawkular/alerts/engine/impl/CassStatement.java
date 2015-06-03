@@ -82,10 +82,10 @@ public class CassStatement {
     public static final String SELECT_ALERTS_TRIGGERS;
     public static final String SELECT_CONDITION_ID;
     public static final String SELECT_CONDITIONS_ALL;
-    public static final String SELECT_CONDITIONS_TENANT;
+    public static final String SELECT_CONDITIONS_BY_TENANT;
     public static final String SELECT_DAMPENING_ID;
     public static final String SELECT_DAMPENINGS_ALL;
-    public static final String SELECT_DAMPENINGS_TENANT;
+    public static final String SELECT_DAMPENINGS_BY_TENANT;
     public static final String SELECT_TAGS;
     public static final String SELECT_TAGS_BY_CATEGORY;
     public static final String SELECT_TAGS_BY_CATEGORY_AND_NAME;
@@ -246,7 +246,7 @@ public class CassStatement {
                 + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId "
                 + "FROM " + keyspace + ".conditions ";
 
-        SELECT_CONDITIONS_TENANT = "SELECT triggerId, triggerMode, type, conditionSetSize, "
+        SELECT_CONDITIONS_BY_TENANT = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, "
                 + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId "
                 + "FROM " + keyspace + ".conditions "
@@ -261,7 +261,7 @@ public class CassStatement {
                 + "evalTotalSetting, evalTimeSetting, dampeningId "
                 + "FROM " + keyspace + ".dampenings ";
 
-        SELECT_DAMPENINGS_TENANT = "SELECT tenantId, triggerId, triggerMode, type, " + "evalTrueSetting, "
+        SELECT_DAMPENINGS_BY_TENANT = "SELECT tenantId, triggerId, triggerMode, type, " + "evalTrueSetting, "
                 + "evalTotalSetting, evalTimeSetting, dampeningId "
                 + "FROM " + keyspace + ".dampenings "
                 + "WHERE tenantId = ? ";

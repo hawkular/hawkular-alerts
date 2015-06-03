@@ -115,12 +115,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
+    // Note, the cassandra cluster shutdown should be performed only once and is performed here because
+    // this is a singleton bean.  If it becomes Stateless this login will need to be moved.
     @PreDestroy
     public void shutdown() {
-        if (session != null) {
-            session.close();
-        }
+        CassCluster.shutdown();
     }
+
 
     private void initialData() throws IOException {
         String data = System.getProperty(JBOSS_DATA_DIR);
@@ -628,13 +629,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectTenantTriggers = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
-        if (selectTenantTriggers == null) {
-            throw new RuntimeException("selectTenantTriggers PreparedStatement is null");
+        PreparedStatement selectTriggersTenant = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
+        if (selectTriggersTenant == null) {
+            throw new RuntimeException("selectTriggersTenant PreparedStatement is null");
         }
         List<Trigger> triggers = new ArrayList<>();
         try {
-            ResultSet rsTriggers = session.execute(selectTenantTriggers.bind(tenantId));
+            ResultSet rsTriggers = session.execute(selectTriggersTenant.bind(tenantId));
             for (Row row : rsTriggers) {
                 Trigger trigger = mapTrigger(row);
                 selectTriggerActions(trigger);
@@ -652,13 +653,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectAllTriggers = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_ALL);
-        if (selectAllTriggers == null) {
-            throw new RuntimeException("selectAllTriggers PreparedStatement is null");
+        PreparedStatement selectTriggersAll = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_ALL);
+        if (selectTriggersAll == null) {
+            throw new RuntimeException("selectTriggersAll PreparedStatement is null");
         }
         List<Trigger> triggers = new ArrayList<>();
         try {
-            ResultSet rsTriggers = session.execute(selectAllTriggers.bind());
+            ResultSet rsTriggers = session.execute(selectTriggersAll.bind());
             for (Row row : rsTriggers) {
                 Trigger trigger = mapTrigger(row);
                 selectTriggerActions(trigger);
@@ -979,13 +980,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectAllDampenings = CassStatement.get(session, CassStatement.SELECT_DAMPENINGS_ALL);
-        if (selectAllDampenings == null) {
-            throw new RuntimeException("selectAllDampenings PreparedStatement is null");
+        PreparedStatement selectDampeningsAll = CassStatement.get(session, CassStatement.SELECT_DAMPENINGS_ALL);
+        if (selectDampeningsAll == null) {
+            throw new RuntimeException("selectDampeningsAll PreparedStatement is null");
         }
         List<Dampening> dampenings = new ArrayList<>();
         try {
-            ResultSet rsDampenings = session.execute(selectAllDampenings.bind());
+            ResultSet rsDampenings = session.execute(selectDampeningsAll.bind());
             mapDampenings(rsDampenings, dampenings);
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1002,14 +1003,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectAllDampeningsByTenant = CassStatement.get(session,
-                CassStatement.SELECT_DAMPENINGS_TENANT);
-        if (selectAllDampeningsByTenant == null) {
-            throw new RuntimeException("selectAllDampeningsByTenant PreparedStatement is null");
+        PreparedStatement selectDampeningsByTenant = CassStatement.get(session,
+                CassStatement.SELECT_DAMPENINGS_BY_TENANT);
+        if (selectDampeningsByTenant == null) {
+            throw new RuntimeException("selectDampeningsByTenant PreparedStatement is null");
         }
         List<Dampening> dampenings = new ArrayList<>();
         try {
-            ResultSet rsDampenings = session.execute(selectAllDampeningsByTenant.bind(tenantId));
+            ResultSet rsDampenings = session.execute(selectDampeningsByTenant.bind(tenantId));
             mapDampenings(rsDampenings, dampenings);
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1149,19 +1150,19 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement insertAvailabilityCondition = CassStatement.get(session,
+        PreparedStatement insertConditionAvailability = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_AVAILABILITY);
-        PreparedStatement insertCompareCondition = CassStatement.get(session, CassStatement.INSERT_CONDITION_COMPARE);
-        PreparedStatement insertStringCondition = CassStatement.get(session, CassStatement.INSERT_CONDITION_STRING);
-        PreparedStatement insertThresholdCondition = CassStatement.get(session,
+        PreparedStatement insertConditionCompare = CassStatement.get(session, CassStatement.INSERT_CONDITION_COMPARE);
+        PreparedStatement insertConditionString = CassStatement.get(session, CassStatement.INSERT_CONDITION_STRING);
+        PreparedStatement insertConditionThreshold = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_THRESHOLD);
-        PreparedStatement insertThresholdRangeCondition = CassStatement.get(session,
+        PreparedStatement insertConditionThresholdRange = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_THRESHOLD_RANGE);
-        if (insertAvailabilityCondition == null
-                || insertCompareCondition == null
-                || insertStringCondition == null
-                || insertThresholdCondition == null
-                || insertThresholdRangeCondition == null) {
+        if (insertConditionAvailability == null
+                || insertConditionCompare == null
+                || insertConditionString == null
+                || insertConditionThreshold == null
+                || insertConditionThresholdRange == null) {
             throw new RuntimeException("insert*Condition PreparedStatement is null");
         }
         // Get rid of the prior condition set
@@ -1186,7 +1187,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 if (cond instanceof AvailabilityCondition) {
 
                     AvailabilityCondition aCond = (AvailabilityCondition) cond;
-                    futures.add(session.executeAsync(insertAvailabilityCondition.bind(aCond.getTenantId(), aCond
+                    futures.add(session.executeAsync(insertConditionAvailability.bind(aCond.getTenantId(), aCond
                             .getTriggerId(),
                             aCond.getTriggerMode().name(), aCond.getConditionSetSize(), aCond.getConditionSetIndex(),
                             aCond.getConditionId(), aCond.getDataId(), aCond.getOperator().name())));
@@ -1195,7 +1196,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
                     CompareCondition cCond = (CompareCondition) cond;
                     dataIds.add(cCond.getData2Id());
-                    futures.add(session.executeAsync(insertCompareCondition.bind(cCond.getTenantId(),
+                    futures.add(session.executeAsync(insertConditionCompare.bind(cCond.getTenantId(),
                             cCond.getTriggerId(), cCond.getTriggerMode().name(), cCond.getConditionSetSize(),
                             cCond.getConditionSetIndex(), cCond.getConditionId(), cCond.getDataId(),
                             cCond.getOperator().name(), cCond.getData2Id(), cCond.getData2Multiplier())));
@@ -1203,7 +1204,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 } else if (cond instanceof StringCondition) {
 
                     StringCondition sCond = (StringCondition) cond;
-                    futures.add(session.executeAsync(insertStringCondition.bind(sCond.getTenantId(), sCond
+                    futures.add(session.executeAsync(insertConditionString.bind(sCond.getTenantId(), sCond
                             .getTriggerId(), sCond.getTriggerMode().name(), sCond.getConditionSetSize(),
                             sCond.getConditionSetIndex(), sCond.getConditionId(), sCond.getDataId(),
                             sCond.getOperator().name(), sCond.getPattern(), sCond.isIgnoreCase())));
@@ -1211,7 +1212,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 } else if (cond instanceof ThresholdCondition) {
 
                     ThresholdCondition tCond = (ThresholdCondition) cond;
-                    futures.add(session.executeAsync(insertThresholdCondition.bind(tCond.getTenantId(),
+                    futures.add(session.executeAsync(insertConditionThreshold.bind(tCond.getTenantId(),
                             tCond.getTriggerId(), tCond.getTriggerMode().name(), tCond.getConditionSetSize(),
                             tCond.getConditionSetIndex(), tCond.getConditionId(), tCond.getDataId(),
                             tCond.getOperator().name(), tCond.getThreshold())));
@@ -1219,7 +1220,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 } else if (cond instanceof ThresholdRangeCondition) {
 
                     ThresholdRangeCondition rCond = (ThresholdRangeCondition) cond;
-                    futures.add(session.executeAsync(insertThresholdRangeCondition.bind(rCond.getTenantId(),
+                    futures.add(session.executeAsync(insertConditionThresholdRange.bind(rCond.getTenantId(),
                             rCond.getTriggerId(), rCond.getTriggerMode().name(), rCond.getConditionSetSize(),
                             rCond.getConditionSetIndex(), rCond.getConditionId(), rCond.getDataId(),
                             rCond.getOperatorLow().name(), rCond.getOperatorHigh().name(), rCond.getThresholdLow(),
@@ -1514,13 +1515,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectAllConditions = CassStatement.get(session, CassStatement.SELECT_CONDITIONS_ALL);
-        if (selectAllConditions == null) {
-            throw new RuntimeException("selectAllConditions PreparedStatement is null");
+        PreparedStatement selectConditionsAll = CassStatement.get(session, CassStatement.SELECT_CONDITIONS_ALL);
+        if (selectConditionsAll == null) {
+            throw new RuntimeException("selectConditionsAll PreparedStatement is null");
         }
         List<Condition> conditions = new ArrayList<>();
         try {
-            ResultSet rsConditions = session.execute(selectAllConditions.bind());
+            ResultSet rsConditions = session.execute(selectConditionsAll.bind());
             mapConditions(rsConditions, conditions);
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1537,14 +1538,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectAllConditionsByTenant = CassStatement.get(session,
-                CassStatement.SELECT_CONDITIONS_TENANT);
-        if (selectAllConditionsByTenant == null) {
-            throw new RuntimeException("selectAllConditionsByTenant PreparedStatement is null");
+        PreparedStatement selectConditionsByTenant = CassStatement.get(session,
+                CassStatement.SELECT_CONDITIONS_BY_TENANT);
+        if (selectConditionsByTenant == null) {
+            throw new RuntimeException("selectConditionsByTenant PreparedStatement is null");
         }
         List<Condition> conditions = new ArrayList<>();
         try {
-            ResultSet rsConditions = session.execute(selectAllConditionsByTenant.bind(tenantId));
+            ResultSet rsConditions = session.execute(selectConditionsByTenant.bind(tenantId));
             mapConditions(rsConditions, conditions);
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -1815,13 +1816,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectAllActions = CassStatement.get(session, CassStatement.SELECT_ACTIONS_ALL);
-        if (selectAllActions == null) {
-            throw new RuntimeException("selectAllActions PreparedStatement is null");
+        PreparedStatement selectActionsAll = CassStatement.get(session, CassStatement.SELECT_ACTIONS_ALL);
+        if (selectActionsAll == null) {
+            throw new RuntimeException("selectActionsAll PreparedStatement is null");
         }
         Map<String, Map<String, Set<String>>> actions = new HashMap<>();
         try {
-            ResultSet rsActions = session.execute(selectAllActions.bind());
+            ResultSet rsActions = session.execute(selectActionsAll.bind());
             for (Row row : rsActions) {
                 String tenantId = row.getString("tenantId");
                 String actionPlugin = row.getString("actionPlugin");
@@ -1849,14 +1850,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectAllActionsByTenant = CassStatement.get(session,
+        PreparedStatement selectActionsByTenant = CassStatement.get(session,
                 CassStatement.SELECT_ACTIONS_BY_TENANT);
-        if (selectAllActionsByTenant == null) {
-            throw new RuntimeException("selectAllActionsByTenant PreparedStatement is null");
+        if (selectActionsByTenant == null) {
+            throw new RuntimeException("selectActionsByTenant PreparedStatement is null");
         }
         Map<String, Set<String>> actions = new HashMap<>();
         try {
-            ResultSet rsActions = session.execute(selectAllActionsByTenant.bind(tenantId));
+            ResultSet rsActions = session.execute(selectActionsByTenant.bind(tenantId));
             for (Row row : rsActions) {
                 String actionPlugin = row.getString("actionPlugin");
                 String actionId = row.getString("actionId");

@@ -27,7 +27,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 
@@ -45,9 +44,6 @@ import org.hawkular.alerts.engine.rules.RulesEngine;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.jboss.logging.Logger;
 
-import com.datastax.driver.core.Session;
-import com.google.gson.GsonBuilder;
-
 /**
  * Cassandra implementation for {@link org.hawkular.alerts.api.services.AlertsService}.
  * This implementation processes data asynchronously using a buffer queue.
@@ -62,13 +58,9 @@ public class AlertsEngineImpl implements AlertsEngine {
 
     private static final String ENGINE_DELAY = "hawkular-alerts.engine-delay";
     private static final String ENGINE_PERIOD = "hawkular-alerts.engine-period";
-    private static final String CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
 
     private int delay;
     private int period;
-
-    private Session session;
-    private String keyspace;
 
     private final List<Data> pendingData;
     private final List<Alert> alerts;
@@ -139,17 +131,6 @@ public class AlertsEngineImpl implements AlertsEngine {
     @PostConstruct
     public void initServices() {
         try {
-            if (this.keyspace == null) {
-                this.keyspace = AlertProperties.getProperty(CASSANDRA_KEYSPACE, "hawkular_alerts");
-            }
-
-            if (session == null) {
-                session = CassCluster.getSession();
-            }
-
-            GsonBuilder gsonBuilder = new GsonBuilder();
-            gsonBuilder.registerTypeHierarchyAdapter(ConditionEval.class, new GsonAdapter<ConditionEval>());
-
             reload();
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
@@ -157,13 +138,6 @@ public class AlertsEngineImpl implements AlertsEngine {
             }
             msgLog.errorCannotInitializeAlertsService(t.getMessage());
         }
-    }
-
-    // Note, the cassandra cluster shutdown should be performed only once and is performed here because
-    // this is a singleton bean and is likely to stay that way.
-    @PreDestroy
-    public void shutdown() {
-        CassCluster.shutdown();
     }
 
     public void clear() {
