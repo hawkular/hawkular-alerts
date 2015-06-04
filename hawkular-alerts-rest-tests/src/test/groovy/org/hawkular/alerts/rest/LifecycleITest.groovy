@@ -249,8 +249,21 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals("RESOLVED", resp.data[0].status)
         assertEquals("AUTO", resp.data[0].resolvedBy)
+        assert null != resp.data[0].evalSets
         assert null != resp.data[0].resolvedEvalSets
+        assert !resp.data[0].evalSets.isEmpty()
+        assert !resp.data[0].resolvedEvalSets.isEmpty()
 
+        // take this opportunity to test result thinning
+        resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"RESOLVED",thin:true] )
+        assertEquals(200, resp.status)
+        assertEquals("RESOLVED", resp.data[0].status)
+        assertEquals("AUTO", resp.data[0].resolvedBy)
+        assert null == resp.data[0].evalSets
+        assert null == resp.data[0].resolvedEvalSets
+
+        // Throw in a status filter test
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"OPEN"] )
         assertEquals(204, resp.status)
     }

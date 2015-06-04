@@ -45,6 +45,8 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.google.common.util.concurrent.Futures;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -56,12 +58,14 @@ import com.google.gson.GsonBuilder;
  */
 @Stateless
 public class CassAlertsServiceImpl implements AlertsService {
+
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassAlertsServiceImpl.class);
 
     private Session session;
 
     private Gson gson;
+    private Gson gsonThin;
 
     @EJB
     AlertsEngine alertsEngine;
@@ -79,6 +83,21 @@ public class CassAlertsServiceImpl implements AlertsService {
             GsonBuilder gsonBuilder = new GsonBuilder();
             gsonBuilder.registerTypeHierarchyAdapter(ConditionEval.class, new GsonAdapter<ConditionEval>());
             gson = gsonBuilder.create();
+
+            GsonBuilder gsonBuilderThin = new GsonBuilder();
+            gsonBuilderThin.registerTypeHierarchyAdapter(ConditionEval.class, new GsonAdapter<ConditionEval>());
+            gsonBuilderThin.addDeserializationExclusionStrategy(new ExclusionStrategy() {
+                @Override
+                public boolean shouldSkipField(FieldAttributes f) {
+                    final Alert.Thin thin = f.getAnnotation(Alert.Thin.class);
+                    return thin != null;
+                }
+                @Override
+                public boolean shouldSkipClass(Class<?> clazz) {
+                    return false;
+                }
+            });
+            gsonThin = gsonBuilderThin.create();
 
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
@@ -134,6 +153,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new RuntimeException("Cassandra session is null");
         }
         boolean filter = (null != criteria && criteria.hasCriteria());
+        boolean thin = (null != criteria && criteria.isThin());
 
         if (filter) {
             log.debugf("getAlerts criteria: %s", criteria.toString());
@@ -210,7 +230,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 ResultSet rsAlerts = session.execute(selectAlertsByTenant.bind(tenantId));
                 for (Row row : rsAlerts) {
                     String payload = row.getString("payload");
-                    Alert alert = fromJson(payload, Alert.class);
+                    Alert alert = fromJson(payload, Alert.class, thin);
                     alerts.add(alert);
                 }
             } else {
@@ -226,7 +246,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 rsAlerts.stream().forEach(r -> {
                     for (Row row : r) {
                         String payload = row.getString("payload");
-                        Alert alert = fromJson(payload, Alert.class);
+                        Alert alert = fromJson(payload, Alert.class, thin);
                         alerts.add(alert);
                     }
                 });
@@ -560,14 +580,14 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     private String toJson(Object resource) {
 
-        log.debugf(gson.toJson(resource));
-        return gson.toJson(resource);
-
+        String result = gson.toJson(resource);
+        log.debugf(result);
+        return result;
     }
 
-    private <T> T fromJson(String json, Class<T> clazz) {
+    private <T> T fromJson(String json, Class<T> clazz, boolean thin) {
 
-        return gson.fromJson(json, clazz);
+        return thin ? gsonThin.fromJson(json, clazz) : gson.fromJson(json, clazz);
     }
 
     private boolean isEmpty(Collection<?> c) {
