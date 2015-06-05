@@ -24,7 +24,6 @@ import org.hawkular.alerts.api.model.trigger.Tag;
 
 /**
  * Query criteria for fetching Alerts.
- * TODO: paging, sorting
  * @author jay shaughnessy
  * @author lucas ponce
  */
@@ -41,6 +40,7 @@ public class AlertsCriteria {
     Collection<String> triggerIds = null;
     Tag tag = null;
     Collection<Tag> tags = null;
+    boolean thin = false;
 
     public AlertsCriteria() {
         super();
@@ -160,6 +160,14 @@ public class AlertsCriteria {
         this.severities = severities;
     }
 
+    public boolean isThin() {
+        return thin;
+    }
+
+    public void setThin(boolean thin) {
+        this.thin = thin;
+    }
+
     public boolean hasCriteria() {
         return null != startTime //
                 || null != endTime
@@ -180,7 +188,6 @@ public class AlertsCriteria {
         return "AlertsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", alertId=" + alertId
                 + ", alertIds=" + alertIds + ", status=" + status + ", statusSet=" + statusSet + ", severity="
                 + severity + ", severities=" + severities + ", triggerId=" + triggerId + ", triggerIds=" + triggerIds
-                + ", tag=" + tag + ", tags=" + tags + "]";
+                + ", tag=" + tag + ", tags=" + tags + ", thin=" + thin + "]";
     }
-
 }

@@ -16,6 +16,10 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Set;
 
@@ -31,6 +35,14 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Lucas Ponce
  */
 public class Alert {
+
+    /**
+     * Used to annotate fields that should be thinned in order to return/deserialize a lightweight Alert
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface Thin {
+    }
 
     public enum Status {
         OPEN, ACKNOWLEDGED, RESOLVED
@@ -50,6 +62,7 @@ public class Alert {
     private long ctime;
 
     @JsonInclude(Include.NON_EMPTY)
+    @Thin
     private List<Set<ConditionEval>> evalSets;
 
     @JsonInclude
@@ -77,6 +90,7 @@ public class Alert {
     private String resolvedNotes;
 
     @JsonInclude(Include.NON_EMPTY)
+    @Thin
     private List<Set<ConditionEval>> resolvedEvalSets;
 
     public Alert() {

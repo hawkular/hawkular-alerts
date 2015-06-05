@@ -30,21 +30,27 @@ import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Oper
 import static org.hawkular.alerts.api.model.trigger.Trigger.Mode
 import static org.junit.Assert.assertEquals
 
+import org.junit.FixMethodOrder
 import org.junit.Test
+
+import static org.junit.runners.MethodSorters.NAME_ASCENDING
 
 /**
  * Alerts REST tests.
  *
  * @author Jay Shaughnessy
  */
+@FixMethodOrder(NAME_ASCENDING)
 class LifecycleITest extends AbstractITestBase {
 
     static host = System.getProperty('hawkular.host') ?: '127.0.0.1'
     static port = Integer.valueOf(System.getProperty('hawkular.port') ?: "8080")
+    static t01Start = String.valueOf(System.currentTimeMillis())
+    static t02Start;
 
     @Test
-    void disableTest() {
-        String start = String.valueOf(System.currentTimeMillis());
+    void t01_disableTest() {
+        String start = t01Start;
 
         // CREATE the trigger
         def resp = client.get(path: "")
@@ -58,13 +64,14 @@ class LifecycleITest extends AbstractITestBase {
 
         testTrigger.setAutoDisable(true);
         testTrigger.setAutoResolve(false);
+        testTrigger.setSeverity(Severity.LOW);
 
         resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
         // ADD Firing condition
         AvailabilityCondition firingCond = new AvailabilityCondition("test-autodisable-trigger",
-                Mode.FIRING, "test-lifecycle-avail", Operator.NOT_UP);
+                Mode.FIRING, "test-autodisable-avail", Operator.NOT_UP);
 
         resp = client.post(path: "triggers/test-autodisable-trigger/conditions", body: firingCond)
         assertEquals(200, resp.status)
@@ -82,6 +89,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("test-autodisable-trigger", resp.data.name)
         assertEquals(true, resp.data.enabled)
         assertEquals(true, resp.data.autoDisable);
+        assertEquals("LOW", resp.data.severity);
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger"] )
@@ -91,14 +99,14 @@ class LifecycleITest extends AbstractITestBase {
         // Note, the groovyx rest c;lient seems incapable of allowing a JSON payload and a TEXT response (which is what
         // we get back from the activemq rest client used by the bus), so use the bus' java rest client to do this.
         RestClient busClient = new RestClient(host, port);
-        String json = "{\"data\":[{\"id\":\"test-lifecycle-avail\",\"timestamp\":" + System.currentTimeMillis() +
+        String json = "{\"data\":[{\"id\":\"test-autodisable-avail\",\"timestamp\":" + System.currentTimeMillis() +
                       ",\"value\"=\"DOWN\",\"type\"=\"availability\"}]}";
         busClient.postTopicMessage("HawkularAlertData", json, null);
         //assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -131,8 +139,8 @@ class LifecycleITest extends AbstractITestBase {
     }
 
     @Test
-    void autoResolveTest() {
-        String start = String.valueOf(System.currentTimeMillis());
+    void t02_autoResolveTest() {
+        String start = t02Start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
         def resp = client.get(path: "")
@@ -154,7 +162,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // ADD Firing condition
         AvailabilityCondition firingCond = new AvailabilityCondition("test-autoresolve-trigger",
-                Mode.FIRING, "test-lifecycle-avail", Operator.NOT_UP);
+                Mode.FIRING, "test-autoresolve-avail", Operator.NOT_UP);
 
         resp = client.post(path: "triggers/test-autoresolve-trigger/conditions", body: firingCond)
         assertEquals(200, resp.status)
@@ -162,7 +170,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // ADD AutoResolve condition
         AvailabilityCondition autoResolveCond = new AvailabilityCondition("test-autoresolve-trigger",
-                Mode.AUTORESOLVE, "test-lifecycle-avail", Operator.UP);
+                Mode.AUTORESOLVE, "test-autoresolve-avail", Operator.UP);
 
         resp = client.post(path: "triggers/test-autoresolve-trigger/conditions", body: autoResolveCond)
         assertEquals(200, resp.status)
@@ -190,7 +198,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
-        Availability avail = new Availability("test-lifecycle-avail", System.currentTimeMillis(), "DOWN");
+        Availability avail = new Availability("test-autoresolve-avail", System.currentTimeMillis(), "DOWN");
         MixedData mixedData = new MixedData();
         mixedData.getAvailability().add(avail);
         resp = client.post(path: "data", body: mixedData);
@@ -198,12 +206,11 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
-            resp = client.get(path: "",
-                query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"OPEN",severities:"HIGH"] )
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
@@ -217,17 +224,8 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.put(path: "ack", query: [alertIds:resp.data[0].alertId,ackBy:"testUser",ackNotes:"testNotes"] )
         assertEquals(200, resp.status)
 
-        // Take this opportunity to do some negative query tests...
         resp = client.get(path: "",
-            query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"OPEN,RESOLVED"] )
-        assertEquals(204, resp.status)
-        resp = client.get(path: "",
-            query: [startTime:start,triggerIds:"test-autoresolve-trigger",severities:"LOW,MEDIUM,CRITICAL"] )
-        assertEquals(204, resp.status)
-
-        // Now proceed...
-        resp = client.get(path: "",
-            query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"ACKNOWLEDGED",severities:"HIGH"] )
+            query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"ACKNOWLEDGED"] )
         assertEquals(200, resp.status)
         assertEquals("ACKNOWLEDGED", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
@@ -240,11 +238,10 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals("test-autoresolve-trigger", resp.data.name)
         assertEquals(true, resp.data.enabled)
-        //assertEquals(Mode.AUTORESOLVE, resp.data.mode)
 
         // Send in UP avail data to autoresolve the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
-        avail = new Availability("test-lifecycle-avail", System.currentTimeMillis(), "UP");
+        avail = new Availability("test-autoresolve-avail", System.currentTimeMillis(), "UP");
         mixedData.clear();
         mixedData.getAvailability().add(avail);
         resp = client.post(path: "data", body: mixedData);
@@ -252,7 +249,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -265,15 +262,11 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals("RESOLVED", resp.data[0].status)
         assertEquals("AUTO", resp.data[0].resolvedBy)
-        assert null != resp.data[0].resolvedEvalSets
-
-        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"OPEN"] )
-        assertEquals(204, resp.status)
     }
 
 
     @Test
-    void manualResolutionTest() {
+    void t03_manualResolutionTest() {
         String start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
@@ -295,7 +288,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // ADD Firing condition
         AvailabilityCondition firingCond = new AvailabilityCondition("test-manual-trigger",
-                Mode.FIRING, "test-lifecycle-avail", Operator.NOT_UP);
+                Mode.FIRING, "test-manual-avail", Operator.NOT_UP);
 
         resp = client.post(path: "triggers/test-manual-trigger/conditions", body: firingCond)
         assertEquals(200, resp.status)
@@ -323,7 +316,7 @@ class LifecycleITest extends AbstractITestBase {
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<5; i++) {
-            Availability avail = new Availability("test-lifecycle-avail", System.currentTimeMillis(), "DOWN");
+            Availability avail = new Availability("test-manual-avail", System.currentTimeMillis(), "DOWN");
             MixedData mixedData = new MixedData();
             mixedData.getAvailability().add(avail);
             resp = client.post(path: "data", body: mixedData);
@@ -332,7 +325,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
@@ -359,5 +352,116 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
     }
 
+    // Given name ordering this test runs after tests 1..3, it uses the alerts generated in those tests
+    // to test alert queries and updates.
+    @Test
+    void t04_fetchTest() {
+        // queries will look for alerts generated in this test tun
+        String start = t01Start;
 
+        // FETCH alerts for bogus trigger, should not be any
+        def resp = client.get(path: "", query: [startTime:start,triggerIds:"XXX"] )
+        assertEquals(204, resp.status)
+
+        // FETCH alerts for bogus alert id, should not be any
+        resp = client.get(path: "", query: [startTime:start,alertIds:"XXX,YYY"] )
+        assertEquals(204, resp.status)
+
+        // FETCH alerts for bogus tag, should not be any
+        resp = client.get(path: "", query: [startTime:start,tags:"XXX"] )
+        assertEquals(204, resp.status)
+
+        // FETCH alerts for bogus category|tag, should not be any
+        resp = client.get(path: "", query: [startTime:start,tags:"XXX|YYY"] )
+        assertEquals(204, resp.status)
+
+        // FETCH alerts for just triggers generated in test t01, by time, should be 1
+        resp = client.get(path: "", query: [startTime:t01Start,endTime:t02Start] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals("test-autodisable-trigger", resp.data[0].triggerId)
+
+        // FETCH the alert above again, this time by alert id
+        def alertId = resp.data[0].alertId
+        resp = client.get(path: "", query: [startTime:start,alertIds:"XXX,"+alertId] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals(alertId, resp.data[0].alertId)
+
+        // FETCH the alert above again, this time by tag
+        resp = client.get(path: "", query: [startTime:start,tags:"dataId|test-autodisable-avail"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals(alertId, resp.data[0].alertId)
+
+        // FETCH the alert above again, this time by union of (good) triggerId and (bad) tag
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger",tags:"XXX"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals(alertId, resp.data[0].alertId)
+
+        // FETCH alerts for test-manual-trigger, there should be 5 from the earlier test
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger"] )
+        assertEquals(200, resp.status)
+        assertEquals(5, resp.data.size())
+
+        // 4 OPEN and 1 RESOLVED
+        resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED"] )
+        assertEquals(200, resp.status)
+        assertEquals(5, resp.data.size())
+
+        resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED,ACKNOWLEDGED"] )
+        assertEquals(200, resp.status)
+        assertEquals(5, resp.data.size())
+
+        resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN,ACKNOWLEDGED"] )
+        assertEquals(200, resp.status)
+        assertEquals(4, resp.data.size())
+
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"ACKNOWLEDGED"] )
+        assertEquals(204, resp.status)
+
+        // FETCH by severity (1 HIGH and 1 LOW, five MEDIUM)
+        resp = client.get(path: "", query: [startTime:start,severities:"CRITICAL"] )
+        assertEquals(204, resp.status)
+
+        resp = client.get(path: "", query: [startTime:start,severities:"LOW,HIGH,MEDIUM"] )
+        assertEquals(200, resp.status)
+        assertEquals(7, resp.data.size())
+
+        resp = client.get(path: "", query: [startTime:start,severities:"LOW"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals("LOW", resp.data[0].severity)
+        assertEquals("test-autodisable-trigger", resp.data[0].triggerId)
+
+        resp = client.get(path: "", query: [startTime:start,severities:"HIGH"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals("HIGH", resp.data[0].severity)
+        assertEquals("test-autoresolve-trigger", resp.data[0].triggerId)
+
+        // test thinning as well as verifying the RESOLVED status fetch (using the autoresolve alert)
+        resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"RESOLVED",thin:false] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals("RESOLVED", resp.data[0].status)
+        assertEquals("AUTO", resp.data[0].resolvedBy)
+        assert null != resp.data[0].evalSets
+        assert null != resp.data[0].resolvedEvalSets
+        assert !resp.data[0].evalSets.isEmpty()
+        assert !resp.data[0].resolvedEvalSets.isEmpty()
+
+        resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"RESOLVED",thin:true] )
+        assertEquals(200, resp.status)
+        assertEquals("RESOLVED", resp.data[0].status)
+        assertEquals("AUTO", resp.data[0].resolvedBy)
+        assert null == resp.data[0].evalSets
+        assert null == resp.data[0].resolvedEvalSets
+    }
 }

@@ -113,7 +113,10 @@ public class AlertsHandler {
             @ApiParam(required = false, value = "filter out alerts for unspecified tags, comma separated list of tags, "
                     + "each tag of format [category|]name")
             @QueryParam("tags")
-            final String tags) {
+            final String tags,
+            @ApiParam(required = false, value = "return only thin alerts, do not include: evalSets, resolvedEvalSets")
+            @QueryParam("thin")
+            final Boolean thin) {
         if (!checkPersona()) {
             return ResponseUtil.internalError("No persona found");
         }
@@ -158,6 +161,9 @@ public class AlertsHandler {
                     }
                 }
                 criteria.setTags(tagList);
+            }
+            if (null != thin) {
+                criteria.setThin(thin.booleanValue());
             }
 
             List<Alert> alertList = alertsService.getAlerts(persona.getId(), criteria);
