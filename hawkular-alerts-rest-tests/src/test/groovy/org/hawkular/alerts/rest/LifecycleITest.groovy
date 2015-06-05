@@ -464,4 +464,24 @@ class LifecycleITest extends AbstractITestBase {
         assert null == resp.data[0].evalSets
         assert null == resp.data[0].resolvedEvalSets
     }
+
+    @Test
+    void t05_paging() {
+
+        // 4 OPEN and 1 RESOLVED
+        def resp = client.get(path: "",
+                query: [triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED", page: "0", per_page: "3"] )
+        assertEquals(200, resp.status)
+        assertEquals(3, resp.data.size())
+
+        println(resp.headers)
+
+        resp = client.get(path: "",
+                query: [triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED", page: "1", per_page: "3"] )
+        assertEquals(200, resp.status)
+        assertEquals(2, resp.data.size())
+
+        println(resp.headers)
+
+    }
 }

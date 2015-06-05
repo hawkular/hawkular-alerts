@@ -18,6 +18,7 @@ package org.hawkular.alerts.engine.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +33,11 @@ import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.paging.AlertComparator;
+import org.hawkular.alerts.api.model.paging.AlertComparator.Field;
+import org.hawkular.alerts.api.model.paging.Order;
+import org.hawkular.alerts.api.model.paging.Page;
+import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
@@ -161,7 +167,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     // filter returns 10 alertIds. We may want to pull the 10 alerts and apply the status filter in the code. For
     // large Alert history, the status filter applied to the DB could return a huge set of ids.
     @Override
-    public List<Alert> getAlerts(String tenantId, AlertsCriteria criteria) throws Exception {
+    public Page<Alert> getAlerts(String tenantId, AlertsCriteria criteria, Pager pager) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
@@ -201,7 +207,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         alertIds.retainAll(alertIdsFilteredByTriggers);
                     }
                     if (alertIds.isEmpty()) {
-                        return alerts;
+                        return new Page<>(alerts, pager, 0);
                     }
                 }
 
@@ -217,7 +223,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         alertIds.retainAll(alertIdsFilteredByCtime);
                     }
                     if (alertIds.isEmpty()) {
-                        return alerts;
+                        return new Page<>(alerts, pager, 0);
                     }
                 }
 
@@ -233,7 +239,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         alertIds.retainAll(alertIdsFilteredBySeverity);
                     }
                     if (alertIds.isEmpty()) {
-                        return alerts;
+                        return new Page<>(alerts, pager, 0);
                     }
                 }
 
@@ -250,7 +256,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                     }
 
                     if (alertIds.isEmpty()) {
-                        return alerts;
+                        return new Page<>(alerts, pager, 0);
                     }
                 }
             }
@@ -291,7 +297,33 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw e;
         }
 
-        return alerts;
+        return preparePage(alerts, pager);
+    }
+
+    private Page<Alert> preparePage(List<Alert> alerts, Pager pager) {
+        if (pager != null)  {
+            List<Alert> ordered = alerts;
+            if (pager.getOrder() != null) {
+                pager.getOrder().stream().filter(o -> o.getField() != null && o.getDirection() != null)
+                        .forEach(o -> {
+                        AlertComparator comparator = new AlertComparator(Field.getField(o.getField()),
+                                o.getDirection());
+                        Collections.sort(ordered, comparator);
+                });
+            }
+            if (!pager.isLimited() || ordered.size() < pager.getStart()) {
+                pager = new Pager(0, ordered.size(), pager.getOrder());
+                return new Page(ordered, pager, ordered.size());
+            }
+            if (pager.getEnd() >= ordered.size()) {
+                return new Page(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
+            }
+            return new Page(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
+        } else {
+            pager = Pager.builder().withPageSize(alerts.size()).orderBy(Field.ALERT_ID.getText(),
+                    Order.Direction.ASCENDING).build();
+            return new Page(alerts, pager, alerts.size());
+        }
     }
 
     /*
@@ -547,7 +579,7 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setAlertIds(alertIds);
-        List<Alert> alertsToAck = getAlerts(tenantId, criteria);
+        List<Alert> alertsToAck = getAlerts(tenantId, criteria, null);
 
         for (Alert a : alertsToAck) {
             a.setStatus(Alert.Status.ACKNOWLEDGED);
@@ -569,7 +601,7 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setAlertIds(alertIds);
-        List<Alert> alertsToResolve = getAlerts(tenantId, criteria);
+        List<Alert> alertsToResolve = getAlerts(tenantId, criteria, null);
 
         for (Alert a : alertsToResolve) {
             a.setStatus(Alert.Status.RESOLVED);
@@ -591,7 +623,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setTriggerId(triggerId);
         criteria.setStatusSet(EnumSet.complementOf(EnumSet.of(Alert.Status.RESOLVED)));
-        List<Alert> alertsToResolve = getAlerts(tenantId, criteria);
+        List<Alert> alertsToResolve = getAlerts(tenantId, criteria, null);
 
         for (Alert a : alertsToResolve) {
             a.setStatus(Alert.Status.RESOLVED);
@@ -677,4 +709,5 @@ public class CassAlertsServiceImpl implements AlertsService {
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();
     }
+
 }

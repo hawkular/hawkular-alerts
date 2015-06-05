@@ -23,6 +23,8 @@ import java.util.Set;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.paging.Page;
+import org.hawkular.alerts.api.model.paging.Pager;
 
 /**
  * Interface that allows to send data to the alerts engine and check resulting state.
@@ -42,10 +44,11 @@ public interface AlertsService {
     /**
      * @param tenantId Tenant where alerts are stored
      * @param criteria If null returns all alerts (not recommended)
+     * @param pager Paging requeriment for fetching alerts. Optional. Return all if null.
      * @return NotNull, can be empty.
      * @throws Exception any problem
      */
-    List<Alert> getAlerts(String tenantId, AlertsCriteria criteria) throws Exception;
+    Page<Alert> getAlerts(String tenantId, AlertsCriteria criteria, Pager pager) throws Exception;
 
     /**
      * The alerts must already have been added. Set the alerts to ACKNOWLEDGED status. The ackTime will be set to the
