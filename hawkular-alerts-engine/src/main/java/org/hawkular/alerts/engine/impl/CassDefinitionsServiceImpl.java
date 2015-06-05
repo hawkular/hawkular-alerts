@@ -36,6 +36,7 @@ import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 
+import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -122,7 +123,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         CassCluster.shutdown();
     }
 
-
     private void initialData() throws IOException {
         String data = System.getProperty(JBOSS_DATA_DIR);
         if (data == null || data.isEmpty()) {
@@ -180,7 +180,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         continue;
                     }
                     String[] fields = line.split(",");
-                    if (fields.length == 11) {
+                    if (fields.length == 12) {
                         String tenantId = fields[0];
                         String triggerId = fields[1];
                         boolean enabled = Boolean.parseBoolean(fields[2]);
@@ -189,15 +189,17 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         boolean autoDisable = Boolean.parseBoolean(fields[5]);
                         boolean autoResolve = Boolean.parseBoolean(fields[6]);
                         boolean autoResolveAlerts = Boolean.parseBoolean(fields[7]);
-                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[8]);
-                        TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match.valueOf(fields[9]);
-                        String[] notifiers = fields[10].split("\\|");
+                        Severity severity = Severity.valueOf(fields[8]);
+                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[9]);
+                        TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match.valueOf(fields[10]);
+                        String[] notifiers = fields[11].split("\\|");
 
                         Trigger trigger = new Trigger(triggerId, name);
                         trigger.setEnabled(enabled);
                         trigger.setAutoDisable(autoDisable);
                         trigger.setAutoResolve(autoResolve);
                         trigger.setAutoResolveAlerts(autoResolveAlerts);
+                        trigger.setSeverity(severity);
                         trigger.setDescription(description);
                         trigger.setFiringMatch(firingMatch);
                         trigger.setAutoResolveMatch(autoResolveMatch);
@@ -487,7 +489,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         try {
             session.execute(insertTrigger.bind(trigger.getName(), trigger.getDescription(),
-                    trigger.isAutoDisable(), trigger.isAutoResolve(), trigger.isAutoResolveAlerts(),
+                    trigger.isAutoDisable(), trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger
+                            .getSeverity().name(),
                     trigger.getFiringMatch().name(), trigger.getAutoResolveMatch().name(),
                     trigger.getId(), trigger.isEnabled(), trigger.getTenantId()));
 
@@ -496,7 +499,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
-
     }
 
     private void insertTriggerActions(Trigger trigger) throws Exception {
@@ -563,7 +565,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         try {
             session.execute(updateTrigger.bind(trigger.getName(), trigger.getDescription(), trigger.isAutoDisable(),
-                    trigger.isAutoResolve(), trigger.isAutoResolveAlerts(),
+                    trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger.getSeverity().name(),
                     trigger.getFiringMatch().name(), trigger.getAutoResolveMatch().name(), trigger.isEnabled(),
                     trigger.getTenantId(), trigger.getId()));
             deleteTriggerActions(trigger);
@@ -697,6 +699,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         trigger.setAutoDisable(row.getBool("autoDisable"));
         trigger.setAutoResolve(row.getBool("autoResolve"));
         trigger.setAutoResolveAlerts(row.getBool("autoResolveAlerts"));
+        trigger.setSeverity(Severity.valueOf(row.getString("severity")));
         trigger.setFiringMatch(TriggerTemplate.Match.valueOf(row.getString("firingMatch")));
         trigger.setAutoResolveMatch(TriggerTemplate.Match.valueOf(row.getString("autoResolveMatch")));
         trigger.setId(row.getString("id"));
@@ -743,6 +746,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         Trigger newTrigger = new Trigger(trigger.getName());
         newTrigger.setName(trigger.getName());
         newTrigger.setDescription(trigger.getDescription());
+        newTrigger.setSeverity(trigger.getSeverity());
         newTrigger.setFiringMatch(trigger.getFiringMatch());
         newTrigger.setAutoResolveMatch(trigger.getAutoResolveMatch());
         newTrigger.setActions(trigger.getActions());
@@ -1225,7 +1229,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                             rCond.getConditionSetIndex(), rCond.getConditionId(), rCond.getDataId(),
                             rCond.getOperatorLow().name(), rCond.getOperatorHigh().name(), rCond.getThresholdLow(),
                             rCond.getThresholdHigh(), rCond.isInRange())));
-
                 }
 
                 // generate the automatic dataId tags for search

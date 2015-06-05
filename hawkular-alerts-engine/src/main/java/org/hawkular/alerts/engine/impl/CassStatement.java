@@ -54,6 +54,7 @@ public class CassStatement {
     public static final String INSERT_ALERT;
     public static final String INSERT_ALERT_TRIGGER;
     public static final String INSERT_ALERT_CTIME;
+    public static final String INSERT_ALERT_SEVERITY;
     public static final String INSERT_ALERT_STATUS;
     public static final String INSERT_CONDITION_AVAILABILITY;
     public static final String INSERT_CONDITION_COMPARE;
@@ -76,6 +77,7 @@ public class CassStatement {
     public static final String SELECT_ALERT_CTIME_START;
     public static final String SELECT_ALERT_CTIME_START_END;
     public static final String SELECT_ALERT_STATUS;
+    public static final String SELECT_ALERT_SEVERITY_BY_TENANT_AND_SEVERITY;
     public static final String SELECT_ALERT_STATUS_BY_TENANT_AND_STATUS;
     public static final String SELECT_ALERTS_BY_TENANT;
     public static final String SELECT_ALERTS_BY_TENANT_AND_ALERT;
@@ -156,6 +158,9 @@ public class CassStatement {
         INSERT_ALERT_CTIME = "INSERT INTO " + keyspace + ".alerts_ctimes "
                 + "(tenantId, alertId, ctime) VALUES (?, ?, ?) ";
 
+        INSERT_ALERT_SEVERITY = "INSERT INTO " + keyspace + ".alerts_severities "
+                + "(tenantId, alertId, severity) VALUES (?, ?, ?) ";
+
         INSERT_ALERT_STATUS = "INSERT INTO " + keyspace + ".alerts_statuses "
                 + "(tenantId, alertId, status) VALUES (?, ?, ?) ";
 
@@ -191,8 +196,8 @@ public class CassStatement {
                 + "(tenantId, category, name, triggers) VALUES (?, ?, ?, ?) ";
 
         INSERT_TRIGGER = "INSERT INTO " + keyspace + ".triggers " +
-                "(name, description, autoDisable, autoResolve, autoResolveAlerts, firingMatch, " +
-                "autoResolveMatch, id, enabled, tenantId) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
+                "(name, description, autoDisable, autoResolve, autoResolveAlerts, severity, firingMatch, " +
+                "autoResolveMatch, id, enabled, tenantId) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_TRIGGER_ACTIONS = "INSERT INTO " + keyspace + ".triggers_actions "
                 + "(tenantId, triggerId, actionPlugin, actions) VALUES (?, ?, ?, ?) ";
@@ -223,6 +228,9 @@ public class CassStatement {
 
         SELECT_ALERT_STATUS = "SELECT alertId, status FROM " + keyspace + ".alerts_statuses "
                 + "WHERE tenantId = ? AND status = ? AND alertId = ? ";
+
+        SELECT_ALERT_SEVERITY_BY_TENANT_AND_SEVERITY = "SELECT alertId FROM " + keyspace + ".alerts_severities "
+                + "WHERE tenantId = ? AND severity = ? ";
 
         SELECT_ALERT_STATUS_BY_TENANT_AND_STATUS = "SELECT alertId FROM " + keyspace + ".alerts_statuses "
                 + "WHERE tenantId = ? AND status = ? ";
@@ -294,7 +302,7 @@ public class CassStatement {
                 + "WHERE tenantId = ? AND name = ? ";
 
         SELECT_TRIGGER = "SELECT name, description, autoDisable, autoResolve, "
-                + "autoResolveAlerts, firingMatch, autoResolveMatch, id, enabled, tenantId "
+                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId "
                 + "FROM " + keyspace + ".triggers "
                 + "WHERE tenantId = ? AND id = ? ";
 
@@ -326,11 +334,11 @@ public class CassStatement {
                 + "WHERE tenantId = ? AND triggerId = ? and triggerMode = ? ";
 
         SELECT_TRIGGERS_ALL = "SELECT name, description, autoDisable, autoResolve, "
-                + "autoResolveAlerts, firingMatch, autoResolveMatch, id, enabled, tenantId "
+                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId "
                 + "FROM " + keyspace + ".triggers ";
 
         SELECT_TRIGGERS_TENANT = "SELECT name, description, autoDisable, autoResolve, "
-                + "autoResolveAlerts, firingMatch, autoResolveMatch, id, enabled, tenantId "
+                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId "
                 + "FROM " + keyspace + ".triggers WHERE tenantId = ? ";
 
         UPDATE_ACTION = "UPDATE " + keyspace + ".actions SET properties = ? "
@@ -349,7 +357,8 @@ public class CassStatement {
 
         UPDATE_TRIGGER = "UPDATE " + keyspace + ".triggers "
                 + "SET name = ?, description = ?, autoDisable = ?, autoResolve = ?, autoResolveAlerts = ?, "
-                + "firingMatch = ?, autoResolveMatch = ?, enabled = ? " + "WHERE tenantId = ? AND id = ? ";
+                + "severity = ?, firingMatch = ?, autoResolveMatch = ?, enabled = ? "
+                + "WHERE tenantId = ? AND id = ? ";
 
     }
 

@@ -1,8 +1,8 @@
 ### Important, the IDE shouldn't break the lines or the data file won't be correctly processed, 1 line per entry ###
-# <tenantId>,<triggerId>,<enabled>,<name>,<description>,<autoDisable>,<autoResolve>,<autoResolveAlerts>,<firingMatch>,<autoResolveMatch>,<actionPlugin>#<actionId1>|...|<actionPlugin>#<actionIdN>
-28026b36-8fe4-4332-84c8-524e173a68bf,trigger-1,true,NumericData-01-low,description,false,false,true,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin
-28026b36-8fe4-4332-84c8-524e173a68bf,trigger-2,true,NumericData-01-02-high,description,false,false,true,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin
-28026b36-8fe4-4332-84c8-524e173a68bf,trigger-3,true,NumericData-03-range,description,false,false,true,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin
-28026b36-8fe4-4332-84c8-524e173a68bf,trigger-4,true,CompareData-01-d1-lthalf-d2,description,false,false,true,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin
-28026b36-8fe4-4332-84c8-524e173a68bf,trigger-5,true,StringData-01-starts,description,false,false,true,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin
-28026b36-8fe4-4332-84c8-524e173a68bf,trigger-6,true,Availability-01-NOT-UP,description,false,false,true,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin
+# <tenantId>,<triggerId>,<enabled>,<name>,<description>,<autoDisable>,<autoResolve>,<autoResolveAlerts>,<severity>,<firingMatch>,<autoResolveMatch>,<actionPlugin>#<actionId1>|...|<actionPlugin>#<actionIdN>
+28026b36-8fe4-4332-84c8-524e173a68bf,trigger-1,true,NumericData-01-low,description,false,false,true,HIGH,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin
+28026b36-8fe4-4332-84c8-524e173a68bf,trigger-2,true,NumericData-01-02-high,description,false,false,true,HIGH,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin
+28026b36-8fe4-4332-84c8-524e173a68bf,trigger-3,true,NumericData-03-range,description,false,false,true,HIGH,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin
+28026b36-8fe4-4332-84c8-524e173a68bf,trigger-4,true,CompareData-01-d1-lthalf-d2,description,false,false,true,HIGH,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin
+28026b36-8fe4-4332-84c8-524e173a68bf,trigger-5,true,StringData-01-starts,description,false,false,true,HIGH,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin
+28026b36-8fe4-4332-84c8-524e173a68bf,trigger-6,true,Availability-01-NOT-UP,description,false,false,true,HIGH,ALL,ALL,snmp#SNMP-Trap-1|snmp#SNMP-Trap-2|sms#sms-to-cio|email#email-to-admin|aerogear#agpush-to-admin

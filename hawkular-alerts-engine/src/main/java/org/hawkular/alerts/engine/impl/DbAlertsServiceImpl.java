@@ -36,6 +36,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Alert.Status;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
@@ -122,7 +123,7 @@ public class DbAlertsServiceImpl implements AlertsService {
 
         try {
             c = ds.getConnection();
-            String sql = "INSERT INTO HWK_ALERTS_ALERTS VALUES (?,?,?,?,?,?)";
+            String sql = "INSERT INTO HWK_ALERTS_ALERTS VALUES (?,?,?,?,?,?,?)";
             ps = c.prepareStatement(sql);
 
             for (Alert a : alerts) {
@@ -131,8 +132,9 @@ public class DbAlertsServiceImpl implements AlertsService {
                 ps.setString(3, a.getTriggerId());
                 ps.setLong(4, a.getCtime());
                 ps.setString(5, a.getStatus().name());
+                ps.setString(6, a.getSeverity().name());
                 sr = new StringReader(toJson(a));
-                ps.setCharacterStream(6, sr);
+                ps.setCharacterStream(7, sr);
                 log.debugf("SQL: " + sql);
                 ps.executeUpdate();
                 sr.close();
@@ -236,6 +238,25 @@ public class DbAlertsServiceImpl implements AlertsService {
                         sql.append(entries++ > 0 ? "," : "");
                         sql.append("'");
                         sql.append(status.name());
+                        sql.append("'");
+                    }
+                    sql.append(") )");
+                }
+                if (isEmpty(criteria.getSeverities())) {
+                    if (null != criteria.getSeverity()) {
+                        sql.append(filters++ > 0 ? " AND " : " ");
+                        sql.append("( a.severity = '");
+                        sql.append(criteria.getSeverity().name());
+                        sql.append("' )");
+                    }
+                } else {
+                    sql.append(filters++ > 0 ? " AND " : " ");
+                    sql.append("( a.severity IN (");
+                    int entries = 0;
+                    for (Severity severity : criteria.getSeverities()) {
+                        sql.append(entries++ > 0 ? "," : "");
+                        sql.append("'");
+                        sql.append(severity.name());
                         sql.append("'");
                     }
                     sql.append(") )");

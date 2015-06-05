@@ -164,7 +164,7 @@ public abstract class DefinitionsTest {
         evalSet.add(eval);
         List<Set<ConditionEval>> evals = new ArrayList<>();
         evals.add(evalSet);
-        Alert alert = new Alert(TEST_TENANT, t.getId(), evals);
+        Alert alert = new Alert(TEST_TENANT, t.getId(), t.getSeverity(), evals);
         List<Alert> alerts = new ArrayList<>();
         alerts.add(alert);
 

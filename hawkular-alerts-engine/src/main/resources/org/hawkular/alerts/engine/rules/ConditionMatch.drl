@@ -407,7 +407,7 @@ rule AlertOnSatisfiedDampening
             log.debug("AlertOnSatisfiedDampening! " + $d.log());
         }
 
-        Alert newAlert = new Alert( $t.getTenantId(), $tid, $d.getSatisfyingEvals() );
+        Alert newAlert = new Alert( $t.getTenantId(), $tid, $t.getSeverity(), $d.getSatisfyingEvals() );
         alerts.add(newAlert);
         if (actions != null) {
             for (String actionPlugin : $t.getActions().keySet()) {

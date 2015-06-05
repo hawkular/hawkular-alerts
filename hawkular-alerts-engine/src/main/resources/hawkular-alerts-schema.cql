@@ -35,6 +35,7 @@ CREATE TABLE ${keyspace}.triggers (
     autoDisable boolean,
     autoResolve boolean,
     autoResolveAlerts boolean,
+    severity text,
     firingMatch text,
     autoResolveMatch text,
     id text,
@@ -183,3 +184,10 @@ CREATE TABLE ${keyspace}.alerts_statuses (
 );
 
 -- #
+
+CREATE TABLE ${keyspace}.alerts_severities (
+    tenantId text,
+    alertId text,
+    severity text,
+    PRIMARY KEY (tenantId, severity, alertId)
+);

@@ -18,6 +18,7 @@ package org.hawkular.alerts.rest
 
 import java.util.List
 
+import org.hawkular.alerts.api.model.Severity
 import org.hawkular.alerts.api.model.data.Availability
 import org.hawkular.alerts.api.model.data.MixedData
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
@@ -63,6 +64,7 @@ class LifecycleITest extends AbstractITestBase {
 
         testTrigger.setAutoDisable(true);
         testTrigger.setAutoResolve(false);
+        testTrigger.setSeverity(Severity.LOW);
 
         resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
@@ -87,6 +89,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("test-autodisable-trigger", resp.data.name)
         assertEquals(true, resp.data.enabled)
         assertEquals(true, resp.data.autoDisable);
+        assertEquals("LOW", resp.data.severity);
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger"] )
@@ -152,6 +155,7 @@ class LifecycleITest extends AbstractITestBase {
         testTrigger.setAutoDisable(false);
         testTrigger.setAutoResolve(true);
         testTrigger.setAutoResolveAlerts(true);
+        testTrigger.setSeverity(Severity.HIGH);
 
         resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
@@ -186,6 +190,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(false, resp.data.autoDisable);
         assertEquals(true, resp.data.autoResolve);
         assertEquals(true, resp.data.autoResolveAlerts);
+        assertEquals("HIGH", resp.data.severity);
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
@@ -213,14 +218,17 @@ class LifecycleITest extends AbstractITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals("OPEN", resp.data[0].status)
+        assertEquals("HIGH", resp.data[0].severity)
 
         // ACK the alert
         resp = client.put(path: "ack", query: [alertIds:resp.data[0].alertId,ackBy:"testUser",ackNotes:"testNotes"] )
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
+        resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"ACKNOWLEDGED"] )
         assertEquals(200, resp.status)
         assertEquals("ACKNOWLEDGED", resp.data[0].status)
+        assertEquals("HIGH", resp.data[0].severity)
         assertEquals("testUser", resp.data[0].ackBy)
         assertEquals("testNotes", resp.data[0].ackNotes)
 
@@ -415,6 +423,26 @@ class LifecycleITest extends AbstractITestBase {
 
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"ACKNOWLEDGED"] )
         assertEquals(204, resp.status)
+
+        // FETCH by severity (1 HIGH and 1 LOW, five MEDIUM)
+        resp = client.get(path: "", query: [startTime:start,severities:"CRITICAL"] )
+        assertEquals(204, resp.status)
+
+        resp = client.get(path: "", query: [startTime:start,severities:"LOW,HIGH,MEDIUM"] )
+        assertEquals(200, resp.status)
+        assertEquals(7, resp.data.size())
+
+        resp = client.get(path: "", query: [startTime:start,severities:"LOW"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals("LOW", resp.data[0].severity)
+        assertEquals("test-autodisable-trigger", resp.data[0].triggerId)
+
+        resp = client.get(path: "", query: [startTime:start,severities:"HIGH"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals("HIGH", resp.data[0].severity)
+        assertEquals("test-autoresolve-trigger", resp.data[0].triggerId)
 
         // test thinning as well as verifying the RESOLVED status fetch (using the autoresolve alert)
         resp = client.get(path: "",

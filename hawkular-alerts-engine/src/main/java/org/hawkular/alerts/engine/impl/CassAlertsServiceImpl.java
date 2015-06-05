@@ -28,6 +28,7 @@ import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 
+import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
@@ -120,6 +121,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         PreparedStatement insertAlertTrigger = CassStatement.get(session, CassStatement.INSERT_ALERT_TRIGGER);
         PreparedStatement insertAlertCtime = CassStatement.get(session, CassStatement.INSERT_ALERT_CTIME);
         PreparedStatement insertAlertStatus = CassStatement.get(session, CassStatement.INSERT_ALERT_STATUS);
+        PreparedStatement insertAlertSeverity = CassStatement.get(session, CassStatement.INSERT_ALERT_SEVERITY);
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
             alerts.stream()
@@ -134,6 +136,9 @@ public class CassAlertsServiceImpl implements AlertsService {
                         futures.add(session.executeAsync(insertAlertStatus.bind(a.getTenantId(),
                                 a.getAlertId(),
                                 a.getStatus().name())));
+                        futures.add(session.executeAsync(insertAlertSeverity.bind(a.getTenantId(),
+                                a.getAlertId(),
+                                a.getSeverity().name())));
                     });
             /*
                 main method is synchronous so we need to wait until futures are completed
@@ -145,6 +150,16 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
     }
 
+    // TODO (jshaughn) The DB-Level filtering approach implemented below is a best-practice for dealing
+    // with Cassandra.  It's basically a series of queries, one for each filter, with a progressive
+    // intersection of the resulting ID set.  This will work well in most cases but we may want to consider
+    // an optimization for dealing with large Alert populations.  Certain filters dealing with low-cardinality
+    // values, like status and severity, could start pulling a large number if alert ids.  If we have reduced the
+    // result set to a small number, via the more narrowing filters, (TBD via perf tests, a threshold that makes
+    // sense), we may want to pull the resulting alerts and apply the low-cardinality filters here in the code,
+    // in a post-fetch step. For example, if we have filters "ctime > 123" and "status == Resolved", and the ctime
+    // filter returns 10 alertIds. We may want to pull the 10 alerts and apply the status filter in the code. For
+    // large Alert history, the status filter applied to the DB could return a huge set of ids.
     @Override
     public List<Alert> getAlerts(String tenantId, AlertsCriteria criteria) throws Exception {
         if (isEmpty(tenantId)) {
@@ -207,6 +222,22 @@ public class CassAlertsServiceImpl implements AlertsService {
                 }
 
                 /*
+                Get alertsIds filtered by severities clause
+                */
+                Set<String> alertIdsFilteredBySeverity = new HashSet<>();
+                boolean filterBySeverity = filterBySeverities(tenantId, alertIdsFilteredBySeverity, criteria);
+                if (filterBySeverity) {
+                    if (alertIds.isEmpty()) {
+                        alertIds.addAll(alertIdsFilteredBySeverity);
+                    } else {
+                        alertIds.retainAll(alertIdsFilteredBySeverity);
+                    }
+                    if (alertIds.isEmpty()) {
+                        return alerts;
+                    }
+                }
+
+                /*
                     Get alertsIds filtered by statuses clause
                  */
                 Set<String> alertIdsFilteredByStatus = new HashSet<>();
@@ -217,6 +248,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                     } else {
                         alertIds.retainAll(alertIdsFilteredByStatus);
                     }
+
                     if (alertIds.isEmpty()) {
                         return alerts;
                     }
@@ -417,6 +449,44 @@ public class CassAlertsServiceImpl implements AlertsService {
         return filterByStatus;
     }
 
+    private boolean filterBySeverities(String tenantId, Set<String> alertsId, AlertsCriteria criteria)
+            throws Exception {
+        boolean filterBySeverity = false;
+        Set<Severity> severities = new HashSet<>();
+        if (isEmpty(criteria.getSeverities())) {
+            if (criteria.getSeverity() != null) {
+                severities.add(criteria.getSeverity());
+            }
+        } else {
+            severities.addAll(criteria.getSeverities());
+        }
+
+        if (severities.size() > 0) {
+            filterBySeverity = true;
+            PreparedStatement selectAlertSeverityByTenantAndSeverity = CassStatement.get(session,
+                    CassStatement.SELECT_ALERT_SEVERITY_BY_TENANT_AND_SEVERITY);
+            List<ResultSetFuture> futures = severities.stream().map(severity ->
+                    session.executeAsync(selectAlertSeverityByTenantAndSeverity.bind(tenantId, severity.name())))
+                    .collect(Collectors.toList());
+
+            List<ResultSet> rsAlertSeverities = Futures.allAsList(futures).get();
+            rsAlertSeverities.stream().forEach(r -> {
+                for (Row row : r) {
+                    String alertId = row.getString("alertId");
+                    alertsId.add(alertId);
+                }
+            });
+            /*
+                If there is not alertId but we have triggersId means that we have an empty result.
+                So we need to sure a alertId to mark that we have an empty result for future joins.
+             */
+            if (alertsId.isEmpty()) {
+                alertsId.add("no-result-fake-alert-id");
+            }
+        }
+        return filterBySeverity;
+    }
+
     private boolean filterByAlerts(Set<String> alertsId, AlertsCriteria criteria) {
         boolean filterByAlerts = false;
         if (isEmpty(criteria.getAlertIds())) {
@@ -607,5 +677,4 @@ public class CassAlertsServiceImpl implements AlertsService {
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();
     }
-
 }

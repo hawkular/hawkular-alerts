@@ -19,6 +19,7 @@ package org.hawkular.alerts.rest
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 
+import org.hawkular.alerts.api.model.Severity
 import org.hawkular.alerts.api.model.trigger.Tag
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.Test
@@ -62,12 +63,14 @@ class TriggersITest extends AbstractITestBase {
         assertEquals("No-Metric", resp.data.name)
 
         testTrigger.setName("No-Metric-Modified")
+        testTrigger.setSeverity(Severity.CRITICAL)
         resp = client.put(path: "triggers/test-trigger-1", body: testTrigger)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "triggers/test-trigger-1")
         assertEquals(200, resp.status)
         assertEquals("No-Metric-Modified", resp.data.name)
+        assertEquals("CRITICAL", resp.data.severity)
 
         resp = client.delete(path: "triggers/test-trigger-1")
         assertEquals(200, resp.status)
