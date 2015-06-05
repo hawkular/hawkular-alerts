@@ -38,6 +38,7 @@ public class AlertsCriteria {
     Collection<String> triggerIds = null;
     Tag tag = null;
     Collection<Tag> tags = null;
+    boolean thin = false;
 
     public AlertsCriteria() {
         super();
@@ -141,6 +142,14 @@ public class AlertsCriteria {
         this.tags = tags;
     }
 
+    public boolean isThin() {
+        return thin;
+    }
+
+    public void setThin(boolean thin) {
+        this.thin = thin;
+    }
+
     public boolean hasCriteria() {
         return null != startTime || //
                 null != endTime || //
@@ -156,9 +165,9 @@ public class AlertsCriteria {
 
     @Override
     public String toString() {
-        return "AlertsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", triggerId=" + triggerId
-                + ", triggerIds=" + triggerIds + ", tag=" + tag + ", tags=" + tags + ", status=" + status + ", " +
-                "statusSet=" + statusSet + "]";
+        return "AlertsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", alertId=" + alertId
+                + ", alertIds=" + alertIds + ", status=" + status + ", statusSet=" + statusSet + ", triggerId="
+                + triggerId + ", triggerIds=" + triggerIds + ", tag=" + tag + ", tags=" + tags + ", thin=" + thin
+                + "]";
     }
-
 }
