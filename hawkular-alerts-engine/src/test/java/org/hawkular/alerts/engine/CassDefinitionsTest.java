@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.engine;
 
+import org.hawkular.alerts.engine.cassandra.EmbeddedCassandra;
 import org.hawkular.alerts.engine.impl.AlertProperties;
 import org.hawkular.alerts.engine.impl.CassCluster;
 import org.junit.AfterClass;
@@ -43,6 +44,9 @@ public class CassDefinitionsTest extends DefinitionsTest {
         String testFolder = CassDefinitionsTest.class.getResource("/").getPath();
         System.setProperty("jboss.server.data.dir", testFolder);
 
+        System.out.print("Starting embedded Cassandra for unit testing...");
+        EmbeddedCassandra.start();
+
         session = CassCluster.getSession();
         keyspace = AlertProperties.getProperty("hawkular-alerts.cassandra-keyspace", "hawkular_alerts_test");
 
@@ -53,6 +57,11 @@ public class CassDefinitionsTest extends DefinitionsTest {
     @AfterClass
     public static void cleanTestSchema() throws Exception {
         session.execute("DROP KEYSPACE " + keyspace);
+
+        CassCluster.shutdown();
+
+        System.out.print("Stopping embedded Cassandra for unit testing...");
+        EmbeddedCassandra.stop();
     }
 
 }
