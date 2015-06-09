@@ -599,6 +599,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return triggers;
     }
 
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Trigger> getAllTriggers() throws Exception {
         if (session == null) {
@@ -611,6 +612,39 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         List<Trigger> triggers = new ArrayList<>();
         try {
             ResultSet rsTriggers = session.execute(selectTriggersAll.bind());
+            for (Row row : rsTriggers) {
+                Trigger trigger = mapTrigger(row);
+                selectTriggerActions(trigger);
+                triggers.add(trigger);
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return triggers;
+    }
+
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
+    @Override
+    public Collection<Trigger> getAllTriggersByTag(String category, String name) throws Exception {
+        if (isEmpty(name)) {
+            throw new IllegalArgumentException("Name must be not null");
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
+        }
+        PreparedStatement selectTagsTriggersAllByTag = isEmpty(category) ?
+                CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_ALL_BY_NAME) :
+                CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_ALL_BY_CATEGORY_AND_NAME);
+        if (selectTagsTriggersAllByTag == null) {
+            throw new RuntimeException("selectTagsTriggersAllByTag PreparedStatement is null");
+        }
+        List<Trigger> triggers = new ArrayList<>();
+        try {
+            BoundStatement bs = isEmpty(category) ?
+                    selectTagsTriggersAllByTag.bind(name) :
+                    selectTagsTriggersAllByTag.bind(category, name);
+            ResultSet rsTriggers = session.execute(bs);
             for (Row row : rsTriggers) {
                 Trigger trigger = mapTrigger(row);
                 selectTriggerActions(trigger);
@@ -928,6 +962,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return dampenings;
     }
 
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Dampening> getAllDampenings() throws Exception {
         if (session == null) {
@@ -1462,6 +1497,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return conditions;
     }
 
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Condition> getAllConditions() throws Exception {
         if (session == null) {
@@ -1841,6 +1877,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Map<String, Map<String, Set<String>>> getAllActions() throws Exception {
         if (session == null) {
