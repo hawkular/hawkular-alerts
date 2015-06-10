@@ -35,12 +35,16 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
+import javax.ws.rs.core.UriInfo;
 import org.hawkular.accounts.api.model.Persona;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.data.MixedData;
+import org.hawkular.alerts.api.model.paging.Page;
+import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
@@ -116,10 +120,14 @@ public class AlertsHandler {
             final String tags,
             @ApiParam(required = false, value = "return only thin alerts, do not include: evalSets, resolvedEvalSets")
             @QueryParam("thin")
-            final Boolean thin) {
+            final Boolean thin,
+            @Context
+            final UriInfo uri
+            ) {
         if (!checkPersona()) {
             return ResponseUtil.internalError("No persona found");
         }
+        Pager pager = RequestUtil.extractPaging(uri);
         try {
             AlertsCriteria criteria = new AlertsCriteria();
             criteria.setStartTime(startTime);
@@ -166,12 +174,12 @@ public class AlertsHandler {
                 criteria.setThin(thin.booleanValue());
             }
 
-            List<Alert> alertList = alertsService.getAlerts(persona.getId(), criteria);
-            log.debugf("Alerts: %s ", alertList);
-            if (isEmpty(alertList)) {
+            Page<Alert> alertPage = alertsService.getAlerts(persona.getId(), criteria, pager);
+            log.debugf("Alerts: %s ", alertPage);
+            if (isEmpty(alertPage)) {
                 return ResponseUtil.noContent();
             }
-            return ResponseUtil.ok(alertList);
+            return ResponseUtil.paginatedOk(alertPage, uri);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
