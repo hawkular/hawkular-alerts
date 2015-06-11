@@ -68,9 +68,8 @@ public class ActionSender implements ActionListener {
                 msgLogger.warnCannotConnectToBus();
                 return;
             }
-            ActionMessage nMsg = new ActionMessage();
-            nMsg.setActionId(action.getActionId());
-            nMsg.setMessage(action.getMessage());
+            ActionMessage nMsg = new ActionMessage(action.getTenantId(), action.getActionPlugin(),
+                    action.getActionId(), action.getMessage(), action.getAlert());
             if (definitions != null) {
                 Map<String, String> properties = definitions.getAction(action.getTenantId(),
                         action.getActionPlugin(), action.getActionId());

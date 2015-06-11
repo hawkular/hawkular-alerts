@@ -18,6 +18,7 @@ package org.hawkular.alerts.api.model.action;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import org.hawkular.alerts.api.model.condition.Alert;
 
 /**
  * A base class for action representation from the perspective of the alerts engine.
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * A Trigger definition can be linked with a list of actions.
  *
  * Alert engine only needs to know an action id and message/payload.
+ * Action payload can optionally have an alert as payload.
  *
  * Action plugins will be responsible to process the action according its own plugin configuration.
  *
@@ -45,6 +47,9 @@ public class Action {
     @JsonInclude(Include.NON_NULL)
     private String message;
 
+    @JsonInclude(Include.NON_NULL)
+    private Alert alert;
+
     public Action() { }
 
     public Action(String tenantId, String actionPlugin, String actionId, String message) {
@@ -52,6 +57,13 @@ public class Action {
         this.actionPlugin = actionPlugin;
         this.actionId = actionId;
         this.message = message;
+    }
+
+    public Action(String tenantId, String actionPlugin, String actionId, Alert alert) {
+        this.tenantId = tenantId;
+        this.actionPlugin = actionPlugin;
+        this.actionId = actionId;
+        this.alert = alert;
     }
 
     public String getTenantId() {
@@ -86,6 +98,14 @@ public class Action {
         this.actionPlugin = actionPlugin;
     }
 
+    public Alert getAlert() {
+        return alert;
+    }
+
+    public void setAlert(Alert alert) {
+        this.alert = alert;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -93,20 +113,21 @@ public class Action {
 
         Action action = (Action) o;
 
-        if (tenantId != null ? !tenantId.equals(action.tenantId) : action.tenantId != null) return false;
-        if (actionPlugin != null ? !actionPlugin.equals(action.actionPlugin) : action.actionPlugin != null)
-            return false;
-        if (actionId != null ? !actionId.equals(action.actionId) : action.actionId != null) return false;
-        return !(message != null ? !message.equals(action.message) : action.message != null);
+        if (!tenantId.equals(action.tenantId)) return false;
+        if (!actionPlugin.equals(action.actionPlugin)) return false;
+        if (!actionId.equals(action.actionId)) return false;
+        if (!message.equals(action.message)) return false;
+        return alert.equals(action.alert);
 
     }
 
     @Override
     public int hashCode() {
-        int result = tenantId != null ? tenantId.hashCode() : 0;
-        result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
-        result = 31 * result + (actionId != null ? actionId.hashCode() : 0);
-        result = 31 * result + (message != null ? message.hashCode() : 0);
+        int result = tenantId.hashCode();
+        result = 31 * result + actionPlugin.hashCode();
+        result = 31 * result + actionId.hashCode();
+        result = 31 * result + message.hashCode();
+        result = 31 * result + alert.hashCode();
         return result;
     }
 
@@ -117,6 +138,7 @@ public class Action {
                 ", actionPlugin='" + actionPlugin + '\'' +
                 ", actionId='" + actionId + '\'' +
                 ", message='" + message + '\'' +
+                ", alert=" + alert +
                 '}';
     }
 }

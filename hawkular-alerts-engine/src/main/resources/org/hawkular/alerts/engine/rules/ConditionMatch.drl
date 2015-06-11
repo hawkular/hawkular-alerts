@@ -412,7 +412,7 @@ rule AlertOnSatisfiedDampening
         if (actions != null) {
             for (String actionPlugin : $t.getActions().keySet()) {
                 for (String actionId : $t.getActions().get(actionPlugin)) {
-                    Action action = new Action($t.getTenantId(), actionPlugin, actionId, newAlert.toString());
+                    Action action = new Action($t.getTenantId(), actionPlugin, actionId, newAlert);
                     actions.send(action);
                 }
             }

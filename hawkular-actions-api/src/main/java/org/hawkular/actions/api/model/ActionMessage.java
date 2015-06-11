@@ -19,6 +19,7 @@ package org.hawkular.actions.api.model;
 import java.util.Map;
 
 import com.google.gson.annotations.Expose;
+import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.bus.common.BasicMessage;
 
 /**
@@ -31,15 +32,32 @@ import org.hawkular.bus.common.BasicMessage;
 public class ActionMessage extends BasicMessage {
 
     @Expose
+    String tenantId;
+
+    @Expose
+    String actionPlugin;
+
+    @Expose
     String actionId;
 
     @Expose
     String message;
 
     @Expose
+    Alert alert;
+
+    @Expose
     Map<String, String> properties;
 
     public ActionMessage() { }
+
+    public ActionMessage(String tenantId, String actionPlugin, String actionId, String message, Alert alert) {
+        this.tenantId = tenantId;
+        this.actionPlugin = actionPlugin;
+        this.actionId = actionId;
+        this.message = message;
+        this.alert = alert;
+    }
 
     public String getMessage() {
         return message;
@@ -65,6 +83,30 @@ public class ActionMessage extends BasicMessage {
         this.properties = properties;
     }
 
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public String getActionPlugin() {
+        return actionPlugin;
+    }
+
+    public void setActionPlugin(String actionPlugin) {
+        this.actionPlugin = actionPlugin;
+    }
+
+    public Alert getAlert() {
+        return alert;
+    }
+
+    public void setAlert(Alert alert) {
+        this.alert = alert;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -72,24 +114,29 @@ public class ActionMessage extends BasicMessage {
 
         ActionMessage that = (ActionMessage) o;
 
-        if (message != null ? !message.equals(that.message) : that.message != null) return false;
-        if (actionId != null ? !actionId.equals(that.actionId) : that.actionId != null) return false;
+        if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
+        if (actionPlugin != null ? !actionPlugin.equals(that.actionPlugin) : that.actionPlugin != null) return false;
+        return !(actionId != null ? !actionId.equals(that.actionId) : that.actionId != null);
 
-        return true;
     }
 
     @Override
     public int hashCode() {
-        int result = actionId != null ? actionId.hashCode() : 0;
-        result = 31 * result + (message != null ? message.hashCode() : 0);
+        int result = tenantId != null ? tenantId.hashCode() : 0;
+        result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
+        result = 31 * result + (actionId != null ? actionId.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
         return "ActionMessage{" +
-                "message='" + message + '\'' +
+                "tenantId='" + tenantId + '\'' +
+                ", actionPlugin='" + actionPlugin + '\'' +
                 ", actionId='" + actionId + '\'' +
-                ", properties=" + properties + '}';
+                ", message='" + message + '\'' +
+                ", alert=" + alert +
+                ", properties=" + properties +
+                '}';
     }
 }
