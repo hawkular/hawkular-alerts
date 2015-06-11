@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 public class ExternalConditionEval extends ConditionEval {
 
     @JsonInclude(Include.NON_NULL)
-    private StringCondition condition;
+    private ExternalCondition condition;
 
     @JsonInclude(Include.NON_NULL)
     private String value;
@@ -42,17 +42,17 @@ public class ExternalConditionEval extends ConditionEval {
         this.value = null;
     }
 
-    public ExternalConditionEval(StringCondition condition, StringData data) {
+    public ExternalConditionEval(ExternalCondition condition, StringData data) {
         super(condition.match(data.getValue()), data.getTimestamp());
         this.condition = condition;
         this.value = data.getValue();
     }
 
-    public StringCondition getCondition() {
+    public ExternalCondition getCondition() {
         return condition;
     }
 
-    public void setCondition(StringCondition condition) {
+    public void setCondition(ExternalCondition condition) {
         this.condition = condition;
     }
 

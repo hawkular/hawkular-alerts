@@ -16,7 +16,6 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -34,7 +33,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Lucas Ponce
  */
 public class ExternalCondition extends Condition {
-    private static final MsgLogger msgLog = MsgLogger.LOGGER;
+    //private static final MsgLogger msgLog = MsgLogger.LOGGER;
 
     /**
      * An identifier assigned by the external system to identify this condition as being handled by that
@@ -103,7 +102,7 @@ public class ExternalCondition extends Condition {
     /**
      * @param value the value, format is defined by the external engine
      * @return true in all cases because it is expected that the provided value was already determined to
-     * match the external condition in the external engine's evaluation. 
+     * match the external condition in the external engine's evaluation.
      */
     public boolean match(String value) {
 

@@ -32,11 +32,11 @@ public class Expression {
     // (?i) = case insensitive
     // interval and period is in minutes with optional 'm' unit
     private static final Pattern SYNTAX = Pattern.compile(
-            //         target:interval:func(metricId           op       value )[, period]
+            //         target:interval:func(metricId           op      threshold )[, period]
             "(?i)(metric|tag):(\\d+)m?+:(\\w+)\\((\\S+)?\\s*([<>]=?+)\\s*(\\S+)\\)(?:,\\s*(\\d+)m?+)?+");
 
     enum Target {
-        Metric, Tag
+        Metric, Tag;
     }
 
     /**
@@ -70,11 +70,11 @@ public class Expression {
         /** percent [0.0,1.0] with last-reported availability up. No period */
         up(false);
 
-        private final boolean single; // true if supported by single metric
+        private final boolean single; // true if supported by single metric/ requires a period
         private final int days; // days back
 
         private Func() {
-            this(0, false);
+            this(0, true);
         }
 
         private Func(int days) {
@@ -120,7 +120,6 @@ public class Expression {
         }
     }
 
-    
     private Target target;
     private Func func;
     private String metric;
@@ -133,9 +132,9 @@ public class Expression {
         Matcher matcher = SYNTAX.matcher(expression);
         if (!matcher.matches())
             throw new IllegalArgumentException("Invalid expression syntax. Must match: " + SYNTAX.pattern());
-        target = Target.valueOf(matcher.group(1));
+        target = valueOfIgnoreCase(Target.class, matcher.group(1));
         interval = Integer.parseInt(matcher.group(2));
-        func = Func.valueOf(matcher.group(3));
+        func = valueOfIgnoreCase(Func.class, matcher.group(3));
         metric = matcher.group(4);
         String sOp = matcher.group(5);
         if (">".equals(sOp))
@@ -153,6 +152,30 @@ public class Expression {
         if (sPeriod != null) {
             period = Integer.parseInt(sPeriod);
         }
+        if (func.isSingle()) {
+            if (null == period) {
+                throw new IllegalArgumentException("Invalid expression syntax. Function " + func.name()
+                        + " requires a time period");
+            }
+        } else {
+            if (Target.Metric == target) {
+                throw new IllegalArgumentException("Invalid expression syntax. Function " + func.name()
+                        + " can not have Metric target");
+            }
+            if (null != period) {
+                throw new IllegalArgumentException("Invalid expression syntax. Function " + func.name()
+                        + " does not support a time period");
+            }
+        }
+    }
+
+    public static <T extends Enum<?>> T valueOfIgnoreCase(Class<T> clazz, String s) {
+        for (T t : clazz.getEnumConstants()) {
+            if (t.name().equalsIgnoreCase(s)) {
+                return t;
+            }
+        }
+        throw new IllegalArgumentException(s);
     }
 
     public Target getTarget() {
@@ -181,6 +204,24 @@ public class Expression {
 
     public Integer getPeriod() {
         return period;
+    }
+
+    public boolean isTrue(Double value) {
+        if (null == value || value.isNaN()) {
+            return false;
+        }
+        switch (op) {
+            case GT:
+                return value > threshold;
+            case GTE:
+                return value >= threshold;
+            case LT:
+                return value < threshold;
+            case LTE:
+                return value <= threshold;
+            default:
+                return false;
+        }
     }
 
     /**

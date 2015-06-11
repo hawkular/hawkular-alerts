@@ -94,7 +94,7 @@ public interface DefinitionsService {
      * Get all stored Triggers for all Tenants with a specific Tag
      * @param category The tag category, ignored if null
      * @param name The tag name, required
-     * @throws Exception on any problem 
+     * @throws Exception on any problem
      */
     Collection<Trigger> getAllTriggersByTag(String category, String name) throws Exception;
 

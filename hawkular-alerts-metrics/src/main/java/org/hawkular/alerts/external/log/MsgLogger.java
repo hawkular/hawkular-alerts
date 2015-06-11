@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.rest.log;
+package org.hawkular.alerts.external.log;
 
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -29,7 +29,7 @@ import org.jboss.logging.annotations.ValidIdRange;
  * @author Lucas Ponce
  */
 @MessageLogger(projectCode = "HAWKALERT")
-@ValidIdRange(min = 230000, max = 239999)
+@ValidIdRange(min = 250000, max = 259999)
 public interface MsgLogger extends BasicLogger {
     MsgLogger LOGGER = Logger.getMessageLogger(MsgLogger.class, MsgLogger.class.getPackage().getName());
 

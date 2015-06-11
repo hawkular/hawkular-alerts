@@ -150,7 +150,7 @@ rule External
     when 
         $t : Trigger( $tid : id, $tmode : mode )
         $c : ExternalCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId  )
-        $d : ExternalData( $did == id )
+        $d : StringData( $did == id )
     then
         ExternalConditionEval ce = new ExternalConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {

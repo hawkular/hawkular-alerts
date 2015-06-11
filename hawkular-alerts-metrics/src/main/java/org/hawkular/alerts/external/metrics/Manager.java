@@ -27,15 +27,22 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
+import javax.inject.Inject;
 
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
+import org.hawkular.alerts.api.model.data.StringData;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.external.metrics.Expression.Func;
+import org.hawkular.metrics.core.api.MetricId;
+import org.hawkular.metrics.core.api.MetricsService;
 import org.jboss.logging.Logger;
+
+import rx.Observable;
 
 /**
  * Manages the Metrics expression evaluations and interacts with the Alerts system.
@@ -56,8 +63,14 @@ public class Manager {
     ScheduledThreadPoolExecutor expressionExecutor;
     Set<ScheduledFuture<?>> scheduledFutures = new HashSet<>();  // TODO: Is this needed in any way?
 
+    @Inject
+    MetricsService metrics;
+
     @EJB
     DefinitionsService definitions;
+
+    @EJB
+    AlertsService alerts;
 
     @PostConstruct
     public void init() {
@@ -107,7 +120,8 @@ public class Manager {
                         if (TAG_NAME.equals(ec.getSystemId())) {
                             try {
                                 Expression expression = new Expression(ec.getExpression());
-                                ExpressionRunner runner = new ExpressionRunner(trigger, ec, expression);
+                                ExpressionRunner runner = new ExpressionRunner(metrics, alerts, trigger, ec,
+                                        expression);
                                 // wait a minute for any initialization and then start the job
                                 scheduledFutures.add(expressionExecutor.scheduleAtFixedRate(runner, 1L,
                                         expression.getInterval(), TimeUnit.MINUTES));
@@ -126,12 +140,18 @@ public class Manager {
     private static class ExpressionRunner implements Runnable {
         private final Logger log = Logger.getLogger(Manager.ExpressionRunner.class);
 
+        private MetricsService metrics;
+        private AlertsService alerts;
         private Trigger trigger;
         private ExternalCondition externalCondition;
         private Expression expression;
 
-        public ExpressionRunner(Trigger trigger, ExternalCondition externalCondition, Expression expression) {
+        public ExpressionRunner(MetricsService metrics, AlertsService alerts, Trigger trigger,
+                ExternalCondition externalCondition,
+                Expression expression) {
             super();
+            this.metrics = metrics;
+            this.alerts = alerts;
             this.trigger = trigger;
             this.externalCondition = externalCondition;
             this.expression = expression;
@@ -141,10 +161,15 @@ public class Manager {
         public void run() {
             try {
                 Func func = expression.getFunc();
+                String tenantId = trigger.getTenantId();
+                MetricId metricId = new MetricId(expression.getMetric());
+                long end = System.currentTimeMillis();
+                long start = end - (expression.getPeriod() * 1000);
+
                 switch (func) {
                     case avg:
-                        
-                        handleAvg(Trigger)
+                        Observable<Double> average = metrics.findGaugeDataAverage(tenantId, metricId, start, end);
+                        average.first().subscribe(this::evaluate);
                         break;
                     default:
                         log.errorf("Unexpected Expression Function: %s", func);
@@ -153,5 +178,19 @@ public class Manager {
                 log.errorf("Unexpected failure in Expression handling: %s", expression);
             }
         }
+
+        public void evaluate(Double value) {
+            if (!expression.isTrue(value)) {
+                return;
+            }
+
+            try {
+                alerts.sendData(new StringData(externalCondition.getDataId(), System.currentTimeMillis(), value
+                        .toString()));
+            } catch (Exception e) {
+                log.error("Failed to send external data to alerts system.", e);
+            }
+        }
     }
+
 }
