@@ -116,7 +116,6 @@ public class Action {
         if (!tenantId.equals(action.tenantId)) return false;
         if (!actionPlugin.equals(action.actionPlugin)) return false;
         if (!actionId.equals(action.actionId)) return false;
-        if (!message.equals(action.message)) return false;
         return alert.equals(action.alert);
 
     }
@@ -126,8 +125,6 @@ public class Action {
         int result = tenantId.hashCode();
         result = 31 * result + actionPlugin.hashCode();
         result = 31 * result + actionId.hashCode();
-        result = 31 * result + message.hashCode();
-        result = 31 * result + alert.hashCode();
         return result;
     }
 

@@ -48,4 +48,8 @@ public interface MsgLogger {
     @Message(id = 240006, value = "Plugin [%s] cannot be started. Error: [%s]")
     void errorCannotBeStarted(String actionPlugin, String msg);
 
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 240007, value = "Plugin [%s] received a message without payload.")
+    void warnMessageReceivedWithoutPayload(String actionPlugin);
+
 }

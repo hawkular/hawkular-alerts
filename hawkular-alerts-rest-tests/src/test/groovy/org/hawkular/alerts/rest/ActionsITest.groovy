@@ -16,6 +16,10 @@
  */
 package org.hawkular.alerts.rest
 
+import org.hawkular.alerts.api.model.Severity
+import org.hawkular.alerts.api.model.action.Action
+import org.hawkular.alerts.api.model.condition.Alert
+
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 
@@ -91,5 +95,68 @@ class ActionsITest extends AbstractITestBase {
         resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
         assertEquals(200, resp.status)
     }
+
+    @Test
+    void invokeActions() {
+        String DEMO_TENANT = "28026b36-8fe4-4332-84c8-524e173a68bf";
+
+        Alert fakeAlert = new Alert();
+        fakeAlert.setTenantId(DEMO_TENANT);
+        fakeAlert.setTriggerId("fake-trigger");
+        fakeAlert.setCtime(System.currentTimeMillis());
+        fakeAlert.setSeverity(Severity.CRITICAL);
+
+        Action testAction = new Action();
+        testAction.setTenantId(DEMO_TENANT);
+        testAction.setActionPlugin("snmp");
+        testAction.setActionId("SNMP-Trap-1");
+        testAction.setMessage("Fake message 1");
+        testAction.setAlert(fakeAlert);
+
+        def resp = client.post(path: "actions/send", body: testAction)
+        assertEquals(200, resp.status)
+
+        testAction = new Action();
+        testAction.setTenantId(DEMO_TENANT);
+        testAction.setActionPlugin("snmp");
+        testAction.setActionId("SNMP-Trap-2");
+        testAction.setMessage("Fake message 2");
+        testAction.setAlert(fakeAlert);
+
+        resp = client.post(path: "actions/send", body: testAction)
+        assertEquals(200, resp.status)
+
+        testAction = new Action();
+        testAction.setTenantId(DEMO_TENANT);
+        testAction.setActionPlugin("email");
+        testAction.setActionId("email-to-admin");
+        testAction.setMessage(null);
+        testAction.setAlert(fakeAlert);
+
+        resp = client.post(path: "actions/send", body: testAction)
+        assertEquals(200, resp.status)
+
+        testAction = new Action();
+        testAction.setTenantId(DEMO_TENANT);
+        testAction.setActionPlugin("sms");
+        testAction.setActionId("sms-to-cio");
+        testAction.setMessage("Fake message 4");
+        testAction.setAlert(fakeAlert);
+
+        resp = client.post(path: "actions/send", body: testAction)
+        assertEquals(200, resp.status)
+
+        testAction = new Action();
+        testAction.setTenantId(DEMO_TENANT);
+        testAction.setActionPlugin("aerogear");
+        testAction.setActionId("agpush-to-admin");
+        testAction.setMessage("Fake message 5");
+        testAction.setAlert(fakeAlert);
+
+        resp = client.post(path: "actions/send", body: testAction)
+        assertEquals(200, resp.status)
+
+    }
+
 
 }
