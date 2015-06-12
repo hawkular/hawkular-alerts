@@ -17,7 +17,9 @@
 package org.hawkular.alerts.external.metrics;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -35,6 +37,7 @@ import org.hawkular.alerts.api.model.data.StringData;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
+import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.external.metrics.Expression.Func;
@@ -61,35 +64,33 @@ public class Manager {
     private static final Integer THREAD_POOL_SIZE = 20;
 
     ScheduledThreadPoolExecutor expressionExecutor;
-    Set<ScheduledFuture<?>> scheduledFutures = new HashSet<>();  // TODO: Is this needed in any way?
+    Map<ExternalCondition, ScheduledFuture<?>> expressionFutures = new HashMap<>();
 
     @Inject
-    MetricsService metrics;
+    private MetricsService metrics;
 
     @EJB
-    DefinitionsService definitions;
+    private DefinitionsService definitions;
 
     @EJB
-    AlertsService alerts;
+    private AlertsService alerts;
 
     @PostConstruct
     public void init() {
+        expressionExecutor = new ScheduledThreadPoolExecutor(THREAD_POOL_SIZE);
 
         definitions.registerListener(new DefinitionsListener() {
             @Override
             public void onChange(DefinitionsEvent event) {
-                if (DefinitionsEvent.EventType.CONDITION_CHANGE == event.getEventType()) {
-                }
+                refresh();
             }
-        });
-
-        refresh();
+        }, DefinitionsEvent.EventType.TRIGGER_UPDATE, EventType.TRIGGER_REMOVE);
     }
 
     @PreDestroy
     public void shutdown() {
-        if (null != scheduledFutures) {
-            scheduledFutures.forEach(f -> f.cancel(true));
+        if (null != expressionFutures) {
+            expressionFutures.values().forEach(f -> f.cancel(true));
         }
         if (null != expressionExecutor) {
             expressionExecutor.shutdown();
@@ -97,9 +98,9 @@ public class Manager {
     }
 
     private void refresh() {
+        log.info("Refreshing External Metrics Trigger!");
         try {
-            shutdown();
-            expressionExecutor = new ScheduledThreadPoolExecutor(THREAD_POOL_SIZE);
+            Set<ExternalCondition> activeConditions = new HashSet<>();
 
             // get all of the triggers tagged for hawkular metrics
             Collection<Trigger> triggers = definitions.getAllTriggersByTag(TAG_CATEGORY, TAG_NAME);
@@ -108,30 +109,58 @@ public class Manager {
             Collection<Condition> conditions = null;
             for (Trigger trigger : triggers) {
                 try {
-                    conditions = definitions.getTriggerConditions(trigger.getTenantId(),
-                            trigger.getId(), null);
+                    if (trigger.isEnabled()) {
+                        conditions = definitions.getTriggerConditions(trigger.getTenantId(), trigger.getId(), null);
+                    }
                 } catch (Exception e) {
                     log.error("Failed to fetch Conditions when scheduling metrics conditions for " + trigger, e);
                     continue;
                 }
+                if (null == conditions) {
+                    continue;
+                }
                 for (Condition condition : conditions) {
                     if (condition instanceof ExternalCondition) {
-                        ExternalCondition ec = (ExternalCondition) condition;
-                        if (TAG_NAME.equals(ec.getSystemId())) {
-                            try {
-                                Expression expression = new Expression(ec.getExpression());
-                                ExpressionRunner runner = new ExpressionRunner(metrics, alerts, trigger, ec,
-                                        expression);
-                                // wait a minute for any initialization and then start the job
-                                scheduledFutures.add(expressionExecutor.scheduleAtFixedRate(runner, 1L,
-                                        expression.getInterval(), TimeUnit.MINUTES));
-                            } catch (Exception e) {
-                                log.error("Failed to schedule expression for metrics condition " + ec, e);
+                        ExternalCondition externalCondition = (ExternalCondition) condition;
+                        if (TAG_NAME.equals(externalCondition.getSystemId())) {
+                            log.info("Found Metrics ExternalCondition! " + externalCondition);
+                            activeConditions.add(externalCondition);
+                            if (expressionFutures.containsKey(externalCondition)) {
+                                log.info("Skipping, already evaluating: " + externalCondition);
+
+                            } else {
+                                try {
+                                    // start the job. TODO: Do we need a delay for any reason?
+                                    log.info("Adding runner for: " + externalCondition);
+                                    Expression expression = new Expression(externalCondition.getExpression());
+                                    ExpressionRunner runner = new ExpressionRunner(metrics, alerts, trigger,
+                                            externalCondition, expression);
+                                    expressionFutures.put(
+                                            externalCondition,
+                                            expressionExecutor.scheduleAtFixedRate(runner, 0L,
+                                                    expression.getInterval(), TimeUnit.MINUTES));
+                                } catch (Exception e) {
+                                    log.error("Failed to schedule expression for metrics condition "
+                                            + externalCondition, e);
+                                }
                             }
                         }
                     }
                 }
             }
+
+            // cancel obsolete expressions
+            Set<ExternalCondition> temp = new HashSet<>();
+            for (Map.Entry<ExternalCondition, ScheduledFuture<?>> me : expressionFutures.entrySet()) {
+                ExternalCondition ec = me.getKey();
+                if (!activeConditions.contains(ec)) {
+                    me.getValue().cancel(true);
+                    temp.add(ec);
+                }
+            }
+            expressionFutures.keySet().removeAll(temp);
+            temp.clear();
+
         } catch (Exception e) {
             log.error("Failed to fetch Triggers for scheduling metrics conditions.", e);
         }
@@ -168,6 +197,7 @@ public class Manager {
 
                 switch (func) {
                     case avg:
+                        log.info("Running External Metrics Condition: " + expression);
                         Observable<Double> average = metrics.findGaugeDataAverage(tenantId, metricId, start, end);
                         average.first().subscribe(this::evaluate);
                         break;
@@ -180,13 +210,16 @@ public class Manager {
         }
 
         public void evaluate(Double value) {
+            log.info("Running External Metrics Evaluation: " + expression + ":" + value);
             if (!expression.isTrue(value)) {
                 return;
             }
 
             try {
-                alerts.sendData(new StringData(externalCondition.getDataId(), System.currentTimeMillis(), value
-                        .toString()));
+                StringData externalData = new StringData(externalCondition.getDataId(), System.currentTimeMillis(),
+                        value.toString());
+                log.info("Sending External Condition Data to Alerts! " + externalData);
+                alerts.sendData(externalData);
             } catch (Exception e) {
                 log.error("Failed to send external data to alerts system.", e);
             }

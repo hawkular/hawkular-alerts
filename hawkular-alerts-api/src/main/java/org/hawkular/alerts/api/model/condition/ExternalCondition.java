@@ -64,8 +64,12 @@ public class ExternalCondition extends Condition {
         this("DefaultId", Mode.FIRING, 1, 1, null, null, null);
     }
 
+    public ExternalCondition(String triggerId, Mode triggerMode, String dataId, String systemId, String expression) {
+        this(triggerId, triggerMode, 1, 1, dataId, systemId, expression);
+    }
+
     public ExternalCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
-            String systemId, String dataId, String expression) {
+            String dataId, String systemId, String expression) {
         super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.EXTERNAL);
         this.dataId = dataId;
         this.expression = expression;

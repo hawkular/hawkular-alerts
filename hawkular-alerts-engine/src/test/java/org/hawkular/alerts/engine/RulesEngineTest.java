@@ -898,7 +898,7 @@ public class RulesEngineTest {
     public void ExternalTest() {
         Trigger t1 = new Trigger("trigger-1", "External-Metrics");
         ExternalCondition t1c1 = new ExternalCondition("trigger-1", Trigger.Mode.FIRING, 1, 1,
-                "HawkularMetrics", "ExternalData-01", "metric:5:avg(foo > 100.5)");
+                "ExternalData-01", "HawkularMetrics", "metric:5:avg(foo > 100.5)");
 
         datums.add(new StringData("ExternalData-01", 1, "Ignored"));
 

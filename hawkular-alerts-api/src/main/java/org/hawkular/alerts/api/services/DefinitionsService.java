@@ -25,6 +25,7 @@ import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 
 /**
  * A interface used to create new triggers, conditions and init new notifiers.
@@ -143,7 +144,6 @@ public interface DefinitionsService {
      * @throws Exception on any problem
      */
     Collection<Dampening> getDampenings(String tenantId) throws Exception;
-
 
     /*
         CRUD interface for Condition
@@ -391,5 +391,5 @@ public interface DefinitionsService {
      */
     List<Tag> getTriggerTags(String tenantId, String triggerId, String category) throws Exception;
 
-    void registerListener(DefinitionsListener listener);
+    void registerListener(DefinitionsListener listener, EventType eventType, EventType... eventTypes);
 }

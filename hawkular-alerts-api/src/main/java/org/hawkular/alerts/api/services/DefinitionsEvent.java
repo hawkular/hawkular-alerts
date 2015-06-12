@@ -25,7 +25,11 @@ package org.hawkular.alerts.api.services;
 public class DefinitionsEvent {
 
     public enum EventType {
-        TRIGGER_CHANGE, DAMPENING_CHANGE, CONDITION_CHANGE
+        CONDITION_CHANGE,
+        DAMPENING_CHANGE,
+        TRIGGER_CREATE,
+        TRIGGER_REMOVE,
+        TRIGGER_UPDATE
     };
 
     private EventType eventType;

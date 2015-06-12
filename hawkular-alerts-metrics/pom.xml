@@ -27,7 +27,7 @@
   </parent>
 
   <artifactId>hawkular-alerts-metrics</artifactId>
-  <packaging>war</packaging>
+  <packaging>jar</packaging>
 
   <name>Hawkular Alerts External Metrics Evaluator</name>
 
@@ -76,16 +76,6 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- documentation -->
-    <dependency>
-      <groupId>com.wordnik</groupId>
-      <artifactId>swagger-annotations</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.wordnik</groupId>
-      <artifactId>swagger-core_2.10</artifactId>
-    </dependency>
-
     <!-- Tests -->
 
     <dependency>
@@ -95,66 +85,5 @@
     </dependency>
 
   </dependencies>
-
-  <profiles>
-    <profile>
-      <id>docgen</id>
-      <build>
-        <!-- Document generation from the Annotations on the REST-API. -->
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>unpack</id>
-                <phase>process-resources</phase>
-                <goals>
-                  <goal>unpack</goal>
-                </goals>
-                <configuration>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>org.hawkular</groupId>
-                      <artifactId>hawkular-build-tools</artifactId>
-                      <version>${version.org.hawkular.hawkular-build-tools}</version>
-                      <type>jar</type>
-                      <includes>**/*.mustache</includes>
-                    </artifactItem>
-                  </artifactItems>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>com.github.kongchen</groupId>
-            <artifactId>swagger-maven-plugin</artifactId>
-            <configuration>
-              <apiSources>
-                <apiSource>
-                  <locations>org.hawkular.alerts.rest</locations>
-                  <apiVersion>1.0</apiVersion>
-                  <basePath>http://localhost:8080/hawkular/alerts</basePath>
-                  <outputTemplate>${project.build.directory}/dependency/hawkular-documentation/asciidoc.mustache</outputTemplate>
-                  <swaggerDirectory>${project.build.directory}/generated/swagger-ui</swaggerDirectory>
-                  <swaggerInternalFilter>org.hawkular.alerts.rest.swagger.filter.JaxRsFilter</swaggerInternalFilter>
-                  <swaggerApiReader>com.wordnik.swagger.jaxrs.reader.DefaultJaxrsApiReader</swaggerApiReader>
-                  <outputPath>${project.build.directory}/generated/rest-alerts.adoc</outputPath>
-                </apiSource>
-              </apiSources>
-            </configuration>
-            <executions>
-              <execution>
-                <phase>compile</phase>
-                <goals>
-                  <goal>generate</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
 </project>

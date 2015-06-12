@@ -74,9 +74,9 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
 
     @Override
     protected void onBasicMessage(AvailDataMessage msg) {
-        log.debugf("Message received: [%s]", msg);
 
         AvailData availData = msg.getAvailData();
+        log.debugf("Message received with [%s] availability.", availData.getData().size());
 
         List<SingleAvail> data = availData.getData();
         List<Data> alertData = new ArrayList<>(data.size());
@@ -87,7 +87,7 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
             }
         }
 
-        log.debugf("Sending: [%s]", alertData);
+        log.debugf("Sending [%s] availability to Alerting", alertData.size());
         try {
             alerts.sendData(alertData);
         } catch (Exception e) {

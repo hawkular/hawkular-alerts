@@ -150,6 +150,46 @@
       </build>
     </profile>
     <profile>
+      <id>external</id>
+      <properties>
+        <!-- IMPORTANT: The port must be the port offset + 8080. -->
+        <hawkular.host>127.0.0.1</hawkular.host>
+        <hawkular.port>8080</hawkular.port>
+        <hawkular.path>/hawkular/</hawkular.path>
+        <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
+        <hawkular.base-uri-alerts>${hawkular.base-uri}/alerts/</hawkular.base-uri-alerts>
+        <hawkular.base-uri-metrics>${hawkular.base-uri}/metrics/</hawkular.base-uri-metrics>
+        <!-- IMPORTANT: The management port must be the port offset + 9990. -->
+        <wildfly.management.port>11887</wildfly.management.port>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/external/*ITest*</include>
+              </includes>
+              <systemPropertyVariables>
+                <hawkular.host>${hawkular.host}</hawkular.host>
+                <hawkular.port>${hawkular.port}</hawkular.port>
+                <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
+              </systemPropertyVariables>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>rest</id>
       <properties>
         <hawkular.host>127.0.0.1</hawkular.host>

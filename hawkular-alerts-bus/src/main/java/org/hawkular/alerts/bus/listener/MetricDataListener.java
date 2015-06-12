@@ -52,13 +52,11 @@ import org.jboss.logging.Logger;
 public class MetricDataListener extends BasicMessageListener<MetricDataMessage> {
     private final Logger log = Logger.getLogger(MetricDataListener.class);
 
-
     @EJB
     AlertsService alerts;
 
     @EJB
     CacheManager cacheManager;
-
 
     private boolean isNeeded(Set<String> activeMetricIds, String metricId) {
         if (null == activeMetricIds) {
@@ -70,10 +68,10 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
 
     @Override
     protected void onBasicMessage(MetricDataMessage msg) {
-        log.debugf("Message received: [%s]", msg);
 
         // TODO: tenants?
         MetricData metricData = msg.getMetricData();
+        log.debugf("Message received with [%s] datums.", metricData.getData().size());
 
         List<SingleMetric> data = metricData.getData();
         List<Data> alertData = new ArrayList<>(data.size());
@@ -81,12 +79,10 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
         for (SingleMetric m : data) {
             if (isNeeded(activeMetricIds, m.getSource())) {
                 alertData.add(new NumericData(m.getSource(), m.getTimestamp(), m.getValue()));
-            } else {
-                log.debugf("Filtering data not used in Triggers. MetricId=%s", m.getSource());
             }
         }
-
-        log.debugf("Sending: [%s]", alertData);
+        log.debugf("Sending [%s] datums to Alerting, filtered [%s] not used in Triggers.", alertData.size(),
+                (metricData.getData().size() - alertData.size()));
         try {
             alerts.sendData(alertData);
         } catch (Exception e) {
