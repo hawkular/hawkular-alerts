@@ -1,0 +1,176 @@
+{"triggers": [
+  {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+    "triggerId": "trigger-1",
+    "enabled": true,
+    "name": "NumericData-01-low",
+    "description": "This is the description",
+    "autoDisable": false,
+    "autoResolve": false,
+    "autoResolveAlerts": true,
+    "severity": "HIGH",
+    "firingMatch": "ALL",
+    "autoResolveMatch": "ALL",
+    "actions": [
+      {"actionPlugin": "snmp",
+       "actionId": "SNMP-Trap-1"
+      },
+      {"actionPlugin": "snmp",
+       "actionId": "SNMP-Trap-2"
+      },
+      {"actionPlugin": "sms",
+       "actionId": "sms-to-cio"
+      },
+      {"actionPlugin": "email",
+       "actionId": "email-to-admin"
+      },
+      {"actionPlugin": "aerogear",
+       "actionId": "agpush-to-admin"
+      }
+    ]
+  },
+  {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+    "triggerId": "trigger-2",
+    "enabled": true,
+    "name": "NumericData-01-02-high",
+    "description": "This is the description",
+    "autoDisable": false,
+    "autoResolve": false,
+    "autoResolveAlerts": true,
+    "severity": "HIGH",
+    "firingMatch": "ALL",
+    "autoResolveMatch": "ALL",
+    "actions": [
+      {"actionPlugin": "snmp",
+        "actionId": "SNMP-Trap-1"
+      },
+      {"actionPlugin": "snmp",
+        "actionId": "SNMP-Trap-2"
+      },
+      {"actionPlugin": "sms",
+        "actionId": "sms-to-cio"
+      },
+      {"actionPlugin": "email",
+        "actionId": "email-to-admin"
+      },
+      {"actionPlugin": "aerogear",
+        "actionId": "agpush-to-admin"
+      }
+    ]
+  },
+  {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+    "triggerId": "trigger-3",
+    "enabled": true,
+    "name": "NumericData-03-range",
+    "description": "This is the description",
+    "autoDisable": false,
+    "autoResolve": false,
+    "autoResolveAlerts": true,
+    "severity": "HIGH",
+    "firingMatch": "ALL",
+    "autoResolveMatch": "ALL",
+    "actions": [
+      {"actionPlugin": "snmp",
+        "actionId": "SNMP-Trap-1"
+      },
+      {"actionPlugin": "snmp",
+        "actionId": "SNMP-Trap-2"
+      },
+      {"actionPlugin": "sms",
+        "actionId": "sms-to-cio"
+      },
+      {"actionPlugin": "email",
+        "actionId": "email-to-admin"
+      },
+      {"actionPlugin": "aerogear",
+        "actionId": "agpush-to-admin"
+      }
+    ]
+  },
+  {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+    "triggerId": "trigger-4",
+    "enabled": true,
+    "name": "CompareData-01-d1-lthalf-d2",
+    "description": "This is the description",
+    "autoDisable": false,
+    "autoResolve": false,
+    "autoResolveAlerts": true,
+    "severity": "HIGH",
+    "firingMatch": "ALL",
+    "autoResolveMatch": "ALL",
+    "actions": [
+      {"actionPlugin": "snmp",
+        "actionId": "SNMP-Trap-1"
+      },
+      {"actionPlugin": "snmp",
+        "actionId": "SNMP-Trap-2"
+      },
+      {"actionPlugin": "sms",
+        "actionId": "sms-to-cio"
+      },
+      {"actionPlugin": "email",
+        "actionId": "email-to-admin"
+      },
+      {"actionPlugin": "aerogear",
+        "actionId": "agpush-to-admin"
+      }
+    ]
+  },
+  {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+    "triggerId": "trigger-5",
+    "enabled": true,
+    "name": "StringData-01-starts",
+    "description": "This is the description",
+    "autoDisable": false,
+    "autoResolve": false,
+    "autoResolveAlerts": true,
+    "severity": "HIGH",
+    "firingMatch": "ALL",
+    "autoResolveMatch": "ALL",
+    "actions": [
+      {"actionPlugin": "snmp",
+        "actionId": "SNMP-Trap-1"
+      },
+      {"actionPlugin": "snmp",
+        "actionId": "SNMP-Trap-2"
+      },
+      {"actionPlugin": "sms",
+        "actionId": "sms-to-cio"
+      },
+      {"actionPlugin": "email",
+        "actionId": "email-to-admin"
+      },
+      {"actionPlugin": "aerogear",
+        "actionId": "agpush-to-admin"
+      }
+    ]
+  },
+  {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+    "triggerId": "trigger-6",
+    "enabled": true,
+    "name": "Availability-01-NOT-UP",
+    "description": "This is the description",
+    "autoDisable": false,
+    "autoResolve": false,
+    "autoResolveAlerts": true,
+    "severity": "HIGH",
+    "firingMatch": "ALL",
+    "autoResolveMatch": "ALL",
+    "actions": [
+      {"actionPlugin": "snmp",
+        "actionId": "SNMP-Trap-1"
+      },
+      {"actionPlugin": "snmp",
+        "actionId": "SNMP-Trap-2"
+      },
+      {"actionPlugin": "sms",
+        "actionId": "sms-to-cio"
+      },
+      {"actionPlugin": "email",
+        "actionId": "email-to-admin"
+      },
+      {"actionPlugin": "aerogear",
+        "actionId": "agpush-to-admin"
+      }
+    ]
+  }
+]}
