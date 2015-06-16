@@ -646,22 +646,45 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (selectTagsTriggersAllByTag == null) {
             throw new RuntimeException("selectTagsTriggersAllByTag PreparedStatement is null");
         }
-        List<Trigger> triggers = new ArrayList<>();
+        Map<String, Set<String>> tenantTriggerIdsMap = new HashMap<>();
         try {
             BoundStatement bs = isEmpty(category) ?
                     selectTagsTriggersAllByTag.bind(name) :
                     selectTagsTriggersAllByTag.bind(category, name);
-            ResultSet rsTriggers = session.execute(bs);
-            for (Row row : rsTriggers) {
-                Trigger trigger = mapTrigger(row);
-                selectTriggerActions(trigger);
-                triggers.add(trigger);
+            ResultSet rsTriggerIds = session.execute(bs);
+            for (Row row : rsTriggerIds) {
+                String tenantId = row.getString("tenantId");
+                Set<String> triggerIds = row.getSet("triggers", String.class);
+                Set<String> storedTriggerIds = tenantTriggerIdsMap.get(tenantId);
+                if (null != storedTriggerIds) {
+                    triggerIds.addAll(storedTriggerIds);
+                }
+                tenantTriggerIdsMap.put(tenantId, triggerIds);
             }
+
+            // Now, generate a cross-tenant result set if Triggers using the tenantIds and triggerIds
+            List<Trigger> triggers = new ArrayList<>();
+            PreparedStatement selectTrigger = CassStatement.get(session, CassStatement.SELECT_TRIGGER);
+            for (Map.Entry<String, Set<String>> entry : tenantTriggerIdsMap.entrySet()) {
+                String tenantId = entry.getKey();
+                Set<String> triggerIds = entry.getValue();
+                List<ResultSetFuture> futures = triggerIds.stream().map(triggerId ->
+                        session.executeAsync(selectTrigger.bind(tenantId, triggerId)))
+                        .collect(Collectors.toList());
+                List<ResultSet> rsTriggers = Futures.allAsList(futures).get();
+                rsTriggers.stream().forEach(r -> {
+                    for (Row row : r) {
+                        triggers.add(mapTrigger(row));
+                    }
+                });
+            }
+
+            return triggers;
+
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
-        return triggers;
     }
 
     private void selectTriggerActions(Trigger trigger) throws Exception {
@@ -1148,6 +1171,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         PreparedStatement insertConditionAvailability = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_AVAILABILITY);
         PreparedStatement insertConditionCompare = CassStatement.get(session, CassStatement.INSERT_CONDITION_COMPARE);
+        PreparedStatement insertConditionExternal = CassStatement
+                .get(session, CassStatement.INSERT_CONDITION_EXTERNAL);
         PreparedStatement insertConditionString = CassStatement.get(session, CassStatement.INSERT_CONDITION_STRING);
         PreparedStatement insertConditionThreshold = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_THRESHOLD);
@@ -1155,6 +1180,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 CassStatement.INSERT_CONDITION_THRESHOLD_RANGE);
         if (insertConditionAvailability == null
                 || insertConditionCompare == null
+                || insertConditionExternal == null
                 || insertConditionString == null
                 || insertConditionThreshold == null
                 || insertConditionThresholdRange == null) {
@@ -1196,6 +1222,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                             cCond.getConditionSetIndex(), cCond.getConditionId(), cCond.getDataId(),
                             cCond.getOperator().name(), cCond.getData2Id(), cCond.getData2Multiplier())));
 
+                } else if (cond instanceof ExternalCondition) {
+
+                    ExternalCondition eCond = (ExternalCondition) cond;
+                    futures.add(session.executeAsync(insertConditionExternal.bind(eCond.getTenantId(), eCond
+                            .getTriggerId(), eCond.getTriggerMode().name(), eCond.getConditionSetSize(),
+                            eCond.getConditionSetIndex(), eCond.getConditionId(), eCond.getDataId(),
+                            eCond.getSystemId(), eCond.getExpression())));
+
                 } else if (cond instanceof StringCondition) {
 
                     StringCondition sCond = (StringCondition) cond;
@@ -1220,6 +1254,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                             rCond.getConditionSetIndex(), rCond.getConditionId(), rCond.getDataId(),
                             rCond.getOperatorLow().name(), rCond.getOperatorHigh().name(), rCond.getThresholdLow(),
                             rCond.getThresholdHigh(), rCond.isInRange())));
+
+                } else {
+                    throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
                 }
 
                 // generate the automatic dataId tags for search
@@ -1587,8 +1624,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     eCondition.setConditionSetSize(row.getInt("conditionSetSize"));
                     eCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
                     eCondition.setDataId(row.getString("dataId"));
-                    eCondition.setSystemId(row.getString("systemId"));
-                    eCondition.setExpression(row.getString("expression"));
+                    eCondition.setSystemId(row.getString("operator"));
+                    eCondition.setExpression(row.getString("pattern"));
                     condition = eCondition;
                     break;
                 case RANGE:
@@ -2085,11 +2122,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void registerListener(DefinitionsListener listener, EventType eventType, EventType... eventTypes) {
-        listeners.put(listener, EnumSet.of(eventType, eventTypes));
+        EnumSet<EventType> types = EnumSet.of(eventType, eventTypes);
+        log.debugf("Registering listeners %s for event types", listener, types);
+        listeners.put(listener, types);
     }
 
     private void notifyListeners(EventType eventType) {
         DefinitionsEvent de = new DefinitionsEvent(eventType);
+        log.debugf("Notifying applicable listeners %s of event %s", listeners, eventType.name());
         for (Map.Entry<DefinitionsListener, Set<EventType>> me : listeners.entrySet()) {
             if (me.getValue().contains(eventType)) {
                 log.debugf("Notified Listener %s", eventType.name());

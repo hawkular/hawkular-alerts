@@ -29,6 +29,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
+import javax.ejb.Startup;
 import javax.inject.Inject;
 
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -53,6 +54,7 @@ import rx.Observable;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@Startup
 @Singleton
 public class Manager {
     private final Logger log = Logger.getLogger(Manager.class);
@@ -69,6 +71,9 @@ public class Manager {
     @Inject
     private MetricsService metrics;
 
+    //private MetricsServiceImpl metrics;
+    //private DataAccess dataAccess;
+
     @EJB
     private DefinitionsService definitions;
 
@@ -77,8 +82,10 @@ public class Manager {
 
     @PostConstruct
     public void init() {
+        log.debugf("Initializing Hawkular Alerts-Metrics Manager...");
         expressionExecutor = new ScheduledThreadPoolExecutor(THREAD_POOL_SIZE);
 
+        log.debugf("Registering Trigger UPDATE/REMOVE listener");
         definitions.registerListener(new DefinitionsListener() {
             @Override
             public void onChange(DefinitionsEvent event) {
@@ -89,6 +96,7 @@ public class Manager {
 
     @PreDestroy
     public void shutdown() {
+        log.debugf("Shutting down Hawkular Alerts-Metrics Manager...");
         if (null != expressionFutures) {
             expressionFutures.values().forEach(f -> f.cancel(true));
         }
@@ -104,6 +112,7 @@ public class Manager {
 
             // get all of the triggers tagged for hawkular metrics
             Collection<Trigger> triggers = definitions.getAllTriggersByTag(TAG_CATEGORY, TAG_NAME);
+            log.infof("Found [%s] External Metrics Triggers!", triggers.size());
 
             // for each trigger look for Metrics Conditions and start running them
             Collection<Condition> conditions = null;
@@ -111,6 +120,8 @@ public class Manager {
                 try {
                     if (trigger.isEnabled()) {
                         conditions = definitions.getTriggerConditions(trigger.getTenantId(), trigger.getId(), null);
+                        log.infof("Checking [%s] Conditions for enabled trigger [%s]!", conditions.size(),
+                                trigger.getName());
                     }
                 } catch (Exception e) {
                     log.error("Failed to fetch Conditions when scheduling metrics conditions for " + trigger, e);
@@ -154,6 +165,7 @@ public class Manager {
             for (Map.Entry<ExternalCondition, ScheduledFuture<?>> me : expressionFutures.entrySet()) {
                 ExternalCondition ec = me.getKey();
                 if (!activeConditions.contains(ec)) {
+                    log.infof("Canceling evaluation of obsolete External Metric Condition %s", ec);
                     me.getValue().cancel(true);
                     temp.add(ec);
                 }

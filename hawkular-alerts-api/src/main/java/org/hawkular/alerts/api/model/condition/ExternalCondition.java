@@ -71,6 +71,8 @@ public class ExternalCondition extends Condition {
     public ExternalCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
             String dataId, String systemId, String expression) {
         super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.EXTERNAL);
+
+        this.systemId = systemId;
         this.dataId = dataId;
         this.expression = expression;
     }

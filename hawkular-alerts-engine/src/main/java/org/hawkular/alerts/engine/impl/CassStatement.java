@@ -59,6 +59,7 @@ public class CassStatement {
     public static final String INSERT_ALERT_STATUS;
     public static final String INSERT_CONDITION_AVAILABILITY;
     public static final String INSERT_CONDITION_COMPARE;
+    public static final String INSERT_CONDITION_EXTERNAL;
     public static final String INSERT_CONDITION_STRING;
     public static final String INSERT_CONDITION_THRESHOLD;
     public static final String INSERT_CONDITION_THRESHOLD_RANGE;
@@ -179,6 +180,10 @@ public class CassStatement {
         INSERT_CONDITION_COMPARE = "INSERT INTO " + keyspace + ".conditions "
                 + "(tenantId, triggerId, triggerMode, type, conditionSetSize, conditionSetIndex, conditionId, "
                 + "dataId, operator, data2Id, data2Multiplier) VALUES (?, ?, ?, 'COMPARE', ?, ?, ?, ?, ?, ?, ?) ";
+
+        INSERT_CONDITION_EXTERNAL = "INSERT INTO " + keyspace + ".conditions "
+                + "(tenantId, triggerId, triggerMode, type, conditionSetSize, conditionSetIndex, conditionId, "
+                + "dataId, operator, pattern) VALUES (?, ?, ?, 'EXTERNAL', ?, ?, ?, ?, ?, ?) ";
 
         INSERT_CONDITION_STRING = "INSERT INTO " + keyspace + ".conditions "
                 + "(tenantId, triggerId, triggerMode, type, conditionSetSize, conditionSetIndex, conditionId, "
@@ -301,11 +306,11 @@ public class CassStatement {
                 + "FROM " + keyspace + ".tags "
                 + "WHERE tenantId = ? AND triggerId = ? AND name = ? ";
 
-        SELECT_TAGS_TRIGGERS_ALL_BY_CATEGORY_AND_NAME = "SELECT triggers "
+        SELECT_TAGS_TRIGGERS_ALL_BY_CATEGORY_AND_NAME = "SELECT tenantId, triggers "
                 + "FROM " + keyspace + ".tags_triggers "
                 + "WHERE category = ? AND name = ? ";
 
-        SELECT_TAGS_TRIGGERS_ALL_BY_NAME = "SELECT triggers "
+        SELECT_TAGS_TRIGGERS_ALL_BY_NAME = "SELECT tenantId, triggers "
                 + "FROM " + keyspace + ".tags_triggers "
                 + "WHERE name = ? ";
 

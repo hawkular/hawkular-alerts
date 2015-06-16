@@ -20,6 +20,7 @@ import java.util.List
 
 import org.hawkular.alerts.api.model.data.StringData
 import org.hawkular.alerts.api.model.condition.ExternalCondition
+import org.hawkular.alerts.api.model.trigger.Tag
 import org.hawkular.alerts.api.model.trigger.Trigger
 
 import static org.hawkular.alerts.api.model.trigger.Trigger.Mode
@@ -70,6 +71,11 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.post(path: "triggers/trigger-test-avg/conditions", body: firingCond)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
+
+        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
+        Tag tag = new Tag( "trigger-test-avg", "HawkularMetrics", "MetricsCondition" );
+        resp = client.post(path: "triggers/tags/", body: tag)
+        assertEquals(200, resp.status)
 
         // ENABLE Trigger
         triggerTestAvg.setEnabled(true);
