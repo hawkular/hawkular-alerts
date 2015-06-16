@@ -46,7 +46,7 @@ import org.hawkular.metrics.core.api.MetricId;
 import org.hawkular.metrics.core.api.MetricsService;
 import org.jboss.logging.Logger;
 
-import rx.Observable;
+import rx.observables.BlockingObservable;
 
 /**
  * Manages the Metrics expression evaluations and interacts with the Alerts system.
@@ -61,6 +61,9 @@ public class Manager {
 
     private static final String TAG_CATEGORY = "HawkularMetrics";
     private static final String TAG_NAME = "MetricsCondition";
+
+    private static final long DAY = 24L * 60L * 1000L;
+    private static final long WEEK = 7L * DAY;
 
     // private static final String THREAD_POOL_NAME = "HawkularAlertsMetricsExpression";
     private static final Integer THREAD_POOL_SIZE = 20;
@@ -133,7 +136,7 @@ public class Manager {
                 for (Condition condition : conditions) {
                     if (condition instanceof ExternalCondition) {
                         ExternalCondition externalCondition = (ExternalCondition) condition;
-                        if (TAG_NAME.equals(externalCondition.getSystemId())) {
+                        if (TAG_CATEGORY.equals(externalCondition.getSystemId())) {
                             log.info("Found Metrics ExternalCondition! " + externalCondition);
                             activeConditions.add(externalCondition);
                             if (expressionFutures.containsKey(externalCondition)) {
@@ -205,24 +208,110 @@ public class Manager {
                 String tenantId = trigger.getTenantId();
                 MetricId metricId = new MetricId(expression.getMetric());
                 long end = System.currentTimeMillis();
-                long start = end - (expression.getPeriod() * 1000);
+                long start = end - (expression.getPeriod() * 60000);
 
+                log.info("Running External Metrics Condition: " + expression);
+                Double value = Double.NaN;
                 switch (func) {
                     case avg:
-                        log.info("Running External Metrics Condition: " + expression);
-                        Observable<Double> average = metrics.findGaugeDataAverage(tenantId, metricId, start, end);
-                        average.first().subscribe(this::evaluate);
+                        // The approach below did not work.  I'm not 100% sure why not but I think it's due to
+                        // the run() method exiting before the async call returns. Anyway, by converting to a
+                        // BlockingObserver and using .last() as opposed to .single() we seem to be OK.
+                        //
+                        //metrics.findGaugeDataAverage(tenantId, metricId, start, end).first().subscribe(
+                        //        this::evaluate,
+                        //        t -> log.debugf("Failed get-query for %s: %s", expression, t.getMessage()));
+
+                        value = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking().last();
+                        break;
+                    case avgd: {
+                        Double avgToday = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking()
+                                .last();
+                        Double avgYesterday = metrics
+                                .findGaugeDataAverage(tenantId, metricId, (start - DAY), (end - DAY)).toBlocking()
+                                .last();
+                        value = avgToday - avgYesterday;
+                        break;
+                    }
+                    case avgdp: {
+                        Double avgToday = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking()
+                                .last();
+                        Double avgYesterday = metrics
+                                .findGaugeDataAverage(tenantId, metricId, (start - DAY), (end - DAY)).toBlocking()
+                                .last();
+                        value = avgToday / avgYesterday;
+                        break;
+                    }
+                    case avgw: {
+                        Double avgToday = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking()
+                                .last();
+                        Double avgLastWeek = metrics
+                                .findGaugeDataAverage(tenantId, metricId, (start - WEEK), (end - WEEK)).toBlocking()
+                                .last();
+                        value = avgToday - avgLastWeek;
+                        break;
+                    }
+                    case avgwp: {
+                        Double avgToday = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking()
+                                .last();
+                        Double avgLastWeek = metrics
+                                .findGaugeDataAverage(tenantId, metricId, (start - WEEK), (end - WEEK)).toBlocking()
+                                .last();
+                        value = avgToday / avgLastWeek;
+                        break;
+                    }
+                    case card:
+                        log.errorf("Not Yet Supported Function: %s", func);
+                        break;
+                    case delta: {
+                        BlockingObservable<Double> bo = metrics.findGaugeDataRange(tenantId, metricId, start, end)
+                                .toBlocking();
+                        Double min = bo.first();
+                        Double max = bo.last();
+                        value = max - min;
+                        break;
+                    }
+                    case deltap: {
+                        BlockingObservable<Double> bo = metrics.findGaugeDataRange(tenantId, metricId, start, end)
+                                .toBlocking();
+                        Double min = bo.first();
+                        Double max = bo.last();
+                        Double avg = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking().last();
+                        value = (max - min) / avg;
+                        break;
+                    }
+                    case down:
+                        log.errorf("Not Yet Supported Function: %s", func);
+                        break;
+                    case max:
+                        value = metrics.findGaugeDataMax(tenantId, metricId, start, end).toBlocking().last();
+                        break;
+                    case min:
+                        value = metrics.findGaugeDataMin(tenantId, metricId, start, end).toBlocking().last();
+                        break;
+                    case up:
+                        log.errorf("Not Yet Supported Function: %s", func);
                         break;
                     default:
                         log.errorf("Unexpected Expression Function: %s", func);
+                        break;
                 }
-            } catch (Exception e) {
-                log.errorf("Unexpected failure in Expression handling: %s", expression);
+
+                evaluate(value);
+
+            } catch (Throwable t) {
+                log.debugf("Failed data fetch for %s: %s", expression, t.getMessage());
             }
         }
 
         public void evaluate(Double value) {
+            if (value.isNaN()) {
+                log.debugf("NaN value, Ignoring External Metrics evaluation of %s", expression);
+                return;
+            }
+
             log.info("Running External Metrics Evaluation: " + expression + ":" + value);
+
             if (!expression.isTrue(value)) {
                 return;
             }

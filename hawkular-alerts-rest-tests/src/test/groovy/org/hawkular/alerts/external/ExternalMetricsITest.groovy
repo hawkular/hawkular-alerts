@@ -64,9 +64,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         assertEquals(200, resp.status)
 
         // ADD external metrics avg condition. Note: systemId must be "HawkularMetrics"
-        // Average over the last 5 minutes > 50, check every minute
+        // Average over the last 1 minute > 50, check every minute
         ExternalCondition firingCond = new ExternalCondition("trigger-test-avg", Mode.FIRING, "external-data-test-avg",
-            "HawkularMetrics", "metric:1:avg(data-test-avg > 50),5");
+            "HawkularMetrics", "metric:1:avg(data-test-avg > 50),1");
 
         resp = client.post(path: "triggers/trigger-test-avg/conditions", body: firingCond)
         assertEquals(200, resp.status)
@@ -77,17 +77,11 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.post(path: "triggers/tags/", body: tag)
         assertEquals(200, resp.status)
 
-        // ENABLE Trigger
-        triggerTestAvg.setEnabled(true);
-
-        resp = client.put(path: "triggers/trigger-test-avg/", body: triggerTestAvg)
-        assertEquals(200, resp.status)
-
-        // FETCH trigger and make sure it's as expected
+        // FETCH trigger to validate and get the tenantId
         resp = client.get(path: "triggers/trigger-test-avg");
         assertEquals(200, resp.status)
         assertEquals("trigger-test-avg", resp.data.name)
-        assertEquals(true, resp.data.enabled)
+        assertEquals(false, resp.data.enabled)
         assertEquals(true, resp.data.autoDisable);
         def tenantId = resp.data.tenantId;
         assert( null != tenantId )
@@ -96,12 +90,20 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-avg"] )
         assertEquals(204, resp.status)
 
-        // Send in METRICS data to have the External Manager send in external data to fire the trigger
+        // Send in METRICS data before enabling the trigger because the external evaluations start as soon
+        // as the enabled Trigger is processed.
         long now = System.currentTimeMillis();
-        DataPoint dp1 = new DataPoint( "data-test-avg", 45.0, now - 180000 );  // 3 minutes ago
-        DataPoint dp2 = new DataPoint( "data-test-avg", 55.0, now - 120000 );  // 2 minutes ago
-        DataPoint dp3 = new DataPoint( "data-test-avg", 65.0, now -  60000 );  // 1 minutes ago
+        DataPoint dp1 = new DataPoint( "data-test-avg", 50.0, now - 30000 );  // 30 seconds ago
+        DataPoint dp2 = new DataPoint( "data-test-avg", 60.0, now - 25000 );  // 25 seconds ago
+        DataPoint dp3 = new DataPoint( "data-test-avg", 73.0, now - 20000 );  // 20 seconds ago
         sendMetricDataViaRest( tenantId, dp1, dp2, dp3 );
+
+        // ENABLE Trigger, this should get picked up by the listener and the expression should be submitted
+        // to a runner for processing...
+        triggerTestAvg.setEnabled(true);
+
+        resp = client.put(path: "triggers/trigger-test-avg/", body: triggerTestAvg)
+        assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
