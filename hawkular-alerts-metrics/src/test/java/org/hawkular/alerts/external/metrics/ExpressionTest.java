@@ -55,24 +55,6 @@ public class ExpressionTest {
         assertTrue(x.getThreshold() == 40.0);
         assertEquals(x.getMetric(), "foo-bar");
 
-        x = new Expression("TAG:5m:avgdp(bar <= 1.1),10");
-        assertEquals(x.getTarget(), Target.Tag);
-        assertEquals(x.getFunc(), Func.avgdp);
-        assertEquals(x.getInterval().intValue(), 5);
-        assertEquals(x.getPeriod().intValue(), 10);
-        assertEquals(x.getOp(), Op.LTE);
-        assertTrue(x.getThreshold() == 1.1);
-        assertEquals(x.getMetric(), "bar");
-
-        x = new Expression("metric:15:avgwp(foo-bar >= 0.5), 20m");
-        assertEquals(x.getTarget(), Target.Metric);
-        assertEquals(x.getFunc(), Func.avgwp);
-        assertEquals(x.getInterval().intValue(), 15);
-        assertEquals(x.getPeriod().intValue(), 20);
-        assertEquals(x.getOp(), Op.GTE);
-        assertTrue(x.getThreshold() == 0.5);
-        assertEquals(x.getMetric(), "foo-bar");
-
         x = new Expression("metric:15:delta(foo-bar >= 2), 20m");
         assertEquals(x.getTarget(), Target.Metric);
         assertEquals(x.getFunc(), Func.delta);

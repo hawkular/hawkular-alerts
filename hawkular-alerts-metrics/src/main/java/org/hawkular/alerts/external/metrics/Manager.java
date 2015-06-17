@@ -230,16 +230,7 @@ public class Manager {
                         Double avgYesterday = metrics
                                 .findGaugeDataAverage(tenantId, metricId, (start - DAY), (end - DAY)).toBlocking()
                                 .last();
-                        value = avgToday - avgYesterday;
-                        break;
-                    }
-                    case avgdp: {
-                        Double avgToday = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking()
-                                .last();
-                        Double avgYesterday = metrics
-                                .findGaugeDataAverage(tenantId, metricId, (start - DAY), (end - DAY)).toBlocking()
-                                .last();
-                        value = avgToday / avgYesterday;
+                        value = ((avgToday - avgYesterday) / avgYesterday) * 100;
                         break;
                     }
                     case avgw: {
@@ -248,16 +239,7 @@ public class Manager {
                         Double avgLastWeek = metrics
                                 .findGaugeDataAverage(tenantId, metricId, (start - WEEK), (end - WEEK)).toBlocking()
                                 .last();
-                        value = avgToday - avgLastWeek;
-                        break;
-                    }
-                    case avgwp: {
-                        Double avgToday = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking()
-                                .last();
-                        Double avgLastWeek = metrics
-                                .findGaugeDataAverage(tenantId, metricId, (start - WEEK), (end - WEEK)).toBlocking()
-                                .last();
-                        value = avgToday / avgLastWeek;
+                        value = ((avgToday - avgLastWeek) / avgLastWeek) * 100;
                         break;
                     }
                     case card:

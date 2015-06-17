@@ -44,7 +44,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
     static t01Start = String.valueOf(System.currentTimeMillis())
     static t02Start;
 
-    @Test
+    //@Test
     void t01_AverageTest() {
         String start = t01Start;
 
@@ -118,9 +118,95 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
             assert resp.status == 204 : resp.status
         }
         assertEquals(200, resp.status)
-
-        String alertId = resp.data[0].alertId;
         println resp.data[0].toString();
+
+        assertEquals("trigger-test-avg", resp.data.triggerId)
+        assertEquals("61.0", resp.data.evalSets.get(0).iterator().next().value)
+    }
+
+    @Test
+    void t01_AverageDayTest() {
+        String start = t01Start;
+
+        // CREATE trigger using external metrics expression
+        def resp = client.get(path: "")
+        assert resp.status == 200 || resp.status == 204 : resp.status
+
+        Trigger triggerTestAvgD = new Trigger("trigger-test-avgd", "trigger-test-avgd");
+
+        // remove if it exists
+        resp = client.delete(path: "triggers/trigger-test-avgd")
+        assert(200 == resp.status || 404 == resp.status)
+
+        triggerTestAvgD.setAutoDisable(true);
+
+        resp = client.post(path: "triggers", body: triggerTestAvgD)
+        assertEquals(200, resp.status)
+
+        // ADD external metrics avgd condition. Note: systemId must be "HawkularMetrics"
+        // Average over the last 1 minute > 50, check every minute
+        ExternalCondition firingCond = new ExternalCondition("trigger-test-avgd", Mode.FIRING, "external-data-test-avg",
+            "HawkularMetrics", "metric:1:avgd(data-test-avgd > 25),1");
+
+        resp = client.post(path: "triggers/trigger-test-avgd/conditions", body: firingCond)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
+        Tag tag = new Tag( "trigger-test-avgd", "HawkularMetrics", "MetricsCondition" );
+        resp = client.post(path: "triggers/tags/", body: tag)
+        assertEquals(200, resp.status)
+
+        // FETCH trigger to validate and get the tenantId
+        resp = client.get(path: "triggers/trigger-test-avgd");
+        assertEquals(200, resp.status)
+        assertEquals("trigger-test-avgd", resp.data.name)
+        assertEquals(false, resp.data.enabled)
+        assertEquals(true, resp.data.autoDisable);
+        def tenantId = resp.data.tenantId;
+        assert( null != tenantId )
+
+        // FETCH recent alerts for trigger, should not be any
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-avgd"] )
+        assertEquals(204, resp.status)
+
+        // Send in METRICS data before enabling the trigger because the external evaluations start as soon
+        // as the enabled Trigger is processed. Current avg = 15. Yesterday avg = 10. % diff = 50%
+        long now = System.currentTimeMillis();
+        long then = now - ( 1000 * 60 * 24 );
+        DataPoint dp1 = new DataPoint( "data-test-avgd", 10.0, now - 30000 );  // 30 seconds ago
+        DataPoint dp2 = new DataPoint( "data-test-avgd", 15.0, now - 25000 );  // 25 seconds ago
+        DataPoint dp3 = new DataPoint( "data-test-avgd", 20.0, now - 20000 );  // 20 seconds ago
+        DataPoint dp4 = new DataPoint( "data-test-avgd", 10.0, then - 30000 );  // d+30 seconds ago
+        DataPoint dp5 = new DataPoint( "data-test-avgd", 10.0, then - 25000 );  // d+25 seconds ago
+        DataPoint dp6 = new DataPoint( "data-test-avgd", 10.0, then - 20000 );  // d+20 seconds ago
+
+        sendMetricDataViaRest( tenantId, dp1, dp2, dp3, dp4, dp5, dp6 );
+
+        // ENABLE Trigger, this should get picked up by the listener and the expression should be submitted
+        // to a runner for processing...
+        triggerTestAvgD.setEnabled(true);
+
+        resp = client.put(path: "triggers/trigger-test-avgd/", body: triggerTestAvgD)
+        assertEquals(200, resp.status)
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 10; ++i ) {
+            println "SLEEP!" ;
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 1
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-avgd"] )
+            if ( resp.status == 200 ) {
+                break;
+            }
+            assert resp.status == 204 : resp.status
+        }
+        assertEquals(200, resp.status)
+        println resp.data[0].toString();
+
+        assertEquals("trigger-test-avgd", resp.data[0].triggerId)
+        assertEquals("50.0", resp.data[0].evalSets[0].iterator().next().value)
     }
 
     private void sendMetricDataViaRest(String tenantId, DataPoint... dataPoints) {

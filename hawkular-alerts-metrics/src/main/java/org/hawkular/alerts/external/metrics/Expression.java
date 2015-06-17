@@ -46,15 +46,11 @@ public class Expression {
         // Single or Group metric
         /** Metric average for the period */
         avg,
-        /** Metric average for the period against the same period in the prior day. */
+        /** Percent change from yesterday:  (((avg - avgSamePeriodYesterday) / avgSamePeriodYesterday) * 100) */
         avgd(1),
-        /** Metric average for the period against the same period in the prior week. */
+        /** Percent change from last week:  (((avg - avgSamePeriodLastWeek) / avgSamePeriodLastWeek) * 100) */
         avgw(7),
-        /** percent [0.0,1.0] change in metric average for the period against the same period in the prior day. */
-        avgdp(1),
-        /** percent [0.0,1.0] change in metric average for the period against the same period in the prior week. */
-        avgwp(7),
-        /** Maximum-Minimum for the period */
+        /** Maximum-Minimum for the period (a measurement of volatility) */
         delta,
         /** (Maximum-Minimum)/avg for the period (a measurement of volatility) */
         deltap,
