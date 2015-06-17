@@ -51,9 +51,9 @@ public class Expression {
         /** Percent change from last week:  (((avg - avgSamePeriodLastWeek) / avgSamePeriodLastWeek) * 100) */
         avgw(7),
         /** Maximum-Minimum for the period (a measurement of volatility) */
-        delta,
+        range,
         /** (Maximum-Minimum)/avg for the period (a measurement of volatility) */
-        deltap,
+        rangep,
         /** Minimum reported value for the period. */
         min,
         /** Maximum reported value for the period. */

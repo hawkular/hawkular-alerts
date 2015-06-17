@@ -57,7 +57,7 @@ public class ExpressionTest {
 
         x = new Expression("metric:15:delta(foo-bar >= 2), 20m");
         assertEquals(x.getTarget(), Target.Metric);
-        assertEquals(x.getFunc(), Func.delta);
+        assertEquals(x.getFunc(), Func.range);
         assertEquals(x.getInterval().intValue(), 15);
         assertEquals(x.getPeriod().intValue(), 20);
         assertEquals(x.getOp(), Op.GTE);
@@ -66,7 +66,7 @@ public class ExpressionTest {
 
         x = new Expression("TAG:5m:deltap(bar <= 1.5),10");
         assertEquals(x.getTarget(), Target.Tag);
-        assertEquals(x.getFunc(), Func.deltap);
+        assertEquals(x.getFunc(), Func.rangep);
         assertEquals(x.getInterval().intValue(), 5);
         assertEquals(x.getPeriod().intValue(), 10);
         assertEquals(x.getOp(), Op.LTE);

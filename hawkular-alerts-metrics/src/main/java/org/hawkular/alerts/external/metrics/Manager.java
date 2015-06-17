@@ -19,6 +19,7 @@ package org.hawkular.alerts.external.metrics;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
@@ -45,8 +46,6 @@ import org.hawkular.alerts.external.metrics.Expression.Func;
 import org.hawkular.metrics.core.api.MetricId;
 import org.hawkular.metrics.core.api.MetricsService;
 import org.jboss.logging.Logger;
-
-import rx.observables.BlockingObservable;
 
 /**
  * Manages the Metrics expression evaluations and interacts with the Alerts system.
@@ -245,19 +244,19 @@ public class Manager {
                     case card:
                         log.errorf("Not Yet Supported Function: %s", func);
                         break;
-                    case delta: {
-                        BlockingObservable<Double> bo = metrics.findGaugeDataRange(tenantId, metricId, start, end)
-                                .toBlocking();
-                        Double min = bo.first();
-                        Double max = bo.last();
+                    case range: {
+                        Iterator<Double> iterator = metrics.findGaugeDataRange(tenantId, metricId, start, end)
+                                .toBlocking().toIterable().iterator();
+                        Double min = iterator.next();
+                        Double max = iterator.next();
                         value = max - min;
                         break;
                     }
-                    case deltap: {
-                        BlockingObservable<Double> bo = metrics.findGaugeDataRange(tenantId, metricId, start, end)
-                                .toBlocking();
-                        Double min = bo.first();
-                        Double max = bo.last();
+                    case rangep: {
+                        Iterator<Double> iterator = metrics.findGaugeDataRange(tenantId, metricId, start, end)
+                                .toBlocking().toIterable().iterator();
+                        Double min = iterator.next();
+                        Double max = iterator.next();
                         Double avg = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking().last();
                         value = (max - min) / avg;
                         break;
