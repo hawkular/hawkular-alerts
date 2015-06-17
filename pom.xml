@@ -28,7 +28,7 @@
 
   <groupId>org.hawkular.alerts</groupId>
   <artifactId>hawkular-alerts</artifactId>
-  <version>0.2.0-Final-SNAPSHOT</version>
+  <version>0.1.0-FINAL-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Hawkular Alerts</name>
