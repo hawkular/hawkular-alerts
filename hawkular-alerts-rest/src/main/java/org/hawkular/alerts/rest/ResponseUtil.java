@@ -22,9 +22,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.PageContext;
 import org.hawkular.alerts.rest.json.Link;
@@ -84,7 +86,7 @@ public class ResponseUtil {
     /**
      * Create the paging headers for collections and attach them to the passed builder. Those are represented as
      * <i>Link:</i> http headers that carry the URL for the pages and the respective relation.
-     * <br/>In addition a <i>X-Total-Count</i> header is created that contains the whole collection size.
+     * <p>In addition a <i>X-Total-Count</i> header is created that contains the whole collection size.</p>
      *
      * @param builder    The ResponseBuilder that receives the headers
      * @param uriInfo    The uriInfo of the incoming request to build the urls
