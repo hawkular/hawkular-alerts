@@ -27,6 +27,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 
@@ -138,6 +139,12 @@ public class AlertsEngineImpl implements AlertsEngine {
             }
             msgLog.errorCannotInitializeAlertsService(t.getMessage());
         }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        rulesTask.cancel();
+        wakeUpTimer.cancel();
     }
 
     public void clear() {
