@@ -107,7 +107,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -118,7 +118,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
             assert resp.status == 204 : resp.status
         }
         assertEquals(200, resp.status)
-        println resp.data[0].toString();
+        // println resp.data[0].toString();
 
         assertEquals("trigger-test-avg", resp.data[0].triggerId)
         assertEquals("61.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -193,7 +193,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -204,7 +204,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
             assert resp.status == 204 : resp.status
         }
         assertEquals(200, resp.status)
-        println resp.data[0].toString();
+        // println resp.data[0].toString();
 
         assertEquals("trigger-test-avgd", resp.data[0].triggerId)
         assertEquals("50.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -279,7 +279,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -290,7 +290,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
             assert resp.status == 204 : resp.status
         }
         assertEquals(200, resp.status)
-        println resp.data[0].toString();
+        // println resp.data[0].toString();
 
         assertEquals("trigger-test-avgw", resp.data[0].triggerId)
         assertEquals("100.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -361,7 +361,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -372,7 +372,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
             assert resp.status == 204 : resp.status
         }
         assertEquals(200, resp.status)
-        println resp.data[0].toString();
+        // println resp.data[0].toString();
 
         assertEquals("trigger-test-min", resp.data[0].triggerId)
         assertEquals("9.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -443,7 +443,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -454,7 +454,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
             assert resp.status == 204 : resp.status
         }
         assertEquals(200, resp.status)
-        println resp.data[0].toString();
+        // println resp.data[0].toString();
 
         assertEquals("trigger-test-max", resp.data[0].triggerId)
         assertEquals("20.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -525,7 +525,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -536,7 +536,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
             assert resp.status == 204 : resp.status
         }
         assertEquals(200, resp.status)
-        println resp.data[0].toString();
+        // println resp.data[0].toString();
 
         assertEquals("trigger-test-range", resp.data[0].triggerId)
         assertEquals("10.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -607,7 +607,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -618,7 +618,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
             assert resp.status == 204 : resp.status
         }
         assertEquals(200, resp.status)
-        println resp.data[0].toString();
+        // println resp.data[0].toString();
 
         assertEquals("trigger-test-rangep", resp.data[0].triggerId)
         assertEquals("0.8", resp.data[0].evalSets[0].iterator().next().value)
@@ -633,7 +633,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         }
 
         // Send it to metrics via rest
-        println mMetrics
+        // println mMetrics
         def resp = metricsClient.post(path:"gauges/data", body:mMetrics, headers:['Hawkular-Tenant':tenantId]);
         assertEquals(200, resp.status)
     }

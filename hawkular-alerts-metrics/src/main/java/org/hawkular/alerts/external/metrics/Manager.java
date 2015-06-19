@@ -43,6 +43,7 @@ import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.external.metrics.Expression.Func;
+import org.hawkular.metrics.core.api.Aggregate;
 import org.hawkular.metrics.core.api.MetricId;
 import org.hawkular.metrics.core.api.MetricsService;
 import org.jboss.logging.Logger;
@@ -64,7 +65,6 @@ public class Manager {
     private static final long DAY = 24L * 60L * 1000L;
     private static final long WEEK = 7L * DAY;
 
-    // private static final String THREAD_POOL_NAME = "HawkularAlertsMetricsExpression";
     private static final Integer THREAD_POOL_SIZE = 20;
 
     ScheduledThreadPoolExecutor expressionExecutor;
@@ -72,9 +72,6 @@ public class Manager {
 
     @Inject
     private MetricsService metrics;
-
-    //private MetricsServiceImpl metrics;
-    //private DataAccess dataAccess;
 
     @EJB
     private DefinitionsService definitions;
@@ -86,6 +83,8 @@ public class Manager {
     public void init() {
         log.debugf("Initializing Hawkular Alerts-Metrics Manager...");
         expressionExecutor = new ScheduledThreadPoolExecutor(THREAD_POOL_SIZE);
+
+        refresh();
 
         log.debugf("Registering Trigger UPDATE/REMOVE listener");
         definitions.registerListener(new DefinitionsListener() {
@@ -99,6 +98,7 @@ public class Manager {
     @PreDestroy
     public void shutdown() {
         log.debugf("Shutting down Hawkular Alerts-Metrics Manager...");
+
         if (null != expressionFutures) {
             expressionFutures.values().forEach(f -> f.cancel(true));
         }
@@ -108,13 +108,13 @@ public class Manager {
     }
 
     private void refresh() {
-        log.info("Refreshing External Metrics Trigger!");
+        log.debugf("Refreshing External Metrics Triggers!");
         try {
             Set<ExternalCondition> activeConditions = new HashSet<>();
 
             // get all of the triggers tagged for hawkular metrics
             Collection<Trigger> triggers = definitions.getAllTriggersByTag(TAG_CATEGORY, TAG_NAME);
-            log.infof("Found [%s] External Metrics Triggers!", triggers.size());
+            log.debugf("Found [%s] External Metrics Triggers!", triggers.size());
 
             // for each trigger look for Metrics Conditions and start running them
             Collection<Condition> conditions = null;
@@ -122,7 +122,7 @@ public class Manager {
                 try {
                     if (trigger.isEnabled()) {
                         conditions = definitions.getTriggerConditions(trigger.getTenantId(), trigger.getId(), null);
-                        log.infof("Checking [%s] Conditions for enabled trigger [%s]!", conditions.size(),
+                        log.debugf("Checking [%s] Conditions for enabled trigger [%s]!", conditions.size(),
                                 trigger.getName());
                     }
                 } catch (Exception e) {
@@ -136,15 +136,15 @@ public class Manager {
                     if (condition instanceof ExternalCondition) {
                         ExternalCondition externalCondition = (ExternalCondition) condition;
                         if (TAG_CATEGORY.equals(externalCondition.getSystemId())) {
-                            log.info("Found Metrics ExternalCondition! " + externalCondition);
+                            log.debugf("Found Metrics ExternalCondition! %s", externalCondition);
                             activeConditions.add(externalCondition);
                             if (expressionFutures.containsKey(externalCondition)) {
-                                log.info("Skipping, already evaluating: " + externalCondition);
+                                log.debugf("Skipping, already evaluating: %s", externalCondition);
 
                             } else {
                                 try {
                                     // start the job. TODO: Do we need a delay for any reason?
-                                    log.info("Adding runner for: " + externalCondition);
+                                    log.debugf("Adding runner for: %s", externalCondition);
                                     Expression expression = new Expression(externalCondition.getExpression());
                                     ExpressionRunner runner = new ExpressionRunner(metrics, alerts, trigger,
                                             externalCondition, expression);
@@ -167,7 +167,7 @@ public class Manager {
             for (Map.Entry<ExternalCondition, ScheduledFuture<?>> me : expressionFutures.entrySet()) {
                 ExternalCondition ec = me.getKey();
                 if (!activeConditions.contains(ec)) {
-                    log.infof("Canceling evaluation of obsolete External Metric Condition %s", ec);
+                    log.debugf("Canceling evaluation of obsolete External Metric Condition %s", ec);
                     me.getValue().cancel(true);
                     temp.add(ec);
                 }
@@ -209,43 +209,42 @@ public class Manager {
                 long end = System.currentTimeMillis();
                 long start = end - (expression.getPeriod() * 60000);
 
-                log.info("Running External Metrics Condition: " + expression);
+                log.debugf("Running External Metrics Condition: %s", expression);
+
                 Double value = Double.NaN;
                 switch (func) {
-                    case avg:
-                        // The approach below did not work.  I'm not 100% sure why not but I think it's due to
-                        // the run() method exiting before the async call returns. Anyway, by converting to a
-                        // BlockingObserver and using .last() as opposed to .single() we seem to be OK.
-                        //
-                        //metrics.findGaugeDataAverage(tenantId, metricId, start, end).first().subscribe(
-                        //        this::evaluate,
-                        //        t -> log.debugf("Failed get-query for %s: %s", expression, t.getMessage()));
-
-                        value = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking().last();
+                    case avg: {
+                        value = metrics.findGaugeData(tenantId, metricId, start, end, Aggregate.Average)
+                                .toBlocking().last();
                         break;
+                    }
                     case avgd: {
-                        Double avgToday = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking()
-                                .last();
+                        Double avgToday = metrics
+                                .findGaugeData(tenantId, metricId, start, end, Aggregate.Average)
+                                .toBlocking().last();
                         Double avgYesterday = metrics
-                                .findGaugeDataAverage(tenantId, metricId, (start - DAY), (end - DAY)).toBlocking()
-                                .last();
+                                .findGaugeData(tenantId, metricId, (start - DAY), (end - DAY),
+                                        Aggregate.Average).toBlocking().last();
                         value = ((avgToday - avgYesterday) / avgYesterday) * 100;
                         break;
                     }
                     case avgw: {
-                        Double avgToday = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking()
-                                .last();
+                        Double avgToday = metrics
+                                .findGaugeData(tenantId, metricId, start, end, Aggregate.Average)
+                                .toBlocking().last();
                         Double avgLastWeek = metrics
-                                .findGaugeDataAverage(tenantId, metricId, (start - WEEK), (end - WEEK)).toBlocking()
-                                .last();
+                                .findGaugeData(tenantId, metricId, (start - WEEK), (end - WEEK),
+                                        Aggregate.Average).toBlocking().last();
                         value = ((avgToday - avgLastWeek) / avgLastWeek) * 100;
                         break;
                     }
-                    case card:
+                    case card: {
                         log.errorf("Not Yet Supported Function: %s", func);
                         break;
+                    }
                     case range: {
-                        Iterator<Double> iterator = metrics.findGaugeDataRange(tenantId, metricId, start, end)
+                        Iterator<Double> iterator = metrics.findGaugeData(tenantId, metricId, start, end,
+                                Aggregate.Min, Aggregate.Max)
                                 .toBlocking().toIterable().iterator();
                         Double min = iterator.next();
                         Double max = iterator.next();
@@ -253,29 +252,37 @@ public class Manager {
                         break;
                     }
                     case rangep: {
-                        Iterator<Double> iterator = metrics.findGaugeDataRange(tenantId, metricId, start, end)
+                        Iterator<Double> iterator = metrics.findGaugeData(tenantId, metricId, start, end,
+                                Aggregate.Min, Aggregate.Max, Aggregate.Average)
                                 .toBlocking().toIterable().iterator();
                         Double min = iterator.next();
                         Double max = iterator.next();
-                        Double avg = metrics.findGaugeDataAverage(tenantId, metricId, start, end).toBlocking().last();
+                        Double avg = iterator.next();
                         value = (max - min) / avg;
                         break;
                     }
-                    case down:
+                    case down: {
                         log.errorf("Not Yet Supported Function: %s", func);
                         break;
-                    case max:
-                        value = metrics.findGaugeDataMax(tenantId, metricId, start, end).toBlocking().last();
+                    }
+                    case max: {
+                        value = metrics.findGaugeData(tenantId, metricId, start, end, Aggregate.Max)
+                                .toBlocking().last();
                         break;
-                    case min:
-                        value = metrics.findGaugeDataMin(tenantId, metricId, start, end).toBlocking().last();
+                    }
+                    case min: {
+                        value = metrics.findGaugeData(tenantId, metricId, start, end, Aggregate.Min)
+                                .toBlocking().last();
                         break;
-                    case up:
+                    }
+                    case up: {
                         log.errorf("Not Yet Supported Function: %s", func);
                         break;
-                    default:
+                    }
+                    default: {
                         log.errorf("Unexpected Expression Function: %s", func);
                         break;
+                    }
                 }
 
                 evaluate(value);
@@ -291,7 +298,7 @@ public class Manager {
                 return;
             }
 
-            log.info("Running External Metrics Evaluation: " + expression + ":" + value);
+            log.debugf("Running External Metrics Evaluation: %s : %s", expression, value);
 
             if (!expression.isTrue(value)) {
                 return;
@@ -300,8 +307,9 @@ public class Manager {
             try {
                 StringData externalData = new StringData(externalCondition.getDataId(), System.currentTimeMillis(),
                         value.toString());
-                log.info("Sending External Condition Data to Alerts! " + externalData);
+                log.debugf("Sending External Condition Data to Alerts! %s", externalData);
                 alerts.sendData(externalData);
+
             } catch (Exception e) {
                 log.error("Failed to send external data to alerts system.", e);
             }

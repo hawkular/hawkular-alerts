@@ -33,7 +33,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Lucas Ponce
  */
 public class ExternalCondition extends Condition {
-    //private static final MsgLogger msgLog = MsgLogger.LOGGER;
 
     /**
      * An identifier assigned by the external system to identify this condition as being handled by that

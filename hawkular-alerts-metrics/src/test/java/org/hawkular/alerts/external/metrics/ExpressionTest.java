@@ -55,7 +55,7 @@ public class ExpressionTest {
         assertTrue(x.getThreshold() == 40.0);
         assertEquals(x.getMetric(), "foo-bar");
 
-        x = new Expression("metric:15:delta(foo-bar >= 2), 20m");
+        x = new Expression("metric:15:range(foo-bar >= 2), 20m");
         assertEquals(x.getTarget(), Target.Metric);
         assertEquals(x.getFunc(), Func.range);
         assertEquals(x.getInterval().intValue(), 15);
@@ -64,7 +64,7 @@ public class ExpressionTest {
         assertTrue(x.getThreshold() == 2.0);
         assertEquals(x.getMetric(), "foo-bar");
 
-        x = new Expression("TAG:5m:deltap(bar <= 1.5),10");
+        x = new Expression("TAG:5m:rangep(bar <= 1.5),10");
         assertEquals(x.getTarget(), Target.Tag);
         assertEquals(x.getFunc(), Func.rangep);
         assertEquals(x.getInterval().intValue(), 5);
