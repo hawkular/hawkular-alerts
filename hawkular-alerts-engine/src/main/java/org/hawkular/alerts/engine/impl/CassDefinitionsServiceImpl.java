@@ -1591,7 +1591,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void addActionPlugin(String actionPlugin, Set<String> properties) throws Exception {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
+        if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         if (properties == null || properties.isEmpty()) {
@@ -1613,8 +1613,33 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
+    public void addActionPlugin(String actionPlugin, Map<String, String> defaultProperties) throws Exception {
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("actionPlugin must be not null");
+        }
+        if (defaultProperties == null || defaultProperties.isEmpty()) {
+            throw new IllegalArgumentException("defaultProperties must be not null");
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
+        }
+        PreparedStatement insertDefaulPropertiesActionPlugin = CassStatement.get(session,
+                CassStatement.INSERT_DEFAULT_PROPERTIES_ACTION_PLUGIN);
+        if (insertDefaulPropertiesActionPlugin == null) {
+            throw new RuntimeException("insertDefaulPropertiesActionPlugin PreparedStatement is null");
+        }
+        try {
+            Set<String> properties = defaultProperties.keySet();
+            session.execute(insertDefaulPropertiesActionPlugin.bind(actionPlugin, properties, defaultProperties));
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public void removeActionPlugin(String actionPlugin) throws Exception {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
+        if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         if (session == null) {
@@ -1634,7 +1659,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void updateActionPlugin(String actionPlugin, Set<String> properties) throws Exception {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
+        if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         if (properties == null || properties.isEmpty()) {
@@ -1649,6 +1674,31 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         try {
             session.execute(updateActionPlugin.bind(properties, actionPlugin));
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public void updateActionPlugin(String actionPlugin, Map<String, String> defaultProperties) throws Exception {
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("actionPlugin must be not null");
+        }
+        if (defaultProperties == null || defaultProperties.isEmpty()) {
+            throw new IllegalArgumentException("defaultProperties must be not null");
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
+        }
+        PreparedStatement updateDefaultPropertiesActionPlugin = CassStatement.get(session,
+                CassStatement.UPDATE_DEFAULT_PROPERTIES_ACTION_PLUGIN);
+        if (updateDefaultPropertiesActionPlugin == null) {
+            throw new RuntimeException("updateDefaultPropertiesActionPlugin PreparedStatement is null");
+        }
+        try {
+            Set<String> properties = defaultProperties.keySet();
+            session.execute(updateDefaultPropertiesActionPlugin.bind(properties, defaultProperties, actionPlugin));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -1679,7 +1729,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Set<String> getActionPlugin(String actionPlugin) throws Exception {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
+        if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         if (session == null) {
@@ -1702,6 +1752,34 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
         return properties;
+    }
+
+    @Override
+    public Map<String, String> getDefaultActionPlugin(String actionPlugin) {
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("actionPlugin must be not null");
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
+        }
+        PreparedStatement selectDefaultPropertiesActionPlugin = CassStatement.get(session,
+                CassStatement.SELECT_DEFAULT_PROPERTIES_ACTION_PLUGIN);
+        if (selectDefaultPropertiesActionPlugin == null) {
+            throw new RuntimeException("selectDefaultPropertiesActionPlugin PreparedStatement is null");
+        }
+        Map<String, String> defaultProperties = null;
+        try {
+            ResultSet rsActionPlugin = session.execute(selectDefaultPropertiesActionPlugin.bind(actionPlugin));
+            Iterator<Row> itActionPlugin = rsActionPlugin.iterator();
+            if (itActionPlugin.hasNext()) {
+                Row row = itActionPlugin.next();
+                defaultProperties = row.getMap("defaultProperties", String.class, String.class);
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return defaultProperties;
     }
 
     @Override

@@ -16,6 +16,8 @@
  */
 package org.hawkular.actions.email.listener;
 
+import java.util.Date;
+import java.util.Map;
 import javax.annotation.Resource;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
@@ -23,19 +25,27 @@ import javax.jms.MessageListener;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.Message.RecipientType;
-import javax.mail.MessagingException;
+import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
-
+import javax.mail.internet.MimeMultipart;
 import org.hawkular.actions.api.log.MsgLogger;
 import org.hawkular.actions.api.model.ActionMessage;
+import org.hawkular.actions.email.EmailPlugin;
+import org.hawkular.actions.email.template.EmailTemplate;
+import org.hawkular.alerts.api.json.GsonUtil;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
+import org.jboss.logging.Logger;
 
 /**
  * An example of listener for emails processing.
+ *
+ * Destination "HawkularAlertsActionsTopic" is common for all plugins.
+ * Specific topics should use a messageSelector filtering by actionPlugin property with its plugin's name.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -46,54 +56,93 @@ import org.hawkular.bus.common.consumer.BasicMessageListener;
         @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = "actionPlugin like 'email'")})
 public class EmailListener extends BasicMessageListener<ActionMessage> {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(EmailListener.class);
+    private final EmailTemplate emailTemplate = new EmailTemplate();
 
     @Resource(mappedName = "java:jboss/mail/Default")
     Session mailSession;
 
     protected void onBasicMessage(ActionMessage msg) {
         try {
-            msgLog.infoActionReceived("email", msg.toString());
+            msgLog.infoActionReceived(EmailPlugin.PLUGIN_NAME, msg.toString());
             Message message = createMimeMessage(msg);
             Transport.send(message);
-        } catch (MessagingException e) {
-            msgLog.errorCannotSendMessage("email", e.getLocalizedMessage());
+        } catch (Exception e) {
+            msgLog.errorCannotSendMessage(EmailPlugin.PLUGIN_NAME, e.getLocalizedMessage());
         }
     }
 
-    private String prepareMessage(ActionMessage msg) {
-        String preparedMsg = null;
-        if (msg != null) {
-            Alert alert = msg.getAlert();
-            if (alert != null) {
-                preparedMsg = "Alert : " + alert.getTriggerId() + " at " + alert.getCtime() + " -- Severity: " +
-                        alert.getSeverity().toString();
-            } else if (msg.getMessage() != null) {
-                preparedMsg = msg.getMessage();
-            } else {
-                preparedMsg = "Message received without data at " + System.currentTimeMillis();
-                msgLog.warnMessageReceivedWithoutPayload("email");
+    protected Message createMimeMessage(ActionMessage msg) throws Exception {
+        Message email = new MimeMessage(mailSession);
+
+        Map<String, String> props = msg.getProperties();
+        Map<String, String> defaultProps = msg.getDefaultProperties();
+        String message = msg.getMessage();
+        Alert alert = msg.getAlert() != null ? GsonUtil.fromJson(msg.getAlert(), Alert.class) : null;
+
+        String from = getProp(props, defaultProps, EmailPlugin.PROP_FROM);
+        from = from == null ? EmailPlugin.DEFAULT_FROM : from;
+
+        String fromName = getProp(props, defaultProps, EmailPlugin.PROP_FROM_NAME);
+        fromName = fromName == null ? EmailPlugin.DEFAULT_FROM_NAME : fromName;
+
+        email.setFrom(new InternetAddress(from, fromName));
+        if (alert != null && alert.getStatus() != null && alert.getStatus().equals(Alert.Status.OPEN)) {
+            email.setSentDate(new Date(alert.getCtime()));
+        }
+
+        if (alert != null) {
+            email.addHeader(EmailPlugin.PROP_MESSAGE_ID, alert.getAlertId());
+            if (alert.getStatus() != null && !alert.getStatus().equals(Alert.Status.OPEN)) {
+                email.addHeader(EmailPlugin.PROP_IN_REPLY_TO, alert.getAlertId());
             }
         }
-        return preparedMsg;
+
+        String to = getProp(props, defaultProps, EmailPlugin.PROP_TO);
+        if (to != null) {
+            Address toAddress = new InternetAddress(to);
+            email.addRecipient(RecipientType.TO, toAddress);
+        }
+
+        String ccs = getProp(props, defaultProps, EmailPlugin.PROP_CC);
+        if (ccs != null) {
+            String[] multipleCc = ccs.split(",");
+            for (String cc : multipleCc) {
+                Address toAddress = new InternetAddress(cc);
+                email.addRecipient(RecipientType.CC, toAddress);
+            }
+        }
+
+        String subject = emailTemplate.subject(alert);
+        if (subject != null) {
+            email.setSubject(subject);
+        }
+
+        Map<String, String> body = emailTemplate.body(props, defaultProps, message, alert);
+        if (body != null && body.get("plain") != null && body.get("html") != null) {
+            MimeBodyPart text = new MimeBodyPart();
+            text.setContent(body.get("plain"), "text/plain");
+
+            MimeBodyPart html = new MimeBodyPart();
+            html.setContent(body.get("html"), "text/html");
+
+            Multipart multipart = new MimeMultipart("alternative");
+            multipart.addBodyPart(html);
+            multipart.addBodyPart(text);
+            email.setContent(multipart);
+        }
+        return email;
     }
 
-    Message createMimeMessage(ActionMessage msg) throws MessagingException {
-        Message message = new MimeMessage(mailSession);
-        message.setFrom(new InternetAddress("noreply@hawkular.org"));
-        if (msg.getProperties() != null && msg.getProperties().get("to") != null) {
-            Address toAddress = new InternetAddress(msg.getProperties().get("to"));
-            message.addRecipient(RecipientType.TO, toAddress);
+    private String getProp(Map<String, String> props, Map<String, String> defaultProps, String prop) {
+        if (props != null && props.get(prop) != null) {
+            return props.get(prop);
         }
-        if (msg.getProperties() != null && msg.getProperties().get("cc") != null) {
-            Address toAddress = new InternetAddress(msg.getProperties().get("cc"));
-            message.addRecipient(RecipientType.CC, toAddress);
+        if (defaultProps != null && defaultProps.get(prop) != null) {
+            return defaultProps.get(prop);
         }
-        String description = "Hawkular alert";
-        if (msg.getProperties() != null && msg.getProperties().get("description") != null) {
-            description += " - " + msg.getProperties().get("description");
-        }
-        message.setSubject(description);
-        message.setContent(prepareMessage(msg), "text/plain");
-        return message;
+        return null;
     }
+
+
 }

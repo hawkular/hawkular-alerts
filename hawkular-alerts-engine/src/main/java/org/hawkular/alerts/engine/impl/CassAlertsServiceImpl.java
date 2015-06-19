@@ -29,6 +29,7 @@ import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 
+import org.hawkular.alerts.api.json.GsonUtil;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
@@ -39,6 +40,7 @@ import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Tag;
+import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
@@ -52,10 +54,6 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.google.common.util.concurrent.Futures;
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 /**
  * Cassandra implementation for {@link org.hawkular.alerts.api.services.AlertsService}.
@@ -71,11 +69,11 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     private Session session;
 
-    private Gson gson;
-    private Gson gsonThin;
-
     @EJB
     AlertsEngine alertsEngine;
+
+    @EJB
+    ActionsService actionsService;
 
     public CassAlertsServiceImpl() {
     }
@@ -86,27 +84,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             if (session == null) {
                 session = CassCluster.getSession();
             }
-
-            GsonBuilder gsonBuilder = new GsonBuilder();
-            gsonBuilder.registerTypeHierarchyAdapter(ConditionEval.class, new GsonAdapter<ConditionEval>());
-            gson = gsonBuilder.create();
-
-            GsonBuilder gsonBuilderThin = new GsonBuilder();
-            gsonBuilderThin.registerTypeHierarchyAdapter(ConditionEval.class, new GsonAdapter<ConditionEval>());
-            gsonBuilderThin.addDeserializationExclusionStrategy(new ExclusionStrategy() {
-                @Override
-                public boolean shouldSkipField(FieldAttributes f) {
-                    final Alert.Thin thin = f.getAnnotation(Alert.Thin.class);
-                    return thin != null;
-                }
-
-                @Override
-                public boolean shouldSkipClass(Class<?> clazz) {
-                    return false;
-                }
-            });
-            gsonThin = gsonBuilderThin.create();
-
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
                 t.printStackTrace();
@@ -133,7 +110,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             alerts.stream()
                     .forEach(a -> {
                         futures.add(session.executeAsync(insertAlert.bind(a.getTenantId(), a.getAlertId(),
-                                toJson(a))));
+                                GsonUtil.toJson(a))));
                         futures.add(session.executeAsync(insertAlertTrigger.bind(a.getTenantId(),
                                 a.getAlertId(),
                                 a.getTriggerId())));
@@ -270,7 +247,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 ResultSet rsAlerts = session.execute(selectAlertsByTenant.bind(tenantId));
                 for (Row row : rsAlerts) {
                     String payload = row.getString("payload");
-                    Alert alert = fromJson(payload, Alert.class, thin);
+                    Alert alert = GsonUtil.fromJson(payload, Alert.class, thin);
                     alerts.add(alert);
                 }
             } else {
@@ -286,7 +263,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 rsAlerts.stream().forEach(r -> {
                     for (Row row : r) {
                         String payload = row.getString("payload");
-                        Alert alert = fromJson(payload, Alert.class, thin);
+                        Alert alert = GsonUtil.fromJson(payload, Alert.class, thin);
                         alerts.add(alert);
                     }
                 });
@@ -680,7 +657,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 }
             });
             session.execute(insertAlertStatus.bind(alert.getTenantId(), alert.getAlertId(), alert.getStatus().name()));
-            session.execute(updateAlert.bind(toJson(alert), alert.getTenantId(), alert.getAlertId()));
+            session.execute(updateAlert.bind(GsonUtil.toJson(alert), alert.getTenantId(), alert.getAlertId()));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -696,18 +673,6 @@ public class CassAlertsServiceImpl implements AlertsService {
     @Override
     public void sendData(Collection<Data> data) throws Exception {
         alertsEngine.sendData(data);
-    }
-
-    private String toJson(Object resource) {
-
-        String result = gson.toJson(resource);
-        log.debugf(result);
-        return result;
-    }
-
-    private <T> T fromJson(String json, Class<T> clazz, boolean thin) {
-
-        return thin ? gsonThin.fromJson(json, clazz) : gson.fromJson(json, clazz);
     }
 
     private boolean isEmpty(Collection<?> c) {

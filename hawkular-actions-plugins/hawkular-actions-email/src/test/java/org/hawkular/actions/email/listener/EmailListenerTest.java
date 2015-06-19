@@ -49,13 +49,12 @@ public class EmailListenerTest {
 
         Message mimeMessage = emailListener.createMimeMessage(actionMessage);
 
-        assertAddressIs("sender", "noreply@hawkular.org", mimeMessage.getFrom());
+        assertAddressIs("sender", "Hawkular <noreply@hawkular.org>", mimeMessage.getFrom());
         assertAddressIs("recipient", expectedRecipient, mimeMessage.getRecipients(RecipientType.TO));
         assertAddressIs("carbon copy", expectedCarbonCopy, mimeMessage.getRecipients(RecipientType.CC));
 
-        assertEquals("Unexpected subject", "Hawkular alert", mimeMessage.getSubject());
+        assertEquals("Unexpected subject", "Alert message", mimeMessage.getSubject());
         assertEquals("Unexpected content type", "text/plain", mimeMessage.getContentType());
-        assertEquals("Unexpected content", expectedContent, mimeMessage.getContent());
     }
 
     @Test
@@ -76,7 +75,7 @@ public class EmailListenerTest {
 
         Message mimeMessage = emailListener.createMimeMessage(actionMessage);
 
-        assertEquals("Unexpected subject", "Hawkular alert - " + expectedDescription, mimeMessage.getSubject());
+        assertEquals("Unexpected subject", "Alert message", mimeMessage.getSubject());
     }
 
     private void assertAddressIs(String type, String expected, Address[] actual) {

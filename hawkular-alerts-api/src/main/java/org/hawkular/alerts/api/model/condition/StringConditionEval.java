@@ -45,6 +45,9 @@ public class StringConditionEval extends ConditionEval {
         super(condition.match(data.getValue()), data.getTimestamp());
         this.condition = condition;
         this.value = data.getValue();
+        if (this.condition != null) {
+            this.type = this.condition.getType();
+        }
     }
 
     public StringCondition getCondition() {

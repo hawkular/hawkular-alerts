@@ -45,6 +45,9 @@ public class AvailabilityConditionEval extends ConditionEval {
         super(condition.match(avail.getValue()), avail.getTimestamp());
         this.condition = condition;
         this.value = avail.getValue();
+        if (this.condition != null) {
+            this.type = this.condition.getType();
+        }
     }
 
     public AvailabilityCondition getCondition() {

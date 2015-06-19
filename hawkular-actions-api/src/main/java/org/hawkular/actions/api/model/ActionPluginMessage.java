@@ -16,6 +16,7 @@
  */
 package org.hawkular.actions.api.model;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.bus.common.BasicMessage;
@@ -47,6 +48,9 @@ public class ActionPluginMessage extends BasicMessage {
     @Expose
     Set<String> properties;
 
+    @Expose
+    Map<String, String> defaultProperties;
+
     public ActionPluginMessage() { }
 
     public String getActionPlugin() {
@@ -73,6 +77,14 @@ public class ActionPluginMessage extends BasicMessage {
         this.properties = properties;
     }
 
+    public Map<String, String> getDefaultProperties() {
+        return defaultProperties;
+    }
+
+    public void setDefaultProperties(Map<String, String> defaultProperties) {
+        this.defaultProperties = defaultProperties;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -80,11 +92,12 @@ public class ActionPluginMessage extends BasicMessage {
 
         ActionPluginMessage that = (ActionPluginMessage) o;
 
-        if (actionPlugin != null ? !actionPlugin.equals(that.actionPlugin) : that.actionPlugin != null) return false;
         if (op != null ? !op.equals(that.op) : that.op != null) return false;
+        if (actionPlugin != null ? !actionPlugin.equals(that.actionPlugin) : that.actionPlugin != null) return false;
         if (properties != null ? !properties.equals(that.properties) : that.properties != null) return false;
+        return !(defaultProperties != null ? !defaultProperties.equals(that.defaultProperties) :
+                that.defaultProperties != null);
 
-        return true;
     }
 
     @Override
@@ -92,15 +105,17 @@ public class ActionPluginMessage extends BasicMessage {
         int result = op != null ? op.hashCode() : 0;
         result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
         result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        result = 31 * result + (defaultProperties != null ? defaultProperties.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
         return "ActionPluginMessage{" +
-                "actionPlugin='" + actionPlugin + '\'' +
-                ", op='" + op + '\'' +
+                "op='" + op + '\'' +
+                ", actionPlugin='" + actionPlugin + '\'' +
                 ", properties=" + properties +
+                ", defaultProperties=" + defaultProperties +
                 '}';
     }
 }

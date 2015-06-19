@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import org.hawkular.alerts.api.json.GsonUtil;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
@@ -55,9 +56,6 @@ import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 /**
  * Basic test of RulesEngine implementation.
@@ -1319,21 +1317,19 @@ public class RulesEngineTest {
         assertTrue(rulesEngine.getFact(fmt1c2) != null);
         assertTrue(rulesEngine.getFact(fmt1c2eval) != null);
 
-        Gson gson = new GsonBuilder().create();
+        String strt1 = GsonUtil.toJson(t1);
+        String strfmt1c1 = GsonUtil.toJson(fmt1c1);
+        String strfmt1c1eval = GsonUtil.toJson(fmt1c1eval);
+        String strfmt1d = GsonUtil.toJson(fmt1d);
+        String strfmt1c2 = GsonUtil.toJson(fmt1c2);
+        String strfmt1c2eval = GsonUtil.toJson(fmt1c2eval);
 
-        String strt1 = gson.toJson(t1);
-        String strfmt1c1 = gson.toJson(fmt1c1);
-        String strfmt1c1eval = gson.toJson(fmt1c1eval);
-        String strfmt1d = gson.toJson(fmt1d);
-        String strfmt1c2 = gson.toJson(fmt1c2);
-        String strfmt1c2eval = gson.toJson(fmt1c2eval);
-
-        Trigger jsont1 = gson.fromJson(strt1, Trigger.class);
-        AvailabilityCondition jsonfmt1c1 = gson.fromJson(strfmt1c1, AvailabilityCondition.class);
-        AvailabilityConditionEval jsonfmt1c1eval = gson.fromJson(strfmt1c1eval, AvailabilityConditionEval.class);
-        Dampening jsonfmt1d = gson.fromJson(strfmt1d, Dampening.class);
-        ThresholdCondition jsonfmt1c2 = gson.fromJson(strfmt1c2, ThresholdCondition.class);
-        ThresholdConditionEval jsonfmt1c2eval = gson.fromJson(strfmt1c2eval, ThresholdConditionEval.class);
+        Trigger jsont1 = GsonUtil.fromJson(strt1, Trigger.class);
+        AvailabilityCondition jsonfmt1c1 = GsonUtil.fromJson(strfmt1c1, AvailabilityCondition.class);
+        AvailabilityConditionEval jsonfmt1c1eval = GsonUtil.fromJson(strfmt1c1eval, AvailabilityConditionEval.class);
+        Dampening jsonfmt1d = GsonUtil.fromJson(strfmt1d, Dampening.class);
+        ThresholdCondition jsonfmt1c2 = GsonUtil.fromJson(strfmt1c2, ThresholdCondition.class);
+        ThresholdConditionEval jsonfmt1c2eval = GsonUtil.fromJson(strfmt1c2eval, ThresholdConditionEval.class);
 
         assertTrue(t1.equals(jsont1));
         assertTrue(fmt1c1.equals(jsonfmt1c1));

@@ -35,7 +35,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
 import org.hawkular.accounts.api.model.Persona;
-import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
@@ -67,27 +66,6 @@ public class ActionsHandler {
 
     public ActionsHandler() {
         log.debugf("Creating instance.");
-    }
-
-    @POST
-    @Path("/send")
-    @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Send an action to the ActionService.",
-            notes = "ActionService should not be invoked directly. This method is for demo/poc purposes.")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Action sent succesfully."),
-            @ApiResponse(code = 500, message = "Internal server error")})
-    public Response send(Action action) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
-        try {
-            actions.send(action);
-            return ResponseUtil.ok();
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
     }
 
     @GET

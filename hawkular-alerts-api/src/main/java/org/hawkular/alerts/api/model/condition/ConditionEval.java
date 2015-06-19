@@ -43,6 +43,9 @@ public abstract class ConditionEval {
     @JsonIgnore
     protected boolean used;
 
+    @JsonInclude
+    protected Condition.Type type;
+
     public ConditionEval() {
         // for json assembly
     }
@@ -84,6 +87,14 @@ public abstract class ConditionEval {
 
     public void setUsed(boolean used) {
         this.used = used;
+    }
+
+    public Condition.Type getType() {
+        return type;
+    }
+
+    public void setType(Condition.Type type) {
+        this.type = type;
     }
 
     @JsonIgnore

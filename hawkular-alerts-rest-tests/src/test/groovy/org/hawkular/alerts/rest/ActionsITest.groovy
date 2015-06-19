@@ -16,15 +16,16 @@
  */
 package org.hawkular.alerts.rest
 
-import org.hawkular.alerts.api.model.Severity
-import org.hawkular.alerts.api.model.action.Action
-import org.hawkular.alerts.api.model.condition.Alert
+import org.hawkular.alerts.api.model.condition.AvailabilityCondition
+import org.hawkular.alerts.api.model.condition.ThresholdCondition
+import org.hawkular.alerts.api.model.data.Availability
+import org.hawkular.alerts.api.model.data.MixedData
+import org.hawkular.alerts.api.model.data.NumericData
+import org.hawkular.alerts.api.model.trigger.Trigger
+import org.junit.Test
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
-
-import org.junit.Test
-
 /**
  * Actions REST tests.
  *
@@ -97,65 +98,159 @@ class ActionsITest extends AbstractITestBase {
     }
 
     @Test
-    void invokeActions() {
-        String DEMO_TENANT = "28026b36-8fe4-4332-84c8-524e173a68bf";
+    void availabilityTest() {
+        String start = String.valueOf(System.currentTimeMillis());
 
-        Alert fakeAlert = new Alert();
-        fakeAlert.setTenantId(DEMO_TENANT);
-        fakeAlert.setTriggerId("fake-trigger");
-        fakeAlert.setCtime(System.currentTimeMillis());
-        fakeAlert.setSeverity(Severity.CRITICAL);
+        // CREATE the trigger
+        def resp = client.get(path: "")
+        assert resp.status == 200 || resp.status == 204 : resp.status
 
-        Action testAction = new Action();
-        testAction.setTenantId(DEMO_TENANT);
-        testAction.setActionPlugin("snmp");
-        testAction.setActionId("SNMP-Trap-1");
-        testAction.setMessage("Fake message 1");
-        testAction.setAlert(fakeAlert);
+        Trigger testTrigger = new Trigger("test-email-availability", "http://www.mydemourl.com");
 
-        def resp = client.post(path: "actions/send", body: testAction)
+        // remove if it exists
+        resp = client.delete(path: "triggers/test-email-availability")
+        assert(200 == resp.status || 404 == resp.status)
+
+        testTrigger.setAutoDisable(false);
+        testTrigger.setAutoResolve(false);
+        testTrigger.setAutoResolveAlerts(false);
+        /*
+            email-to-admin action is pre-created from demo data
+         */
+        testTrigger.addAction("email", "email-to-admin");
+
+        resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        testAction = new Action();
-        testAction.setTenantId(DEMO_TENANT);
-        testAction.setActionPlugin("snmp");
-        testAction.setActionId("SNMP-Trap-2");
-        testAction.setMessage("Fake message 2");
-        testAction.setAlert(fakeAlert);
+        // ADD Firing condition
+        AvailabilityCondition firingCond = new AvailabilityCondition("test-email-availability",
+                Trigger.Mode.FIRING, "test-email-availability", AvailabilityCondition.Operator.NOT_UP);
 
-        resp = client.post(path: "actions/send", body: testAction)
+        resp = client.post(path: "triggers/test-email-availability/conditions", body: firingCond)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // ENABLE Trigger
+        testTrigger.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-email-availability", body: testTrigger)
         assertEquals(200, resp.status)
 
-        testAction = new Action();
-        testAction.setTenantId(DEMO_TENANT);
-        testAction.setActionPlugin("email");
-        testAction.setActionId("email-to-admin");
-        testAction.setMessage(null);
-        testAction.setAlert(fakeAlert);
+        // FETCH trigger and make sure it's as expected
+        resp = client.get(path: "triggers/test-email-availability");
+        assertEquals(200, resp.status)
+        assertEquals("http://www.mydemourl.com", resp.data.name)
+        assertEquals(true, resp.data.enabled)
+        assertEquals(false, resp.data.autoDisable);
+        assertEquals(false, resp.data.autoResolve);
+        assertEquals(false, resp.data.autoResolveAlerts);
 
-        resp = client.post(path: "actions/send", body: testAction)
+        // FETCH recent alerts for trigger, should not be any
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-email-availability"] )
+        assertEquals(204, resp.status)
+
+        // Send in DOWN avail data to fire the trigger
+        // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
+        for (int i=0; i<5; i++) {
+            Availability avail = new Availability("test-email-availability", System.currentTimeMillis(), "DOWN");
+            MixedData mixedData = new MixedData();
+            mixedData.getAvailability().add(avail);
+            resp = client.post(path: "data", body: mixedData);
+            assertEquals(200, resp.status)
+        }
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 10; ++i ) {
+            // println "SLEEP!" ;
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 5
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-email-availability"] )
+            if ( resp.status == 200 && resp.data.size() == 5 ) {
+                break;
+            }
+        }
+        assertEquals(200, resp.status)
+        assertEquals(5, resp.data.size())
+        assertEquals("OPEN", resp.data[0].status)
+    }
+
+    @Test
+    void thresholdTest() {
+        String start = String.valueOf(System.currentTimeMillis());
+
+        // CREATE the trigger
+        def resp = client.get(path: "")
+        assert resp.status == 200 || resp.status == 204 : resp.status
+
+        Trigger testTrigger = new Trigger("test-email-threshold", "http://www.mydemourl.com");
+
+        // remove if it exists
+        resp = client.delete(path: "triggers/test-email-threshold")
+        assert(200 == resp.status || 404 == resp.status)
+
+        testTrigger.setAutoDisable(false);
+        testTrigger.setAutoResolve(false);
+        testTrigger.setAutoResolveAlerts(false);
+        /*
+            email-to-admin action is pre-created from demo data
+         */
+        testTrigger.addAction("email", "email-to-admin");
+
+        resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        testAction = new Action();
-        testAction.setTenantId(DEMO_TENANT);
-        testAction.setActionPlugin("sms");
-        testAction.setActionId("sms-to-cio");
-        testAction.setMessage("Fake message 4");
-        testAction.setAlert(fakeAlert);
+        // ADD Firing condition
+        ThresholdCondition firingCond = new ThresholdCondition("test-email-threshold",
+                Trigger.Mode.FIRING, "test-email-threshold", ThresholdCondition.Operator.GT, 300);
 
-        resp = client.post(path: "actions/send", body: testAction)
+        resp = client.post(path: "triggers/test-email-threshold/conditions", body: firingCond)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // ENABLE Trigger
+        testTrigger.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-email-threshold", body: testTrigger)
         assertEquals(200, resp.status)
 
-        testAction = new Action();
-        testAction.setTenantId(DEMO_TENANT);
-        testAction.setActionPlugin("aerogear");
-        testAction.setActionId("agpush-to-admin");
-        testAction.setMessage("Fake message 5");
-        testAction.setAlert(fakeAlert);
-
-        resp = client.post(path: "actions/send", body: testAction)
+        // FETCH trigger and make sure it's as expected
+        resp = client.get(path: "triggers/test-email-threshold");
         assertEquals(200, resp.status)
+        assertEquals("http://www.mydemourl.com", resp.data.name)
+        assertEquals(true, resp.data.enabled)
+        assertEquals(false, resp.data.autoDisable);
+        assertEquals(false, resp.data.autoResolve);
+        assertEquals(false, resp.data.autoResolveAlerts);
 
+        // FETCH recent alerts for trigger, should not be any
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-email-threshold"] )
+        assertEquals(204, resp.status)
+
+        // Send in DOWN avail data to fire the trigger
+        // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
+        for (int i=0; i<5; i++) {
+            NumericData threshold = new NumericData("test-email-threshold", System.currentTimeMillis(), 305.5 + i);
+            MixedData mixedData = new MixedData();
+            mixedData.getNumericData().add(threshold);
+            resp = client.post(path: "data", body: mixedData);
+            assertEquals(200, resp.status)
+        }
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 10; ++i ) {
+            // println "SLEEP!" ;
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 5
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-email-threshold"] )
+            if ( resp.status == 200 && resp.data.size() == 5 ) {
+                break;
+            }
+        }
+        assertEquals(200, resp.status)
+        assertEquals(5, resp.data.size())
+        assertEquals("OPEN", resp.data[0].status)
     }
 
 

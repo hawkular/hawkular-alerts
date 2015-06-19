@@ -23,6 +23,7 @@ import javax.jms.MessageListener;
 
 import org.hawkular.actions.api.log.MsgLogger;
 import org.hawkular.actions.api.model.ActionMessage;
+import org.hawkular.alerts.api.json.GsonUtil;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 
@@ -75,7 +76,7 @@ public class AerogearListener extends BasicMessageListener<ActionMessage> {
     private String prepareMessage(ActionMessage msg) {
         String preparedMsg = null;
         if (msg != null) {
-            Alert alert = msg.getAlert();
+            Alert alert = msg.getAlert() != null ? GsonUtil.fromJson(msg.getAlert(), Alert.class) : null;
             if (alert != null) {
                 preparedMsg = "Alert : " + alert.getTriggerId() + " at " + alert.getCtime() + " -- Severity: " +
                         alert.getSeverity().toString();

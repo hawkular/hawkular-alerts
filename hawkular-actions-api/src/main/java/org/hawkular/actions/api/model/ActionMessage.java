@@ -19,7 +19,6 @@ package org.hawkular.actions.api.model;
 import java.util.Map;
 
 import com.google.gson.annotations.Expose;
-import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.bus.common.BasicMessage;
 
 /**
@@ -44,14 +43,17 @@ public class ActionMessage extends BasicMessage {
     String message;
 
     @Expose
-    Alert alert;
+    String alert;
 
     @Expose
     Map<String, String> properties;
 
+    @Expose
+    Map<String, String> defaultProperties;
+
     public ActionMessage() { }
 
-    public ActionMessage(String tenantId, String actionPlugin, String actionId, String message, Alert alert) {
+    public ActionMessage(String tenantId, String actionPlugin, String actionId, String message, String alert) {
         this.tenantId = tenantId;
         this.actionPlugin = actionPlugin;
         this.actionId = actionId;
@@ -99,12 +101,20 @@ public class ActionMessage extends BasicMessage {
         this.actionPlugin = actionPlugin;
     }
 
-    public Alert getAlert() {
+    public String getAlert() {
         return alert;
     }
 
-    public void setAlert(Alert alert) {
+    public void setAlert(String alert) {
         this.alert = alert;
+    }
+
+    public Map<String, String> getDefaultProperties() {
+        return defaultProperties;
+    }
+
+    public void setDefaultProperties(Map<String, String> defaultProperties) {
+        this.defaultProperties = defaultProperties;
     }
 
     @Override
@@ -116,7 +126,12 @@ public class ActionMessage extends BasicMessage {
 
         if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
         if (actionPlugin != null ? !actionPlugin.equals(that.actionPlugin) : that.actionPlugin != null) return false;
-        return !(actionId != null ? !actionId.equals(that.actionId) : that.actionId != null);
+        if (actionId != null ? !actionId.equals(that.actionId) : that.actionId != null) return false;
+        if (message != null ? !message.equals(that.message) : that.message != null) return false;
+        if (alert != null ? !alert.equals(that.alert) : that.alert != null) return false;
+        if (properties != null ? !properties.equals(that.properties) : that.properties != null) return false;
+        return !(defaultProperties != null ? !defaultProperties.equals(that.defaultProperties) :
+                that.defaultProperties != null);
 
     }
 
@@ -125,6 +140,10 @@ public class ActionMessage extends BasicMessage {
         int result = tenantId != null ? tenantId.hashCode() : 0;
         result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
         result = 31 * result + (actionId != null ? actionId.hashCode() : 0);
+        result = 31 * result + (message != null ? message.hashCode() : 0);
+        result = 31 * result + (alert != null ? alert.hashCode() : 0);
+        result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        result = 31 * result + (defaultProperties != null ? defaultProperties.hashCode() : 0);
         return result;
     }
 
@@ -137,6 +156,7 @@ public class ActionMessage extends BasicMessage {
                 ", message='" + message + '\'' +
                 ", alert=" + alert +
                 ", properties=" + properties +
+                ", defaultProperties=" + defaultProperties +
                 '}';
     }
 }

@@ -228,15 +228,90 @@ public interface DefinitionsService {
         ActionPlugin API will be useful in the UI to help to define new actions.
         i.e. querying for properties to fill for a specific action type.
      */
+
+    /**
+     * Add a new Plugin into the definitions service.
+     * This operation is invoked mainly on a registration plugin phase.
+     * A new plugin is deployed into hawkular and it registers his name and properties name.
+     * Properties have to be filled when a new action is created.
+     *
+     * @param actionPlugin name of the plugin
+     * @param properties list of properties to be configured in actions of this plugins type
+     * @throws Exception on any problem
+     */
     void addActionPlugin(String actionPlugin, Set<String> properties) throws Exception;
 
+    /*
+        An action plugin can define default properties at plugin level.
+     */
+
+    /**
+     * Add a new Plugin into definitions service.
+     * This operation is invoked mainly on a registration plugin phase.
+     * A new plugin is deployed into hawkular and it register his name, his properties and also defines default
+     * values for those properties.
+     * Properties are overwritten per action but default values are used in case some property is not present.
+     *
+     * @param actionPlugin name of the plugin
+     * @param defaultProperties map of properties with its default values
+     * @throws Exception on any problem
+     */
+    void addActionPlugin(String actionPlugin, Map<String, String> defaultProperties)
+        throws Exception;
+
+    /**
+     * Remove an existing Plugin from the definitions service.
+     *
+     * @param actionPlugin name of the plugin
+     * @throws Exception on any problem
+     */
     void removeActionPlugin(String actionPlugin) throws Exception;
 
+    /**
+     * Update an existing plugin.
+     * This operation changes the properties needed for a plugin.
+     *
+     * @param actionPlugin name of the plugin
+     * @param properties list of properties to be configured in actions of this plugins type
+     * @throws Exception on any problem
+     */
     void updateActionPlugin(String actionPlugin, Set<String> properties) throws Exception;
 
+    /**
+     * Update an existing plugin.
+     * This operation changes the properties needed for a plugin and its default values.
+     *
+     * @param actionPlugin name of the plugin
+     * @param defaultProperties map of properties with its default values
+     * @throws Exception on any problem
+     */
+    void updateActionPlugin(String actionPlugin, Map<String, String> defaultProperties)
+        throws Exception;
+
+    /**
+     * Get all list of plugins configured on the system.
+     *
+     * @return List of plugins configured on the definitions service
+     * @throws Exception on an problem
+     */
     Collection<String> getActionPlugins() throws Exception;
 
+    /**
+     * Get list of properties needed to configure an action for a specific plugin
+     *
+     * @param actionPlugin name of the plugin
+     * @return list of properties to be configured
+     * @throws Exception on any problem
+     */
     Set<String> getActionPlugin(String actionPlugin) throws Exception;
+
+    /**
+     * Get a map with the properties needed to configure an action with its default values
+     *
+     * @param actionPlugin name of the plugin
+     * @return map of properties with its default values
+     */
+    Map<String, String> getDefaultActionPlugin(String actionPlugin);
 
     /*
         An action is a representation of specific tasks to be executed by action plugins.
@@ -246,7 +321,7 @@ public interface DefinitionsService {
      */
 
     /**
-     * Create a new Action.
+     * Create a new Action
      *
      * @param tenantId Tenant where actions are stored
      * @param actionPlugin Action plugin where this action is stored

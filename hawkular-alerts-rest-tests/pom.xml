@@ -62,6 +62,14 @@
     </dependency>
 
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>hawkular-actions-email</artifactId>
+      <version>${project.version}</version>
+      <type>war</type>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
@@ -202,6 +210,14 @@
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts-ear.ear</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-actions-email</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-actions-email.war</destFileName>
                     </artifactItem>
                   </artifactItems>
                 </configuration>
