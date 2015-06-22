@@ -302,6 +302,14 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     private Page<Alert> preparePage(List<Alert> alerts, Pager pager) {
         if (pager != null)  {
+            if (pager.getOrder() != null
+                    && !pager.getOrder().isEmpty()
+                    && pager.getOrder().get(0).getField() == null) {
+                pager = Pager.builder()
+                        .withPageSize(pager.getPageSize())
+                        .withStartPage(pager.getPageNumber())
+                        .orderBy(Field.ALERT_ID.getText(), Order.Direction.DESCENDING).build();
+            }
             List<Alert> ordered = alerts;
             if (pager.getOrder() != null) {
                 pager.getOrder().stream().filter(o -> o.getField() != null && o.getDirection() != null)
