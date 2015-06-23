@@ -21,6 +21,7 @@ import javax.enterprise.inject.Produces;
 import org.hawkular.metrics.core.api.MetricsService;
 import org.hawkular.metrics.core.impl.MetricsServiceImpl;
 
+import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.Session;
 
 /**
@@ -39,7 +40,7 @@ public class MetricsServiceProducer {
             Session session = CassCluster.getSession();
             boolean resetDB = false;
             boolean createSchema = false;
-            metricsService.startUp(session, keyspace, resetDB, createSchema);
+            metricsService.startUp(session, keyspace, resetDB, createSchema, new MetricRegistry());
         }
 
         return metricsService;
