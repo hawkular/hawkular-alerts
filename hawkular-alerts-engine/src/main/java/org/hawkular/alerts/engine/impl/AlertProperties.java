@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Properties;
 import org.hawkular.alerts.engine.log.MsgLogger;
@@ -36,19 +38,38 @@ public class AlertProperties {
     }
 
     public static String getProperty(String key, String defaultValue) {
+        return getProperty(key, null, defaultValue);
+    }
+
+    public static String getProperty(String key, String envKey, String defaultValue) {
         if (alertsProperties == null) {
             initConfiguration();
         }
         String value = System.getProperty(key);
         if (value == null) {
-            value = alertsProperties.getProperty(key, defaultValue);
+            if (envKey != null) {
+                value = System.getenv(envKey);
+            }
+            if (value == null) {
+                value = alertsProperties.getProperty(key, defaultValue);
+            }
         }
         return value;
     }
 
     private static void initConfiguration() {
         try {
-            InputStream is = AlertProperties.class.getClassLoader().getResourceAsStream(ALERTS_CONF);
+            String userHome = System.getProperty("user.home");
+            InputStream is = null;
+            if (userHome != null) {
+                File extFile = new File(userHome, "." + ALERTS_CONF);
+                if (extFile.exists()) {
+                    is = new FileInputStream(extFile);
+                }
+            }
+            if (is == null) {
+                is = AlertProperties.class.getClassLoader().getResourceAsStream(ALERTS_CONF);
+            }
             alertsProperties = new Properties();
             alertsProperties.load(is);
         } catch (Exception e) {

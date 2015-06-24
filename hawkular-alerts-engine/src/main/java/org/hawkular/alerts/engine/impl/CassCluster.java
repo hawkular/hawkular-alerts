@@ -38,7 +38,9 @@ import org.jboss.logging.Logger;
 public class CassCluster {
     private static final Logger log = Logger.getLogger(CassDefinitionsServiceImpl.class);
     private static final String ALERTS_CASSANDRA_PORT = "hawkular-alerts.cassandra-cql-port";
+    private static final String ALERTS_CASSANDRA_PORT_ENV = "CASSANDRA_CQL_PORT";
     private static final String ALERTS_CASSANDRA_NODES = "hawkular-alerts.cassandra-nodes";
+    private static final String ALERTS_CASSANDRA_NODES_ENV = "CASSANDRA_NODES";
     private static final String ALERTS_CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
     private static final String ALERTS_CASSANDRA_RETRY_ATTEMPTS = "hawkular-alerts.cassandra-retry-attempts";
     private static final String ALERTS_CASSANDRA_RETRY_TIMEOUT = "hawkular-alerts.cassandra-retry-timeout";
@@ -98,8 +100,8 @@ public class CassCluster {
 
     public static Session getSession() throws Exception {
         if (cluster == null && session == null) {
-            String cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, "9042");
-            String nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, "127.0.0.1");
+            String cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, ALERTS_CASSANDRA_PORT_ENV, "9042");
+            String nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, ALERTS_CASSANDRA_NODES_ENV, "127.0.0.1");
             int attempts = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_ATTEMPTS, "5"));
             int timeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_TIMEOUT, "2000"));
             /*
