@@ -131,6 +131,9 @@
               <includes>
                 <include>**/*ITest*</include>
               </includes>
+              <excludes>
+                <exclude>**/external/*ITest*</exclude>
+              </excludes>
               <systemPropertyVariables>
                 <hawkular.host>${hawkular.host}</hawkular.host>
                 <hawkular.port>${hawkular.port}</hawkular.port>
@@ -328,6 +331,9 @@
                   <includes>
                     <include>**/*ITest*</include>
                   </includes>
+                  <excludes>
+                    <exclude>**/external/*ITest*</exclude>
+                  </excludes>
                 </configuration>
               </execution>
               <execution>
