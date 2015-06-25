@@ -43,13 +43,13 @@
     <dependency>
       <groupId>org.hawkular.metrics</groupId>
       <artifactId>hawkular-metrics-core-api</artifactId>
-      <version>0.3.5-SNAPSHOT</version>
+      <version>${version.org.hawkular.metrics}</version>
     </dependency>
 
     <dependency>
       <groupId>org.hawkular.metrics</groupId>
       <artifactId>hawkular-metrics-core-impl</artifactId>
-      <version>0.3.5-SNAPSHOT</version>
+      <version>${version.org.hawkular.metrics}</version>
     </dependency>
 
     <dependency>
