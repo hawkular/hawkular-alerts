@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <!--
 
     Copyright 2015 Red Hat, Inc. and/or its affiliates
@@ -17,16 +17,13 @@
     limitations under the License.
 
 -->
-<jboss:jboss
-    xmlns="http://java.sun.com/xml/ns/javaee"
-    xmlns:jboss="http://www.jboss.com/xml/ns/javaee"
-    xmlns:s="urn:security:1.1"
-    version="3.1" impl-version="2.0">
+<jboss-deployment-structure>
 
-  <assembly-descriptor>
-    <s:security>
-      <ejb-name>*</ejb-name>
-      <s:security-domain>keycloak</s:security-domain>
-    </s:security>
-  </assembly-descriptor>
-</jboss:jboss>
+  <deployment>
+    <dependencies>
+      <module name="org.hawkular.nest" />
+      <module name="org.infinispan" export="true" />
+    </dependencies>
+  </deployment>
+
+</jboss-deployment-structure>
