@@ -16,6 +16,7 @@
  */
 package org.hawkular.actions.email.registration;
 
+import java.io.IOException;
 import org.hawkular.bus.common.ConnectionContextFactory;
 import org.hawkular.bus.common.Endpoint;
 import org.hawkular.bus.common.MessageId;
@@ -73,6 +74,18 @@ public class RegistrationInit {
         } catch (JMSException e) {
             log.debug(e.getMessage(), e);
             msgLog.errorCannotSendMessage("email", e.getMessage());
+        } finally {
+            if (pcc != null) {
+                try {
+                    pcc.close();
+                    pcc = null;
+                } catch (IOException ignored) { }
+            }
+            if (ccf != null) {
+                try {
+                    ccf.close();
+                } catch (JMSException ignored) { }
+            }
         }
     }
 }

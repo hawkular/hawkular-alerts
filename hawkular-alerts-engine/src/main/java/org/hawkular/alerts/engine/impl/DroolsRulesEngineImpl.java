@@ -144,6 +144,14 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
             batchData.clear();
 
+            if (log.isTraceEnabled()) {
+                log.trace("Drools session dumping before firing: ");
+                for (FactHandle fact : kSession.getFactHandles()) {
+                    Object o = kSession.getObject(fact);
+                    log.trace("Fact: " + o.toString());
+                }
+            }
+
             kSession.fireAllRules();
         }
     }

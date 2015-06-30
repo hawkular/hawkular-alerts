@@ -16,6 +16,7 @@
  */
 package org.hawkular.actions.pagerduty.registration;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -72,6 +73,18 @@ public class RegistrationInit {
         } catch (JMSException e) {
             log.debug(e.getMessage(), e);
             msgLog.errorCannotSendMessage("pagerduty", e.getMessage());
+        } finally {
+            if (pcc != null) {
+                try {
+                    pcc.close();
+                    pcc = null;
+                } catch (IOException ignored) { }
+            }
+            if (ccf != null) {
+                try {
+                    ccf.close();
+                } catch (JMSException ignored) { }
+            }
         }
     }
 }

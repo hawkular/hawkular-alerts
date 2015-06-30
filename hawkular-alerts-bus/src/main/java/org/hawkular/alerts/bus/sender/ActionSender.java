@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.bus.sender;
 
+import java.io.IOException;
+import javax.jms.JMSException;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.ActionListener;
@@ -81,6 +83,19 @@ public class ActionSender implements ActionListener {
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             msgLogger.errorProcessingAction(e.getMessage());
+        } finally {
+            if (pcc != null) {
+                try {
+                    pcc.close();
+                    pcc = null;
+                } catch (IOException ignored) { }
+            }
+            if (ccf != null) {
+                try {
+                    ccf.close();
+                    ccf = null;
+                } catch (JMSException ignored) { }
+            }
         }
     }
 
@@ -90,7 +105,11 @@ public class ActionSender implements ActionListener {
         }
         if (conFactory == null) {
             conFactory = (TopicConnectionFactory) ctx.lookup(CONNECTION_FACTORY);
+        }
+        if (ccf == null) {
             ccf = new ConnectionContextFactory(conFactory);
+        }
+        if (pcc == null) {
             pcc = ccf.createProducerConnectionContext(new Endpoint(Endpoint.Type.TOPIC, ACTIONS_TOPIC));
         }
         if (definitions == null) {
