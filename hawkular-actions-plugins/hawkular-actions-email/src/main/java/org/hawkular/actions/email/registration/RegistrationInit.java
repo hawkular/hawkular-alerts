@@ -70,9 +70,16 @@ public class RegistrationInit {
             apMsg.setOp(EmailPlugin.INIT_PLUGIN);
             apMsg.setActionPlugin(EmailPlugin.PLUGIN_NAME);
             Set<String> properties = new HashSet<String>();
-            properties.add("to");
-            properties.add("cc");
-            properties.add("description");
+            properties.add(EmailPlugin.PROP_FROM);
+            properties.add(EmailPlugin.PROP_FROM_NAME);
+            properties.add(EmailPlugin.PROP_TO);
+            properties.add(EmailPlugin.PROP_CC);
+            properties.add(EmailPlugin.PROP_MESSAGE_ID);
+            properties.add(EmailPlugin.PROP_IN_REPLY_TO);
+            properties.add(EmailPlugin.PROP_TEMPLATE_HAWKULAR_URL);
+            properties.add(EmailPlugin.PROP_TEMPLATE_LOCALE);
+            properties.add(EmailPlugin.PROP_TEMPLATE_PLAIN);
+            properties.add(EmailPlugin.PROP_TEMPLATE_HTML);
             apMsg.setProperties(properties);
 
             MessageId mid = new MessageProcessor().send(pcc, apMsg);
