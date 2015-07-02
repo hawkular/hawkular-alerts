@@ -29,7 +29,7 @@
   <artifactId>hawkular-alerts-rest</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerts REST Api</name>
+  <name>Hawkular Alerts REST</name>
 
   <dependencies>
 
@@ -37,21 +37,30 @@
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-engine</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-bus</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.hawkular.accounts</groupId>
       <artifactId>hawkular-accounts-api</artifactId>
       <version>${version.org.hawkular.accounts}</version>
-      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-actions-api</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
