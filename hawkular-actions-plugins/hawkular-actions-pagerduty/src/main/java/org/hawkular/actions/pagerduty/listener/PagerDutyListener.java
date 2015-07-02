@@ -33,6 +33,8 @@ import com.squareup.pagerduty.incidents.Trigger;
 
 import org.hawkular.actions.api.log.MsgLogger;
 import org.hawkular.actions.api.model.ActionMessage;
+import org.hawkular.alerts.api.json.GsonUtil;
+import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 
 import retrofit.RestAdapter;
@@ -115,6 +117,23 @@ public class PagerDutyListener extends BasicMessageListener<ActionMessage> {
         return value == null || value.trim().isEmpty();
     }
 
+    private String prepareMessage(ActionMessage msg) {
+        String preparedMsg = null;
+        if (msg != null) {
+            Alert alert = msg.getAlert() != null ? GsonUtil.fromJson(msg.getAlert(), Alert.class) : null;
+            if (alert != null) {
+                preparedMsg = "Alert : " + alert.getTriggerId() + " at " + alert.getCtime() + " -- Severity: " +
+                        alert.getSeverity().toString();
+            } else if (msg.getMessage() != null) {
+                preparedMsg = msg.getMessage();
+            } else {
+                preparedMsg = "Message received without data at " + System.currentTimeMillis();
+                msgLog.warnMessageReceivedWithoutPayload("pagerduty");
+            }
+        }
+        return preparedMsg;
+    }
+
     protected void onBasicMessage(ActionMessage msg) {
         msgLog.infoActionReceived("pagerduty", msg.toString());
 
@@ -123,7 +142,7 @@ public class PagerDutyListener extends BasicMessageListener<ActionMessage> {
             return;
         }
 
-        Trigger trigger = new Trigger.Builder(msg.getMessage()).build();
+        Trigger trigger = new Trigger.Builder(prepareMessage(msg)).build();
         NotifyResult result = pagerDuty.notify(trigger);
         if (!"success".equals(result.status())) {
             msgLog.errorCannotSendMessage("pagerduty", result.message());

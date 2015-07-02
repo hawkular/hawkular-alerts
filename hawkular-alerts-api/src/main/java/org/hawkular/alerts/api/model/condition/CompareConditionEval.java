@@ -51,6 +51,9 @@ public class CompareConditionEval extends ConditionEval {
         this.condition = condition;
         this.value1 = data1.getValue();
         this.value2 = data2.getValue();
+        if (this.condition != null) {
+            this.type = this.condition.getType();
+        }
     }
 
     public CompareCondition getCondition() {

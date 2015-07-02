@@ -27,6 +27,8 @@ import org.hawkular.alerts.api.model.Severity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
  * A status of an alert thrown by several matched conditions.
@@ -88,6 +90,22 @@ public class Alert {
 
     @JsonInclude
     private String resolvedNotes;
+
+    /*
+     * This is the trigger defined when the alert was fired.
+     * A trigger definition can change during time, but an alert should be attached with a specific instance.
+     */
+    @JsonInclude(Include.NON_EMPTY)
+    @Thin
+    private Trigger trigger;
+
+    /*
+     * This is the dampening attached to a trigger when the alert was fired.
+     * As a trigger, the dampening can change during time, but an alert should be attached with a specific instance.
+     */
+    @JsonInclude(Include.NON_EMPTY)
+    @Thin
+    private Dampening dampening;
 
     @JsonInclude(Include.NON_EMPTY)
     @Thin
@@ -218,6 +236,22 @@ public class Alert {
 
     public void setResolvedEvalSets(List<Set<ConditionEval>> resolvedEvalSets) {
         this.resolvedEvalSets = resolvedEvalSets;
+    }
+
+    public Trigger getTrigger() {
+        return trigger;
+    }
+
+    public void setTrigger(Trigger trigger) {
+        this.trigger = trigger;
+    }
+
+    public Dampening getDampening() {
+        return dampening;
+    }
+
+    public void setDampening(Dampening dampening) {
+        this.dampening = dampening;
     }
 
     @Override

@@ -89,6 +89,7 @@
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>${version.com.google.code.gson}</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>

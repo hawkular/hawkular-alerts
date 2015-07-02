@@ -24,8 +24,6 @@ import org.jboss.logging.Logger;
 
 import javax.ejb.Singleton;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -41,7 +39,6 @@ public class MemActionsServiceImpl implements ActionsService {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(MemActionsServiceImpl.class);
 
-    Queue<Action> pending = new ConcurrentLinkedDeque<Action>();
     List<ActionListener> listeners = new CopyOnWriteArrayList<ActionListener>();
 
     public MemActionsServiceImpl() {
@@ -53,11 +50,13 @@ public class MemActionsServiceImpl implements ActionsService {
         if (action == null || action.getActionId() == null || action.getActionId().isEmpty()) {
             throw new IllegalArgumentException("Action must be not null");
         }
-        pending.add(action);
-
         /*
             In this implementation we invoke listeners as soon as we receive an event.
             This can be modified per implementation basis adding asynchronously behaviour at this level.
+
+            i.e. send(Action) can be responsible to enqueue message into a buffer.
+            This buffer can be processed by listeners on an async behaviour with additional logic (priorities by
+             severity or other criteria).
          */
         for (ActionListener listener : listeners) {
             listener.process(action);

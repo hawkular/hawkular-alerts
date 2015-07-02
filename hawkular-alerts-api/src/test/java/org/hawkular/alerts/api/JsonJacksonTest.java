@@ -59,7 +59,7 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
  *
  * @author Lucas Ponce
  */
-public class JsonTest {
+public class JsonJacksonTest {
 
     ObjectMapper objectMapper;
 

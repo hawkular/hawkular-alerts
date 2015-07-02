@@ -23,6 +23,8 @@ import javax.jms.MessageListener;
 
 import org.hawkular.actions.api.log.MsgLogger;
 import org.hawkular.actions.api.model.ActionMessage;
+import org.hawkular.alerts.api.json.GsonUtil;
+import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 
 import org.jboss.aerogear.unifiedpush.DefaultPushSender;
@@ -71,6 +73,23 @@ public class AerogearListener extends BasicMessageListener<ActionMessage> {
         return value == null || value.trim().isEmpty();
     }
 
+    private String prepareMessage(ActionMessage msg) {
+        String preparedMsg = null;
+        if (msg != null) {
+            Alert alert = msg.getAlert() != null ? GsonUtil.fromJson(msg.getAlert(), Alert.class) : null;
+            if (alert != null) {
+                preparedMsg = "Alert : " + alert.getTriggerId() + " at " + alert.getCtime() + " -- Severity: " +
+                        alert.getSeverity().toString();
+            } else if (msg.getMessage() != null) {
+                preparedMsg = msg.getMessage();
+            } else {
+                preparedMsg = "Message received without data at " + System.currentTimeMillis();
+                msgLog.warnMessageReceivedWithoutPayload("aerogear");
+            }
+        }
+        return preparedMsg;
+    }
+
     protected void onBasicMessage(ActionMessage msg) {
         msgLog.infoActionReceived("aerogear", msg.toString());
 
@@ -79,7 +98,7 @@ public class AerogearListener extends BasicMessageListener<ActionMessage> {
             return;
         }
 
-        MessageBuilder alert = UnifiedMessage.withMessage().alert(msg.getMessage());
+        MessageBuilder alert = UnifiedMessage.withMessage().alert(prepareMessage(msg));
         if (msg.getProperties() != null) {
             String alias = msg.getProperties().get("alias");
             if (!isBlank(alias)) {

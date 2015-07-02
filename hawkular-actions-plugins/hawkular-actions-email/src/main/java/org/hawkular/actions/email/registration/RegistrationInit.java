@@ -16,7 +16,19 @@
  */
 package org.hawkular.actions.email.registration;
 
+
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+import javax.jms.JMSException;
+import javax.jms.QueueConnectionFactory;
+
+import org.hawkular.actions.email.EmailPlugin;
 import org.hawkular.bus.common.ConnectionContextFactory;
 import org.hawkular.bus.common.Endpoint;
 import org.hawkular.bus.common.MessageId;
@@ -25,15 +37,6 @@ import org.hawkular.bus.common.producer.ProducerConnectionContext;
 import org.hawkular.actions.api.log.MsgLogger;
 import org.hawkular.actions.api.model.ActionPluginMessage;
 import org.jboss.logging.Logger;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.jms.JMSException;
-import javax.jms.QueueConnectionFactory;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * A initialization class to init the email plugin
@@ -59,21 +62,32 @@ public class RegistrationInit {
             ccf = new ConnectionContextFactory(conFactory);
             pcc = ccf.createProducerConnectionContext(new Endpoint(Endpoint.Type.QUEUE, ACTION_PLUGIN_REGISTER));
 
+            /*
+                This is a registration message, it should contain
+             */
+
             ActionPluginMessage apMsg = new ActionPluginMessage();
-            apMsg.setOp("init");
-            apMsg.setActionPlugin("email");
+            apMsg.setOp(EmailPlugin.INIT_PLUGIN);
+            apMsg.setActionPlugin(EmailPlugin.PLUGIN_NAME);
             Set<String> properties = new HashSet<String>();
-            properties.add("to");
-            properties.add("cc");
-            properties.add("description");
+            properties.add(EmailPlugin.PROP_FROM);
+            properties.add(EmailPlugin.PROP_FROM_NAME);
+            properties.add(EmailPlugin.PROP_TO);
+            properties.add(EmailPlugin.PROP_CC);
+            properties.add(EmailPlugin.PROP_MESSAGE_ID);
+            properties.add(EmailPlugin.PROP_IN_REPLY_TO);
+            properties.add(EmailPlugin.PROP_TEMPLATE_HAWKULAR_URL);
+            properties.add(EmailPlugin.PROP_TEMPLATE_LOCALE);
+            properties.add(EmailPlugin.PROP_TEMPLATE_PLAIN);
+            properties.add(EmailPlugin.PROP_TEMPLATE_HTML);
             apMsg.setProperties(properties);
 
             MessageId mid = new MessageProcessor().send(pcc, apMsg);
 
-            msgLog.infoPluginRegistration("email", mid.toString());
+            msgLog.infoPluginRegistration(EmailPlugin.INIT_PLUGIN, mid.toString());
         } catch (JMSException e) {
             log.debug(e.getMessage(), e);
-            msgLog.errorCannotSendMessage("email", e.getMessage());
+            msgLog.errorCannotSendMessage(EmailPlugin.INIT_PLUGIN, e.getMessage());
         } finally {
             if (pcc != null) {
                 try {

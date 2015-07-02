@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.bus.listener;
 
+import java.util.Map;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.bus.log.MsgLogger;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
@@ -48,24 +49,29 @@ public class ActionPluginListener extends BasicMessageListener<ActionPluginMessa
     protected void onBasicMessage(ActionPluginMessage msg) {
         log.debugf("Message received: [%s]", msg);
         String op = msg.getOp();
-        String notifierType = msg.getActionPlugin();
+        String actionPlugin = msg.getActionPlugin();
         if (op == null || op.isEmpty()) {
             msgLog.warnActionPluginRegistrationWithoutOp();
         } else if (op.equals("init")) {
             try {
-                if (definitions.getActionPlugin(notifierType) == null) {
+                if (definitions.getActionPlugin(actionPlugin) == null) {
                     Set<String> properties = msg.getProperties();
-                    definitions.addActionPlugin(notifierType, properties);
-                    msgLog.infoActionPluginRegistration(notifierType);
+                    Map<String, String> defaultProperties = msg.getDefaultProperties();
+                    if (defaultProperties != null && !defaultProperties.isEmpty()) {
+                        definitions.addActionPlugin(actionPlugin, defaultProperties);
+                    } else {
+                        definitions.addActionPlugin(actionPlugin, properties);
+                    }
+                    msgLog.infoActionPluginRegistration(actionPlugin);
                 } else {
-                    msgLog.warnActionPluginAlreadyRegistered(notifierType);
+                    msgLog.warnActionPluginAlreadyRegistered(actionPlugin);
                 }
             } catch (Exception e) {
                 log.debugf(e.getMessage(), e);
                 msgLog.errorDefinitionsService(e.getMessage());
             }
         } else {
-            msgLog.warnActionPluginRegistrationWithUnknownOp(notifierType, op);
+            msgLog.warnActionPluginRegistrationWithUnknownOp(actionPlugin, op);
         }
     }
 }

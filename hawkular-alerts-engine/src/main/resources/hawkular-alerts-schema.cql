@@ -105,6 +105,7 @@ CREATE INDEX dampenings_id ON ${keyspace}.dampenings(dampeningId);
 CREATE TABLE ${keyspace}.action_plugins (
     actionPlugin text,
     properties set<text>,
+    defaultProperties map<text, text>,
     PRIMARY KEY (actionPlugin)
 );
 

@@ -16,8 +16,15 @@
  */
 package org.hawkular.alerts.bus.sender;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.io.IOException;
+
+import javax.jms.TopicConnectionFactory;
 import javax.jms.JMSException;
+import javax.naming.InitialContext;
+
+import org.hawkular.alerts.api.json.GsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.ActionListener;
@@ -30,10 +37,7 @@ import org.hawkular.bus.common.producer.ProducerConnectionContext;
 import org.hawkular.actions.api.model.ActionMessage;
 import org.jboss.logging.Logger;
 
-import javax.jms.TopicConnectionFactory;
-import javax.naming.InitialContext;
-import java.util.HashMap;
-import java.util.Map;
+
 
 /**
  * An implementation of {@link org.hawkular.alerts.api.services.ActionListener} that will send listener
@@ -68,13 +72,15 @@ public class ActionSender implements ActionListener {
                 msgLogger.warnCannotConnectToBus();
                 return;
             }
-            ActionMessage nMsg = new ActionMessage();
-            nMsg.setActionId(action.getActionId());
-            nMsg.setMessage(action.getMessage());
+            String alert = action.getAlert() != null ? GsonUtil.toJson(action.getAlert()) : null;
+            ActionMessage nMsg = new ActionMessage(action.getTenantId(), action.getActionPlugin(),
+                    action.getActionId(), action.getMessage(), alert);
             if (definitions != null) {
                 Map<String, String> properties = definitions.getAction(action.getTenantId(),
                         action.getActionPlugin(), action.getActionId());
+                Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
                 nMsg.setProperties(properties);
+                nMsg.setDefaultProperties(defaultProperties);
                 MessageId mid = new MessageProcessor().send(pcc, nMsg, actionPluginFilter(action.getActionPlugin()));
                 msgLogger.infoSentActionMessage(mid.getId());
             } else {

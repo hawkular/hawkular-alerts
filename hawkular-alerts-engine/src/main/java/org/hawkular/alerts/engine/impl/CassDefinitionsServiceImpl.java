@@ -16,11 +16,9 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -74,6 +72,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private static final String CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassDefinitionsServiceImpl.class);
+    private ObjectMapper objectMapper = new ObjectMapper();
     private Session session;
     private String keyspace;
     private boolean initialized = false;
@@ -165,187 +164,164 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void initTriggers(File fFolder) throws Exception {
-        File triggers = new File(fFolder, "triggers.data");
-        if (triggers.exists() && triggers.isFile()) {
-            List<String> lines = null;
-            try {
-                lines = Files.readAllLines(Paths.get(triggers.toURI()), Charset.forName("UTF-8"));
-            } catch (IOException e) {
-                log.debugf(e.toString(), e);
-                msgLog.warningReadingFile("triggers.data");
-            }
-            if (lines != null && !lines.isEmpty()) {
-                for (String line : lines) {
-                    if (line.startsWith("#")) {
-                        continue;
-                    }
-                    String[] fields = line.split(",");
-                    if (fields.length == 12) {
-                        String tenantId = fields[0];
-                        String triggerId = fields[1];
-                        boolean enabled = Boolean.parseBoolean(fields[2]);
-                        String name = fields[3];
-                        String description = fields[4];
-                        boolean autoDisable = Boolean.parseBoolean(fields[5]);
-                        boolean autoResolve = Boolean.parseBoolean(fields[6]);
-                        boolean autoResolveAlerts = Boolean.parseBoolean(fields[7]);
-                        Severity severity = Severity.valueOf(fields[8]);
-                        TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf(fields[9]);
-                        TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match.valueOf(fields[10]);
-                        String[] notifiers = fields[11].split("\\|");
+        File triggersFile = new File(fFolder, "triggers-data.json");
+        if (triggersFile.exists() && triggersFile.isFile()) {
+            Map<String, Object> triggers = objectMapper.readValue(triggersFile, Map.class);
+            if (triggers != null && !triggers.isEmpty() && triggers.get("triggers") != null) {
+                List<Map<String,Object>> aTriggers = (List<Map<String,Object>>)triggers.get("triggers");
+                for (Map<String,Object> t : aTriggers) {
+                    String tenantId = (String)t.get("tenantId");
+                    String triggerId = (String)t.get("triggerId");
+                    boolean enabled = (Boolean)t.get("enabled");
+                    String name = (String)t.get("name");
+                    String description = (String)t.get("description");
+                    boolean autoDisable = (Boolean)t.get("autoDisable");
+                    boolean autoResolve = (Boolean)t.get("autoResolve");
+                    boolean autoResolveAlerts = (Boolean)t.get("autoResolveAlerts");
+                    Severity severity = Severity.valueOf((String)t.get("severity"));
+                    TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf((String)t.get("firingMatch"));
+                    TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match
+                            .valueOf((String)t.get("autoResolveMatch"));
+                    List<Map<String, String>> actions = (List<Map<String, String>>) t.get("actions");
 
-                        Trigger trigger = new Trigger(triggerId, name);
-                        trigger.setEnabled(enabled);
-                        trigger.setAutoDisable(autoDisable);
-                        trigger.setAutoResolve(autoResolve);
-                        trigger.setAutoResolveAlerts(autoResolveAlerts);
-                        trigger.setSeverity(severity);
-                        trigger.setDescription(description);
-                        trigger.setFiringMatch(firingMatch);
-                        trigger.setAutoResolveMatch(autoResolveMatch);
-                        trigger.setTenantId(tenantId);
-                        for (String notifier : notifiers) {
-                            String[] actions = notifier.split("#");
-                            String actionPlugin = actions[0];
-                            String actionId = actions[1];
-                            trigger.addAction(actionPlugin, actionId);
-                        }
-
-                        addTrigger(tenantId, trigger);
-                        log.debugf("Init file - Inserting [%s]", trigger);
+                    Trigger trigger = new Trigger(triggerId, name);
+                    trigger.setEnabled(enabled);
+                    trigger.setAutoDisable(autoDisable);
+                    trigger.setAutoResolve(autoResolve);
+                    trigger.setAutoResolveAlerts(autoResolveAlerts);
+                    trigger.setSeverity(severity);
+                    trigger.setDescription(description);
+                    trigger.setFiringMatch(firingMatch);
+                    trigger.setAutoResolveMatch(autoResolveMatch);
+                    trigger.setTenantId(tenantId);
+                    for (Map<String, String> action : actions) {
+                        trigger.addAction(action.get("actionPlugin"), action.get("actionId"));
                     }
+                    addTrigger(tenantId, trigger);
+                    log.debugf("Init file - Inserting [%s]", trigger);
                 }
             }
         } else {
-            msgLog.warningFileNotFound("triggers.data");
+            msgLog.warningFileNotFound("triggers-data.json");
         }
     }
 
     private void initConditions(File initFolder) throws Exception {
-        File conditions = new File(initFolder, "conditions.data");
-        if (conditions.exists() && conditions.isFile()) {
-            List<String> lines = null;
-            try {
-                lines = Files.readAllLines(Paths.get(conditions.toURI()), Charset.forName("UTF-8"));
-            } catch (IOException e) {
-                msgLog.warningReadingFile("conditions.data");
-            }
-            if (lines != null && !lines.isEmpty()) {
-                for (String line : lines) {
-                    if (line.startsWith("#")) {
-                        continue;
+        File conditionsFile = new File(initFolder, "conditions-data.json");
+        if (conditionsFile.exists() && conditionsFile.isFile()) {
+            Map<String, Object> conditions = objectMapper.readValue(conditionsFile, Map.class);
+            if (conditions != null && !conditions.isEmpty() && conditions.get("conditions") != null) {
+                List<Map<String, Object>> aConditions = (List<Map<String, Object>>) conditions.get("conditions");
+                for (Map<String, Object> c: aConditions) {
+                    String tenantId = (String)c.get("tenantId");
+                    String triggerId = (String)c.get("triggerId");
+                    Trigger.Mode triggerMode = Trigger.Mode.valueOf((String)c.get("triggerMode"));
+                    int conditionSetSize = (Integer)c.get("conditionSetSize");
+                    int conditionSetIndex = (Integer)c.get("conditionSetIndex");
+                    String type = (String)c.get("type");
+                    if (type != null && !type.isEmpty() && type.equals("threshold")) {
+                        String dataId = (String)c.get("dataId");
+                        String operator = (String)c.get("operator");
+                        Double threshold = (Double)c.get("threshold");
+
+                        ThresholdCondition newCondition = new ThresholdCondition();
+                        newCondition.setTriggerId(triggerId);
+                        newCondition.setTriggerMode(triggerMode);
+                        newCondition.setConditionSetSize(conditionSetSize);
+                        newCondition.setConditionSetIndex(conditionSetIndex);
+                        newCondition.setDataId(dataId);
+                        newCondition.setOperator(ThresholdCondition.Operator.valueOf(operator));
+                        newCondition.setThreshold(threshold);
+                        newCondition.setTenantId(tenantId);
+
+                        initCondition(newCondition);
+                        log.debugf("Init file - Inserting [%s]", newCondition);
                     }
-                    String[] fields = line.split(",");
-                    if (fields.length > 5) {
-                        String tenantId = fields[0];
-                        String triggerId = fields[1];
-                        Trigger.Mode triggerMode = Trigger.Mode.valueOf(fields[2]);
-                        int conditionSetSize = Integer.parseInt(fields[3]);
-                        int conditionSetIndex = Integer.parseInt(fields[4]);
-                        String type = fields[5];
-                        if (type != null && !type.isEmpty() && type.equals("threshold") && fields.length == 9) {
-                            String dataId = fields[6];
-                            String operator = fields[7];
-                            Double threshold = Double.parseDouble(fields[8]);
+                    if (type != null && !type.isEmpty() && type.equals("range")) {
+                        String dataId = (String)c.get("dataId");
+                        String operatorLow = (String)c.get("operatorLow");
+                        String operatorHigh = (String)c.get("operatorHigh");
+                        Double thresholdLow = (Double)c.get("thresholdLow");
+                        Double thresholdHigh = (Double)c.get("thresholdHigh");
+                        boolean inRange = (Boolean)c.get("inRange");
 
-                            ThresholdCondition newCondition = new ThresholdCondition();
-                            newCondition.setTriggerId(triggerId);
-                            newCondition.setTriggerMode(triggerMode);
-                            newCondition.setConditionSetSize(conditionSetSize);
-                            newCondition.setConditionSetIndex(conditionSetIndex);
-                            newCondition.setDataId(dataId);
-                            newCondition.setOperator(ThresholdCondition.Operator.valueOf(operator));
-                            newCondition.setThreshold(threshold);
-                            newCondition.setTenantId(tenantId);
+                        ThresholdRangeCondition newCondition = new ThresholdRangeCondition();
+                        newCondition.setTriggerId(triggerId);
+                        newCondition.setTriggerMode(triggerMode);
+                        newCondition.setConditionSetSize(conditionSetSize);
+                        newCondition.setConditionSetIndex(conditionSetIndex);
+                        newCondition.setDataId(dataId);
+                        newCondition.setOperatorLow(ThresholdRangeCondition.Operator.valueOf(operatorLow));
+                        newCondition.setOperatorHigh(ThresholdRangeCondition.Operator.valueOf(operatorHigh));
+                        newCondition.setThresholdLow(thresholdLow);
+                        newCondition.setThresholdHigh(thresholdHigh);
+                        newCondition.setInRange(inRange);
+                        newCondition.setTenantId(tenantId);
 
-                            initCondition(newCondition);
-                            log.debugf("Init file - Inserting [%s]", newCondition);
-                        }
-                        if (type != null && !type.isEmpty() && type.equals("range") && fields.length == 12) {
-                            String dataId = fields[6];
-                            String operatorLow = fields[7];
-                            String operatorHigh = fields[8];
-                            Double thresholdLow = Double.parseDouble(fields[9]);
-                            Double thresholdHigh = Double.parseDouble(fields[10]);
-                            boolean inRange = Boolean.parseBoolean(fields[11]);
-
-                            ThresholdRangeCondition newCondition = new ThresholdRangeCondition();
-                            newCondition.setTriggerId(triggerId);
-                            newCondition.setTriggerMode(triggerMode);
-                            newCondition.setConditionSetSize(conditionSetSize);
-                            newCondition.setConditionSetIndex(conditionSetIndex);
-                            newCondition.setDataId(dataId);
-                            newCondition.setOperatorLow(ThresholdRangeCondition.Operator.valueOf(operatorLow));
-                            newCondition.setOperatorHigh(ThresholdRangeCondition.Operator.valueOf(operatorHigh));
-                            newCondition.setThresholdLow(thresholdLow);
-                            newCondition.setThresholdHigh(thresholdHigh);
-                            newCondition.setInRange(inRange);
-                            newCondition.setTenantId(tenantId);
-
-                            initCondition(newCondition);
-                            log.debugf("Init file - Inserting [%s]", newCondition);
-                        }
-                        if (type != null && !type.isEmpty() && type.equals("compare") && fields.length == 10) {
-                            String dataId = fields[6];
-                            String operator = fields[7];
-                            Double data2Multiplier = Double.parseDouble(fields[8]);
-                            String data2Id = fields[9];
-
-                            CompareCondition newCondition = new CompareCondition();
-                            newCondition.setTriggerId(triggerId);
-                            newCondition.setTriggerMode(triggerMode);
-                            newCondition.setConditionSetSize(conditionSetSize);
-                            newCondition.setConditionSetIndex(conditionSetIndex);
-                            newCondition.setDataId(dataId);
-                            newCondition.setOperator(CompareCondition.Operator.valueOf(operator));
-                            newCondition.setData2Multiplier(data2Multiplier);
-                            newCondition.setData2Id(data2Id);
-                            newCondition.setTenantId(tenantId);
-
-                            initCondition(newCondition);
-                            log.debugf("Init file - Inserting [%s]", newCondition);
-                        }
-                        if (type != null && !type.isEmpty() && type.equals("string") && fields.length == 10) {
-                            String dataId = fields[6];
-                            String operator = fields[7];
-                            String pattern = fields[8];
-                            boolean ignoreCase = Boolean.parseBoolean(fields[9]);
-
-                            StringCondition newCondition = new StringCondition();
-                            newCondition.setTriggerId(triggerId);
-                            newCondition.setTriggerMode(triggerMode);
-                            newCondition.setConditionSetSize(conditionSetSize);
-                            newCondition.setConditionSetIndex(conditionSetIndex);
-                            newCondition.setDataId(dataId);
-                            newCondition.setOperator(StringCondition.Operator.valueOf(operator));
-                            newCondition.setPattern(pattern);
-                            newCondition.setIgnoreCase(ignoreCase);
-                            newCondition.setTenantId(tenantId);
-
-                            initCondition(newCondition);
-                            log.debugf("Init file - Inserting [%s]", newCondition);
-                        }
-                        if (type != null && !type.isEmpty() && type.equals("availability") && fields.length == 8) {
-                            String dataId = fields[6];
-                            String operator = fields[7];
-
-                            AvailabilityCondition newCondition = new AvailabilityCondition();
-                            newCondition.setTriggerId(triggerId);
-                            newCondition.setTriggerMode(triggerMode);
-                            newCondition.setConditionSetSize(conditionSetSize);
-                            newCondition.setConditionSetIndex(conditionSetIndex);
-                            newCondition.setDataId(dataId);
-                            newCondition.setOperator(AvailabilityCondition.Operator.valueOf(operator));
-                            newCondition.setTenantId(tenantId);
-
-                            initCondition(newCondition);
-                            log.debugf("Init file - Inserting [%s]", newCondition);
-                        }
+                        initCondition(newCondition);
+                        log.debugf("Init file - Inserting [%s]", newCondition);
                     }
+                    if (type != null && !type.isEmpty() && type.equals("compare")) {
+                        String dataId = (String)c.get("dataId");
+                        String operator = (String)c.get("operator");
+                        Double data2Multiplier = (Double)c.get("data2Multiplier");
+                        String data2Id = (String)c.get("data2Id");
+
+                        CompareCondition newCondition = new CompareCondition();
+                        newCondition.setTriggerId(triggerId);
+                        newCondition.setTriggerMode(triggerMode);
+                        newCondition.setConditionSetSize(conditionSetSize);
+                        newCondition.setConditionSetIndex(conditionSetIndex);
+                        newCondition.setDataId(dataId);
+                        newCondition.setOperator(CompareCondition.Operator.valueOf(operator));
+                        newCondition.setData2Multiplier(data2Multiplier);
+                        newCondition.setData2Id(data2Id);
+                        newCondition.setTenantId(tenantId);
+
+                        initCondition(newCondition);
+                        log.debugf("Init file - Inserting [%s]", newCondition);
+                    }
+                    if (type != null && !type.isEmpty() && type.equals("string")) {
+                        String dataId = (String)c.get("dataId");
+                        String operator = (String)c.get("operator");
+                        String pattern = (String)c.get("pattern");
+                        boolean ignoreCase = (Boolean)c.get("ignoreCase");
+
+                        StringCondition newCondition = new StringCondition();
+                        newCondition.setTriggerId(triggerId);
+                        newCondition.setTriggerMode(triggerMode);
+                        newCondition.setConditionSetSize(conditionSetSize);
+                        newCondition.setConditionSetIndex(conditionSetIndex);
+                        newCondition.setDataId(dataId);
+                        newCondition.setOperator(StringCondition.Operator.valueOf(operator));
+                        newCondition.setPattern(pattern);
+                        newCondition.setIgnoreCase(ignoreCase);
+                        newCondition.setTenantId(tenantId);
+
+                        initCondition(newCondition);
+                        log.debugf("Init file - Inserting [%s]", newCondition);
+                    }
+                    if (type != null && !type.isEmpty() && type.equals("availability")) {
+                        String dataId = (String)c.get("dataId");
+                        String operator = (String)c.get("operator");
+
+                        AvailabilityCondition newCondition = new AvailabilityCondition();
+                        newCondition.setTriggerId(triggerId);
+                        newCondition.setTriggerMode(triggerMode);
+                        newCondition.setConditionSetSize(conditionSetSize);
+                        newCondition.setConditionSetIndex(conditionSetIndex);
+                        newCondition.setDataId(dataId);
+                        newCondition.setOperator(AvailabilityCondition.Operator.valueOf(operator));
+                        newCondition.setTenantId(tenantId);
+
+                        initCondition(newCondition);
+                        log.debugf("Init file - Inserting [%s]", newCondition);
+                    }
+
                 }
             }
         } else {
-            msgLog.warningFileNotFound("conditions.data");
+            msgLog.warningFileNotFound("conditions-data.json");
         }
     }
 
@@ -357,81 +333,54 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void initDampenings(File initFolder) throws Exception {
-        File dampening = new File(initFolder, "dampening.data");
-        if (dampening.exists() && dampening.isFile()) {
-            List<String> lines = null;
-            try {
-                lines = Files.readAllLines(Paths.get(dampening.toURI()), Charset.forName("UTF-8"));
-            } catch (IOException e) {
-                msgLog.warningReadingFile("dampening.data");
-            }
-            if (lines != null && !lines.isEmpty()) {
-                for (String line : lines) {
-                    if (line.startsWith("#")) {
-                        continue;
-                    }
-                    String[] fields = line.split(",");
-                    if (fields.length == 7) {
-                        String tenantId = fields[0];
-                        String triggerId = fields[1];
-                        Trigger.Mode triggerMode = Trigger.Mode.valueOf(fields[2]);
-                        String type = fields[3];
-                        int evalTrueSetting = new Integer(fields[4]);
-                        int evalTotalSetting = new Integer(fields[5]);
-                        int evalTimeSetting = new Integer(fields[6]);
+        File dampeningFile = new File(initFolder, "dampening-data.json");
+        if (dampeningFile.exists() && dampeningFile.isFile()) {
+            Map<String, Object> dampenings = objectMapper.readValue(dampeningFile, Map.class);
+            if (dampenings != null && !dampenings.isEmpty() && dampenings.get("dampenings") != null) {
+                List<Map<String, Object>> aDampenings = (List<Map<String, Object>>) dampenings.get("dampenings");
+                for (Map<String, Object> d : aDampenings) {
+                    String tenantId = (String)d.get("tenantId");
+                    String triggerId = (String)d.get("triggerId");
+                    Trigger.Mode triggerMode = Trigger.Mode.valueOf((String)d.get("triggerMode"));
+                    String type = (String)d.get("type");
+                    int evalTrueSetting = (Integer)d.get("evalTrueSetting");
+                    int evalTotalSetting = (Integer)d.get("evalTotalSetting");
+                    long evalTimeSetting = (Integer)d.get("evalTimeSetting");
 
-                        Dampening newDampening = new Dampening(triggerId, triggerMode, Dampening.Type.valueOf(type),
-                                evalTrueSetting, evalTotalSetting, evalTimeSetting);
+                    Dampening newDampening = new Dampening(triggerId, triggerMode, Dampening.Type.valueOf(type),
+                            evalTrueSetting, evalTotalSetting, evalTimeSetting);
 
-                        addDampening(tenantId, newDampening);
-                        log.debugf("Init file - Inserting [%s]", newDampening);
-                    }
+                    addDampening(tenantId, newDampening);
+                    log.debugf("Init file - Inserting [%s]", newDampening);
                 }
             }
         } else {
-            msgLog.warningFileNotFound("dampening.data");
+            msgLog.warningFileNotFound("dampening-data.json");
         }
     }
 
     private void initActions(File initFolder) throws Exception {
-        File actions = new File(initFolder, "actions.data");
-        if (actions.exists() && actions.isFile()) {
-            List<String> lines = null;
-            try {
-                lines = Files.readAllLines(Paths.get(actions.toURI()), Charset.forName("UTF-8"));
-            } catch (IOException e) {
-                log.error(e.toString(), e);
-            }
-            if (lines != null && !lines.isEmpty()) {
-                for (String line : lines) {
-                    if (line.startsWith("#")) {
-                        continue;
-                    }
-                    String[] fields = line.split(",");
-                    if (fields.length > 3) {
-                        String tenantId = fields[0];
-                        String actionPlugin = fields[1];
-                        String actionId = fields[2];
-
-                        Map<String, String> newAction = new HashMap<>();
-                        newAction.put("tenantId", tenantId);
-                        newAction.put("actionPlugin", actionPlugin);
-                        newAction.put("actionId", actionId);
-
-                        for (int i = 3; i < fields.length; i++) {
-                            String property = fields[i];
-                            String[] properties = property.split("=");
-                            if (properties.length == 2) {
-                                newAction.put(properties[0], properties[1]);
-                            }
-                        }
-                        addAction(tenantId, actionPlugin, actionId, newAction);
-                        log.debugf("Init file - Inserting [%s]", newAction);
-                    }
+        File actionsFile = new File(initFolder, "actions-data.json");
+        if (actionsFile.exists() && actionsFile.isFile()) {
+            Map<String, Object> actions = objectMapper.readValue(actionsFile, Map.class);
+            if (actions != null && !actions.isEmpty() && actions.get("actions") != null) {
+                List<Map<String, Object>> aActions = (List)actions.get("actions");
+                for (Map<String, Object> a : aActions) {
+                    Map<String, String> newAction = new HashMap<>();
+                    String tenantId = (String)a.get("tenantId");
+                    newAction.put("tenantId", tenantId);
+                    String actionPlugin = (String)a.get("actionPlugin");
+                    newAction.put("actionPlugin", actionPlugin);
+                    String actionId = (String)a.get("actionId");
+                    newAction.put("actionId", actionId);
+                    Map<String, String> properties = (Map<String, String>)a.get("properties");
+                    newAction.putAll(properties);
+                    addAction(tenantId, actionPlugin, actionId, newAction);
+                    log.debugf("Init file - Inserting [%s]", newAction);
                 }
             }
         } else {
-            msgLog.warningFileNotFound("actions.data");
+            msgLog.warningFileNotFound("actions-data.json");
         }
     }
 
@@ -1642,7 +1591,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void addActionPlugin(String actionPlugin, Set<String> properties) throws Exception {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
+        if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         if (properties == null || properties.isEmpty()) {
@@ -1664,8 +1613,33 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
+    public void addActionPlugin(String actionPlugin, Map<String, String> defaultProperties) throws Exception {
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("actionPlugin must be not null");
+        }
+        if (defaultProperties == null || defaultProperties.isEmpty()) {
+            throw new IllegalArgumentException("defaultProperties must be not null");
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
+        }
+        PreparedStatement insertActionPluginDefaulProperties = CassStatement.get(session,
+                CassStatement.INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES);
+        if (insertActionPluginDefaulProperties == null) {
+            throw new RuntimeException("insertDefaulPropertiesActionPlugin PreparedStatement is null");
+        }
+        try {
+            Set<String> properties = defaultProperties.keySet();
+            session.execute(insertActionPluginDefaulProperties.bind(actionPlugin, properties, defaultProperties));
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public void removeActionPlugin(String actionPlugin) throws Exception {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
+        if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         if (session == null) {
@@ -1685,7 +1659,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void updateActionPlugin(String actionPlugin, Set<String> properties) throws Exception {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
+        if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         if (properties == null || properties.isEmpty()) {
@@ -1700,6 +1674,31 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         try {
             session.execute(updateActionPlugin.bind(properties, actionPlugin));
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public void updateActionPlugin(String actionPlugin, Map<String, String> defaultProperties) throws Exception {
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("actionPlugin must be not null");
+        }
+        if (defaultProperties == null || defaultProperties.isEmpty()) {
+            throw new IllegalArgumentException("defaultProperties must be not null");
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
+        }
+        PreparedStatement updateDefaultPropertiesActionPlugin = CassStatement.get(session,
+                CassStatement.UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES);
+        if (updateDefaultPropertiesActionPlugin == null) {
+            throw new RuntimeException("updateDefaultPropertiesActionPlugin PreparedStatement is null");
+        }
+        try {
+            Set<String> properties = defaultProperties.keySet();
+            session.execute(updateDefaultPropertiesActionPlugin.bind(properties, defaultProperties, actionPlugin));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -1730,7 +1729,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Set<String> getActionPlugin(String actionPlugin) throws Exception {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
+        if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         if (session == null) {
@@ -1753,6 +1752,34 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
         return properties;
+    }
+
+    @Override
+    public Map<String, String> getDefaultActionPlugin(String actionPlugin) {
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("actionPlugin must be not null");
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
+        }
+        PreparedStatement selectActionPluginDefaultProperties = CassStatement.get(session,
+                CassStatement.SELECT_ACTION_PLUGIN_DEFAULT_PROPERTIES);
+        if (selectActionPluginDefaultProperties == null) {
+            throw new RuntimeException("selectDefaultPropertiesActionPlugin PreparedStatement is null");
+        }
+        Map<String, String> defaultProperties = null;
+        try {
+            ResultSet rsActionPlugin = session.execute(selectActionPluginDefaultProperties.bind(actionPlugin));
+            Iterator<Row> itActionPlugin = rsActionPlugin.iterator();
+            if (itActionPlugin.hasNext()) {
+                Row row = itActionPlugin.next();
+                defaultProperties = row.getMap("defaultProperties", String.class, String.class);
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return defaultProperties;
     }
 
     @Override

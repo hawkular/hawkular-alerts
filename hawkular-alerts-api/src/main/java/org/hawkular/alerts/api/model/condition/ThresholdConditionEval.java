@@ -43,6 +43,9 @@ public class ThresholdConditionEval extends ConditionEval {
         super(condition.match(data.getValue()), data.getTimestamp());
         this.condition = condition;
         this.value = data.getValue();
+        if (this.condition != null) {
+            this.type = this.condition.getType();
+        }
     }
 
     public ThresholdCondition getCondition() {

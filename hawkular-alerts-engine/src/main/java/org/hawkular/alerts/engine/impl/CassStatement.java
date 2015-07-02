@@ -51,6 +51,7 @@ public class CassStatement {
 
     public static final String INSERT_ACTION;
     public static final String INSERT_ACTION_PLUGIN;
+    public static final String INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String INSERT_ALERT;
     public static final String INSERT_ALERT_TRIGGER;
     public static final String INSERT_ALERT_CTIME;
@@ -71,6 +72,7 @@ public class CassStatement {
     public static final String SELECT_ACTIONS_ALL;
     public static final String SELECT_ACTIONS_BY_TENANT;
     public static final String SELECT_ACTION_PLUGIN;
+    public static final String SELECT_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String SELECT_ACTION_PLUGINS;
     public static final String SELECT_ACTIONS_PLUGIN;
     public static final String SELECT_ALERT_CTIME_END;
@@ -106,6 +108,7 @@ public class CassStatement {
 
     public static final String UPDATE_ACTION;
     public static final String UPDATE_ACTION_PLUGIN;
+    public static final String UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String UPDATE_ALERT;
     public static final String UPDATE_DAMPENING_ID;
     public static final String UPDATE_TAGS_TRIGGERS;
@@ -149,6 +152,9 @@ public class CassStatement {
 
         INSERT_ACTION_PLUGIN = "INSERT INTO " + keyspace + ".action_plugins "
                 + "(actionPlugin, properties) VALUES (?, ?) ";
+
+        INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES = "INSERT INTO " + keyspace + ".action_plugins "
+                + "(actionPlugin, properties, defaultProperties) VALUES (?, ?, ?) ";
 
         INSERT_ALERT = "INSERT INTO " + keyspace + ".alerts " + "(tenantId, alertId, payload) VALUES (?, ?, ?) ";
 
@@ -211,6 +217,9 @@ public class CassStatement {
                 + "WHERE tenantId = ? ";
 
         SELECT_ACTION_PLUGIN = "SELECT properties FROM " + keyspace + ".action_plugins " + "WHERE actionPlugin = ? ";
+
+        SELECT_ACTION_PLUGIN_DEFAULT_PROPERTIES = "SELECT defaultProperties FROM " + keyspace + ".action_plugins "
+                + "WHERE actionPlugin = ? ";
 
         SELECT_ACTION_PLUGINS = "SELECT actionPlugin FROM " + keyspace + ".action_plugins";
 
@@ -345,6 +354,9 @@ public class CassStatement {
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
 
         UPDATE_ACTION_PLUGIN = "UPDATE " + keyspace + ".action_plugins SET properties = ? WHERE actionPlugin = ? ";
+
+        UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES = "UPDATE " + keyspace + ".action_plugins " +
+                "SET properties = ?, defaultProperties = ? WHERE actionPlugin = ? ";
 
         UPDATE_ALERT = "UPDATE " + keyspace + ".alerts SET payload = ? WHERE tenantId = ? AND alertId = ? ";
 
