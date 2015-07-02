@@ -17,7 +17,8 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -26,10 +27,10 @@
     <version>0.3.0.Final-SNAPSHOT</version>
   </parent>
 
-  <artifactId>hawkular-alerts-metrics</artifactId>
-  <packaging>jar</packaging>
+  <artifactId>hawkular-alerter-metrics</artifactId>
+  <packaging>war</packaging>
 
-  <name>Hawkular Alerts External Metrics Evaluator</name>
+  <name>Hawkular External Alerter: Metrics</name>
 
   <dependencies>
 
@@ -84,6 +85,77 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-all</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.groovy.modules.http-builder</groupId>
+      <artifactId>http-builder</artifactId>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/external/*ITest*</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- ITests require a running server with metrics, alerts and the external alerter running -->
+    <profile>
+      <id>itest</id>
+      <properties>
+        <!-- IMPORTANT: The port must be the port offset + 8080. -->
+        <hawkular.host>127.0.0.1</hawkular.host>
+        <hawkular.port>8080</hawkular.port>
+        <hawkular.path>/hawkular/</hawkular.path>
+        <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
+        <hawkular.base-uri-alerts>${hawkular.base-uri}/alerts/</hawkular.base-uri-alerts>
+        <hawkular.base-uri-metrics>${hawkular.base-uri}/metrics/</hawkular.base-uri-metrics>
+        <!-- IMPORTANT: The management port must be the port offset + 9990. -->
+        <wildfly.management.port>11887</wildfly.management.port>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>**/metrics/*Test*</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*ITest*</include>
+              </includes>
+              <systemPropertyVariables>
+                <hawkular.host>${hawkular.host}</hawkular.host>
+                <hawkular.port>${hawkular.port}</hawkular.port>
+                <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
+              </systemPropertyVariables>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

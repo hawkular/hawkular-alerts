@@ -73,10 +73,10 @@ public class Manager {
     @Inject
     private MetricsService metrics;
 
-    @EJB
+    @EJB(mappedName = "java:global/hawkular-alerts-rest/CassDefinitionsServiceImpl")
     private DefinitionsService definitions;
 
-    @EJB
+    @EJB(mappedName = "java:global/hawkular-alerts-rest/CassAlertsServiceImpl")
     private AlertsService alerts;
 
     @PostConstruct
