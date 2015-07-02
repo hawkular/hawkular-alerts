@@ -51,6 +51,7 @@ public class CassStatement {
 
     public static final String INSERT_ACTION;
     public static final String INSERT_ACTION_PLUGIN;
+    public static final String INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String INSERT_ALERT;
     public static final String INSERT_ALERT_TRIGGER;
     public static final String INSERT_ALERT_CTIME;
@@ -62,7 +63,6 @@ public class CassStatement {
     public static final String INSERT_CONDITION_THRESHOLD;
     public static final String INSERT_CONDITION_THRESHOLD_RANGE;
     public static final String INSERT_DAMPENING;
-    public static final String INSERT_DEFAULT_PROPERTIES_ACTION_PLUGIN;
     public static final String INSERT_TAG;
     public static final String INSERT_TAGS_TRIGGERS;
     public static final String INSERT_TRIGGER;
@@ -72,6 +72,7 @@ public class CassStatement {
     public static final String SELECT_ACTIONS_ALL;
     public static final String SELECT_ACTIONS_BY_TENANT;
     public static final String SELECT_ACTION_PLUGIN;
+    public static final String SELECT_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String SELECT_ACTION_PLUGINS;
     public static final String SELECT_ACTIONS_PLUGIN;
     public static final String SELECT_ALERT_CTIME_END;
@@ -89,7 +90,6 @@ public class CassStatement {
     public static final String SELECT_DAMPENING_ID;
     public static final String SELECT_DAMPENINGS_ALL;
     public static final String SELECT_DAMPENINGS_BY_TENANT;
-    public static final String SELECT_DEFAULT_PROPERTIES_ACTION_PLUGIN;
     public static final String SELECT_TAGS;
     public static final String SELECT_TAGS_BY_CATEGORY;
     public static final String SELECT_TAGS_BY_CATEGORY_AND_NAME;
@@ -108,9 +108,9 @@ public class CassStatement {
 
     public static final String UPDATE_ACTION;
     public static final String UPDATE_ACTION_PLUGIN;
+    public static final String UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String UPDATE_ALERT;
     public static final String UPDATE_DAMPENING_ID;
-    public static final String UPDATE_DEFAULT_PROPERTIES_ACTION_PLUGIN;
     public static final String UPDATE_TAGS_TRIGGERS;
     public static final String UPDATE_TRIGGER;
 
@@ -153,6 +153,9 @@ public class CassStatement {
         INSERT_ACTION_PLUGIN = "INSERT INTO " + keyspace + ".action_plugins "
                 + "(actionPlugin, properties) VALUES (?, ?) ";
 
+        INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES = "INSERT INTO " + keyspace + ".action_plugins "
+                + "(actionPlugin, properties, defaultProperties) VALUES (?, ?, ?) ";
+
         INSERT_ALERT = "INSERT INTO " + keyspace + ".alerts " + "(tenantId, alertId, payload) VALUES (?, ?, ?) ";
 
         INSERT_ALERT_TRIGGER = "INSERT INTO " + keyspace + ".alerts_triggers "
@@ -192,9 +195,6 @@ public class CassStatement {
                 + "(triggerId, triggerMode, type, evalTrueSetting, evalTotalSetting, evalTimeSetting, "
                 + "dampeningId, tenantId) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ";
 
-        INSERT_DEFAULT_PROPERTIES_ACTION_PLUGIN = "INSERT INTO " + keyspace + ".action_plugins "
-                + "(actionPlugin, properties, defaultProperties) VALUES (?, ?, ?) ";
-
         INSERT_TAG = "INSERT INTO " + keyspace + ".tags "
                 + "(tenantId, triggerId, category, name, visible) VALUES (?, ?, ?, ?, ?) ";
 
@@ -217,6 +217,9 @@ public class CassStatement {
                 + "WHERE tenantId = ? ";
 
         SELECT_ACTION_PLUGIN = "SELECT properties FROM " + keyspace + ".action_plugins " + "WHERE actionPlugin = ? ";
+
+        SELECT_ACTION_PLUGIN_DEFAULT_PROPERTIES = "SELECT defaultProperties FROM " + keyspace + ".action_plugins "
+                + "WHERE actionPlugin = ? ";
 
         SELECT_ACTION_PLUGINS = "SELECT actionPlugin FROM " + keyspace + ".action_plugins";
 
@@ -279,9 +282,6 @@ public class CassStatement {
                 + "evalTotalSetting, evalTimeSetting, dampeningId "
                 + "FROM " + keyspace + ".dampenings "
                 + "WHERE tenantId = ? ";
-
-        SELECT_DEFAULT_PROPERTIES_ACTION_PLUGIN = "SELECT defaultProperties FROM " + keyspace + ".action_plugins "
-                + "WHERE actionPlugin = ? ";
 
         SELECT_TAGS = "SELECT tenantId, triggerId, category, name, visible "
                 + "FROM " + keyspace + ".tags "
@@ -355,14 +355,14 @@ public class CassStatement {
 
         UPDATE_ACTION_PLUGIN = "UPDATE " + keyspace + ".action_plugins SET properties = ? WHERE actionPlugin = ? ";
 
+        UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES = "UPDATE " + keyspace + ".action_plugins " +
+                "SET properties = ?, defaultProperties = ? WHERE actionPlugin = ? ";
+
         UPDATE_ALERT = "UPDATE " + keyspace + ".alerts SET payload = ? WHERE tenantId = ? AND alertId = ? ";
 
         UPDATE_DAMPENING_ID = "UPDATE " + keyspace + ".dampenings "
                 + "SET type = ?, evalTrueSetting = ?, evalTotalSetting = ?, evalTimeSetting = ? "
                 + "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? AND dampeningId = ? ";
-
-        UPDATE_DEFAULT_PROPERTIES_ACTION_PLUGIN = "UPDATE " + keyspace + ".action_plugins " +
-                "SET properties = ?, defaultProperties = ? WHERE actionPlugin = ? ";
 
         UPDATE_TAGS_TRIGGERS = "UPDATE " + keyspace + ".tags_triggers SET triggers = ? "
                 + "WHERE tenantId = ? AND name = ? ";

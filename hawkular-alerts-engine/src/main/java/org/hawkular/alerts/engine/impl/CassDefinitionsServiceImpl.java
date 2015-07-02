@@ -1623,14 +1623,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement insertDefaulPropertiesActionPlugin = CassStatement.get(session,
-                CassStatement.INSERT_DEFAULT_PROPERTIES_ACTION_PLUGIN);
-        if (insertDefaulPropertiesActionPlugin == null) {
+        PreparedStatement insertActionPluginDefaulProperties = CassStatement.get(session,
+                CassStatement.INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES);
+        if (insertActionPluginDefaulProperties == null) {
             throw new RuntimeException("insertDefaulPropertiesActionPlugin PreparedStatement is null");
         }
         try {
             Set<String> properties = defaultProperties.keySet();
-            session.execute(insertDefaulPropertiesActionPlugin.bind(actionPlugin, properties, defaultProperties));
+            session.execute(insertActionPluginDefaulProperties.bind(actionPlugin, properties, defaultProperties));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -1692,7 +1692,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new RuntimeException("Cassandra session is null");
         }
         PreparedStatement updateDefaultPropertiesActionPlugin = CassStatement.get(session,
-                CassStatement.UPDATE_DEFAULT_PROPERTIES_ACTION_PLUGIN);
+                CassStatement.UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES);
         if (updateDefaultPropertiesActionPlugin == null) {
             throw new RuntimeException("updateDefaultPropertiesActionPlugin PreparedStatement is null");
         }
@@ -1762,14 +1762,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectDefaultPropertiesActionPlugin = CassStatement.get(session,
-                CassStatement.SELECT_DEFAULT_PROPERTIES_ACTION_PLUGIN);
-        if (selectDefaultPropertiesActionPlugin == null) {
+        PreparedStatement selectActionPluginDefaultProperties = CassStatement.get(session,
+                CassStatement.SELECT_ACTION_PLUGIN_DEFAULT_PROPERTIES);
+        if (selectActionPluginDefaultProperties == null) {
             throw new RuntimeException("selectDefaultPropertiesActionPlugin PreparedStatement is null");
         }
         Map<String, String> defaultProperties = null;
         try {
-            ResultSet rsActionPlugin = session.execute(selectDefaultPropertiesActionPlugin.bind(actionPlugin));
+            ResultSet rsActionPlugin = session.execute(selectActionPluginDefaultProperties.bind(actionPlugin));
             Iterator<Row> itActionPlugin = rsActionPlugin.iterator();
             if (itActionPlugin.hasNext()) {
                 Row row = itActionPlugin.next();
