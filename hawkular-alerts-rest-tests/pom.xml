@@ -28,7 +28,7 @@
 
   <artifactId>hawkular-alerts-rest-tests</artifactId>
 
-  <name>Hawkular Alerts REST Api integration tests</name>
+  <name>Hawkular Alerts REST integration tests</name>
 
   <dependencies>
 
@@ -160,11 +160,10 @@
         <wildfly.port.offset>1897</wildfly.port.offset>
         <!-- IMPORTANT: The management port must be the port offset + 9990. -->
         <wildfly.management.port>11887</wildfly.management.port>
-        <hawkular.home>${project.build.directory}/hawkular</hawkular.home>
-        <hawkular.wildfly>${hawkular.home}/wildfly-${version.org.wildfly}</hawkular.wildfly>
-        <hawkular.configuration>${hawkular.wildfly}/standalone/configuration</hawkular.configuration>
-        <hawkular.data>${hawkular.wildfly}/standalone/data</hawkular.data>
-        <hawkular.deployments>${hawkular.wildfly}/modules/org/hawkular/nest/main/deployments</hawkular.deployments>
+        <hawkular.home>${project.build.directory}</hawkular.home>
+        <hawkular.configuration>${hawkular.home}/hawkular-${version.org.hawkular}/standalone/configuration</hawkular.configuration>
+        <hawkular.data>${hawkular.home}/hawkular-${version.org.hawkular}/standalone/data</hawkular.data>
+        <hawkular.deployments>${hawkular.home}/hawkular-${version.org.hawkular}/modules/org/hawkular/nest/main/deployments</hawkular.deployments>
       </properties>
       <dependencies>
         <dependency>
@@ -205,11 +204,12 @@
                   <artifactItems>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-ear</artifactId>
-                      <type>ear</type>
+                      <artifactId>hawkular-alerts-rest</artifactId>
+                      <version>${project.version}</version>
+                      <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-alerts-ear.ear</destFileName>
+                      <destFileName>hawkular-alerts-rest.war</destFileName>
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
@@ -228,6 +228,18 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
             <executions>
+              <execution>
+                <id>delete-old-hawkular-alert-ears</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <delete file="${hawkular.deployments}/hawkular-alerts-ear.ear"/>
+                  </target>
+                </configuration>
+              </execution>
               <execution>
                 <id>rename-hawkular-realm</id>
                 <phase>pre-integration-test</phase>
@@ -302,7 +314,7 @@
             <groupId>org.wildfly.plugins</groupId>
             <artifactId>wildfly-maven-plugin</artifactId>
             <configuration>
-              <jboss-home>${hawkular.wildfly}</jboss-home>
+              <jboss-home>${hawkular.home}/hawkular-${version.org.hawkular}</jboss-home>
             </configuration>
             <executions>
               <execution>
