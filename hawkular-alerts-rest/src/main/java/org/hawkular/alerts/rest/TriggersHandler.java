@@ -37,6 +37,7 @@ import org.hawkular.accounts.api.model.Persona;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
@@ -556,6 +557,8 @@ public class TriggersHandler {
                     condition = objectMapper.readValue(jsonCondition, ThresholdCondition.class);
                 } else if (conditionType.equals(Condition.Type.RANGE)) {
                     condition = objectMapper.readValue(jsonCondition, ThresholdRangeCondition.class);
+                } else if (conditionType.equals(Condition.Type.EXTERNAL)) {
+                    condition = objectMapper.readValue(jsonCondition, ExternalCondition.class);
                 }
                 if (condition == null) {
                     return ResponseUtil.badRequest("Bad json condition");
@@ -616,6 +619,8 @@ public class TriggersHandler {
                     condition = objectMapper.readValue(jsonCondition, ThresholdCondition.class);
                 } else if (conditionType.equals(Condition.Type.RANGE)) {
                     condition = objectMapper.readValue(jsonCondition, ThresholdRangeCondition.class);
+                } else if (conditionType.equals(Condition.Type.EXTERNAL)) {
+                    condition = objectMapper.readValue(jsonCondition, ExternalCondition.class);
                 }
                 if (condition == null) {
                     return ResponseUtil.badRequest("Bad json condition");

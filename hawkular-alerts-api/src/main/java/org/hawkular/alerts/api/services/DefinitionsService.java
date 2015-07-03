@@ -25,6 +25,7 @@ import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 
 /**
  * A interface used to create new triggers, conditions and init new notifiers.
@@ -90,6 +91,13 @@ public interface DefinitionsService {
      */
     Collection<Trigger> getAllTriggers() throws Exception;
 
+    /**
+     * Get all stored Triggers for all Tenants with a specific Tag
+     * @param category The tag category, ignored if null
+     * @param name The tag name, required
+     * @throws Exception on any problem
+     */
+    Collection<Trigger> getAllTriggersByTag(String category, String name) throws Exception;
 
     /**
      * Used to generate an explicit Trigger from a Tokenized Trigger.  The dataIdMap replaces the tokens in the
@@ -136,7 +144,6 @@ public interface DefinitionsService {
      * @throws Exception on any problem
      */
     Collection<Dampening> getDampenings(String tenantId) throws Exception;
-
 
     /*
         CRUD interface for Condition
@@ -384,5 +391,5 @@ public interface DefinitionsService {
      */
     List<Tag> getTriggerTags(String tenantId, String triggerId, String category) throws Exception;
 
-    void registerListener(DefinitionsListener listener);
+    void registerListener(DefinitionsListener listener, EventType eventType, EventType... eventTypes);
 }

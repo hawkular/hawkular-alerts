@@ -67,11 +67,9 @@ public class CacheManager {
         definitions.registerListener(new DefinitionsListener() {
             @Override
             public void onChange(DefinitionsEvent event) {
-                if (DefinitionsEvent.EventType.CONDITION_CHANGE == event.getEventType()) {
-                    updateActiveIds();
-                }
+                updateActiveIds();
             }
-        });
+        }, DefinitionsEvent.EventType.CONDITION_CHANGE);
     }
 
     public Set<String> getActiveDataIds() {

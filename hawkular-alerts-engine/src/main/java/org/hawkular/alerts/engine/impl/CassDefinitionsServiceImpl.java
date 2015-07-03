@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -38,6 +39,7 @@ import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
@@ -46,6 +48,7 @@ import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerTemplate;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
+import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
@@ -77,7 +80,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private String keyspace;
     private boolean initialized = false;
 
-    private List<DefinitionsListener> listeners = new ArrayList<>();
+    private Map<DefinitionsListener, Set<EventType>> listeners = new HashMap<>();
 
     @EJB
     AlertsEngine alertsEngine;
@@ -448,6 +451,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
+
+        notifyListeners(DefinitionsEvent.EventType.TRIGGER_CREATE);
     }
 
     private void insertTriggerActions(Trigger trigger) throws Exception {
@@ -494,6 +499,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
+
+        notifyListeners(DefinitionsEvent.EventType.TRIGGER_REMOVE);
     }
 
     @Override
@@ -528,7 +535,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(trigger.getTenantId(), trigger.getId());
         }
 
-        notifyListeners(DefinitionsEvent.EventType.TRIGGER_CHANGE);
+        notifyListeners(DefinitionsEvent.EventType.TRIGGER_UPDATE);
 
         return trigger;
     }
@@ -599,6 +606,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return triggers;
     }
 
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Trigger> getAllTriggers() throws Exception {
         if (session == null) {
@@ -621,6 +629,62 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
         return triggers;
+    }
+
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
+    @Override
+    public Collection<Trigger> getAllTriggersByTag(String category, String name) throws Exception {
+        if (isEmpty(name)) {
+            throw new IllegalArgumentException("Name must be not null");
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
+        }
+        PreparedStatement selectTagsTriggersAllByTag = isEmpty(category) ?
+                CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_ALL_BY_NAME) :
+                CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_ALL_BY_CATEGORY_AND_NAME);
+        if (selectTagsTriggersAllByTag == null) {
+            throw new RuntimeException("selectTagsTriggersAllByTag PreparedStatement is null");
+        }
+        Map<String, Set<String>> tenantTriggerIdsMap = new HashMap<>();
+        try {
+            BoundStatement bs = isEmpty(category) ?
+                    selectTagsTriggersAllByTag.bind(name) :
+                    selectTagsTriggersAllByTag.bind(category, name);
+            ResultSet rsTriggerIds = session.execute(bs);
+            for (Row row : rsTriggerIds) {
+                String tenantId = row.getString("tenantId");
+                Set<String> triggerIds = row.getSet("triggers", String.class);
+                Set<String> storedTriggerIds = tenantTriggerIdsMap.get(tenantId);
+                if (null != storedTriggerIds) {
+                    triggerIds.addAll(storedTriggerIds);
+                }
+                tenantTriggerIdsMap.put(tenantId, triggerIds);
+            }
+
+            // Now, generate a cross-tenant result set if Triggers using the tenantIds and triggerIds
+            List<Trigger> triggers = new ArrayList<>();
+            PreparedStatement selectTrigger = CassStatement.get(session, CassStatement.SELECT_TRIGGER);
+            for (Map.Entry<String, Set<String>> entry : tenantTriggerIdsMap.entrySet()) {
+                String tenantId = entry.getKey();
+                Set<String> triggerIds = entry.getValue();
+                List<ResultSetFuture> futures = triggerIds.stream().map(triggerId ->
+                        session.executeAsync(selectTrigger.bind(tenantId, triggerId)))
+                        .collect(Collectors.toList());
+                List<ResultSet> rsTriggers = Futures.allAsList(futures).get();
+                rsTriggers.stream().forEach(r -> {
+                    for (Row row : r) {
+                        triggers.add(mapTrigger(row));
+                    }
+                });
+            }
+
+            return triggers;
+
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
     }
 
     private void selectTriggerActions(Trigger trigger) throws Exception {
@@ -928,6 +992,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return dampenings;
     }
 
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Dampening> getAllDampenings() throws Exception {
         if (session == null) {
@@ -1106,6 +1171,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         PreparedStatement insertConditionAvailability = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_AVAILABILITY);
         PreparedStatement insertConditionCompare = CassStatement.get(session, CassStatement.INSERT_CONDITION_COMPARE);
+        PreparedStatement insertConditionExternal = CassStatement
+                .get(session, CassStatement.INSERT_CONDITION_EXTERNAL);
         PreparedStatement insertConditionString = CassStatement.get(session, CassStatement.INSERT_CONDITION_STRING);
         PreparedStatement insertConditionThreshold = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_THRESHOLD);
@@ -1113,6 +1180,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 CassStatement.INSERT_CONDITION_THRESHOLD_RANGE);
         if (insertConditionAvailability == null
                 || insertConditionCompare == null
+                || insertConditionExternal == null
                 || insertConditionString == null
                 || insertConditionThreshold == null
                 || insertConditionThresholdRange == null) {
@@ -1154,6 +1222,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                             cCond.getConditionSetIndex(), cCond.getConditionId(), cCond.getDataId(),
                             cCond.getOperator().name(), cCond.getData2Id(), cCond.getData2Multiplier())));
 
+                } else if (cond instanceof ExternalCondition) {
+
+                    ExternalCondition eCond = (ExternalCondition) cond;
+                    futures.add(session.executeAsync(insertConditionExternal.bind(eCond.getTenantId(), eCond
+                            .getTriggerId(), eCond.getTriggerMode().name(), eCond.getConditionSetSize(),
+                            eCond.getConditionSetIndex(), eCond.getConditionId(), eCond.getDataId(),
+                            eCond.getSystemId(), eCond.getExpression())));
+
                 } else if (cond instanceof StringCondition) {
 
                     StringCondition sCond = (StringCondition) cond;
@@ -1178,6 +1254,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                             rCond.getConditionSetIndex(), rCond.getConditionId(), rCond.getDataId(),
                             rCond.getOperatorLow().name(), rCond.getOperatorHigh().name(), rCond.getThresholdLow(),
                             rCond.getThresholdHigh(), rCond.isInRange())));
+
+                } else {
+                    throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
                 }
 
                 // generate the automatic dataId tags for search
@@ -1294,14 +1373,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             tags.add(tag);
         }
         return tags;
-    }
-
-    private void notifyListeners(DefinitionsEvent.EventType eventType) {
-        DefinitionsEvent de = new DefinitionsEvent(eventType);
-        for (DefinitionsListener dl : listeners) {
-            log.debugf("Notified Listener %s", eventType.name());
-            dl.onChange(de);
-        }
     }
 
     private void removeConditions(String tenantId, String triggerId, Trigger.Mode triggerMode) throws Exception {
@@ -1462,6 +1533,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return conditions;
     }
 
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Condition> getAllConditions() throws Exception {
         if (session == null) {
@@ -1519,72 +1591,91 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         Condition condition = null;
         String type = row.getString("type");
         if (type != null && !type.isEmpty()) {
-            if (type.equals(Condition.Type.AVAILABILITY.name())) {
-                AvailabilityCondition aCondition = new AvailabilityCondition();
-                aCondition.setTenantId(row.getString("tenantId"));
-                aCondition.setTriggerId(row.getString("triggerId"));
-                aCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
-                aCondition.setConditionSetSize(row.getInt("conditionSetSize"));
-                aCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
-                aCondition.setDataId(row.getString("dataId"));
-                aCondition.setOperator(AvailabilityCondition.Operator.valueOf(row.getString("operator")));
-                condition = aCondition;
-            } else if (type.equals(Condition.Type.COMPARE.name())) {
-                CompareCondition cCondition = new CompareCondition();
-                cCondition.setTenantId(row.getString("tenantId"));
-                cCondition.setTriggerId(row.getString("triggerId"));
-                cCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
-                cCondition.setConditionSetSize(row.getInt("conditionSetSize"));
-                cCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
-                cCondition.setDataId(row.getString("dataId"));
-                cCondition.setOperator(CompareCondition.Operator.valueOf(row.getString("operator")));
-                cCondition.setData2Id(row.getString("data2Id"));
-                cCondition.setData2Multiplier(row.getDouble("data2Multiplier"));
-                condition = cCondition;
-            } else if (type.equals(Condition.Type.STRING.name())) {
-                StringCondition sCondition = new StringCondition();
-                sCondition.setTenantId(row.getString("tenantId"));
-                sCondition.setTriggerId(row.getString("triggerId"));
-                sCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
-                sCondition.setConditionSetSize(row.getInt("conditionSetSize"));
-                sCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
-                sCondition.setDataId(row.getString("dataId"));
-                sCondition.setOperator(StringCondition.Operator.valueOf(row.getString("operator")));
-                sCondition.setPattern(row.getString("pattern"));
-                sCondition.setIgnoreCase(row.getBool("ignoreCase"));
-                condition = sCondition;
-            } else if (type.equals(Condition.Type.THRESHOLD.name())) {
-                ThresholdCondition tCondition = new ThresholdCondition();
-                tCondition.setTenantId(row.getString("tenantId"));
-                tCondition.setTriggerId(row.getString("triggerId"));
-                tCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
-                tCondition.setConditionSetSize(row.getInt("conditionSetSize"));
-                tCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
-                tCondition.setDataId(row.getString("dataId"));
-                tCondition.setOperator(ThresholdCondition.Operator.valueOf(row.getString("operator")));
-                tCondition.setThreshold(row.getDouble("threshold"));
-                condition = tCondition;
-            } else if (type.equals(Condition.Type.RANGE.name())) {
-                ThresholdRangeCondition rCondition = new ThresholdRangeCondition();
-                rCondition.setTenantId(row.getString("tenantId"));
-                rCondition.setTriggerId(row.getString("triggerId"));
-                rCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
-                rCondition.setConditionSetSize(row.getInt("conditionSetSize"));
-                rCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
-                rCondition.setDataId(row.getString("dataId"));
-                rCondition.setOperatorLow(ThresholdRangeCondition.Operator.valueOf(row.getString
-                        ("operatorLow")));
-                rCondition.setOperatorHigh(ThresholdRangeCondition.Operator.valueOf(row.getString
-                        ("operatorHigh")));
-                rCondition.setThresholdLow(row.getDouble("thresholdLow"));
-                rCondition.setThresholdHigh(row.getDouble("thresholdHigh"));
-                rCondition.setInRange(row.getBool("inRange"));
-                condition = rCondition;
-            } else {
-                log.debugf("Wrong condition type found: " + type);
+            switch (Condition.Type.valueOf(type)) {
+                case AVAILABILITY:
+                    AvailabilityCondition aCondition = new AvailabilityCondition();
+                    aCondition.setTenantId(row.getString("tenantId"));
+                    aCondition.setTriggerId(row.getString("triggerId"));
+                    aCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    aCondition.setConditionSetSize(row.getInt("conditionSetSize"));
+                    aCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
+                    aCondition.setDataId(row.getString("dataId"));
+                    aCondition.setOperator(AvailabilityCondition.Operator.valueOf(row.getString("operator")));
+                    condition = aCondition;
+                    break;
+                case COMPARE:
+                    CompareCondition cCondition = new CompareCondition();
+                    cCondition.setTenantId(row.getString("tenantId"));
+                    cCondition.setTriggerId(row.getString("triggerId"));
+                    cCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    cCondition.setConditionSetSize(row.getInt("conditionSetSize"));
+                    cCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
+                    cCondition.setDataId(row.getString("dataId"));
+                    cCondition.setOperator(CompareCondition.Operator.valueOf(row.getString("operator")));
+                    cCondition.setData2Id(row.getString("data2Id"));
+                    cCondition.setData2Multiplier(row.getDouble("data2Multiplier"));
+                    condition = cCondition;
+                    break;
+                case EXTERNAL:
+                    ExternalCondition eCondition = new ExternalCondition();
+                    eCondition.setTenantId(row.getString("tenantId"));
+                    eCondition.setTriggerId(row.getString("triggerId"));
+                    eCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    eCondition.setConditionSetSize(row.getInt("conditionSetSize"));
+                    eCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
+                    eCondition.setDataId(row.getString("dataId"));
+                    eCondition.setSystemId(row.getString("operator"));
+                    eCondition.setExpression(row.getString("pattern"));
+                    condition = eCondition;
+                    break;
+                case RANGE:
+                    ThresholdRangeCondition rCondition = new ThresholdRangeCondition();
+                    rCondition.setTenantId(row.getString("tenantId"));
+                    rCondition.setTriggerId(row.getString("triggerId"));
+                    rCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    rCondition.setConditionSetSize(row.getInt("conditionSetSize"));
+                    rCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
+                    rCondition.setDataId(row.getString("dataId"));
+                    rCondition.setOperatorLow(ThresholdRangeCondition.Operator.valueOf(row.getString
+                            ("operatorLow")));
+                    rCondition.setOperatorHigh(ThresholdRangeCondition.Operator.valueOf(row.getString
+                            ("operatorHigh")));
+                    rCondition.setThresholdLow(row.getDouble("thresholdLow"));
+                    rCondition.setThresholdHigh(row.getDouble("thresholdHigh"));
+                    rCondition.setInRange(row.getBool("inRange"));
+                    condition = rCondition;
+                    break;
+                case STRING:
+                    StringCondition sCondition = new StringCondition();
+                    sCondition.setTenantId(row.getString("tenantId"));
+                    sCondition.setTriggerId(row.getString("triggerId"));
+                    sCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    sCondition.setConditionSetSize(row.getInt("conditionSetSize"));
+                    sCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
+                    sCondition.setDataId(row.getString("dataId"));
+                    sCondition.setOperator(StringCondition.Operator.valueOf(row.getString("operator")));
+                    sCondition.setPattern(row.getString("pattern"));
+                    sCondition.setIgnoreCase(row.getBool("ignoreCase"));
+                    condition = sCondition;
+                    break;
+                case THRESHOLD:
+                    ThresholdCondition tCondition = new ThresholdCondition();
+                    tCondition.setTenantId(row.getString("tenantId"));
+                    tCondition.setTriggerId(row.getString("triggerId"));
+                    tCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    tCondition.setConditionSetSize(row.getInt("conditionSetSize"));
+                    tCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
+                    tCondition.setDataId(row.getString("dataId"));
+                    tCondition.setOperator(ThresholdCondition.Operator.valueOf(row.getString("operator")));
+                    tCondition.setThreshold(row.getDouble("threshold"));
+                    condition = tCondition;
+                    break;
+                default:
+                    log.debugf("Unexpected condition type found: " + type);
+                    break;
             }
         } else {
-            log.debugf("Wrong condition type: null or empty");
+            log.debugf("Invalid condition type: null or empty");
         }
         return condition;
     }
@@ -1841,6 +1932,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Map<String, Map<String, Set<String>>> getAllActions() throws Exception {
         if (session == null) {
@@ -2029,8 +2121,21 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void registerListener(DefinitionsListener listener) {
-        listeners.add(listener);
+    public void registerListener(DefinitionsListener listener, EventType eventType, EventType... eventTypes) {
+        EnumSet<EventType> types = EnumSet.of(eventType, eventTypes);
+        log.debugf("Registering listeners %s for event types", listener, types);
+        listeners.put(listener, types);
+    }
+
+    private void notifyListeners(EventType eventType) {
+        DefinitionsEvent de = new DefinitionsEvent(eventType);
+        log.debugf("Notifying applicable listeners %s of event %s", listeners, eventType.name());
+        for (Map.Entry<DefinitionsListener, Set<EventType>> me : listeners.entrySet()) {
+            if (me.getValue().contains(eventType)) {
+                log.debugf("Notified Listener %s", eventType.name());
+                me.getKey().onChange(de);
+            }
+        }
     }
 
     private boolean isEmpty(Trigger trigger) {

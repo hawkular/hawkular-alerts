@@ -14,33 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.api.services;
+package org.hawkular.alerts.external.log;
+
+import org.jboss.logging.BasicLogger;
+import org.jboss.logging.Logger;
+import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.logging.annotations.ValidIdRange;
 
 /**
- * Immutable definitions event.
+ * Common log for INFO, WARN, ERROR and FATAL messages.
  *
- * @author jay shaughnessy
- * @author lucas ponce
+ * @author Lucas Ponce
  */
-public class DefinitionsEvent {
-
-    public enum EventType {
-        CONDITION_CHANGE,
-        DAMPENING_CHANGE,
-        TRIGGER_CREATE,
-        TRIGGER_REMOVE,
-        TRIGGER_UPDATE
-    };
-
-    private EventType eventType;
-
-    public DefinitionsEvent(EventType eventType) {
-        super();
-        this.eventType = eventType;
-    }
-
-    public EventType getEventType() {
-        return eventType;
-    }
+@MessageLogger(projectCode = "HAWKALERT")
+@ValidIdRange(min = 250000, max = 259999)
+public interface MsgLogger extends BasicLogger {
+    MsgLogger LOGGER = Logger.getMessageLogger(MsgLogger.class, MsgLogger.class.getPackage().getName());
 
 }

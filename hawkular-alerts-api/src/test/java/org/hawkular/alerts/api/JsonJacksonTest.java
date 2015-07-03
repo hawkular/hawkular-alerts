@@ -34,6 +34,8 @@ import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.CompareConditionEval;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.condition.ExternalCondition;
+import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.StringConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -101,15 +103,15 @@ public class JsonJacksonTest {
         assertTrue(!output.contains("evalSets"));
 
         AvailabilityCondition aCond = new AvailabilityCondition("trigger-test",
-                                                                "Default",
-                                                                AvailabilityCondition.Operator.UP);
+                "Default",
+                AvailabilityCondition.Operator.UP);
         Availability aData = new Availability("Metric-test", 1, AvailabilityType.UP);
         AvailabilityConditionEval aEval = new AvailabilityConditionEval(aCond, aData);
 
         ThresholdCondition tCond = new ThresholdCondition("trigger-test",
-                                                          "Default",
-                                                          ThresholdCondition.Operator.LTE,
-                                                          50.0);
+                "Default",
+                ThresholdCondition.Operator.LTE,
+                50.0);
         NumericData tData = new NumericData("Metric-test2", 2, 25.5);
         ThresholdConditionEval tEval = new ThresholdConditionEval(tCond, tData);
 
@@ -638,6 +640,46 @@ public class JsonJacksonTest {
         assertTrue(eval.getCondition().getThresholdLow() == 10.5);
         assertTrue(eval.getCondition().getThresholdHigh() == 20.5);
         assertTrue(eval.getValue() == 1.0);
+    }
+
+    @Test
+    public void jsonExternalConditionTest() throws Exception {
+        String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\","
+                + "\"type\":\"EXTERNAL\", \"conditionId\":\"test-FIRING-1-1\","
+                + "\"dataId\":\"Default\",\"systemId\":\"HawkularMetrics\","
+                + "\"expression\":\"metric:5:avg(foo > 100.5)\"}";
+        ExternalCondition condition = objectMapper.readValue(str, ExternalCondition.class);
+
+        assertTrue(condition.getType().equals(Condition.Type.EXTERNAL));
+        assertTrue(condition.getTenantId().equals("test"));
+        assertTrue(condition.getTriggerId().equals("test"));
+        assertTrue(condition.getTriggerMode().equals(Mode.FIRING));
+        assertTrue(condition.getDataId().equals("Default"));
+        assertTrue(condition.getSystemId().equals("HawkularMetrics"));
+        assertTrue(condition.getExpression().equals("metric:5:avg(foo > 100.5)"));
+
+        String output = objectMapper.writeValueAsString(condition);
+    }
+
+    @Test
+    public void jsonExternalConditionEvalTest() throws Exception {
+        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1," +
+                "\"condition\":" +
+                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
+                "\"dataId\":\"Default\",\"systemId\":\"HawkularMetrics\"," +
+                "\"expression\":\"metric:5:avg(foo > 100.5)\"}," +
+                "\"value\":\"foo\"}";
+        ExternalConditionEval eval = objectMapper.readValue(str, ExternalConditionEval.class);
+
+        assertTrue(eval.getEvalTimestamp() == 1);
+        assertTrue(eval.getDataTimestamp() == 1);
+        assertTrue(eval.getCondition().getType().equals(Condition.Type.EXTERNAL));
+        assertTrue(eval.getCondition().getTriggerId().equals("test"));
+        assertTrue(eval.getCondition().getTriggerMode().equals(Mode.FIRING));
+        assertTrue(eval.getCondition().getDataId().equals("Default"));
+        assertTrue(eval.getCondition().getSystemId().equals("HawkularMetrics"));
+        assertTrue(eval.getCondition().getExpression().equals("metric:5:avg(foo > 100.5)"));
+        assertTrue(eval.getValue().equals("foo"));
     }
 
     @Test

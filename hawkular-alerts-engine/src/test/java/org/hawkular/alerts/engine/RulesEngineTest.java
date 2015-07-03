@@ -36,6 +36,8 @@ import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.CompareConditionEval;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.condition.ExternalCondition;
+import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.StringConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -890,6 +892,42 @@ public class RulesEngineTest {
         v = e.getValue();
         assertEquals(AvailabilityType.UNAVAILABLE, v);
         assertEquals("AvailData-01", e.getCondition().getDataId());
+    }
+
+    @Test
+    public void ExternalTest() {
+        Trigger t1 = new Trigger("trigger-1", "External-Metrics");
+        ExternalCondition t1c1 = new ExternalCondition("trigger-1", Trigger.Mode.FIRING, 1, 1,
+                "ExternalData-01", "HawkularMetrics", "metric:5:avg(foo > 100.5)");
+
+        datums.add(new StringData("ExternalData-01", 1, "Ignored"));
+
+        // default dampening
+
+        t1.setEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+
+        rulesEngine.addData(datums);
+
+        rulesEngine.fire();
+
+        assertEquals(alerts.toString(), 1, alerts.size());
+
+        Alert a = alerts.get(0);
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
+        Set<ConditionEval> evals = a.getEvalSets().get(0);
+        assertEquals(1, evals.size());
+        ExternalConditionEval e = (ExternalConditionEval) evals.iterator().next();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
+        String v = e.getValue();
+        assertEquals("Ignored", v);
+        assertEquals("ExternalData-01", e.getCondition().getDataId());
     }
 
     @Test
