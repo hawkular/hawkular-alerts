@@ -186,6 +186,40 @@ public class AlertsHandler {
         }
     }
 
+    @GET
+    @Path("/ack/{alertId}")
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Set one alert Acknowledged")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Alert Acknowledged invoked successfully"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public Response ackAlert(@ApiParam(required = true, value = "alertId to Ack")
+            @PathParam("alertId")
+            final String alertId,
+            @ApiParam(required = false, value = "user acknowledging the alerts")
+            @QueryParam("ackBy")
+            final String ackBy,
+            @ApiParam(required = false, value = "additional notes asscoiated with the acknowledgement")
+            @QueryParam("ackNotes")
+            final String ackNotes) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
+        try {
+            if (!isEmpty(alertId)) {
+                alertsService.ackAlerts(persona.getId(), Arrays.asList(alertId), ackBy, ackNotes);
+                log.debugf("AlertId: %s ", alertId);
+                return ResponseUtil.ok();
+            } else {
+                return ResponseUtil.badRequest("AlertId required for ack");
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
     @PUT
     @Path("/ack")
     @Consumes(APPLICATION_JSON)
@@ -213,6 +247,41 @@ public class AlertsHandler {
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertIds required for ack");
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/resolve/{alertId}")
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Set one alert Resolved")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Alerts Resolution invoked successfully."),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public Response resolveAlert(@ApiParam(required = true, value = "alertId to set Resolved")
+            @PathParam("alertId")
+            final String alertId,
+            @ApiParam(required = false, value = "user resolving the alerts")
+            @QueryParam("resolvedBy")
+            final String resolvedBy,
+            @ApiParam(required = false, value = "additional notes asscoiated with the resolution")
+            @QueryParam("resolvedNotes")
+            final String resolvedNotes) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
+        try {
+            if (!isEmpty(alertId)) {
+                alertsService.resolveAlerts(persona.getId(), Arrays.asList(alertId), resolvedBy,
+                        resolvedNotes, null);
+                log.debugf("AlertId: %s ", alertId);
+                return ResponseUtil.ok();
+            } else {
+                return ResponseUtil.badRequest("AlertsId required for resolve");
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);

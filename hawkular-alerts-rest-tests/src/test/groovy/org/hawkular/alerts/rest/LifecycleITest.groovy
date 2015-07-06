@@ -15,26 +15,19 @@
  * limitations under the License.
  */
 package org.hawkular.alerts.rest
-
-import java.util.List
-
 import org.hawkular.alerts.api.model.Severity
+import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.data.Availability
 import org.hawkular.alerts.api.model.data.MixedData
-import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.bus.messages.AlertData
 import org.hawkular.bus.restclient.RestClient
+import org.junit.FixMethodOrder
+import org.junit.Test
 
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
 import static org.hawkular.alerts.api.model.trigger.Trigger.Mode
 import static org.junit.Assert.assertEquals
-
-import org.junit.FixMethodOrder
-import org.junit.Test
-
 import static org.junit.runners.MethodSorters.NAME_ASCENDING
-
 /**
  * Alerts REST tests.
  *
@@ -264,7 +257,6 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("AUTO", resp.data[0].resolvedBy)
     }
 
-
     @Test
     void t03_manualResolutionTest() {
         String start = String.valueOf(System.currentTimeMillis());
@@ -484,4 +476,102 @@ class LifecycleITest extends AbstractITestBase {
         println(resp.headers)
 
     }
+
+    @Test
+    void t06_manualAckAndResolutionTest() {
+        String start = String.valueOf(System.currentTimeMillis());
+
+        // CREATE the trigger
+        def resp = client.get(path: "")
+        assert resp.status == 200 || resp.status == 204 : resp.status
+
+        Trigger testTrigger = new Trigger("test-manual2-trigger", "test-manual2-trigger");
+
+        // remove if it exists
+        resp = client.delete(path: "triggers/test-manual2-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        testTrigger.setAutoDisable(false);
+        testTrigger.setAutoResolve(false);
+        testTrigger.setAutoResolveAlerts(false);
+
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // ADD Firing condition
+        AvailabilityCondition firingCond = new AvailabilityCondition("test-manual2-trigger",
+                Mode.FIRING, "test-manual2-avail", Operator.NOT_UP);
+
+        resp = client.post(path: "triggers/test-manual2-trigger/conditions", body: firingCond)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // ENABLE Trigger
+        testTrigger.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-manual2-trigger", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // FETCH trigger and make sure it's as expected
+        resp = client.get(path: "triggers/test-manual2-trigger");
+        assertEquals(200, resp.status)
+        assertEquals("test-manual2-trigger", resp.data.name)
+        assertEquals(true, resp.data.enabled)
+        assertEquals(false, resp.data.autoDisable);
+        assertEquals(false, resp.data.autoResolve);
+        assertEquals(false, resp.data.autoResolveAlerts);
+
+        // FETCH recent alerts for trigger, should not be any
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger"] )
+        assertEquals(204, resp.status)
+
+        // Send in DOWN avail data to fire the trigger
+        // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
+        for (int i=0; i<5; i++) {
+            Availability avail = new Availability("test-manual2-avail", System.currentTimeMillis(), "DOWN");
+            MixedData mixedData = new MixedData();
+            mixedData.getAvailability().add(avail);
+            resp = client.post(path: "data", body: mixedData);
+            assertEquals(200, resp.status)
+        }
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 10; ++i ) {
+            // println "SLEEP!" ;
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 5
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger"] )
+            if ( resp.status == 200 && resp.data.size() == 5 ) {
+                break;
+            }
+        }
+        assertEquals(200, resp.status)
+        assertEquals(5, resp.data.size())
+        assertEquals("OPEN", resp.data[0].status)
+
+        def alertId1 = resp.data[0].alertId;
+        def alertId2 = resp.data[1].alertId;
+        // RESOLVE manually 1 alert
+        resp = client.get(path: "resolve/" + alertId1,
+                query: [resolvedBy:"testUser", resolvedNotes:"testNotes"] )
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "ack/" + alertId2,
+                query: [resolvedBy:"testUser", resolvedNotes:"testNotes"] )
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger",statuses:"OPEN"] )
+        assertEquals(200, resp.status)
+        assertEquals(3, resp.data.size())
+
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger",statuses:"ACKNOWLEDGED"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger",statuses:"RESOLVED"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+    }
+
 }
