@@ -52,7 +52,7 @@ public class ActionSender implements ActionListener {
     private static final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
     private static final String ACTIONS_TOPIC = "HawkularAlertsActionsTopic";
     private static final String DEFINITIONS_SERVICE =
-            "java:app/hawkular-alerts-engine/CassDefinitionsServiceImpl";
+            "java:app/hawkular-alerts-rest/CassDefinitionsServiceImpl";
 
     private TopicConnectionFactory conFactory;
     private ConnectionContextFactory ccf;
@@ -124,7 +124,7 @@ public class ActionSender implements ActionListener {
     }
 
     private static Map<String, String> actionPluginFilter(String actionPlugin) {
-        Map<String, String> map = new HashMap<String, String>(1);
+        Map<String, String> map = new HashMap<>(1);
         map.put("actionPlugin", actionPlugin);
         return map;
     }
