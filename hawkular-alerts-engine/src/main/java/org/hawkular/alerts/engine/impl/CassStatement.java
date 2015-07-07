@@ -91,12 +91,11 @@ public class CassStatement {
     public static final String SELECT_DAMPENING_ID;
     public static final String SELECT_DAMPENINGS_ALL;
     public static final String SELECT_DAMPENINGS_BY_TENANT;
+    public static final String SELECT_PARTITIONS_TAGS;
     public static final String SELECT_TAGS;
     public static final String SELECT_TAGS_BY_CATEGORY;
     public static final String SELECT_TAGS_BY_CATEGORY_AND_NAME;
     public static final String SELECT_TAGS_BY_NAME;
-    public static final String SELECT_TAGS_TRIGGERS_ALL_BY_CATEGORY_AND_NAME;
-    public static final String SELECT_TAGS_TRIGGERS_ALL_BY_NAME;
     public static final String SELECT_TAGS_TRIGGERS_BY_CATEGORY;
     public static final String SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME;
     public static final String SELECT_TAGS_TRIGGERS_BY_NAME;
@@ -290,6 +289,10 @@ public class CassStatement {
                 + "FROM " + keyspace + ".dampenings "
                 + "WHERE tenantId = ? ";
 
+        // This is for use as a pre-query to gather all partitions to be subsequently queried. If the
+        // partition key changes this should also change.
+        SELECT_PARTITIONS_TAGS = "SELECT DISTINCT tenantid FROM " + keyspace + ".triggers ";
+
         SELECT_TAGS = "SELECT tenantId, triggerId, category, name, visible "
                 + "FROM " + keyspace + ".tags "
                 + "WHERE tenantId = ? AND triggerId = ? ORDER BY triggerId, name ";
@@ -306,23 +309,14 @@ public class CassStatement {
                 + "FROM " + keyspace + ".tags "
                 + "WHERE tenantId = ? AND triggerId = ? AND name = ? ";
 
-        SELECT_TAGS_TRIGGERS_ALL_BY_CATEGORY_AND_NAME = "SELECT tenantId, triggers "
-                + "FROM " + keyspace + ".tags_triggers "
-                + "WHERE category = ? AND name = ? ";
-
-        SELECT_TAGS_TRIGGERS_ALL_BY_NAME = "SELECT tenantId, triggers "
-                + "FROM " + keyspace + ".tags_triggers "
-                + "WHERE name = ? "
-                + "ALLOW FILTERING";
-
-        SELECT_TAGS_TRIGGERS_BY_CATEGORY = "SELECT triggers FROM " + keyspace
+        SELECT_TAGS_TRIGGERS_BY_CATEGORY = "SELECT tenantId, triggers FROM " + keyspace
                 + ".tags_triggers WHERE tenantId = ? AND category = ? ";
 
-        SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME = "SELECT triggers "
+        SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME = "SELECT tenantId, triggers "
                 + "FROM " + keyspace + ".tags_triggers "
                 + "WHERE tenantId = ? AND category = ? AND name = ? ";
 
-        SELECT_TAGS_TRIGGERS_BY_NAME = "SELECT triggers "
+        SELECT_TAGS_TRIGGERS_BY_NAME = "SELECT tenantId, triggers "
                 + "FROM " + keyspace + ".tags_triggers "
                 + "WHERE tenantId = ? AND name = ? ";
 
