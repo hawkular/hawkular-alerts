@@ -25,7 +25,8 @@
     "properties": {
       "to": "admin@hawkular.org",
       "cc": "bigboss@hawkular.org",
-      "description": "This is an example of Email Action Plugin"
+      "description": "This is an example of Email Action Plugin",
+      "template.hawkular.url": "http://www.hawkular.org"
     }
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
