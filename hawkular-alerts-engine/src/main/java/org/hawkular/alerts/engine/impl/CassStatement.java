@@ -312,9 +312,10 @@ public class CassStatement {
 
         SELECT_TAGS_TRIGGERS_ALL_BY_NAME = "SELECT tenantId, triggers "
                 + "FROM " + keyspace + ".tags_triggers "
-                + "WHERE name = ? ";
+                + "WHERE name = ? "
+                + "ALLOW FILTERING";
 
-        SELECT_TAGS_TRIGGERS_BY_CATEGORY = "SELECT triggers FROM " + keyspace + ""
+        SELECT_TAGS_TRIGGERS_BY_CATEGORY = "SELECT triggers FROM " + keyspace
                 + ".tags_triggers WHERE tenantId = ? AND category = ? ";
 
         SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME = "SELECT triggers "

@@ -16,7 +16,6 @@
  */
 package org.hawkular.alerts.engine.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,6 +60,7 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.Futures;
 
 /**
@@ -579,21 +579,38 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return trigger;
     }
 
+    // TODO: This fetch perform cross-tenant fetch and may be inefficient at scale
+    @Override
+    public Collection<Trigger> getAllTriggers() throws Exception {
+        return selectTriggers(null);
+    }
+
     @Override
     public Collection<Trigger> getTriggers(String tenantId) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
+
+        return selectTriggers(tenantId);
+    }
+
+    private Collection<Trigger> selectTriggers(String tenantId) throws Exception {
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        PreparedStatement selectTriggersTenant = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
-        if (selectTriggersTenant == null) {
+
+        PreparedStatement selectTriggers = isEmpty(tenantId) ?
+                CassStatement.get(session, CassStatement.SELECT_TRIGGERS_ALL) :
+                CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
+        if (null == selectTriggers) {
             throw new RuntimeException("selectTriggersTenant PreparedStatement is null");
         }
+
         List<Trigger> triggers = new ArrayList<>();
         try {
-            ResultSet rsTriggers = session.execute(selectTriggersTenant.bind(tenantId));
+            ResultSet rsTriggers = session.execute(isEmpty(tenantId) ?
+                    selectTriggers.bind() :
+                    selectTriggers.bind(tenantId));
             for (Row row : rsTriggers) {
                 Trigger trigger = mapTrigger(row);
                 selectTriggerActions(trigger);
@@ -606,32 +623,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return triggers;
     }
 
-    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
-    @Override
-    public Collection<Trigger> getAllTriggers() throws Exception {
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
-        PreparedStatement selectTriggersAll = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_ALL);
-        if (selectTriggersAll == null) {
-            throw new RuntimeException("selectTriggersAll PreparedStatement is null");
-        }
-        List<Trigger> triggers = new ArrayList<>();
-        try {
-            ResultSet rsTriggers = session.execute(selectTriggersAll.bind());
-            for (Row row : rsTriggers) {
-                Trigger trigger = mapTrigger(row);
-                selectTriggerActions(trigger);
-                triggers.add(trigger);
-            }
-        } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-        return triggers;
-    }
-
-    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
+    // TODO: This performs a cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Trigger> getAllTriggersByTag(String category, String name) throws Exception {
         if (isEmpty(name)) {
@@ -678,6 +670,42 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     }
                 });
             }
+
+            return triggers;
+
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public Collection<Trigger> getTriggersByTag(String tenantId, String category, String name) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("tenantId must be not null");
+        }
+        if (isEmpty(category) && isEmpty(name)) {
+            throw new IllegalArgumentException("Category and Name can not both be null");
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
+        }
+
+        try {
+            Set<String> triggerIds = getTriggerIdsByTag(tenantId, category, name);
+
+            // Now, generate a result set of Triggers using the triggerIds
+            List<Trigger> triggers = new ArrayList<>(triggerIds.size());
+            PreparedStatement selectTrigger = CassStatement.get(session, CassStatement.SELECT_TRIGGER);
+            List<ResultSetFuture> futures = triggerIds.stream().map(triggerId ->
+                    session.executeAsync(selectTrigger.bind(tenantId, triggerId)))
+                    .collect(Collectors.toList());
+            List<ResultSet> rsTriggers = Futures.allAsList(futures).get();
+            rsTriggers.stream().forEach(r -> {
+                for (Row row : r) {
+                    triggers.add(mapTrigger(row));
+                }
+            });
 
             return triggers;
 
@@ -1284,6 +1312,12 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private void insertTag(String tenantId, String triggerId, String category, String name, boolean visible)
             throws Exception {
 
+        // Do not store null values for category as it is a query-able field. Although secondary indexes allow
+        // nulls they are not really a good idea, use empty string to minimally make the rows queryable.
+        if (null == category) {
+            category = "";
+        }
+
         // If the desired Tag already exists just return
         if (!getTags(tenantId, triggerId, category, name).isEmpty()) {
             return;
@@ -1297,7 +1331,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void insertTriggerByTagIndex(String tenantId, String category, String name, String triggerId) {
-        Set<String> triggers = getTriggersByTags(tenantId, category, name);
+        Set<String> triggers = getTriggerIdsByTag(tenantId, category, name);
         triggers = new HashSet<>(triggers);
         if (triggers.isEmpty()) {
             triggers.add(triggerId);
@@ -1319,15 +1353,29 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @SuppressWarnings("unchecked")
-    private Set<String> getTriggersByTags(String tenantId, String category, String name) {
+    private Set<String> getTriggerIdsByTag(String tenantId, String category, String name) {
         Set triggerTags = new HashSet<>();
 
-        PreparedStatement selectTagsTriggers = CassStatement.get(session,
-                CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME);
+        PreparedStatement selectTagsTriggers = null;
+        if (isEmpty(category)) {
+            selectTagsTriggers = CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_BY_NAME);
+        } else if (isEmpty(name)) {
+            selectTagsTriggers = CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY);
+        } else {
+            selectTagsTriggers = CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME);
+        }
         if (selectTagsTriggers == null) {
             throw new RuntimeException("selectTagsTriggers PreparedStatement is null");
         }
-        ResultSet rsTriggersTags = session.execute(selectTagsTriggers.bind(tenantId, category, name));
+        BoundStatement bs = null;
+        if (isEmpty(category)) {
+            bs = selectTagsTriggers.bind(tenantId, name);
+        } else if (isEmpty(name)) {
+            bs = selectTagsTriggers.bind(tenantId, category);
+        } else {
+            bs = selectTagsTriggers.bind(tenantId, category, name);
+        }
+        ResultSet rsTriggersTags = session.execute(bs);
         for (Row row : rsTriggersTags) {
             triggerTags = row.getSet("triggers", String.class);
         }
@@ -1446,7 +1494,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         for (Tag tag : tags) {
-            Set<String> triggers = getTriggersByTags(tag.getTenantId(), tag.getCategory(), tag.getName());
+            Set<String> triggers = getTriggerIdsByTag(tag.getTenantId(), tag.getCategory(), tag.getName());
             if (triggers.size() > 1) {
                 Set<String> updateTriggers = new HashSet<>(triggers);
                 updateTriggers.remove(triggerId);
@@ -2058,17 +2106,17 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void addTag(String tenantId, Tag tag) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
-        }
         if (tag == null) {
             throw new IllegalArgumentException("Tag must be not null");
         }
-        if (tag.getTriggerId() == null || tag.getTriggerId().trim().isEmpty()) {
+        if (isEmpty(tag.getTriggerId())) {
             throw new IllegalArgumentException("Tag TriggerId must be not null or empty");
         }
-        if (tag.getName() == null || tag.getName().trim().isEmpty()) {
+        if (isEmpty(tag.getName())) {
             throw new IllegalArgumentException("Tag Name must be not null or empty");
+        }
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null or empty");
         }
         checkTenantId(tenantId, tag);
         if (session == null) {
@@ -2162,7 +2210,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         this last one will be overwritten with the parameter.
      */
     private void checkTenantId(String tenantId, Object obj) {
-        if (tenantId == null || tenantId.trim().isEmpty()) {
+        if (isEmpty(tenantId)) {
             return;
         }
         if (obj == null) {

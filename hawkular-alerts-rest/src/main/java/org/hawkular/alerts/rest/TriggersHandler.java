@@ -102,6 +102,35 @@ public class TriggersHandler {
         }
     }
 
+    @GET
+    @Path("/tag")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(
+            value = "Find all Trigger definitions for the specified tag. At least one of category and name is required",
+            notes = "Pagination is not yet implemented")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Triggers list found. Can be empty."),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response findTriggersByTag(
+            @ApiParam(required = false, value = "The tag category. If not supplied or empty only tag name is used")
+            @QueryParam("category")
+            final String category,
+            @ApiParam(required = false, value = "The tag name. If not supplied or empty only tag category is used")
+            @QueryParam("name")
+            final String name) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
+        try {
+            Collection<Trigger> triggers = definitions.getTriggersByTag(persona.getId(), category, name);
+            log.debugf("Triggers: %s ", triggers);
+            return ResponseUtil.ok(triggers);
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
     @POST
     @Path("/")
     @Consumes(APPLICATION_JSON)
@@ -114,8 +143,8 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success, Trigger Created"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response createTrigger(@ApiParam(value = "Trigger definition to be created", name = "trigger",
-            required = true)
+    public Response createTrigger(
+            @ApiParam(value = "Trigger definition to be created", name = "trigger", required = true)
             final Trigger trigger) {
         if (!checkPersona()) {
             return ResponseUtil.internalError("No persona found");
@@ -148,8 +177,8 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success, Trigger found"),
             @ApiResponse(code = 404, message = "Trigger not found"),
             @ApiResponse(code = 500, message = "Internal server error") })
-    public Response getTrigger(@ApiParam(value = "Trigger definition id to be retrieved",
-                    required = true)
+    public Response getTrigger(
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId) {
         if (!checkPersona()) {
@@ -177,7 +206,8 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success, Trigger updated"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters") })
-    public Response updateTrigger(@ApiParam(value = "Trigger definition id to be updated", required = true)
+    public Response updateTrigger(
+            @ApiParam(value = "Trigger definition id to be updated", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @ApiParam(value = "Updated trigger definition", name = "trigger", required = true)
@@ -211,7 +241,8 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success, Trigger deleted"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 404, message = "Trigger doesn't found") })
-    public Response deleteTrigger(@ApiParam(value = "Trigger definition id to be deleted", required = true)
+    public Response deleteTrigger(
+            @ApiParam(value = "Trigger definition id to be deleted", required = true)
             @PathParam("triggerId")
             final String triggerId) {
         if (!checkPersona()) {
@@ -238,7 +269,8 @@ public class TriggersHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error")})
-    public Response getTriggerDampenings(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
+    public Response getTriggerDampenings(
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId) {
         if (!checkPersona()) {
@@ -261,7 +293,8 @@ public class TriggersHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
-    public Response getTriggerModeDampenings(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
+    public Response getTriggerModeDampenings(
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @ApiParam(value = "Trigger mode", required = true)
@@ -289,7 +322,8 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success, Dampening Found"),
             @ApiResponse(code = 404, message = "No Dampening Found"),
             @ApiResponse(code = 500, message = "Internal server error") })
-    public Response getDampening(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
+    public Response getDampening(
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @ApiParam(value = "Dampening id", required = true)
@@ -321,7 +355,8 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success, Dampening created"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response createDampening(@ApiParam(value = "Trigger definition id attached to dampening", required = true)
+    public Response createDampening(
+            @ApiParam(value = "Trigger definition id attached to dampening", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @ApiParam(value = "Dampening definition to be created", required = true)
@@ -380,8 +415,9 @@ public class TriggersHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampening Updated"),
             @ApiResponse(code = 404, message = "No Dampening Found"),
-            @ApiResponse(code = 500, message = "Internal server error")})
-    public Response updateDampening(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response updateDampening(
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @ApiParam(value = "Dampening id", required = true)
@@ -415,8 +451,9 @@ public class TriggersHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampening deleted"),
             @ApiResponse(code = 404, message = "No Dampening found"),
-            @ApiResponse(code = 500, message = "Internal server error")})
-    public Response deleteDampening(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response deleteDampening(
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @ApiParam(value = "Dampening id for dampening definition to be deleted", required = true)
@@ -447,7 +484,8 @@ public class TriggersHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
-    public Response getTriggerConditions(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
+    public Response getTriggerConditions(
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId) {
         if (!checkPersona()) {
@@ -470,8 +508,9 @@ public class TriggersHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Condition found"),
             @ApiResponse(code = 404, message = "No Condition found"),
-            @ApiResponse(code = 500, message = "Internal server error")})
-    public Response getTriggerCondition(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response getTriggerCondition(
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @PathParam("conditionId")
@@ -508,7 +547,8 @@ public class TriggersHandler {
             @ApiResponse(code = 404, message = "No trigger found"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response createCondition(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
+    public Response createCondition(
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @ApiParam(value = "Json representation of a condition. For examples of Condition types, See "
@@ -570,7 +610,8 @@ public class TriggersHandler {
             @ApiResponse(code = 404, message = "No Condition found"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response updateCondition(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
+    public Response updateCondition(
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @PathParam("conditionId")
@@ -637,7 +678,8 @@ public class TriggersHandler {
             @ApiResponse(code = 404, message = "No Condition found"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response deleteCondition(@ApiParam(value = "Trigger definition id to be retrieved", required = true)
+    public Response deleteCondition(
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @PathParam("conditionId")
@@ -697,7 +739,9 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success, Tag created"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response createTag(@ApiParam(value = "Tag to be created", required = true) final Tag tag) {
+    public Response createTag(
+            @ApiParam(value = "Tag to be created", required = true)
+            final Tag tag) {
         if (!checkPersona()) {
             return ResponseUtil.internalError("No persona found");
         }
@@ -722,7 +766,8 @@ public class TriggersHandler {
             @ApiResponse(code = 404, message = "No Trigger Found"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response deleteTags(@ApiParam(value = "Trigger id of tags to be deleted", required = true)
+    public Response deleteTags(
+            @ApiParam(value = "Trigger id of tags to be deleted", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @ApiParam(value = "Category of tags to be deleted", required = false)
@@ -753,7 +798,8 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response getTriggerTags(@ApiParam(value = "Trigger id for the retrieved Tags", required = true)
+    public Response getTriggerTags(
+            @ApiParam(value = "Trigger id for the retrieved Tags", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @ApiParam(value = "Category of tags to be retrieved", required = false)
