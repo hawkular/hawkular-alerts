@@ -74,8 +74,7 @@ public class ActionsHandler {
     @ApiOperation(value = "Find all action ids grouped by plugin",
             notes = "Pagination is not yet implemented")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success. Actions found."),
-            @ApiResponse(code = 204, message = "Success. No actions found."),
+            @ApiResponse(code = 200, message = "Success."),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response findActions() {
         if (!checkPersona()) {
@@ -84,9 +83,6 @@ public class ActionsHandler {
         try {
             Map<String, Set<String>> actions = definitions.getActions(persona.getId());
             log.debugf("Actions: ", actions);
-            if (isEmpty(actions)) {
-                return ResponseUtil.noContent();
-            }
             return ResponseUtil.ok(actions);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
@@ -100,8 +96,7 @@ public class ActionsHandler {
     @ApiOperation(value = "Find all action ids of an specific action plugin",
             notes = "Pagination is not yet implemented")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Actions Found"),
-            @ApiResponse(code = 204, message = "No Actions Found"),
+            @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response findActionsByPlugin(@ApiParam(value = "Action plugin to filter query for action ids",
             required = true)
@@ -113,9 +108,6 @@ public class ActionsHandler {
         try {
             Collection<String> actions = definitions.getActions(persona.getId(), actionPlugin);
             log.debugf("Actions: %s ", actions);
-            if (isEmpty(actions)) {
-                return ResponseUtil.noContent();
-            }
             return ResponseUtil.ok(actions);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);

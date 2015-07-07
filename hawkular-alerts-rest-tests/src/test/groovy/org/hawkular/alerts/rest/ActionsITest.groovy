@@ -103,7 +103,7 @@ class ActionsITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assert resp.status == 200 : resp.status
 
         Trigger testTrigger = new Trigger("test-email-availability", "http://www.mydemourl.com");
 
@@ -147,7 +147,7 @@ class ActionsITest extends AbstractITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-email-availability"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
@@ -181,7 +181,7 @@ class ActionsITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assert resp.status == 200 : resp.status
 
         Trigger testTrigger = new Trigger("test-email-threshold", "http://www.mydemourl.com");
 
@@ -225,7 +225,7 @@ class ActionsITest extends AbstractITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-email-threshold"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data

@@ -88,8 +88,7 @@ public class AlertsHandler {
             value = "Get alerts with optional filtering",
             notes = "Pagination is not yet implemented.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success. Alerts found."),
-            @ApiResponse(code = 204, message = "Success. Not alerts found."),
+            @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response findAlerts(
             @ApiParam(required = false, value = "filter out alerts created before this time, millisecond since epoch")
@@ -177,7 +176,7 @@ public class AlertsHandler {
             Page<Alert> alertPage = alertsService.getAlerts(persona.getId(), criteria, pager);
             log.debugf("Alerts: %s ", alertPage);
             if (isEmpty(alertPage)) {
-                return ResponseUtil.noContent();
+                return ResponseUtil.ok(alertPage);
             }
             return ResponseUtil.paginatedOk(alertPage, uri);
         } catch (Exception e) {

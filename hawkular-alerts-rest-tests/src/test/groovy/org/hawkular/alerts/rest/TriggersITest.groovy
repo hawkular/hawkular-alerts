@@ -119,7 +119,7 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         resp = client.get(path: "triggers/test-trigger-1/tags");
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         resp = client.delete(path: "triggers/test-trigger-1")
         assertEquals(200, resp.status)

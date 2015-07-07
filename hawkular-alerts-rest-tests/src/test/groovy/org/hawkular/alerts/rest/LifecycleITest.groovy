@@ -47,7 +47,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assert resp.status == 200 : resp.status
 
         Trigger testTrigger = new Trigger("test-autodisable-trigger", "test-autodisable-trigger");
 
@@ -86,7 +86,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         // Send in avail data to fire the trigger
         // Note, the groovyx rest c;lient seems incapable of allowing a JSON payload and a TEXT response (which is what
@@ -104,10 +104,10 @@ class LifecycleITest extends AbstractITestBase {
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger"] )
-            if ( resp.status == 200 ) {
+            if ( resp.status == 200 && resp.data != null && resp.data.size > 0) {
                 break;
             }
-            assert resp.status == 204 : resp.status
+            assert resp.status == 200 : resp.status
         }
         assertEquals(200, resp.status)
 
@@ -137,7 +137,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assert resp.status == 200 : resp.status
 
         Trigger testTrigger = new Trigger("test-autoresolve-trigger", "test-autoresolve-trigger");
 
@@ -187,7 +187,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
@@ -207,7 +207,7 @@ class LifecycleITest extends AbstractITestBase {
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 204 : resp.status
+            assert resp.status == 200 : resp.status
         }
         assertEquals(200, resp.status)
         assertEquals("OPEN", resp.data[0].status)
@@ -250,7 +250,7 @@ class LifecycleITest extends AbstractITestBase {
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 204 : resp.status
+            assert resp.status == 200 : resp.status
         }
         assertEquals(200, resp.status)
         assertEquals("RESOLVED", resp.data[0].status)
@@ -263,7 +263,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assert resp.status == 200 : resp.status
 
         Trigger testTrigger = new Trigger("test-manual-trigger", "test-manual-trigger");
 
@@ -303,7 +303,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
@@ -353,19 +353,19 @@ class LifecycleITest extends AbstractITestBase {
 
         // FETCH alerts for bogus trigger, should not be any
         def resp = client.get(path: "", query: [startTime:start,triggerIds:"XXX"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         // FETCH alerts for bogus alert id, should not be any
         resp = client.get(path: "", query: [startTime:start,alertIds:"XXX,YYY"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         // FETCH alerts for bogus tag, should not be any
         resp = client.get(path: "", query: [startTime:start,tags:"XXX"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         // FETCH alerts for bogus category|tag, should not be any
         resp = client.get(path: "", query: [startTime:start,tags:"XXX|YYY"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         // FETCH alerts for just triggers generated in test t01, by time, should be 1
         resp = client.get(path: "", query: [startTime:t01Start,endTime:t02Start] )
@@ -414,11 +414,11 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(4, resp.data.size())
 
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"ACKNOWLEDGED"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         // FETCH by severity (1 HIGH and 1 LOW, five MEDIUM)
         resp = client.get(path: "", query: [startTime:start,severities:"CRITICAL"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         resp = client.get(path: "", query: [startTime:start,severities:"LOW,HIGH,MEDIUM"] )
         assertEquals(200, resp.status)
@@ -483,7 +483,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assert resp.status == 200 : resp.status
 
         Trigger testTrigger = new Trigger("test-manual2-trigger", "test-manual2-trigger");
 
@@ -523,7 +523,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
 
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
@@ -538,11 +538,11 @@ class LifecycleITest extends AbstractITestBase {
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
             // println "SLEEP!" ;
-            Thread.sleep(500);
+            Thread.sleep(1000);
 
             // FETCH recent alerts for trigger, there should be 5
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger"] )
-            if ( resp.status == 200 && resp.data.size() == 5 ) {
+            if ( resp.status == 200 && resp.data != null && resp.data.size() == 5 ) {
                 break;
             }
         }

@@ -66,8 +66,7 @@ public class ActionPluginHandler {
     @ApiOperation(value = "Find all action plugins",
                   notes = "Pagination is not yet implemented")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success. Plugins found."),
-            @ApiResponse(code = 204, message = "Success. No plugins found."),
+            @ApiResponse(code = 200, message = "Success."),
             @ApiResponse(code = 500, message = "Internal server error")})
     public Response findActionPlugins() {
         if (!checkPersona()) {
@@ -76,9 +75,6 @@ public class ActionPluginHandler {
         try {
             Collection<String> actionPlugins = definitions.getActionPlugins();
             log.debugf("ActionPlugins: %s ", actionPlugins);
-            if (isEmpty(actionPlugins)) {
-                return ResponseUtil.noContent();
-            }
             return ResponseUtil.ok(actionPlugins);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);

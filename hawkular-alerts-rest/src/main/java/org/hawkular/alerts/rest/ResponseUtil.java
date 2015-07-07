@@ -45,10 +45,6 @@ public class ResponseUtil {
                 .entity(errors).type(APPLICATION_JSON_TYPE).build();
     }
 
-    public static Response noContent() {
-        return Response.status(Response.Status.NO_CONTENT).type(APPLICATION_JSON_TYPE).build();
-    }
-
     public static Response notFound(String message) {
         Map<String, String> errors = new HashMap<>();
         errors.put("errorMsg", "Not found: " + message);
