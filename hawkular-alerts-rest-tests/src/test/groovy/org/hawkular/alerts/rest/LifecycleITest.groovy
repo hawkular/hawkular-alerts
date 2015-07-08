@@ -17,8 +17,10 @@
 package org.hawkular.alerts.rest
 import org.hawkular.alerts.api.model.Severity
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
+import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Availability
 import org.hawkular.alerts.api.model.data.MixedData
+import org.hawkular.alerts.api.model.data.NumericData
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.bus.restclient.RestClient
 import org.junit.FixMethodOrder
@@ -574,4 +576,195 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
     }
 
+    @Test
+    void t07_autoResolveWithThresholdTest() {
+        String start = String.valueOf(System.currentTimeMillis());
+
+        /*
+            Step 0: Check REST API is up and running
+         */
+        def resp = client.get(path: "")
+        assert resp.status == 200 : resp.status
+
+        /*
+            Step 1: Remove previous existing definition for this test
+         */
+        resp = client.delete(path: "triggers/test-autoresolve-threshold")
+        assert(200 == resp.status || 404 == resp.status)
+
+        /*
+            Step 2: Create a new trigger
+         */
+        Trigger testTrigger = new Trigger("test-autoresolve-threshold-trigger", "http://www.myresource.com");
+        testTrigger.setAutoDisable(false);
+        testTrigger.setAutoResolve(true);
+        testTrigger.setAutoResolveAlerts(false);
+        testTrigger.setSeverity(Severity.HIGH);
+
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        /*
+            Step 3: Create a threshold FIRING condition
+                    Fires when ResponseTime > 100 ms
+                    "Normal" scenario, the condition represents a "bad" situation we want to monitor and alert
+         */
+        ThresholdCondition firingCond = new ThresholdCondition("test-autoresolve-threshold-trigger",
+                Mode.FIRING, "test-autoresolve-threshold", ThresholdCondition.Operator.GT, 100);
+
+        resp = client.post(path: "triggers/test-autoresolve-threshold-trigger/conditions", body: firingCond)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        /*
+            Step 4: Create a threshold AUTORESOLVE condition
+                    Fires when ResponseTime <= 100 ms
+                    "Resolution" scenario, the condition represent a "good" situation to enable again "Normal" scenario
+                    Typically it should be the "opposite" than
+         */
+        ThresholdCondition autoResolveCond = new ThresholdCondition("test-autoresolve-threshold-trigger",
+                Mode.AUTORESOLVE, "test-autoresolve-threshold", ThresholdCondition.Operator.LTE, 100);
+
+        resp = client.post(path: "triggers/test-autoresolve-threshold-trigger/conditions", body: autoResolveCond)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        /*
+            Step 5: Enable the trigger to accept data
+         */
+        testTrigger.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-autoresolve-threshold-trigger", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        /*
+            Step 6: Check trigger is created correctly
+         */
+        resp = client.get(path: "triggers/test-autoresolve-threshold-trigger");
+        assertEquals(200, resp.status)
+        assertEquals("http://www.myresource.com", resp.data.name)
+        assertEquals(true, resp.data.enabled)
+        assertEquals(false, resp.data.autoDisable);
+        assertEquals(true, resp.data.autoResolve);
+        assertEquals(false, resp.data.autoResolveAlerts);
+        assertEquals("HIGH", resp.data.severity);
+
+        /*
+            Step 7: Check there is not alerts for this trigger at this point
+         */
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
+        assertEquals(200, resp.status)
+
+        /*
+            Step 8: Sending "bad" data to fire the trigger
+                    Using direct API instead bus messages
+         */
+        NumericData responseTime = new NumericData("test-autoresolve-threshold", System.currentTimeMillis(), 101);
+        MixedData mixedData = new MixedData();
+        mixedData.getNumericData().add(responseTime);
+        resp = client.post(path: "data", body: mixedData);
+        assertEquals(200, resp.status)
+
+        /*
+             Step 9: Wait until the engine detects the data, matches the conditions and sends an alert
+         */
+        for ( int i=0; i < 10; ++i ) {
+            Thread.sleep(500);
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
+            /*
+                We should have only 1 alert
+             */
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
+                break;
+            }
+            assert resp.status == 200 : resp.status
+        }
+        assertEquals(200, resp.status)
+        assertEquals("OPEN", resp.data[0].status)
+        assertEquals("HIGH", resp.data[0].severity)
+
+        /*
+            Step 10: Sending "bad" data to fire the trigger
+         */
+        responseTime = new NumericData("test-autoresolve-threshold", System.currentTimeMillis(), 102);
+        mixedData = new MixedData();
+        mixedData.getNumericData().add(responseTime);
+        resp = client.post(path: "data", body: mixedData);
+        assertEquals(200, resp.status)
+
+        /*
+             Step 11: Wait until the engine detects the data
+                      It should retrieve only 1 data not 2 as previous data shouldn't generate a new alert
+         */
+        for ( int i=0; i < 10; ++i ) {
+            Thread.sleep(500);
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
+            /*
+                We should have only 1 alert
+             */
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
+                break;
+            }
+            assert resp.status == 200 : resp.status
+        }
+        assertEquals(200, resp.status)
+        assertEquals("OPEN", resp.data[0].status)
+        assertEquals("HIGH", resp.data[0].severity)
+
+        /*
+            Step 12: Sending "good" data to change trigger from FIRING to AUTORESOLVE
+         */
+        responseTime = new NumericData("test-autoresolve-threshold", System.currentTimeMillis(), 102);
+        mixedData = new MixedData();
+        mixedData.getNumericData().add(responseTime);
+        resp = client.post(path: "data", body: mixedData);
+        assertEquals(200, resp.status)
+
+        /*
+             Step 13: Wait until the engine detects the data
+                      It should retrieve only 1 data not 2 as previous data shouldn't generate a new alert
+         */
+        for ( int i=0; i < 10; ++i ) {
+            Thread.sleep(500);
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
+            /*
+                We should have only 1 alert
+             */
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
+                break;
+            }
+            assert resp.status == 200 : resp.status
+        }
+        assertEquals(200, resp.status)
+        assertEquals("OPEN", resp.data[0].status)
+        assertEquals("HIGH", resp.data[0].severity)
+
+        /*
+            Step 14: Sending "bad" data to fire the trigger
+         */
+        responseTime = new NumericData("test-autoresolve-threshold", System.currentTimeMillis(), 103);
+        mixedData = new MixedData();
+        mixedData.getNumericData().add(responseTime);
+        resp = client.post(path: "data", body: mixedData);
+        assertEquals(200, resp.status)
+
+        /*
+             Step 15: Wait until the engine detects the data
+                      It should retrieve 2 data
+         */
+        for ( int i=0; i < 10; ++i ) {
+            Thread.sleep(500);
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
+            /*
+                We should have only 2 alert
+             */
+            if ( resp.status == 200 && resp.data.size() == 2 ) {
+                break;
+            }
+            assert resp.status == 200 : resp.status
+        }
+        assertEquals(200, resp.status)
+        assertEquals("OPEN", resp.data[0].status)
+        assertEquals("HIGH", resp.data[0].severity)
+    }
 }
