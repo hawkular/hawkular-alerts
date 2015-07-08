@@ -17,7 +17,8 @@
 package org.hawkular.alerts.api.model.trigger;
 
 /**
- * Each instance is a tag
+ * A Trigger can have zero or more Tags.  For storing a Tag the specified Trigger must exist for the specified Tenant
+ * and <code>name</code> is required.
  *
  * @author jay shaughnessy
  * @author lucas ponce
@@ -35,8 +36,6 @@ public class Tag {
     }
 
     /**
-     * Create a searchable Tag on name only
-     *
      * @param name NotEmpty
      */
     public Tag(String name) {
@@ -44,8 +43,6 @@ public class Tag {
     }
 
     /**
-     * Create a searchable Tag on category + name
-     *
      * @param category Nullable
      * @param name NotEmpty
      */
@@ -54,9 +51,7 @@ public class Tag {
     }
 
     /**
-     * Create an invisible Tag for persisting.
-     *
-     * @param triggerId Nullable Note, required for storage but not search.
+     * @param triggerId Nullable
      * @param category Nullable
      * @param name NotEmpty
      */
@@ -65,7 +60,7 @@ public class Tag {
     }
 
     /**
-     * @param triggerId Nullable Note, required for storage but not search.
+     * @param triggerId Nullable
      * @param category Nullable
      * @param name NotEmpty
      * @param visible flag indicating whether this tag is available for display

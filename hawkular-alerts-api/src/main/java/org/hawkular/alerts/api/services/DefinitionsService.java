@@ -86,14 +86,24 @@ public interface DefinitionsService {
     Collection<Trigger> getTriggers(String tenantId) throws Exception;
 
     /**
+     * Get all stored Triggers with a specific Tag. Category and Name can not both be null.
+     * @param tenantId Tenant where trigger is stored
+     * @param category The tag category, if null or empty fetch only by tag name
+     * @param name The tag name, if null or empty fetch only by tag category
+     * @throws Exception on any problem
+     */
+    Collection<Trigger> getTriggersByTag(String tenantId, String category, String name) throws Exception;
+
+    /**
      * Get all stored Triggers for all Tenants
      * @throws Exception on any problem
      */
     Collection<Trigger> getAllTriggers() throws Exception;
 
     /**
-     * Get all stored Triggers for all Tenants with a specific Tag
-     * @param category The tag category, ignored if null
+     * Get all stored Triggers for all Tenants with a specific Tag. This can be inefficient, especially if
+     * querying by name only.
+     * @param category The tag category, if null or empty fetch only by tag name
      * @param name The tag name, required
      * @throws Exception on any problem
      */
@@ -366,9 +376,10 @@ public interface DefinitionsService {
     */
 
     /**
-     * Add Tag with the specified name to the specified Trigger. Category is optional. If the Tag exists the
-     * call returns successfully but has no effect.
-     * @param tenantId Tenant where tag is stored
+     * Add Tag to the specified Trigger (tenantId+triggerid). Category is optional but highly recommended for
+     * efficiency and to avoid unwanted name collisions. If the Tag exists the call returns successfully but
+     * has no effect.
+     * @param tenantId Tenant where tag is created
      * @param tag New tag to be created
      * @throws Exception on any problem
      */
@@ -384,6 +395,7 @@ public interface DefinitionsService {
     void removeTags(String tenantId, String triggerId, String category, String name) throws Exception;
 
     /**
+     * @param tenantId NotEmpty, must be the proper tenant for the specified trigger.
      * @param triggerId NotEmpty
      * @param category Nullable.
      * @return The existing Tags for the trigger, optionally filtered by category. Sorted by category, name.

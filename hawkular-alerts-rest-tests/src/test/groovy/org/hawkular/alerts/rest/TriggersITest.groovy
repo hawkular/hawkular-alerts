@@ -115,12 +115,30 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals("test-name", resp.data.iterator().next().name)
 
+        resp = client.get(path: "triggers/tag", query: [category:"test-category"] );
+        assertEquals(200, resp.status)
+        assertEquals("test-trigger-1", resp.data.iterator().next().id)
+
+        resp = client.get(path: "triggers/tag", query: [name:"test-name"] );
+        assertEquals(200, resp.status)
+        assertEquals("test-trigger-1", resp.data.iterator().next().id)
+
+        resp = client.get(path: "triggers/tag", query: [category:"test-category",name:"test-name"] );
+        assertEquals(200, resp.status)
+        assertEquals("test-trigger-1", resp.data.iterator().next().id)
+
+        resp = client.get(path: "triggers/tag", query: [category:"funky",name:"funky"] );
+        assertEquals(200, resp.status)
+        assertEquals(false, resp.data.iterator().hasNext())
+
+        // delete the tag
         resp = client.post(path: "triggers/test-trigger-1/tags", query: [category:"test-category"] )
         assertEquals(200, resp.status)
 
         resp = client.get(path: "triggers/test-trigger-1/tags");
         assertEquals(200, resp.status)
 
+        // delete the trigger
         resp = client.delete(path: "triggers/test-trigger-1")
         assertEquals(200, resp.status)
     }
