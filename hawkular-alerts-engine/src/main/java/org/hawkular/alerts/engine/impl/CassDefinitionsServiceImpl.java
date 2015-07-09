@@ -179,6 +179,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     String name = (String)t.get("name");
                     String description = (String)t.get("description");
                     boolean autoDisable = (Boolean)t.get("autoDisable");
+                    boolean autoEnable = (Boolean)t.get("autoEnable");
                     boolean autoResolve = (Boolean)t.get("autoResolve");
                     boolean autoResolveAlerts = (Boolean)t.get("autoResolveAlerts");
                     Severity severity = Severity.valueOf((String)t.get("severity"));
@@ -190,6 +191,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     Trigger trigger = new Trigger(triggerId, name);
                     trigger.setEnabled(enabled);
                     trigger.setAutoDisable(autoDisable);
+                    trigger.setAutoEnable(autoEnable);
                     trigger.setAutoResolve(autoResolve);
                     trigger.setAutoResolveAlerts(autoResolveAlerts);
                     trigger.setSeverity(severity);
@@ -441,8 +443,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         try {
             session.execute(insertTrigger.bind(trigger.getName(), trigger.getDescription(),
-                    trigger.isAutoDisable(), trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger
-                            .getSeverity().name(),
+                    trigger.isAutoDisable(), trigger.isAutoEnable(), trigger.isAutoResolve(),
+                    trigger.isAutoResolveAlerts(), trigger.getSeverity().name(),
                     trigger.getFiringMatch().name(), trigger.getAutoResolveMatch().name(),
                     trigger.getId(), trigger.isEnabled(), trigger.getTenantId()));
 
@@ -521,9 +523,10 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         try {
             session.execute(updateTrigger.bind(trigger.getName(), trigger.getDescription(), trigger.isAutoDisable(),
-                    trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger.getSeverity().name(),
-                    trigger.getFiringMatch().name(), trigger.getAutoResolveMatch().name(), trigger.isEnabled(),
-                    trigger.getTenantId(), trigger.getId()));
+                    trigger.isAutoEnable(), trigger.isAutoResolve(), trigger.isAutoResolveAlerts(),
+                    trigger.getSeverity().name(), trigger.getFiringMatch().name(),
+                    trigger.getAutoResolveMatch().name(), trigger.isEnabled(), trigger.getTenantId(),
+                    trigger.getId()));
             deleteTriggerActions(trigger);
             insertTriggerActions(trigger);
         } catch (Exception e) {
@@ -754,6 +757,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         trigger.setName(row.getString("name"));
         trigger.setDescription(row.getString("description"));
         trigger.setAutoDisable(row.getBool("autoDisable"));
+        trigger.setAutoEnable(row.getBool("autoEnable"));
         trigger.setAutoResolve(row.getBool("autoResolve"));
         trigger.setAutoResolveAlerts(row.getBool("autoResolveAlerts"));
         trigger.setSeverity(Severity.valueOf(row.getString("severity")));

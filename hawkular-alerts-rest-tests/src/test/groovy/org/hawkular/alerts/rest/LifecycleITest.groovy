@@ -84,6 +84,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("test-autodisable-trigger", resp.data.name)
         assertEquals(true, resp.data.enabled)
         assertEquals(true, resp.data.autoDisable);
+        assertEquals(false, resp.data.autoEnable);
         assertEquals("LOW", resp.data.severity);
 
         // FETCH recent alerts for trigger, should not be any
@@ -131,6 +132,12 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("testUser", resp.data[0].resolvedBy)
         assertEquals("testNotes", resp.data[0].resolvedNotes)
         assert null == resp.data[0].resolvedEvalSets
+
+        // FETCH trigger and make sure it's still disabled, because autoEnable was set to false
+        resp = client.get(path: "triggers/test-autodisable-trigger");
+        assertEquals(200, resp.status)
+        assertEquals("test-autodisable-trigger", resp.data.name)
+        assertEquals(false, resp.data.enabled)
     }
 
     @Test
@@ -461,22 +468,23 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t05_paging() {
+        // queries will look for alerts generated in this test tun
+        String start = t01Start;
 
         // 4 OPEN and 1 RESOLVED
         def resp = client.get(path: "",
-                query: [triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED", page: "0", per_page: "3"] )
+                query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED", page: "0", per_page: "3"] )
         assertEquals(200, resp.status)
         assertEquals(3, resp.data.size())
 
         println(resp.headers)
 
         resp = client.get(path: "",
-                query: [triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED", page: "1", per_page: "3"] )
+                query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED", page: "1", per_page: "3"] )
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size())
 
         println(resp.headers)
-
     }
 
     @Test
@@ -589,7 +597,7 @@ class LifecycleITest extends AbstractITestBase {
         /*
             Step 1: Remove previous existing definition for this test
          */
-        resp = client.delete(path: "triggers/test-autoresolve-threshold")
+        resp = client.delete(path: "triggers/test-autoresolve-threshold-trigger")
         assert(200 == resp.status || 404 == resp.status)
 
         /*
@@ -766,5 +774,269 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals("OPEN", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
+    }
+
+    @Test
+    void t08_autoEnableTest() {
+        String start = String.valueOf(System.currentTimeMillis());
+
+        // CREATE the trigger
+        def resp = client.get(path: "")
+        assert resp.status == 200 : resp.status
+
+        Trigger testTrigger = new Trigger("test-autoenable-trigger", "test-autoenable-trigger");
+
+        // remove if it exists
+        resp = client.delete(path: "triggers/test-autoenable-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        testTrigger.setAutoDisable(true);
+        testTrigger.setAutoEnable(true);
+        testTrigger.setAutoResolve(false);
+        testTrigger.setAutoResolveAlerts(false);
+
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // ADD Firing condition
+        AvailabilityCondition firingCond = new AvailabilityCondition("test-autoenable-trigger",
+                Mode.FIRING, "test-autoenable-avail", Operator.NOT_UP);
+
+        resp = client.post(path: "triggers/test-autoenable-trigger/conditions", body: firingCond)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // ENABLE Trigger
+        testTrigger.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-autoenable-trigger", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // FETCH trigger and make sure it's as expected
+        resp = client.get(path: "triggers/test-autoenable-trigger");
+        assertEquals(200, resp.status)
+        assertEquals("test-autoenable-trigger", resp.data.name)
+        assertEquals(true, resp.data.enabled)
+        assertEquals(true, resp.data.autoDisable);
+        assertEquals(true, resp.data.autoEnable);
+        assertEquals(false, resp.data.autoResolve);
+        assertEquals(false, resp.data.autoResolveAlerts);
+
+        // FETCH recent alerts for trigger, should not be any
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoenable-trigger"] )
+        assertEquals(200, resp.status)
+
+        // Send in DOWN avail data to fire the trigger
+        // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
+        for (int i=0; i<2; i++) {
+            Availability avail = new Availability("test-autoenable-avail", System.currentTimeMillis(), "DOWN");
+            MixedData mixedData = new MixedData();
+            mixedData.getAvailability().add(avail);
+            resp = client.post(path: "data", body: mixedData);
+            assertEquals(200, resp.status)
+        }
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 10; ++i ) {
+            // println "SLEEP!" ;
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 1 because the trigger should have disabled after firing
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoenable-trigger"] )
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
+                break;
+            }
+        }
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals("OPEN", resp.data[0].status)
+
+        // FETCH trigger and make sure it's disabled
+        def resp2 = client.get(path: "triggers/test-autoenable-trigger");
+        assertEquals(200, resp2.status)
+        assertEquals("test-autoenable-trigger", resp2.data.name)
+        assertEquals(false, resp2.data.enabled)
+
+        // RESOLVE manually the alert
+        resp = client.put(path: "resolve", query: [alertIds:resp.data[0].alertId,resolvedBy:"testUser",
+                resolvedNotes:"testNotes"] )
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoenable-trigger",statuses:"OPEN"] )
+        assertEquals(200, resp.status)
+        assertEquals(0, resp.data.size())
+
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoenable-trigger",statuses:"RESOLVED"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // at the time of this writing we don't have a service to purge/delete alerts, so for this to work we
+        // have to make sure any old alerts (from prior runs) are also resolved. Because all alerts for the trigger
+        // must be resolved for autoEnable to kick in...
+        resp = client.get(path: "", query: [triggerIds:"test-autoenable-trigger",statuses:"OPEN"] )
+        assertEquals(200, resp.status)
+        for(int i=0; i < resp.data.size(); ++i) {
+            resp2 = client.put(path: "resolve", query: [alertIds:resp.data[i].alertId,resolvedBy:"testUser",
+                resolvedNotes:"testNotes"] )
+            assertEquals(200, resp2.status)
+        }
+
+        // FETCH trigger and make sure it's now enabled
+        resp2 = client.get(path: "triggers/test-autoenable-trigger");
+        assertEquals(200, resp2.status)
+        assertEquals("test-autoenable-trigger", resp2.data.name)
+        assertEquals(true, resp2.data.enabled)
+    }
+
+    @Test
+    void t09_manualAutoResolveTest() {
+        String start = String.valueOf(System.currentTimeMillis());
+
+        // CREATE the trigger
+        def resp = client.get(path: "")
+        assert resp.status == 200 : resp.status
+
+        Trigger testTrigger = new Trigger("test-manual-autoresolve-trigger", "test-manual-autoresolve-trigger");
+
+        // remove if it exists
+        resp = client.delete(path: "triggers/test-manual-autoresolve-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        testTrigger.setAutoDisable(false);
+        testTrigger.setAutoResolve(true);
+        testTrigger.setAutoResolveAlerts(true);
+        testTrigger.setSeverity(Severity.HIGH);
+
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // ADD Firing condition
+        AvailabilityCondition firingCond = new AvailabilityCondition("test-manual-autoresolve-trigger",
+                Mode.FIRING, "test-manual-autoresolve-avail", Operator.NOT_UP);
+
+        resp = client.post(path: "triggers/test-manual-autoresolve-trigger/conditions", body: firingCond)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // ADD AutoResolve condition
+        AvailabilityCondition autoResolveCond = new AvailabilityCondition("test-manual-autoresolve-trigger",
+                Mode.AUTORESOLVE, "test-autoresolve-avail", Operator.UP);
+
+        resp = client.post(path: "triggers/test-manual-autoresolve-trigger/conditions", body: autoResolveCond)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // ENABLE Trigger
+        testTrigger.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-manual-autoresolve-trigger", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // FETCH trigger and make sure it's as expected
+        resp = client.get(path: "triggers/test-manual-autoresolve-trigger");
+        assertEquals(200, resp.status)
+        assertEquals("test-manual-autoresolve-trigger", resp.data.name)
+        assertEquals(true, resp.data.enabled)
+        assertEquals(false, resp.data.autoDisable);
+        assertEquals(false, resp.data.autoEnable);
+        assertEquals(true, resp.data.autoResolve);
+        assertEquals(true, resp.data.autoResolveAlerts);
+        assertEquals("HIGH", resp.data.severity);
+
+        // FETCH recent alerts for trigger, should not be any
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-autoresolve-trigger"] )
+        assertEquals(200, resp.status)
+
+        // Send in DOWN avail data to fire the trigger
+        // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
+        Availability avail = new Availability("test-manual-autoresolve-avail", System.currentTimeMillis(), "DOWN");
+        MixedData mixedData = new MixedData();
+        mixedData.getAvailability().add(avail);
+        resp = client.post(path: "data", body: mixedData);
+        assertEquals(200, resp.status)
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 10; ++i ) {
+            // println "SLEEP!" ;
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 1
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-autoresolve-trigger"] )
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
+                break;
+            }
+            assert resp.status == 200 : resp.status
+        }
+        assertEquals(200, resp.status)
+        assertEquals("OPEN", resp.data[0].status)
+        assertEquals("HIGH", resp.data[0].severity)
+
+        // FETCH trigger and make sure it's still enabled (note - we can't check the mode as that is runtime
+        // info and not supplied in the returned json)
+        resp = client.get(path: "triggers/test-manual-autoresolve-trigger");
+        assertEquals(200, resp.status)
+        assertEquals("test-manual-autoresolve-trigger", resp.data.name)
+        assertEquals(true, resp.data.enabled)
+
+        // Manually RESOLVE the alert prior to an autoResolve
+        // Att the time of this writing we don't have a service to purge/delete alerts, so for this to work we
+        // have to make sure any old alerts (from prior runs) are also resolved. Because all alerts for the trigger
+        // must be resolved for autoEnable to kick in...
+        resp = client.get(path: "", query: [triggerIds:"test-manual-autoresolve-trigger",statuses:"OPEN"] )
+        assertEquals(200, resp.status)
+        for(int i=0; i < resp.data.size(); ++i) {
+            def resp2 = client.put(path: "resolve", query: [alertIds:resp.data[i].alertId,resolvedBy:"testUser",
+                resolvedNotes:"testNotes"] )
+            assertEquals(200, resp2.status)
+        }
+
+        // Send in another DOWN data and we should get another alert assuming the trigger was reset to Firing mode
+        avail = new Availability("test-manual-autoresolve-avail", System.currentTimeMillis(), "DOWN");
+        mixedData = new MixedData();
+        mixedData.getAvailability().add(avail);
+        resp = client.post(path: "data", body: mixedData);
+        assertEquals(200, resp.status)
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 10; ++i ) {
+            // println "SLEEP!" ;
+            Thread.sleep(500);
+
+            // FETCH recent OPEN alerts for trigger, there should be 1
+            resp = client.get(path: "",
+                query: [startTime:start,triggerIds:"test-manual-autoresolve-trigger",statuses:"OPEN"] )
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
+                break;
+            }
+            assert resp.status == 200 : resp.status
+        }
+        assertEquals(200, resp.status)
+        assertEquals("OPEN", resp.data[0].status)
+    }
+
+    @Test
+    void t100_cleanup() {
+        // clean up triggers
+        def resp = client.delete(path: "triggers/test-autodisable-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-autoresolve-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-manual-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-manual2-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-autoresolve-threshold-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-autoenable-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-manual-autoresolve-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
     }
 }
