@@ -25,6 +25,7 @@ import javax.jms.MessageListener;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.Message.RecipientType;
+import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
@@ -73,38 +74,49 @@ public class EmailListener extends BasicMessageListener<ActionMessage> {
     }
 
     protected Message createMimeMessage(ActionMessage msg) throws Exception {
-        Message email = new MimeMessage(mailSession);
+        Message email = new HawkularMimeMessage(mailSession);
 
         Map<String, String> props = msg.getProperties();
         Map<String, String> defaultProps = msg.getDefaultProperties();
         String message = msg.getMessage();
         Alert alert = msg.getAlert() != null ? GsonUtil.fromJson(msg.getAlert(), Alert.class) : null;
+        Alert.Status status = alert != null && alert.getStatus() != null ? alert.getStatus() : Alert.Status.OPEN;
 
-        String from = getProp(props, defaultProps, EmailPlugin.PROP_FROM);
+        String from = getProp(props, defaultProps, EmailPlugin.PROP_FROM + "." + status.name().toLowerCase());
+        from = from == null ? getProp(props, defaultProps, EmailPlugin.PROP_FROM) : from;
         from = from == null ? EmailPlugin.DEFAULT_FROM : from;
 
-        String fromName = getProp(props, defaultProps, EmailPlugin.PROP_FROM_NAME);
+        String fromName = getProp(props, defaultProps, EmailPlugin.PROP_FROM_NAME + "." + status.name().toLowerCase());
+        fromName = fromName == null ? getProp(props, defaultProps, EmailPlugin.PROP_FROM_NAME) : fromName;
         fromName = fromName == null ? EmailPlugin.DEFAULT_FROM_NAME : fromName;
 
         email.setFrom(new InternetAddress(from, fromName));
-        if (alert != null && alert.getStatus() != null && alert.getStatus().equals(Alert.Status.OPEN)) {
-            email.setSentDate(new Date(alert.getCtime()));
-        }
-
-        if (alert != null) {
-            email.addHeader(EmailPlugin.PROP_MESSAGE_ID, alert.getAlertId());
-            if (alert.getStatus() != null && !alert.getStatus().equals(Alert.Status.OPEN)) {
-                email.addHeader(EmailPlugin.PROP_IN_REPLY_TO, alert.getAlertId());
+        if (alert != null && alert.getStatus() != null) {
+            if (alert.getStatus().equals(Alert.Status.OPEN)) {
+                email.setSentDate(new Date(alert.getCtime()));
+            } else if (alert.getStatus().equals(Alert.Status.ACKNOWLEDGED)) {
+                email.setSentDate(new Date(alert.getAckTime()));
+            } else {
+                email.setSentDate(new Date(alert.getResolvedTime()));
             }
         }
 
-        String to = getProp(props, defaultProps, EmailPlugin.PROP_TO);
+        if (alert != null) {
+            email.addHeader(EmailPlugin.MESSAGE_ID, alert.getAlertId());
+            if (alert.getStatus() != null && !alert.getStatus().equals(Alert.Status.OPEN)) {
+                email.addHeader(EmailPlugin.IN_REPLY_TO, alert.getAlertId());
+            }
+        }
+
+        String to = getProp(props, defaultProps, EmailPlugin.PROP_TO + "." + status.name().toLowerCase());
+        to = to == null ? getProp(props, defaultProps, EmailPlugin.PROP_TO) : to;
         if (to != null) {
             Address toAddress = new InternetAddress(to);
             email.addRecipient(RecipientType.TO, toAddress);
         }
 
-        String ccs = getProp(props, defaultProps, EmailPlugin.PROP_CC);
+        String ccs = getProp(props, defaultProps, EmailPlugin.PROP_CC + "." + status.name().toLowerCase());
+        ccs = ccs == null ? getProp(props, defaultProps, EmailPlugin.PROP_CC) : ccs;
         if (ccs != null) {
             String[] multipleCc = ccs.split(",");
             for (String cc : multipleCc) {
@@ -142,6 +154,20 @@ public class EmailListener extends BasicMessageListener<ActionMessage> {
             return defaultProps.get(prop);
         }
         return null;
+    }
+
+    public class HawkularMimeMessage extends MimeMessage {
+
+        public HawkularMimeMessage(Session session) {
+            super(session);
+        }
+
+        @Override
+        protected void updateMessageID() throws MessagingException {
+            /*
+                Overriding to maintain my own message-id
+             */
+        }
     }
 
 

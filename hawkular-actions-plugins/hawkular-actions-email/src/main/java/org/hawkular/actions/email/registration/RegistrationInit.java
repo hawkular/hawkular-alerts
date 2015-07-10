@@ -63,9 +63,9 @@ public class RegistrationInit {
             pcc = ccf.createProducerConnectionContext(new Endpoint(Endpoint.Type.QUEUE, ACTION_PLUGIN_REGISTER));
 
             /*
-                This is a registration message, it should contain
+                This is a registration message.
+                It contains the properties that can be configured for this plugin.
              */
-
             ActionPluginMessage apMsg = new ActionPluginMessage();
             apMsg.setOp(EmailPlugin.INIT_PLUGIN);
             apMsg.setActionPlugin(EmailPlugin.PLUGIN_NAME);
@@ -74,8 +74,6 @@ public class RegistrationInit {
             properties.add(EmailPlugin.PROP_FROM_NAME);
             properties.add(EmailPlugin.PROP_TO);
             properties.add(EmailPlugin.PROP_CC);
-            properties.add(EmailPlugin.PROP_MESSAGE_ID);
-            properties.add(EmailPlugin.PROP_IN_REPLY_TO);
             properties.add(EmailPlugin.PROP_TEMPLATE_HAWKULAR_URL);
             properties.add(EmailPlugin.PROP_TEMPLATE_LOCALE);
             properties.add(EmailPlugin.PROP_TEMPLATE_PLAIN);
