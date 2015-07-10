@@ -452,10 +452,12 @@ rule AlertOnSatisfiedDampening
             if (log != null && log.isDebugEnabled()) {
                 log.debug("Setting Trigger Disabled! " + $t);
             }
-            retract( $t );
-            $t.setEnabled( false );
 
+            // the autoDisable trigger handling will result in a trigger reload, so we can just retract the
+            // current definition. And given that it will be disabled, it actually will not get loaded.
             disabledTriggers.add( $t );
+
+            retract( $t );
 
         } else if (log != null && log.isDebugEnabled()) {
             log.debug("Trigger remains in Firing mode, AutoDisable and AutoResolve not set. " + $t);
@@ -472,13 +474,12 @@ rule SetFiringModeOnSatisfiedDampening
             log.debug("SetFiringModeOnSatisfiedDampening! " + $d.log());
         }
 
+        // the autoResolved trigger handling will result in a trigger reload, so we can just retract the
+        // current definition. We set it to FIRING mode but that is mainly a cosmetic change and affects
+        // only the Trigger instance placed into autoResolvedTriggers.
+        $t.setMode(Mode.FIRING);
         autoResolvedTriggers.put( $t, $d.getSatisfyingEvals() );
 
         retract( $d );
-        $d.reset();
-        insert( $d );
-
         retract( $t );
-        $t.setMode(Mode.FIRING);
-        insert( $t );
 end

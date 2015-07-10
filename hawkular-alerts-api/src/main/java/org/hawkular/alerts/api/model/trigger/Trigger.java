@@ -121,12 +121,15 @@ public class Trigger extends TriggerTemplate {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
 
-        Trigger trigger = (Trigger) o;
+        Trigger trigger = (Trigger)o;
 
-        if (id != null ? !id.equals(trigger.id) : trigger.id != null) return false;
+        if (id != null ? !id.equals(trigger.id) : trigger.id != null)
+            return false;
         return !(tenantId != null ? !tenantId.equals(trigger.tenantId) : trigger.tenantId != null);
 
     }
@@ -140,9 +143,9 @@ public class Trigger extends TriggerTemplate {
 
     @Override
     public String toString() {
-        return "Trigger [tenantId="+ tenantId + " id=" + id + ", enabled=" + enabled + ", mode=" + mode +
-                ", getName()=" + getName() + ", isAutoDisable()=" + isAutoDisable() + ", isAutoResolve()=" +
-                isAutoResolve() + "]";
+        return "Trigger [tenantId=" + tenantId + " id=" + id + ", enabled=" + enabled + ", mode=" + mode +
+                ", getName()=" + getName() + ", isAutoDisable()=" + isAutoDisable() + ", isAutoEnable()="
+                + isAutoEnable() + ", isAutoResolve()=" + isAutoResolve() + "]";
     }
 
 }

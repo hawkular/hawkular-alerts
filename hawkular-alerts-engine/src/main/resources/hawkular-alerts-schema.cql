@@ -33,6 +33,7 @@ CREATE TABLE ${keyspace}.triggers (
     name text,
     description text,
     autoDisable boolean,
+    autoEnable boolean,
     autoResolve boolean,
     autoResolveAlerts boolean,
     severity text,

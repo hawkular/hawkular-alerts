@@ -776,6 +776,7 @@ public class JsonJacksonTest {
                 "\"id\":\"test\"," +
                 "\"enabled\":true," +
                 "\"autoDisable\":true," +
+                "\"autoEnable\":true," +
                 "\"autoResolve\":true," +
                 "\"autoResolveAlerts\":true," +
                 "\"severity\":\"HIGH\"}";
@@ -790,6 +791,7 @@ public class JsonJacksonTest {
         assertTrue(trigger.getId().equals("test"));
         assertTrue(trigger.isEnabled());
         assertTrue(trigger.isAutoDisable());
+        assertTrue(trigger.isAutoEnable());
         assertTrue(trigger.isAutoResolve());
         assertTrue(trigger.isAutoResolveAlerts());
         assertTrue(trigger.getSeverity() == Severity.HIGH);

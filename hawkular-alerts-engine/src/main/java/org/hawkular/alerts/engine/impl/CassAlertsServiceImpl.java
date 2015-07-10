@@ -40,9 +40,11 @@ import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Tag;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
+import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.jboss.logging.Logger;
@@ -71,6 +73,9 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     @EJB
     AlertsEngine alertsEngine;
+
+    @EJB
+    DefinitionsService definitionsService;
 
     @EJB
     ActionsService actionsService;
@@ -278,7 +283,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     private Page<Alert> preparePage(List<Alert> alerts, Pager pager) {
-        if (pager != null)  {
+        if (pager != null) {
             if (pager.getOrder() != null
                     && !pager.getOrder().isEmpty()
                     && pager.getOrder().get(0).getField() == null) {
@@ -291,10 +296,10 @@ public class CassAlertsServiceImpl implements AlertsService {
             if (pager.getOrder() != null) {
                 pager.getOrder().stream().filter(o -> o.getField() != null && o.getDirection() != null)
                         .forEach(o -> {
-                        AlertComparator comparator = new AlertComparator(Field.getField(o.getField()),
-                                o.getDirection());
-                        Collections.sort(ordered, comparator);
-                });
+                            AlertComparator comparator = new AlertComparator(Field.getField(o.getField()),
+                                    o.getDirection());
+                            Collections.sort(ordered, comparator);
+                        });
             }
             if (!pager.isLimited() || ordered.size() < pager.getStart()) {
                 pager = new Pager(0, ordered.size(), pager.getOrder());
@@ -577,6 +582,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     @Override
     public void resolveAlerts(String tenantId, Collection<String> alertIds, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
+
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
@@ -588,6 +594,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         criteria.setAlertIds(alertIds);
         List<Alert> alertsToResolve = getAlerts(tenantId, criteria, null);
 
+        // resolve the alerts
         for (Alert a : alertsToResolve) {
             a.setStatus(Alert.Status.RESOLVED);
             a.setResolvedBy(resolvedBy);
@@ -595,14 +602,23 @@ public class CassAlertsServiceImpl implements AlertsService {
             a.setResolvedEvalSets(resolvedEvalSets);
             updateAlertStatus(a);
         }
+
+        // gather the triggerIds of the triggers we need to check for resolve options
+        Set<String> triggerIds = alertsToResolve.stream().map(a -> a.getTriggerId()).collect(Collectors.toSet());
+
+        // handle resolve options
+        triggerIds.stream().forEach(tid -> handleResolveOptions(tenantId, tid, true));
     }
 
     @Override
     public void resolveAlertsForTrigger(String tenantId, String triggerId, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
 
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
         if (isEmpty(triggerId)) {
-            return;
+            throw new IllegalArgumentException("TriggerId must be not null");
         }
 
         AlertsCriteria criteria = new AlertsCriteria();
@@ -617,6 +633,8 @@ public class CassAlertsServiceImpl implements AlertsService {
             a.setResolvedEvalSets(resolvedEvalSets);
             updateAlertStatus(a);
         }
+
+        handleResolveOptions(tenantId, triggerId, false);
     }
 
     private Alert updateAlertStatus(Alert alert) throws Exception {
@@ -663,6 +681,48 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw e;
         }
         return alert;
+    }
+
+    private void handleResolveOptions(String tenantId, String triggerId, boolean checkAllResolved) {
+
+        try {
+            Trigger trigger = definitionsService.getTrigger(tenantId, triggerId);
+            if (null == trigger) {
+                return;
+            }
+
+            boolean setEnabled = trigger.isAutoEnable() && !trigger.isEnabled();
+            boolean setFiring = trigger.isAutoResolve();
+
+            if (!setEnabled && !setFiring) {
+                return;
+            }
+
+            boolean allResolved = true;
+            if (checkAllResolved) {
+                AlertsCriteria ac = new AlertsCriteria();
+                ac.setTriggerId(triggerId);
+                ac.setStatusSet(EnumSet.complementOf(EnumSet.of(Alert.Status.RESOLVED)));
+                Page<Alert> unresolvedAlerts = getAlerts(tenantId, ac, new Pager(0, 1, Order.unspecified()));
+                allResolved = unresolvedAlerts.isEmpty();
+            }
+
+            if (!allResolved) {
+                return;
+            }
+
+            // Either update the trigger, which implicitly reloads the trigger (and as such resets to firing mode)
+            // or perform an explicit reload to reset to firing mode.
+            if (setEnabled) {
+                trigger.setEnabled(true);
+                definitionsService.updateTrigger(tenantId, trigger);
+            } else {
+                alertsEngine.reloadTrigger(tenantId, triggerId);
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+        }
+
     }
 
     @Override

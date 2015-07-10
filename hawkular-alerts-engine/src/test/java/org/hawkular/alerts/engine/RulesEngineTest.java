@@ -1272,6 +1272,7 @@ public class RulesEngineTest {
 
         t1.setEnabled(true);
         t1.setAutoDisable(false);
+        t1.setAutoEnable(false);
         t1.setAutoResolve(true);
         t1.setAutoResolveAlerts(true);
 
@@ -1318,7 +1319,9 @@ public class RulesEngineTest {
         rulesEngine.addData(datums);
         rulesEngine.fire();
 
-        // The second consecutive UP should satisfy the AutoResolve requirements and return the Trigger to FIRING mode.
+        // The second consecutive UP should satisfy the AutoResolve requirements and return the Trigger
+        // in the autoResolvedTriggers global. Note the trigger is set to FIRING mode but in production
+        // the real handling reloads the trigger and as such it is reset to FIRING mode in the engine.
         assertTrue(alerts.isEmpty());
         assertTrue(disabledTriggers.isEmpty());
         assertEquals(1, autoResolvedTriggers.size());

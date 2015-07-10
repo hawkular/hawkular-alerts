@@ -48,6 +48,9 @@ public abstract class TriggerTemplate {
     private boolean autoDisable;
 
     @JsonInclude
+    private boolean autoEnable;
+
+    @JsonInclude
     private boolean autoResolve;
 
     @JsonInclude
@@ -70,6 +73,7 @@ public abstract class TriggerTemplate {
         this.name = name;
 
         this.autoDisable = false;
+        this.autoEnable = false;
         this.autoResolve = false;
         this.autoResolveAlerts = true;
         this.severity = Severity.MEDIUM;
@@ -103,6 +107,14 @@ public abstract class TriggerTemplate {
 
     public void setAutoDisable(boolean autoDisable) {
         this.autoDisable = autoDisable;
+    }
+
+    public boolean isAutoEnable() {
+        return autoEnable;
+    }
+
+    public void setAutoEnable(boolean autoEnable) {
+        this.autoEnable = autoEnable;
     }
 
     public boolean isAutoResolve() {

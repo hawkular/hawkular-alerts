@@ -208,8 +208,8 @@ public class CassStatement {
                 + "(tenantId, category, name, triggers) VALUES (?, ?, ?, ?) ";
 
         INSERT_TRIGGER = "INSERT INTO " + keyspace + ".triggers " +
-                "(name, description, autoDisable, autoResolve, autoResolveAlerts, severity, firingMatch, " +
-                "autoResolveMatch, id, enabled, tenantId) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
+                "(name, description, autoDisable, autoEnable, autoResolve, autoResolveAlerts, severity, firingMatch, "
+                + "autoResolveMatch, id, enabled, tenantId) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_TRIGGER_ACTIONS = "INSERT INTO " + keyspace + ".triggers_actions "
                 + "(tenantId, triggerId, actionPlugin, actions) VALUES (?, ?, ?, ?) ";
@@ -320,7 +320,7 @@ public class CassStatement {
                 + "FROM " + keyspace + ".tags_triggers "
                 + "WHERE tenantId = ? AND name = ? ";
 
-        SELECT_TRIGGER = "SELECT name, description, autoDisable, autoResolve, "
+        SELECT_TRIGGER = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
                 + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId "
                 + "FROM " + keyspace + ".triggers "
                 + "WHERE tenantId = ? AND id = ? ";
@@ -352,11 +352,11 @@ public class CassStatement {
                 + "FROM " + keyspace + ".dampenings "
                 + "WHERE tenantId = ? AND triggerId = ? and triggerMode = ? ";
 
-        SELECT_TRIGGERS_ALL = "SELECT name, description, autoDisable, autoResolve, "
+        SELECT_TRIGGERS_ALL = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
                 + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId "
                 + "FROM " + keyspace + ".triggers ";
 
-        SELECT_TRIGGERS_TENANT = "SELECT name, description, autoDisable, autoResolve, "
+        SELECT_TRIGGERS_TENANT = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
                 + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId "
                 + "FROM " + keyspace + ".triggers WHERE tenantId = ? ";
 
@@ -378,8 +378,8 @@ public class CassStatement {
                 + "WHERE tenantId = ? AND name = ? ";
 
         UPDATE_TRIGGER = "UPDATE " + keyspace + ".triggers "
-                + "SET name = ?, description = ?, autoDisable = ?, autoResolve = ?, autoResolveAlerts = ?, "
-                + "severity = ?, firingMatch = ?, autoResolveMatch = ?, enabled = ? "
+                + "SET name = ?, description = ?, autoDisable = ?, autoEnable = ?, autoResolve = ?, "
+                + "autoResolveAlerts = ?, severity = ?, firingMatch = ?, autoResolveMatch = ?, enabled = ? "
                 + "WHERE tenantId = ? AND id = ? ";
 
     }
