@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,7 @@ import javax.ejb.Stateless;
 
 import org.hawkular.alerts.api.json.GsonUtil;
 import org.hawkular.alerts.api.model.Severity;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
@@ -576,6 +578,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             a.setAckBy(ackBy);
             a.setAckNotes(ackNotes);
             updateAlertStatus(a);
+            sendAction(a);
         }
     }
 
@@ -601,6 +604,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             a.setResolvedNotes(resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
             updateAlertStatus(a);
+            sendAction(a);
         }
 
         // gather the triggerIds of the triggers we need to check for resolve options
@@ -632,6 +636,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             a.setResolvedNotes(resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
             updateAlertStatus(a);
+            sendAction(a);
         }
 
         handleResolveOptions(tenantId, triggerId, false);
@@ -734,6 +739,19 @@ public class CassAlertsServiceImpl implements AlertsService {
     public void sendData(Collection<Data> data) throws Exception {
         alertsEngine.sendData(data);
     }
+
+    private void sendAction(Alert a) {
+        if (actionsService != null && a != null && a.getTrigger() != null && a.getTrigger().getActions() != null) {
+            Map<String, Set<String>> actions = a.getTrigger().getActions();
+            for (String actionPlugin : actions.keySet()) {
+                for (String actionId : actions.get(actionPlugin)) {
+                    Action action = new Action(a.getTrigger().getTenantId(), actionPlugin, actionId, a);
+                    actionsService.send(action);
+                }
+            }
+        }
+    }
+
 
     private boolean isEmpty(Collection<?> c) {
         return null == c || c.isEmpty();

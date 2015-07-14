@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -137,29 +138,6 @@ public class EmailTemplateTest {
     }
 
     @Test
-    public void templateForType() throws Exception {
-        String thresholdTemplate = "THRESHOLD TEMPLATE ${alert.triggerId}";
-        String availabilityTemplate = "AVAILABILITY TEMPLATE ${alert.triggerId}";
-
-        Map<String, String> props = new HashMap<>();
-        props.put(EmailPlugin.PROP_TEMPLATE_PLAIN + ".THRESHOLD", thresholdTemplate);
-
-        Map<String, String> content = template.body(props, null, null, alertThreshold);
-        assertEquals(thresholdTemplate, content.get("plain"));
-
-        content = template.body(null, props, null, alertThreshold);
-        assertEquals(thresholdTemplate, content.get("plain"));
-
-        props.put(EmailPlugin.PROP_TEMPLATE_PLAIN + ".AVAILABILITY", availabilityTemplate);
-
-        content = template.body(props, null, null, alertAvailability);
-        assertEquals(availabilityTemplate, content.get("plain"));
-
-        content = template.body(null, props, null, alertAvailability);
-        assertEquals(availabilityTemplate, content.get("plain"));
-    }
-
-    @Test
     public void templateForLocale() throws Exception {
         String enTemplate = "ENGLISH TEMPLATE";
         String esTemplate = "PLANTILLA EN ESPAÑOL";
@@ -188,10 +166,10 @@ public class EmailTemplateTest {
     @Test
     public void testSubject() throws Exception {
         String subject = template.subject(alertAvailability);
-        assertEquals("Alert message: http://www.mydemourl.com is not up", subject);
+        assertEquals("Alert [open] message: http://www.mydemourl.com is not up", subject);
 
         subject = template.subject(alertThreshold);
-        assertEquals("Alert message: http://www.mydemourl.com has response time greater than threshold",
+        assertEquals("Alert [open] message: http://www.mydemourl.com has response time greater than threshold",
                 subject);
     }
 
@@ -214,5 +192,16 @@ public class EmailTemplateTest {
 
         System.out.println(body.get("plain"));
     }
+
+    @Test
+    public void testPropertyFolder() throws Exception {
+        String testPath = EmailTemplateTest.class
+                .getClassLoader().getResource("template.plain.default_en_US.ftl").getPath();
+        File testFile = new File(testPath);
+        String templatesTestDir = testFile.getParent();
+        System.setProperty(EmailPlugin.HAWKULAR_ALERTS_TEMPLATES_PROPERY, templatesTestDir);
+        EmailTemplate templatesFromDisk = new EmailTemplate();
+    }
+
 
 }

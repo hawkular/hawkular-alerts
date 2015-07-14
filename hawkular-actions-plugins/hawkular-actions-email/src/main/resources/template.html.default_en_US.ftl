@@ -94,11 +94,22 @@
                                 <!-- Content -->
 
                                 <tr>
-                                    <td align="center" style="background-color:#faeceb; padding:40px 30px 33px 30px;">
+                                    <td align="center"
+                                        <#if alert?? && alert.status?? && alert.status == 'RESOLVED'>
+                                            style="background-color:#f0f7ef; padding:40px 30px 33px 30px;"
+                                        <#else>
+                                            style="background-color:#faeceb; padding:40px 30px 33px 30px;"
+                                        </#if>>
                                         <table width="540" cellspacing="0" cellpadding="0" border="0" class="flexible-container" style="margin:0 auto;">
                                             <tr>
                                                 <td align="center" style="padding-bottom:25px;">
+                                                    <#if alert?? && alert.status?? && alert.status == 'RESOLVED'>
+                                                    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAABoCAYAAAA6sjRJAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDowMDgwMTE3NDA3MjA2ODExODA4M0Q5RkNBQjM0RTkxNyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo3MDVBNDk0NTBFQkExMUU1ODIxQUFGRDlFRUJBM0ZBOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo3MDVBNDk0NDBFQkExMUU1ODIxQUFGRDlFRUJBM0ZBOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M2IChNYWNpbnRvc2gpIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6Rjg3RjExNzQwNzIwNjgxMTgwODNENUE0NkNCRkIyRTkiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MDA4MDExNzQwNzIwNjgxMTgwODNEOUZDQUIzNEU5MTciLz4gPC9yZGY6RGVzY3Jp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
+                                                    " alt="Icon: alert resolved flag" border="0" width="60"
+                                                         height="52" />
+                                                    <#else>
                                                     <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHcAAABoCAYAAADLuW/EAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDowMDgwMTE3NDA3MjA2ODExODA4M0Q5RkNBQjM0RTkxNyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo3OUE0NTRGNTBERkQxMUU1OUY1NUE0Q0U4RkM0QTIxRiIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo3OUE0NTRGNDBERkQxMUU1OUY1NUE0Q0U4RkM0QTIxRiIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M2IChNYWNpbnRvc2gpIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6Rjg3RjExNzQwNzIwNjgxMTgwODNENUE0NkNCRkIyRTkiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MDA4MDExNzQwNzIwNjgxMTgwODNEOUZDQUIzNEU5MTciLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7dqnS3AAAD90lEQVR42uydy1XbQBRAZQ47FqgDTAU4O3bIFeBUgKkgpIKYDkgFERUEOhA7lqKCiA7sBWtnBt7EEx3byNKMPZLvPWeOjT+y9K7mK+zXm8/nUZnno16sbkZSElWO5akXVTJV0vO3eS6vjWB3KA8rn+uV5SpZWuidKiefbPdRlbEqU0IcptyDklgt63cFsZpLqcUxIQ6Tg1KN/bXh+88QHLhc6WPTmtvQgm8IZbg1d2wNmuqA3IDljhpu59jBNsCT3AsH2xoQzrA47Mhx9KUYEut+Zt0vpHQGNV7qS6upjytXU6OirXJjaSESue3LgG4dP5Y89irB0OJzKW2TrmMwKbe6SvatEjyx5b5WnNuuo/B4EGal7MzRNk+kXJSEa9kPUlol1T6Z9aqhFvy+QqX+0NOgq4YfeupQ8MgqxzsK4qNITgOR2hepVTzNlNzYyNVv/NPgg59K/VzdM3K8Y6FLAyWS76T5DlmqzfDf2rISrHf+W82DH9SstbEIvXHQLWyDF5GsZU8DlbpUbix9zqb92nWNpsvseGi1dJMTOhXRrscapgVr2k0O/7sqZC1DXlY8wPGGg49Eaull1B3uHTTZ5hLrjcNB47C34npuVmFhY6g67azi9dzPRnhd4Mlqsqu2XmYm4ONkH/qe5+6DVMOFFDOlKkoLKGahZSDF+xjDl9yBnMX7IHXZHPpqzQLK1vAht+6oGwKX62IxBBxx4HBbY8R2V25COLsrt084uysXkAvIBeQCcpELyAXkAnIBuYBcQC5yAbmAXEAuIBeQi1xALiAXkAvIBeQCcpELyAXkAnIBuYBcQC5yAbmAXEAuIBeQi1xALiAXkAseyZHbTX6ev82nXUj3pn+Z3M7qVcjjWel1JpuYJokWP0N/0kGx71lR2yhXp395iBap2qqmgJlawm3xRrKvXAPbQudYmOi8E+aBtsg12bl85PPRNT2V4iNLyNaltkGuT6HrarcRrWvzOAr3B8JXSg11tKz7z9voIy/gSII83dG+ZCJX78t9YFKHcvJlbZgK6R3+Gi0yhRUBBbMoSZ7tYB9m8tlfqkgNpVl2kU1r25Jj6ZN18Z2qrlHuQJc192FDqacSrDaILffLE5F8LWMD163Yd4nPoEnX5LLmptHn2TTvA2x2mx5zWppOJRvU6Jmc3Jl162yMcej4jDaDoLOOS103nVq2YGK/zsQgjzwPFl33uXm0yClvOv4s2j9WLZhsFV8Dqn2VGhRcOEAuIBeQC8gF5AJykQvIBeQCcgG5gFxALnIBuYBcQC4gF5CLXEAudENuUeG9BeFrp9xJ9PF1ylXcnr/NkRs4S/8pXcT1n496+tsDcenpXP+YBqELn78CDADNhAorEgKyfAAAAABJRU5ErkJggg==" alt="Icon: alert flag" border="0" width="60" height="52" />
+                                                    </#if>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -122,10 +133,10 @@
                                             </tr>
                                             <tr>
                                                 <td align="center" style="color:#999999; font-family:Open sans,sans-serif; font-size:13px; line-height:21px; padding-bottom:7px;">
-                                                <#if alert?? && alert.dampening?? && alert.dampening.type == 'STRICT_TIME'>(Alert triggered after ${alert.dampening.evalTimeSetting/1000} seconds )</#if>
+                                                <#if alert?? && alert.dampening?? && alert.dampening.type == 'STRICT_TIME'>alert triggered after ${alert.dampening.evalTimeSetting/1000} seconds </#if>
                                                 </td>
                                             </tr>
-                                            <#if type?? && type == 'THRESHOLD' && average?? && condition??>
+                                            <#if condition?? && condition.type == 'THRESHOLD' && average??>
                                             <tr>
                                                 <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:13px; line-height:21px;">
                                                     Average response time: <span style="font-size:15px;">${average}</span> ms
@@ -136,6 +147,69 @@
                                                         threshold is ${condition.threshold} ms
                                                     </td>
                                                 </tr>
+                                            </#if>
+                                            <#if (numConditions > 1)>
+                                                <tr>
+                                                    <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:13px; line-height:21px;">
+                                                        Conditions:
+                                                    </td>
+                                                </tr>
+                                                <#list condDescs as condDesc>
+                                                    <tr>
+                                                        <td align="center" style="color:#999999; font-family:Open sans,sans-serif; font-size:13px; line-height:21px; padding-bottom:7px;">
+                                                        ${condDesc.type}: ${condDesc.description}
+                                                        </td>
+                                                    </tr>
+                                                </#list>
+                                            </#if>
+                                            <#if alert?? && alert.status?? && alert.status == 'ACKNOWLEDGED'>
+                                                <tr>
+                                                    <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:13px; line-height:21px;">
+                                                        Acknowledge time:
+                                                        <span style="font-size:15px;">${alert.ackTime?number_to_datetime}</span>
+                                                    </td>
+                                                </tr>
+                                                <#if alert.ackBy?? >
+                                                    <tr>
+                                                        <td align="center" style="color:#999999; font-family:Open
+                                                        sans,sans-serif; font-size:13px; line-height:21px;
+                                                        padding-bottom:2px;">
+                                                            by ${alert.ackBy}
+                                                        </td>
+                                                    </tr>
+                                                </#if>
+                                                <#if alert.ackNotes?? >
+                                                    <tr>
+                                                        <td align="center" style="color:#999999; font-family:Open sans,sans-serif; font-size:13px; line-height:21px; padding-bottom:7px;">
+                                                            ${alert.ackNotes}
+                                                        </td>
+                                                    </tr>
+                                                </#if>
+                                            </#if>
+                                            <#if alert?? && alert.status?? && alert.status == 'RESOLVED'>
+                                                <tr>
+                                                    <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:13px; line-height:21px;">
+                                                        Resolved time:
+                                                        <span style="font-size:15px;">${alert
+                                                        .resolvedTime?number_to_datetime}</span>
+                                                    </td>
+                                                </tr>
+                                                <#if alert.resolvedBy?? >
+                                                    <tr>
+                                                        <td align="center" style="color:#999999; font-family:Open
+                                                            sans,sans-serif; font-size:13px; line-height:21px;
+                                                            padding-bottom:2px;">
+                                                            by ${alert.resolvedBy}
+                                                        </td>
+                                                    </tr>
+                                                </#if>
+                                                <#if alert.resolvedNotes?? >
+                                                    <tr>
+                                                        <td align="center" style="color:#999999; font-family:Open sans,sans-serif; font-size:13px; line-height:21px; padding-bottom:7px;">
+                                                            ${alert.resolvedNotes}
+                                                        </td>
+                                                    </tr>
+                                                </#if>
                                             </#if>
                                         </table>
                                     </td>
@@ -172,4 +246,3 @@
 </div>
 </body>
 </html>
-

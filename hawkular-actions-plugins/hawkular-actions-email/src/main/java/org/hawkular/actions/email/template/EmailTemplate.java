@@ -18,9 +18,12 @@ package org.hawkular.actions.email.template;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -29,10 +32,18 @@ import org.hawkular.actions.email.EmailPlugin;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
+import org.hawkular.alerts.api.model.condition.CompareCondition;
+import org.hawkular.alerts.api.model.condition.CompareConditionEval;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.condition.ExternalCondition;
+import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
+import org.hawkular.alerts.api.model.condition.StringCondition;
+import org.hawkular.alerts.api.model.condition.StringConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
+import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.jboss.logging.Logger;
 
 /**
@@ -44,11 +55,9 @@ public class EmailTemplate {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(EmailTemplate.class);
 
-    private static final String DEFAULT_TEMPLATE_PLAIN = "template.plain.default.ftl";
-    private static final String DEFAULT_TEMPLATE_HTML = "template.html.default.ftl";
-    private static final Locale DEFAULT_LOCALE = new Locale("en", "US");
-
-    private static final String SUBJECT = "Alert message";
+    public static final String DEFAULT_TEMPLATE_PLAIN = "template.plain.default.ftl";
+    public static final String DEFAULT_TEMPLATE_HTML = "template.html.default.ftl";
+    public static final Locale DEFAULT_LOCALE = new Locale("en", "US");
 
     Configuration ftlCfg;
     Template ftlTemplate;
@@ -57,8 +66,24 @@ public class EmailTemplate {
 
     public EmailTemplate() {
         ftlCfg = new Configuration();
-        ftlCfg.setClassForTemplateLoading(this.getClass(), "/");
         try {
+            /*
+                Check if templates are located from disk or if we are loading default ones.
+             */
+            String templatesDir = System.getenv(EmailPlugin.HAWKULAR_ALERTS_TEMPLATES);
+            templatesDir = templatesDir == null ? System.getProperty(EmailPlugin.HAWKULAR_ALERTS_TEMPLATES_PROPERY)
+                    : templatesDir;
+            boolean templatesFromDir = false;
+            if (templatesDir != null) {
+                File fileDir = new File(templatesDir);
+                if (fileDir.exists()) {
+                    ftlCfg.setDirectoryForTemplateLoading(fileDir);
+                    templatesFromDir = true;
+                }
+            }
+            if (!templatesFromDir) {
+                ftlCfg.setClassForTemplateLoading(this.getClass(), "/");
+            }
             ftlTemplatePlain = ftlCfg.getTemplate(DEFAULT_TEMPLATE_PLAIN, DEFAULT_LOCALE);
             ftlTemplateHtml = ftlCfg.getTemplate(DEFAULT_TEMPLATE_HTML, DEFAULT_LOCALE);
         } catch (IOException e) {
@@ -101,28 +126,27 @@ public class EmailTemplate {
             }
             templateData.put("url", templateHawkularUrl);
 
+            if (alert != null && alert.getStatus() != null) {
+                Alert.Status status = alert.getStatus();
+                templateData.put("status", status.name());
+            }
+
             String templateLocale = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_LOCALE);
-            Condition.Type type = getFirstConditionType(alert);
-            if (type != null) {
-                templateData.put("type", type);
-                averageAndThreshold(templateData, alert);
-                if (templateLocale != null) {
-                    plain = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_PLAIN + "." + type.name() + "."
-                            + templateLocale);
-                    html = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_HTML + "." + type.name() + "."
-                            + templateLocale);
-                } else {
-                    plain = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_PLAIN + "." + type.name());
-                    html = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_HTML + "." + type.name());
-                }
+            if (templateLocale != null) {
+                plain = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_PLAIN + "." + templateLocale);
+                html = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_HTML + "." + templateLocale);
             } else {
-                if (templateLocale != null) {
-                    plain = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_PLAIN + "." + templateLocale);
-                    html = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_HTML + "." + templateLocale);
-                } else {
-                    plain = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_PLAIN);
-                    html = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_HTML);
-                }
+                plain = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_PLAIN);
+                html = getProp(props, defaultProps, EmailPlugin.PROP_TEMPLATE_HTML);
+            }
+
+            int numConditions = getConditionsSize(alert);
+            templateData.put("numConditions", numConditions);
+            if (numConditions == 1) {
+                averageAndThreshold(templateData, alert);
+            } else if (numConditions > 1) {
+                List<ConditionDesc> condDescs = getConditionDescription(alert);
+                templateData.put("condDescs", condDescs);
             }
 
             StringWriter writerPlain = new StringWriter();
@@ -152,56 +176,217 @@ public class EmailTemplate {
         return processed;
     }
 
-    private void subjects(Map<String, Object> props, Alert alert) {
-        if (props != null && alert != null && alert.getTrigger() != null && getFirstCondition(alert) != null) {
-            Condition.Type type = getFirstConditionType(alert);
-            Condition condition = getFirstCondition(alert);
-            String subject = SUBJECT;
-            String plainSubject = null;
-            String htmlSubject = null;
-            if (type != null && type.equals(Condition.Type.AVAILABILITY)) {
-                plainSubject = "Server " + alert.getTrigger().getName() + " is";
-                htmlSubject = "Server is ";
-                AvailabilityCondition aCondition = (AvailabilityCondition) condition;
-                subject += ": " + alert.getTrigger().getName() + " is";
-                if (aCondition.getOperator().equals(AvailabilityCondition.Operator.UP)) {
-                    subject += " up";
-                    plainSubject += " up";
-                    htmlSubject += "up";
-                } else if (aCondition.getOperator().equals(AvailabilityCondition.Operator.NOT_UP)) {
-                    subject += " not up";
-                    plainSubject += " not up";
-                    htmlSubject += " not up";
-                } else if (aCondition.getOperator().equals(AvailabilityCondition.Operator.DOWN)) {
-                    subject += " down";
-                    plainSubject += " down";
-                    htmlSubject += " down";
-                }
-            }
-            if (type != null && type.equals(Condition.Type.THRESHOLD)) {
-                ThresholdCondition tCondition = (ThresholdCondition) condition;
-                subject += ": " + alert.getTrigger().getName() + " has response time";
-                plainSubject = "Response time";
-                if (tCondition.getOperator().equals(ThresholdCondition.Operator.GT)) {
-                    subject += " greater than threshold";
-                    plainSubject += " greater than threshold";
-                } else if (tCondition.getOperator().equals(ThresholdCondition.Operator.GTE)) {
-                    subject += " greater or equal than threshold";
-                    plainSubject += " greater or equal than threshold";
-                } else if (tCondition.getOperator().equals(ThresholdCondition.Operator.LT)) {
-                    subject += " less than threshold";
-                    plainSubject += " less than threshold";
-                } else if (tCondition.getOperator().equals(ThresholdCondition.Operator.LTE)) {
-                    subject += " less or equal than threshold";
-                    plainSubject += " less or equal than threshold";
-                }
-                htmlSubject = plainSubject;
-                plainSubject += " for " + alert.getTrigger().getName();
-            }
+    /*
+        This method builds the subjects used for:
+            1.- "subject" email header
+            2.- Main title in HTML email
+            3.- Main title in Plain email
+
+        We may have two scenarios:
+            a) Trigger with one condition:
+
+                In this case, we personalize the subject according the type of condition
+                (it supports AVAILABILITY and THRESHOLD for the moment)
+
+            b) Trigger with more than one condition:
+
+                With more than one condition the subject will be generic showing the name of the trigger
+
+        Results are stores in the Map passed as first argument with the following keys:
+
             props.put("subject", subject);
             props.put("plainSubject", plainSubject);
             props.put("htmlSubject", htmlSubject);
+     */
+    private void subjects(Map<String, Object> props, Alert alert) {
+        if (props == null) return;
+        if (alert == null) return;
+        String subject;
+        String plainSubject;
+        String htmlSubject;
+        if (alert.getTrigger() == null) {
+            subject = plainSubject = htmlSubject = getStateSubject(alert);
+        } else {
+            int numConditions = getConditionsSize(alert);
+            if (numConditions == 0) {
+                subject = plainSubject = htmlSubject = getStateSubject(alert);
+            } else if (numConditions == 1) {
+                Condition.Type type = getFirstConditionType(alert);
+                Condition condition = getFirstCondition(alert);
+                subject = plainSubject = htmlSubject = getStateSubject(alert);
+                /*
+                    Subject for AVAILABILITY
+                 */
+                if (type != null && type.equals(Condition.Type.AVAILABILITY)) {
+                    plainSubject = "Server " + alert.getTrigger().getName() + " is";
+                    htmlSubject = "Server is ";
+                    AvailabilityCondition aCondition = (AvailabilityCondition) condition;
+                    subject += ": " + alert.getTrigger().getName() + " is";
+                    String description;
+                    if (alert.getStatus().equals(Alert.Status.RESOLVED) && alert.getResolvedEvalSets() != null) {
+                        AvailabilityCondition rCondition = (AvailabilityCondition) getFirstResolvedCondition(alert);
+                        description = oneCondAvailabilityDescription(rCondition);
+                    } else {
+                        description = oneCondAvailabilityDescription(aCondition);
+                    }
+                    subject += " " + description;
+                    plainSubject += " " + description;
+                    htmlSubject += " " + description;
+                }
+
+                /*
+                    Subject for THRESHOLD
+                 */
+                if (type != null && type.equals(Condition.Type.THRESHOLD)) {
+                    ThresholdCondition tCondition = (ThresholdCondition) condition;
+                    subject += ": " + alert.getTrigger().getName() + " has response time";
+                    plainSubject = "Response time";
+                    String description;
+                    if (alert.getStatus().equals(Alert.Status.RESOLVED) && alert.getResolvedEvalSets() != null) {
+                        ThresholdCondition rCondition = (ThresholdCondition) getFirstResolvedCondition(alert);
+                        description = oneCondResponseTimeDescription(rCondition);
+                    } else {
+                        description = oneCondResponseTimeDescription(tCondition);
+                    }
+                    subject += " " + description;
+                    plainSubject += " " + description;
+                    htmlSubject = plainSubject;
+                    plainSubject += " for " + alert.getTrigger().getName();
+                }
+            } else {
+                /*
+                    We have several conditions, so we write a generic subject
+                 */
+                subject = getStateSubject(alert) + " for " + alert.getTrigger().getName();
+                plainSubject = "Alert for " + alert.getTrigger().getName();
+                htmlSubject = "Alert for";
+            }
         }
+        props.put("subject", subject);
+        props.put("plainSubject", plainSubject);
+        props.put("htmlSubject", htmlSubject);
+    }
+
+    private String oneCondAvailabilityDescription(AvailabilityCondition cond) {
+        if (cond.getOperator().equals(AvailabilityCondition.Operator.UP)) {
+            return "up";
+        } else if (cond.getOperator().equals(AvailabilityCondition.Operator.NOT_UP)) {
+            return "not up";
+        } else if (cond.getOperator().equals(AvailabilityCondition.Operator.DOWN)) {
+            return "down";
+        }
+        return "";
+    }
+
+    private String oneCondResponseTimeDescription(ThresholdCondition cond) {
+        if (cond.getOperator().equals(ThresholdCondition.Operator.GT)) {
+            return "greater than threshold";
+        } else if (cond.getOperator().equals(ThresholdCondition.Operator.GTE)) {
+            return "greater or equal than threshold";
+        } else if (cond.getOperator().equals(ThresholdCondition.Operator.LT)) {
+            return "less than threshold";
+        } else if (cond.getOperator().equals(ThresholdCondition.Operator.LTE)) {
+            return "less or equal than threshold";
+        }
+        return "";
+    }
+
+    private String mixDescription(Condition cond) {
+        String desc = "";
+        if (cond instanceof ThresholdCondition) {
+            desc += cond.getDataId() + " is ";
+            ThresholdCondition.Operator operator = ((ThresholdCondition) cond).getOperator();
+            if (operator.equals(ThresholdCondition.Operator.LT)) {
+                desc += "less than ";
+            } else if (operator.equals(ThresholdCondition.Operator.LTE)) {
+                desc += "less or equals than ";
+            } else if (operator.equals(ThresholdCondition.Operator.GT)) {
+                desc += "greater than ";
+            } else if (operator.equals(ThresholdCondition.Operator.LT)) {
+                desc += "greater or equals than ";
+            }
+            desc += ((ThresholdCondition) cond).getThreshold();
+        } else if (cond instanceof AvailabilityCondition) {
+            desc += cond.getDataId() + " is ";
+            AvailabilityCondition.Operator operator = ((AvailabilityCondition) cond).getOperator();
+            if (operator.equals(AvailabilityCondition.Operator.DOWN)) {
+                desc += "down ";
+            } else if (operator.equals(AvailabilityCondition.Operator.NOT_UP)) {
+                desc += "not up";
+            } else if (operator.equals(AvailabilityCondition.Operator.UP)) {
+                desc += "up";
+            }
+        } else if (cond instanceof ThresholdRangeCondition) {
+            desc += cond.getDataId() + " ";
+            if (((ThresholdRangeCondition) cond).isInRange()) {
+                desc += "in range ";
+            } else {
+                desc += "out of range ";
+            }
+            ThresholdRangeCondition.Operator operatorLow = ((ThresholdRangeCondition) cond).getOperatorLow();
+            ThresholdRangeCondition.Operator operatorHigh = ((ThresholdRangeCondition) cond).getOperatorHigh();
+            if (operatorLow.equals(ThresholdRangeCondition.Operator.INCLUSIVE)) {
+                desc += "[ ";
+            } else {
+                desc += "( ";
+            }
+            desc += ((ThresholdRangeCondition) cond).getThresholdLow();
+            desc += ", ";
+            desc += ((ThresholdRangeCondition) cond).getThresholdHigh();
+            if (operatorHigh.equals(ThresholdRangeCondition.Operator.INCLUSIVE)) {
+                desc += " ]";
+            } else {
+                desc += " )";
+            }
+        } else if (cond instanceof StringCondition) {
+            desc += cond.getDataId() + " ";
+            StringCondition.Operator operator = ((StringCondition) cond).getOperator();
+            if (operator.equals(StringCondition.Operator.STARTS_WITH)) {
+                desc += "starts with ";
+            } else if (operator.equals(StringCondition.Operator.CONTAINS)) {
+                desc += "contains ";
+            } else if (operator.equals(StringCondition.Operator.ENDS_WITH)) {
+                desc += "ends with ";
+            } else if (operator.equals(StringCondition.Operator.EQUAL)) {
+                desc += "is equal to ";
+            } else if (operator.equals(StringCondition.Operator.NOT_EQUAL)) {
+                desc += "is not equal to ";
+            } else if (operator.equals(StringCondition.Operator.MATCH)) {
+                desc += "matches to ";
+            }
+            desc += ((StringCondition) cond).getPattern();
+            if (((StringCondition) cond).isIgnoreCase()) {
+                desc += " (ignore case) ";
+            }
+        } else if (cond instanceof CompareCondition) {
+            desc += cond.getDataId() + " ";
+            CompareCondition.Operator operator = ((CompareCondition) cond).getOperator();
+            if (operator.equals(CompareCondition.Operator.LT)) {
+                desc += "less than ";
+            } else if (operator.equals(CompareCondition.Operator.LTE)) {
+                desc += "less or equals than ";
+            } else if (operator.equals(CompareCondition.Operator.GT)) {
+                desc += "greater than ";
+            } else if (operator.equals(CompareCondition.Operator.GTE)) {
+                desc += "greater or equals than ";
+            }
+            if (((CompareCondition) cond).getData2Multiplier() != 1.0) {
+                desc += "( " + ((CompareCondition) cond).getData2Id() + " * "
+                        + ((CompareCondition) cond).getData2Multiplier() + " )";
+            } else {
+                desc += ((CompareCondition) cond).getData2Id();
+            }
+        } else if (cond instanceof ExternalCondition) {
+            desc += cond.getDataId() + " with external expression " + ((ExternalCondition) cond).getExpression();
+        }
+        return desc;
+    }
+
+    private String getStateSubject(Alert alert) {
+        if (alert != null && alert.getStatus() != null) {
+            return "Alert [" + alert.getStatus().name().toLowerCase() + "] message";
+        }
+        return "Alert message";
     }
 
     private Condition.Type getFirstConditionType(Alert alert) {
@@ -214,15 +399,44 @@ public class EmailTemplate {
         return null;
     }
 
-    private Condition getFirstCondition(Alert alert) {
+    private int getConditionsSize(Alert alert) {
         if (alert != null && alert.getEvalSets() != null && alert.getEvalSets().size() > 0) {
-            if (alert.getEvalSets().get(0) != null && alert.getEvalSets().get(0).size() > 0) {
-                ConditionEval conditionEval = alert.getEvalSets().get(0).iterator().next();
-                if (conditionEval instanceof AvailabilityConditionEval) {
-                    return ((AvailabilityConditionEval) conditionEval).getCondition();
-                } else if (conditionEval instanceof ThresholdConditionEval) {
-                    return ((ThresholdConditionEval) conditionEval).getCondition();
-                }
+            return alert.getEvalSets().get(0).size();
+        }
+        return 0;
+    }
+
+    private Condition getFirstCondition(Alert alert) {
+        if (alert == null
+                || alert.getEvalSets() == null
+                || alert.getEvalSets().size() == 0
+                || alert.getStatus() == null) {
+            return null;
+        }
+        if (alert.getEvalSets().get(0) != null && alert.getEvalSets().get(0).size() > 0) {
+            ConditionEval conditionEval = alert.getEvalSets().get(0).iterator().next();
+            if (conditionEval instanceof AvailabilityConditionEval) {
+                return ((AvailabilityConditionEval) conditionEval).getCondition();
+            } else if (conditionEval instanceof ThresholdConditionEval) {
+                return ((ThresholdConditionEval) conditionEval).getCondition();
+            }
+        }
+        return null;
+    }
+
+    private Condition getFirstResolvedCondition(Alert alert) {
+        if (alert == null
+                || alert.getResolvedEvalSets() == null
+                || alert.getResolvedEvalSets().size() == 0
+                || alert.getStatus() == null) {
+            return null;
+        }
+        if (alert.getResolvedEvalSets().get(0) != null && alert.getResolvedEvalSets().get(0).size() > 0) {
+            ConditionEval conditionEval = alert.getResolvedEvalSets().get(0).iterator().next();
+            if (conditionEval instanceof AvailabilityConditionEval) {
+                return ((AvailabilityConditionEval) conditionEval).getCondition();
+            } else if (conditionEval instanceof ThresholdConditionEval) {
+                return ((ThresholdConditionEval) conditionEval).getCondition();
             }
         }
         return null;
@@ -255,5 +469,71 @@ public class EmailTemplate {
             return defaultProps.get(prop);
         }
         return null;
+    }
+
+    /*
+        This class is used to represent the description of a List<Set<ConditionEval>>.
+        It is listed by conditions, and each condition will have a description plus a description of an average values.
+     */
+    public static class ConditionDesc {
+        public String type;
+        public String description;
+        public String values;
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public String getValues() {
+            return values;
+        }
+
+        public void setValues(String values) {
+            this.values = values;
+        }
+    }
+
+    private List<ConditionDesc> getConditionDescription(Alert alert) {
+        List<ConditionDesc> descs = new ArrayList<>();
+        if (alert != null && alert.getEvalSets() != null) {
+            List<Set<ConditionEval>> evalsSets = alert.getEvalSets();
+            if (evalsSets.size() > 0) {
+                Set<ConditionEval> setEval = evalsSets.get(0);
+                for (ConditionEval eval : setEval) {
+                    /*
+                        First item is to build the description
+                     */
+                    ConditionDesc desc = new ConditionDesc();
+                    desc.type = eval.getType().name();
+                    if (eval.getType().equals(Condition.Type.THRESHOLD)) {
+                        desc.description = mixDescription(((ThresholdConditionEval)eval).getCondition());
+                    } else if (eval.getType().equals(Condition.Type.AVAILABILITY)) {
+                        desc.description = mixDescription(((AvailabilityConditionEval)eval).getCondition());
+                    } else if (eval.getType().equals(Condition.Type.RANGE)) {
+                        desc.description = mixDescription(((ThresholdRangeConditionEval)eval).getCondition());
+                    } else if (eval.getType().equals(Condition.Type.COMPARE)) {
+                        desc.description = mixDescription(((CompareConditionEval)eval).getCondition());
+                    } else if (eval.getType().equals(Condition.Type.STRING)) {
+                        desc.description = mixDescription(((StringConditionEval)eval).getCondition());
+                    } else if (eval.getType().equals(Condition.Type.EXTERNAL)) {
+                        desc.description = mixDescription(((ExternalConditionEval)eval).getCondition());
+                    }
+                    descs.add(desc);
+                }
+            }
+        }
+        return descs;
     }
 }
