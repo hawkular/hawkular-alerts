@@ -16,10 +16,12 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.Map;
+
 import org.hawkular.alerts.api.model.data.NumericData;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.*;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * An evaluation state for compare condition.
@@ -38,22 +40,28 @@ public class CompareConditionEval extends ConditionEval {
     @JsonInclude(Include.NON_NULL)
     private Double value2;
 
+    @JsonInclude(Include.NON_EMPTY)
+    protected Map<String, String> context2;
+
     public CompareConditionEval() {
-        super(false, 0);
+        super(false, 0, null);
         this.condition = null;
         this.value1 = null;
         this.value2 = null;
+        this.context2 = null;
     }
 
     public CompareConditionEval(CompareCondition condition, NumericData data1, NumericData data2) {
         super(condition.match(data1.getValue(), data2.getValue()),
-                ((data1.getTimestamp() > data1.getTimestamp()) ? data1.getTimestamp() : data2.getTimestamp()));
+                ((data1.getTimestamp() > data1.getTimestamp()) ? data1.getTimestamp() : data2.getTimestamp()),
+                data1.getContext());
         this.condition = condition;
         this.value1 = data1.getValue();
         this.value2 = data2.getValue();
         if (this.condition != null) {
             this.type = this.condition.getType();
         }
+        this.context2 = data2.getContext();
     }
 
     public CompareCondition getCondition() {
@@ -93,6 +101,14 @@ public class CompareConditionEval extends ConditionEval {
     @Override
     public int getConditionSetIndex() {
         return condition.getConditionSetIndex();
+    }
+
+    public Map<String, String> getContext2() {
+        return context2;
+    }
+
+    public void setContext2(Map<String, String> context2) {
+        this.context2 = context2;
     }
 
     @Override

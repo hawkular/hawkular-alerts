@@ -16,15 +16,16 @@
  */
 package org.hawkular.alerts.engine.impl;
 
-import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.services.ActionsService;
-import org.hawkular.alerts.api.services.ActionListener;
-import org.hawkular.alerts.engine.log.MsgLogger;
-import org.jboss.logging.Logger;
-
-import javax.ejb.Singleton;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import javax.ejb.Singleton;
+
+import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.services.ActionListener;
+import org.hawkular.alerts.api.services.ActionsService;
+import org.hawkular.alerts.engine.log.MsgLogger;
+import org.jboss.logging.Logger;
 
 /**
  * A memory implementation of {@link org.hawkular.alerts.api.services.ActionsService}.

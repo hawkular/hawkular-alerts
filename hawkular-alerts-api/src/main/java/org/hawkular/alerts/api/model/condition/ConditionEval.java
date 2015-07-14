@@ -16,8 +16,11 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * An evaluation state of a specific condition.
@@ -46,15 +49,19 @@ public abstract class ConditionEval {
     @JsonInclude
     protected Condition.Type type;
 
+    @JsonInclude(Include.NON_EMPTY)
+    protected Map<String, String> context;
+
     public ConditionEval() {
         // for json assembly
     }
 
-    public ConditionEval(boolean match, long dataTimestamp) {
+    public ConditionEval(boolean match, long dataTimestamp, Map<String, String> context) {
         this.match = match;
         this.dataTimestamp = dataTimestamp;
         this.evalTimestamp = System.currentTimeMillis();
         this.used = false;
+        this.context = context;
     }
 
     public boolean isMatch() {
@@ -95,6 +102,14 @@ public abstract class ConditionEval {
 
     public void setType(Condition.Type type) {
         this.type = type;
+    }
+
+    public Map<String, String> getContext() {
+        return context;
+    }
+
+    public void setContext(Map<String, String> context) {
+        this.context = context;
     }
 
     @JsonIgnore

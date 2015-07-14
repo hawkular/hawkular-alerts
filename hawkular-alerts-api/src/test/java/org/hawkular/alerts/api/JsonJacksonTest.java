@@ -190,7 +190,7 @@ public class JsonJacksonTest {
         String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1," +
                 "\"condition\":" +
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"dataId\":\"Default\",\"operator\":\"UP\"}," +
-                "\"value\":\"UP\"}";
+                "\"value\":\"UP\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         AvailabilityConditionEval eval = objectMapper.readValue(str, AvailabilityConditionEval.class);
 
         assertTrue(eval.getEvalTimestamp() == 1);
@@ -201,6 +201,9 @@ public class JsonJacksonTest {
         assertTrue(eval.getCondition().getDataId().equals("Default"));
         assertTrue(eval.getCondition().getOperator().equals(AvailabilityCondition.Operator.UP));
         assertTrue(eval.getValue().equals(AvailabilityType.UP));
+        assertTrue(eval.getContext().size() == 2);
+        assertTrue(eval.getContext().get("n1").equals("v1"));
+        assertTrue(eval.getContext().get("n2").equals("v2"));
     }
 
     @Test
@@ -294,7 +297,7 @@ public class JsonJacksonTest {
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}," +
                 "\"value1\":10.0," +
-                "\"value2\":15.0}";
+                "\"value2\":15.0,\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"},\"context2\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         CompareConditionEval eval = objectMapper.readValue(str, CompareConditionEval.class);
 
         assertTrue(eval.getEvalTimestamp() == 1);
@@ -306,6 +309,12 @@ public class JsonJacksonTest {
         assertTrue(eval.getCondition().getOperator().equals(CompareCondition.Operator.LT));
         assertTrue(eval.getValue1().equals(10.0));
         assertTrue(eval.getValue2().equals(15.0));
+        assertTrue(eval.getContext().size() == 2);
+        assertTrue(eval.getContext().get("n1").equals("v1"));
+        assertTrue(eval.getContext().get("n2").equals("v2"));
+        assertTrue(eval.getContext2().size() == 2);
+        assertTrue(eval.getContext2().get("n1").equals("v1"));
+        assertTrue(eval.getContext2().get("n2").equals("v2"));
     }
 
     @Test
@@ -396,7 +405,7 @@ public class JsonJacksonTest {
                 "\"condition\":" +
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default\",\"operator\":\"MATCH\",\"pattern\":\"test-pattern\",\"ignoreCase\":false}," +
-                "\"value\":\"test-value\"}";
+                "\"value\":\"test-value\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         StringConditionEval eval = objectMapper.readValue(str, StringConditionEval.class);
 
         assertTrue(eval.getEvalTimestamp() == 1);
@@ -409,6 +418,9 @@ public class JsonJacksonTest {
         assertTrue(eval.getCondition().getPattern().equals("test-pattern"));
         assertFalse(eval.getCondition().isIgnoreCase());
         assertTrue(eval.getValue().equals("test-value"));
+        assertTrue(eval.getContext().size() == 2);
+        assertTrue(eval.getContext().get("n1").equals("v1"));
+        assertTrue(eval.getContext().get("n2").equals("v2"));
     }
 
     @Test
@@ -488,7 +500,7 @@ public class JsonJacksonTest {
                 "\"condition\":" +
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default\",\"operator\":\"LT\",\"threshold\":10.5}," +
-                "\"value\":1.0}";
+                "\"value\":1.0,\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         ThresholdConditionEval eval = objectMapper.readValue(str, ThresholdConditionEval.class);
 
         assertTrue(eval.getEvalTimestamp() == 1);
@@ -500,6 +512,9 @@ public class JsonJacksonTest {
         assertTrue(eval.getCondition().getOperator().equals(ThresholdCondition.Operator.LT));
         assertTrue(eval.getCondition().getThreshold() == 10.5);
         assertTrue(eval.getValue() == 1.0);
+        assertTrue(eval.getContext().size() == 2);
+        assertTrue(eval.getContext().get("n1").equals("v1"));
+        assertTrue(eval.getContext().get("n2").equals("v2"));
     }
 
     @Test
@@ -626,7 +641,7 @@ public class JsonJacksonTest {
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\",\"operatorHigh\":\"INCLUSIVE\"," +
                 "\"thresholdLow\":10.5,\"thresholdHigh\":20.5,\"inRange\":true}," +
-                "\"value\":1.0}";
+                "\"value\":1.0,\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         ThresholdRangeConditionEval eval = objectMapper.readValue(str, ThresholdRangeConditionEval.class);
 
         assertTrue(eval.getEvalTimestamp() == 1);
@@ -640,6 +655,9 @@ public class JsonJacksonTest {
         assertTrue(eval.getCondition().getThresholdLow() == 10.5);
         assertTrue(eval.getCondition().getThresholdHigh() == 20.5);
         assertTrue(eval.getValue() == 1.0);
+        assertTrue(eval.getContext().size() == 2);
+        assertTrue(eval.getContext().get("n1").equals("v1"));
+        assertTrue(eval.getContext().get("n2").equals("v2"));
     }
 
     @Test
@@ -668,7 +686,7 @@ public class JsonJacksonTest {
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default\",\"systemId\":\"HawkularMetrics\"," +
                 "\"expression\":\"metric:5:avg(foo > 100.5)\"}," +
-                "\"value\":\"foo\"}";
+                "\"value\":\"foo\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         ExternalConditionEval eval = objectMapper.readValue(str, ExternalConditionEval.class);
 
         assertTrue(eval.getEvalTimestamp() == 1);
@@ -680,6 +698,9 @@ public class JsonJacksonTest {
         assertTrue(eval.getCondition().getSystemId().equals("HawkularMetrics"));
         assertTrue(eval.getCondition().getExpression().equals("metric:5:avg(foo > 100.5)"));
         assertTrue(eval.getValue().equals("foo"));
+        assertTrue(eval.getContext().size() == 2);
+        assertTrue(eval.getContext().get("n1").equals("v1"));
+        assertTrue(eval.getContext().get("n2").equals("v2"));
     }
 
     @Test
@@ -730,41 +751,59 @@ public class JsonJacksonTest {
 
     @Test
     public void jsonDataTest() throws Exception {
-        String str = "{\"id\":\"test\",\"timestamp\":1,\"value\":\"UNAVAILABLE\"}";
+        String str = "{\"id\":\"test\",\"timestamp\":1,\"value\":\"UP\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         Availability aData = objectMapper.readValue(str, Availability.class);
 
         assertTrue(aData.getId().equals("test"));
         assertTrue(aData.getTimestamp() == 1);
-        assertTrue(aData.getValue().equals(AvailabilityType.UNAVAILABLE));
+        assertTrue(aData.getValue().equals(AvailabilityType.UP));
+        assertTrue(aData.getContext() != null);
+        assertTrue(aData.getContext().size() == 2);
+        assertTrue(aData.getContext().get("n1").equals("v1"));
+        assertTrue(aData.getContext().get("n2").equals("v2"));
 
         String output = objectMapper.writeValueAsString(aData);
 
         assertTrue(output.contains("type"));
         assertTrue(output.contains("AVAILABILITY"));
+        assertTrue(output.contains("n1"));
+        assertTrue(output.contains("v1"));
 
-        str = "{\"id\":\"test\",\"timestamp\":1,\"value\":10.45}";
+        str = "{\"id\":\"test\",\"timestamp\":1,\"value\":10.45,\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         NumericData nData = objectMapper.readValue(str, NumericData.class);
 
         assertTrue(nData.getId().equals("test"));
         assertTrue(nData.getTimestamp() == 1);
         assertTrue(nData.getValue() == 10.45);
+        assertTrue(nData.getContext() != null);
+        assertTrue(nData.getContext().size() == 2);
+        assertTrue(nData.getContext().get("n1").equals("v1"));
+        assertTrue(nData.getContext().get("n2").equals("v2"));
 
         output = objectMapper.writeValueAsString(nData);
 
         assertTrue(output.contains("type"));
         assertTrue(output.contains("NUMERIC"));
+        assertTrue(output.contains("n1"));
+        assertTrue(output.contains("v1"));
 
-        str = "{\"id\":\"test\",\"timestamp\":1,\"value\":\"test-value\"}";
+        str = "{\"id\":\"test\",\"timestamp\":1,\"value\":\"test-value\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         StringData sData = objectMapper.readValue(str, StringData.class);
 
         assertTrue(sData.getId().equals("test"));
         assertTrue(sData.getTimestamp() == 1);
         assertTrue(sData.getValue().equals("test-value"));
+        assertTrue(sData.getContext() != null);
+        assertTrue(sData.getContext().size() == 2);
+        assertTrue(sData.getContext().get("n1").equals("v1"));
+        assertTrue(sData.getContext().get("n2").equals("v2"));
 
         output = objectMapper.writeValueAsString(sData);
 
         assertTrue(output.contains("type"));
         assertTrue(output.contains("STRING"));
+        assertTrue(output.contains("n1"));
+        assertTrue(output.contains("v1"));
     }
 
     @Test

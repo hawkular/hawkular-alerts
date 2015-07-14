@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.data;
 
+import java.util.Map;
+
 /**
  * An availability incoming data.
  *
@@ -29,7 +31,7 @@ public class Availability extends Data {
     }
 
     public Availability() {
-        this(null, 0, AvailabilityType.UP);
+        this(null, 0, AvailabilityType.UP, null);
     }
 
     /**
@@ -38,12 +40,26 @@ public class Availability extends Data {
      * @param value Must be a valid {@link AvailabilityType} name.
      */
     public Availability(String id, long timestamp, String value) {
-        super(id, timestamp, (null == value) ? AvailabilityType.UP : AvailabilityType.valueOf(value),
-                Type.AVAILABILITY);
+        this(id, timestamp, value, null);
     }
 
     public Availability(String id, long timestamp, AvailabilityType value) {
-        super(id, timestamp, (null == value) ? AvailabilityType.UP : value, Type.AVAILABILITY);
+        this(id, timestamp, value, null);
+    }
+
+    /**
+     * @param id the id
+     * @param timestamp the timestamp
+     * @param value Must be a valid {@link AvailabilityType} name.
+     * @param context optional, contextual name-value pairs to be stored with the data.
+     */
+    public Availability(String id, long timestamp, String value, Map<String, String> context) {
+        super(id, timestamp, (null == value) ? AvailabilityType.UP : AvailabilityType.valueOf(value),
+                Type.AVAILABILITY, context);
+    }
+
+    public Availability(String id, long timestamp, AvailabilityType value, Map<String, String> context) {
+        super(id, timestamp, (null == value) ? AvailabilityType.UP : value, Type.AVAILABILITY, context);
     }
 
     public AvailabilityType getValue() {
