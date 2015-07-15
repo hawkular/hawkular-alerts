@@ -16,11 +16,9 @@
  */
 package org.hawkular.alerts.bus.messages;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
-
 import org.hawkular.bus.common.BasicMessage;
-
-import com.google.gson.annotations.Expose;
 
 /**
  * A bus message for messages on HawkularAvailData Topic.
@@ -32,7 +30,7 @@ import com.google.gson.annotations.Expose;
 public class AvailDataMessage extends BasicMessage {
 
     // the basic message body - it will be exposed to the JSON output
-    @Expose
+    @JsonInclude
     private AvailData availData;
 
     protected AvailDataMessage() {
@@ -51,7 +49,7 @@ public class AvailDataMessage extends BasicMessage {
     }
 
     public static class AvailData {
-        @Expose
+        @JsonInclude
         List<SingleAvail> data;
 
         public AvailData() {
@@ -75,13 +73,13 @@ public class AvailDataMessage extends BasicMessage {
      * This is meant to parse out an instance of <code>org.rhq.metrics.client.common.SingleMetric</code>
      */
     public static class SingleAvail {
-        @Expose
+        @JsonInclude
         private String tenantId;
-        @Expose
+        @JsonInclude
         private String id;
-        @Expose
+        @JsonInclude
         private long timestamp;
-        @Expose
+        @JsonInclude
         private String avail;
 
         public SingleAvail() {

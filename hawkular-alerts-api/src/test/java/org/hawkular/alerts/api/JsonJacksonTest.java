@@ -18,6 +18,8 @@ package org.hawkular.alerts.api;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.hawkular.alerts.api.json.JacksonDeserializer;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
@@ -55,6 +58,7 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
 /**
  * Validation of JSON serialization/deserialization
@@ -130,6 +134,67 @@ public class JsonJacksonTest {
     }
 
     @Test
+    public void jsonToAlertTest() throws Exception {
+        String jsonAlert = "{\"tenantId\":\"jdoe\"," +
+                "\"alertId\":\"trigger-test|1436964192878\"," +
+                "\"triggerId\":\"trigger-test\"," +
+                "\"ctime\":1436964192878," +
+                "\"evalSets\":[" +
+                    "[{\"evalTimestamp\":1436964294055," +
+                        "\"dataTimestamp\":2," +
+                        "\"type\":\"THRESHOLD\"," +
+                        "\"condition\":{\"tenantId\":null," +
+                                        "\"triggerId\":\"trigger-test\"," +
+                                        "\"triggerMode\":\"FIRING\"," +
+                                        "\"type\":\"THRESHOLD\"," +
+                                        "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
+                                        "\"dataId\":\"Default\"," +
+                                        "\"operator\":\"LTE\"," +
+                                        "\"threshold\":50.0" +
+                                        "}," +
+                        "\"value\":25.5}," +
+                    "{\"evalTimestamp\":1436964284965," +
+                        "\"dataTimestamp\":1," +
+                        "\"type\":\"AVAILABILITY\"," +
+                        "\"condition\":{\"tenantId\":null," +
+                                        "\"triggerId\":\"trigger-test\"," +
+                                        "\"triggerMode\":\"FIRING\"," +
+                                        "\"type\":\"AVAILABILITY\"," +
+                                        "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
+                                        "\"dataId\":\"Default\"," +
+                                        "\"operator\":\"UP\"" +
+                                        "}," +
+                        "\"value\":\"UP\"}]" +
+                    "]," +
+                "\"severity\":\"MEDIUM\"," +
+                "\"status\":\"OPEN\"," +
+                "\"ackTime\":0," +
+                "\"ackBy\":null," +
+                "\"ackNotes\":null," +
+                "\"resolvedTime\":0," +
+                "\"resolvedBy\":null," +
+                "\"resolvedNotes\":null" +
+                "}";
+
+        ObjectMapper mapper = new ObjectMapper();
+        Alert alert = mapper.readValue(jsonAlert, Alert.class);
+        assertNotNull(alert);
+        assertNotNull(alert.getEvalSets());
+        assertEquals(1, alert.getEvalSets().size());
+        assertEquals(2, alert.getEvalSets().get(0).size());
+
+        /*
+            Testing thin deserializer
+         */
+        SimpleModule simpleModule = new SimpleModule();
+        simpleModule.setDeserializerModifier(new JacksonDeserializer.AlertThinDeserializer());
+        mapper = new ObjectMapper();
+        mapper.registerModule(simpleModule);
+        alert = mapper.readValue(jsonAlert, Alert.class);
+        assertNull(alert.getEvalSets());
+    }
+
+    @Test
     public void jsonAvailabilityConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"type\":\"AVAILABILITY\"," +
@@ -187,7 +252,7 @@ public class JsonJacksonTest {
 
     @Test
     public void jsonAvailabilityConditionEvalTest() throws Exception {
-        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1," +
+        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"AVAILABILITY\"," +
                 "\"condition\":" +
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"dataId\":\"Default\",\"operator\":\"UP\"}," +
                 "\"value\":\"UP\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
@@ -292,7 +357,7 @@ public class JsonJacksonTest {
 
     @Test
     public void jsonCompareConditionEvalTest() throws Exception {
-        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1," +
+        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"COMPARE\"," +
                 "\"condition\":" +
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}," +
@@ -401,7 +466,7 @@ public class JsonJacksonTest {
 
     @Test
     public void jsonStringConditionEvalTest() throws Exception {
-        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1," +
+        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"STRING\"," +
                 "\"condition\":" +
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default\",\"operator\":\"MATCH\",\"pattern\":\"test-pattern\",\"ignoreCase\":false}," +
@@ -496,7 +561,7 @@ public class JsonJacksonTest {
 
     @Test
     public void jsonThresholdConditionEvalTest() throws Exception {
-        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1," +
+        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"THRESHOLD\"," +
                 "\"condition\":" +
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default\",\"operator\":\"LT\",\"threshold\":10.5}," +
@@ -636,7 +701,7 @@ public class JsonJacksonTest {
 
     @Test
     public void jsonThresholdRangeConditionEvalTest() throws Exception {
-        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1," +
+        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"RANGE\"," +
                 "\"condition\":" +
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\",\"operatorHigh\":\"INCLUSIVE\"," +
@@ -681,7 +746,7 @@ public class JsonJacksonTest {
 
     @Test
     public void jsonExternalConditionEvalTest() throws Exception {
-        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1," +
+        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"EXTERNAL\"," +
                 "\"condition\":" +
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"dataId\":\"Default\",\"systemId\":\"HawkularMetrics\"," +
@@ -840,5 +905,4 @@ public class JsonJacksonTest {
         assertTrue(!output.contains("mode"));
         assertTrue(!output.contains("match"));
     }
-
 }

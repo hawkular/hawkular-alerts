@@ -21,7 +21,7 @@ import java.util.Set;
 
 import org.hawkular.bus.common.BasicMessage;
 
-import com.google.gson.annotations.Expose;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * An action plugin registration message.
@@ -39,16 +39,16 @@ import com.google.gson.annotations.Expose;
  */
 public class ActionPluginMessage extends BasicMessage {
 
-    @Expose
+    @JsonInclude
     String op;
 
-    @Expose
+    @JsonInclude
     String actionPlugin;
 
-    @Expose
+    @JsonInclude
     Set<String> properties;
 
-    @Expose
+    @JsonInclude
     Map<String, String> defaultProperties;
 
     public ActionPluginMessage() { }

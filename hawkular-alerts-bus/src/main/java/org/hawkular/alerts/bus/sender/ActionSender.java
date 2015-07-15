@@ -24,7 +24,7 @@ import javax.jms.TopicConnectionFactory;
 import javax.jms.JMSException;
 import javax.naming.InitialContext;
 
-import org.hawkular.alerts.api.json.GsonUtil;
+import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.ActionListener;
@@ -72,7 +72,7 @@ public class ActionSender implements ActionListener {
                 msgLogger.warnCannotConnectToBus();
                 return;
             }
-            String alert = action.getAlert() != null ? GsonUtil.toJson(action.getAlert()) : null;
+            String alert = action.getAlert() != null ? JsonUtil.toJson(action.getAlert()) : null;
             ActionMessage nMsg = new ActionMessage(action.getTenantId(), action.getActionPlugin(),
                     action.getActionId(), action.getMessage(), alert);
             if (definitions != null) {

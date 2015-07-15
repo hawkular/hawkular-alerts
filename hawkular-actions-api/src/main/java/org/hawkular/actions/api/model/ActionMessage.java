@@ -18,9 +18,9 @@ package org.hawkular.actions.api.model;
 
 import java.util.Map;
 
-import com.google.gson.annotations.Expose;
 import org.hawkular.bus.common.BasicMessage;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 /**
  * A action message generated from the alerts engine through alert-bus subsystem.
  * Action plugins must listen per actionPlugin of message in the filter.
@@ -30,25 +30,25 @@ import org.hawkular.bus.common.BasicMessage;
  */
 public class ActionMessage extends BasicMessage {
 
-    @Expose
+    @JsonInclude
     String tenantId;
 
-    @Expose
+    @JsonInclude
     String actionPlugin;
 
-    @Expose
+    @JsonInclude
     String actionId;
 
-    @Expose
+    @JsonInclude
     String message;
 
-    @Expose
+    @JsonInclude
     String alert;
 
-    @Expose
+    @JsonInclude
     Map<String, String> properties;
 
-    @Expose
+    @JsonInclude
     Map<String, String> defaultProperties;
 
     public ActionMessage() { }

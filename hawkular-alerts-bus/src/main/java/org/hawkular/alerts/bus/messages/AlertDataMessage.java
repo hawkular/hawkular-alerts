@@ -16,13 +16,14 @@
  */
 package org.hawkular.alerts.bus.messages;
 
-import com.google.gson.annotations.Expose;
-import org.hawkular.alerts.api.model.data.Data;
-import org.hawkular.bus.common.BasicMessage;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.bus.common.BasicMessage;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 /**
  * A bus message used to receive data for the alerts subsystem.
  * One message can store a collection of {@link org.hawkular.alerts.bus.messages.AlertData}.
@@ -32,7 +33,7 @@ import java.util.List;
  */
 public class AlertDataMessage extends BasicMessage {
 
-    @Expose
+    @JsonInclude
     List<AlertData> data;
 
     protected AlertDataMessage() { }

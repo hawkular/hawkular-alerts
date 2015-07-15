@@ -16,11 +16,12 @@
  */
 package org.hawkular.alerts.bus.messages;
 
+
 import java.util.List;
 
-import com.google.gson.annotations.Expose;
-
 import org.hawkular.bus.common.BasicMessage;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * A bus message for messages on HawkularMetricData Topic.
@@ -32,7 +33,7 @@ import org.hawkular.bus.common.BasicMessage;
 public class MetricDataMessage extends BasicMessage {
 
     // the basic message body - it will be exposed to the JSON output
-    @Expose
+    @JsonInclude
     private MetricData metricData;
 
     protected MetricDataMessage() {
@@ -51,9 +52,9 @@ public class MetricDataMessage extends BasicMessage {
     }
 
     public static class MetricData {
-        @Expose
+        @JsonInclude
         String tenantId;
-        @Expose
+        @JsonInclude
         List<SingleMetric> data;
 
         public MetricData() {
@@ -85,11 +86,11 @@ public class MetricDataMessage extends BasicMessage {
      * This is meant to parse out an instance of <code>org.rhq.metrics.client.common.SingleMetric</code>
      */
     public static class SingleMetric {
-        @Expose
+        @JsonInclude
         private String source;
-        @Expose
+        @JsonInclude
         private long timestamp;
-        @Expose
+        @JsonInclude
         private double value;
 
         public SingleMetric() {
