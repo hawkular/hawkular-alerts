@@ -24,11 +24,11 @@ import java.util.List;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
+import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
  * A status of an alert thrown by several matched conditions.

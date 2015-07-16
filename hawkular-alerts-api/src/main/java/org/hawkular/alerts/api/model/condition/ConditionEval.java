@@ -18,9 +18,12 @@ package org.hawkular.alerts.api.model.condition;
 
 import java.util.Map;
 
+import org.hawkular.alerts.api.json.JacksonDeserializer;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * An evaluation state of a specific condition.
@@ -28,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@JsonDeserialize(using = JacksonDeserializer.ConditionEvalDeserializer.class)
 public abstract class ConditionEval {
 
     // result of the condition evaluation
@@ -125,33 +129,25 @@ public abstract class ConditionEval {
     public abstract String getLog();
 
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (int) (dataTimestamp ^ (dataTimestamp >>> 32));
-        result = prime * result + (int) (evalTimestamp ^ (evalTimestamp >>> 32));
-        result = prime * result + (match ? 1231 : 1237);
-        result = prime * result + (used ? 1231 : 1237);
-        return result;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ConditionEval that = (ConditionEval) o;
+
+        if (evalTimestamp != that.evalTimestamp) return false;
+        if (dataTimestamp != that.dataTimestamp) return false;
+        if (type != that.type) return false;
+        return !(context != null ? !context.equals(that.context) : that.context != null);
+
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        ConditionEval other = (ConditionEval) obj;
-        if (dataTimestamp != other.dataTimestamp)
-            return false;
-        if (evalTimestamp != other.evalTimestamp)
-            return false;
-        if (match != other.match)
-            return false;
-        if (used != other.used)
-            return false;
-        return true;
+    public int hashCode() {
+        int result = (int) (evalTimestamp ^ (evalTimestamp >>> 32));
+        result = 31 * result + (int) (dataTimestamp ^ (dataTimestamp >>> 32));
+        result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + (context != null ? context.hashCode() : 0);
+        return result;
     }
 }

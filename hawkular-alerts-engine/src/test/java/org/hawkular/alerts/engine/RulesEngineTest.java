@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import org.hawkular.alerts.api.json.GsonUtil;
+import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
@@ -1358,19 +1358,19 @@ public class RulesEngineTest {
         assertTrue(rulesEngine.getFact(fmt1c2) != null);
         assertTrue(rulesEngine.getFact(fmt1c2eval) != null);
 
-        String strt1 = GsonUtil.toJson(t1);
-        String strfmt1c1 = GsonUtil.toJson(fmt1c1);
-        String strfmt1c1eval = GsonUtil.toJson(fmt1c1eval);
-        String strfmt1d = GsonUtil.toJson(fmt1d);
-        String strfmt1c2 = GsonUtil.toJson(fmt1c2);
-        String strfmt1c2eval = GsonUtil.toJson(fmt1c2eval);
+        String strt1 = JsonUtil.toJson(t1);
+        String strfmt1c1 = JsonUtil.toJson(fmt1c1);
+        String strfmt1c1eval = JsonUtil.toJson(fmt1c1eval);
+        String strfmt1d = JsonUtil.toJson(fmt1d);
+        String strfmt1c2 = JsonUtil.toJson(fmt1c2);
+        String strfmt1c2eval = JsonUtil.toJson(fmt1c2eval);
 
-        Trigger jsont1 = GsonUtil.fromJson(strt1, Trigger.class);
-        AvailabilityCondition jsonfmt1c1 = GsonUtil.fromJson(strfmt1c1, AvailabilityCondition.class);
-        AvailabilityConditionEval jsonfmt1c1eval = GsonUtil.fromJson(strfmt1c1eval, AvailabilityConditionEval.class);
-        Dampening jsonfmt1d = GsonUtil.fromJson(strfmt1d, Dampening.class);
-        ThresholdCondition jsonfmt1c2 = GsonUtil.fromJson(strfmt1c2, ThresholdCondition.class);
-        ThresholdConditionEval jsonfmt1c2eval = GsonUtil.fromJson(strfmt1c2eval, ThresholdConditionEval.class);
+        Trigger jsont1 = JsonUtil.fromJson(strt1, Trigger.class);
+        AvailabilityCondition jsonfmt1c1 = JsonUtil.fromJson(strfmt1c1, AvailabilityCondition.class);
+        AvailabilityConditionEval jsonfmt1c1eval = JsonUtil.fromJson(strfmt1c1eval, AvailabilityConditionEval.class);
+        Dampening jsonfmt1d = JsonUtil.fromJson(strfmt1d, Dampening.class);
+        ThresholdCondition jsonfmt1c2 = JsonUtil.fromJson(strfmt1c2, ThresholdCondition.class);
+        ThresholdConditionEval jsonfmt1c2eval = JsonUtil.fromJson(strfmt1c2eval, ThresholdConditionEval.class);
 
         assertTrue(t1.equals(jsont1));
         assertTrue(fmt1c1.equals(jsonfmt1c1));

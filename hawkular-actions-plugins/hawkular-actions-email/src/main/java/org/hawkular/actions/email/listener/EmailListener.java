@@ -37,7 +37,7 @@ import org.hawkular.actions.api.log.MsgLogger;
 import org.hawkular.actions.api.model.ActionMessage;
 import org.hawkular.actions.email.EmailPlugin;
 import org.hawkular.actions.email.template.EmailTemplate;
-import org.hawkular.alerts.api.json.GsonUtil;
+import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
@@ -79,7 +79,7 @@ public class EmailListener extends BasicMessageListener<ActionMessage> {
         Map<String, String> props = msg.getProperties();
         Map<String, String> defaultProps = msg.getDefaultProperties();
         String message = msg.getMessage();
-        Alert alert = msg.getAlert() != null ? GsonUtil.fromJson(msg.getAlert(), Alert.class) : null;
+        Alert alert = msg.getAlert() != null ? JsonUtil.fromJson(msg.getAlert(), Alert.class) : null;
         Alert.Status status = alert != null && alert.getStatus() != null ? alert.getStatus() : Alert.Status.OPEN;
 
         String from = getProp(props, defaultProps, EmailPlugin.PROP_FROM + "." + status.name().toLowerCase());

@@ -16,13 +16,12 @@
  */
 package org.hawkular.alerts.bus.messages;
 
-import com.google.gson.annotations.Expose;
-
 import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.data.StringData;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 /**
  * A basic data to be consumed by the alerts subsystem.
  * This data will come from a JSON representation, so it will define target type as a field member.
@@ -32,16 +31,16 @@ import org.hawkular.alerts.api.model.data.StringData;
  */
 public class AlertData {
 
-    @Expose
+    @JsonInclude
     private final String id;
 
-    @Expose
+    @JsonInclude
     private final long timestamp;
 
-    @Expose
+    @JsonInclude
     private final String value;
 
-    @Expose
+    @JsonInclude
     private final String type;
 
     public AlertData() {

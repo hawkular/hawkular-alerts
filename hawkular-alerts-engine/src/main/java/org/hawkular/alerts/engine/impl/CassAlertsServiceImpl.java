@@ -30,7 +30,7 @@ import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 
-import org.hawkular.alerts.api.json.GsonUtil;
+import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
@@ -117,7 +117,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             alerts.stream()
                     .forEach(a -> {
                         futures.add(session.executeAsync(insertAlert.bind(a.getTenantId(), a.getAlertId(),
-                                GsonUtil.toJson(a))));
+                                JsonUtil.toJson(a))));
                         futures.add(session.executeAsync(insertAlertTrigger.bind(a.getTenantId(),
                                 a.getAlertId(),
                                 a.getTriggerId())));
@@ -254,7 +254,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 ResultSet rsAlerts = session.execute(selectAlertsByTenant.bind(tenantId));
                 for (Row row : rsAlerts) {
                     String payload = row.getString("payload");
-                    Alert alert = GsonUtil.fromJson(payload, Alert.class, thin);
+                    Alert alert = JsonUtil.fromJson(payload, Alert.class, thin);
                     alerts.add(alert);
                 }
             } else {
@@ -270,7 +270,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 rsAlerts.stream().forEach(r -> {
                     for (Row row : r) {
                         String payload = row.getString("payload");
-                        Alert alert = GsonUtil.fromJson(payload, Alert.class, thin);
+                        Alert alert = JsonUtil.fromJson(payload, Alert.class, thin);
                         alerts.add(alert);
                     }
                 });
@@ -680,7 +680,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 }
             });
             session.execute(insertAlertStatus.bind(alert.getTenantId(), alert.getAlertId(), alert.getStatus().name()));
-            session.execute(updateAlert.bind(GsonUtil.toJson(alert), alert.getTenantId(), alert.getAlertId()));
+            session.execute(updateAlert.bind(JsonUtil.toJson(alert), alert.getTenantId(), alert.getAlertId()));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;

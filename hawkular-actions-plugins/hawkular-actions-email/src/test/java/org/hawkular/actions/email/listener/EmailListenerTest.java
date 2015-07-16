@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.mail.Message;
 import org.hawkular.actions.api.model.ActionMessage;
-import org.hawkular.alerts.api.json.GsonUtil;
+import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
@@ -113,7 +113,7 @@ public class EmailListenerTest {
         props.put("template.hawkular.url", "http://www.hawkular.org");
 
         openThresholdMsg = new ActionMessage(tenantId, "email", "email-to-test", "Threshold Alert",
-                GsonUtil.toJson(rtAlert));
+                JsonUtil.toJson(rtAlert));
         openThresholdMsg.setProperties(props);
 
         rtAlert.setStatus(Status.ACKNOWLEDGED);
@@ -121,7 +121,7 @@ public class EmailListenerTest {
         rtAlert.setAckTime(System.currentTimeMillis() + 10000);
         rtAlert.setAckNotes("Test ACK notes");
         ackThresholdMsg = new ActionMessage(tenantId, "email", "email-to-test", "Threshold Alert",
-                GsonUtil.toJson(rtAlert));
+                JsonUtil.toJson(rtAlert));
         ackThresholdMsg.setProperties(props);
 
         /*
@@ -136,7 +136,7 @@ public class EmailListenerTest {
         rtAlert.setResolvedEvalSets(getEvalList(rtResolveCondition, rtGoodData));
 
         resolvedThresholdMsg = new ActionMessage(tenantId, "email", "email-to-test", "Threshold Alert",
-                GsonUtil.toJson(rtAlert));
+                JsonUtil.toJson(rtAlert));
         resolvedThresholdMsg.setProperties(props);
 
 
@@ -178,7 +178,7 @@ public class EmailListenerTest {
         props.put("template.hawkular.url", "http://www.hawkular.org");
 
         openAvailMsg = new ActionMessage(tenantId, "email", "email-to-test", "Availability Alert",
-                GsonUtil.toJson(avAlert));
+                JsonUtil.toJson(avAlert));
         openAvailMsg.setProperties(props);
 
         avAlert.setStatus(Status.ACKNOWLEDGED);
@@ -186,7 +186,7 @@ public class EmailListenerTest {
         avAlert.setAckTime(System.currentTimeMillis() + 10000);
         avAlert.setAckNotes("Test ACK notes");
         ackAvailMsg = new ActionMessage(tenantId, "email", "email-to-test", "Availability Alert",
-                GsonUtil.toJson(avAlert));
+                JsonUtil.toJson(avAlert));
         ackAvailMsg.setProperties(props);
 
         /*
@@ -201,7 +201,7 @@ public class EmailListenerTest {
         avAlert.setResolvedEvalSets(getEvalList(avResolveCondition, avGoodData));
 
         resolvedAvailMsg = new ActionMessage(tenantId, "email", "email-to-test", "Availability Alert",
-                GsonUtil.toJson(avAlert));
+                JsonUtil.toJson(avAlert));
         resolvedAvailMsg.setProperties(props);
 
         /*
@@ -253,7 +253,7 @@ public class EmailListenerTest {
         props.put("template.hawkular.url", "http://www.hawkular.org");
 
         openTwoCondMsg = new ActionMessage(tenantId, "email", "email-to-test", "Response Time and Availability Alert",
-                GsonUtil.toJson(mixAlert));
+                JsonUtil.toJson(mixAlert));
         openTwoCondMsg.setProperties(props);
 
         mixAlert.setStatus(Status.ACKNOWLEDGED);
@@ -261,7 +261,7 @@ public class EmailListenerTest {
         mixAlert.setAckTime(System.currentTimeMillis() + 10000);
         mixAlert.setAckNotes("Test ACK notes");
         ackTwoCondMsg = new ActionMessage(tenantId, "email", "email-to-test", "Availability Alert",
-                GsonUtil.toJson(mixAlert));
+                JsonUtil.toJson(mixAlert));
         ackTwoCondMsg.setProperties(props);
 
         /*
@@ -284,7 +284,7 @@ public class EmailListenerTest {
         mixAlert.setResolvedEvalSets(getEvalList(mixResolveConditions, mixGoodData));
 
         resolvedTwoCondMsg = new ActionMessage(tenantId, "email", "email-to-test", "Availability Alert",
-                GsonUtil.toJson(mixAlert));
+                JsonUtil.toJson(mixAlert));
         resolvedTwoCondMsg.setProperties(props);
     }
 

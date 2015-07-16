@@ -36,8 +36,6 @@ import org.hawkular.alerts.bus.messages.AvailDataMessage.SingleAvail;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
 
-import com.google.gson.GsonBuilder;
-
 /**
  * <p>
  * An adapter that processes Hawkular Availability data, extracts relevant avail datums, translates them to Alerting
@@ -94,14 +92,4 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
             throw new RuntimeException(e);
         }
     }
-
-    // just dumps the expected json
-    public static void main(String[] args) {
-        AvailData d = new AvailData();
-        List<SingleAvail> sa = new ArrayList<>(1);
-        sa.add(new SingleAvail("tenant", "Avail-01", 123L, "DOWN"));
-        d.setData(sa);
-        System.out.println(new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create().toJson(d).toString());
-    }
-
 }
