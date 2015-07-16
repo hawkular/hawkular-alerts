@@ -394,6 +394,11 @@ public class AlertsEngineImpl implements AlertsEngine {
                 } catch (Exception e) {
                     log.errorf("Failed to resolve Alerts. Could not AutoResolve alerts for trigger %s", t);
                 }
+                try {
+                    reloadTrigger(t.getTenantId(), t.getId());
+                } catch (Exception e) {
+                    log.errorf("Failed to reload AutoResolved Trigger: %s", t);
+                }
             }
         } finally {
             autoResolvedTriggers.clear();

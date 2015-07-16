@@ -50,6 +50,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t01_disableTest() {
+        println( "Running t01_disableTest")
         String start = t01Start;
 
         // CREATE the trigger
@@ -97,11 +98,11 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // Send in avail data to fire the trigger
-        // Note, the groovyx rest c;lient seems incapable of allowing a JSON payload and a TEXT response (which is what
+        // Note, the groovyx rest client seems incapable of allowing a JSON payload and a TEXT response (which is what
         // we get back from the activemq rest client used by the bus), so use the bus' java rest client to do this.
         RestClient busClient = new RestClient(host, port);
         String json = "{\"data\":[{\"id\":\"test-autodisable-avail\",\"timestamp\":" + System.currentTimeMillis() +
-                      ",\"value\"=\"DOWN\",\"type\"=\"availability\"}]}";
+                      ",\"value\":\"DOWN\",\"type\":\"availability\"}]}";
         busClient.postTopicMessage("HawkularAlertData", json, null);
         //assertEquals(200, resp.status)
 
@@ -118,6 +119,7 @@ class LifecycleITest extends AbstractITestBase {
             assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
 
         String alertId = resp.data[0].alertId;
 
@@ -147,6 +149,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t02_autoResolveTest() {
+        println( "Running t02_autoResolveTest")
         String start = t02Start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
@@ -226,6 +229,7 @@ class LifecycleITest extends AbstractITestBase {
             assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
 
@@ -269,12 +273,14 @@ class LifecycleITest extends AbstractITestBase {
             assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         assertEquals("RESOLVED", resp.data[0].status)
         assertEquals("AUTO", resp.data[0].resolvedBy)
     }
 
     @Test
     void t03_manualResolutionTest() {
+        println( "Running t03_manualResolutionTest")
         String start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
@@ -343,6 +349,7 @@ class LifecycleITest extends AbstractITestBase {
             }
         }
         assertEquals(200, resp.status)
+        assertFalse(resp.data.isEmpty())
         assertEquals(5, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
 
@@ -364,6 +371,7 @@ class LifecycleITest extends AbstractITestBase {
     // to test alert queries and updates.
     @Test
     void t04_fetchTest() {
+        println( "Running t04_fetchTest")
         // queries will look for alerts generated in this test tun
         String start = t01Start;
 
@@ -430,6 +438,16 @@ class LifecycleITest extends AbstractITestBase {
 
         // 4 OPEN and 1 RESOLVED
         resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN"] )
+        assertEquals(200, resp.status)
+        assertEquals(4, resp.data.size())
+
+        resp = client.get(path: "",
+            query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"RESOLVED"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        resp = client.get(path: "",
             query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED"] )
         assertEquals(200, resp.status)
         assertEquals(5, resp.data.size())
@@ -490,6 +508,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t05_paging() {
+        println( "Running t05_paging")
         // queries will look for alerts generated in this test tun
         String start = t01Start;
 
@@ -499,18 +518,19 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(3, resp.data.size())
 
-        println(resp.headers)
+        // println(resp.headers)
 
         resp = client.get(path: "",
                 query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED", page: "1", per_page: "3"] )
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size())
 
-        println(resp.headers)
+        // println(resp.headers)
     }
 
     @Test
     void t06_manualAckAndResolutionTest() {
+        println( "Running t06_manualAckAndResolutionTest")
         String start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
@@ -608,6 +628,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t07_autoResolveWithThresholdTest() {
+        println( "Running t07_autoResolveWithThresholdTest")
         String start = String.valueOf(System.currentTimeMillis());
 
         /*
@@ -684,6 +705,7 @@ class LifecycleITest extends AbstractITestBase {
          */
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
         assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         /*
             Step 8: Sending "bad" data to fire the trigger
@@ -710,11 +732,12 @@ class LifecycleITest extends AbstractITestBase {
             assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
 
         /*
-            Step 10: Sending "bad" data to fire the trigger
+            Step 10: Sending "bad" data to fire the trigger, should not fire, trigger now in AutoResolve mode
          */
         responseTime = new NumericData("test-autoresolve-threshold", System.currentTimeMillis(), 102);
         mixedData = new MixedData();
@@ -723,28 +746,20 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         /*
-             Step 11: Wait until the engine detects the data
+             Step 11: Wait for engine to process data
                       It should retrieve only 1 data not 2 as previous data shouldn't generate a new alert
          */
-        for ( int i=0; i < 10; ++i ) {
-            Thread.sleep(500);
-            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
-            /*
-                We should have only 1 alert
-             */
-            if ( resp.status == 200 && resp.data.size() == 1 ) {
-                break;
-            }
-            assertEquals(200, resp.status)
-        }
+        Thread.sleep(2500);
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
 
         /*
             Step 12: Sending "good" data to change trigger from FIRING to AUTORESOLVE
          */
-        responseTime = new NumericData("test-autoresolve-threshold", System.currentTimeMillis(), 102);
+        responseTime = new NumericData("test-autoresolve-threshold", System.currentTimeMillis(), 95);
         mixedData = new MixedData();
         mixedData.getNumericData().add(responseTime);
         resp = client.post(path: "data", body: mixedData);
@@ -754,18 +769,10 @@ class LifecycleITest extends AbstractITestBase {
              Step 13: Wait until the engine detects the data
                       It should retrieve only 1 data not 2 as previous data shouldn't generate a new alert
          */
-        for ( int i=0; i < 10; ++i ) {
-            Thread.sleep(500);
-            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
-            /*
-                We should have only 1 alert
-             */
-            if ( resp.status == 200 && resp.data.size() == 1 ) {
-                break;
-            }
-            assertEquals(200, resp.status)
-        }
+        Thread.sleep(2500);
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
 
@@ -794,12 +801,14 @@ class LifecycleITest extends AbstractITestBase {
             assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(2, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
     }
 
     @Test
     void t08_autoEnableTest() {
+        println("Running t08_autoEnableTest")
         String start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
@@ -912,6 +921,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t09_manualAutoResolveTest() {
+        println("Running t09_manualAutoResolveTest")
         String start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
@@ -990,6 +1000,7 @@ class LifecycleITest extends AbstractITestBase {
             assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
 
@@ -1033,11 +1044,13 @@ class LifecycleITest extends AbstractITestBase {
             assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
     }
 
     @Test
     void t100_cleanup() {
+        println("Running t100_cleanup")
         // clean up triggers
         def resp = client.delete(path: "triggers/test-autodisable-trigger")
         assert(200 == resp.status || 404 == resp.status)
