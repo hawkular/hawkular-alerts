@@ -16,10 +16,10 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.model.data.NumericData;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import org.hawkular.alerts.api.model.data.NumericData;
 
 /**
  * An evaluation state for threshold condition.
@@ -36,11 +36,12 @@ public class ThresholdConditionEval extends ConditionEval {
     private Double value;
 
     public ThresholdConditionEval() {
-        super();
+        super(false, 0, null);
+        this.value = Double.NaN;
     }
 
     public ThresholdConditionEval(ThresholdCondition condition, NumericData data) {
-        super(condition.match(data.getValue()), data.getTimestamp());
+        super(condition.match(data.getValue()), data.getTimestamp(), data.getContext());
         this.condition = condition;
         this.value = data.getValue();
         if (this.condition != null) {

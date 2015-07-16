@@ -16,10 +16,11 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * An evaluation state for availability condition.
@@ -36,13 +37,13 @@ public class AvailabilityConditionEval extends ConditionEval {
     private AvailabilityType value;
 
     public AvailabilityConditionEval() {
-        super(false, 0);
+        super(false, 0, null);
         this.condition = null;
         this.value = null;
     }
 
     public AvailabilityConditionEval(AvailabilityCondition condition, Availability avail) {
-        super(condition.match(avail.getValue()), avail.getTimestamp());
+        super(condition.match(avail.getValue()), avail.getTimestamp(), avail.getContext());
         this.condition = condition;
         this.value = avail.getValue();
         if (this.condition != null) {

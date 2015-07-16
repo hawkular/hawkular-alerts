@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.api.model.data;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -48,10 +51,11 @@ public abstract class Data implements Comparable<Data> {
     @JsonInclude
     protected Type type;
 
+    @JsonInclude(Include.NON_EMPTY)
+    protected Map<String, String> context;
+
+    // Default constructor is needed for JSON libraries in JAX-RS context.
     public Data() {
-        /*
-            Default constructor is needed for JSON libraries in JAX-RS context.
-         */
         this.id = null;
     }
 
@@ -62,10 +66,22 @@ public abstract class Data implements Comparable<Data> {
      * @param type the type of data
      */
     public Data(String id, long timestamp, Object value, Type type) {
+        this(id, timestamp, value, type, null);
+    }
+
+    /**
+     * @param id not null
+     * @param timestamp in millis, if less than 1 assigned currentTime.
+     * @param value the value
+     * @param type the type of data
+     * @param context optional, contextual name-value pairs to be stored with the data.
+     */
+    public Data(String id, long timestamp, Object value, Type type, Map<String, String> context) {
         this.id = id;
         this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
         this.value = value;
         this.type = type;
+        this.context = context;
     }
 
     public String getId() {
@@ -103,12 +119,30 @@ public abstract class Data implements Comparable<Data> {
         this.type = type;
     }
 
+    public Map<String, String> getContext() {
+        return context;
+    }
+
+    public void setContext(Map<String, String> context) {
+        this.context = context;
+    }
+
+    public void addProperty(String name, String value) {
+        if (null == name || null == value) {
+            throw new IllegalArgumentException("Propety must have non-null name and value");
+        }
+        if (null == context) {
+            context = new HashMap<>();
+        }
+        context.put(name, value);
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((id == null) ? 0 : id.hashCode());
-        result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
+        result = prime * result + (int)(timestamp ^ (timestamp >>> 32));
         result = prime * result + ((value == null) ? 0 : value.hashCode());
         return result;
     }
@@ -121,7 +155,7 @@ public abstract class Data implements Comparable<Data> {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        Data other = (Data) obj;
+        Data other = (Data)obj;
         if (id == null) {
             if (other.id != null)
                 return false;
@@ -139,7 +173,7 @@ public abstract class Data implements Comparable<Data> {
 
     @Override
     public String toString() {
-        return "Data [id=" + id + ", timestamp=" + timestamp + ", value=" + value + "]";
+        return "Data [id=" + id + ", timestamp=" + timestamp + ", value=" + value + ", context=" + context + "]";
     }
 
     @Override

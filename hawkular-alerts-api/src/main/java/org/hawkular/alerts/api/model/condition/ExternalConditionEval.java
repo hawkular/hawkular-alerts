@@ -37,13 +37,13 @@ public class ExternalConditionEval extends ConditionEval {
     private String value;
 
     public ExternalConditionEval() {
-        super(false, 0);
+        super(false, 0, null);
         this.condition = null;
         this.value = null;
     }
 
     public ExternalConditionEval(ExternalCondition condition, StringData data) {
-        super(condition.match(data.getValue()), data.getTimestamp());
+        super(condition.match(data.getValue()), data.getTimestamp(), data.getContext());
         this.condition = condition;
         this.value = data.getValue();
     }

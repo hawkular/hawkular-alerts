@@ -17,6 +17,7 @@
 package org.hawkular.alerts.rest
 import org.hawkular.alerts.api.model.Severity
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
+import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Availability
 import org.hawkular.alerts.api.model.data.MixedData
@@ -29,6 +30,10 @@ import org.junit.Test
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
 import static org.hawkular.alerts.api.model.trigger.Trigger.Mode
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertNull
 import static org.junit.runners.MethodSorters.NAME_ASCENDING
 /**
  * Alerts REST tests.
@@ -49,7 +54,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 : resp.status
+        assertEquals(200, resp.status)
 
         Trigger testTrigger = new Trigger("test-autodisable-trigger", "test-autodisable-trigger");
 
@@ -82,9 +87,9 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "triggers/test-autodisable-trigger");
         assertEquals(200, resp.status)
         assertEquals("test-autodisable-trigger", resp.data.name)
-        assertEquals(true, resp.data.enabled)
-        assertEquals(true, resp.data.autoDisable);
-        assertEquals(false, resp.data.autoEnable);
+        assertTrue(resp.data.enabled)
+        assertTrue(resp.data.autoDisable);
+        assertFalse(resp.data.autoEnable);
         assertEquals("LOW", resp.data.severity);
 
         // FETCH recent alerts for trigger, should not be any
@@ -110,7 +115,7 @@ class LifecycleITest extends AbstractITestBase {
             if ( resp.status == 200 && resp.data != null && resp.data.size > 0) {
                 break;
             }
-            assert resp.status == 200 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
 
@@ -120,7 +125,7 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "triggers/test-autodisable-trigger");
         assertEquals(200, resp.status)
         assertEquals("test-autodisable-trigger", resp.data.name)
-        assertEquals(false, resp.data.enabled)
+        assertFalse(resp.data.enabled)
 
         // RESOLVE manually the alert
         resp = client.put(path: "resolve", query: [alertIds:alertId,resolvedBy:"testUser",resolvedNotes:"testNotes"] )
@@ -131,13 +136,13 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("RESOLVED", resp.data[0].status)
         assertEquals("testUser", resp.data[0].resolvedBy)
         assertEquals("testNotes", resp.data[0].resolvedNotes)
-        assert null == resp.data[0].resolvedEvalSets
+        assertNull(resp.data[0].resolvedEvalSets)
 
         // FETCH trigger and make sure it's still disabled, because autoEnable was set to false
         resp = client.get(path: "triggers/test-autodisable-trigger");
         assertEquals(200, resp.status)
         assertEquals("test-autodisable-trigger", resp.data.name)
-        assertEquals(false, resp.data.enabled)
+        assertFalse(resp.data.enabled)
     }
 
     @Test
@@ -146,7 +151,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 : resp.status
+        assertEquals(200, resp.status)
 
         Trigger testTrigger = new Trigger("test-autoresolve-trigger", "test-autoresolve-trigger");
 
@@ -188,10 +193,10 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "triggers/test-autoresolve-trigger");
         assertEquals(200, resp.status)
         assertEquals("test-autoresolve-trigger", resp.data.name)
-        assertEquals(true, resp.data.enabled)
-        assertEquals(false, resp.data.autoDisable);
-        assertEquals(true, resp.data.autoResolve);
-        assertEquals(true, resp.data.autoResolveAlerts);
+        assertTrue(resp.data.enabled)
+        assertFalse(resp.data.autoDisable);
+        assertTrue(resp.data.autoResolve);
+        assertTrue(resp.data.autoResolveAlerts);
         assertEquals("HIGH", resp.data.severity);
 
         // FETCH recent alerts for trigger, should not be any
@@ -200,7 +205,9 @@ class LifecycleITest extends AbstractITestBase {
 
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
-        Availability avail = new Availability("test-autoresolve-avail", System.currentTimeMillis(), "DOWN");
+        Map<String,String> context = new HashMap<>(1);
+        context.put("contextName","contextValue");
+        Availability avail = new Availability("test-autoresolve-avail", System.currentTimeMillis(), "DOWN", context);
         MixedData mixedData = new MixedData();
         mixedData.getAvailability().add(avail);
         resp = client.post(path: "data", body: mixedData);
@@ -216,7 +223,7 @@ class LifecycleITest extends AbstractITestBase {
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 200 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
         assertEquals("OPEN", resp.data[0].status)
@@ -239,7 +246,7 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "triggers/test-autoresolve-trigger");
         assertEquals(200, resp.status)
         assertEquals("test-autoresolve-trigger", resp.data.name)
-        assertEquals(true, resp.data.enabled)
+        assertTrue(resp.data.enabled)
 
         // Send in UP avail data to autoresolve the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
@@ -259,7 +266,7 @@ class LifecycleITest extends AbstractITestBase {
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 200 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
         assertEquals("RESOLVED", resp.data[0].status)
@@ -272,7 +279,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 : resp.status
+        assertEquals(200, resp.status)
 
         Trigger testTrigger = new Trigger("test-manual-trigger", "test-manual-trigger");
 
@@ -305,10 +312,10 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "triggers/test-manual-trigger");
         assertEquals(200, resp.status)
         assertEquals("test-manual-trigger", resp.data.name)
-        assertEquals(true, resp.data.enabled)
-        assertEquals(false, resp.data.autoDisable);
-        assertEquals(false, resp.data.autoResolve);
-        assertEquals(false, resp.data.autoResolveAlerts);
+        assertTrue(resp.data.enabled)
+        assertFalse(resp.data.autoDisable);
+        assertFalse(resp.data.autoResolve);
+        assertFalse(resp.data.autoResolveAlerts);
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger"] )
@@ -363,18 +370,22 @@ class LifecycleITest extends AbstractITestBase {
         // FETCH alerts for bogus trigger, should not be any
         def resp = client.get(path: "", query: [startTime:start,triggerIds:"XXX"] )
         assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         // FETCH alerts for bogus alert id, should not be any
         resp = client.get(path: "", query: [startTime:start,alertIds:"XXX,YYY"] )
         assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         // FETCH alerts for bogus tag, should not be any
         resp = client.get(path: "", query: [startTime:start,tags:"XXX"] )
         assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         // FETCH alerts for bogus category|tag, should not be any
         resp = client.get(path: "", query: [startTime:start,tags:"XXX|YYY"] )
         assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         // FETCH alerts for just triggers generated in test t01, by time, should be 1
         resp = client.get(path: "", query: [startTime:t01Start,endTime:t02Start] )
@@ -400,6 +411,17 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals(alertId, resp.data[0].alertId)
+
+        // FETCH alerts for test-autoresolve-trigger, there should be 1 from the earlier test, with context data
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertNotNull(resp.data[0].evalSets)
+        assertTrue(!resp.data[0].evalSets.isEmpty())
+        AvailabilityConditionEval eval =
+            (AvailabilityConditionEval)resp.data[0].evalSets.iterator().next().iterator().next();
+        assertNotNull(eval.getContext())
+        assertTrue("contextValue".equals(eval.getContext().get("contextName")))
 
         // FETCH alerts for test-manual-trigger, there should be 5 from the earlier test
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger"] )
@@ -452,18 +474,18 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
         assertEquals("RESOLVED", resp.data[0].status)
         assertEquals("AUTO", resp.data[0].resolvedBy)
-        assert null != resp.data[0].evalSets
-        assert null != resp.data[0].resolvedEvalSets
-        assert !resp.data[0].evalSets.isEmpty()
-        assert !resp.data[0].resolvedEvalSets.isEmpty()
+        assertNotNull(resp.data[0].evalSets)
+        assertNotNull(resp.data[0].resolvedEvalSets)
+        assertFalse(resp.data[0].evalSets.isEmpty())
+        assertFalse(resp.data[0].resolvedEvalSets.isEmpty())
 
         resp = client.get(path: "",
             query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"RESOLVED",thin:true] )
         assertEquals(200, resp.status)
         assertEquals("RESOLVED", resp.data[0].status)
         assertEquals("AUTO", resp.data[0].resolvedBy)
-        assert null == resp.data[0].evalSets
-        assert null == resp.data[0].resolvedEvalSets
+        assertNull(resp.data[0].evalSets)
+        assertNull(resp.data[0].resolvedEvalSets)
     }
 
     @Test
@@ -493,7 +515,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 : resp.status
+        assertEquals(200, resp.status)
 
         Trigger testTrigger = new Trigger("test-manual2-trigger", "test-manual2-trigger");
 
@@ -526,10 +548,10 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "triggers/test-manual2-trigger");
         assertEquals(200, resp.status)
         assertEquals("test-manual2-trigger", resp.data.name)
-        assertEquals(true, resp.data.enabled)
-        assertEquals(false, resp.data.autoDisable);
-        assertEquals(false, resp.data.autoResolve);
-        assertEquals(false, resp.data.autoResolveAlerts);
+        assertTrue(resp.data.enabled)
+        assertFalse(resp.data.autoDisable);
+        assertFalse(resp.data.autoResolve);
+        assertFalse(resp.data.autoResolveAlerts);
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger"] )
@@ -592,7 +614,7 @@ class LifecycleITest extends AbstractITestBase {
             Step 0: Check REST API is up and running
          */
         def resp = client.get(path: "")
-        assert resp.status == 200 : resp.status
+        assertEquals(200, resp.status)
 
         /*
             Step 1: Remove previous existing definition for this test
@@ -651,10 +673,10 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "triggers/test-autoresolve-threshold-trigger");
         assertEquals(200, resp.status)
         assertEquals("http://www.myresource.com", resp.data.name)
-        assertEquals(true, resp.data.enabled)
-        assertEquals(false, resp.data.autoDisable);
-        assertEquals(true, resp.data.autoResolve);
-        assertEquals(false, resp.data.autoResolveAlerts);
+        assertTrue(resp.data.enabled)
+        assertFalse(resp.data.autoDisable);
+        assertTrue(resp.data.autoResolve);
+        assertFalse(resp.data.autoResolveAlerts);
         assertEquals("HIGH", resp.data.severity);
 
         /*
@@ -685,7 +707,7 @@ class LifecycleITest extends AbstractITestBase {
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 200 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
         assertEquals("OPEN", resp.data[0].status)
@@ -713,7 +735,7 @@ class LifecycleITest extends AbstractITestBase {
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 200 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
         assertEquals("OPEN", resp.data[0].status)
@@ -741,7 +763,7 @@ class LifecycleITest extends AbstractITestBase {
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 200 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
         assertEquals("OPEN", resp.data[0].status)
@@ -769,7 +791,7 @@ class LifecycleITest extends AbstractITestBase {
             if ( resp.status == 200 && resp.data.size() == 2 ) {
                 break;
             }
-            assert resp.status == 200 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
         assertEquals("OPEN", resp.data[0].status)
@@ -782,7 +804,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 : resp.status
+        assertEquals(200, resp.status)
 
         Trigger testTrigger = new Trigger("test-autoenable-trigger", "test-autoenable-trigger");
 
@@ -816,11 +838,11 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "triggers/test-autoenable-trigger");
         assertEquals(200, resp.status)
         assertEquals("test-autoenable-trigger", resp.data.name)
-        assertEquals(true, resp.data.enabled)
-        assertEquals(true, resp.data.autoDisable);
-        assertEquals(true, resp.data.autoEnable);
-        assertEquals(false, resp.data.autoResolve);
-        assertEquals(false, resp.data.autoResolveAlerts);
+        assertTrue(resp.data.enabled)
+        assertTrue(resp.data.autoDisable);
+        assertTrue(resp.data.autoEnable);
+        assertFalse(resp.data.autoResolve);
+        assertFalse(resp.data.autoResolveAlerts);
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoenable-trigger"] )
@@ -855,7 +877,7 @@ class LifecycleITest extends AbstractITestBase {
         def resp2 = client.get(path: "triggers/test-autoenable-trigger");
         assertEquals(200, resp2.status)
         assertEquals("test-autoenable-trigger", resp2.data.name)
-        assertEquals(false, resp2.data.enabled)
+        assertFalse(resp2.data.enabled)
 
         // RESOLVE manually the alert
         resp = client.put(path: "resolve", query: [alertIds:resp.data[0].alertId,resolvedBy:"testUser",
@@ -885,7 +907,7 @@ class LifecycleITest extends AbstractITestBase {
         resp2 = client.get(path: "triggers/test-autoenable-trigger");
         assertEquals(200, resp2.status)
         assertEquals("test-autoenable-trigger", resp2.data.name)
-        assertEquals(true, resp2.data.enabled)
+        assertTrue(resp2.data.enabled)
     }
 
     @Test
@@ -894,7 +916,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // CREATE the trigger
         def resp = client.get(path: "")
-        assert resp.status == 200 : resp.status
+        assertEquals(200, resp.status)
 
         Trigger testTrigger = new Trigger("test-manual-autoresolve-trigger", "test-manual-autoresolve-trigger");
 
@@ -936,11 +958,11 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "triggers/test-manual-autoresolve-trigger");
         assertEquals(200, resp.status)
         assertEquals("test-manual-autoresolve-trigger", resp.data.name)
-        assertEquals(true, resp.data.enabled)
-        assertEquals(false, resp.data.autoDisable);
-        assertEquals(false, resp.data.autoEnable);
-        assertEquals(true, resp.data.autoResolve);
-        assertEquals(true, resp.data.autoResolveAlerts);
+        assertTrue(resp.data.enabled)
+        assertFalse(resp.data.autoDisable);
+        assertFalse(resp.data.autoEnable);
+        assertTrue(resp.data.autoResolve);
+        assertTrue(resp.data.autoResolveAlerts);
         assertEquals("HIGH", resp.data.severity);
 
         // FETCH recent alerts for trigger, should not be any
@@ -965,7 +987,7 @@ class LifecycleITest extends AbstractITestBase {
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 200 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
         assertEquals("OPEN", resp.data[0].status)
@@ -976,7 +998,7 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "triggers/test-manual-autoresolve-trigger");
         assertEquals(200, resp.status)
         assertEquals("test-manual-autoresolve-trigger", resp.data.name)
-        assertEquals(true, resp.data.enabled)
+        assertTrue(resp.data.enabled)
 
         // Manually RESOLVE the alert prior to an autoResolve
         // Att the time of this writing we don't have a service to purge/delete alerts, so for this to work we
@@ -1008,7 +1030,7 @@ class LifecycleITest extends AbstractITestBase {
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 200 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
         assertEquals("OPEN", resp.data[0].status)

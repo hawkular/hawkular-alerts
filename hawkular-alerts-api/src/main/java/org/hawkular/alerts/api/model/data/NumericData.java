@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.data;
 
+import java.util.Map;
+
 /**
  * A numeric incoming data.
  *
@@ -24,15 +26,17 @@ package org.hawkular.alerts.api.model.data;
  */
 public class NumericData extends Data {
 
+    // Default constructor is needed for JSON libraries in JAX-RS context.
     public NumericData() {
-        /*
-            Default constructor is needed for JSON libraries in JAX-RS context.
-         */
-        this(null, 0, Double.NaN);
+        this(null, 0, Double.NaN, null);
     }
 
     public NumericData(String id, long timestamp, Double value) {
-        super(id, timestamp, (null == value) ? Double.NaN : value, Type.NUMERIC);
+        this(id, timestamp, value, null);
+    }
+
+    public NumericData(String id, long timestamp, Double value, Map<String, String> context) {
+        super(id, timestamp, (null == value) ? Double.NaN : value, Type.NUMERIC, context);
     }
 
     public Double getValue() {

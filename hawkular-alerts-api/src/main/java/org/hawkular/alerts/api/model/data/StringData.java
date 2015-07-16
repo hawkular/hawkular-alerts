@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.data;
 
+import java.util.Map;
+
 /**
  * A string incoming data.
  *
@@ -24,15 +26,17 @@ package org.hawkular.alerts.api.model.data;
  */
 public class StringData extends Data {
 
+    // Default constructor is needed for JSON libraries in JAX-RS context.
     public StringData() {
-        /*
-            Default constructor is needed for JSON libraries in JAX-RS context.
-         */
-        this(null, 0, "");
+        this(null, 0, "", null);
     }
 
     public StringData(String id, long timestamp, String value) {
-        super(id, timestamp, (null == value) ? "" : value, Type.STRING);
+        this(id, timestamp, value, null);
+    }
+
+    public StringData(String id, long timestamp, String value, Map<String, String> context) {
+        super(id, timestamp, (null == value) ? "" : value, Type.STRING, context);
     }
 
     public String getValue() {
