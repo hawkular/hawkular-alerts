@@ -576,6 +576,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         for (Alert a : alertsToAck) {
             a.setStatus(Alert.Status.ACKNOWLEDGED);
             a.setAckBy(ackBy);
+            a.setAckTime(System.currentTimeMillis());
             a.setAckNotes(ackNotes);
             updateAlertStatus(a);
             sendAction(a);
@@ -601,6 +602,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         for (Alert a : alertsToResolve) {
             a.setStatus(Alert.Status.RESOLVED);
             a.setResolvedBy(resolvedBy);
+            a.setResolvedTime(System.currentTimeMillis());
             a.setResolvedNotes(resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
             updateAlertStatus(a);
@@ -633,6 +635,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         for (Alert a : alertsToResolve) {
             a.setStatus(Alert.Status.RESOLVED);
             a.setResolvedBy(resolvedBy);
+            a.setResolvedTime(System.currentTimeMillis());
             a.setResolvedNotes(resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
             updateAlertStatus(a);
