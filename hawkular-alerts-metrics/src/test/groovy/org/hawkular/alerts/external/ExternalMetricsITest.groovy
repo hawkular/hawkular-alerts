@@ -25,6 +25,7 @@ import org.hawkular.alerts.api.model.trigger.Trigger
 
 import static org.hawkular.alerts.api.model.trigger.Trigger.Mode
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
 
 import org.junit.FixMethodOrder
 import org.junit.Test
@@ -50,13 +51,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // CREATE trigger using external metrics expression
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assertTrue(resp.status == 200 || resp.status == 204)
 
         Trigger triggerTestAvg = new Trigger("trigger-test-avg", "trigger-test-avg");
 
         // remove if it exists
         resp = client.delete(path: "triggers/trigger-test-avg")
-        assert(200 == resp.status || 404 == resp.status)
+        assertTrue(200 == resp.status || 404 == resp.status)
 
         triggerTestAvg.setAutoDisable(true);
 
@@ -88,7 +89,8 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-avg"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         // Send in METRICS data before enabling the trigger because the external evaluations start as soon
         // as the enabled Trigger is processed.
@@ -112,12 +114,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-avg"] )
-            if ( resp.status == 200 ) {
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 204 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
         assertEquals("trigger-test-avg", resp.data[0].triggerId)
@@ -131,13 +134,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // CREATE trigger using external metrics expression
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assertTrue(resp.status == 200 || resp.status == 204)
 
         Trigger triggerTestAvgD = new Trigger("trigger-test-avgd", "trigger-test-avgd");
 
         // remove if it exists
         resp = client.delete(path: "triggers/trigger-test-avgd")
-        assert(200 == resp.status || 404 == resp.status)
+        assertTrue(200 == resp.status || 404 == resp.status)
 
         triggerTestAvgD.setAutoDisable(true);
 
@@ -169,7 +172,8 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-avgd"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         // Send in METRICS data before enabling the trigger because the external evaluations start as soon
         // as the enabled Trigger is processed. Current avg = 15. Yesterday avg = 10. % diff = 50%
@@ -198,12 +202,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-avgd"] )
-            if ( resp.status == 200 ) {
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 204 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
         assertEquals("trigger-test-avgd", resp.data[0].triggerId)
@@ -217,13 +222,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // CREATE trigger using external metrics expression
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assertTrue(resp.status == 200 || resp.status == 204)
 
         Trigger triggerTestAvgW = new Trigger("trigger-test-avgw", "trigger-test-avgw");
 
         // remove if it exists
         resp = client.delete(path: "triggers/trigger-test-avgw")
-        assert(200 == resp.status || 404 == resp.status)
+        assertTrue(200 == resp.status || 404 == resp.status)
 
        triggerTestAvgW.setAutoDisable(true);
 
@@ -255,7 +260,8 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-avgw"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         // Send in METRICS data before enabling the trigger because the external evaluations start as soon
         // as the enabled Trigger is processed. Current avg = 20. LastWeek avg = 10. % diff = 100%
@@ -284,12 +290,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-avgw"] )
-            if ( resp.status == 200 ) {
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 204 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
         assertEquals("trigger-test-avgw", resp.data[0].triggerId)
@@ -303,13 +310,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // CREATE trigger using external metrics expression
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assertTrue(resp.status == 200 || resp.status == 204)
 
         Trigger triggerTestMin = new Trigger("trigger-test-min", "trigger-test-min");
 
         // remove if it exists
         resp = client.delete(path: "triggers/trigger-test-min")
-        assert(200 == resp.status || 404 == resp.status)
+        assertTrue(200 == resp.status || 404 == resp.status)
 
        triggerTestMin.setAutoDisable(true);
 
@@ -341,7 +348,8 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-min"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         // Send in METRICS data before enabling the trigger because the external evaluations start as soon
         // as the enabled Trigger is processed. min = 9
@@ -366,12 +374,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-min"] )
-            if ( resp.status == 200 ) {
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 204 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
         assertEquals("trigger-test-min", resp.data[0].triggerId)
@@ -385,13 +394,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // CREATE trigger using external metrics expression
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assertTrue(resp.status == 200 || resp.status == 204)
 
         Trigger triggerTestMax = new Trigger("trigger-test-max", "trigger-test-max");
 
         // remove if it exists
         resp = client.delete(path: "triggers/trigger-test-max")
-        assert(200 == resp.status || 404 == resp.status)
+        assertTrue(200 == resp.status || 404 == resp.status)
 
         triggerTestMax.setAutoDisable(true);
 
@@ -423,7 +432,8 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-max"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         // Send in METRICS data before enabling the trigger because the external evaluations start as soon
         // as the enabled Trigger is processed. Max = 20
@@ -448,12 +458,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-max"] )
-            if ( resp.status == 200 ) {
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 204 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
         assertEquals("trigger-test-max", resp.data[0].triggerId)
@@ -467,13 +478,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // CREATE trigger using external metrics expression
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assertTrue(resp.status == 200 || resp.status == 204)
 
         Trigger triggerTestRange = new Trigger("trigger-test-range", "trigger-test-range");
 
         // remove if it exists
         resp = client.delete(path: "triggers/trigger-test-range")
-        assert(200 == resp.status || 404 == resp.status)
+        assertTrue(200 == resp.status || 404 == resp.status)
 
         triggerTestRange.setAutoDisable(true);
 
@@ -505,7 +516,8 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-range"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         // Send in METRICS data before enabling the trigger because the external evaluations start as soon
         // as the enabled Trigger is processed. Range=10
@@ -530,12 +542,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-range"] )
-            if ( resp.status == 200 ) {
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 204 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
         assertEquals("trigger-test-range", resp.data[0].triggerId)
@@ -549,13 +562,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // CREATE trigger using external metrics expression
         def resp = client.get(path: "")
-        assert resp.status == 200 || resp.status == 204 : resp.status
+        assertTrue(resp.status == 200 || resp.status == 204)
 
         Trigger triggerTestRangep = new Trigger("trigger-test-rangep", "trigger-test-rangep");
 
         // remove if it exists
         resp = client.delete(path: "triggers/trigger-test-rangep")
-        assert(200 == resp.status || 404 == resp.status)
+        assertTrue(200 == resp.status || 404 == resp.status)
 
         triggerTestRangep.setAutoDisable(true);
 
@@ -587,7 +600,8 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-rangep"] )
-        assertEquals(204, resp.status)
+        assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
 
         // Send in METRICS data before enabling the trigger because the external evaluations start as soon
         // as the enabled Trigger is processed. Rangep=0.8
@@ -612,12 +626,13 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-rangep"] )
-            if ( resp.status == 200 ) {
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
                 break;
             }
-            assert resp.status == 204 : resp.status
+            assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
         assertEquals("trigger-test-rangep", resp.data[0].triggerId)
