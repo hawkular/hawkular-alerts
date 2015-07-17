@@ -25,7 +25,6 @@ import org.hawkular.alerts.api.model.condition.StringCondition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.jboss.logging.Logger
 import org.junit.Test
 
 /**
