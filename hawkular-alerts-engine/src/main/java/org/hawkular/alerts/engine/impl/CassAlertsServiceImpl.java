@@ -43,6 +43,7 @@ import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
@@ -162,8 +163,9 @@ public class CassAlertsServiceImpl implements AlertsService {
         boolean thin = (null != criteria && criteria.isThin());
 
         if (filter) {
-            log.debugf("getAlerts criteria: %s", criteria.toString());
+
         }
+        log.debugf("getAlerts criteria: %s", criteria.toString());
 
         List<Alert> alerts = new ArrayList<>();
         Set<String> alertIds = new HashSet<>();
@@ -691,7 +693,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         return alert;
     }
 
-    private void handleResolveOptions(String tenantId, String triggerId, boolean checkAllResolved) {
+    private void handleResolveOptions(String tenantId, String triggerId, boolean checkIfAllResolved) {
 
         try {
             Trigger trigger = definitionsService.getTrigger(tenantId, triggerId);
@@ -702,12 +704,24 @@ public class CassAlertsServiceImpl implements AlertsService {
             boolean setEnabled = trigger.isAutoEnable() && !trigger.isEnabled();
             boolean setFiring = trigger.isAutoResolve();
 
-            if (!setEnabled && !setFiring) {
+            // Only reload the trigger if it is not already in firing mode, otherwise we could lose partial matching.
+            // This is a rare case because a trigger with autoResolve=true will not be in firing mode with an
+            // unresolved trigger. But it is possible, either by mistake, or timing,  for a client to try and
+            // resolve an already-resolved alert.
+            if (setFiring) {
+                Trigger loadedTrigger = alertsEngine.getLoadedTrigger(trigger);
+                if (Mode.FIRING == loadedTrigger.getMode()) {
+                    log.debugf("Ignoring setFiring, loaded Trigger already in firing mode %s", loadedTrigger);
+                    setFiring = false;
+                }
+            }
+
+            if (!(setEnabled || setFiring)) {
                 return;
             }
 
             boolean allResolved = true;
-            if (checkAllResolved) {
+            if (checkIfAllResolved) {
                 AlertsCriteria ac = new AlertsCriteria();
                 ac.setTriggerId(triggerId);
                 ac.setStatusSet(EnumSet.complementOf(EnumSet.of(Alert.Status.RESOLVED)));
@@ -716,6 +730,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
 
             if (!allResolved) {
+                log.debugf("Ignoring resolveOptions, not all Alerts for Trigger %s are resolved", trigger);
                 return;
             }
 
@@ -754,7 +769,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
         }
     }
-
 
     private boolean isEmpty(Collection<?> c) {
         return null == c || c.isEmpty();

@@ -163,7 +163,12 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
     @Override
     public Object getFact(Object o) {
-        return kSession.getFactHandle(o);
+        Object result = null;
+        FactHandle factHandle = kSession.getFactHandle(o);
+        if (null != factHandle) {
+            result = kSession.getObject(factHandle);
+        }
+        return result;
     }
 
     @Override

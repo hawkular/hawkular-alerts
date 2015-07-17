@@ -19,6 +19,7 @@ package org.hawkular.alerts.engine.service;
 import java.util.Collection;
 
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
  * Interface that allows to send data to the alerts engine and check resulting state.
@@ -27,6 +28,17 @@ import org.hawkular.alerts.api.model.data.Data;
  * @author Lucas Ponce
  */
 public interface AlertsEngine {
+
+    /**
+     * Reset session state.
+     */
+    void clear();
+
+    /**
+     * @param trigger the trigger for which the loaded version is requested.
+     * @return the Trigger with the current engine state, or null if the trigger is not found in the engine
+     */
+    Trigger getLoadedTrigger(Trigger trigger);
 
     /**
      * Send data into the alerting system for evaluation.
@@ -43,11 +55,6 @@ public interface AlertsEngine {
      * @throws Exception any problem.
      */
     void sendData(Collection<Data> data) throws Exception;
-
-    /**
-     * Reset session state.
-     */
-    void clear();
 
     /**
      * Reload all Triggers.

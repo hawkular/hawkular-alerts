@@ -47,7 +47,7 @@ public interface RulesEngine {
 
     /**
      * @param fact the fact
-     * @return The implementation-specific Fact representing <code>object</code>, or null if <code>object</code> is
+     * @return The Fact Object representing <code>object</code>, or null if <code>object</code> is
      * not a Fact in the rules engine.
      */
     Object getFact(Object fact);

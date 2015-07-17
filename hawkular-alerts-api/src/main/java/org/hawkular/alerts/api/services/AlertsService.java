@@ -63,7 +63,9 @@ public interface AlertsService {
 
     /**
      * The alerts must already have been added. Set the alerts to RESOLVED status. The resolvedTime will be set to the
-     * system time.
+     * system time.  If the call leaves the trigger with no unresolved alerts then:<br>
+     * - If the trigger has <code>autoEnable=true</code> it will be enabled, as needed.<br>
+     * - If the trigger has <code>autoResolve=true</code> it will be set to firing mode, as needed.
      * @param tenantId Tenant where alerts are stored
      * @param alertIds Alerts to be acknowledged.
      * @param resolvedBy Optional. Typically the user resolving the alerts.
@@ -76,7 +78,9 @@ public interface AlertsService {
 
     /**
      * Set unresolved alerts for the provided trigger to RESOLVED status. The resolvedTime will be set to the
-     * system time.
+     * system time.<br>
+     * - If the trigger has <code>autoEnable=true</code> it will be enabled, as needed.<br>
+     * - If the trigger has <code>autoResolve=true</code> it will be set to firing mode, as needed.
      * @param tenantId Tenant where alerts are stored
      * @param triggerId Tenant where alerts are stored
      * @param resolvedBy Optional. Typically the user resolving the alerts.

@@ -1003,6 +1003,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
+        String alertId = resp.data[0].alertId;
 
         // FETCH trigger and make sure it's still enabled (note - we can't check the mode as that is runtime
         // info and not supplied in the returned json)
@@ -1012,7 +1013,7 @@ class LifecycleITest extends AbstractITestBase {
         assertTrue(resp.data.enabled)
 
         // Manually RESOLVE the alert prior to an autoResolve
-        // Att the time of this writing we don't have a service to purge/delete alerts, so for this to work we
+        // At the time of this writing we don't have a service to purge/delete alerts, so for this to work we
         // have to make sure any old alerts (from prior runs) are also resolved. Because all alerts for the trigger
         // must be resolved for autoEnable to kick in...
         resp = client.get(path: "", query: [triggerIds:"test-manual-autoresolve-trigger",statuses:"OPEN"] )
@@ -1022,6 +1023,12 @@ class LifecycleITest extends AbstractITestBase {
                 resolvedNotes:"testNotes"] )
             assertEquals(200, resp2.status)
         }
+
+        // manually resolve the alert again, from here it just ensures that this doesn't create a problem
+        // but examination of the debug log allows us to ensure that this does not cause a reload of the
+        // the trigger into the engine.
+        resp = client.put(path: "resolve", query: [alertIds:alertId,resolvedBy:"testUser", resolvedNotes:"testNotes"] )
+        assertEquals(200, resp.status)
 
         // Send in another DOWN data and we should get another alert assuming the trigger was reset to Firing mode
         avail = new Availability("test-manual-autoresolve-avail", System.currentTimeMillis(), "DOWN");

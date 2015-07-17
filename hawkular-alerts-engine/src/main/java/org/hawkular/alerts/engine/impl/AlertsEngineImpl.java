@@ -243,6 +243,22 @@ public class AlertsEngineImpl implements AlertsEngine {
         }
     }
 
+    @Override
+    public Trigger getLoadedTrigger(Trigger trigger) {
+        if (null == trigger) {
+            throw new IllegalArgumentException("Trigger must be not null");
+        }
+
+        Trigger loadedTrigger = null;
+        try {
+            loadedTrigger = (Trigger)rules.getFact(trigger);
+
+        } catch (Exception e) {
+            log.errorf("Failed to get Trigger from engine %s: %s", trigger, e);
+        }
+        return loadedTrigger;
+    }
+
     private void removeTrigger(Trigger trigger) {
         if (null != rules.getFact(trigger)) {
             // First remove the related Trigger facts from the engine
@@ -254,9 +270,9 @@ public class AlertsEngineImpl implements AlertsEngine {
             final String triggerId = trigger.getId();
             rules.removeFacts(t -> {
                 if (t instanceof Dampening) {
-                    return ((Dampening) t).getTriggerId().equals(triggerId);
+                    return ((Dampening)t).getTriggerId().equals(triggerId);
                 } else if (t instanceof Condition) {
-                    return ((Condition) t).getTriggerId().equals(triggerId);
+                    return ((Condition)t).getTriggerId().equals(triggerId);
                 }
                 return false;
             });
@@ -386,18 +402,26 @@ public class AlertsEngineImpl implements AlertsEngine {
         try {
             for (Map.Entry<Trigger, List<Set<ConditionEval>>> entry : autoResolvedTriggers.entrySet()) {
                 Trigger t = entry.getKey();
-                try {
-                    if (t.isAutoResolveAlerts()) {
+                boolean manualReload = !t.isAutoResolveAlerts();
+
+                // calling resolveAlertsForTrigger will result in a trigger reload (unless it fails),
+                // otherwise, manually reload the trigger back into the engine (in firing mode).
+                if (t.isAutoResolveAlerts()) {
+                    try {
                         alertsService.resolveAlertsForTrigger(t.getTenantId(), t.getId(), "AUTO", null,
                                 entry.getValue());
+                    } catch (Exception e) {
+                        manualReload = true;
+                        log.errorf("Failed to resolve Alerts. Could not AutoResolve alerts for trigger %s", t);
                     }
-                } catch (Exception e) {
-                    log.errorf("Failed to resolve Alerts. Could not AutoResolve alerts for trigger %s", t);
                 }
-                try {
-                    reloadTrigger(t.getTenantId(), t.getId());
-                } catch (Exception e) {
-                    log.errorf("Failed to reload AutoResolved Trigger: %s", t);
+
+                if (manualReload) {
+                    try {
+                        reloadTrigger(t.getTenantId(), t.getId());
+                    } catch (Exception e) {
+                        log.errorf("Failed to reload AutoResolved Trigger: %s", t);
+                    }
                 }
             }
         } finally {
