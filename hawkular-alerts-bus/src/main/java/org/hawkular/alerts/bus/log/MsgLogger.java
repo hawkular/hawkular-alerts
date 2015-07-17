@@ -53,10 +53,6 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 210005, value = "Cannot connect to hawkular bus")
     void warnCannotConnectToBus();
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 210006, value = "Sent action message [%s] to the bus")
-    void infoSentActionMessage(String msg);
-
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 210007, value = "Cannot access to DefinitionsService")
     void warnCannotAccessToDefinitionsService();

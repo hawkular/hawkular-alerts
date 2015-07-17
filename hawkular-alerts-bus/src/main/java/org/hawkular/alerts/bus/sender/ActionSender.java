@@ -82,7 +82,7 @@ public class ActionSender implements ActionListener {
                 nMsg.setProperties(properties);
                 nMsg.setDefaultProperties(defaultProperties);
                 MessageId mid = new MessageProcessor().send(pcc, nMsg, actionPluginFilter(action.getActionPlugin()));
-                msgLogger.infoSentActionMessage(mid.getId());
+                log.debug("Sent action message [" + mid.getId() + "] to the bus");
             } else {
                 msgLogger.warnCannotAccessToDefinitionsService();
             }

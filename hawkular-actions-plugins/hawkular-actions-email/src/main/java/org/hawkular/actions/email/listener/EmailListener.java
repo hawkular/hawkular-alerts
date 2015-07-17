@@ -65,7 +65,8 @@ public class EmailListener extends BasicMessageListener<ActionMessage> {
 
     protected void onBasicMessage(ActionMessage msg) {
         try {
-            msgLog.infoActionReceived(EmailPlugin.PLUGIN_NAME, msg.toString());
+            log.debug("Action received for plugin [" + EmailPlugin.PLUGIN_NAME + "], " +
+                    "msg = " + msg.toString());
             Message message = createMimeMessage(msg);
             Transport.send(message);
         } catch (Exception e) {
