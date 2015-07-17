@@ -19,6 +19,7 @@ package org.hawkular.alerts.api.model.condition;
 import java.util.Map;
 
 import org.hawkular.alerts.api.json.JacksonDeserializer;
+import org.hawkular.alerts.api.model.condition.Condition.Type;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -60,7 +61,8 @@ public abstract class ConditionEval {
         // for json assembly
     }
 
-    public ConditionEval(boolean match, long dataTimestamp, Map<String, String> context) {
+    public ConditionEval(Type type, boolean match, long dataTimestamp, Map<String, String> context) {
+        this.type = type;
         this.match = match;
         this.dataTimestamp = dataTimestamp;
         this.evalTimestamp = System.currentTimeMillis();

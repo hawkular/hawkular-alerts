@@ -18,6 +18,7 @@ package org.hawkular.alerts.api.model.condition;
 
 import java.util.Map;
 
+import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.data.NumericData;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -44,7 +45,7 @@ public class CompareConditionEval extends ConditionEval {
     protected Map<String, String> context2;
 
     public CompareConditionEval() {
-        super(false, 0, null);
+        super(Type.COMPARE, false, 0, null);
         this.condition = null;
         this.value1 = null;
         this.value2 = null;
@@ -52,15 +53,12 @@ public class CompareConditionEval extends ConditionEval {
     }
 
     public CompareConditionEval(CompareCondition condition, NumericData data1, NumericData data2) {
-        super(condition.match(data1.getValue(), data2.getValue()),
+        super(Type.COMPARE, condition.match(data1.getValue(), data2.getValue()),
                 ((data1.getTimestamp() > data1.getTimestamp()) ? data1.getTimestamp() : data2.getTimestamp()),
                 data1.getContext());
         this.condition = condition;
         this.value1 = data1.getValue();
         this.value2 = data2.getValue();
-        if (this.condition != null) {
-            this.type = this.condition.getType();
-        }
         this.context2 = data2.getContext();
     }
 

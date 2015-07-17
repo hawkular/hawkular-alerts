@@ -253,8 +253,8 @@ public class JsonJacksonTest {
     @Test
     public void jsonAvailabilityConditionEvalTest() throws Exception {
         String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"AVAILABILITY\"," +
-                "\"condition\":" +
-                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"dataId\":\"Default\",\"operator\":\"UP\"}," +
+                "\"condition\":{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"AVAILABILITY\"," +
+                "\"dataId\":\"Default\",\"operator\":\"UP\"}," +
                 "\"value\":\"UP\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         AvailabilityConditionEval eval = objectMapper.readValue(str, AvailabilityConditionEval.class);
 
@@ -357,12 +357,12 @@ public class JsonJacksonTest {
 
     @Test
     public void jsonCompareConditionEvalTest() throws Exception {
-        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"COMPARE\"," +
-                "\"condition\":" +
-                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
-                "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}," +
-                "\"value1\":10.0," +
-                "\"value2\":15.0,\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"},\"context2\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
+        String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"COMPARE\","
+                + "\"condition\":"
+                + "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"COMPARE\","
+                + "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2},"
+                + "\"value1\":10.0,\"value2\":15.0,"
+                + "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"},\"context2\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         CompareConditionEval eval = objectMapper.readValue(str, CompareConditionEval.class);
 
         assertTrue(eval.getEvalTimestamp() == 1);
@@ -468,7 +468,7 @@ public class JsonJacksonTest {
     public void jsonStringConditionEvalTest() throws Exception {
         String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"STRING\"," +
                 "\"condition\":" +
-                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
+                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"STRING\"," +
                 "\"dataId\":\"Default\",\"operator\":\"MATCH\",\"pattern\":\"test-pattern\",\"ignoreCase\":false}," +
                 "\"value\":\"test-value\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         StringConditionEval eval = objectMapper.readValue(str, StringConditionEval.class);
@@ -563,7 +563,7 @@ public class JsonJacksonTest {
     public void jsonThresholdConditionEvalTest() throws Exception {
         String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"THRESHOLD\"," +
                 "\"condition\":" +
-                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
+                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"THRESHOLD\"," +
                 "\"dataId\":\"Default\",\"operator\":\"LT\",\"threshold\":10.5}," +
                 "\"value\":1.0,\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         ThresholdConditionEval eval = objectMapper.readValue(str, ThresholdConditionEval.class);
@@ -703,7 +703,7 @@ public class JsonJacksonTest {
     public void jsonThresholdRangeConditionEvalTest() throws Exception {
         String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"RANGE\"," +
                 "\"condition\":" +
-                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
+                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"RANGE\"," +
                 "\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\",\"operatorHigh\":\"INCLUSIVE\"," +
                 "\"thresholdLow\":10.5,\"thresholdHigh\":20.5,\"inRange\":true}," +
                 "\"value\":1.0,\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
@@ -748,7 +748,7 @@ public class JsonJacksonTest {
     public void jsonExternalConditionEvalTest() throws Exception {
         String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"EXTERNAL\"," +
                 "\"condition\":" +
-                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
+                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"EXTERNAL\"," +
                 "\"dataId\":\"Default\",\"systemId\":\"HawkularMetrics\"," +
                 "\"expression\":\"metric:5:avg(foo > 100.5)\"}," +
                 "\"value\":\"foo\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";

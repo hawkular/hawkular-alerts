@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.data.NumericData;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -36,18 +37,15 @@ public class ThresholdRangeConditionEval extends ConditionEval {
     private Double value;
 
     public ThresholdRangeConditionEval() {
-        super(false, 0, null);
+        super(Type.RANGE, false, 0, null);
         this.condition = null;
         this.value = null;
     }
 
     public ThresholdRangeConditionEval(ThresholdRangeCondition condition, NumericData data) {
-        super(condition.match(data.getValue()), data.getTimestamp(), data.getContext());
+        super(Type.RANGE, condition.match(data.getValue()), data.getTimestamp(), data.getContext());
         this.condition = condition;
         this.value = data.getValue();
-        if (this.condition != null) {
-            this.type = this.condition.getType();
-        }
     }
 
     public ThresholdRangeCondition getCondition() {

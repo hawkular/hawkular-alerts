@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.data.StringData;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -36,18 +37,15 @@ public class StringConditionEval extends ConditionEval {
     private String value;
 
     public StringConditionEval() {
-        super(false, 0, null);
+        super(Type.STRING, false, 0, null);
         this.condition = null;
         this.value = null;
     }
 
     public StringConditionEval(StringCondition condition, StringData data) {
-        super(condition.match(data.getValue()), data.getTimestamp(), data.getContext());
+        super(Type.STRING, condition.match(data.getValue()), data.getTimestamp(), data.getContext());
         this.condition = condition;
         this.value = data.getValue();
-        if (this.condition != null) {
-            this.type = this.condition.getType();
-        }
     }
 
     public StringCondition getCondition() {
