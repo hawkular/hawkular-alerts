@@ -20,7 +20,7 @@ import java.util.Map;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.bus.log.MsgLogger;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
-import org.hawkular.actions.api.model.ActionPluginMessage;
+import org.hawkular.alerts.actions.api.model.ActionPluginMessage;
 import org.jboss.logging.Logger;
 
 import javax.ejb.ActivationConfigProperty;

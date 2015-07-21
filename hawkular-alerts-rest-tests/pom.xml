@@ -28,7 +28,7 @@
 
   <artifactId>hawkular-alerts-rest-tests</artifactId>
 
-  <name>Hawkular Alerts REST integration tests</name>
+  <name>Hawkular Alerts Rest Integration Tests</name>
 
   <dependencies>
 
