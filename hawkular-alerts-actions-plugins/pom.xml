@@ -18,26 +18,34 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts</artifactId>
+    <groupId>org.hawkular.alerts</groupId>
     <version>0.4.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>hawkular-alerts-bus</artifactId>
-  <packaging>jar</packaging>
+  <artifactId>hawkular-alerts-actions-plugins</artifactId>
+  <packaging>pom</packaging>
 
-  <name>Hawkular Alerts Bus</name>
+  <name>Hawkular Alerts Action Plugins</name>
+  <description>Parent module of all Action Plugins</description>
+
+  <properties>
+    <org.hawkular.wildfly.home>${project.basedir}/../../../hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-${version.org.wildfly}</org.hawkular.wildfly.home>
+  </properties>
+
+  <modules>
+    <module>hawkular-alerts-actions-email</module>
+    <module>hawkular-alerts-actions-sms</module>
+    <module>hawkular-alerts-actions-snmp</module>
+    <module>hawkular-alerts-actions-aerogear</module>
+    <module>hawkular-alerts-actions-pagerduty</module>
+  </modules>
 
   <dependencies>
-
-    <dependency>
-      <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
@@ -61,11 +69,9 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- place above active-mq in order to get the correct javax annotations used in the build path (for eclipse) -->
     <dependency>
-      <groupId>javax</groupId>
-      <artifactId>javaee-api</artifactId>
-      <version>${version.javaee.spec}</version>
+      <groupId>org.jboss.resteasy</groupId>
+      <artifactId>resteasy-jackson2-provider</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -81,6 +87,13 @@
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-jaas</artifactId>
       <version>${version.org.apache.activemq}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>javax</groupId>
+      <artifactId>javaee-api</artifactId>
+      <version>${version.javaee.spec}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -101,17 +114,8 @@
       <scope>provided</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.jboss.resteasy</groupId>
-      <artifactId>resteasy-jackson2-provider</artifactId>
-      <scope>provided</scope>
-    </dependency>
 
-    <dependency>
-      <groupId>org.infinispan</groupId>
-      <artifactId>infinispan-core</artifactId>
-      <scope>provided</scope>
-    </dependency>
+    <!-- Tests -->
 
     <dependency>
       <groupId>junit</groupId>
@@ -119,6 +123,16 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
+
+  <build>
+    <finalName>${project.artifactId}</finalName>
+  </build>
 
 </project>

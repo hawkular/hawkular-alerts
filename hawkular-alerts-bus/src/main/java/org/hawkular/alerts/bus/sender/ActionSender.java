@@ -34,7 +34,7 @@ import org.hawkular.bus.common.Endpoint;
 import org.hawkular.bus.common.MessageId;
 import org.hawkular.bus.common.MessageProcessor;
 import org.hawkular.bus.common.producer.ProducerConnectionContext;
-import org.hawkular.actions.api.model.ActionMessage;
+import org.hawkular.alerts.actions.api.model.ActionMessage;
 import org.jboss.logging.Logger;
 
 
