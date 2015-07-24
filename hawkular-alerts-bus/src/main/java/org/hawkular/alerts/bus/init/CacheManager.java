@@ -125,7 +125,7 @@ public class CacheManager {
             log.error("FAILED to load conditions to create Id filters. All data being forwarded to alerting!", e);
             activeDataIds = null;
             activeAvailabiityIds = null;
-            //activeDataIdsTime = 0L;
+            return;
         }
 
         activeDataIds = Collections.unmodifiableSet(dataIds);
