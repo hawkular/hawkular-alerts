@@ -486,8 +486,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         PreparedStatement deleteDampenings = CassStatement.get(session, CassStatement.DELETE_DAMPENINGS);
         PreparedStatement deleteConditions = CassStatement.get(session, CassStatement.DELETE_CONDITIONS);
-        PreparedStatement deleteTriggers = CassStatement.get(session, CassStatement.DELETE_TRIGGERS);
-        if (deleteDampenings == null || deleteConditions == null || deleteTriggers == null) {
+        PreparedStatement deleteTrigger = CassStatement.get(session, CassStatement.DELETE_TRIGGER);
+        if (deleteDampenings == null || deleteConditions == null || deleteTrigger == null) {
             throw new RuntimeException("delete*Triggers PreparedStatement is null");
         }
         try {
@@ -495,7 +495,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             List<ResultSetFuture> futures = new ArrayList<>();
             futures.add(session.executeAsync(deleteDampenings.bind(tenantId, triggerId)));
             futures.add(session.executeAsync(deleteConditions.bind(tenantId, triggerId)));
-            futures.add(session.executeAsync(deleteTriggers.bind(tenantId, triggerId)));
+            futures.add(session.executeAsync(deleteTrigger.bind(tenantId, triggerId)));
             Futures.allAsList(futures).get();
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());

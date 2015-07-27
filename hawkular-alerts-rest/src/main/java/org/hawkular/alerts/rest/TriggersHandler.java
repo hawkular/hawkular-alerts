@@ -240,7 +240,7 @@ public class TriggersHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Trigger deleted"),
             @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "Trigger doesn't found") })
+            @ApiResponse(code = 404, message = "Trigger not found") })
     public Response deleteTrigger(
             @ApiParam(value = "Trigger definition id to be deleted", required = true)
             @PathParam("triggerId")

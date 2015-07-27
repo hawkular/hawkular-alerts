@@ -28,6 +28,7 @@ import java.util.Set;
 import javax.ejb.EJB;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -37,8 +38,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-
 import javax.ws.rs.core.UriInfo;
+
 import org.hawkular.accounts.api.model.Persona;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
@@ -128,51 +129,8 @@ public class AlertsHandler {
         }
         Pager pager = RequestUtil.extractPaging(uri);
         try {
-            AlertsCriteria criteria = new AlertsCriteria();
-            criteria.setStartTime(startTime);
-            criteria.setEndTime(endTime);
-            if (!isEmpty(alertIds)) {
-                criteria.setAlertIds(Arrays.asList(alertIds.split(",")));
-            }
-            if (!isEmpty(triggerIds)) {
-                criteria.setTriggerIds(Arrays.asList(triggerIds.split(",")));
-            }
-            if (!isEmpty(statuses)) {
-                Set<Alert.Status> statusSet = new HashSet<>();
-                for (String s : statuses.split(",")) {
-                    statusSet.add(Alert.Status.valueOf(s));
-                }
-                criteria.setStatusSet(statusSet);
-            }
-            if (null != severities && !severities.trim().isEmpty()) {
-                Set<Severity> severitySet = new HashSet<>();
-                for (String s : severities.split(",")) {
-                    severitySet.add(Severity.valueOf(s));
-                }
-                criteria.setSeverities(severitySet);
-            }
-            if (!isEmpty(tags)) {
-                String[] tagTokens = tags.split(",");
-                List<Tag> tagList = new ArrayList<>(tagTokens.length);
-                for (String tagToken : tagTokens) {
-                    String[] fields = tagToken.split("\\|");
-                    Tag newTag;
-                    if (fields.length > 0 && fields.length < 3) {
-                        if (fields.length == 1) {
-                            newTag = new Tag(fields[0]);
-                        } else {
-                            newTag = new Tag(fields[0], fields[1]);
-                        }
-                        newTag.setTenantId(persona.getId());
-                        tagList.add(newTag);
-                    }
-                }
-                criteria.setTags(tagList);
-            }
-            if (null != thin) {
-                criteria.setThin(thin.booleanValue());
-            }
-
+            AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
+                    tags, thin);
             Page<Alert> alertPage = alertsService.getAlerts(persona.getId(), criteria, pager);
             log.debugf("Alerts: %s ", alertPage);
             if (isEmpty(alertPage)) {
@@ -194,8 +152,8 @@ public class AlertsHandler {
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public Response ackAlert(@ApiParam(required = true, value = "alertId to Ack")
-            @PathParam("alertId")
-            final String alertId,
+    @PathParam("alertId")
+    final String alertId,
             @ApiParam(required = false, value = "user acknowledging the alerts")
             @QueryParam("ackBy")
             final String ackBy,
@@ -227,7 +185,8 @@ public class AlertsHandler {
             @ApiResponse(code = 200, message = "Success, Alerts Acknowledged invoked successfully"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response ackAlerts(@ApiParam(required = true, value = "comma separated list of alertIds to Ack")
+    public Response ackAlerts(
+            @ApiParam(required = true, value = "comma separated list of alertIds to Ack")
             @QueryParam("alertIds")
             final String alertIds,
             @ApiParam(required = false, value = "user acknowledging the alerts")
@@ -242,10 +201,175 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertIds)) {
                 alertsService.ackAlerts(persona.getId(), Arrays.asList(alertIds.split(",")), ackBy, ackNotes);
-                log.debugf("AlertsIds: %s ", alertIds);
+                log.debugf("Acked alertIds: %s ", alertIds);
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertIds required for ack");
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @DELETE
+    @Path("/{alertId}")
+    @ApiOperation(value = "Delete an existing Alert")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Alert deleted"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 404, message = "Alert not found") })
+    public Response deleteAlert(
+            @ApiParam(value = "Alert id to be deleted", required = true)
+            @PathParam("alertId")
+            final String alertId) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
+        try {
+            AlertsCriteria criteria = new AlertsCriteria();
+            criteria.setAlertId(alertId);
+            int numDeleted = alertsService.deleteAlerts(persona.getId(), criteria);
+            if (1 == numDeleted) {
+                log.debugf("AlertId: %s ", alertId);
+                return ResponseUtil.ok();
+            } else {
+                return ResponseUtil.notFound("Alert " + alertId + " doesn't exist for delete");
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @PUT
+    @Path("/delete")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(
+            value = "Delete alerts with optional filtering")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response deleteAlerts(
+            @ApiParam(required = false, value = "filter out alerts created before this time, millisecond since epoch")
+            @QueryParam("startTime")
+            final Long startTime,
+            @ApiParam(required = false, value = "filter out alerts created after this time, millisecond since epoch")
+            @QueryParam("endTime")
+            final Long endTime,
+            @ApiParam(required = false, value = "filter out alerts for unspecified alertIds, " +
+                    "comma separated list of alert IDs")
+            @QueryParam("alertIds")
+            final String alertIds,
+            @ApiParam(required = false, value = "filter out alerts for unspecified triggers, " +
+                    "comma separated list of trigger IDs")
+            @QueryParam("triggerIds")
+            final String triggerIds,
+            @ApiParam(required = false, value = "filter out alerts for unspecified lifecycle status, " +
+                    "comma separated list of status values")
+            @QueryParam("statuses")
+            final String statuses,
+            @ApiParam(required = false, value = "filter out alerts for unspecified severity, " +
+                    "comma separated list of severity values")
+            @QueryParam("severities")
+            final String severities,
+            @ApiParam(required = false, value = "filter out alerts for unspecified tags, comma separated list of tags, "
+                    + "each tag of format [category|]name")
+            @QueryParam("tags")
+            final String tags
+            ) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
+        try {
+            AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
+                    tags, null);
+            int numDeleted = alertsService.deleteAlerts(persona.getId(), criteria);
+            log.debugf("Alerts deleted: %s ", numDeleted);
+            return ResponseUtil.ok(numDeleted);
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    private AlertsCriteria buildCriteria(Long startTime, Long endTime, String alertIds, String triggerIds,
+            String statuses, String severities, String tags, Boolean thin) {
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setStartTime(startTime);
+        criteria.setEndTime(endTime);
+        if (!isEmpty(alertIds)) {
+            criteria.setAlertIds(Arrays.asList(alertIds.split(",")));
+        }
+        if (!isEmpty(triggerIds)) {
+            criteria.setTriggerIds(Arrays.asList(triggerIds.split(",")));
+        }
+        if (!isEmpty(statuses)) {
+            Set<Alert.Status> statusSet = new HashSet<>();
+            for (String s : statuses.split(",")) {
+                statusSet.add(Alert.Status.valueOf(s));
+            }
+            criteria.setStatusSet(statusSet);
+        }
+        if (null != severities && !severities.trim().isEmpty()) {
+            Set<Severity> severitySet = new HashSet<>();
+            for (String s : severities.split(",")) {
+                severitySet.add(Severity.valueOf(s));
+            }
+            criteria.setSeverities(severitySet);
+        }
+        if (!isEmpty(tags)) {
+            String[] tagTokens = tags.split(",");
+            List<Tag> tagList = new ArrayList<>(tagTokens.length);
+            for (String tagToken : tagTokens) {
+                String[] fields = tagToken.split("\\|");
+                Tag newTag;
+                if (fields.length > 0 && fields.length < 3) {
+                    if (fields.length == 1) {
+                        newTag = new Tag(fields[0]);
+                    } else {
+                        newTag = new Tag(fields[0], fields[1]);
+                    }
+                    newTag.setTenantId(persona.getId());
+                    tagList.add(newTag);
+                }
+            }
+            criteria.setTags(tagList);
+        }
+        if (null != thin) {
+            criteria.setThin(thin.booleanValue());
+        }
+
+        return criteria;
+    }
+
+    @GET
+    @Path("/alert/{alertId}")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get an existing Alert",
+            response = Alert.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Alert found"),
+            @ApiResponse(code = 404, message = "Alert not found"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response getAlert(
+            @ApiParam(value = "Id of alert to be retrieved", required = true)
+            @PathParam("alertId")
+            final String alertId,
+            @ApiParam(required = false, value = "return only a thin alert, do not include: evalSets, resolvedEvalSets")
+            @QueryParam("thin")
+            final Boolean thin) {
+        if (!checkPersona()) {
+            return ResponseUtil.internalError("No persona found");
+        }
+        try {
+            Alert found = alertsService.getAlert(persona.getId(), alertId,
+                    ((null == thin) ? false : thin.booleanValue()));
+            if (found != null) {
+                log.debugf("Alert: %s ", found);
+                return ResponseUtil.ok(found);
+            } else {
+                return ResponseUtil.notFound("alertId: " + alertId + " not found");
             }
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
@@ -262,8 +386,8 @@ public class AlertsHandler {
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public Response resolveAlert(@ApiParam(required = true, value = "alertId to set Resolved")
-            @PathParam("alertId")
-            final String alertId,
+    @PathParam("alertId")
+    final String alertId,
             @ApiParam(required = false, value = "user resolving the alerts")
             @QueryParam("resolvedBy")
             final String resolvedBy,
@@ -296,7 +420,8 @@ public class AlertsHandler {
             @ApiResponse(code = 200, message = "Success, Alerts Resolution invoked successfully."),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response resolveAlerts(@ApiParam(required = true, value = "comma separated list of alertIds to set Resolved")
+    public Response resolveAlerts(
+            @ApiParam(required = true, value = "comma separated list of alertIds to set Resolved")
             @QueryParam("alertIds")
             final String alertIds,
             @ApiParam(required = false, value = "user resolving the alerts")
@@ -331,7 +456,8 @@ public class AlertsHandler {
             @ApiResponse(code = 200, message = "Success, data added."),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response sendData(@ApiParam(required = true, name = "mixedData", value = "data to be processed by alerting")
+    public Response sendData(
+            @ApiParam(required = true, name = "mixedData", value = "data to be processed by alerting")
             final MixedData mixedData) {
         if (!checkPersona()) {
             return ResponseUtil.internalError("No persona found");
