@@ -42,7 +42,7 @@ public interface MsgLogger extends BasicLogger {
     void errorFolderNotFound(String folder);
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 220003, value = "Error reading file [%s]")
+    @Message(id = 220003, value = "Error reading registration [%s]")
     void warningReadingFile(String file);
 
     @LogMessage(level = Logger.Level.WARN)

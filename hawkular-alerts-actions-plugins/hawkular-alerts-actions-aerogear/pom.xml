@@ -33,6 +33,18 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-bus-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-actions-bus</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.jboss.aerogear</groupId>
       <artifactId>unifiedpush-java-client</artifactId>
       <version>1.1.0-alpha.1</version>

@@ -46,10 +46,6 @@ public interface MsgLogger extends BasicLogger {
     void warnActionPluginAlreadyRegistered(String actionPlugin);
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 210004, value = "Action plugin [%s] registration received with unkwown op [%s]")
-    void warnActionPluginRegistrationWithUnknownOp(String actionPlugin, String op);
-
-    @LogMessage(level = Logger.Level.WARN)
     @Message(id = 210005, value = "Cannot connect to hawkular bus")
     void warnCannotConnectToBus();
 

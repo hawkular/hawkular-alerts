@@ -17,7 +17,8 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -58,10 +59,12 @@
 
   <modules>
     <module>hawkular-alerts-api</module>
+    <module>hawkular-alerts-actions-api</module>
+    <module>hawkular-alerts-bus-api</module>
     <module>hawkular-alerts-engine</module>
     <module>hawkular-alerts-bus</module>
+    <module>hawkular-alerts-actions-bus</module>
     <module>hawkular-alerts-rest</module>
-    <module>hawkular-alerts-actions-api</module>
     <module>hawkular-alerts-actions-plugins</module>
     <module>hawkular-alerts-rest-tests</module>
     <module>hawkular-alerts-metrics</module>
@@ -95,6 +98,7 @@
     <version.org.hawkular.bus>0.2.1</version.org.hawkular.bus>
     <version.org.hawkular.nest>0.1.1</version.org.hawkular.nest>
     <version.org.hawkular.metrics>0.4.0.Final</version.org.hawkular.metrics>
+    <version.org.jboss.jboss-vfs>3.2.9.Final</version.org.jboss.jboss-vfs>
     <version.org.slf4j>1.7.2</version.org.slf4j>
     <version.org.yaml>1.11</version.org.yaml>
   </properties>

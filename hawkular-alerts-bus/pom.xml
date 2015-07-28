@@ -45,6 +45,12 @@
       <version>${project.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-bus-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <!-- The hawkular platform will provide these -->
     <dependency>
       <groupId>org.hawkular.bus</groupId>

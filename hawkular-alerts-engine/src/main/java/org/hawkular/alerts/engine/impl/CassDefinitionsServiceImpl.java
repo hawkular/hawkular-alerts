@@ -205,7 +205,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     }
                     trigger.setContext(context);
                     addTrigger(tenantId, trigger);
-                    log.debugf("Init file - Inserting [%s]", trigger);
+                    log.debugf("Init registration - Inserting [%s]", trigger);
                 }
             }
         } else {
@@ -242,7 +242,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setTenantId(tenantId);
 
                         initCondition(newCondition);
-                        log.debugf("Init file - Inserting [%s]", newCondition);
+                        log.debugf("Init registration - Inserting [%s]", newCondition);
                     }
                     if (type != null && !type.isEmpty() && type.equals("range")) {
                         String dataId = (String)c.get("dataId");
@@ -266,7 +266,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setTenantId(tenantId);
 
                         initCondition(newCondition);
-                        log.debugf("Init file - Inserting [%s]", newCondition);
+                        log.debugf("Init registration - Inserting [%s]", newCondition);
                     }
                     if (type != null && !type.isEmpty() && type.equals("compare")) {
                         String dataId = (String)c.get("dataId");
@@ -286,7 +286,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setTenantId(tenantId);
 
                         initCondition(newCondition);
-                        log.debugf("Init file - Inserting [%s]", newCondition);
+                        log.debugf("Init registration - Inserting [%s]", newCondition);
                     }
                     if (type != null && !type.isEmpty() && type.equals("string")) {
                         String dataId = (String)c.get("dataId");
@@ -306,7 +306,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setTenantId(tenantId);
 
                         initCondition(newCondition);
-                        log.debugf("Init file - Inserting [%s]", newCondition);
+                        log.debugf("Init registration - Inserting [%s]", newCondition);
                     }
                     if (type != null && !type.isEmpty() && type.equals("availability")) {
                         String dataId = (String)c.get("dataId");
@@ -322,7 +322,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setTenantId(tenantId);
 
                         initCondition(newCondition);
-                        log.debugf("Init file - Inserting [%s]", newCondition);
+                        log.debugf("Init registration - Inserting [%s]", newCondition);
                     }
 
                 }
@@ -358,7 +358,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                             evalTrueSetting, evalTotalSetting, evalTimeSetting);
 
                     addDampening(tenantId, newDampening);
-                    log.debugf("Init file - Inserting [%s]", newDampening);
+                    log.debugf("Init registration - Inserting [%s]", newDampening);
                 }
             }
         } else {
@@ -383,7 +383,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     Map<String, String> properties = (Map<String, String>)a.get("properties");
                     newAction.putAll(properties);
                     addAction(tenantId, actionPlugin, actionId, newAction);
-                    log.debugf("Init file - Inserting [%s]", newAction);
+                    log.debugf("Init registration - Inserting [%s]", newAction);
                 }
             }
         } else {

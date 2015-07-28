@@ -43,6 +43,7 @@
     <module>hawkular-alerts-actions-snmp</module>
     <module>hawkular-alerts-actions-aerogear</module>
     <module>hawkular-alerts-actions-pagerduty</module>
+    <module>hawkular-alerts-actions-file</module>
   </modules>
 
   <dependencies>

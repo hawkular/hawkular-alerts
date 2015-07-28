@@ -17,7 +17,7 @@
 package org.hawkular.alerts.bus.init;
 
 import org.hawkular.alerts.api.services.ActionsService;
-import org.hawkular.alerts.bus.sender.ActionSender;
+import org.hawkular.alerts.bus.sender.ActionPluginSender;
 import org.jboss.logging.Logger;
 
 
@@ -42,7 +42,7 @@ public class AlertEngineRegister {
 
     @PostConstruct
     public void init() {
-        ActionSender sender = new ActionSender();
+        ActionPluginSender sender = new ActionPluginSender();
         actions.addListener(sender);
         log.debugf("Registering sender: [%s]", sender);
     }

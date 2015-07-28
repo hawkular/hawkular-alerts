@@ -77,7 +77,7 @@ public class ConfigEditor {
         File yamlFile = new File(basedir, CASSANDRA_YAML);
 
         if (yamlFile.exists()) {
-            // load the default configuration file
+            // load the default configuration registration
             try (InputStream yamlInputStream =  getClass().getResourceAsStream("/" + CASSANDRA_YAML)) {
                 DumperOptions options = new DumperOptions();
                 options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
