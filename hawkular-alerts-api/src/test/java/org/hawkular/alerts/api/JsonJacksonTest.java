@@ -197,7 +197,7 @@ public class JsonJacksonTest {
     @Test
     public void jsonAvailabilityConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
-                "\"type\":\"AVAILABILITY\"," +
+                "\"type\":\"AVAILABILITY\",\"conditionSetSize\":1,\"conditionSetIndex\":1," +
                 "\"conditionId\":\"test-FIRING-1-1\",\"dataId\":\"Default\",\"operator\":\"UP\"}";
         AvailabilityCondition condition = objectMapper.readValue(str, AvailabilityCondition.class);
 
@@ -209,7 +209,7 @@ public class JsonJacksonTest {
 
         String output = objectMapper.writeValueAsString(condition);
 
-        assertTrue(str.equals(output));
+        assertTrue(output, str.equals(output));
 
         // Check bad mode and operator
 
@@ -274,7 +274,7 @@ public class JsonJacksonTest {
     @Test
     public void jsonCompareConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"COMPARE\"," +
-                "\"conditionId\":\"test-FIRING-1-1\"," +
+                "\"conditionSetSize\":1,\"conditionSetIndex\":1,\"conditionId\":\"test-FIRING-1-1\"," +
                 "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         CompareCondition condition = objectMapper.readValue(str, CompareCondition.class);
 
@@ -288,7 +288,7 @@ public class JsonJacksonTest {
 
         String output = objectMapper.writeValueAsString(condition);
 
-        assertTrue(str.equals(output));
+        assertTrue(output, str.equals(output));
 
         // Check bad mode and operator
 
@@ -385,7 +385,7 @@ public class JsonJacksonTest {
     @Test
     public void jsonStringConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"STRING\"," +
-                "\"conditionId\":\"test-FIRING-1-1\"," +
+                "\"conditionSetSize\":1,\"conditionSetIndex\":1,\"conditionId\":\"test-FIRING-1-1\"," +
                 "\"dataId\":\"Default\",\"operator\":\"MATCH\",\"pattern\":\"test-pattern\",\"ignoreCase\":false}";
         StringCondition condition = objectMapper.readValue(str, StringCondition.class);
 
@@ -399,7 +399,7 @@ public class JsonJacksonTest {
 
         String output = objectMapper.writeValueAsString(condition);
 
-        assertTrue(str.equals(output));
+        assertTrue(output, str.equals(output));
 
         // Check bad mode and operator
 
@@ -491,7 +491,7 @@ public class JsonJacksonTest {
     @Test
     public void jsonThresholdConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
-                "\"type\":\"THRESHOLD\"," +
+                "\"type\":\"THRESHOLD\",\"conditionSetSize\":1,\"conditionSetIndex\":1," +
                 "\"conditionId\":\"test-FIRING-1-1\"," +
                 "\"dataId\":\"Default\",\"operator\":\"LT\",\"threshold\":10.5}";
         ThresholdCondition condition = objectMapper.readValue(str, ThresholdCondition.class);
@@ -505,7 +505,7 @@ public class JsonJacksonTest {
 
         String output = objectMapper.writeValueAsString(condition);
 
-        assertTrue(str.equals(output));
+        assertTrue(output, str.equals(output));
 
         // Check bad mode and operator
 
@@ -585,8 +585,8 @@ public class JsonJacksonTest {
     @Test
     public void jsonThresholdRangeConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"RANGE\"," +
-                "\"conditionId\":\"test-FIRING-1-1\",\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\"," +
-                "\"operatorHigh\":\"INCLUSIVE\"," +
+                "\"conditionSetSize\":1,\"conditionSetIndex\":1,\"conditionId\":\"test-FIRING-1-1\"," +
+                "\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\",\"operatorHigh\":\"INCLUSIVE\"," +
                 "\"thresholdLow\":10.5,\"thresholdHigh\":20.5,\"inRange\":true}";
         ThresholdRangeCondition condition = objectMapper.readValue(str, ThresholdRangeCondition.class);
 
@@ -601,7 +601,7 @@ public class JsonJacksonTest {
 
         String output = objectMapper.writeValueAsString(condition);
 
-        assertTrue(str.equals(output));
+        assertTrue(output, str.equals(output));
 
         // Check bad mode and operator
 
@@ -728,8 +728,8 @@ public class JsonJacksonTest {
     @Test
     public void jsonExternalConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\","
-                + "\"type\":\"EXTERNAL\", \"conditionId\":\"test-FIRING-1-1\","
-                + "\"dataId\":\"Default\",\"systemId\":\"HawkularMetrics\","
+                + "\"type\":\"EXTERNAL\", \"conditionId\":\"test-FIRING-1-1\",\"conditionSetSize\":1,"
+                + "\"conditionSetIndex\":1,\"dataId\":\"Default\",\"systemId\":\"HawkularMetrics\","
                 + "\"expression\":\"metric:5:avg(foo > 100.5)\"}";
         ExternalCondition condition = objectMapper.readValue(str, ExternalCondition.class);
 
