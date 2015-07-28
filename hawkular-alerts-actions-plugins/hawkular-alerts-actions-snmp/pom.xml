@@ -31,45 +31,28 @@
 
   <name>Hawkular Alerts Action Snmp Plugin</name>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-bus-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-actions-bus</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
-
   <profiles>
     <profile>
-      <id>dev</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>deploy</id>
-                <phase>install</phase>
-                <configuration>
-                  <target>
-                    <copy file="${project.build.directory}/${project.build.finalName}.war" todir="${org.hawkular.wildfly.deployments}" />
-                  </target>
-                </configuration>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
+      <id>bus</id>
+      <dependencies>
+
+        <!-- Hawkular Alerts Bus dependencies. Used only on bus deployments. -->
+        <dependency>
+          <groupId>org.hawkular.alerts</groupId>
+          <artifactId>hawkular-alerts-bus-api</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+          <groupId>org.hawkular.alerts</groupId>
+          <artifactId>hawkular-alerts-actions-bus</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+
+      </dependencies>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
     </profile>
   </profiles>
 

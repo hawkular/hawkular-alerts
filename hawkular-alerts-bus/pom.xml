@@ -33,6 +33,7 @@
 
   <dependencies>
 
+    <!-- Hawkular Alerts dependencies -->
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>
@@ -51,7 +52,7 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- The hawkular platform will provide these -->
+    <!-- Hawkular Nest dependencies -->
     <dependency>
       <groupId>org.hawkular.bus</groupId>
       <artifactId>hawkular-bus-mdb</artifactId>
@@ -59,7 +60,6 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- The hawkular platform will provide these transitive deps from common -->
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
@@ -67,15 +67,6 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- place above active-mq in order to get the correct javax annotations used in the build path (for eclipse) -->
-    <dependency>
-      <groupId>javax</groupId>
-      <artifactId>javaee-api</artifactId>
-      <version>${version.javaee.spec}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- these will be provided by our RA - the MDB itself will never need ActiveMQ specific classes -->
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-all</artifactId>
@@ -90,9 +81,18 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- Wildfly dependencies -->
+    <dependency>
+      <groupId>javax</groupId>
+      <artifactId>javaee-api</artifactId>
+      <version>${version.javaee.spec}</version>
+      <scope>provided</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -119,6 +119,7 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- Tests -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

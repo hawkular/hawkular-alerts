@@ -32,6 +32,7 @@
 
   <dependencies>
 
+    <!-- This project is specific for test so all dependencies are test scope -->
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>
@@ -109,6 +110,7 @@
   </build>
 
   <profiles>
+
     <profile>
       <id>rest-only</id>
       <properties>
@@ -147,6 +149,7 @@
         </plugins>
       </build>
     </profile>
+
     <profile>
       <id>rest</id>
       <properties>
@@ -348,6 +351,7 @@
         </plugins>
       </build>
     </profile>
+
   </profiles>
 
 </project>

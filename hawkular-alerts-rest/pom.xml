@@ -33,6 +33,7 @@
 
   <dependencies>
 
+    <!-- Hawkular Alerts dependencies -->
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>
@@ -47,25 +48,22 @@
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-bus</artifactId>
+      <artifactId>hawkular-alerts-actions-api</artifactId>
       <version>${project.version}</version>
     </dependency>
 
+    <!-- Hawkular Accounts dependencies -->
     <dependency>
       <groupId>org.hawkular.accounts</groupId>
       <artifactId>hawkular-accounts-api</artifactId>
       <version>${version.org.hawkular.accounts}</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-actions-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
+    <!-- Wildfly dependencies -->
     <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -87,7 +85,7 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- documentation -->
+    <!-- Documentation -->
     <dependency>
       <groupId>com.wordnik</groupId>
       <artifactId>swagger-annotations</artifactId>
@@ -100,7 +98,6 @@
     </dependency>
 
     <!-- Tests -->
-
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -110,30 +107,21 @@
   </dependencies>
 
   <profiles>
+
     <profile>
-      <id>rest</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <configuration>
-              <includes>
-                <include>**/*ITest*</include>
-              </includes>
-            </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
+      <id>bus</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.hawkular.alerts</groupId>
+          <artifactId>hawkular-alerts-bus</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
     </profile>
+
     <profile>
       <id>docgen</id>
       <build>
@@ -192,6 +180,6 @@
         </plugins>
       </build>
     </profile>
-  </profiles>
 
+  </profiles>
 </project>
