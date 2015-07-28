@@ -35,22 +35,6 @@ import org.hawkular.alerts.api.model.paging.Pager;
 public interface AlertsService {
 
     /**
-     * Persist the provided alerts.
-     * @param alerts Set of unpersisted Alerts.
-     * @throws Exception any problem
-     */
-    void addAlerts(Collection<Alert> alerts) throws Exception;
-
-    /**
-     * @param tenantId Tenant where alerts are stored
-     * @param criteria If null returns all alerts (not recommended)
-     * @param pager Paging requeriment for fetching alerts. Optional. Return all if null.
-     * @return NotNull, can be empty.
-     * @throws Exception any problem
-     */
-    Page<Alert> getAlerts(String tenantId, AlertsCriteria criteria, Pager pager) throws Exception;
-
-    /**
      * The alerts must already have been added. Set the alerts to ACKNOWLEDGED status. The ackTime will be set to the
      * system time.
      * @param tenantId Tenant where alerts are stored
@@ -60,6 +44,40 @@ public interface AlertsService {
      * @throws Exception any problem
      */
     void ackAlerts(String tenantId, Collection<String> alertIds, String ackBy, String ackNotes) throws Exception;
+
+    /**
+     * Persist the provided alerts.
+     * @param alerts Set of unpersisted Alerts.
+     * @throws Exception any problem
+     */
+    void addAlerts(Collection<Alert> alerts) throws Exception;
+
+    /**
+     * Delete the requested Alerts, as described by the provided criteria.
+     * @param tenantId Tenant where alerts are stored
+     * @param criteria specifying the Alerts to be deleted. Not null.
+     * @returns the number of alerts deleted
+     * @throws Exception any problem
+     */
+    int deleteAlerts(String tenantId, AlertsCriteria criteria) throws Exception;
+
+    /**
+     * @param tenantId Tenant where alerts are stored
+     * @param alertId the Alert to get.
+     * @param thin If true don't include evalSets and resolveEvalSets in the returned Alert
+     * @return the Alert or null if not found.
+     * @throws Exception any problem
+     */
+    Alert getAlert(String tenantId, String alertId, boolean thin) throws Exception;
+
+    /**
+     * @param tenantId Tenant where alerts are stored
+     * @param criteria If null returns all alerts (not recommended)
+     * @param pager Paging requirement for fetching alerts. Optional. Return all if null.
+     * @return NotNull, can be empty.
+     * @throws Exception any problem
+     */
+    Page<Alert> getAlerts(String tenantId, AlertsCriteria criteria, Pager pager) throws Exception;
 
     /**
      * The alerts must already have been added. Set the alerts to RESOLVED status. The resolvedTime will be set to the

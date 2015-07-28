@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -139,6 +140,36 @@ public class CassAlertsServiceImpl implements AlertsService {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public Alert getAlert(String tenantId, String alertId, boolean thin) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(alertId)) {
+            throw new IllegalArgumentException("AlertId must be not null");
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
+        }
+        PreparedStatement selectAlert = CassStatement.get(session, CassStatement.SELECT_ALERT);
+        if (selectAlert == null) {
+            throw new RuntimeException("selectAlert PreparedStatement is null");
+        }
+        Alert alert = null;
+        try {
+            ResultSet rsAlert = session.execute(selectAlert.bind(tenantId, alertId));
+            Iterator<Row> itAlert = rsAlert.iterator();
+            if (itAlert.hasNext()) {
+                Row row = itAlert.next();
+                alert = JsonUtil.fromJson(row.getString("payload"), Alert.class, thin);
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return alert;
     }
 
     // TODO (jshaughn) The DB-Level filtering approach implemented below is a best-practice for dealing
@@ -264,7 +295,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                     We have a filter, so we are going to perform several queries with alertsIds filtering
                  */
                 PreparedStatement selectAlertsByTenantAndAlert = CassStatement.get(session,
-                        CassStatement.SELECT_ALERTS_BY_TENANT_AND_ALERT);
+                        CassStatement.SELECT_ALERT);
                 List<ResultSetFuture> futures = alertIds.stream().map(alertId ->
                         session.executeAsync(selectAlertsByTenantAndAlert.bind(tenantId, alertId)))
                         .collect(Collectors.toList());
@@ -586,6 +617,47 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     @Override
+    public int deleteAlerts(String tenantId, AlertsCriteria criteria) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (null == criteria) {
+            throw new IllegalArgumentException("Criteria must be not null");
+        }
+
+        // no need to fetch the evalSets to perform the necessary deletes
+        criteria.setThin(true);
+        List<Alert> alertsToDelete = getAlerts(tenantId, criteria, null);
+
+        if (alertsToDelete.isEmpty()) {
+            return 0;
+        }
+
+        PreparedStatement deleteAlert = CassStatement.get(session, CassStatement.DELETE_ALERT);
+        PreparedStatement deleteAlertCtime = CassStatement.get(session, CassStatement.DELETE_ALERT_CTIME);
+        PreparedStatement deleteAlertSeverity = CassStatement.get(session, CassStatement.DELETE_ALERT_SEVERITY);
+        PreparedStatement deleteAlertStatus = CassStatement.get(session, CassStatement.DELETE_ALERT_STATUS);
+        PreparedStatement deleteAlertTrigger = CassStatement.get(session, CassStatement.DELETE_ALERT_TRIGGER);
+        if (deleteAlert == null || deleteAlertCtime == null || deleteAlertSeverity == null
+                || deleteAlertStatus == null || deleteAlertTrigger == null) {
+            throw new RuntimeException("delete*Alerts PreparedStatement is null");
+        }
+
+        for (Alert a : alertsToDelete) {
+            String id = a.getAlertId();
+            List<ResultSetFuture> futures = new ArrayList<>();
+            futures.add(session.executeAsync(deleteAlert.bind(tenantId, id)));
+            futures.add(session.executeAsync(deleteAlertCtime.bind(tenantId, a.getCtime(), id)));
+            futures.add(session.executeAsync(deleteAlertSeverity.bind(tenantId, a.getSeverity().name(), id)));
+            futures.add(session.executeAsync(deleteAlertStatus.bind(tenantId, a.getStatus().name(), id)));
+            futures.add(session.executeAsync(deleteAlertTrigger.bind(tenantId, a.getTriggerId(), id)));
+            Futures.allAsList(futures).get();
+        }
+
+        return alertsToDelete.size();
+    }
+
+    @Override
     public void resolveAlerts(String tenantId, Collection<String> alertIds, String resolvedBy, String resolvedNotes,
             List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
 
@@ -710,7 +782,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             // resolve an already-resolved alert.
             if (setFiring) {
                 Trigger loadedTrigger = alertsEngine.getLoadedTrigger(trigger);
-                if (Mode.FIRING == loadedTrigger.getMode()) {
+                if (null != loadedTrigger && Mode.FIRING == loadedTrigger.getMode()) {
                     log.debugf("Ignoring setFiring, loaded Trigger already in firing mode %s", loadedTrigger);
                     setFiring = false;
                 }

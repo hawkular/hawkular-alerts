@@ -108,7 +108,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
+            println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -218,7 +218,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
+            println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -262,7 +262,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
+            println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -338,8 +338,8 @@ class LifecycleITest extends AbstractITestBase {
         }
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
+        for ( int i=0; i < 20; ++i ) {
+            println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
@@ -589,7 +589,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
+            println "SLEEP!" ;
             Thread.sleep(1000);
 
             // FETCH recent alerts for trigger, there should be 5
@@ -869,7 +869,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
+            println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1 because the trigger should have disabled after firing
@@ -901,16 +901,10 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
-        // at the time of this writing we don't have a service to purge/delete alerts, so for this to work we
-        // have to make sure any old alerts (from prior runs) are also resolved. Because all alerts for the trigger
+        // delete any other alerts for the trigger because all alerts for the trigger
         // must be resolved for autoEnable to kick in...
-        resp = client.get(path: "", query: [triggerIds:"test-autoenable-trigger",statuses:"OPEN"] )
+        resp = client.put(path: "delete", query: [triggerIds:"test-autoenable-trigger",statuses:"OPEN"] )
         assertEquals(200, resp.status)
-        for(int i=0; i < resp.data.size(); ++i) {
-            resp2 = client.put(path: "resolve", query: [alertIds:resp.data[i].alertId,resolvedBy:"testUser",
-                resolvedNotes:"testNotes"] )
-            assertEquals(200, resp2.status)
-        }
 
         // FETCH trigger and make sure it's now enabled
         resp2 = client.get(path: "triggers/test-autoenable-trigger");
@@ -989,7 +983,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
+            println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -1039,7 +1033,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
+            println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent OPEN alerts for trigger, there should be 1
@@ -1080,5 +1074,56 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.delete(path: "triggers/test-manual-autoresolve-trigger")
         assert(200 == resp.status || 404 == resp.status)
 
+        // clean up alerts
+
+        resp = client.get(path: "", query: [triggerIds:"test-autodisable-trigger"])
+        assertEquals(200, resp.status)
+        assertFalse( resp.data.isEmpty() )
+
+        def resp2;
+        for(int i=0; i < resp.data.size(); ++i) {
+            // test single alert get
+            resp2 = client.get(path: "alert/" + resp.data[i].alertId )
+            assertEquals(200, resp2.status)
+            // test single alert delete
+            def resp3 = client.delete(path: resp.data[i].alertId )
+            assertEquals(200, resp3.status)
+        }
+        // test failed single alert get
+        resp = client.get(path: "alert/" + resp2.data.alertId )
+        assertEquals(404, resp.status)
+        // test failed single alert delete
+        resp = client.delete(path: resp2.data.alertId )
+        assertEquals(404, resp.status)
+
+        // test empty multi-alert delete
+        resp = client.put(path: "delete", query: [triggerIds:"test-autodisable-trigger"])
+        assertEquals(200, resp.status)
+        assertEquals( 0, resp.data )
+
+        // test success multi-alert delete
+        resp = client.put(path: "delete", query: [triggerIds:"test-autoresolve-trigger"])
+        assertEquals(200, resp.status)
+        assertTrue( resp.data > 0 )
+
+        resp = client.put(path: "delete", query: [triggerIds:"test-manual-trigger"])
+        assertEquals(200, resp.status)
+        assertTrue( resp.data > 0 )
+
+        resp = client.put(path: "delete", query: [triggerIds:"test-manual2-trigger"])
+        assertEquals(200, resp.status)
+        assertTrue( resp.data > 0 )
+
+        resp = client.put(path: "delete", query: [triggerIds:"test-autoresolve-threshold-trigger"])
+        assertEquals(200, resp.status)
+        assertTrue( resp.data > 0 )
+
+        resp = client.put(path: "delete", query: [triggerIds:"test-autoenable-trigger"])
+        assertEquals(200, resp.status)
+        assertTrue( resp.data > 0 )
+
+        resp = client.put(path: "delete", query: [triggerIds:"test-manual-autoresolve-trigger"])
+        assertEquals(200, resp.status)
+        assertTrue( resp.data > 0 )
     }
 }

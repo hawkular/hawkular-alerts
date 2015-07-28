@@ -38,7 +38,11 @@ public class CassStatement {
 
     public static final String DELETE_ACTION;
     public static final String DELETE_ACTION_PLUGIN;
+    public static final String DELETE_ALERT;
+    public static final String DELETE_ALERT_CTIME;
+    public static final String DELETE_ALERT_SEVERITY;
     public static final String DELETE_ALERT_STATUS;
+    public static final String DELETE_ALERT_TRIGGER;
     public static final String DELETE_CONDITIONS;
     public static final String DELETE_CONDITIONS_MODE;
     public static final String DELETE_DAMPENING_ID;
@@ -47,7 +51,7 @@ public class CassStatement {
     public static final String DELETE_TAGS_BY_NAME;
     public static final String DELETE_TAGS_TRIGGERS;
     public static final String DELETE_TRIGGER_ACTIONS;
-    public static final String DELETE_TRIGGERS;
+    public static final String DELETE_TRIGGER;
 
     public static final String INSERT_ACTION;
     public static final String INSERT_ACTION_PLUGIN;
@@ -83,7 +87,7 @@ public class CassStatement {
     public static final String SELECT_ALERT_SEVERITY_BY_TENANT_AND_SEVERITY;
     public static final String SELECT_ALERT_STATUS_BY_TENANT_AND_STATUS;
     public static final String SELECT_ALERTS_BY_TENANT;
-    public static final String SELECT_ALERTS_BY_TENANT_AND_ALERT;
+    public static final String SELECT_ALERT;
     public static final String SELECT_ALERTS_TRIGGERS;
     public static final String SELECT_CONDITION_ID;
     public static final String SELECT_CONDITIONS_ALL;
@@ -124,8 +128,19 @@ public class CassStatement {
 
         DELETE_ACTION_PLUGIN = "DELETE FROM " + keyspace + ".action_plugins WHERE actionPlugin = ? ";
 
+        DELETE_ALERT = "DELETE FROM " + keyspace + ".alerts " + "WHERE tenantId = ? AND alertId = ? ";
+
+        DELETE_ALERT_CTIME = "DELETE FROM " + keyspace + ".alerts_ctimes "
+                + "WHERE tenantId = ? AND ctime = ? AND alertId = ? ";
+
+        DELETE_ALERT_SEVERITY = "DELETE FROM " + keyspace + ".alerts_severities "
+                + "WHERE tenantId = ? AND severity = ? AND alertId = ? ";
+
         DELETE_ALERT_STATUS = "DELETE FROM " + keyspace + ".alerts_statuses "
                 + "WHERE tenantId = ? AND status = ? AND alertId = ? ";
+
+        DELETE_ALERT_TRIGGER = "DELETE FROM " + keyspace + ".alerts_triggers "
+                + "WHERE tenantId = ? AND triggerId = ? AND alertId = ? ";
 
         DELETE_CONDITIONS = "DELETE FROM " + keyspace + ".conditions " + "WHERE tenantId = ? AND triggerId = ? ";
 
@@ -147,7 +162,7 @@ public class CassStatement {
         DELETE_TRIGGER_ACTIONS = "DELETE FROM " + keyspace + ".triggers_actions "
                 + "WHERE tenantId = ? AND triggerId = ? ";
 
-        DELETE_TRIGGERS = "DELETE FROM " + keyspace + ".triggers " + "WHERE tenantId = ? AND id = ? ";
+        DELETE_TRIGGER = "DELETE FROM " + keyspace + ".triggers " + "WHERE tenantId = ? AND id = ? ";
 
         INSERT_ACTION = "INSERT INTO " + keyspace + ".actions "
                 + "(tenantId, actionPlugin, actionId, properties) VALUES (?, ?, ?, ?) ";
@@ -252,7 +267,7 @@ public class CassStatement {
 
         SELECT_ALERTS_BY_TENANT = "SELECT payload FROM " + keyspace + ".alerts " + "WHERE tenantId = ? ";
 
-        SELECT_ALERTS_BY_TENANT_AND_ALERT = "SELECT payload FROM " + keyspace + ".alerts "
+        SELECT_ALERT = "SELECT payload FROM " + keyspace + ".alerts "
                 + "WHERE tenantId = ? AND alertId = ? ";
 
         SELECT_ALERTS_TRIGGERS = "SELECT alertId FROM " + keyspace + ".alerts_triggers "
