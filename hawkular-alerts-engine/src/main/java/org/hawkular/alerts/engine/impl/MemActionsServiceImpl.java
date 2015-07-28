@@ -21,6 +21,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.ejb.Singleton;
 
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.ActionsService;
@@ -36,6 +38,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 @Singleton
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class MemActionsServiceImpl implements ActionsService {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(MemActionsServiceImpl.class);

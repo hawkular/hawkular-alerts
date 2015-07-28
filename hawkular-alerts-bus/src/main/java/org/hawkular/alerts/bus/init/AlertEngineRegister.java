@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.bus.init;
 
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.bus.sender.ActionPluginSender;
 import org.jboss.logging.Logger;
@@ -34,6 +36,7 @@ import javax.ejb.Startup;
  */
 @Startup
 @Singleton
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class AlertEngineRegister {
     private final Logger log = Logger.getLogger(AlertEngineRegister.class);
 

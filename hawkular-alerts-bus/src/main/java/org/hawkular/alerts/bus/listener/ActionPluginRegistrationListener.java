@@ -22,6 +22,8 @@ import java.util.Set;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.jms.MessageListener;
 
 import org.hawkular.alerts.api.services.DefinitionsService;
@@ -39,6 +41,7 @@ import org.jboss.logging.Logger;
 @MessageDriven(messageListenerInterface = MessageListener.class, activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAlertsPluginsQueue")})
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class ActionPluginRegistrationListener extends BasicMessageListener<BusPluginOpMessage>  {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(ActionPluginRegistrationListener.class);

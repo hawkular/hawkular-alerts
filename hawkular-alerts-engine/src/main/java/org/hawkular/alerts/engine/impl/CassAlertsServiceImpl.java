@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
@@ -68,6 +70,7 @@ import com.google.common.util.concurrent.Futures;
  * @author Lucas Ponce
  */
 @Stateless
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class CassAlertsServiceImpl implements AlertsService {
 
     private final MsgLogger msgLog = MsgLogger.LOGGER;

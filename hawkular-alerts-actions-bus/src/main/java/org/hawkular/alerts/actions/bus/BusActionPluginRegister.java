@@ -23,6 +23,8 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.jms.JMSException;
 import javax.jms.QueueConnectionFactory;
 
@@ -43,6 +45,7 @@ import org.jboss.logging.Logger;
  */
 @Startup
 @Singleton
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class BusActionPluginRegister {
     public static final int NUM_ATTEMPTS = 10;
     public static final int TIMEOUT = 2000;

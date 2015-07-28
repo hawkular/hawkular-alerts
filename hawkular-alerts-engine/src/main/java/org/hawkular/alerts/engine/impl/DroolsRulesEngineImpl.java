@@ -21,6 +21,8 @@ import java.util.TreeSet;
 import java.util.function.Predicate;
 
 import javax.ejb.Singleton;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 
 import org.drools.core.event.DebugAgendaEventListener;
 import org.drools.core.event.DebugRuleRuntimeEventListener;
@@ -42,6 +44,7 @@ import org.kie.api.runtime.rule.FactHandle;
  * @author Lucas Ponce
  */
 @Singleton
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class DroolsRulesEngineImpl implements RulesEngine {
     // private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(DroolsRulesEngineImpl.class);

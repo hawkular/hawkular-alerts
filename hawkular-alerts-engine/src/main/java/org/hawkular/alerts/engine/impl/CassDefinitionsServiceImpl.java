@@ -33,6 +33,8 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
@@ -69,6 +71,7 @@ import com.google.common.util.concurrent.Futures;
  * @author Lucas Ponce
  */
 @Singleton
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class CassDefinitionsServiceImpl implements DefinitionsService {
     private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
     private static final String INIT_FOLDER = "hawkular-alerts";
