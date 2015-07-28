@@ -59,7 +59,7 @@
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-actions-api</artifactId>
+      <artifactId>hawkular-alerts-actions-api</artifactId>
       <version>${project.version}</version>
     </dependency>
 

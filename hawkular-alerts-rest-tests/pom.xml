@@ -55,7 +55,7 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>hawkular-actions-email</artifactId>
+      <artifactId>hawkular-alerts-actions-email</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <scope>test</scope>
@@ -211,11 +211,11 @@
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-actions-email</artifactId>
+                      <artifactId>hawkular-alerts-actions-email</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-actions-email.war</destFileName>
+                      <destFileName>hawkular-alerts-actions-email.war</destFileName>
                     </artifactItem>
                   </artifactItems>
                 </configuration>
