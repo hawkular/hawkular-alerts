@@ -131,20 +131,43 @@ class ConditionsITest extends AbstractITestBase {
         def resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        ThresholdCondition testCond = new ThresholdCondition("test-trigger-4",
+        ThresholdCondition testCond1 = new ThresholdCondition("test-trigger-4",
                 "No-Metric", ThresholdCondition.Operator.GT, 10.12);
 
-        resp = client.post(path: "triggers/test-trigger-4/conditions", body: testCond)
+        ThresholdCondition testCond2 = new ThresholdCondition("test-trigger-4",
+                "No-Metric", ThresholdCondition.Operator.LT, 4.10);
+
+        resp = client.post(path: "triggers/test-trigger-4/conditions", body: testCond1)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
-        testCond.setOperator(ThresholdCondition.Operator.LTE)
-        resp = client.put(path: "triggers/test-trigger-4/conditions/" + testCond.getConditionId(), body: testCond)
+        resp = client.post(path: "triggers/test-trigger-4/conditions", body: testCond2)
         assertEquals(200, resp.status)
-        assertEquals(1, resp.data.size())
+        assertEquals(2, resp.data.size())
+
+        resp = client.get(path: "triggers/test-trigger-4/conditions")
+        assertEquals(200, resp.status)
+        assertEquals(2, resp.data.size())
+
+        testCond1 = resp.data[0];
+        testCond2 = resp.data[1];
+
+        testCond1.setOperator(ThresholdCondition.Operator.LTE)
+        resp = client.put(path: "triggers/test-trigger-4/conditions/" + testCond1.getConditionId(), body: testCond1)
+        assertEquals(200, resp.status)
+        assertEquals(2, resp.data.size())
         assertEquals("LTE", resp.data[0].operator)
 
-        resp = client.delete(path: "triggers/test-trigger-4/conditions/" + testCond.getConditionId())
+        resp = client.delete(path: "triggers/test-trigger-4/conditions/" + testCond1.getConditionId())
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-4/conditions")
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        testCond1 = resp.data[0];
+
+        resp = client.delete(path: "triggers/test-trigger-4/conditions/" + testCond1.getConditionId())
         assertEquals(200, resp.status)
 
         resp = client.delete(path: "triggers/test-trigger-4")

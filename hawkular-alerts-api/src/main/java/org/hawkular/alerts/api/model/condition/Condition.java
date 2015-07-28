@@ -18,7 +18,6 @@ package org.hawkular.alerts.api.model.condition;
 
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
@@ -55,14 +54,14 @@ public abstract class Condition {
      * Number of conditions associated with a particular trigger.
      * i.e. 2 [ conditions ]
      */
-    @JsonIgnore
+    @JsonInclude
     protected int conditionSetSize;
 
     /**
      * Index of the current condition
      * i.e. 1 [ of 2 conditions ]
      */
-    @JsonIgnore
+    @JsonInclude
     protected int conditionSetIndex;
 
     /**
