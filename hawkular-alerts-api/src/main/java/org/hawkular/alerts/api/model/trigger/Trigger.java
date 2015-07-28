@@ -73,7 +73,7 @@ public class Trigger extends TriggerTemplate {
 
         this.enabled = false;
         this.mode = Mode.FIRING;
-        this.match = getFiringMatch();
+        this.match = Match.ALL;
     }
 
     public boolean isEnabled() {
@@ -109,6 +109,18 @@ public class Trigger extends TriggerTemplate {
 
     public void setMatch(Match match) {
         this.match = match;
+    }
+
+    @Override
+    public void setFiringMatch(Match firingMatch) {
+        super.setFiringMatch(firingMatch);
+        setMatch(this.mode == Mode.FIRING ? getFiringMatch() : getAutoResolveMatch());
+    }
+
+    @Override
+    public void setAutoResolveMatch(Match autoResolveMatch) {
+        super.setAutoResolveMatch(autoResolveMatch);
+        setMatch(this.mode == Mode.FIRING ? getFiringMatch() : getAutoResolveMatch());
     }
 
     public String getTenantId() {

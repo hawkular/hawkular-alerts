@@ -905,4 +905,42 @@ public class JsonJacksonTest {
         assertTrue(!output.contains("mode"));
         assertTrue(!output.contains("match"));
     }
+
+    @Test
+    public void jsonTriggerMatchAnyTest() throws Exception {
+        String str = "{\"name\":\"test-name\",\"description\":\"test-description\"," +
+                "\"actions\":{\"plugin1\":[\"uno\",\"dos\",\"tres\"]}," +
+                "\"firingMatch\":\"ANY\"," +
+                "\"autoResolveMatch\":\"ALL\"," +
+                "\"id\":\"test\"," +
+                "\"enabled\":true," +
+                "\"autoDisable\":true," +
+                "\"autoEnable\":true," +
+                "\"autoResolve\":true," +
+                "\"autoResolveAlerts\":true," +
+                "\"severity\":\"HIGH\"}";
+        Trigger trigger = objectMapper.readValue(str, Trigger.class);
+
+        assertEquals(Match.ANY, trigger.getMatch());
+
+        assertTrue(trigger.getName().equals("test-name"));
+        assertTrue(trigger.getDescription().equals("test-description"));
+        assertEquals(1, trigger.getActions().size());
+        assertEquals(3, trigger.getActions().get("plugin1").size());
+        assertTrue(trigger.getFiringMatch().equals(Match.ANY));
+        assertTrue(trigger.getAutoResolveMatch().equals(Match.ALL));
+        assertTrue(trigger.getId().equals("test"));
+        assertTrue(trigger.isEnabled());
+        assertTrue(trigger.isAutoDisable());
+        assertTrue(trigger.isAutoEnable());
+        assertTrue(trigger.isAutoResolve());
+        assertTrue(trigger.isAutoResolveAlerts());
+        assertTrue(trigger.getSeverity() == Severity.HIGH);
+
+        String output = objectMapper.writeValueAsString(trigger);
+
+        assertTrue(!output.contains("mode"));
+        assertTrue(!output.contains("match"));
+    }
+
 }
