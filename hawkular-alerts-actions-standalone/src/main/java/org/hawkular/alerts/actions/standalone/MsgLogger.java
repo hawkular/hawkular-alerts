@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.actions.bus;
+package org.hawkular.alerts.actions.standalone;
 
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -29,31 +29,31 @@ import org.jboss.logging.annotations.ValidIdRange;
  * @author Lucas Ponce
  */
 @MessageLogger(projectCode = "HAWKALERT")
-@ValidIdRange(min = 260000, max = 269999)
+@ValidIdRange(min = 270000, max = 279999)
 public interface MsgLogger extends BasicLogger {
     MsgLogger LOGGER = Logger.getMessageLogger(MsgLogger.class, MsgLogger.class.getPackage().getName());
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 260001, value = "Plugin [%s] has received a action message: [%s]")
-    void infoActionReceived(String actionPlugin, String msg);
-
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 260002, value = "No ActionPluginListener found on plugin deployment")
-    void warnNoPluginsFound();
-
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 260003, value = "Plugin [%s] has sent a registration request: [%s]")
-    void infoPluginRegistration(String actionPlugin, String msg);
+    @Message(id = 270001, value = "Action plugin [%s] registered")
+    void infoActionPluginRegistration(String actionPlugin);
 
     @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 260005, value = "Plugin cannot send a message to the bus. Error: [%s]")
-    void errorCannotSendMessage(String msg);
+    @Message(id = 270002, value = "Cannot access to DefinitionsService")
+    void warnCannotAccessToDefinitionsService();
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 260007, value = "Plugin received a message without plugin info.")
+    @Message(id = 270003, value = "No ActionPluginListener found on plugin deployment")
+    void warnNoPluginsFound();
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 270004, value = "Error processing action. Description: [%s]")
+    void errorProcessingAction(String msg);
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 270005, value = "Plugin [%s] cannot be registered into the engine. Error: [%s]")
+    void errorCannotRegisterPlugin(String actionPlugin, String msg);
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 270007, value = "Plugin received a message without plugin info.")
     void warnMessageReceivedWithoutPluginInfo();
-
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 260008, value = "Cannot connect to the broker. Attempt [%s]. Trying in [%s] ms. Error: [%s]")
-    void warnCannotConnectBroker(int attempt, int next, String msg);
 }

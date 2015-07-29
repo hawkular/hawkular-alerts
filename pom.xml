@@ -64,6 +64,7 @@
     <module>hawkular-alerts-engine</module>
     <module>hawkular-alerts-bus</module>
     <module>hawkular-alerts-actions-bus</module>
+    <module>hawkular-alerts-actions-standalone</module>
     <module>hawkular-alerts-rest</module>
     <module>hawkular-alerts-actions-plugins</module>
     <module>hawkular-alerts-rest-tests</module>

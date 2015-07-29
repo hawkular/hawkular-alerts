@@ -18,9 +18,9 @@ package org.hawkular.alerts.actions.email;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
 import javax.annotation.Resource;
 import javax.mail.Address;
 import javax.mail.Message;
@@ -30,6 +30,7 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
+
 import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
@@ -161,7 +162,6 @@ public class EmailPlugin implements ActionPluginListener {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(EmailPlugin.class);
 
-    Set<String> properties = new HashSet<>();
     Map<String, String> defaultProperties = new HashMap<>();
 
     @Resource(mappedName = "java:jboss/mail/Default")
@@ -170,25 +170,21 @@ public class EmailPlugin implements ActionPluginListener {
     EmailTemplate emailTemplate;
 
     public EmailPlugin() {
-        properties.add(EmailPlugin.PROP_FROM);
-        properties.add(EmailPlugin.PROP_FROM_NAME);
-        properties.add(EmailPlugin.PROP_TO);
-        properties.add(EmailPlugin.PROP_CC);
-        properties.add(EmailPlugin.PROP_TEMPLATE_HAWKULAR_URL);
-        properties.add(EmailPlugin.PROP_TEMPLATE_LOCALE);
-        properties.add(EmailPlugin.PROP_TEMPLATE_PLAIN);
-        properties.add(EmailPlugin.PROP_TEMPLATE_HTML);
 
         defaultProperties.put(EmailPlugin.PROP_FROM, EmailPlugin.DEFAULT_FROM);
         defaultProperties.put(EmailPlugin.PROP_FROM_NAME, EmailPlugin.DEFAULT_FROM_NAME);
+        defaultProperties.put(EmailPlugin.PROP_TO, "");
+        defaultProperties.put(EmailPlugin.PROP_CC, "");
         defaultProperties.put(EmailPlugin.PROP_TEMPLATE_HAWKULAR_URL, "http://localhost:8080/");
+        defaultProperties.put(EmailPlugin.PROP_TEMPLATE_PLAIN, "");
+        defaultProperties.put(EmailPlugin.PROP_TEMPLATE_HTML, "");
 
         emailTemplate = new EmailTemplate();
     }
 
     @Override
     public Set<String> getProperties() {
-        return properties;
+        return defaultProperties.keySet();
     }
 
     @Override

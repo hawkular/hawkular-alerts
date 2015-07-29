@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.io.IOException;
 
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.jms.TopicConnectionFactory;
 import javax.jms.JMSException;
 import javax.naming.InitialContext;
@@ -45,6 +49,9 @@ import org.jboss.logging.Logger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@Startup
+@Singleton
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class ActionPluginSender implements ActionListener {
     private final MsgLogger msgLogger = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(ActionPluginSender.class);
