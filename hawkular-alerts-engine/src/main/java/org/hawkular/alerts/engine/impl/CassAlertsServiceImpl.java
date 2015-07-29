@@ -106,6 +106,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (alerts == null) {
             throw new IllegalArgumentException("Alerts must be not null");
         }
+        session = CassCluster.getSession();
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
@@ -150,6 +151,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (isEmpty(alertId)) {
             throw new IllegalArgumentException("AlertId must be not null");
         }
+        session = CassCluster.getSession();
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
@@ -187,6 +189,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
+        session = CassCluster.getSession();
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
@@ -723,6 +726,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (alert == null || alert.getAlertId() == null || alert.getAlertId().isEmpty()) {
             throw new IllegalArgumentException("AlertId must be not null");
         }
+        session = CassCluster.getSession();
         if (session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
