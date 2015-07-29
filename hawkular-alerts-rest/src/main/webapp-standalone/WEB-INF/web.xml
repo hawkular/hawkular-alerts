@@ -1,4 +1,4 @@
-<%--
+<!--
 
     Copyright 2015 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
@@ -15,12 +15,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
---%>
-<html>
-    <head>
-        <title>Hawkular Alerts Engine</title>
-    </head>
-    <body>
-        <h3>Hawkular Alerts Engine</h3>
-    </body>
-</html>
+-->
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+      version="3.0">
+
+</web-app>
