@@ -18,13 +18,15 @@ package org.hawkular.alerts.rest;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
+import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
+
 import java.util.Collection;
 
 import javax.ejb.EJB;
-import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -33,7 +35,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
-import org.hawkular.accounts.api.model.Persona;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -66,8 +67,8 @@ import com.wordnik.swagger.annotations.ApiResponses;
 public class TriggersHandler {
     private static final Logger log = Logger.getLogger(TriggersHandler.class);
 
-    @Inject
-    Persona persona;
+    @HeaderParam(TENANT_HEADER_NAME)
+    String tenantId;
 
     @EJB
     DefinitionsService definitions;
@@ -89,11 +90,8 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response findTriggers() {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Collection<Trigger> triggers = definitions.getTriggers(persona.getId());
+            Collection<Trigger> triggers = definitions.getTriggers(tenantId);
             log.debugf("Triggers: %s ", triggers);
             return ResponseUtil.ok(triggers);
         } catch (Exception e) {
@@ -118,11 +116,8 @@ public class TriggersHandler {
             @ApiParam(required = false, value = "The tag name. If not supplied or empty only tag category is used")
             @QueryParam("name")
             final String name) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Collection<Trigger> triggers = definitions.getTriggersByTag(persona.getId(), category, name);
+            Collection<Trigger> triggers = definitions.getTriggersByTag(tenantId, category, name);
             log.debugf("Triggers: %s ", triggers);
             return ResponseUtil.ok(triggers);
         } catch (Exception e) {
@@ -146,17 +141,14 @@ public class TriggersHandler {
     public Response createTrigger(
             @ApiParam(value = "Trigger definition to be created", name = "trigger", required = true)
             final Trigger trigger) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             if (null != trigger) {
                 if (isEmpty(trigger.getId())) {
                     trigger.setId(Trigger.generateId());
-                } else if (definitions.getTrigger(persona.getId(), trigger.getId()) != null) {
+                } else if (definitions.getTrigger(tenantId, trigger.getId()) != null) {
                     return ResponseUtil.badRequest("Trigger with ID [" + trigger.getId() + "] exists.");
                 }
-                definitions.addTrigger(persona.getId(), trigger);
+                definitions.addTrigger(tenantId, trigger);
                 log.debugf("Trigger: %s ", trigger.toString());
                 return ResponseUtil.ok(trigger);
             } else {
@@ -181,11 +173,8 @@ public class TriggersHandler {
             @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Trigger found = definitions.getTrigger(persona.getId(), triggerId);
+            Trigger found = definitions.getTrigger(tenantId, triggerId);
             if (found != null) {
                 log.debugf("Trigger: %s ", found);
                 return ResponseUtil.ok(found);
@@ -212,17 +201,14 @@ public class TriggersHandler {
             final String triggerId,
             @ApiParam(value = "Updated trigger definition", name = "trigger", required = true)
             final Trigger trigger) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             boolean exists = false;
             if (trigger != null && !isEmpty(triggerId)) {
                 trigger.setId(triggerId);
-                exists = (definitions.getTrigger(persona.getId(), triggerId) != null);
+                exists = (definitions.getTrigger(tenantId, triggerId) != null);
             }
             if (exists) {
-                definitions.updateTrigger(persona.getId(), trigger);
+                definitions.updateTrigger(tenantId, trigger);
                 log.debugf("Trigger: %s ", trigger);
                 return ResponseUtil.ok();
             } else {
@@ -245,12 +231,9 @@ public class TriggersHandler {
             @ApiParam(value = "Trigger definition id to be deleted", required = true)
             @PathParam("triggerId")
             final String triggerId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            if (definitions.getTrigger(persona.getId(), triggerId) != null) {
-                definitions.removeTrigger(persona.getId(), triggerId);
+            if (definitions.getTrigger(tenantId, triggerId) != null) {
+                definitions.removeTrigger(tenantId, triggerId);
                 log.debugf("TriggerId: %s ", triggerId);
                 return ResponseUtil.ok();
             } else {
@@ -273,11 +256,8 @@ public class TriggersHandler {
             @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Collection<Dampening> dampenings = definitions.getTriggerDampenings(persona.getId(), triggerId, null);
+            Collection<Dampening> dampenings = definitions.getTriggerDampenings(tenantId, triggerId, null);
             log.debugf("Dampenings: %s ", dampenings);
             return ResponseUtil.ok(dampenings);
         } catch (Exception e) {
@@ -300,11 +280,8 @@ public class TriggersHandler {
             @ApiParam(value = "Trigger mode", required = true)
             @PathParam("triggerMode")
             final Trigger.Mode triggerMode) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Collection<Dampening> dampenings = definitions.getTriggerDampenings(persona.getId(), triggerId,
+            Collection<Dampening> dampenings = definitions.getTriggerDampenings(tenantId, triggerId,
                     triggerMode);
             log.debugf("Dampenings: %s ", dampenings);
             return ResponseUtil.ok(dampenings);
@@ -329,11 +306,8 @@ public class TriggersHandler {
             @ApiParam(value = "Dampening id", required = true)
             @PathParam("dampeningId")
             final String dampeningId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Dampening found = definitions.getDampening(persona.getId(), dampeningId);
+            Dampening found = definitions.getDampening(tenantId, dampeningId);
             log.debugf("Dampening: %s ", found);
             if (found == null) {
                 return ResponseUtil.notFound("No dampening found for triggerId: " + triggerId + " and dampeningId:" +
@@ -361,16 +335,13 @@ public class TriggersHandler {
             final String triggerId,
             @ApiParam(value = "Dampening definition to be created", required = true)
             final Dampening dampening) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             dampening.setTriggerId(triggerId);
             boolean exists = (definitions.getDampening(triggerId, dampening.getDampeningId()) != null);
             if (!exists) {
                 // make sure we have the best chance of clean data..
                 Dampening d = getCleanDampening(dampening);
-                definitions.addDampening(persona.getId(), d);
+                definitions.addDampening(tenantId, d);
                 log.debugf("Dampening: %s ", d);
                 return ResponseUtil.ok(d);
             } else {
@@ -425,15 +396,12 @@ public class TriggersHandler {
             final String dampeningId,
             @ApiParam(value = "Updated dampening definition", required = true)
             final Dampening dampening) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            boolean exists = (definitions.getDampening(persona.getId(), dampeningId) != null);
+            boolean exists = (definitions.getDampening(tenantId, dampeningId) != null);
             if (exists) {
                 // make sure we have the best chance of clean data..
                 Dampening d = getCleanDampening(dampening);
-                definitions.updateDampening(persona.getId(), d);
+                definitions.updateDampening(tenantId, d);
                 log.debugf("Dampening: %s ", d);
                 return ResponseUtil.ok(d);
             } else {
@@ -459,13 +427,10 @@ public class TriggersHandler {
             @ApiParam(value = "Dampening id for dampening definition to be deleted", required = true)
             @PathParam("dampeningId")
             final String dampeningId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            boolean exists = (definitions.getDampening(persona.getId(), dampeningId) != null);
+            boolean exists = (definitions.getDampening(tenantId, dampeningId) != null);
             if (exists) {
-                definitions.removeDampening(persona.getId(), dampeningId);
+                definitions.removeDampening(tenantId, dampeningId);
                 log.debugf("DampeningId: %s ", dampeningId);
                 return ResponseUtil.ok();
             } else {
@@ -488,11 +453,8 @@ public class TriggersHandler {
             @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Collection<Condition> conditions = definitions.getTriggerConditions(persona.getId(), triggerId, null);
+            Collection<Condition> conditions = definitions.getTriggerConditions(tenantId, triggerId, null);
             log.debugf("Conditions: %s ", conditions);
             return ResponseUtil.ok(conditions);
         } catch (Exception e) {
@@ -515,15 +477,12 @@ public class TriggersHandler {
             final String triggerId,
             @PathParam("conditionId")
             final String conditionId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Trigger trigger = definitions.getTrigger(persona.getId(), triggerId);
+            Trigger trigger = definitions.getTrigger(tenantId, triggerId);
             if (trigger == null) {
                 return ResponseUtil.notFound("No trigger found for triggerId: " + triggerId);
             }
-            Condition found = definitions.getCondition(persona.getId(), conditionId);
+            Condition found = definitions.getCondition(tenantId, conditionId);
             if (found == null) {
                 return ResponseUtil.notFound("No condition found for conditionId: " + conditionId);
             }
@@ -557,11 +516,8 @@ public class TriggersHandler {
                     + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
                     + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
             String jsonCondition) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Trigger trigger = definitions.getTrigger(persona.getId(), triggerId);
+            Trigger trigger = definitions.getTrigger(tenantId, triggerId);
             if (trigger == null) {
                 return ResponseUtil.notFound("No trigger found for triggerId: " + triggerId);
             }
@@ -590,7 +546,7 @@ public class TriggersHandler {
                     return ResponseUtil.badRequest("Bad json condition");
                 }
                 condition.setTriggerId(triggerId);
-                Collection<Condition> conditions = definitions.addCondition(persona.getId(),
+                Collection<Condition> conditions = definitions.addCondition(tenantId,
                         condition.getTriggerId(),
                         condition.getTriggerMode(),
                         condition);
@@ -622,11 +578,8 @@ public class TriggersHandler {
             final String conditionId,
             @ApiParam(value = "Json representation of a condition")
             String jsonCondition) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Trigger trigger = definitions.getTrigger(persona.getId(), triggerId);
+            Trigger trigger = definitions.getTrigger(tenantId, triggerId);
             if (trigger == null) {
                 return ResponseUtil.notFound("No trigger found for triggerId: " + triggerId);
             }
@@ -657,12 +610,12 @@ public class TriggersHandler {
                 condition.setTriggerId(triggerId);
                 boolean exists = false;
                 if (conditionId.equals(condition.getConditionId())) {
-                    exists = (definitions.getCondition(persona.getId(), condition.getConditionId()) != null);
+                    exists = (definitions.getCondition(tenantId, condition.getConditionId()) != null);
                 }
                 if (!exists) {
                     return ResponseUtil.notFound("Condition not found for conditionId: " + conditionId);
                 } else {
-                    Collection<Condition> conditions = definitions.updateCondition(persona.getId(), condition);
+                    Collection<Condition> conditions = definitions.updateCondition(tenantId, condition);
                     log.debugf("Conditions: %s ", conditions);
                     return ResponseUtil.ok(conditions);
                 }
@@ -690,15 +643,12 @@ public class TriggersHandler {
             final String triggerId,
             @PathParam("conditionId")
             final String conditionId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Trigger trigger = definitions.getTrigger(persona.getId(), triggerId);
+            Trigger trigger = definitions.getTrigger(tenantId, triggerId);
             if (trigger == null) {
                 return ResponseUtil.notFound("No trigger found for triggerId: " + triggerId);
             }
-            Condition condition = definitions.getCondition(persona.getId(), conditionId);
+            Condition condition = definitions.getCondition(tenantId, conditionId);
             if (condition == null) {
                 return ResponseUtil.notFound("No condition found for conditionId: " + conditionId);
             }
@@ -706,7 +656,7 @@ public class TriggersHandler {
                 return ResponseUtil.badRequest("ConditionId: " + conditionId + " does not belong to triggerId: " +
                         triggerId);
             }
-            Collection<Condition> conditions = definitions.removeCondition(persona.getId(), conditionId);
+            Collection<Condition> conditions = definitions.removeCondition(tenantId, conditionId);
             log.debugf("Conditions: %s ", conditions);
             return ResponseUtil.ok(conditions);
         } catch (Exception e) {
@@ -748,14 +698,11 @@ public class TriggersHandler {
     public Response createTag(
             @ApiParam(value = "Tag to be created", required = true)
             final Tag tag) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             if (isEmpty(tag.getTriggerId()) || isEmpty(tag.getName())) {
                 return ResponseUtil.badRequest("Invalid tag, triggerId or name required");
             }
-            definitions.addTag(persona.getId(), tag);
+            definitions.addTag(tenantId, tag);
             log.debugf("Tag: %s ", tag);
             return ResponseUtil.ok(tag);
         } catch (Exception e) {
@@ -782,11 +729,8 @@ public class TriggersHandler {
             @ApiParam(value = "Name of tags to be deleted", required = false)
             @QueryParam("name")
             final String name) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            definitions.removeTags(persona.getId(), triggerId, category, name);
+            definitions.removeTags(tenantId, triggerId, category, name);
             return ResponseUtil.ok();
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
@@ -811,11 +755,8 @@ public class TriggersHandler {
             @ApiParam(value = "Category of tags to be retrieved", required = false)
             @QueryParam("category")
             final String category) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Collection<Tag> tags = definitions.getTriggerTags(persona.getId(), triggerId, category);
+            Collection<Tag> tags = definitions.getTriggerTags(tenantId, triggerId, category);
             log.debugf("Tags: " + tags);
             return ResponseUtil.ok(tags);
         } catch (Exception e) {
@@ -824,23 +765,8 @@ public class TriggersHandler {
         }
     }
 
-    private boolean checkPersona() {
-        if (persona == null) {
-            log.warn("Persona is null. Possible issue with accounts integration ? ");
-            return false;
-        }
-        if (isEmpty(persona.getId())) {
-            log.warn("Persona is empty. Possible issue with accounts integration ? ");
-            return false;
-        }
-        return true;
-    }
-
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();
     }
 
-    //    private boolean isEmpty(Collection collection) {
-    //        return collection == null || collection.isEmpty();
-    //    }
 }

@@ -18,6 +18,8 @@ package org.hawkular.alerts.rest;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
+import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,10 +28,10 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ejb.EJB;
-import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -40,7 +42,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.hawkular.accounts.api.model.Persona;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.data.MixedData;
@@ -69,8 +70,8 @@ import com.wordnik.swagger.annotations.ApiResponses;
 public class AlertsHandler {
     private final Logger log = Logger.getLogger(AlertsHandler.class);
 
-    @Inject
-    Persona persona;
+    @HeaderParam(TENANT_HEADER_NAME)
+    String tenantId;
 
     @EJB
     AlertsService alertsService;
@@ -122,16 +123,12 @@ public class AlertsHandler {
             @QueryParam("thin")
             final Boolean thin,
             @Context
-            final UriInfo uri
-            ) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
+            final UriInfo uri) {
         Pager pager = RequestUtil.extractPaging(uri);
         try {
             AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
                     tags, thin);
-            Page<Alert> alertPage = alertsService.getAlerts(persona.getId(), criteria, pager);
+            Page<Alert> alertPage = alertsService.getAlerts(tenantId, criteria, pager);
             log.debugf("Alerts: %s ", alertPage);
             if (isEmpty(alertPage)) {
                 return ResponseUtil.ok(alertPage);
@@ -160,12 +157,9 @@ public class AlertsHandler {
             @ApiParam(required = false, value = "additional notes asscoiated with the acknowledgement")
             @QueryParam("ackNotes")
             final String ackNotes) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             if (!isEmpty(alertId)) {
-                alertsService.ackAlerts(persona.getId(), Arrays.asList(alertId), ackBy, ackNotes);
+                alertsService.ackAlerts(tenantId, Arrays.asList(alertId), ackBy, ackNotes);
                 log.debugf("AlertId: %s ", alertId);
                 return ResponseUtil.ok();
             } else {
@@ -195,12 +189,9 @@ public class AlertsHandler {
             @ApiParam(required = false, value = "additional notes asscoiated with the acknowledgement")
             @QueryParam("ackNotes")
             final String ackNotes) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             if (!isEmpty(alertIds)) {
-                alertsService.ackAlerts(persona.getId(), Arrays.asList(alertIds.split(",")), ackBy, ackNotes);
+                alertsService.ackAlerts(tenantId, Arrays.asList(alertIds.split(",")), ackBy, ackNotes);
                 log.debugf("Acked alertIds: %s ", alertIds);
                 return ResponseUtil.ok();
             } else {
@@ -223,13 +214,10 @@ public class AlertsHandler {
             @ApiParam(value = "Alert id to be deleted", required = true)
             @PathParam("alertId")
             final String alertId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             AlertsCriteria criteria = new AlertsCriteria();
             criteria.setAlertId(alertId);
-            int numDeleted = alertsService.deleteAlerts(persona.getId(), criteria);
+            int numDeleted = alertsService.deleteAlerts(tenantId, criteria);
             if (1 == numDeleted) {
                 log.debugf("AlertId: %s ", alertId);
                 return ResponseUtil.ok();
@@ -278,13 +266,10 @@ public class AlertsHandler {
             @QueryParam("tags")
             final String tags
             ) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
                     tags, null);
-            int numDeleted = alertsService.deleteAlerts(persona.getId(), criteria);
+            int numDeleted = alertsService.deleteAlerts(tenantId, criteria);
             log.debugf("Alerts deleted: %s ", numDeleted);
             return ResponseUtil.ok(numDeleted);
         } catch (Exception e) {
@@ -330,7 +315,7 @@ public class AlertsHandler {
                     } else {
                         newTag = new Tag(fields[0], fields[1]);
                     }
-                    newTag.setTenantId(persona.getId());
+                    newTag.setTenantId(tenantId);
                     tagList.add(newTag);
                 }
             }
@@ -359,12 +344,8 @@ public class AlertsHandler {
             @ApiParam(required = false, value = "return only a thin alert, do not include: evalSets, resolvedEvalSets")
             @QueryParam("thin")
             final Boolean thin) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Alert found = alertsService.getAlert(persona.getId(), alertId,
-                    ((null == thin) ? false : thin.booleanValue()));
+            Alert found = alertsService.getAlert(tenantId, alertId, ((null == thin) ? false : thin.booleanValue()));
             if (found != null) {
                 log.debugf("Alert: %s ", found);
                 return ResponseUtil.ok(found);
@@ -394,12 +375,9 @@ public class AlertsHandler {
             @ApiParam(required = false, value = "additional notes asscoiated with the resolution")
             @QueryParam("resolvedNotes")
             final String resolvedNotes) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             if (!isEmpty(alertId)) {
-                alertsService.resolveAlerts(persona.getId(), Arrays.asList(alertId), resolvedBy,
+                alertsService.resolveAlerts(tenantId, Arrays.asList(alertId), resolvedBy,
                         resolvedNotes, null);
                 log.debugf("AlertId: %s ", alertId);
                 return ResponseUtil.ok();
@@ -430,12 +408,9 @@ public class AlertsHandler {
             @ApiParam(required = false, value = "additional notes asscoiated with the resolution")
             @QueryParam("resolvedNotes")
             final String resolvedNotes) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             if (!isEmpty(alertIds)) {
-                alertsService.resolveAlerts(persona.getId(), Arrays.asList(alertIds.split(",")), resolvedBy,
+                alertsService.resolveAlerts(tenantId, Arrays.asList(alertIds.split(",")), resolvedBy,
                         resolvedNotes, null);
                 log.debugf("AlertsIds: %s ", alertIds);
                 return ResponseUtil.ok();
@@ -459,9 +434,6 @@ public class AlertsHandler {
     public Response sendData(
             @ApiParam(required = true, name = "mixedData", value = "data to be processed by alerting")
             final MixedData mixedData) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             if (isEmpty(mixedData)) {
                 return ResponseUtil.badRequest("Data is empty");
@@ -486,9 +458,6 @@ public class AlertsHandler {
             @ApiResponse(code = 200, message = "Success. Reload invoked successfully."),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response reloadAlerts() {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             alertsEngine.reload();
             return ResponseUtil.ok();
@@ -506,28 +475,13 @@ public class AlertsHandler {
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response reloadTrigger(@PathParam("triggerId")
     final String triggerId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            alertsEngine.reloadTrigger(persona.getId(), triggerId);
+            alertsEngine.reloadTrigger(tenantId, triggerId);
             return ResponseUtil.ok();
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
-    }
-
-    private boolean checkPersona() {
-        if (persona == null) {
-            log.warn("Persona is null. Possible issue with accounts integration ? ");
-            return false;
-        }
-        if (isEmpty(persona.getId())) {
-            log.warn("Persona is empty. Possible issue with accounts integration ? ");
-            return false;
-        }
-        return true;
     }
 
     private boolean isEmpty(String s) {
