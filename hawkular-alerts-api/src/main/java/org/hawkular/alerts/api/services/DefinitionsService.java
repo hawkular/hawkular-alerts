@@ -327,8 +327,9 @@ public interface DefinitionsService {
      *
      * @param actionPlugin name of the plugin
      * @return map of properties with its default values
+     * @throws Exception on any problem
      */
-    Map<String, String> getDefaultActionPlugin(String actionPlugin);
+    Map<String, String> getDefaultActionPlugin(String actionPlugin) throws Exception;
 
     /*
         An action is a representation of specific tasks to be executed by action plugins.
