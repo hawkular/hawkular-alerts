@@ -141,11 +141,8 @@ public class CompareConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "CompareConditionEval [evalTimestamp=" + evalTimestamp + ", " +
-                "dataTimestamp=" + dataTimestamp + ", " +
-                "condition=" + condition + ", " +
-                "value1=" + value1 + ", " +
-                "value2=" + value2 + "]";
+        return "CompareConditionEval [condition=" + condition + ", value1=" + value1 + ", value2=" + value2
+                + ", match=" + match + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp + "]";
     }
 
 }

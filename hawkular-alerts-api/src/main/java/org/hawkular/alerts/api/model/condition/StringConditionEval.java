@@ -108,10 +108,8 @@ public class StringConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "StringConditionEval [evalTimestamp=" + evalTimestamp + ", " +
-                "dataTimestamp=" + dataTimestamp + ", " +
-                "condition=" + condition + ", " +
-                "value=" + value + "]";
+        return "StringConditionEval [condition=" + condition + ", value=" + value + ", match=" + match
+                + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp + "]";
     }
 
 }

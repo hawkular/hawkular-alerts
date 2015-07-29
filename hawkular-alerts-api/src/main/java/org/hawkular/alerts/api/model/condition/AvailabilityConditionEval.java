@@ -114,10 +114,8 @@ public class AvailabilityConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "AvailabilityConditionEval [evalTimestamp=" + evalTimestamp + ", " +
-                "dataTimestamp=" + dataTimestamp + ", " +
-                "condition=" + condition + ", " +
-                "value=" + value + "]";
+        return "AvailabilityConditionEval [condition=" + condition + ", value=" + value + ", match=" + match
+                + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp + "]";
     }
 
 }

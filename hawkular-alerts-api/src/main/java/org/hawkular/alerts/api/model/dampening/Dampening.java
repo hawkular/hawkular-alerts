@@ -427,11 +427,11 @@ public class Dampening {
 
     @Override
     public String toString() {
-        return "Dampening [triggerId=" + triggerId + ", triggerMode=" + triggerMode + ", type=" + type
+        return "Dampening [satisfied=" + satisfied + ", triggerId=" + triggerId + ", triggerMode=" + triggerMode
+                + ", type=" + type
                 + ", evalTrueSetting=" + evalTrueSetting + ", evalTotalSetting=" + evalTotalSetting
                 + ", evalTimeSetting=" + evalTimeSetting + ", numTrueEvals="
-                + numTrueEvals + ", numEvals=" + numEvals + ", trueEvalsStartTime=" + trueEvalsStartTime
-                + ", satisfied=" + satisfied + ", satisfyingEvals=" + satisfyingEvals + "]";
+                + numTrueEvals + ", numEvals=" + numEvals + ", trueEvalsStartTime=" + trueEvalsStartTime + "]";
     }
 
 }

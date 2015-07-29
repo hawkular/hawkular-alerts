@@ -108,10 +108,8 @@ public class ThresholdRangeConditionEval extends ConditionEval {
 
     @Override
     public String toString() {
-        return "ThresholdRangeConditionEval [evalTimestamp=" + evalTimestamp + ", " +
-                "dataTimestamp=" + dataTimestamp + ", " +
-                "condition=" + condition + ", " +
-                "value=" + value + "]";
+        return "ThresholdRangeConditionEval [condition=" + condition + ", value=" + value + ", match=" + match
+                + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp + "]";
     }
 
 }
