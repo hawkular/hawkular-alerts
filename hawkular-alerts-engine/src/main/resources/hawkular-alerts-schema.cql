@@ -41,6 +41,7 @@ CREATE TABLE ${keyspace}.triggers (
     autoResolveMatch text,
     id text,
     enabled boolean,
+    context map<text,text>,
     PRIMARY KEY (tenantId, id)
 );
 

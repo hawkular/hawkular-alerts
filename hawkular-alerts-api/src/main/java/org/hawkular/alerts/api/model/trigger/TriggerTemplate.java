@@ -69,8 +69,16 @@ public abstract class TriggerTemplate {
     @JsonInclude
     private Match autoResolveMatch;
 
+    @JsonInclude(Include.NON_EMPTY)
+    protected Map<String, String> context;
+
     public TriggerTemplate(String name) {
+        this(name, null);
+    }
+
+    public TriggerTemplate(String name, Map<String, String> context) {
         this.name = name;
+        this.context = context;
 
         this.autoDisable = false;
         this.autoEnable = false;
@@ -203,12 +211,36 @@ public abstract class TriggerTemplate {
         }
     }
 
+    public Map<String, String> getContext() {
+        return context;
+    }
+
+    public void setContext(Map<String, String> context) {
+        this.context = context;
+    }
+
+    /**
+     * Add context information.
+     * @param name context key.
+     * @param value context value.
+     */
+    public void addProperty(String name, String value) {
+        if (null == name || null == value) {
+            throw new IllegalArgumentException("Propety must have non-null name and value");
+        }
+        if (null == context) {
+            context = new HashMap<>();
+        }
+        context.put(name, value);
+    }
+
     @Override
     public String toString() {
         return "TriggerTemplate [name=" + name + ", " +
                 "description=" + description + ", " +
                 "firingMatch=" + firingMatch + ", " +
-                "safetyMatch=" + autoResolveMatch + "]";
+                "safetyMatch=" + autoResolveMatch + ", " +
+                "context=" + context + "]";
     }
 
 }

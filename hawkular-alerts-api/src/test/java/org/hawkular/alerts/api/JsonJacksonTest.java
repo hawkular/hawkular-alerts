@@ -173,8 +173,8 @@ public class JsonJacksonTest {
                 "\"ackNotes\":null," +
                 "\"resolvedTime\":0," +
                 "\"resolvedBy\":null," +
-                "\"resolvedNotes\":null" +
-                "}";
+                "\"resolvedNotes\":null," +
+                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
 
         ObjectMapper mapper = new ObjectMapper();
         Alert alert = mapper.readValue(jsonAlert, Alert.class);
@@ -182,6 +182,10 @@ public class JsonJacksonTest {
         assertNotNull(alert.getEvalSets());
         assertEquals(1, alert.getEvalSets().size());
         assertEquals(2, alert.getEvalSets().get(0).size());
+        assertTrue(alert.getContext() != null);
+        assertTrue(alert.getContext().size() == 2);
+        assertTrue(alert.getContext().get("n1").equals("v1"));
+        assertTrue(alert.getContext().get("n2").equals("v2"));
 
         /*
             Testing thin deserializer
@@ -883,7 +887,8 @@ public class JsonJacksonTest {
                 "\"autoEnable\":true," +
                 "\"autoResolve\":true," +
                 "\"autoResolveAlerts\":true," +
-                "\"severity\":\"HIGH\"}";
+                "\"severity\":\"HIGH\"," +
+                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         Trigger trigger = objectMapper.readValue(str, Trigger.class);
 
         assertTrue(trigger.getName().equals("test-name"));
@@ -899,6 +904,10 @@ public class JsonJacksonTest {
         assertTrue(trigger.isAutoResolve());
         assertTrue(trigger.isAutoResolveAlerts());
         assertTrue(trigger.getSeverity() == Severity.HIGH);
+        assertTrue(trigger.getContext() != null);
+        assertTrue(trigger.getContext().size() == 2);
+        assertTrue(trigger.getContext().get("n1").equals("v1"));
+        assertTrue(trigger.getContext().get("n2").equals("v2"));
 
         String output = objectMapper.writeValueAsString(trigger);
 
