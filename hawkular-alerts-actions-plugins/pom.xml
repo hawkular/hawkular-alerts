@@ -134,4 +134,44 @@
     <finalName>${project.artifactId}</finalName>
   </build>
 
+  <profiles>
+    <profile>
+      <id>bus</id>
+      <dependencies>
+
+        <!-- Hawkular Alerts Bus dependencies. Used only on bus deployments. -->
+        <dependency>
+          <groupId>org.hawkular.alerts</groupId>
+          <artifactId>hawkular-alerts-bus-api</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+          <groupId>org.hawkular.alerts</groupId>
+          <artifactId>hawkular-alerts-actions-bus</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+
+      </dependencies>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+    </profile>
+
+    <profile>
+      <id>standalone</id>
+      <dependencies>
+
+        <!-- Hawkular Alerts Standalone dependencies. Used only on non-bus scenarios. -->
+        <dependency>
+          <groupId>org.hawkular.alerts</groupId>
+          <artifactId>hawkular-alerts-actions-standalone</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+
+      </dependencies>
+
+    </profile>
+  </profiles>
+
 </project>

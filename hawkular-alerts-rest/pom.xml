@@ -111,11 +111,13 @@
     <profile>
       <id>bus</id>
       <dependencies>
+
         <dependency>
           <groupId>org.hawkular.alerts</groupId>
           <artifactId>hawkular-alerts-bus</artifactId>
           <version>${project.version}</version>
         </dependency>
+
       </dependencies>
       <activation>
         <activeByDefault>true</activeByDefault>
@@ -124,13 +126,6 @@
 
     <profile>
       <id>standalone</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.hawkular.alerts</groupId>
-          <artifactId>hawkular-alerts-bus</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-      </dependencies>
       <build>
         <plugins>
           <plugin>

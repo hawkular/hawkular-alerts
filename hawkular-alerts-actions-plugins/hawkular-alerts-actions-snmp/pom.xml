@@ -31,29 +31,4 @@
 
   <name>Hawkular Alerts Action Snmp Plugin</name>
 
-  <profiles>
-    <profile>
-      <id>bus</id>
-      <dependencies>
-
-        <!-- Hawkular Alerts Bus dependencies. Used only on bus deployments. -->
-        <dependency>
-          <groupId>org.hawkular.alerts</groupId>
-          <artifactId>hawkular-alerts-bus-api</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-          <groupId>org.hawkular.alerts</groupId>
-          <artifactId>hawkular-alerts-actions-bus</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-
-      </dependencies>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-    </profile>
-  </profiles>
-
 </project>
