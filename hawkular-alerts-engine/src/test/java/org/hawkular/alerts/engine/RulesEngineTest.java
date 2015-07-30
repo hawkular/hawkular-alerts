@@ -52,6 +52,7 @@ import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.data.StringData;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
+import org.hawkular.alerts.api.model.trigger.TriggerTemplate.Match;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.rules.RulesEngine;
 import org.jboss.logging.Logger;
@@ -1246,6 +1247,112 @@ public class RulesEngineTest {
         assertEquals("NumericData-02", e2.getCondition().getDataId());
     }
 
+    @Test
+    public void matchAnyTest() {
+        Trigger t1 = new Trigger("trigger-1", "Any-Two-Conditions");
+        t1.setFiringMatch(Match.ANY);
+
+        ThresholdCondition t1c1 = new ThresholdCondition("trigger-1", 2, 1, "X",
+                ThresholdCondition.Operator.GT, 100.0);
+        ThresholdCondition t1c2 = new ThresholdCondition("trigger-1", 2, 2, "Y",
+                ThresholdCondition.Operator.GT, 200.0);
+
+        Dampening t1d = Dampening.forStrict("trigger-1", Mode.FIRING, 2);
+
+        t1.setEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+        rulesEngine.addFact(t1c2);
+        rulesEngine.addFact(t1d);
+
+        // for clarity deliver datums independently
+
+        datums.add(new NumericData("X", 1, 125.0));  // match, dampening eval true (X), no alert
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+        assertEquals(alerts.toString(), 0, alerts.size());
+
+        datums.clear();
+        datums.add(new NumericData("X", 2, 50.0));   // no match, dampening reset
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+        assertEquals(alerts.toString(), 0, alerts.size());
+
+        datums.clear();
+        datums.add(new NumericData("Y", 3, 300.0));  // match, dampening eval true (Y), no alert
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+        assertEquals(alerts.toString(), 0, alerts.size());
+
+        datums.clear();
+        datums.add(new NumericData("X", 4, 110.0));  // match, dampening eval true (X,Y), alert! dampening reset
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+        assertEquals(alerts.toString(), 1, alerts.size());
+
+        Alert a = alerts.get(0);
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(2, a.getEvalSets().size());
+        Set<ConditionEval> evals = a.getEvalSets().get(0);
+        assertEquals(2, evals.size());
+        List<ConditionEval> evalsList = new ArrayList<>(evals);
+        Collections.sort(
+                evalsList,
+                (ConditionEval c1, ConditionEval c2) -> Integer.compare(c1.getConditionSetIndex(),
+                        c2.getConditionSetIndex()));
+        Iterator<ConditionEval> i = evalsList.iterator();
+        ThresholdConditionEval e = (ThresholdConditionEval)i.next();
+        assertEquals(2, e.getConditionSetSize());
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(!e.isMatch());
+        Double v = e.getValue();
+        assertTrue(v.equals(50.0));
+        assertEquals("X", e.getCondition().getDataId());
+
+        ThresholdConditionEval e2 = (ThresholdConditionEval)i.next();
+        assertEquals(2, e2.getConditionSetSize());
+        assertEquals(2, e2.getConditionSetIndex());
+        assertEquals("trigger-1", e2.getTriggerId());
+        assertTrue(e2.isMatch());
+        v = e2.getValue();
+        assertTrue(v.equals(300.0));
+        assertEquals("Y", e2.getCondition().getDataId());
+
+        evals = a.getEvalSets().get(1);
+        assertEquals(2, evals.size());
+        evalsList = new ArrayList<>(evals);
+        Collections.sort(
+                evalsList,
+                (ConditionEval c1, ConditionEval c2) -> Integer.compare(c1.getConditionSetIndex(),
+                        c2.getConditionSetIndex()));
+        i = evalsList.iterator();
+        e = (ThresholdConditionEval)i.next();
+        assertEquals(2, e.getConditionSetSize());
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
+        v = e.getValue();
+        assertTrue(v.equals(110.0));
+        assertEquals("X", e.getCondition().getDataId());
+
+        e2 = (ThresholdConditionEval)i.next();
+        assertEquals(2, e2.getConditionSetSize());
+        assertEquals(2, e2.getConditionSetIndex());
+        assertEquals("trigger-1", e2.getTriggerId());
+        assertTrue(e2.isMatch());
+        v = e2.getValue();
+        assertTrue(v.equals(300.0));
+        assertEquals("Y", e2.getCondition().getDataId());
+
+        alerts.clear();
+        datums.clear();
+        datums.add(new NumericData("Y", 5, 150.0));  // match, dampening eval true (X), no alert
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+        assertEquals(alerts.toString(), 0, alerts.size());
+    }
     @Test
     public void autoResolveTest() {
         // The single trigger has definitions for both FIRING and AUTORESOLVE modes

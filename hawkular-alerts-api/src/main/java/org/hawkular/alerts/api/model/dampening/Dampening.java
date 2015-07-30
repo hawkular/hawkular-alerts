@@ -344,17 +344,6 @@ public class Dampening {
                 throw new IllegalArgumentException("Unexpected Match type: " + match.name());
         }
 
-        if (Match.ALL == match) {
-        } else {
-            for (ConditionEval ce : currentEvals.values()) {
-
-                if (!ce.isMatch()) {
-                    trueEval = false;
-                    break;
-                }
-            }
-        }
-
         // If we had previously started our time and now have exceeded our time limit then we must start over
         long now = System.currentTimeMillis();
         if (type == Type.RELAXED_TIME && trueEvalsStartTime != 0L) {
