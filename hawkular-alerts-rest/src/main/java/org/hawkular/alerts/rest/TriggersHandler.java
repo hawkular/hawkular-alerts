@@ -541,7 +541,9 @@ public class TriggersHandler {
     @POST
     @Path("/{triggerId}/conditions")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Create a new condition for a specific trigger")
+    @ApiOperation(value = "Create a new condition for a specific trigger. Add/Delete/Update of a condition "
+            + "effectively replaces the condition set for the trigger.  The new condition set is returned. "
+            + "Clients code should then use the new condition set as ConditionIds may have changed!")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Condition created"),
             @ApiResponse(code = 404, message = "No trigger found"),
@@ -604,7 +606,9 @@ public class TriggersHandler {
     @PUT
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing condition for a specific trigger")
+    @ApiOperation(value = "Update an existing condition for a specific trigger. Add/Delete/Update of a condition "
+            + "effectively replaces the condition set for the trigger.  The new condition set is returned. "
+            + "Clients code should then use the new condition set as ConditionIds may have changed!")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Condition updated"),
             @ApiResponse(code = 404, message = "No Condition found"),
@@ -672,7 +676,9 @@ public class TriggersHandler {
     @DELETE
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Delete an existing condition for a specific trigger")
+    @ApiOperation(value = "Delete an existing condition for a specific trigger. Add/Delete/Update of a condition "
+            + "effectively replaces the condition set for the trigger.  The new condition set is returned. "
+            + "Clients code should then use the new condition set as ConditionIds may have changed!")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Condition deleted"),
             @ApiResponse(code = 404, message = "No Condition found"),
@@ -834,7 +840,7 @@ public class TriggersHandler {
         return null == s || s.trim().isEmpty();
     }
 
-    private boolean isEmpty(Collection collection) {
-        return collection == null || collection.isEmpty();
-    }
+    //    private boolean isEmpty(Collection collection) {
+    //        return collection == null || collection.isEmpty();
+    //    }
 }

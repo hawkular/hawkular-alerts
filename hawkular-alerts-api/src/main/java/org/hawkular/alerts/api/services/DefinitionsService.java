@@ -162,8 +162,13 @@ public interface DefinitionsService {
     /**
      * A convenience method that adds a new Condition to the existing condition set for the specified
      * Trigger and trigger mode.  The new condition will be assigned the highest conditionSetIndex for the
-     * updated conditionSet. The following Condition fields are ignored for the
-     * incoming condition, and set in the returned collection set:<pre>
+     * updated conditionSet.
+     * <p>
+     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
+     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
+     * </p>
+     * The following Condition fields are ignored for the incoming condition, and set in the returned collection set:
+     * <pre>
      *   conditionId
      *   triggerId
      *   triggerMode
@@ -181,8 +186,11 @@ public interface DefinitionsService {
             throws Exception;
 
     /**
-     * A convenience method that removes a Condition from an existing condition set. This will update the
-     * conditionSetSize and possibly the conditionSetIndex for any remaining conditions.
+     * A convenience method that removes a Condition from an existing condition set.
+     * <p>
+     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
+     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
+     * </p>
      * @param tenantId Tenant where trigger and his conditions are stored
      * @param conditionId Condition id to be removed
      * @return The updated, persisted condition set. Not null. Can be empty.
@@ -192,6 +200,10 @@ public interface DefinitionsService {
 
     /**
      * A convenience method that updates an existing Condition from an existing condition set.
+     * <p>
+     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
+     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
+     * </p>
      * @param tenantId
      * @param condition Not null. conditionId must be for an existing condition.
      * @return The updated, persisted condition set. Not null. Can be empty.
@@ -201,8 +213,13 @@ public interface DefinitionsService {
 
     /**
      * The condition set for a trigger's trigger mode is treated as a whole.  When making any change to the
-     * conditions just [re-]set all of the conditions. The following Condition fields are ignored for the
-     * incoming conditions, and set in the returned collection:<pre>
+     * conditions just [re-]set all of the conditions.
+     * <p>
+     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
+     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
+     * </p>
+     * The following Condition fields are ignored for the incoming conditions, and set in the returned collection:
+     * <pre>
      *   conditionId
      *   triggerId
      *   triggerMode
