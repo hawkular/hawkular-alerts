@@ -18,12 +18,15 @@ package org.hawkular.alerts.api.model.dampening;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
+import org.hawkular.alerts.api.model.trigger.TriggerTemplate.Match;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -82,6 +85,10 @@ public class Dampening {
 
     @JsonIgnore
     private transient long trueEvalsStartTime;
+
+    @JsonIgnore
+    // This Map<conditionSetIndex,ConditionEval> holds the most recent eval for each member of the condition set
+    private transient Map<Integer, ConditionEval> currentEvals = new HashMap<>(5);
 
     @JsonIgnore
     private transient boolean satisfied;
@@ -263,6 +270,10 @@ public class Dampening {
         return evalTimeSetting;
     }
 
+    public Map<Integer, ConditionEval> getCurrentEvals() {
+        return currentEvals;
+    }
+
     @JsonIgnore
     public boolean isSatisfied() {
         return satisfied;
@@ -292,12 +303,55 @@ public class Dampening {
         this.tenantId = tenantId;
     }
 
-    public void perform(ConditionEval... conditionEvals) {
-        boolean trueEval = true;
-        for (ConditionEval ce : conditionEvals) {
-            if (!ce.isMatch()) {
-                trueEval = false;
+    public void perform(Match match, ConditionEval conditionEval) {
+        if (null == match) {
+            throw new IllegalArgumentException("Match can not be null");
+        }
+        if (null == conditionEval) {
+            throw new IllegalArgumentException("ConditionEval can not be null");
+        }
+
+        // The currentEvals map holds the most recent eval for each condition in the condition set.
+        currentEvals.put(conditionEval.getConditionSetIndex(), conditionEval);
+
+        boolean trueEval = false;
+        switch (match) {
+            case ALL:
+                // Don't perform a dampening eval until we have a conditionEval for each member of the ConditionSet.
+                if (currentEvals.size() < conditionEval.getConditionSetSize()) {
+                    return;
+                }
+                // Otherwise, all condition evals must be true for the condition set eval to be true
+                trueEval = true;
+                for (ConditionEval ce : currentEvals.values()) {
+                    if (!ce.isMatch()) {
+                        trueEval = false;
+                        break;
+                    }
+                }
                 break;
+            case ANY:
+                // we only need one true condition eval for the condition set eval to be true
+                trueEval = false;
+                for (ConditionEval ce : currentEvals.values()) {
+                    if (ce.isMatch()) {
+                        trueEval = true;
+                        break;
+                    }
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected Match type: " + match.name());
+        }
+
+        if (Match.ALL == match) {
+        } else {
+            for (ConditionEval ce : currentEvals.values()) {
+
+                if (!ce.isMatch()) {
+                    trueEval = false;
+                    break;
+                }
             }
         }
 
@@ -312,7 +366,7 @@ public class Dampening {
         numEvals += 1;
         if (trueEval) {
             numTrueEvals += 1;
-            addSatisfyingEvals(conditionEvals);
+            addSatisfyingEvals(new HashSet<>(currentEvals.values()));
 
             switch (type) {
                 case STRICT:
@@ -416,7 +470,7 @@ public class Dampening {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        Dampening other = (Dampening) obj;
+        Dampening other = (Dampening)obj;
         if (dampeningId == null) {
             if (other.dampeningId != null)
                 return false;
