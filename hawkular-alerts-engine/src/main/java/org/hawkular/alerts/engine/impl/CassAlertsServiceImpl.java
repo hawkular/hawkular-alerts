@@ -200,9 +200,8 @@ public class CassAlertsServiceImpl implements AlertsService {
         boolean thin = (null != criteria && criteria.isThin());
 
         if (filter) {
-
+            log.debugf("getAlerts criteria: %s", criteria.toString());
         }
-        log.debugf("getAlerts criteria: %s", criteria.toString());
 
         List<Alert> alerts = new ArrayList<>();
         Set<String> alertIds = new HashSet<>();
