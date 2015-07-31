@@ -95,9 +95,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     @PostConstruct
     public void initServices() {
         try {
-            if (session == null) {
-                session = CassCluster.getSession();
-            }
+            session = CassCluster.getSession();
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
                 t.printStackTrace();
@@ -112,9 +110,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new IllegalArgumentException("Alerts must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement insertAlert = CassStatement.get(session, CassStatement.INSERT_ALERT);
         PreparedStatement insertAlertTrigger = CassStatement.get(session, CassStatement.INSERT_ALERT_TRIGGER);
         PreparedStatement insertAlertCtime = CassStatement.get(session, CassStatement.INSERT_ALERT_CTIME);
@@ -157,9 +152,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new IllegalArgumentException("AlertId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectAlert = CassStatement.get(session, CassStatement.SELECT_ALERT);
         if (selectAlert == null) {
             throw new RuntimeException("selectAlert PreparedStatement is null");
@@ -195,9 +187,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new IllegalArgumentException("TenantId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
 
@@ -731,9 +720,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new IllegalArgumentException("AlertId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         try {
             /*
                 Not sure if these queries can be wrapped in an async way as they have dependencies with results.
