@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.trigger;
 
+import java.util.Map;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -56,7 +57,11 @@ public class Trigger extends TriggerTemplate {
     }
 
     public Trigger(String name) {
-        this(generateId(), name);
+        this(generateId(), name, null);
+    }
+
+    public Trigger(String name, Map<String, String> context) {
+        this(generateId(), name, context);
     }
 
     public static String generateId() {
@@ -64,7 +69,11 @@ public class Trigger extends TriggerTemplate {
     }
 
     public Trigger(String id, String name) {
-        super(name);
+        this(id, name, null);
+    }
+
+    public Trigger(String id, String name, Map<String, String> context) {
+        super(name, context);
 
         if (id == null || id.isEmpty()) {
             throw new IllegalArgumentException("Trigger id must be non-empty");
@@ -157,7 +166,7 @@ public class Trigger extends TriggerTemplate {
     public String toString() {
         return "Trigger [tenantId=" + tenantId + " id=" + id + ", enabled=" + enabled + ", mode=" + mode +
                 ", getName()=" + getName() + ", isAutoDisable()=" + isAutoDisable() + ", isAutoEnable()="
-                + isAutoEnable() + ", isAutoResolve()=" + isAutoResolve() + "]";
+                + isAutoEnable() + ", isAutoResolve()=" + isAutoResolve() + ", context=" + context + "]";
     }
 
 }

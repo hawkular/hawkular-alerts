@@ -224,7 +224,7 @@ public class CassStatement {
 
         INSERT_TRIGGER = "INSERT INTO " + keyspace + ".triggers " +
                 "(name, description, autoDisable, autoEnable, autoResolve, autoResolveAlerts, severity, firingMatch, "
-                + "autoResolveMatch, id, enabled, tenantId) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
+                + "autoResolveMatch, id, enabled, tenantId, context) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_TRIGGER_ACTIONS = "INSERT INTO " + keyspace + ".triggers_actions "
                 + "(tenantId, triggerId, actionPlugin, actions) VALUES (?, ?, ?, ?) ";
@@ -336,7 +336,7 @@ public class CassStatement {
                 + "WHERE tenantId = ? AND name = ? ";
 
         SELECT_TRIGGER = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
-                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId "
+                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId, context "
                 + "FROM " + keyspace + ".triggers "
                 + "WHERE tenantId = ? AND id = ? ";
 
@@ -368,11 +368,11 @@ public class CassStatement {
                 + "WHERE tenantId = ? AND triggerId = ? and triggerMode = ? ";
 
         SELECT_TRIGGERS_ALL = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
-                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId "
+                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId, context "
                 + "FROM " + keyspace + ".triggers ";
 
         SELECT_TRIGGERS_TENANT = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
-                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId "
+                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId, context "
                 + "FROM " + keyspace + ".triggers WHERE tenantId = ? ";
 
         UPDATE_ACTION = "UPDATE " + keyspace + ".actions SET properties = ? "

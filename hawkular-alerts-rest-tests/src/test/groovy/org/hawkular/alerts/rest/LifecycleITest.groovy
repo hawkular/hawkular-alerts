@@ -57,7 +57,11 @@ class LifecycleITest extends AbstractITestBase {
         def resp = client.get(path: "")
         assertEquals(200, resp.status)
 
-        Trigger testTrigger = new Trigger("test-autodisable-trigger", "test-autodisable-trigger");
+        // sub-test: add context and ensure it carries through to the alert
+        Map<String,String> context = new HashMap<>(1);
+        context.put("contextName","contextValue");
+        context.put("contextName2","contextValue2");
+        Trigger testTrigger = new Trigger("test-autodisable-trigger", "test-autodisable-trigger", context);
 
         // remove if it exists
         resp = client.delete(path: "triggers/test-autodisable-trigger")
@@ -92,6 +96,9 @@ class LifecycleITest extends AbstractITestBase {
         assertTrue(resp.data.autoDisable);
         assertFalse(resp.data.autoEnable);
         assertEquals("LOW", resp.data.severity);
+        assertNotNull(resp.data.context);
+        assertEquals("contextValue", resp.data.context.get("contextName"));
+        assertEquals("contextValue2", resp.data.context.get("contextName2"));
 
         // FETCH recent alerts for trigger, should not be any
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger"] )
@@ -108,7 +115,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -139,6 +146,10 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("testUser", resp.data[0].resolvedBy)
         assertEquals("testNotes", resp.data[0].resolvedNotes)
         assertNull(resp.data[0].resolvedEvalSets)
+        assertNotNull(resp.data[0].context);
+        Map<String,String> alertContext = (Map<String,String>)resp.data[0].context;
+        assertEquals("contextValue", alertContext.get("contextName"));
+        assertEquals("contextValue2", alertContext.get("contextName2"));
 
         // FETCH trigger and make sure it's still disabled, because autoEnable was set to false
         resp = client.get(path: "triggers/test-autodisable-trigger");
@@ -218,7 +229,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -262,7 +273,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -339,7 +350,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 20; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
@@ -589,7 +600,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(1000);
 
             // FETCH recent alerts for trigger, there should be 5
@@ -869,7 +880,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1 because the trigger should have disabled after firing
@@ -983,7 +994,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -1033,7 +1044,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
+            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent OPEN alerts for trigger, there should be 1

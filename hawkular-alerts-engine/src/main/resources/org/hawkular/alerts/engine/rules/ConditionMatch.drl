@@ -430,6 +430,7 @@ rule AlertOnSatisfiedDampening
         Alert newAlert = new Alert( $t.getTenantId(), $tid, $t.getSeverity(), $d.getSatisfyingEvals() );
         newAlert.setTrigger($t);
         newAlert.setDampening($d);
+        newAlert.setContext($t.getContext());
         alerts.add(newAlert);
         if (actions != null) {
             for (String actionPlugin : $t.getActions().keySet()) {

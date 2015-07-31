@@ -187,6 +187,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match
                             .valueOf((String)t.get("autoResolveMatch"));
                     List<Map<String, String>> actions = (List<Map<String, String>>)t.get("actions");
+                    Map<String, String> context = (Map<String, String>)t.get("context");
 
                     Trigger trigger = new Trigger(triggerId, name);
                     trigger.setEnabled(enabled);
@@ -202,6 +203,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     for (Map<String, String> action : actions) {
                         trigger.addAction(action.get("actionPlugin"), action.get("actionId"));
                     }
+                    trigger.setContext(context);
                     addTrigger(tenantId, trigger);
                     log.debugf("Init file - Inserting [%s]", trigger);
                 }
@@ -447,7 +449,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     trigger.isAutoDisable(), trigger.isAutoEnable(), trigger.isAutoResolve(),
                     trigger.isAutoResolveAlerts(), trigger.getSeverity().name(),
                     trigger.getFiringMatch().name(), trigger.getAutoResolveMatch().name(),
-                    trigger.getId(), trigger.isEnabled(), trigger.getTenantId()));
+                    trigger.getId(), trigger.isEnabled(), trigger.getTenantId(), trigger.getContext()));
 
             insertTriggerActions(trigger);
         } catch (Exception e) {
@@ -773,6 +775,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         trigger.setId(row.getString("id"));
         trigger.setEnabled(row.getBool("enabled"));
         trigger.setTenantId(row.getString("tenantId"));
+        trigger.setContext(row.getMap("context", String.class, String.class));
 
         return trigger;
     }

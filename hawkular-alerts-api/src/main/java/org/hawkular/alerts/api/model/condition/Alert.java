@@ -20,7 +20,9 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
@@ -92,8 +94,8 @@ public class Alert {
     private String resolvedNotes;
 
     /*
-     * This is the trigger defined when the alert was fired.
-     * A trigger definition can change during time, but an alert should be attached with a specific instance.
+     * If set this should be the trigger as defined when the alert was fired.  A trigger definition can change
+     * over time, but an alert should be attached with the relevant instance.
      */
     @JsonInclude(Include.NON_EMPTY)
     @Thin
@@ -111,6 +113,13 @@ public class Alert {
     @Thin
     private List<Set<ConditionEval>> resolvedEvalSets;
 
+    /*
+     * This should be initialized to the owning trigger's context. It is not set automatically so as to allow
+     * for flexibility.  Note, this is not marked as Thin, whereas the trigger is Thin.
+     */
+    @JsonInclude(Include.NON_EMPTY)
+    private Map<String, String> context;
+
     public Alert() {
         // for json assembly
     }
@@ -120,6 +129,7 @@ public class Alert {
         this.triggerId = triggerId;
         this.severity = (null == severity) ? Severity.MEDIUM : severity;
         this.evalSets = evalSets;
+
         this.ctime = System.currentTimeMillis();
         this.status = Status.OPEN;
 
@@ -254,6 +264,29 @@ public class Alert {
         this.dampening = dampening;
     }
 
+    public Map<String, String> getContext() {
+        return context;
+    }
+
+    public void setContext(Map<String, String> context) {
+        this.context = context;
+    }
+
+    /**
+     * Add context information.
+     * @param name context key.
+     * @param value context value.
+     */
+    public void addProperty(String name, String value) {
+        if (null == name || null == value) {
+            throw new IllegalArgumentException("Propety must have non-null name and value");
+        }
+        if (null == context) {
+            context = new HashMap<>();
+        }
+        context.put(name, value);
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -282,7 +315,8 @@ public class Alert {
     @Override
     public String toString() {
         return "Alert [alertId=" + alertId + ", status=" + status + ", ackTime=" + ackTime
-                + ", ackBy=" + ackBy + ", resolvedTime=" + resolvedTime + ", resolvedBy=" + resolvedBy + "]";
+                + ", ackBy=" + ackBy + ", resolvedTime=" + resolvedTime + ", resolvedBy=" + resolvedBy + ", context="
+                + context + "]";
     }
 
 }
