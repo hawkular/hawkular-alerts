@@ -35,11 +35,11 @@ public class StandalonePluginMessage implements PluginMessage {
 
     @Override
     public Action getAction() {
-        return null;
+        return action;
     }
 
     @Override
     public Map<String, String> getProperties() {
-        return null;
+        return properties;
     }
 }

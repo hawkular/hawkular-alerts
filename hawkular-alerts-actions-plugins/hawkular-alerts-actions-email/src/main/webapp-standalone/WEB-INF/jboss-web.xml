@@ -17,12 +17,6 @@
     limitations under the License.
 
 -->
-<jboss-deployment-structure>
-
-  <deployment>
-    <dependencies>
-
-    </dependencies>
-  </deployment>
-
-</jboss-deployment-structure>
+<jboss-web>
+  <context-root>/hawkular/actions/email</context-root>
+</jboss-web>

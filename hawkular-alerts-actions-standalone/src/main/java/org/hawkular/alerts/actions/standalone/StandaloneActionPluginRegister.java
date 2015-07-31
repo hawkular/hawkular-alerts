@@ -31,7 +31,6 @@ import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.jboss.logging.Logger;
 
 /**
  * Main bus register for plugins implementations
@@ -42,10 +41,9 @@ import org.jboss.logging.Logger;
 @Singleton
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class StandaloneActionPluginRegister {
-    public static final String DEFINITIONS_SERVICE = "java:app/hawkular-alerts-rest/CassDefinitionsServiceImpl";
-    public static final String ACTIONS_SERVICE = "java:app/hawkular-alerts-rest/MemActionsServiceImpl";
+    public static final String DEFINITIONS_SERVICE = "java:global/hawkular-alerts-rest/CassDefinitionsServiceImpl";
+    public static final String ACTIONS_SERVICE = "java:global/hawkular-alerts-rest/MemActionsServiceImpl";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(StandaloneActionPluginRegister.class);
 
     DefinitionsService definitions;
     ActionsService actions;

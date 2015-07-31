@@ -49,19 +49,21 @@ public class ActionPlugins {
     private ActionPlugins() {
         try {
             plugins = new HashMap<>();
-            URL webInfUrl = getWebInfUrl();
-            List<Class> pluginClasses = findAnnotationInClasses(webInfUrl, ActionPlugin.class);
-            for (Class pluginClass : pluginClasses) {
-                Annotation actionPlugin = pluginClass.getDeclaredAnnotation(ActionPlugin.class);
-                if (actionPlugin instanceof ActionPlugin) {
-                    String name = ((ActionPlugin) actionPlugin).name();
-                    Object newInstance = pluginClass.newInstance();
-                    if (newInstance instanceof ActionPluginListener) {
-                        ActionPluginListener pluginInstance = (ActionPluginListener)newInstance;
-                        plugins.put(name, pluginInstance);
-                    } else {
-                        throw new IllegalStateException("Plugin [" + name + "] is not instance of " +
-                                "ActionPluginListener");
+            List<URL> webInfUrls = getWebInfUrls();
+            for (URL webInfUrl : webInfUrls) {
+                List<Class> pluginClasses = findAnnotationInClasses(webInfUrl, ActionPlugin.class);
+                for (Class pluginClass : pluginClasses) {
+                    Annotation actionPlugin = pluginClass.getDeclaredAnnotation(ActionPlugin.class);
+                    if (actionPlugin instanceof ActionPlugin) {
+                        String name = ((ActionPlugin) actionPlugin).name();
+                        Object newInstance = pluginClass.newInstance();
+                        if (newInstance instanceof ActionPluginListener) {
+                            ActionPluginListener pluginInstance = (ActionPluginListener)newInstance;
+                            plugins.put(name, pluginInstance);
+                        } else {
+                            throw new IllegalStateException("Plugin [" + name + "] is not instance of " +
+                                    "ActionPluginListener");
+                        }
                     }
                 }
             }
@@ -70,15 +72,16 @@ public class ActionPlugins {
         }
     }
 
-    private URL getWebInfUrl() throws Exception {
+    private List<URL> getWebInfUrls() throws Exception {
         Enumeration<URL> allUrls = Thread.currentThread().getContextClassLoader().getResources("");
+        List<URL> webInfUrls = new ArrayList<>();
         while (allUrls != null && allUrls.hasMoreElements()) {
             URL url = allUrls.nextElement();
             if (url.toExternalForm().contains("WEB-INF/classes")) {
-                return url;
+                webInfUrls.add(url);
             }
         }
-        return null;
+        return webInfUrls;
     }
 
     private List<Class> findAnnotationInClasses(URL url, Class annotation) throws Exception {

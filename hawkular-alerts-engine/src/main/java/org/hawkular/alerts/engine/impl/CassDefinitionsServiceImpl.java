@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
+import javax.ejb.Local;
 import javax.ejb.Singleton;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
@@ -70,6 +71,7 @@ import com.google.common.util.concurrent.Futures;
  *
  * @author Lucas Ponce
  */
+@Local(DefinitionsService.class)
 @Singleton
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class CassDefinitionsServiceImpl implements DefinitionsService {

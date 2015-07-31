@@ -164,7 +164,9 @@ public class EmailPlugin implements ActionPluginListener {
 
     Map<String, String> defaultProperties = new HashMap<>();
 
-    @Resource(mappedName = "java:jboss/mail/Default")
+    public static final String MAIL_SESSION = "java:jboss/mail/Default";
+
+    @Resource(mappedName = MAIL_SESSION)
     Session mailSession;
 
     EmailTemplate emailTemplate;

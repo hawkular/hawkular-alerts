@@ -19,6 +19,7 @@ package org.hawkular.alerts.engine.impl;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import javax.ejb.Local;
 import javax.ejb.Singleton;
 
 import javax.ejb.TransactionAttribute;
@@ -37,6 +38,7 @@ import org.jboss.logging.Logger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@Local(ActionsService.class)
 @Singleton
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class MemActionsServiceImpl implements ActionsService {
