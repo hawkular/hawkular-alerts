@@ -114,13 +114,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-<<<<<<< HEAD
-            // println "SLEEP!" ;
-            Thread.sleep(500);
-=======
             println "SLEEP!" ;
             Thread.sleep(1000);
->>>>>>> HWKALERTS-68 Set standalone test environment and several fixes
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger"] )
@@ -233,13 +228,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-<<<<<<< HEAD
-            // println "SLEEP!" ;
-            Thread.sleep(500);
-=======
             println "SLEEP!" ;
             Thread.sleep(1000);
->>>>>>> HWKALERTS-68 Set standalone test environment and several fixes
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
@@ -282,13 +272,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-<<<<<<< HEAD
-            // println "SLEEP!" ;
-            Thread.sleep(500);
-=======
             println "SLEEP!" ;
             Thread.sleep(1000);
->>>>>>> HWKALERTS-68 Set standalone test environment and several fixes
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"RESOLVED"] )
@@ -364,13 +349,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 20; ++i ) {
-<<<<<<< HEAD
-            // println "SLEEP!" ;
-            Thread.sleep(500);
-=======
             println "SLEEP!" ;
             Thread.sleep(1000);
->>>>>>> HWKALERTS-68 Set standalone test environment and several fixes
 
             // FETCH recent alerts for trigger, there should be 5
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger"] )
@@ -901,13 +881,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-<<<<<<< HEAD
-            // println "SLEEP!" ;
-            Thread.sleep(500);
-=======
             println "SLEEP!" ;
             Thread.sleep(1000);
->>>>>>> HWKALERTS-68 Set standalone test environment and several fixes
 
             // FETCH recent alerts for trigger, there should be 1 because the trigger should have disabled after firing
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoenable-trigger"] )
@@ -1020,13 +995,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-<<<<<<< HEAD
-            // println "SLEEP!" ;
-            Thread.sleep(500);
-=======
             println "SLEEP!" ;
             Thread.sleep(1000);
->>>>>>> HWKALERTS-68 Set standalone test environment and several fixes
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-autoresolve-trigger"] )
@@ -1075,13 +1045,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-<<<<<<< HEAD
-            // println "SLEEP!" ;
-            Thread.sleep(500);
-=======
             println "SLEEP!" ;
             Thread.sleep(1000);
->>>>>>> HWKALERTS-68 Set standalone test environment and several fixes
 
             // FETCH recent OPEN alerts for trigger, there should be 1
             resp = client.get(path: "",
