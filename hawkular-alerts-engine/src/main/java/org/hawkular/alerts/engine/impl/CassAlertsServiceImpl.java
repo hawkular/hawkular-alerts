@@ -29,7 +29,10 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
+import javax.ejb.Local;
 import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
@@ -67,7 +70,9 @@ import com.google.common.util.concurrent.Futures;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@Local(AlertsService.class)
 @Stateless
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class CassAlertsServiceImpl implements AlertsService {
 
     private final MsgLogger msgLog = MsgLogger.LOGGER;
@@ -90,9 +95,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     @PostConstruct
     public void initServices() {
         try {
-            if (session == null) {
-                session = CassCluster.getSession();
-            }
+            session = CassCluster.getSession();
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
                 t.printStackTrace();
@@ -107,9 +110,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new IllegalArgumentException("Alerts must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement insertAlert = CassStatement.get(session, CassStatement.INSERT_ALERT);
         PreparedStatement insertAlertTrigger = CassStatement.get(session, CassStatement.INSERT_ALERT_TRIGGER);
         PreparedStatement insertAlertCtime = CassStatement.get(session, CassStatement.INSERT_ALERT_CTIME);
@@ -152,9 +152,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new IllegalArgumentException("AlertId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectAlert = CassStatement.get(session, CassStatement.SELECT_ALERT);
         if (selectAlert == null) {
             throw new RuntimeException("selectAlert PreparedStatement is null");
@@ -190,16 +187,12 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new IllegalArgumentException("TenantId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
 
         if (filter) {
-
+            log.debugf("getAlerts criteria: %s", criteria.toString());
         }
-        log.debugf("getAlerts criteria: %s", criteria.toString());
 
         List<Alert> alerts = new ArrayList<>();
         Set<String> alertIds = new HashSet<>();
@@ -727,9 +720,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new IllegalArgumentException("AlertId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         try {
             /*
                 Not sure if these queries can be wrapped in an async way as they have dependencies with results.

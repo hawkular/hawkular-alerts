@@ -15,17 +15,6 @@
  * limitations under the License.
  */
 package org.hawkular.alerts.rest
-import org.hawkular.alerts.api.model.Severity
-import org.hawkular.alerts.api.model.condition.AvailabilityCondition
-import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval
-import org.hawkular.alerts.api.model.condition.ThresholdCondition
-import org.hawkular.alerts.api.model.data.Availability
-import org.hawkular.alerts.api.model.data.MixedData
-import org.hawkular.alerts.api.model.data.NumericData
-import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.bus.restclient.RestClient
-import org.junit.FixMethodOrder
-import org.junit.Test
 
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
 import static org.hawkular.alerts.api.model.trigger.Trigger.Mode
@@ -35,6 +24,18 @@ import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertNull
 import static org.junit.runners.MethodSorters.NAME_ASCENDING
+
+import org.hawkular.alerts.api.model.Severity
+import org.hawkular.alerts.api.model.condition.AvailabilityCondition
+import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval
+import org.hawkular.alerts.api.model.condition.ThresholdCondition
+import org.hawkular.alerts.api.model.data.Availability
+import org.hawkular.alerts.api.model.data.MixedData
+import org.hawkular.alerts.api.model.data.NumericData
+import org.hawkular.alerts.api.model.trigger.Trigger
+import org.junit.FixMethodOrder
+import org.junit.Test
+
 /**
  * Alerts REST tests.
  *
@@ -105,18 +106,16 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // Send in avail data to fire the trigger
-        // Note, the groovyx rest client seems incapable of allowing a JSON payload and a TEXT response (which is what
-        // we get back from the activemq rest client used by the bus), so use the bus' java rest client to do this.
-        RestClient busClient = new RestClient(host, port);
-        String json = "{\"data\":[{\"id\":\"test-autodisable-avail\",\"timestamp\":" + System.currentTimeMillis() +
-                      ",\"value\":\"DOWN\",\"type\":\"availability\"}]}";
-        busClient.postTopicMessage("HawkularAlertData", json, null);
-        //assertEquals(200, resp.status)
+        String jsonData = "{\"availability\":" +
+                "[{\"id\":\"test-autodisable-avail\",\"timestamp\":" + System.currentTimeMillis() +
+                      ",\"value\":\"DOWN\",\"type\":\"AVAILABILITY\"}]}";
+        resp = client.post(path: "data", body: jsonData);
+        assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
-            Thread.sleep(500);
+            println "SLEEP!" ;
+            Thread.sleep(1000);
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger"] )
@@ -229,8 +228,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
-            Thread.sleep(500);
+            println "SLEEP!" ;
+            Thread.sleep(1000);
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
@@ -273,8 +272,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
-            Thread.sleep(500);
+            println "SLEEP!" ;
+            Thread.sleep(1000);
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"RESOLVED"] )
@@ -350,8 +349,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 20; ++i ) {
-            // println "SLEEP!" ;
-            Thread.sleep(500);
+            println "SLEEP!" ;
+            Thread.sleep(1000);
 
             // FETCH recent alerts for trigger, there should be 5
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger"] )
@@ -732,7 +731,8 @@ class LifecycleITest extends AbstractITestBase {
              Step 9: Wait until the engine detects the data, matches the conditions and sends an alert
          */
         for ( int i=0; i < 10; ++i ) {
-            Thread.sleep(500);
+            println "SLEEP!" ;
+            Thread.sleep(1000);
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
             /*
                 We should have only 1 alert
@@ -801,7 +801,8 @@ class LifecycleITest extends AbstractITestBase {
                       It should retrieve 2 data
          */
         for ( int i=0; i < 10; ++i ) {
-            Thread.sleep(500);
+            println "SLEEP!" ;
+            Thread.sleep(1000);
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
             /*
                 We should have only 2 alert
@@ -880,8 +881,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
-            Thread.sleep(500);
+            println "SLEEP!" ;
+            Thread.sleep(1000);
 
             // FETCH recent alerts for trigger, there should be 1 because the trigger should have disabled after firing
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoenable-trigger"] )
@@ -994,8 +995,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
-            Thread.sleep(500);
+            println "SLEEP!" ;
+            Thread.sleep(1000);
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-autoresolve-trigger"] )
@@ -1044,8 +1045,8 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
-            Thread.sleep(500);
+            println "SLEEP!" ;
+            Thread.sleep(1000);
 
             // FETCH recent OPEN alerts for trigger, there should be 1
             resp = client.get(path: "",

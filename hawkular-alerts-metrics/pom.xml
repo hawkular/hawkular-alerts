@@ -33,6 +33,7 @@
 
   <dependencies>
 
+    <!-- Hawkular Alerts dependencies -->
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>
@@ -40,6 +41,7 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- Hawkular Metrics dependencies -->
     <dependency>
       <groupId>org.hawkular.metrics</groupId>
       <artifactId>hawkular-metrics-core-api</artifactId>
@@ -52,9 +54,11 @@
       <version>${version.org.hawkular.metrics}</version>
     </dependency>
 
+    <!-- Wildfly dependencies -->
     <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -77,7 +81,6 @@
     </dependency>
 
     <!-- Tests -->
-
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

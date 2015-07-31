@@ -16,7 +16,6 @@
  */
 package org.hawkular.alerts.rest
 
-import org.junit.AfterClass
 import org.junit.BeforeClass
 
 import groovyx.net.http.ContentType
@@ -46,5 +45,11 @@ class AbstractITestBase {
             .encodeToString("$testUser:$testPasword".getBytes("utf-8"))
          */
         client.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
+
+        /*
+            This is used for non-bus scenarios.
+            In Bus scenarios this property is skipped
+         */
+        client.headers.put("Hawkular-Tenant", "28026b36-8fe4-4332-84c8-524e173a68bf")
     }
 }

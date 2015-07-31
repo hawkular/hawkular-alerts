@@ -16,13 +16,36 @@
  */
 package org.hawkular.alerts.actions.email;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Resource;
+import javax.mail.Address;
+import javax.mail.Message;
+import javax.mail.Multipart;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMultipart;
+
+import org.hawkular.alerts.actions.api.MsgLogger;
+import org.hawkular.alerts.actions.api.ActionPlugin;
+import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.api.model.condition.Alert;
+import org.jboss.logging.Logger;
+
 /**
- * Main class to store common properties for email plugin.
+ * Main class Email plugin
  *
+ * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class EmailPlugin {
-    public static final String INIT_PLUGIN = "init";
+@ActionPlugin(name = "email")
+public class EmailPlugin implements ActionPluginListener {
     public static final String PLUGIN_NAME = "email";
 
     public static final String MESSAGE_ID = "Message-ID";
@@ -135,4 +158,116 @@ public class EmailPlugin {
      *                          in a template.
      */
     public static final String PROP_TEMPLATE_HTML = "template.html";
+
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(EmailPlugin.class);
+
+    Map<String, String> defaultProperties = new HashMap<>();
+
+    public static final String MAIL_SESSION = "java:jboss/mail/Default";
+
+    @Resource(mappedName = MAIL_SESSION)
+    Session mailSession;
+
+    EmailTemplate emailTemplate;
+
+    public EmailPlugin() {
+
+        defaultProperties.put(EmailPlugin.PROP_FROM, EmailPlugin.DEFAULT_FROM);
+        defaultProperties.put(EmailPlugin.PROP_FROM_NAME, EmailPlugin.DEFAULT_FROM_NAME);
+        defaultProperties.put(EmailPlugin.PROP_TO, "");
+        defaultProperties.put(EmailPlugin.PROP_CC, "");
+        defaultProperties.put(EmailPlugin.PROP_TEMPLATE_HAWKULAR_URL, "http://localhost:8080/");
+        defaultProperties.put(EmailPlugin.PROP_TEMPLATE_PLAIN, "");
+        defaultProperties.put(EmailPlugin.PROP_TEMPLATE_HTML, "");
+
+        emailTemplate = new EmailTemplate();
+    }
+
+    @Override
+    public Set<String> getProperties() {
+        return defaultProperties.keySet();
+    }
+
+    @Override
+    public Map<String, String> getDefaultProperties() {
+        return defaultProperties;
+    }
+
+    @Override
+    public void process(PluginMessage msg) throws Exception {
+        Message message = createMimeMessage(msg);
+        Transport.send(message);
+    }
+
+    protected Message createMimeMessage(PluginMessage msg) throws Exception {
+        Message email = new EmailMimeMessage(mailSession);
+
+        Map<String, String> props = msg.getProperties();
+        Alert alert = msg.getAction() != null ? msg.getAction().getAlert() : null;
+        Alert.Status status = alert != null && alert.getStatus() != null ? alert.getStatus() : Alert.Status.OPEN;
+
+        String from = props.get(EmailPlugin.PROP_FROM + "." + status.name().toLowerCase());
+        from = from == null ? props.get(EmailPlugin.PROP_FROM) : from;
+        from = from == null ? EmailPlugin.DEFAULT_FROM : from;
+
+        String fromName = props.get(EmailPlugin.PROP_FROM_NAME + "." + status.name().toLowerCase());
+        fromName = fromName == null ? props.get(EmailPlugin.PROP_FROM_NAME) : fromName;
+        fromName = fromName == null ? EmailPlugin.DEFAULT_FROM_NAME : fromName;
+
+        email.setFrom(new InternetAddress(from, fromName));
+        if (alert != null && alert.getStatus() != null) {
+            if (alert.getStatus().equals(Alert.Status.OPEN)) {
+                email.setSentDate(new Date(alert.getCtime()));
+            } else if (alert.getStatus().equals(Alert.Status.ACKNOWLEDGED)) {
+                email.setSentDate(new Date(alert.getAckTime()));
+            } else {
+                email.setSentDate(new Date(alert.getResolvedTime()));
+            }
+        }
+
+        if (alert != null) {
+            email.addHeader(EmailPlugin.MESSAGE_ID, alert.getAlertId());
+            if (alert.getStatus() != null && !alert.getStatus().equals(Alert.Status.OPEN)) {
+                email.addHeader(EmailPlugin.IN_REPLY_TO, alert.getAlertId());
+            }
+        }
+
+        String to = props.get(EmailPlugin.PROP_TO + "." + status.name().toLowerCase());
+        to = to == null ? props.get(EmailPlugin.PROP_TO) : to;
+        if (to != null) {
+            Address toAddress = new InternetAddress(to);
+            email.addRecipient(Message.RecipientType.TO, toAddress);
+        }
+
+        String ccs = props.get(EmailPlugin.PROP_CC + "." + status.name().toLowerCase());
+        ccs = ccs == null ? props.get(EmailPlugin.PROP_CC) : ccs;
+        if (ccs != null) {
+            String[] multipleCc = ccs.split(",");
+            for (String cc : multipleCc) {
+                Address toAddress = new InternetAddress(cc);
+                email.addRecipient(Message.RecipientType.CC, toAddress);
+            }
+        }
+
+        String subject = emailTemplate.subject(alert);
+        if (subject != null) {
+            email.setSubject(subject);
+        }
+
+        Map<String, String> body = emailTemplate.body(props, alert);
+        if (body != null && body.get("plain") != null && body.get("html") != null) {
+            MimeBodyPart text = new MimeBodyPart();
+            text.setContent(body.get("plain"), "text/plain");
+
+            MimeBodyPart html = new MimeBodyPart();
+            html.setContent(body.get("html"), "text/html");
+
+            Multipart multipart = new MimeMultipart("alternative");
+            multipart.addBodyPart(html);
+            multipart.addBodyPart(text);
+            email.setContent(multipart);
+        }
+        return email;
+    }
 }

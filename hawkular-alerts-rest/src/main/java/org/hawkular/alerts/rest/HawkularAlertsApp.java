@@ -31,6 +31,8 @@ import javax.ws.rs.core.Application;
 public class HawkularAlertsApp extends Application {
     private static final Logger log = Logger.getLogger(HawkularAlertsApp.class);
 
+    public static final String TENANT_HEADER_NAME = "Hawkular-Tenant";
+
     public HawkularAlertsApp() {
         log.debugf("Hawkular Alerts REST starting...");
     }

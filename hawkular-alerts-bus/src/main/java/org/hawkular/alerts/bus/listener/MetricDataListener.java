@@ -23,6 +23,8 @@ import java.util.Set;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.jms.MessageListener;
 
 import org.hawkular.alerts.api.model.data.Data;
@@ -49,6 +51,7 @@ import org.jboss.logging.Logger;
 @MessageDriven(messageListenerInterface = MessageListener.class, activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularMetricData") })
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class MetricDataListener extends BasicMessageListener<MetricDataMessage> {
     private final Logger log = Logger.getLogger(MetricDataListener.class);
 

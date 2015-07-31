@@ -32,7 +32,10 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
+import javax.ejb.Local;
 import javax.ejb.Singleton;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
@@ -68,7 +71,9 @@ import com.google.common.util.concurrent.Futures;
  *
  * @author Lucas Ponce
  */
+@Local(DefinitionsService.class)
 @Singleton
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class CassDefinitionsServiceImpl implements DefinitionsService {
     private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
     private static final String INIT_FOLDER = "hawkular-alerts";
@@ -102,16 +107,11 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             if (this.keyspace == null) {
                 this.keyspace = AlertProperties.getProperty(CASSANDRA_KEYSPACE, "hawkular_alerts");
             }
-
-            if (session == null) {
-                session = CassCluster.getSession();
-            }
-
+            session = CassCluster.getSession();
             /*
                 Initial data works here because we are in a singleton
              */
             initialData();
-
         } catch (Throwable t) {
             msgLog.errorCannotInitializeDefinitionsService(t.getMessage());
             t.printStackTrace();
@@ -139,10 +139,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private void initFiles(String folder) {
         if (folder == null) {
             msgLog.errorFolderMustBeNotNull();
-            return;
-        }
-        if (session == null) {
-            msgLog.errorDatabaseException("Cassandra session is null. Initialization can not work.");
             return;
         }
 
@@ -205,7 +201,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     }
                     trigger.setContext(context);
                     addTrigger(tenantId, trigger);
-                    log.debugf("Init file - Inserting [%s]", trigger);
+                    log.debugf("Init registration - Inserting [%s]", trigger);
                 }
             }
         } else {
@@ -242,7 +238,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setTenantId(tenantId);
 
                         initCondition(newCondition);
-                        log.debugf("Init file - Inserting [%s]", newCondition);
+                        log.debugf("Init registration - Inserting [%s]", newCondition);
                     }
                     if (type != null && !type.isEmpty() && type.equals("range")) {
                         String dataId = (String)c.get("dataId");
@@ -266,7 +262,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setTenantId(tenantId);
 
                         initCondition(newCondition);
-                        log.debugf("Init file - Inserting [%s]", newCondition);
+                        log.debugf("Init registration - Inserting [%s]", newCondition);
                     }
                     if (type != null && !type.isEmpty() && type.equals("compare")) {
                         String dataId = (String)c.get("dataId");
@@ -286,7 +282,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setTenantId(tenantId);
 
                         initCondition(newCondition);
-                        log.debugf("Init file - Inserting [%s]", newCondition);
+                        log.debugf("Init registration - Inserting [%s]", newCondition);
                     }
                     if (type != null && !type.isEmpty() && type.equals("string")) {
                         String dataId = (String)c.get("dataId");
@@ -306,7 +302,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setTenantId(tenantId);
 
                         initCondition(newCondition);
-                        log.debugf("Init file - Inserting [%s]", newCondition);
+                        log.debugf("Init registration - Inserting [%s]", newCondition);
                     }
                     if (type != null && !type.isEmpty() && type.equals("availability")) {
                         String dataId = (String)c.get("dataId");
@@ -322,7 +318,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setTenantId(tenantId);
 
                         initCondition(newCondition);
-                        log.debugf("Init file - Inserting [%s]", newCondition);
+                        log.debugf("Init registration - Inserting [%s]", newCondition);
                     }
 
                 }
@@ -358,7 +354,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                             evalTrueSetting, evalTotalSetting, evalTimeSetting);
 
                     addDampening(tenantId, newDampening);
-                    log.debugf("Init file - Inserting [%s]", newDampening);
+                    log.debugf("Init registration - Inserting [%s]", newDampening);
                 }
             }
         } else {
@@ -383,7 +379,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     Map<String, String> properties = (Map<String, String>)a.get("properties");
                     newAction.putAll(properties);
                     addAction(tenantId, actionPlugin, actionId, newAction);
-                    log.debugf("Init file - Inserting [%s]", newAction);
+                    log.debugf("Init registration - Inserting [%s]", newAction);
                 }
             }
         } else {
@@ -410,9 +406,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         properties.put("actionPlugin", actionPlugin);
         properties.put("tenantId", tenantId);
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement insertAction = CassStatement.get(session, CassStatement.INSERT_ACTION);
         if (insertAction == null) {
             throw new RuntimeException("insertAction PreparedStatement is null");
@@ -436,9 +429,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         checkTenantId(tenantId, trigger);
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement insertTrigger = CassStatement.get(session, CassStatement.INSERT_TRIGGER);
         if (insertTrigger == null) {
             throw new RuntimeException("insertTrigger PreparedStatement is null");
@@ -485,9 +475,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement deleteDampenings = CassStatement.get(session, CassStatement.DELETE_DAMPENINGS);
         PreparedStatement deleteConditions = CassStatement.get(session, CassStatement.DELETE_CONDITIONS);
         PreparedStatement deleteTrigger = CassStatement.get(session, CassStatement.DELETE_TRIGGER);
@@ -519,9 +506,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         checkTenantId(tenantId, trigger);
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement updateTrigger = CassStatement.get(session, CassStatement.UPDATE_TRIGGER);
         if (updateTrigger == null) {
             throw new RuntimeException("updateTrigger PreparedStatement is null");
@@ -565,9 +549,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectTrigger = CassStatement.get(session, CassStatement.SELECT_TRIGGER);
         if (selectTrigger == null) {
             throw new RuntimeException("selectTrigger PreparedStatement is null");
@@ -605,10 +586,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     private Collection<Trigger> selectTriggers(String tenantId) throws Exception {
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
-
         PreparedStatement selectTriggers = isEmpty(tenantId) ?
                 CassStatement.get(session, CassStatement.SELECT_TRIGGERS_ALL) :
                 CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
@@ -640,9 +617,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Name must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
 
         try {
             // first, get all the partitions for tags (i.e. tenants)
@@ -715,9 +689,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Category and Name can not both be null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
 
         try {
             Set<String> triggerIds = getTriggerIdsByTag(tenantId, category, name);
@@ -886,9 +857,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         checkTenantId(tenantId, dampening);
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement insertDampening = CassStatement.get(session, CassStatement.INSERT_DAMPENING);
         if (insertDampening == null) {
             throw new RuntimeException("insertDampening PreparedStatement is null");
@@ -921,9 +889,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("dampeningId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement deleteDampeningId = CassStatement.get(session, CassStatement.DELETE_DAMPENING_ID);
         if (deleteDampeningId == null) {
             throw new RuntimeException("deleteDampeningId PreparedStatement is null");
@@ -960,9 +925,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         checkTenantId(tenantId, dampening);
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement updateDampeningId = CassStatement.get(session, CassStatement.UPDATE_DAMPENING_ID);
         if (updateDampeningId == null) {
             throw new RuntimeException("updateDampeningId PreparedStatement is null");
@@ -995,9 +957,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("DampeningId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectDampeningId = CassStatement.get(session, CassStatement.SELECT_DAMPENING_ID);
         if (selectDampeningId == null) {
             throw new RuntimeException("selectDampeningId PreparedStatement is null");
@@ -1028,9 +987,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectTriggerDampenings = CassStatement
                 .get(session, CassStatement.SELECT_TRIGGER_DAMPENINGS);
         PreparedStatement selectTriggerDampeningsMode = CassStatement.get(session,
@@ -1059,9 +1015,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     @Override
     public Collection<Dampening> getAllDampenings() throws Exception {
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectDampeningsAll = CassStatement.get(session, CassStatement.SELECT_DAMPENINGS_ALL);
         if (selectDampeningsAll == null) {
             throw new RuntimeException("selectDampeningsAll PreparedStatement is null");
@@ -1083,9 +1036,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TenantId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectDampeningsByTenant = CassStatement.get(session,
                 CassStatement.SELECT_DAMPENINGS_BY_TENANT);
         if (selectDampeningsByTenant == null) {
@@ -1231,9 +1181,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Conditions must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement insertConditionAvailability = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_AVAILABILITY);
         PreparedStatement insertConditionCompare = CassStatement.get(session, CassStatement.INSERT_CONDITION_COMPARE);
@@ -1472,9 +1419,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerMode must not be null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement deleteConditionsMode = CassStatement.get(session, CassStatement.DELETE_CONDITIONS_MODE);
         if (deleteConditionsMode == null) {
             throw new RuntimeException("deleteConditionsMode PreparedStatement is null");
@@ -1493,9 +1437,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     private void deleteTags(String tenantId, String triggerId, String category, String name) throws Exception {
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         BoundStatement boundTags;
         if (!isEmpty(name)) {
             PreparedStatement deleteTagsByName = CassStatement.get(session, CassStatement.DELETE_TAGS_BY_NAME);
@@ -1562,9 +1503,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("conditionId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectConditionId = CassStatement.get(session, CassStatement.SELECT_CONDITION_ID);
         if (selectConditionId == null) {
             throw new RuntimeException("selectConditionId PreparedStatement is null");
@@ -1595,9 +1533,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("triggerId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectTriggerConditions = CassStatement
                 .get(session, CassStatement.SELECT_TRIGGER_CONDITIONS);
         PreparedStatement selectTriggerConditionsTriggerMode = CassStatement.get(session,
@@ -1627,9 +1562,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     @Override
     public Collection<Condition> getAllConditions() throws Exception {
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectConditionsAll = CassStatement.get(session, CassStatement.SELECT_CONDITIONS_ALL);
         if (selectConditionsAll == null) {
             throw new RuntimeException("selectConditionsAll PreparedStatement is null");
@@ -1651,9 +1583,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TenantId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectConditionsByTenant = CassStatement.get(session,
                 CassStatement.SELECT_CONDITIONS_BY_TENANT);
         if (selectConditionsByTenant == null) {
@@ -1781,9 +1710,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("properties must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement insertActionPlugin = CassStatement.get(session, CassStatement.INSERT_ACTION_PLUGIN);
         if (insertActionPlugin == null) {
             throw new RuntimeException("insertActionPlugin PreparedStatement is null");
@@ -1805,9 +1731,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("defaultProperties must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement insertActionPluginDefaulProperties = CassStatement.get(session,
                 CassStatement.INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES);
         if (insertActionPluginDefaulProperties == null) {
@@ -1828,9 +1751,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement deleteActionPlugin = CassStatement.get(session, CassStatement.DELETE_ACTION_PLUGIN);
         if (deleteActionPlugin == null) {
             throw new RuntimeException("deleteActionPlugin PreparedStatement is null");
@@ -1852,9 +1772,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("properties must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement updateActionPlugin = CassStatement.get(session, CassStatement.UPDATE_ACTION_PLUGIN);
         if (updateActionPlugin == null) {
             throw new RuntimeException("updateActionPlugin PreparedStatement is null");
@@ -1876,9 +1793,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("defaultProperties must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement updateDefaultPropertiesActionPlugin = CassStatement.get(session,
                 CassStatement.UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES);
         if (updateDefaultPropertiesActionPlugin == null) {
@@ -1896,9 +1810,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     @Override
     public Collection<String> getActionPlugins() throws Exception {
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectActionPlugins = CassStatement.get(session, CassStatement.SELECT_ACTION_PLUGINS);
         if (selectActionPlugins == null) {
             throw new RuntimeException("selectActionPlugins PreparedStatement is null");
@@ -1922,9 +1833,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectActionPlugin = CassStatement.get(session, CassStatement.SELECT_ACTION_PLUGIN);
         if (selectActionPlugin == null) {
             throw new RuntimeException("selectActionPlugin PreparedStatement is null");
@@ -1950,9 +1858,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectActionPluginDefaultProperties = CassStatement.get(session,
                 CassStatement.SELECT_ACTION_PLUGIN_DEFAULT_PROPERTIES);
         if (selectActionPluginDefaultProperties == null) {
@@ -1985,9 +1890,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("ActionId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement deleteAction = CassStatement.get(session, CassStatement.DELETE_ACTION);
         if (deleteAction == null) {
             throw new RuntimeException("deleteAction PreparedStatement is null");
@@ -2019,9 +1921,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         properties.put("actionPlugin", actionPlugin);
 
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement updateAction = CassStatement.get(session, CassStatement.UPDATE_ACTION);
         if (updateAction == null) {
             throw new RuntimeException("updateAction PreparedStatement is null");
@@ -2038,9 +1937,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     @Override
     public Map<String, Map<String, Set<String>>> getAllActions() throws Exception {
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectActionsAll = CassStatement.get(session, CassStatement.SELECT_ACTIONS_ALL);
         if (selectActionsAll == null) {
             throw new RuntimeException("selectActionsAll PreparedStatement is null");
@@ -2073,9 +1969,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TenantId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectActionsByTenant = CassStatement.get(session,
                 CassStatement.SELECT_ACTIONS_BY_TENANT);
         if (selectActionsByTenant == null) {
@@ -2108,9 +2001,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectActionsPlugin = CassStatement.get(session, CassStatement.SELECT_ACTIONS_PLUGIN);
         if (selectActionsPlugin == null) {
             throw new RuntimeException("selectActionsPlugin PreparedStatement is null");
@@ -2140,9 +2030,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("actionId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         PreparedStatement selectAction = CassStatement.get(session, CassStatement.SELECT_ACTION);
         if (selectAction == null) {
             throw new RuntimeException("selectAction PreparedStatement is null");
@@ -2178,9 +2065,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         checkTenantId(tenantId, tag);
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
         try {
             insertTag(tag.getTenantId(), tag.getTriggerId(), tag.getCategory(), tag.getName(), tag.isVisible());
         } catch (Exception e) {
@@ -2214,9 +2098,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         session = CassCluster.getSession();
-        if (session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
 
         List<Tag> tags;
         try {

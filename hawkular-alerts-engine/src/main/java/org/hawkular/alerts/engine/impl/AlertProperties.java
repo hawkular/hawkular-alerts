@@ -23,7 +23,7 @@ import java.util.Properties;
 import org.hawkular.alerts.engine.log.MsgLogger;
 
 /**
- * Read global properties from hawkular-alerts.properties file
+ * Read global properties from hawkular-alerts.properties registration
  *
  * @author Lucas Ponce
  */

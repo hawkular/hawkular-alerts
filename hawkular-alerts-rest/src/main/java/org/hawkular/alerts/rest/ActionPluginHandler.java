@@ -18,18 +18,19 @@ package org.hawkular.alerts.rest;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
+import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
+
 import java.util.Collection;
 import java.util.Set;
 
 import javax.ejb.EJB;
-import javax.inject.Inject;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
-import org.hawkular.accounts.api.model.Persona;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
 
@@ -50,8 +51,8 @@ import com.wordnik.swagger.annotations.ApiResponses;
 public class ActionPluginHandler {
     private final Logger log = Logger.getLogger(ActionPluginHandler.class);
 
-    @Inject
-    Persona persona;
+    @HeaderParam(TENANT_HEADER_NAME)
+    String tenantId;
 
     @EJB
     DefinitionsService definitions;
@@ -69,9 +70,6 @@ public class ActionPluginHandler {
             @ApiResponse(code = 200, message = "Success."),
             @ApiResponse(code = 500, message = "Internal server error")})
     public Response findActionPlugins() {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             Collection<String> actionPlugins = definitions.getActionPlugins();
             log.debugf("ActionPlugins: %s ", actionPlugins);
@@ -95,9 +93,6 @@ public class ActionPluginHandler {
     public Response getActionPlugin(@ApiParam(value = "Action plugin to query", required = true)
                                         @PathParam ("actionPlugin")
                                         final String actionPlugin) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
             Set<String> actionPluginProps = definitions.getActionPlugin(actionPlugin);
             log.debugf("ActionPlugin: %s - Properties: %s ", actionPlugin, actionPluginProps);
@@ -109,22 +104,6 @@ public class ActionPluginHandler {
             log.debugf(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
-    }
-
-    private boolean checkPersona() {
-        if (persona == null) {
-            log.warn("Persona is null. Possible issue with accounts integration ? ");
-            return false;
-        }
-        if (isEmpty(persona.getId())) {
-            log.warn("Persona is empty. Possible issue with accounts integration ? ");
-            return false;
-        }
-        return true;
-    }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.trim().isEmpty();
     }
 
     private boolean isEmpty(Collection collection) {

@@ -32,39 +32,43 @@
   <name>Hawkular Alerts Action PagerDuty Plugin</name>
 
   <dependencies>
+
     <dependency>
       <groupId>com.squareup.pagerduty</groupId>
       <artifactId>pagerduty-incidents</artifactId>
       <version>1.0.1</version>
     </dependency>
+
   </dependencies>
 
   <profiles>
+
     <profile>
-      <id>dev</id>
+      <id>standalone</id>
       <build>
         <plugins>
+
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
+            <artifactId>maven-war-plugin</artifactId>
             <executions>
               <execution>
-                <id>deploy</id>
-                <phase>install</phase>
-                <configuration>
-                  <target>
-                    <copy file="${project.build.directory}/${project.build.finalName}.war" todir="${org.hawkular.wildfly.deployments}" />
-                  </target>
-                </configuration>
+                <id>bus-war-package</id>
+                <phase>package</phase>
                 <goals>
-                  <goal>run</goal>
+                  <goal>war</goal>
                 </goals>
+                <configuration>
+                  <warSourceDirectory>src/main/webapp-standalone</warSourceDirectory>
+                </configuration>
               </execution>
             </executions>
           </plugin>
+
         </plugins>
       </build>
     </profile>
+
   </profiles>
 
 </project>

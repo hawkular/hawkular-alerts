@@ -16,8 +16,10 @@
  */
 package org.hawkular.alerts.bus.init;
 
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import org.hawkular.alerts.api.services.ActionsService;
-import org.hawkular.alerts.bus.sender.ActionSender;
+import org.hawkular.alerts.bus.sender.ActionPluginSender;
 import org.jboss.logging.Logger;
 
 
@@ -34,6 +36,7 @@ import javax.ejb.Startup;
  */
 @Startup
 @Singleton
+@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class AlertEngineRegister {
     private final Logger log = Logger.getLogger(AlertEngineRegister.class);
 
@@ -42,7 +45,7 @@ public class AlertEngineRegister {
 
     @PostConstruct
     public void init() {
-        ActionSender sender = new ActionSender();
+        ActionPluginSender sender = new ActionPluginSender();
         actions.addListener(sender);
         log.debugf("Registering sender: [%s]", sender);
     }

@@ -18,15 +18,17 @@ package org.hawkular.alerts.rest;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
+import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.EJB;
-import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -34,7 +36,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
-import org.hawkular.accounts.api.model.Persona;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
@@ -55,8 +56,8 @@ import com.wordnik.swagger.annotations.ApiResponses;
 public class ActionsHandler {
     private final Logger log = Logger.getLogger(ActionsHandler.class);
 
-    @Inject
-    Persona persona;
+    @HeaderParam(TENANT_HEADER_NAME)
+    String tenantId;
 
     @EJB
     DefinitionsService definitions;
@@ -77,11 +78,8 @@ public class ActionsHandler {
             @ApiResponse(code = 200, message = "Success."),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response findActions() {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Map<String, Set<String>> actions = definitions.getActions(persona.getId());
+            Map<String, Set<String>> actions = definitions.getActions(tenantId);
             log.debugf("Actions: ", actions);
             return ResponseUtil.ok(actions);
         } catch (Exception e) {
@@ -102,11 +100,8 @@ public class ActionsHandler {
             required = true)
             @PathParam("actionPlugin")
             final String actionPlugin) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Collection<String> actions = definitions.getActions(persona.getId(), actionPlugin);
+            Collection<String> actions = definitions.getActions(tenantId, actionPlugin);
             log.debugf("Actions: %s ", actions);
             return ResponseUtil.ok(actions);
         } catch (Exception e) {
@@ -132,9 +127,6 @@ public class ActionsHandler {
                     name = "actionProperties",
                     required = true)
             final Map<String, String> actionProperties) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         String actionPlugin = actionProperties.get("actionPlugin");
         String actionId = actionProperties.get("actionId");
         if (isEmpty(actionPlugin)) {
@@ -144,10 +136,10 @@ public class ActionsHandler {
             return ResponseUtil.badRequest("actionId must be not null");
         }
         try {
-            if (definitions.getAction(persona.getId(), actionPlugin, actionId) != null) {
+            if (definitions.getAction(tenantId, actionPlugin, actionId) != null) {
                 return ResponseUtil.badRequest("Existing action:  " + actionId);
             } else {
-                definitions.addAction(persona.getId(), actionPlugin, actionId, actionProperties);
+                definitions.addAction(tenantId, actionPlugin, actionId, actionProperties);
                 log.debugf("ActionId: %s - Properties: %s ", actionId, actionProperties);
                 return ResponseUtil.ok(actionProperties);
             }
@@ -174,11 +166,8 @@ public class ActionsHandler {
             @ApiParam(value = "Action id to be retrieved", required = true)
             @PathParam("actionId")
             final String actionId) {
-        if (!checkPersona()) {
-            return ResponseUtil.internalError("No persona found");
-        }
         try {
-            Map<String, String> actionProperties = definitions.getAction(persona.getId(), actionPlugin, actionId);
+            Map<String, String> actionProperties = definitions.getAction(tenantId, actionPlugin, actionId);
             log.debugf("ActionId: %s - Properties: %s ", actionId, actionProperties);
             if (isEmpty(actionProperties)) {
                 return ResponseUtil.notFound("Not action found for actionPlugin: " + actionPlugin + " and actionId: "
@@ -212,11 +201,8 @@ public class ActionsHandler {
             @ApiParam(value = "Action properties. Properties depend of specific ActionPlugin.", required = true)
             final Map<String, String> actionProperties) {
         try {
-            if (!checkPersona()) {
-                return ResponseUtil.internalError("No persona found");
-            }
-            if (definitions.getAction(persona.getId(), actionPlugin, actionId) != null) {
-                definitions.updateAction(persona.getId(), actionPlugin, actionId, actionProperties);
+            if (definitions.getAction(tenantId, actionPlugin, actionId) != null) {
+                definitions.updateAction(tenantId, actionPlugin, actionId, actionProperties);
                 log.debugf("ActionId: %s - Properties: %s ", actionId, actionProperties);
                 return ResponseUtil.ok(actionProperties);
             } else {
@@ -242,11 +228,8 @@ public class ActionsHandler {
             @PathParam("actionId")
             final String actionId) {
         try {
-            if (!checkPersona()) {
-                return ResponseUtil.internalError("No persona found");
-            }
-            if (definitions.getAction(persona.getId(), actionPlugin, actionId) != null) {
-                definitions.removeAction(persona.getId(), actionPlugin, actionId);
+            if (definitions.getAction(tenantId, actionPlugin, actionId) != null) {
+                definitions.removeAction(tenantId, actionPlugin, actionId);
                 log.debugf("ActionId: %s ", actionId);
                 return ResponseUtil.ok();
             } else {
@@ -258,24 +241,8 @@ public class ActionsHandler {
         }
     }
 
-    private boolean checkPersona() {
-        if (persona == null) {
-            log.warn("Persona is null. Possible issue with accounts integration ? ");
-            return false;
-        }
-        if (isEmpty(persona.getId())) {
-            log.warn("Persona is empty. Possible issue with accounts integration ? ");
-            return false;
-        }
-        return true;
-    }
-
     private boolean isEmpty(Map map) {
         return map == null || map.isEmpty();
-    }
-
-    private boolean isEmpty(Collection collection) {
-        return collection == null || collection.isEmpty();
     }
 
     private boolean isEmpty(String s) {

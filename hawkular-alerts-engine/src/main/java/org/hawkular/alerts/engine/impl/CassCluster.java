@@ -49,6 +49,8 @@ public class CassCluster {
 
     private static Session session = null;
 
+    private static boolean initialized = false;
+
     private static CassCluster instance = new CassCluster();
 
     private CassCluster() { }
@@ -82,6 +84,7 @@ public class CassCluster {
                 }
             }
         }
+        initialized = true;
     }
 
     private String substituteVars(String cql, Map<String, String> vars) {
@@ -133,10 +136,13 @@ public class CassCluster {
                     }
                 }
             }
-            if (session != null) {
+            if (session != null && !initialized) {
                 String keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
                 instance.initScheme(session, keyspace);
             }
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
         }
         return session;
     }
