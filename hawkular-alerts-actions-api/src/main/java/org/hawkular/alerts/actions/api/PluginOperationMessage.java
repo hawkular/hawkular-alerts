@@ -28,7 +28,7 @@ import java.util.Set;
  *
  * @author Lucas Ponce
  */
-public interface PluginOpMessage {
+public interface PluginOperationMessage {
 
     enum Operation {
         REGISTRATION

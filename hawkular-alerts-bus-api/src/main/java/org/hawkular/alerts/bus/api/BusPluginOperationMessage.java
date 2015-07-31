@@ -18,7 +18,7 @@ package org.hawkular.alerts.bus.api;
 
 import java.util.Map;
 import java.util.Set;
-import org.hawkular.alerts.actions.api.PluginOpMessage;
+import org.hawkular.alerts.actions.api.PluginOperationMessage;
 import org.hawkular.bus.common.BasicMessage;
 
 /**
@@ -26,17 +26,17 @@ import org.hawkular.bus.common.BasicMessage;
  *
  * @author Lucas Ponce
  */
-public class BusPluginOpMessage extends BasicMessage implements PluginOpMessage {
+public class BusPluginOperationMessage extends BasicMessage implements PluginOperationMessage {
 
     Operation operation;
     String actionPlugin;
     Set<String> propertyNames;
     Map<String, String> defaultProperties;
 
-    public BusPluginOpMessage() {
+    public BusPluginOperationMessage() {
     }
 
-    public BusPluginOpMessage(Operation operation, String actionPlugin, Set<String> propertyNames,
+    public BusPluginOperationMessage(Operation operation, String actionPlugin, Set<String> propertyNames,
             Map<String, String> defaultProperties) {
         this.operation = operation;
         this.actionPlugin = actionPlugin;

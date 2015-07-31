@@ -29,7 +29,7 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
 
 /**
- * Main bus listener for plugins implementation.
+ * Main standalone listener for plugins implementation.
  *
  * @author Lucas Ponce
  */

@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.actions.bus;
 
+import static org.hawkular.alerts.actions.api.PluginOperationMessage.Operation.REGISTRATION;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -29,8 +31,7 @@ import javax.jms.JMSException;
 import javax.jms.QueueConnectionFactory;
 
 import org.hawkular.alerts.actions.api.ActionPluginListener;
-import org.hawkular.alerts.actions.api.PluginOpMessage;
-import org.hawkular.alerts.bus.api.BusPluginOpMessage;
+import org.hawkular.alerts.bus.api.BusPluginOperationMessage;
 import org.hawkular.bus.common.ConnectionContextFactory;
 import org.hawkular.bus.common.Endpoint;
 import org.hawkular.bus.common.MessageId;
@@ -90,7 +91,7 @@ public class BusActionPluginRegister {
             Map<String, ActionPluginListener> plugins = ActionPlugins.getPlugins();
             for (String actionPlugin : plugins.keySet()) {
                 ActionPluginListener actionPluginListener = plugins.get(actionPlugin);
-                BusPluginOpMessage msg = new BusPluginOpMessage(PluginOpMessage.Operation.REGISTRATION,
+                BusPluginOperationMessage msg = new BusPluginOperationMessage(REGISTRATION,
                         actionPlugin,
                         actionPluginListener.getProperties(),
                         actionPluginListener.getDefaultProperties());

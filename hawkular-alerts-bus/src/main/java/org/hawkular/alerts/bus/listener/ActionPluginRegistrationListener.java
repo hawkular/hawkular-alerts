@@ -29,7 +29,7 @@ import javax.jms.MessageListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.bus.log.MsgLogger;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
-import org.hawkular.alerts.bus.api.BusPluginOpMessage;
+import org.hawkular.alerts.bus.api.BusPluginOperationMessage;
 import org.jboss.logging.Logger;
 
 /**
@@ -42,7 +42,7 @@ import org.jboss.logging.Logger;
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAlertsPluginsQueue")})
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
-public class ActionPluginRegistrationListener extends BasicMessageListener<BusPluginOpMessage>  {
+public class ActionPluginRegistrationListener extends BasicMessageListener<BusPluginOperationMessage>  {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(ActionPluginRegistrationListener.class);
 
@@ -50,7 +50,7 @@ public class ActionPluginRegistrationListener extends BasicMessageListener<BusPl
     DefinitionsService definitions;
 
     @Override
-    protected void onBasicMessage(BusPluginOpMessage msg) {
+    protected void onBasicMessage(BusPluginOperationMessage msg) {
         log.debugf("Message received: [%s]", msg);
         String actionPlugin = msg.getActionPlugin();
         if (msg.getOperation() == null) {

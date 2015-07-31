@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * Define an alerts actions plugin implementation
- * Plugin must have a valid name that will be used at registration phase
+ * Plugin must have a unique name that will be used at registration phase
  * Plugin must implement ActionPluginListener interface
  *
  * @author Lucas Ponce

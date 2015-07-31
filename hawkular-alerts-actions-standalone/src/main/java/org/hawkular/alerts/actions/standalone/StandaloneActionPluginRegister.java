@@ -33,7 +33,7 @@ import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 
 /**
- * Main bus register for plugins implementations
+ * Main standalone register for plugins implementations
  *
  * @author Lucas Ponce
  */
