@@ -46,7 +46,8 @@ public class FilePlugin implements ActionPluginListener {
     private ObjectMapper objectMapper;
 
     public FilePlugin() {
-        defaultProperties.put("path", "/tmp/hawkular/actions/file");
+        defaultProperties.put("path",
+                new File(System.getProperty("java.io.tmpdir"), "hawkular/actions/file").getAbsolutePath());
         objectMapper = new ObjectMapper();
     }
 
