@@ -17,16 +17,16 @@
 package org.hawkular.alerts.actions.standalone;
 
 import java.util.Map;
-
 import java.util.Set;
+
 import javax.annotation.PostConstruct;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
-
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.ActionsService;

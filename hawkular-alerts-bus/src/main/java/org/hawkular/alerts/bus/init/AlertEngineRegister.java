@@ -16,17 +16,16 @@
  */
 package org.hawkular.alerts.bus.init;
 
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import org.hawkular.alerts.api.services.ActionsService;
-import org.hawkular.alerts.bus.sender.ActionPluginSender;
-import org.jboss.logging.Logger;
-
-
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
+
+import org.hawkular.alerts.api.services.ActionsService;
+import org.hawkular.alerts.bus.sender.ActionPluginSender;
+import org.jboss.logging.Logger;
 
 /**
  * A helper class to initialize bus callbacks into the alerts engine.

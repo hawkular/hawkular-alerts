@@ -16,10 +16,10 @@
  */
 package org.hawkular.alerts.rest;
 
-import org.jboss.logging.Logger;
-
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
+
+import org.jboss.logging.Logger;
 
 /**
  * Base class for REST module.

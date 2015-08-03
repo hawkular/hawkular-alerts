@@ -19,9 +19,10 @@ package org.hawkular.alerts.actions.snmp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import org.hawkular.alerts.actions.api.MsgLogger;
+
 import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.PluginMessage;
 
 /**

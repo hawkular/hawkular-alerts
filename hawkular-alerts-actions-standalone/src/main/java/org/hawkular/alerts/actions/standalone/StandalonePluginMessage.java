@@ -17,6 +17,7 @@
 package org.hawkular.alerts.actions.standalone;
 
 import java.util.Map;
+
 import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.action.Action;
 

@@ -31,9 +31,9 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 
-import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.jboss.logging.Logger;

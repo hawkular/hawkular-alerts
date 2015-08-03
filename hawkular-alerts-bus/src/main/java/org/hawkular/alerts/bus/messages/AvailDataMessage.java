@@ -16,9 +16,11 @@
  */
 package org.hawkular.alerts.bus.messages;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
+
 import org.hawkular.bus.common.BasicMessage;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * A bus message for messages on HawkularAvailData Topic.

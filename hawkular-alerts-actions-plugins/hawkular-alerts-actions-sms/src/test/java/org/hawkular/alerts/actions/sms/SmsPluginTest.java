@@ -25,12 +25,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-
-import com.google.common.collect.ImmutableList;
-import com.twilio.sdk.resource.factory.MessageFactory;
-
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.hawkular.alerts.actions.api.PluginMessage;
@@ -49,6 +46,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import com.google.common.collect.ImmutableList;
+import com.twilio.sdk.resource.factory.MessageFactory;
 
 /**
  * @author Thomas Segismont

@@ -16,21 +16,21 @@
  */
 package org.hawkular.alerts.bus.sender;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.IOException;
 
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
-import javax.jms.TopicConnectionFactory;
 import javax.jms.JMSException;
+import javax.jms.TopicConnectionFactory;
 import javax.naming.InitialContext;
 
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.ActionListener;
+import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.bus.api.BusPluginMessage;
 import org.hawkular.alerts.bus.log.MsgLogger;
 import org.hawkular.bus.common.ConnectionContextFactory;

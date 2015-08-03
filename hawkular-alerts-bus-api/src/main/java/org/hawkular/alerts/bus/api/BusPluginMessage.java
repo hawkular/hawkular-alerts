@@ -16,11 +16,13 @@
  */
 package org.hawkular.alerts.bus.api;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Map;
+
 import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.bus.common.BasicMessage;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Message send from the alerts engine through the bus and received by the action plugins architecture.

@@ -16,9 +16,10 @@
  */
 package org.hawkular.alerts.api.model.action;
 
+import org.hawkular.alerts.api.model.condition.Alert;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import org.hawkular.alerts.api.model.condition.Alert;
 
 /**
  * A base class for action representation from the perspective of the alerts engine.

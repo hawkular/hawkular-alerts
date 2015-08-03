@@ -16,9 +16,6 @@
  */
 package org.hawkular.alerts.actions.email;
 
-import static org.hawkular.alerts.api.model.condition.Alert.Status;
-import static org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
-import static org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
@@ -35,6 +32,7 @@ import javax.mail.Message;
 import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.condition.Alert.Status;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -43,9 +41,11 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Availability;
+import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

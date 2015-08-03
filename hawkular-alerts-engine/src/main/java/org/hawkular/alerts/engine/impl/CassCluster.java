@@ -16,19 +16,21 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.util.Map;
+
+import org.hawkular.alerts.engine.util.TokenReplacingReader;
+import org.jboss.logging.Logger;
+
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.util.Map;
-import org.hawkular.alerts.engine.util.TokenReplacingReader;
-import org.jboss.logging.Logger;
 
 /**
  * Cassandra cluster representation and session factory.
