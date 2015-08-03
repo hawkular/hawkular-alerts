@@ -108,10 +108,13 @@ public class Dampening {
      * no time limit for the evaluations.
      * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
-     * @param numConsecutiveTrueEvals the numConsecutiveTrueEvals
+     * @param numConsecutiveTrueEvals the numConsecutiveTrueEvals, >= 1.
      * @return the configured Dampening
      */
     public static Dampening forStrict(String triggerId, Mode triggerMode, int numConsecutiveTrueEvals) {
+        if (numConsecutiveTrueEvals < 1) {
+            throw new IllegalArgumentException("NumConsecutiveTrueEvals must be >= 1");
+        }
         return new Dampening(triggerId, triggerMode, Type.STRICT, numConsecutiveTrueEvals, numConsecutiveTrueEvals, 0);
     }
 
@@ -120,11 +123,17 @@ public class Dampening {
      * no time limit for the evaluations.
      * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
-     * @param numTrueEvals the numTrueEvals
-     * @param numTotalEvals the numTotalEvals
+     * @param numTrueEvals the numTrueEvals, >=1
+     * @param numTotalEvals the numTotalEvals, > numTotalEvals
      * @return the configured Dampening
      */
     public static Dampening forRelaxedCount(String triggerId, Mode triggerMode, int numTrueEvals, int numTotalEvals) {
+        if (numTrueEvals < 1) {
+            throw new IllegalArgumentException("NumTrueEvals must be >= 1");
+        }
+        if (numTotalEvals <= numTrueEvals) {
+            throw new IllegalArgumentException("NumTotalEvals must be > NumTrueEvals");
+        }
         return new Dampening(triggerId, triggerMode, Type.RELAXED_COUNT, numTrueEvals, numTotalEvals, 0);
     }
 
@@ -134,12 +143,18 @@ public class Dampening {
      * the requisite data must be supplied in a timely manner.
      * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
-     * @param numTrueEvals the numTrueEvals
+     * @param numTrueEvals the numTrueEvals, >= 1.
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
-     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
+     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times. >=1ms.
      * @return the configured Dampening
      */
     public static Dampening forRelaxedTime(String triggerId, Mode triggerMode, int numTrueEvals, long evalPeriod) {
+        if (numTrueEvals < 1) {
+            throw new IllegalArgumentException("NumTrueEvals must be >= 1");
+        }
+        if (evalPeriod < 1) {
+            throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
+        }
         return new Dampening(triggerId, triggerMode, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
     }
 
@@ -150,10 +165,13 @@ public class Dampening {
      * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
-     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
+     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.  >=1ms.
      * @return the configured Dampening
      */
     public static Dampening forStrictTime(String triggerId, Mode triggerMode, long evalPeriod) {
+        if (evalPeriod < 1) {
+            throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
+        }
         return new Dampening(triggerId, triggerMode, Type.STRICT_TIME, 0, 0, evalPeriod);
     }
 
@@ -164,10 +182,13 @@ public class Dampening {
      * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
-     * collectionTimes (i.e. the timestamp on the data) but rather the clock starts at true-evaluation-time-1.
+     * collectionTimes (i.e. the timestamp on the data) but rather the clock starts at true-evaluation-time-1. >=1ms.
      * @return the configured Dampening
      */
     public static Dampening forStrictTimeout(String triggerId, Mode triggerMode, long evalPeriod) {
+        if (evalPeriod < 1) {
+            throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
+        }
         return new Dampening(triggerId, triggerMode, Type.STRICT_TIMEOUT, 0, 0, evalPeriod);
     }
 

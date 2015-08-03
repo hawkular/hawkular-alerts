@@ -256,7 +256,7 @@ rule ProvideDefaultDampening
         if (log != null && log.isDebugEnabled()) {
             log.debug("Adding default " + $tmode + " dampening for trigger! " + $t.getId());
         }
-        Dampening d = new Dampening( $tid, $tmode, Dampening.Type.STRICT, 1, 1, 0L );
+        Dampening d = Dampening.forStrict( $tid, $tmode, 1 );
         insert( d );
 end
 

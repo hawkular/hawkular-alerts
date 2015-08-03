@@ -113,13 +113,15 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
-            Thread.sleep(1000);
+        for ( int i=0; i < 20; ++i ) {
+            Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger"] )
             if ( resp.status == 200 && resp.data != null && resp.data.size > 0) {
+                if ( i > 10 ) {
+                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                }
                 break;
             }
             assertEquals(200, resp.status)
@@ -227,13 +229,15 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
-            Thread.sleep(1000);
+        for ( int i=0; i < 20; ++i ) {
+            Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
+                if ( i > 10 ) {
+                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                }
                 break;
             }
             assertEquals(200, resp.status)
@@ -271,13 +275,15 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
-            Thread.sleep(1000);
+        for ( int i=0; i < 20; ++i ) {
+            Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"RESOLVED"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
+                if ( i > 10 ) {
+                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                }
                 break;
             }
             assertEquals(200, resp.status)
@@ -349,12 +355,14 @@ class LifecycleITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 20; ++i ) {
-            println "SLEEP!" ;
-            Thread.sleep(1000);
+            Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger"] )
             if ( resp.status == 200 && resp.data.size() == 5 ) {
+                if ( i > 10 ) {
+                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                }
                 break;
             }
         }
@@ -598,13 +606,15 @@ class LifecycleITest extends AbstractITestBase {
         }
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
-            Thread.sleep(1000);
+        for ( int i=0; i < 20; ++i ) {
+            Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger"] )
             if ( resp.status == 200 && resp.data != null && resp.data.size() == 5 ) {
+                if ( i > 10 ) {
+                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                }
                 break;
             }
         }
@@ -730,14 +740,16 @@ class LifecycleITest extends AbstractITestBase {
         /*
              Step 9: Wait until the engine detects the data, matches the conditions and sends an alert
          */
-        for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
-            Thread.sleep(1000);
+        for ( int i=0; i < 20; ++i ) {
+            Thread.sleep(500);
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
             /*
                 We should have only 1 alert
              */
             if ( resp.status == 200 && resp.data.size() == 1 ) {
+                if ( i > 10 ) {
+                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                }
                 break;
             }
             assertEquals(200, resp.status)
@@ -800,14 +812,16 @@ class LifecycleITest extends AbstractITestBase {
              Step 15: Wait until the engine detects the data
                       It should retrieve 2 data
          */
-        for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
-            Thread.sleep(1000);
+        for ( int i=0; i < 20; ++i ) {
+            Thread.sleep(500);
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
             /*
                 We should have only 2 alert
              */
             if ( resp.status == 200 && resp.data.size() == 2 ) {
+                if ( i > 10 ) {
+                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                }
                 break;
             }
             assertEquals(200, resp.status)
@@ -880,13 +894,15 @@ class LifecycleITest extends AbstractITestBase {
         }
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
-            Thread.sleep(1000);
+        for ( int i=0; i < 20; ++i ) {
+            Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1 because the trigger should have disabled after firing
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoenable-trigger"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
+                if ( i > 10 ) {
+                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                }
                 break;
             }
         }
@@ -994,13 +1010,15 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
-            Thread.sleep(1000);
+        for ( int i=0; i < 20; ++i ) {
+            Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-autoresolve-trigger"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
+                if ( i > 10 ) {
+                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                }
                 break;
             }
             assertEquals(200, resp.status)
@@ -1044,14 +1062,16 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
-            println "SLEEP!" ;
-            Thread.sleep(1000);
+        for ( int i=0; i < 20; ++i ) {
+            Thread.sleep(500);
 
             // FETCH recent OPEN alerts for trigger, there should be 1
             resp = client.get(path: "",
                 query: [startTime:start,triggerIds:"test-manual-autoresolve-trigger",statuses:"OPEN"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
+                if ( i > 10 ) {
+                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                }
                 break;
             }
             assertEquals(200, resp.status)
