@@ -19,9 +19,10 @@ package org.hawkular.alerts.actions.aerogear;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import org.hawkular.alerts.actions.api.MsgLogger;
+
 import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.jboss.aerogear.unifiedpush.DefaultPushSender;

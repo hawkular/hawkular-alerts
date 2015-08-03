@@ -16,9 +16,11 @@
  */
 package org.hawkular.alerts.actions.api;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Map;
+
 import org.hawkular.alerts.api.model.action.Action;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * A message sent to the plugin from the alerts engine

@@ -16,7 +16,6 @@
  */
 package org.hawkular.alerts.actions.file;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -24,12 +23,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.jboss.logging.Logger;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * A simple file action plugin

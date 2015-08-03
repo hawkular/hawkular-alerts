@@ -17,6 +17,7 @@
 package org.hawkular.alerts.api.model.paging;
 
 import java.util.Comparator;
+
 import org.hawkular.alerts.api.model.condition.Alert;
 
 /**

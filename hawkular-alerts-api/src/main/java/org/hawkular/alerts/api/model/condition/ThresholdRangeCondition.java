@@ -16,9 +16,10 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * A numeric threshold range condition.

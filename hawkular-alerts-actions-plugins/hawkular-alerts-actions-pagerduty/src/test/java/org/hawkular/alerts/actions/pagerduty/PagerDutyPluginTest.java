@@ -20,16 +20,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 
-import com.google.gson.InstanceCreator;
-import com.squareup.pagerduty.incidents.FakePagerDuty;
-import com.squareup.pagerduty.incidents.NotifyResult;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
@@ -44,6 +41,10 @@ import org.hawkular.alerts.api.model.data.NumericData;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.google.gson.InstanceCreator;
+import com.squareup.pagerduty.incidents.FakePagerDuty;
+import com.squareup.pagerduty.incidents.NotifyResult;
 
 /**
  * @author Thomas Segismont

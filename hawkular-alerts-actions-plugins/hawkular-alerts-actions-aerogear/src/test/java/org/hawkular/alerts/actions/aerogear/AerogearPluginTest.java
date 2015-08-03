@@ -40,12 +40,12 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.NumericData;
+import org.jboss.aerogear.unifiedpush.PushSender;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.jboss.aerogear.unifiedpush.PushSender;
 
 /**
  * @author Thomas Segismont
