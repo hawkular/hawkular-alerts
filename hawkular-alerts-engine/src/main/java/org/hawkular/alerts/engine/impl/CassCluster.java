@@ -63,7 +63,7 @@ public class CassCluster {
             keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
         }
 
-        log.debugf("Creating Schema for keyspace " + keyspace);
+        log.debugf("Checking Schema existence for keyspace: %s", keyspace);
 
         ResultSet resultSet = session.execute("SELECT * FROM system.schema_keyspaces WHERE keyspace_name = '" +
                 keyspace + "'");
@@ -72,21 +72,28 @@ public class CassCluster {
             return;
         }
 
+        log.infof("Creating Schema for keyspace %s", keyspace);
+
         ImmutableMap<String, String> schemaVars = ImmutableMap.of("keyspace", keyspace);
 
+        String updatedCQL = null;
         try (InputStream inputStream = CassCluster.class.getResourceAsStream("/hawkular-alerts-schema.cql");
              InputStreamReader reader = new InputStreamReader(inputStream)) {
             String content = CharStreams.toString(reader);
 
             for (String cql : content.split("(?m)^-- #.*$")) {
                 if (!cql.startsWith("--")) {
-                    String updatedCQL = substituteVars(cql.trim(), schemaVars);
+                    updatedCQL = substituteVars(cql.trim(), schemaVars);
                     log.debugf("Executing CQL:\n" + updatedCQL + "\n");
                     session.execute(updatedCQL);
                 }
             }
+        } catch (Exception e) {
+            log.errorf("Failed schema creation: %s\nEXECUTING CQL:\n%s", e, updatedCQL);
         }
         initialized = true;
+
+        log.infof("Done creating Schema for keyspace: " + keyspace);
     }
 
     private String substituteVars(String cql, Map<String, String> vars) {
@@ -103,7 +110,7 @@ public class CassCluster {
         }
     }
 
-    public static Session getSession() throws Exception {
+    public static synchronized Session getSession() throws Exception {
         if (cluster == null && session == null) {
             String cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, ALERTS_CASSANDRA_PORT_ENV, "9042");
             String nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, ALERTS_CASSANDRA_NODES_ENV, "127.0.0.1");
