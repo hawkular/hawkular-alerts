@@ -46,9 +46,10 @@ import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Match;
+import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.model.trigger.TriggerTemplate;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 import org.hawkular.alerts.api.services.DefinitionsListener;
@@ -179,9 +180,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     boolean autoResolve = (Boolean)t.get("autoResolve");
                     boolean autoResolveAlerts = (Boolean)t.get("autoResolveAlerts");
                     Severity severity = Severity.valueOf((String)t.get("severity"));
-                    TriggerTemplate.Match firingMatch = TriggerTemplate.Match.valueOf((String)t.get("firingMatch"));
-                    TriggerTemplate.Match autoResolveMatch = TriggerTemplate.Match
-                            .valueOf((String)t.get("autoResolveMatch"));
+                    Match firingMatch = Match.valueOf((String) t.get("firingMatch"));
+                    Match autoResolveMatch = Match.valueOf((String) t.get("autoResolveMatch"));
                     List<Map<String, String>> actions = (List<Map<String, String>>)t.get("actions");
                     Map<String, String> context = (Map<String, String>)t.get("context");
 
@@ -218,7 +218,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 for (Map<String, Object> c : aConditions) {
                     String tenantId = (String)c.get("tenantId");
                     String triggerId = (String)c.get("triggerId");
-                    Trigger.Mode triggerMode = Trigger.Mode.valueOf((String)c.get("triggerMode"));
+                    Mode triggerMode = Mode.valueOf((String) c.get("triggerMode"));
                     int conditionSetSize = (Integer)c.get("conditionSetSize");
                     int conditionSetIndex = (Integer)c.get("conditionSetIndex");
                     String type = (String)c.get("type");
@@ -344,7 +344,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 for (Map<String, Object> d : aDampenings) {
                     String tenantId = (String)d.get("tenantId");
                     String triggerId = (String)d.get("triggerId");
-                    Trigger.Mode triggerMode = Trigger.Mode.valueOf((String)d.get("triggerMode"));
+                    Mode triggerMode = Mode.valueOf((String) d.get("triggerMode"));
                     String type = (String)d.get("type");
                     int evalTrueSetting = (Integer)d.get("evalTrueSetting");
                     int evalTotalSetting = (Integer)d.get("evalTotalSetting");
@@ -742,8 +742,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         trigger.setAutoResolve(row.getBool("autoResolve"));
         trigger.setAutoResolveAlerts(row.getBool("autoResolveAlerts"));
         trigger.setSeverity(Severity.valueOf(row.getString("severity")));
-        trigger.setFiringMatch(TriggerTemplate.Match.valueOf(row.getString("firingMatch")));
-        trigger.setAutoResolveMatch(TriggerTemplate.Match.valueOf(row.getString("autoResolveMatch")));
+        trigger.setFiringMatch(Match.valueOf(row.getString("firingMatch")));
+        trigger.setAutoResolveMatch(Match.valueOf(row.getString("autoResolveMatch")));
         trigger.setId(row.getString("id"));
         trigger.setEnabled(row.getBool("enabled"));
         trigger.setTenantId(row.getString("tenantId"));
@@ -979,7 +979,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Dampening> getTriggerDampenings(String tenantId, String triggerId, Trigger.Mode triggerMode)
+    public Collection<Dampening> getTriggerDampenings(String tenantId, String triggerId, Mode triggerMode)
             throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
@@ -1064,7 +1064,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         Dampening dampening = new Dampening();
         dampening.setTenantId(row.getString("tenantId"));
         dampening.setTriggerId(row.getString("triggerId"));
-        dampening.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+        dampening.setTriggerMode(Mode.valueOf(row.getString("triggerMode")));
         dampening.setType(Dampening.Type.valueOf(row.getString("type")));
         dampening.setEvalTrueSetting(row.getInt("evalTrueSetting"));
         dampening.setEvalTotalSetting(row.getInt("evalTotalSetting"));
@@ -1073,7 +1073,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Condition> addCondition(String tenantId, String triggerId, Trigger.Mode triggerMode,
+    public Collection<Condition> addCondition(String tenantId, String triggerId, Mode triggerMode,
             Condition condition) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
@@ -1114,7 +1114,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         String triggerId = condition.getTriggerId();
-        Trigger.Mode triggerMode = condition.getTriggerMode();
+        Mode triggerMode = condition.getTriggerMode();
         Collection<Condition> conditions = getTriggerConditions(tenantId, triggerId, triggerMode);
 
         int i = 0;
@@ -1150,7 +1150,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     " does not exist.");
         }
         String triggerId = existingCondition.getTriggerId();
-        Trigger.Mode triggerMode = existingCondition.getTriggerMode();
+        Mode triggerMode = existingCondition.getTriggerMode();
         Collection<Condition> conditions = getTriggerConditions(tenantId, triggerId, triggerMode);
 
         int size = conditions.size();
@@ -1167,7 +1167,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Condition> setConditions(String tenantId, String triggerId, Trigger.Mode triggerMode,
+    public Collection<Condition> setConditions(String tenantId, String triggerId, Mode triggerMode,
             Collection<Condition> conditions) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
@@ -1409,7 +1409,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return tags;
     }
 
-    private void removeConditions(String tenantId, String triggerId, Trigger.Mode triggerMode) throws Exception {
+    private void removeConditions(String tenantId, String triggerId, Mode triggerMode) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must not be null");
         }
@@ -1525,7 +1525,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Condition> getTriggerConditions(String tenantId, String triggerId, Trigger.Mode triggerMode)
+    public Collection<Condition> getTriggerConditions(String tenantId, String triggerId, Mode triggerMode)
             throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
@@ -1618,7 +1618,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     AvailabilityCondition aCondition = new AvailabilityCondition();
                     aCondition.setTenantId(row.getString("tenantId"));
                     aCondition.setTriggerId(row.getString("triggerId"));
-                    aCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    aCondition.setTriggerMode(Mode.valueOf(row.getString("triggerMode")));
                     aCondition.setConditionSetSize(row.getInt("conditionSetSize"));
                     aCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
                     aCondition.setDataId(row.getString("dataId"));
@@ -1629,7 +1629,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     CompareCondition cCondition = new CompareCondition();
                     cCondition.setTenantId(row.getString("tenantId"));
                     cCondition.setTriggerId(row.getString("triggerId"));
-                    cCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    cCondition.setTriggerMode(Mode.valueOf(row.getString("triggerMode")));
                     cCondition.setConditionSetSize(row.getInt("conditionSetSize"));
                     cCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
                     cCondition.setDataId(row.getString("dataId"));
@@ -1642,7 +1642,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     ExternalCondition eCondition = new ExternalCondition();
                     eCondition.setTenantId(row.getString("tenantId"));
                     eCondition.setTriggerId(row.getString("triggerId"));
-                    eCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    eCondition.setTriggerMode(Mode.valueOf(row.getString("triggerMode")));
                     eCondition.setConditionSetSize(row.getInt("conditionSetSize"));
                     eCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
                     eCondition.setDataId(row.getString("dataId"));
@@ -1654,7 +1654,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     ThresholdRangeCondition rCondition = new ThresholdRangeCondition();
                     rCondition.setTenantId(row.getString("tenantId"));
                     rCondition.setTriggerId(row.getString("triggerId"));
-                    rCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    rCondition.setTriggerMode(Mode.valueOf(row.getString("triggerMode")));
                     rCondition.setConditionSetSize(row.getInt("conditionSetSize"));
                     rCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
                     rCondition.setDataId(row.getString("dataId"));
@@ -1671,7 +1671,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     StringCondition sCondition = new StringCondition();
                     sCondition.setTenantId(row.getString("tenantId"));
                     sCondition.setTriggerId(row.getString("triggerId"));
-                    sCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    sCondition.setTriggerMode(Mode.valueOf(row.getString("triggerMode")));
                     sCondition.setConditionSetSize(row.getInt("conditionSetSize"));
                     sCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
                     sCondition.setDataId(row.getString("dataId"));
@@ -1684,7 +1684,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     ThresholdCondition tCondition = new ThresholdCondition();
                     tCondition.setTenantId(row.getString("tenantId"));
                     tCondition.setTriggerId(row.getString("triggerId"));
-                    tCondition.setTriggerMode(Trigger.Mode.valueOf(row.getString("triggerMode")));
+                    tCondition.setTriggerMode(Mode.valueOf(row.getString("triggerMode")));
                     tCondition.setConditionSetSize(row.getInt("conditionSetSize"));
                     tCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
                     tCondition.setDataId(row.getString("dataId"));

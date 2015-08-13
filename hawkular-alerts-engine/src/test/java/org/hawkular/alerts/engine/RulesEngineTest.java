@@ -50,9 +50,8 @@ import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.data.StringData;
+import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
-import org.hawkular.alerts.api.model.trigger.TriggerTemplate.Match;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.rules.RulesEngine;
 import org.jboss.logging.Logger;
@@ -898,7 +897,7 @@ public class RulesEngineTest {
     @Test
     public void ExternalTest() {
         Trigger t1 = new Trigger("trigger-1", "External-Metrics");
-        ExternalCondition t1c1 = new ExternalCondition("trigger-1", Trigger.Mode.FIRING, 1, 1,
+        ExternalCondition t1c1 = new ExternalCondition("trigger-1", Mode.FIRING, 1, 1,
                 "ExternalData-01", "HawkularMetrics", "metric:5:avg(foo > 100.5)");
 
         datums.add(new StringData("ExternalData-01", 1, "Ignored"));

@@ -16,11 +16,17 @@
  */
 package org.hawkular.alerts.api.model.trigger;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+
+import org.hawkular.alerts.api.model.Severity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * A trigger definition.
@@ -28,14 +34,65 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class Trigger extends TriggerTemplate {
-
-    public enum Mode {
-        FIRING, AUTORESOLVE
-    };
+public class Trigger {
 
     @JsonInclude
+    private String tenantId;
+
+    /** Unique within the tenant */
+    @JsonInclude
     private String id;
+
+    /** For display */
+    @JsonInclude
+    private String name;
+
+    @JsonInclude
+    private String description;
+
+    /** Disable automatically after firing */
+    @JsonInclude
+    private boolean autoDisable;
+
+    /** Enable automatically if disabled and resolved manually */
+    @JsonInclude
+    private boolean autoEnable;
+
+    /** Switch to auto-resolve mode after firing */
+    @JsonInclude
+    private boolean autoResolve;
+
+    /** Resolve all unresolved alerts when auto-resolve condition-set is satisfied */
+    @JsonInclude
+    private boolean autoResolveAlerts;
+
+    @JsonInclude
+    private Severity severity;
+
+    /** A map with key based on actionPlugin and value a set of action's ids */
+    @JsonInclude(Include.NON_EMPTY)
+    private Map<String, Set<String>> actions;
+
+    @JsonInclude
+    private Match firingMatch;
+
+    @JsonInclude
+    private Match autoResolveMatch;
+
+    @JsonInclude(Include.NON_EMPTY)
+    protected Map<String, String> context;
+
+    /** Is a parent trigger, non-firing, used to manage a set of child triggers. */
+    @JsonInclude
+    private boolean parent;
+
+    /** Is a child trigger of the specified triggerId */
+    @JsonInclude
+    private String childOf;
+
+    /** Is a child trigger of the specified triggerId but currently orphaned (i.e. customized) */
+    @JsonInclude
+    private boolean orphan;
 
     @JsonInclude
     private boolean enabled;
@@ -45,9 +102,6 @@ public class Trigger extends TriggerTemplate {
 
     @JsonIgnore
     private transient Match match;
-
-    @JsonInclude
-    private String tenantId;
 
     public Trigger() {
         /*
@@ -73,24 +127,28 @@ public class Trigger extends TriggerTemplate {
     }
 
     public Trigger(String id, String name, Map<String, String> context) {
-        super(name, context);
-
         if (id == null || id.isEmpty()) {
             throw new IllegalArgumentException("Trigger id must be non-empty");
         }
         this.id = id;
+        this.name = name;
+        this.context = context;
+
+        this.autoDisable = false;
+        this.autoEnable = false;
+        this.autoResolve = false;
+        this.autoResolveAlerts = true;
+        this.severity = Severity.MEDIUM;
+        this.firingMatch = Match.ALL;
+        this.autoResolveMatch = Match.ALL;
+        this.actions = new HashMap<>();
+        this.parent = false;
+        this.childOf = null;
+        this.orphan = false;
 
         this.enabled = false;
         this.mode = Mode.FIRING;
         this.match = Match.ALL;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
     }
 
     public String getId() {
@@ -99,6 +157,150 @@ public class Trigger extends TriggerTemplate {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("Trigger name must be non-empty.");
+        }
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public boolean isAutoDisable() {
+        return autoDisable;
+    }
+
+    public void setAutoDisable(boolean autoDisable) {
+        this.autoDisable = autoDisable;
+    }
+
+    public boolean isAutoEnable() {
+        return autoEnable;
+    }
+
+    public void setAutoEnable(boolean autoEnable) {
+        this.autoEnable = autoEnable;
+    }
+
+    public boolean isAutoResolve() {
+        return autoResolve;
+    }
+
+    public void setAutoResolve(boolean autoResolve) {
+        this.autoResolve = autoResolve;
+    }
+
+    public boolean isAutoResolveAlerts() {
+        return autoResolveAlerts;
+    }
+
+    public void setAutoResolveAlerts(boolean autoResolveAlerts) {
+        this.autoResolveAlerts = autoResolveAlerts;
+    }
+
+    public Severity getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(Severity severity) {
+        this.severity = severity;
+    }
+
+    public Match getFiringMatch() {
+        return firingMatch;
+    }
+
+    public Match getAutoResolveMatch() {
+        return autoResolveMatch;
+    }
+
+    public Map<String, Set<String>> getActions() {
+        return actions;
+    }
+
+    public void setActions(Map<String, Set<String>> actions) {
+        this.actions = actions;
+    }
+
+    public void addAction(String actionPlugin, String actionId) {
+        if (actionPlugin == null || actionPlugin.isEmpty()) {
+            throw new IllegalArgumentException("ActionPlugin must be non-empty.");
+        }
+        if (actionId == null || actionId.isEmpty()) {
+            throw new IllegalArgumentException("ActionId must be non-empty.");
+        }
+        if (actions.get(actionPlugin) == null) {
+            actions.put(actionPlugin, new HashSet<>());
+        }
+        actions.get(actionPlugin).add(actionId);
+    }
+
+    public void addActions(String actionPlugin, Set<String> actionIds) {
+        if (actionPlugin == null || actionPlugin.isEmpty()) {
+            throw new IllegalArgumentException("ActionPlugin must be non-empty.");
+        }
+        if (actionIds == null) {
+            throw new IllegalArgumentException("ActionIds must be non null");
+        }
+        if (actions.get(actionPlugin) == null) {
+            actions.put(actionPlugin, new HashSet<>());
+        }
+        actions.get(actionPlugin).addAll(actionIds);
+    }
+
+    public void removeAction(String actionPlugin, String actionId) {
+        if (actionPlugin == null || actionPlugin.isEmpty()) {
+            throw new IllegalArgumentException("actionPlugin must be non-empty.");
+        }
+        if (actionId == null || actionId.isEmpty()) {
+            throw new IllegalArgumentException("ActionId must be non-empty.");
+        }
+        if (actions.get(actionPlugin) != null) {
+            actions.get(actionPlugin).remove(actionId);
+        }
+    }
+
+    public Map<String, String> getContext() {
+        return context;
+    }
+
+    public void setContext(Map<String, String> context) {
+        this.context = context;
+    }
+
+    /**
+     * Add context information.
+     * @param name context key.
+     * @param value context value.
+     */
+    public void addProperty(String name, String value) {
+        if (null == name || null == value) {
+            throw new IllegalArgumentException("Propety must have non-null name and value");
+        }
+        if (null == context) {
+            context = new HashMap<>();
+        }
+        context.put(name, value);
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     @JsonIgnore
@@ -120,15 +322,13 @@ public class Trigger extends TriggerTemplate {
         this.match = match;
     }
 
-    @Override
     public void setFiringMatch(Match firingMatch) {
-        super.setFiringMatch(firingMatch);
+        this.firingMatch = firingMatch;
         setMatch(this.mode == Mode.FIRING ? getFiringMatch() : getAutoResolveMatch());
     }
 
-    @Override
     public void setAutoResolveMatch(Match autoResolveMatch) {
-        super.setAutoResolveMatch(autoResolveMatch);
+        this.autoResolveMatch = autoResolveMatch;
         setMatch(this.mode == Mode.FIRING ? getFiringMatch() : getAutoResolveMatch());
     }
 
@@ -147,7 +347,7 @@ public class Trigger extends TriggerTemplate {
         if (o == null || getClass() != o.getClass())
             return false;
 
-        Trigger trigger = (Trigger)o;
+        Trigger trigger = (Trigger) o;
 
         if (id != null ? !id.equals(trigger.id) : trigger.id != null)
             return false;
@@ -164,9 +364,12 @@ public class Trigger extends TriggerTemplate {
 
     @Override
     public String toString() {
-        return "Trigger [tenantId=" + tenantId + " id=" + id + ", enabled=" + enabled + ", mode=" + mode +
-                ", getName()=" + getName() + ", isAutoDisable()=" + isAutoDisable() + ", isAutoEnable()="
-                + isAutoEnable() + ", isAutoResolve()=" + isAutoResolve() + ", context=" + context + "]";
+        return "Trigger [tenantId=" + tenantId + ", id=" + id + ", name=" + name + ", description=" + description
+                + ", autoDisable=" + autoDisable + ", autoEnable=" + autoEnable + ", autoResolve=" + autoResolve
+                + ", autoResolveAlerts=" + autoResolveAlerts + ", severity=" + severity + ", actions=" + actions
+                + ", firingMatch=" + firingMatch + ", autoResolveMatch=" + autoResolveMatch + ", context=" + context
+                + ", parent=" + parent + ", childOf=" + childOf + ", orphan=" + orphan + ", enabled=" + enabled
+                + ", mode=" + mode + "]";
     }
 
 }

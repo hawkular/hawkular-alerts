@@ -43,6 +43,7 @@ import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
@@ -274,12 +275,12 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response getTriggerModeDampenings(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
-            @PathParam("triggerId")
-            final String triggerId,
-            @ApiParam(value = "Trigger mode", required = true)
-            @PathParam("triggerMode")
-            final Trigger.Mode triggerMode) {
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)//
+            @PathParam("triggerId")//
+            final String triggerId,//
+            @ApiParam(value = "Trigger mode", required = true)//
+            @PathParam("triggerMode")//
+            final Mode triggerMode) {
         try {
             Collection<Dampening> dampenings = definitions.getTriggerDampenings(tenantId, triggerId,
                     triggerMode);

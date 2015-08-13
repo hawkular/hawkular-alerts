@@ -42,6 +42,7 @@ CREATE TABLE ${keyspace}.triggers (
     id text,
     enabled boolean,
     context map<text,text>,
+    parent boolean,
     PRIMARY KEY (tenantId, id)
 );
 

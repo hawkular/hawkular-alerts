@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
@@ -139,7 +140,7 @@ public interface DefinitionsService {
      * @return The existing dampenings for the trigger. Not null.
      * @throws Exception on any problem
      */
-    Collection<Dampening> getTriggerDampenings(String tenantId, String triggerId, Trigger.Mode triggerMode)
+    Collection<Dampening> getTriggerDampenings(String tenantId, String triggerId, Mode triggerMode)
             throws Exception;
 
     /**
@@ -182,7 +183,7 @@ public interface DefinitionsService {
      * @return The updated, persisted condition set
      * @throws Exception on any problem
      */
-    Collection<Condition> addCondition(String tenantId, String triggerId, Trigger.Mode triggerMode, Condition condition)
+    Collection<Condition> addCondition(String tenantId, String triggerId, Mode triggerMode, Condition condition)
             throws Exception;
 
     /**
@@ -233,7 +234,7 @@ public interface DefinitionsService {
      * @return The persisted condition set
      * @throws Exception on any problem
      */
-    Collection<Condition> setConditions(String tenantId, String triggerId, Trigger.Mode triggerMode,
+    Collection<Condition> setConditions(String tenantId, String triggerId, Mode triggerMode,
             Collection<Condition> conditions) throws Exception;
 
     Condition getCondition(String tenantId, String conditionId) throws Exception;
@@ -245,7 +246,7 @@ public interface DefinitionsService {
      * @return The existing conditions for the trigger. Not null.
      * @throws Exception on any problem
      */
-    Collection<Condition> getTriggerConditions(String tenantId, String triggerId, Trigger.Mode triggerMode)
+    Collection<Condition> getTriggerConditions(String tenantId, String triggerId, Mode triggerMode)
             throws Exception;
 
     Collection<Condition> getConditions(String tenantId) throws Exception;

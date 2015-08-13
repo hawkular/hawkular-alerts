@@ -16,7 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
+import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
