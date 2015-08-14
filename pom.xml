@@ -94,7 +94,7 @@
     <version.org.hawkular>1.0.0.Alpha3</version.org.hawkular>
     <version.org.hawkular.accounts>1.0.6</version.org.hawkular.accounts>
     <version.org.hawkular.bus>0.2.1</version.org.hawkular.bus>
-    <version.org.hawkular.commons>0.1.1.Final</version.org.hawkular.commons>
+    <version.org.hawkular.commons>0.2.0.Final</version.org.hawkular.commons>
     <version.org.hawkular.nest>0.1.1</version.org.hawkular.nest>
     <version.org.hawkular.metrics>0.4.0.Final</version.org.hawkular.metrics>
     <version.org.jboss.jboss-vfs>3.2.9.Final</version.org.jboss.jboss-vfs>
