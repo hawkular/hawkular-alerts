@@ -18,12 +18,15 @@ package org.hawkular.alerts.api.model.dampening;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
+import org.hawkular.alerts.api.model.trigger.TriggerTemplate.Match;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -84,6 +87,10 @@ public class Dampening {
     private transient long trueEvalsStartTime;
 
     @JsonIgnore
+    // This Map<conditionSetIndex,ConditionEval> holds the most recent eval for each member of the condition set
+    private transient Map<Integer, ConditionEval> currentEvals = new HashMap<>(5);
+
+    @JsonIgnore
     private transient boolean satisfied;
 
     @JsonIgnore
@@ -101,10 +108,13 @@ public class Dampening {
      * no time limit for the evaluations.
      * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
-     * @param numConsecutiveTrueEvals the numConsecutiveTrueEvals
+     * @param numConsecutiveTrueEvals the numConsecutiveTrueEvals, >= 1.
      * @return the configured Dampening
      */
     public static Dampening forStrict(String triggerId, Mode triggerMode, int numConsecutiveTrueEvals) {
+        if (numConsecutiveTrueEvals < 1) {
+            throw new IllegalArgumentException("NumConsecutiveTrueEvals must be >= 1");
+        }
         return new Dampening(triggerId, triggerMode, Type.STRICT, numConsecutiveTrueEvals, numConsecutiveTrueEvals, 0);
     }
 
@@ -113,11 +123,17 @@ public class Dampening {
      * no time limit for the evaluations.
      * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
-     * @param numTrueEvals the numTrueEvals
-     * @param numTotalEvals the numTotalEvals
+     * @param numTrueEvals the numTrueEvals, >=1
+     * @param numTotalEvals the numTotalEvals, > numTotalEvals
      * @return the configured Dampening
      */
     public static Dampening forRelaxedCount(String triggerId, Mode triggerMode, int numTrueEvals, int numTotalEvals) {
+        if (numTrueEvals < 1) {
+            throw new IllegalArgumentException("NumTrueEvals must be >= 1");
+        }
+        if (numTotalEvals <= numTrueEvals) {
+            throw new IllegalArgumentException("NumTotalEvals must be > NumTrueEvals");
+        }
         return new Dampening(triggerId, triggerMode, Type.RELAXED_COUNT, numTrueEvals, numTotalEvals, 0);
     }
 
@@ -127,12 +143,18 @@ public class Dampening {
      * the requisite data must be supplied in a timely manner.
      * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
-     * @param numTrueEvals the numTrueEvals
+     * @param numTrueEvals the numTrueEvals, >= 1.
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
-     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
+     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times. >=1ms.
      * @return the configured Dampening
      */
     public static Dampening forRelaxedTime(String triggerId, Mode triggerMode, int numTrueEvals, long evalPeriod) {
+        if (numTrueEvals < 1) {
+            throw new IllegalArgumentException("NumTrueEvals must be >= 1");
+        }
+        if (evalPeriod < 1) {
+            throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
+        }
         return new Dampening(triggerId, triggerMode, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
     }
 
@@ -143,10 +165,13 @@ public class Dampening {
      * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
-     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.
+     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.  >=1ms.
      * @return the configured Dampening
      */
     public static Dampening forStrictTime(String triggerId, Mode triggerMode, long evalPeriod) {
+        if (evalPeriod < 1) {
+            throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
+        }
         return new Dampening(triggerId, triggerMode, Type.STRICT_TIME, 0, 0, evalPeriod);
     }
 
@@ -157,10 +182,13 @@ public class Dampening {
      * @param triggerId the triggerId
      * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
-     * collectionTimes (i.e. the timestamp on the data) but rather the clock starts at true-evaluation-time-1.
+     * collectionTimes (i.e. the timestamp on the data) but rather the clock starts at true-evaluation-time-1. >=1ms.
      * @return the configured Dampening
      */
     public static Dampening forStrictTimeout(String triggerId, Mode triggerMode, long evalPeriod) {
+        if (evalPeriod < 1) {
+            throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
+        }
         return new Dampening(triggerId, triggerMode, Type.STRICT_TIMEOUT, 0, 0, evalPeriod);
     }
 
@@ -263,6 +291,10 @@ public class Dampening {
         return evalTimeSetting;
     }
 
+    public Map<Integer, ConditionEval> getCurrentEvals() {
+        return currentEvals;
+    }
+
     @JsonIgnore
     public boolean isSatisfied() {
         return satisfied;
@@ -292,13 +324,45 @@ public class Dampening {
         this.tenantId = tenantId;
     }
 
-    public void perform(ConditionEval... conditionEvals) {
-        boolean trueEval = true;
-        for (ConditionEval ce : conditionEvals) {
-            if (!ce.isMatch()) {
-                trueEval = false;
+    public void perform(Match match, ConditionEval conditionEval) {
+        if (null == match) {
+            throw new IllegalArgumentException("Match can not be null");
+        }
+        if (null == conditionEval) {
+            throw new IllegalArgumentException("ConditionEval can not be null");
+        }
+
+        // The currentEvals map holds the most recent eval for each condition in the condition set.
+        currentEvals.put(conditionEval.getConditionSetIndex(), conditionEval);
+
+        boolean trueEval = false;
+        switch (match) {
+            case ALL:
+                // Don't perform a dampening eval until we have a conditionEval for each member of the ConditionSet.
+                if (currentEvals.size() < conditionEval.getConditionSetSize()) {
+                    return;
+                }
+                // Otherwise, all condition evals must be true for the condition set eval to be true
+                trueEval = true;
+                for (ConditionEval ce : currentEvals.values()) {
+                    if (!ce.isMatch()) {
+                        trueEval = false;
+                        break;
+                    }
+                }
                 break;
-            }
+            case ANY:
+                // we only need one true condition eval for the condition set eval to be true
+                trueEval = false;
+                for (ConditionEval ce : currentEvals.values()) {
+                    if (ce.isMatch()) {
+                        trueEval = true;
+                        break;
+                    }
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected Match type: " + match.name());
         }
 
         // If we had previously started our time and now have exceeded our time limit then we must start over
@@ -312,7 +376,7 @@ public class Dampening {
         numEvals += 1;
         if (trueEval) {
             numTrueEvals += 1;
-            addSatisfyingEvals(conditionEvals);
+            addSatisfyingEvals(new HashSet<>(currentEvals.values()));
 
             switch (type) {
                 case STRICT:
@@ -416,7 +480,7 @@ public class Dampening {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        Dampening other = (Dampening) obj;
+        Dampening other = (Dampening)obj;
         if (dampeningId == null) {
             if (other.dampeningId != null)
                 return false;

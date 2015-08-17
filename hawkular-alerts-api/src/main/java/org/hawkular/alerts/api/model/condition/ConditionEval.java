@@ -47,10 +47,6 @@ public abstract class ConditionEval {
     @JsonInclude
     protected long dataTimestamp;
 
-    // flag noting whether this condition eval was used in a tested Tuple and already applied to dampening
-    @JsonIgnore
-    protected boolean used;
-
     @JsonInclude
     protected Condition.Type type;
 
@@ -66,7 +62,6 @@ public abstract class ConditionEval {
         this.match = match;
         this.dataTimestamp = dataTimestamp;
         this.evalTimestamp = System.currentTimeMillis();
-        this.used = false;
         this.context = context;
     }
 
@@ -92,14 +87,6 @@ public abstract class ConditionEval {
 
     public void setDataTimestamp(long dataTimestamp) {
         this.dataTimestamp = dataTimestamp;
-    }
-
-    public boolean isUsed() {
-        return used;
-    }
-
-    public void setUsed(boolean used) {
-        this.used = used;
     }
 
     public Condition.Type getType() {

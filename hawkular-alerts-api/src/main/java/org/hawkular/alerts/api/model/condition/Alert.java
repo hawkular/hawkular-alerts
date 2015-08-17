@@ -133,7 +133,7 @@ public class Alert {
         this.ctime = System.currentTimeMillis();
         this.status = Status.OPEN;
 
-        this.alertId = triggerId + "|" + ctime;
+        this.alertId = triggerId + "-" + ctime;
     }
 
     public String getTenantId() {
