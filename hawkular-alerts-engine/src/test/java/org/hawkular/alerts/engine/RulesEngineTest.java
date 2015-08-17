@@ -95,22 +95,22 @@ public class RulesEngineTest {
     @Test
     public void thresholdTest() {
         // 1 alert
-        Trigger t1 = new Trigger("trigger-1", "Threshold-LT");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Threshold-LT");
         ThresholdCondition t1c1 = new ThresholdCondition("trigger-1", 1, 1,
                 "NumericData-01",
                 ThresholdCondition.Operator.LT, 10.0);
         // 2 alert3
-        Trigger t2 = new Trigger("trigger-2", "Threshold-LTE");
+        Trigger t2 = new Trigger("tenant", "trigger-2", "Threshold-LTE");
         ThresholdCondition t2c1 = new ThresholdCondition("trigger-2", 1, 1,
                 "NumericData-01",
                 ThresholdCondition.Operator.LTE, 10.0);
         // 1 alert
-        Trigger t3 = new Trigger("trigger-3", "Threshold-GT");
+        Trigger t3 = new Trigger("tenant", "trigger-3", "Threshold-GT");
         ThresholdCondition t3c1 = new ThresholdCondition("trigger-3", 1, 1,
                 "NumericData-01",
                 ThresholdCondition.Operator.GT, 10.0);
         // 2 alerts
-        Trigger t4 = new Trigger("trigger-4", "Threshold-GTE");
+        Trigger t4 = new Trigger("tenant", "trigger-4", "Threshold-GTE");
         ThresholdCondition t4c1 = new ThresholdCondition("trigger-4", 1, 1,
                 "NumericData-01",
                 ThresholdCondition.Operator.GTE, 10.0);
@@ -233,7 +233,7 @@ public class RulesEngineTest {
 
     @Test
     public void thresholdRangeTest() {
-        Trigger t1 = new Trigger("trigger-1", "NumericData-01-");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "NumericData-01-");
         // should fire 2 alerts
         ThresholdRangeCondition t1c1 = new ThresholdRangeCondition("trigger-1", 1, 1,
                 "NumericData-01",
@@ -242,7 +242,7 @@ public class RulesEngineTest {
                 10.0, 15.0,
                 true);
         // should fine 0 alerts
-        Trigger t2 = new Trigger("trigger-2", "NumericData-01");
+        Trigger t2 = new Trigger("tenant", "trigger-2", "NumericData-01");
         ThresholdRangeCondition t2c1 = new ThresholdRangeCondition("trigger-2", 1, 1,
                 "NumericData-01",
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
@@ -250,7 +250,7 @@ public class RulesEngineTest {
                 10.0, 15.0,
                 true);
         // should fire 1 alert
-        Trigger t3 = new Trigger("trigger-3", "NumericData-01");
+        Trigger t3 = new Trigger("tenant", "trigger-3", "NumericData-01");
         ThresholdRangeCondition t3c1 = new ThresholdRangeCondition("trigger-3", 1, 1,
                 "NumericData-01",
                 ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -327,19 +327,19 @@ public class RulesEngineTest {
 
     @Test
     public void compareTest() {
-        Trigger t1 = new Trigger("trigger-1", "Compare-D1-LT-Half-D2");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Compare-D1-LT-Half-D2");
         CompareCondition t1c1 = new CompareCondition("trigger-1", 1, 1,
                 "NumericData-01",
                 CompareCondition.Operator.LT, 0.5, "NumericData-02");
-        Trigger t2 = new Trigger("trigger-2", "Compare-D1-LTE-Half-D2");
+        Trigger t2 = new Trigger("tenant", "trigger-2", "Compare-D1-LTE-Half-D2");
         CompareCondition t2c1 = new CompareCondition("trigger-2", 1, 1,
                 "NumericData-01",
                 CompareCondition.Operator.LTE, 0.5, "NumericData-02");
-        Trigger t3 = new Trigger("trigger-3", "Compare-D1-GT-Half-D2");
+        Trigger t3 = new Trigger("tenant", "trigger-3", "Compare-D1-GT-Half-D2");
         CompareCondition t3c1 = new CompareCondition("trigger-3", 1, 1,
                 "NumericData-01",
                 CompareCondition.Operator.GT, 0.5, "NumericData-02");
-        Trigger t4 = new Trigger("trigger-4", "Compare-D1-GTE-Half-D2");
+        Trigger t4 = new Trigger("tenant", "trigger-4", "Compare-D1-GTE-Half-D2");
         CompareCondition t4c1 = new CompareCondition("trigger-4", 1, 1,
                 "NumericData-01",
                 CompareCondition.Operator.GTE, 0.5, "NumericData-02");
@@ -508,34 +508,34 @@ public class RulesEngineTest {
     public void StringTest() {
         // StringData-01 Triggers
         // 2 alerts
-        Trigger t1 = new Trigger("trigger-1", "String-StartsWith");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "String-StartsWith");
         StringCondition t1c1 = new StringCondition("trigger-1", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.STARTS_WITH, "Fred", false);
         // 1 alert
-        Trigger t2 = new Trigger("trigger-2", "String-Equal");
+        Trigger t2 = new Trigger("tenant", "trigger-2", "String-Equal");
         StringCondition t3c1 = new StringCondition("trigger-2", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.EQUAL, "Fred", false);
         // 1 alert
-        Trigger t3 = new Trigger("trigger-3", "String-Contains");
+        Trigger t3 = new Trigger("tenant", "trigger-3", "String-Contains");
         StringCondition t5c1 = new StringCondition("trigger-3", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.CONTAINS, "And", false);
         // 1 alert
-        Trigger t4 = new Trigger("trigger-4", "String-Match");
+        Trigger t4 = new Trigger("tenant", "trigger-4", "String-Match");
         StringCondition t6c1 = new StringCondition("trigger-4", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.MATCH, "Fred.*Barney", false);
 
         // StringData-02 Triggers
         // 1 alert
-        Trigger t5 = new Trigger("trigger-5", "String-EndsWith");
+        Trigger t5 = new Trigger("tenant", "trigger-5", "String-EndsWith");
         StringCondition t2c1 = new StringCondition("trigger-5", 1, 1,
                 "StringData-02",
                 StringCondition.Operator.ENDS_WITH, "Fred", false);
         // 1 alert
-        Trigger t6 = new Trigger("trigger-6", "String-StartsWith");
+        Trigger t6 = new Trigger("tenant", "trigger-6", "String-StartsWith");
         StringCondition t4c1 = new StringCondition("trigger-6", 1, 1,
                 "StringData-02", // note
                 StringCondition.Operator.NOT_EQUAL, "Fred", false);
@@ -677,34 +677,34 @@ public class RulesEngineTest {
     public void StringTestIgnoreCase() {
         // StringData-01 Triggers
         // 2 alerts
-        Trigger t1 = new Trigger("trigger-1", "String-StartsWith");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "String-StartsWith");
         StringCondition t1c1 = new StringCondition("trigger-1", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.STARTS_WITH, "FRED", true);
         // 1 alert
-        Trigger t2 = new Trigger("trigger-2", "String-Equal");
+        Trigger t2 = new Trigger("tenant", "trigger-2", "String-Equal");
         StringCondition t3c1 = new StringCondition("trigger-2", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.EQUAL, "FRED", true);
         // 1 alert
-        Trigger t3 = new Trigger("trigger-3", "String-Contains");
+        Trigger t3 = new Trigger("tenant", "trigger-3", "String-Contains");
         StringCondition t5c1 = new StringCondition("trigger-3", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.CONTAINS, "AND", true);
         // 1 alert
-        Trigger t4 = new Trigger("trigger-4", "String-Match");
+        Trigger t4 = new Trigger("tenant", "trigger-4", "String-Match");
         StringCondition t6c1 = new StringCondition("trigger-4", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.MATCH, "FRED.*barney", true);
 
         // StringData-02 Triggers
         // 1 alert
-        Trigger t5 = new Trigger("trigger-5", "String-EndsWith");
+        Trigger t5 = new Trigger("tenant", "trigger-5", "String-EndsWith");
         StringCondition t2c1 = new StringCondition("trigger-5", 1, 1,
                 "StringData-02",
                 StringCondition.Operator.ENDS_WITH, "FRED", true);
         // 1 alert
-        Trigger t6 = new Trigger("trigger-6", "String-StartsWith");
+        Trigger t6 = new Trigger("tenant", "trigger-6", "String-StartsWith");
         StringCondition t4c1 = new StringCondition("trigger-6", 1, 1,
                 "StringData-02", // note
                 StringCondition.Operator.NOT_EQUAL, "FRED", true);
@@ -844,7 +844,7 @@ public class RulesEngineTest {
 
     @Test
     public void AvailabilityTest() {
-        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.NOT_UP);
 
@@ -896,7 +896,7 @@ public class RulesEngineTest {
 
     @Test
     public void ExternalTest() {
-        Trigger t1 = new Trigger("trigger-1", "External-Metrics");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "External-Metrics");
         ExternalCondition t1c1 = new ExternalCondition("trigger-1", Mode.FIRING, 1, 1,
                 "ExternalData-01", "HawkularMetrics", "metric:5:avg(foo > 100.5)");
 
@@ -932,7 +932,7 @@ public class RulesEngineTest {
 
     @Test
     public void DampeningStrictTest() {
-        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
@@ -978,7 +978,7 @@ public class RulesEngineTest {
 
     @Test
     public void DampeningRelaxedCountTest() {
-        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
@@ -1025,7 +1025,7 @@ public class RulesEngineTest {
 
     @Test
     public void DampeningRelaxedTimeTest() {
-        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
@@ -1081,7 +1081,7 @@ public class RulesEngineTest {
 
     @Test
     public void DampeningStrictTimeTest() {
-        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
@@ -1121,7 +1121,7 @@ public class RulesEngineTest {
 
     @Test
     public void DampeningStrictTimeoutTest() {
-        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
@@ -1167,7 +1167,7 @@ public class RulesEngineTest {
 
     @Test
     public void multiConditionTest() {
-        Trigger t1 = new Trigger("trigger-1", "Two-Conditions");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Two-Conditions");
         ThresholdCondition t1c1 = new ThresholdCondition("trigger-1", 2, 1, "NumericData-01",
                 ThresholdCondition.Operator.LT, 10.0);
         ThresholdRangeCondition t1c2 = new ThresholdRangeCondition("trigger-1", 2, 2, "NumericData-02",
@@ -1355,7 +1355,7 @@ public class RulesEngineTest {
     @Test
     public void autoResolveTest() {
         // The single trigger has definitions for both FIRING and AUTORESOLVE modes
-        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
 
         // Firing Mode
         AvailabilityCondition fmt1c1 = new AvailabilityCondition("trigger-1", Mode.FIRING, 1, 1,
@@ -1438,7 +1438,7 @@ public class RulesEngineTest {
     @Test
     public void checkEqualityInRulesEngine() throws Exception {
 
-        Trigger t1 = new Trigger("trigger-1", "Avail-DOWN");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition fmt1c1 = new AvailabilityCondition("trigger-1", Mode.FIRING, 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
         Availability adata = new Availability("AvailData-01", System.currentTimeMillis(), AvailabilityType.UP);

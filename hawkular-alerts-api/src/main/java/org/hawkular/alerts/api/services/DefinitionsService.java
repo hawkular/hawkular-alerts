@@ -43,10 +43,13 @@ public interface DefinitionsService {
      */
 
     /**
-     * Create a new <code>Trigger</code>.  <code>Conditions</code> and <code>Actions</code> are manipulated in separate
-     * calls. The new <code>Trigger</code> will be persisted.  When fully defined a call to
-     * {@link #updateTrigger(String, Trigger)}
-     * is needed to enable the <code>Trigger</code>.
+     * Create a new <code>Trigger</code>. <code>Conditions</code> and <code>Dampening</code> are
+     * manipulated in separate calls. The new <code>Trigger</code> will be persisted.  When fully defined a call to
+     * {@link #updateTrigger(String, Trigger)} is needed to enable the <code>Trigger</code>.
+     * <p>
+     * Parent triggers must have <code>parent=true</code> at create time. A parent trigger can never be
+     * made a non-parent, and vice-versa.
+     * </p>
      * @param tenantId Tenant where trigger is created
      * @param trigger New trigger definition to be added
      * @throws Exception If the <code>Trigger</code> already exists.
@@ -55,6 +58,10 @@ public interface DefinitionsService {
 
     /**
      * The <code>Trigger</code> will be removed from the Alerts engine, as needed, and will no longer be persisted.
+     * <p>
+     * Parent triggers will also have all child triggers removed (including orphans).  To remove a parent trigger
+     * while leaving behind child triggers use {@link #removeParentTrigger(String, String, boolean, boolean)}.
+     * </p>
      * @param tenantId Tenant where trigger is stored
      * @param triggerId Trigger to be removed
      * @throws Exception on any problem
@@ -62,9 +69,26 @@ public interface DefinitionsService {
     void removeTrigger(String tenantId, String triggerId) throws Exception;
 
     /**
-     * Update the <code>Trigger</code>. <code>Conditions</code> and <code>Actions</code> are manipulated in separate
-     * calls. The updated <code>Trigger</code> will be persisted.  If enabled the <code>Trigger</code>
-     * will be [re-]inserted into the Alerts engine and any prior dampening will be reset.
+     * The parent <code>Trigger</code> will be removed from the Alerts engine, as needed, and will no longer be
+     * persisted. The child triggers will be removed as well, depending on the settings for
+     * <code>leaveChildren</code> and <code>leaveOrphans</code>. Note that any child triggers not removed will
+     * no longer have a parent trigger associated and will then need to be managed independently.
+     * @param tenantId Tenant where trigger is stored
+     * @param triggerId Parent Trigger to be removed.
+     * @param leaveChildren If true then the non-orphan children are also removed.
+     * @param leaveOrphans If true then the orphan children are also removed.
+     * @throws Exception on any problem
+     */
+    void removeParentTrigger(String tenantId, String parentId, boolean leaveChildren, boolean leaveOrphans)
+            throws Exception;
+
+    /**
+     * Update the <code>Trigger</code>. <code>Conditions</code> and <code>Dampening</code> are
+     * manipulated in separate calls. The updated <code>Trigger</code> will be persisted.  If enabled the
+     * <code>Trigger</code> will be [re-]inserted into the Alerts engine and any prior dampening will be reset.
+     * <p>
+     * Parent triggers will also have all non-orphan child triggers similarly updated.
+     * </p>
      * @param tenantId Tenant where trigger is updated
      * @param trigger Existing trigger to be updated
      * @throws Exception If the <code>Trigger</code> does not exist.
@@ -96,6 +120,15 @@ public interface DefinitionsService {
     Collection<Trigger> getTriggersByTag(String tenantId, String category, String name) throws Exception;
 
     /**
+     * Get the child triggers for the specified parent trigger.
+     * @param tenantId Tenant for the parent trigger
+     * @param parentId Parent triggerId
+     * @param includeOrphans if true, include orphan child triggers for the parent
+     * @throws Exception on any problem
+     */
+    Collection<Trigger> getChildTriggers(String tenantId, String parentId, boolean includeOrphans) throws Exception;
+
+    /**
      * Get all stored Triggers for all Tenants
      * @throws Exception on any problem
      */
@@ -111,24 +144,80 @@ public interface DefinitionsService {
     Collection<Trigger> getAllTriggersByTag(String category, String name) throws Exception;
 
     /**
-     * Used to generate an explicit Trigger from a Tokenized Trigger.  The dataIdMap replaces the tokens in the
-     * Conditions with actual dataIds.
+     * Generate a child trigger for the specified parent trigger. The dataIdMap replaces the tokens in the
+     * parent trigger's conditions with actual dataIds. The child trigger gets the enabled state of the parent.
      * @param tenantId Tenant where trigger is stored
-     * @param triggerId Trigger to be copied
+     * @param parentId Parent triggerId from which to spawn the child trigger
+     * @param childId The child triggerId, unique id within the tenant, if null an Id will be generated
+     * @param childName The child triggerName, not null, unique name within the tenant
+     * @param childContext The child triggerContext. If null the context is inherited from the parent trigger
      * @param dataIdMap Tokens to be replaced in the new trigger
-     * @return a copy of original trigger
+     * @return the child trigger
      * @throws Exception on any problem
      */
-    Trigger copyTrigger(String tenantId, String triggerId, Map<String, String> dataIdMap) throws Exception;
+    Trigger addChildTrigger(String tenantId, String parentId, String childId, String childName,
+            Map<String, String> childContext, Map<String, String> dataIdMap) throws Exception;
+
+    Trigger orphanChildTrigger(String tenantId, String childId) throws Exception;
+
+    /**
+     * Un-orphan a child trigger.  The child trigger is again synchronized with the parent definition. As an orphan
+     * it may have been altered in various ways. So, as when spawning a new child trigger, the context and dataIdMap
+     * are specified.
+     * <p>
+     * This is basically a convenience method that first performs a {@link #removeTrigger(String, String)} and
+     * then an {@link #addChildTrigger(String, String, String, String, Map, Map)}. But the child trigger must
+     * already exist for this call to succeed. The trigger will maintain the same parent, id, and name.
+     * </p>
+     * @param tenantId Tenant where trigger is stored
+     * @param childId The child triggerId
+     * @param childContext The child triggerContext. If null the context is inherited from the parent trigger
+     * @param dataIdMap Tokens to be replaced in the new trigger
+     * @return the child trigger
+     * @throws Exception
+     */
+    Trigger unorphanChildTrigger(String tenantId, String childId, Map<String, String> childContext,
+            Map<String, String> dataIdMap) throws Exception;
+
+
 
     /*
         CRUD interface for Dampening
      */
 
+    /**
+     * Add the <code>Dampening</code>. The relevant triggerId is specified in the Dampening object.
+     * <p>
+     * Parent triggers will apply the dampening to their spawned children.
+     * </p>
+     * @param tenantId the owning tenant
+     * @param dampening the Dampening definition, which should be tied to a trigger
+     * @return the new Dampening
+     * @throws Exception
+     */
     Dampening addDampening(String tenantId, Dampening dampening) throws Exception;
 
+    /**
+     * Remove the specified <code>Dampening</code> from the relevant trigger.
+     * <p>
+     * Parent triggers will remove the dampening from their non-orphan children.
+     * </p>
+     * @param tenantId the owning tenant
+     * @param dampeningId the doomed dampening  record
+     * @throws Exception
+     */
     void removeDampening(String tenantId, String dampeningId) throws Exception;
 
+    /**
+     * Update the <code>Dampening</code> on the relevant trigger.
+     * <p>
+     * Parent triggers will update the dampening on their non-orphan children.
+     * </p>
+     * @param tenantId the owning tenant
+     * @param dampening the Dampening definition, which should be tied to a trigger
+     * @return the new Dampening
+     * @throws Exception
+     */
     Dampening updateDampening(String tenantId, Dampening dampening) throws Exception;
 
     Dampening getDampening(String tenantId, String dampeningId) throws Exception;
@@ -176,6 +265,9 @@ public interface DefinitionsService {
      *   conditionSetSize
      *   conditionSetIndex
      * </pre>
+     * <p>
+     * Parent triggers will add the condition to their non-orphan children.
+     * </p>
      * @param tenantId Tenant where trigger is stored
      * @param triggerId Trigger where condition will be stored
      * @param triggerMode Mode where condition is applied
@@ -192,6 +284,9 @@ public interface DefinitionsService {
      * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
      * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
      * </p>
+     * <p>
+     * Parent triggers will remove the condition from their non-orphan children.
+     * </p>
      * @param tenantId Tenant where trigger and his conditions are stored
      * @param conditionId Condition id to be removed
      * @return The updated, persisted condition set. Not null. Can be empty.
@@ -204,6 +299,9 @@ public interface DefinitionsService {
      * <p>
      * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
      * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
+     * </p>
+     * <p>
+     * Parent triggers will update the condition on their non-orphan children.
      * </p>
      * @param tenantId
      * @param condition Not null. conditionId must be for an existing condition.
@@ -227,6 +325,9 @@ public interface DefinitionsService {
      *   conditionSetSize
      *   conditionSetIndex
      * </pre>
+     * <p>
+     * Parent triggers will set the conditions on their non-orphan children.
+     * </p>
      * @param tenantId Tenant where trigger and his conditions are stored
      * @param triggerId Trigger where conditions will be stored
      * @param triggerMode Mode where conditions are applied

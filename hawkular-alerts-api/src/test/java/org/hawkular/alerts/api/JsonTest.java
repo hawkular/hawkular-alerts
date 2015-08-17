@@ -106,14 +106,12 @@ public class JsonTest {
 
         assertTrue(!output.contains("evalSets"));
 
-        AvailabilityCondition aCond = new AvailabilityCondition("trigger-test",
-                "Default",
+        AvailabilityCondition aCond = new AvailabilityCondition("trigger-test", "Default",
                 AvailabilityCondition.Operator.UP);
         Availability aData = new Availability("Metric-test", 1, AvailabilityType.UP);
         AvailabilityConditionEval aEval = new AvailabilityConditionEval(aCond, aData);
 
-        ThresholdCondition tCond = new ThresholdCondition("trigger-test",
-                "Default",
+        ThresholdCondition tCond = new ThresholdCondition("trigger-test", "Default",
                 ThresholdCondition.Operator.LTE,
                 50.0);
         NumericData tData = new NumericData("Metric-test2", 2, 25.5);

@@ -47,6 +47,7 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.engine.exception.NotFoundException;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -203,18 +204,16 @@ public class TriggersHandler {
             @ApiParam(value = "Updated trigger definition", name = "trigger", required = true)
             final Trigger trigger) {
         try {
-            boolean exists = false;
             if (trigger != null && !isEmpty(triggerId)) {
                 trigger.setId(triggerId);
-                exists = (definitions.getTrigger(tenantId, triggerId) != null);
             }
-            if (exists) {
-                definitions.updateTrigger(tenantId, trigger);
-                log.debugf("Trigger: %s ", trigger);
-                return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.notFound("Trigger " + triggerId + " doesn't exist for update");
-            }
+            definitions.updateTrigger(tenantId, trigger);
+            log.debugf("Trigger: %s ", trigger);
+            return ResponseUtil.ok();
+
+        } catch (NotFoundException e) {
+            return ResponseUtil.notFound("Trigger " + triggerId + " doesn't exist for update");
+
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
@@ -233,13 +232,13 @@ public class TriggersHandler {
             @PathParam("triggerId")
             final String triggerId) {
         try {
-            if (definitions.getTrigger(tenantId, triggerId) != null) {
-                definitions.removeTrigger(tenantId, triggerId);
-                log.debugf("TriggerId: %s ", triggerId);
-                return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.notFound("Trigger " + triggerId + " doesn't exist for delete");
-            }
+            definitions.removeTrigger(tenantId, triggerId);
+            log.debugf("TriggerId: %s ", triggerId);
+            return ResponseUtil.ok();
+
+        } catch (NotFoundException e) {
+            return ResponseUtil.notFound("Trigger " + triggerId + " doesn't exist for delete");
+
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());

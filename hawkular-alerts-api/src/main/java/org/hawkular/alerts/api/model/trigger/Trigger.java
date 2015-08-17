@@ -50,6 +50,9 @@ public class Trigger {
     @JsonInclude
     private String description;
 
+    @JsonInclude(Include.NON_EMPTY)
+    protected Map<String, String> context;
+
     /** Disable automatically after firing */
     @JsonInclude
     private boolean autoDisable;
@@ -79,9 +82,6 @@ public class Trigger {
     @JsonInclude
     private Match autoResolveMatch;
 
-    @JsonInclude(Include.NON_EMPTY)
-    protected Map<String, String> context;
-
     /** Is a parent trigger, non-firing, used to manage a set of child triggers. */
     @JsonInclude
     private boolean parent;
@@ -107,29 +107,30 @@ public class Trigger {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("defaultName");
+        this("defaultTenant", "defaultName");
     }
 
-    public Trigger(String name) {
-        this(generateId(), name, null);
+    public Trigger(String tenantId, String name) {
+        this(tenantId, generateId(), name, null);
     }
 
-    public Trigger(String name, Map<String, String> context) {
-        this(generateId(), name, context);
+    public Trigger(String tenantId, String name, Map<String, String> context) {
+        this(tenantId, generateId(), name, context);
     }
 
     public static String generateId() {
         return UUID.randomUUID().toString();
     }
 
-    public Trigger(String id, String name) {
-        this(id, name, null);
+    public Trigger(String tenantId, String id, String name) {
+        this(tenantId, id, name, null);
     }
 
-    public Trigger(String id, String name, Map<String, String> context) {
+    public Trigger(String tenantId, String id, String name, Map<String, String> context) {
         if (id == null || id.isEmpty()) {
             throw new IllegalArgumentException("Trigger id must be non-empty");
         }
+        this.tenantId = tenantId;
         this.id = id;
         this.name = name;
         this.context = context;
@@ -149,6 +150,14 @@ public class Trigger {
         this.enabled = false;
         this.mode = Mode.FIRING;
         this.match = Match.ALL;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 
     public String getId() {
@@ -176,6 +185,29 @@ public class Trigger {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Map<String, String> getContext() {
+        return context;
+    }
+
+    public void setContext(Map<String, String> context) {
+        this.context = context;
+    }
+
+    /**
+     * Add context information.
+     * @param name context key.
+     * @param value context value.
+     */
+    public void addProperty(String name, String value) {
+        if (null == name || null == value) {
+            throw new IllegalArgumentException("Propety must have non-null name and value");
+        }
+        if (null == context) {
+            context = new HashMap<>();
+        }
+        context.put(name, value);
     }
 
     public boolean isAutoDisable() {
@@ -272,27 +304,33 @@ public class Trigger {
         }
     }
 
-    public Map<String, String> getContext() {
-        return context;
+    public boolean isParent() {
+        return parent;
     }
 
-    public void setContext(Map<String, String> context) {
-        this.context = context;
+    public void setParent(boolean parent) {
+        this.parent = parent;
     }
 
-    /**
-     * Add context information.
-     * @param name context key.
-     * @param value context value.
-     */
-    public void addProperty(String name, String value) {
-        if (null == name || null == value) {
-            throw new IllegalArgumentException("Propety must have non-null name and value");
-        }
-        if (null == context) {
-            context = new HashMap<>();
-        }
-        context.put(name, value);
+    public String getChildOf() {
+        return childOf;
+    }
+
+    public void setChildOf(String childOf) {
+        this.childOf = childOf;
+    }
+
+    @JsonIgnore
+    public boolean isChild() {
+        return null != childOf;
+    }
+
+    public boolean isOrphan() {
+        return orphan;
+    }
+
+    public void setOrphan(boolean orphan) {
+        this.orphan = orphan;
     }
 
     public boolean isEnabled() {
@@ -301,6 +339,11 @@ public class Trigger {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    @JsonIgnore
+    public boolean isLoadable() {
+        return !parent && enabled;
     }
 
     @JsonIgnore
@@ -332,13 +375,6 @@ public class Trigger {
         setMatch(this.mode == Mode.FIRING ? getFiringMatch() : getAutoResolveMatch());
     }
 
-    public String getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
-    }
 
     @Override
     public boolean equals(Object o) {

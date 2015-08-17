@@ -110,6 +110,7 @@ public class CassStatement {
     public static final String SELECT_TRIGGER_DAMPENINGS;
     public static final String SELECT_TRIGGER_DAMPENINGS_MODE;
     public static final String SELECT_TRIGGERS_ALL;
+    public static final String SELECT_TRIGGERS_CHILDOF;
     public static final String SELECT_TRIGGERS_TENANT;
 
     public static final String UPDATE_ACTION;
@@ -370,6 +371,10 @@ public class CassStatement {
         SELECT_TRIGGERS_ALL = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
                 + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId, context "
                 + "FROM " + keyspace + ".triggers ";
+
+        SELECT_TRIGGERS_CHILDOF = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
+                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId, context "
+                + "FROM " + keyspace + ".triggers WHERE tenantId = ? AND childOf = ? ";
 
         SELECT_TRIGGERS_TENANT = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
                 + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId, context "

@@ -46,8 +46,6 @@ import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.trigger.Match;
-import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
@@ -74,7 +72,7 @@ import com.google.common.util.concurrent.Futures;
  */
 @Local(DefinitionsService.class)
 @Singleton
-@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
+@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class CassDefinitionsServiceImpl implements DefinitionsService {
     private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
     private static final String INIT_FOLDER = "hawkular-alerts";
@@ -180,12 +178,15 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     boolean autoResolve = (Boolean)t.get("autoResolve");
                     boolean autoResolveAlerts = (Boolean)t.get("autoResolveAlerts");
                     Severity severity = Severity.valueOf((String)t.get("severity"));
-                    Match firingMatch = Match.valueOf((String) t.get("firingMatch"));
-                    Match autoResolveMatch = Match.valueOf((String) t.get("autoResolveMatch"));
+                    Match firingMatch = Match.valueOf((String)t.get("firingMatch"));
+                    Match autoResolveMatch = Match.valueOf((String)t.get("autoResolveMatch"));
                     List<Map<String, String>> actions = (List<Map<String, String>>)t.get("actions");
                     Map<String, String> context = (Map<String, String>)t.get("context");
+                    boolean parent = (Boolean)t.get("parent");
+                    String childOf = (String)t.get("childOf");
+                    boolean orphan = (Boolean)t.get("orphan");
 
-                    Trigger trigger = new Trigger(triggerId, name);
+                    Trigger trigger = new Trigger(tenantId, triggerId, name);
                     trigger.setEnabled(enabled);
                     trigger.setAutoDisable(autoDisable);
                     trigger.setAutoEnable(autoEnable);
@@ -195,11 +196,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     trigger.setDescription(description);
                     trigger.setFiringMatch(firingMatch);
                     trigger.setAutoResolveMatch(autoResolveMatch);
-                    trigger.setTenantId(tenantId);
                     for (Map<String, String> action : actions) {
                         trigger.addAction(action.get("actionPlugin"), action.get("actionId"));
                     }
                     trigger.setContext(context);
+                    trigger.setParent(parent);
+                    trigger.setChildOf(childOf);
+                    trigger.setOrphan(orphan);
+
                     addTrigger(tenantId, trigger);
                     log.debugf("Init registration - Inserting [%s]", trigger);
                 }
@@ -218,7 +222,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 for (Map<String, Object> c : aConditions) {
                     String tenantId = (String)c.get("tenantId");
                     String triggerId = (String)c.get("triggerId");
-                    Mode triggerMode = Mode.valueOf((String) c.get("triggerMode"));
+                    Mode triggerMode = Mode.valueOf((String)c.get("triggerMode"));
                     int conditionSetSize = (Integer)c.get("conditionSetSize");
                     int conditionSetIndex = (Integer)c.get("conditionSetIndex");
                     String type = (String)c.get("type");
@@ -344,7 +348,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 for (Map<String, Object> d : aDampenings) {
                     String tenantId = (String)d.get("tenantId");
                     String triggerId = (String)d.get("triggerId");
-                    Mode triggerMode = Mode.valueOf((String) d.get("triggerMode"));
+                    Mode triggerMode = Mode.valueOf((String)d.get("triggerMode"));
                     String type = (String)d.get("type");
                     int evalTrueSetting = (Integer)d.get("evalTrueSetting");
                     int evalTotalSetting = (Integer)d.get("evalTotalSetting");
@@ -427,6 +431,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(trigger)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
+
         checkTenantId(tenantId, trigger);
         session = CassCluster.getSession();
         PreparedStatement insertTrigger = CassStatement.get(session, CassStatement.INSERT_TRIGGER);
@@ -474,19 +479,84 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
+
+        Trigger doomedTrigger = getTrigger(tenantId, triggerId);
+        if (null == doomedTrigger) {
+            throw new NotFoundException(Trigger.class.getName(), tenantId, triggerId);
+        }
+
+        if (doomedTrigger.isParent()) {
+            removeParentTrigger(doomedTrigger, false, false);
+
+        } else {
+            removeTrigger(doomedTrigger);
+        }
+    }
+
+    @Override
+    public void removeParentTrigger(String tenantId, String parentId, boolean leaveChildren, boolean leaveOrphans)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(parentId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+
+        Trigger doomedTrigger = getTrigger(tenantId, parentId);
+        if (null == doomedTrigger) {
+            throw new NotFoundException(Trigger.class.getName(), tenantId, parentId);
+        }
+        if (!doomedTrigger.isParent()) {
+            throw new IllegalArgumentException("Trigger [" + parentId + "] is not a parent trigger");
+        }
+
+        removeParentTrigger(doomedTrigger, leaveChildren, leaveOrphans);
+    }
+
+    private void removeParentTrigger(Trigger parent, boolean leaveChildren, boolean leaveOrphans) throws Exception {
+
+        String tenantId = parent.getTenantId();
+        String parentId = parent.getId();
+
+        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, true);
+
+        for (Trigger child : childTriggers) {
+            if (leaveChildren || (leaveOrphans && child.isOrphan())) {
+                child.setChildOf(null);
+                child.setOrphan(false);
+                updateTrigger(tenantId, child);
+                continue;
+            }
+
+            removeTrigger(child);
+        }
+
+        removeTrigger(parent);
+    }
+
+    private void removeTrigger(Trigger trigger) throws Exception {
         session = CassCluster.getSession();
+
+        String tenantId = trigger.getTenantId();
+        String triggerId = trigger.getId();
+
         PreparedStatement deleteDampenings = CassStatement.get(session, CassStatement.DELETE_DAMPENINGS);
         PreparedStatement deleteConditions = CassStatement.get(session, CassStatement.DELETE_CONDITIONS);
+        PreparedStatement deleteActions = CassStatement.get(session, CassStatement.DELETE_TRIGGER_ACTIONS);
         PreparedStatement deleteTrigger = CassStatement.get(session, CassStatement.DELETE_TRIGGER);
-        if (deleteDampenings == null || deleteConditions == null || deleteTrigger == null) {
+        session.execute(deleteActions.bind(trigger.getTenantId(), trigger.getId()));
+        if (deleteDampenings == null || deleteConditions == null || deleteActions == null || deleteTrigger == null) {
             throw new RuntimeException("delete*Triggers PreparedStatement is null");
         }
+
         try {
             deleteTags(tenantId, triggerId, null, null);
             deleteTriggerActions(tenantId, triggerId);
             List<ResultSetFuture> futures = new ArrayList<>();
             futures.add(session.executeAsync(deleteDampenings.bind(tenantId, triggerId)));
             futures.add(session.executeAsync(deleteConditions.bind(tenantId, triggerId)));
+            futures.add(session.executeAsync(deleteActions.bind(tenantId, triggerId)));
             futures.add(session.executeAsync(deleteTrigger.bind(tenantId, triggerId)));
             Futures.allAsList(futures).get();
         } catch (Exception e) {
@@ -505,7 +575,57 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(trigger)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
+
         checkTenantId(tenantId, trigger);
+        Trigger currentTrigger = getTrigger(tenantId, trigger.getId());
+        if (null == currentTrigger) {
+            throw new NotFoundException(Trigger.class.getName(), tenantId, trigger.getId());
+        }
+
+        if (currentTrigger.isParent()) {
+            return updateParentTrigger(currentTrigger);
+
+        } else {
+            return updateTrigger(currentTrigger);
+        }
+    }
+
+    private Trigger updateParentTrigger(Trigger parent) throws Exception {
+
+        String tenantId = parent.getTenantId();
+        String parentId = parent.getId();
+
+        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, true);
+
+        for (Trigger child : childTriggers) {
+            if (!child.isOrphan()) {
+                copyParentTrigger(parent, child);
+                updateTrigger(tenantId, child);
+            }
+        }
+
+        return updateTrigger(parent);
+    }
+
+    private Trigger copyParentTrigger(Trigger parent, Trigger child) {
+        child.setActions(parent.getActions());
+        child.setAutoDisable(parent.isAutoDisable());
+        child.setAutoEnable(parent.isAutoEnable());
+        child.setAutoResolve(parent.isAutoResolve());
+        child.setAutoResolveAlerts(parent.isAutoResolveAlerts());
+        child.setAutoResolveMatch(parent.getAutoResolveMatch());
+        child.setChildOf(parent.getId());
+        child.setContext(parent.getContext());
+        child.setDescription(parent.getDescription());
+        child.setEnabled(parent.isEnabled());
+        child.setFiringMatch(parent.getFiringMatch());
+        child.setName(parent.getName());
+        child.setSeverity(parent.getSeverity());
+
+        return child;
+    }
+
+    private Trigger updateTrigger(Trigger trigger) throws Exception {
         session = CassCluster.getSession();
         PreparedStatement updateTrigger = CassStatement.get(session, CassStatement.UPDATE_TRIGGER);
         if (updateTrigger == null) {
@@ -533,7 +653,65 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return trigger;
     }
 
-    private void deleteTriggerActions(String tenantId, String triggerId) throws Exception {
+    @Override
+    public Trigger orphanChildTrigger(String tenantId, String childId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(childId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+
+        checkTenantId(tenantId, childId);
+
+        Trigger child = getTrigger(tenantId, childId);
+        if (null == child) {
+            throw new NotFoundException(Trigger.class.getName(), tenantId, childId);
+        }
+        if (!child.isChild()) {
+            throw new IllegalArgumentException("Trigger is not a child trigger: [" + tenantId + "/" + childId + "]");
+        }
+        if (child.isOrphan()) {
+            throw new IllegalArgumentException("Trigger is already an orphan: [" + tenantId + "/" + childId + "]");
+        }
+
+        child.setOrphan(true);
+        return updateTrigger(child);
+    }
+
+    @Override
+    public Trigger unorphanChildTrigger(String tenantId, String childId, Map<String, String> childContext,
+            Map<String, String> dataIdMap) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(childId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+
+        checkTenantId(tenantId, childId);
+
+        Trigger orphanChild = getTrigger(tenantId, childId);
+        if (null == orphanChild) {
+            throw new NotFoundException(Trigger.class.getName(), tenantId, childId);
+        }
+        if (!orphanChild.isChild()) {
+            throw new IllegalArgumentException("Trigger is not a child trigger: [" + tenantId + "/" + childId + "]");
+        }
+        if (!orphanChild.isOrphan()) {
+            throw new IllegalArgumentException("Trigger is not an orphan: [" + tenantId + "/" + childId + "]");
+        }
+
+        String parentId = orphanChild.getChildOf();
+        String childName = orphanChild.getName();
+
+        removeTrigger(tenantId, childId);
+        Trigger child = addChildTrigger(tenantId, parentId, childId, childName, childContext, dataIdMap);
+
+        return child;
+    }
+
+    private void deleteTriggerActions(Trigger trigger) throws Exception {
         PreparedStatement deleteTriggerActions = CassStatement.get(session, CassStatement.DELETE_TRIGGER_ACTIONS);
         if (deleteTriggerActions == null) {
             throw new RuntimeException("updateTrigger PreparedStatement is null");
@@ -715,6 +893,33 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
+    @Override
+    public Collection<Trigger> getChildTriggers(String tenantId, String parentId, boolean includeOrphans)
+            throws Exception {
+
+        session = CassCluster.getSession();
+        PreparedStatement selectTriggersChildOf = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_CHILDOF);
+        if (null == selectTriggersChildOf) {
+            throw new RuntimeException("selectTriggersChildOf PreparedStatement is null");
+        }
+
+        List<Trigger> triggers = new ArrayList<>();
+        try {
+            ResultSet rsTriggers = session.execute(selectTriggersChildOf.bind(tenantId, parentId));
+            for (Row row : rsTriggers) {
+                if (includeOrphans || !row.getBool("orphan")) {
+                    Trigger trigger = mapTrigger(row);
+                    selectTriggerActions(trigger);
+                    triggers.add(trigger);
+                }
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return triggers;
+    }
+
     private void selectTriggerActions(Trigger trigger) throws Exception {
         if (trigger == null) {
             throw new IllegalArgumentException("Trigger must be not null");
@@ -735,8 +940,11 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private Trigger mapTrigger(Row row) {
         Trigger trigger = new Trigger();
 
+        trigger.setTenantId(row.getString("tenantId"));
+        trigger.setId(row.getString("id"));
         trigger.setName(row.getString("name"));
         trigger.setDescription(row.getString("description"));
+        trigger.setContext(row.getMap("context", String.class, String.class));
         trigger.setAutoDisable(row.getBool("autoDisable"));
         trigger.setAutoEnable(row.getBool("autoEnable"));
         trigger.setAutoResolve(row.getBool("autoResolve"));
@@ -744,33 +952,37 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         trigger.setSeverity(Severity.valueOf(row.getString("severity")));
         trigger.setFiringMatch(Match.valueOf(row.getString("firingMatch")));
         trigger.setAutoResolveMatch(Match.valueOf(row.getString("autoResolveMatch")));
-        trigger.setId(row.getString("id"));
+        trigger.setParent(row.getBool("parent"));
+        trigger.setChildOf(row.getString("childOf"));
+        trigger.setOrphan(row.getBool("orphan"));
         trigger.setEnabled(row.getBool("enabled"));
-        trigger.setTenantId(row.getString("tenantId"));
-        trigger.setContext(row.getMap("context", String.class, String.class));
 
         return trigger;
     }
 
     @Override
-    public Trigger copyTrigger(String tenantId, String triggerId, Map<String, String> dataIdMap) throws Exception {
+    public Trigger addChildTrigger(String tenantId, String parentId, String childId, String childName,
+            Map<String, String> childContext, Map<String, String> dataIdMap) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        if (isEmpty(triggerId)) {
+        if (isEmpty(parentId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (isEmpty(childName)) {
+            throw new IllegalArgumentException("ChildName must be not null");
         }
         if (isEmpty(dataIdMap)) {
             throw new IllegalArgumentException("DataIdMap must be not null");
         }
-        Trigger trigger = getTrigger(tenantId, triggerId);
-        if (trigger == null) {
-            throw new IllegalArgumentException("Trigger not found for tenantId [ " + tenantId + "] and triggerId [" +
-                    triggerId + "]");
+        Trigger parent = getTrigger(tenantId, parentId);
+        if (parent == null) {
+            throw new IllegalArgumentException("Trigger not found for tenantId/triggerId [ " + tenantId + "]/[" +
+                    parentId + "]");
         }
         // ensure we have a 1-1 mapping for the dataId substitution
         Set<String> dataIdTokens = new HashSet<>();
-        Collection<Condition> conditions = getTriggerConditions(tenantId, triggerId, null);
+        Collection<Condition> conditions = getTriggerConditions(tenantId, parentId, null);
         for (Condition c : conditions) {
             if (c instanceof CompareCondition) {
                 dataIdTokens.add(c.getDataId());
@@ -784,68 +996,77 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     "DataIdMap must contain the exact dataIds (keyset) expected by the condition set. Expected: "
                             + dataIdMap.keySet() + ", dataIdMap: " + dataIdMap.keySet());
         }
-        Collection<Dampening> dampenings = getTriggerDampenings(tenantId, triggerId, null);
+        Collection<Dampening> dampenings = getTriggerDampenings(tenantId, parentId, null);
 
-        Trigger newTrigger = new Trigger(trigger.getName());
-        newTrigger.setName(trigger.getName());
-        newTrigger.setDescription(trigger.getDescription());
-        newTrigger.setSeverity(trigger.getSeverity());
-        newTrigger.setFiringMatch(trigger.getFiringMatch());
-        newTrigger.setAutoResolveMatch(trigger.getAutoResolveMatch());
-        newTrigger.setActions(trigger.getActions());
-        newTrigger.setTenantId(trigger.getTenantId());
+        Trigger child = (null == childId) ? new Trigger(tenantId, childName) : new Trigger(tenantId, childId,
+                childName);
 
-        addTrigger(tenantId, newTrigger);
+        copyParentTrigger(parent, child);
+
+        if (null != childContext) {
+            child.setContext(childContext);
+        }
+
+        addTrigger(tenantId, child);
 
         for (Condition c : conditions) {
             Condition newCondition = null;
-            if (c instanceof ThresholdCondition) {
-                newCondition = new ThresholdCondition(newTrigger.getId(), c.getTriggerMode(),
-                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
-                        ((ThresholdCondition)c).getOperator(), ((ThresholdCondition)c).getThreshold());
-
-            } else if (c instanceof ThresholdRangeCondition) {
-                newCondition = new ThresholdRangeCondition(newTrigger.getId(), c.getTriggerMode(),
-                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
-                        ((ThresholdRangeCondition)c).getOperatorLow(),
-                        ((ThresholdRangeCondition)c).getOperatorHigh(),
-                        ((ThresholdRangeCondition)c).getThresholdLow(),
-                        ((ThresholdRangeCondition)c).getThresholdHigh(),
-                        ((ThresholdRangeCondition)c).isInRange());
-
-            } else if (c instanceof AvailabilityCondition) {
-                newCondition = new AvailabilityCondition(newTrigger.getId(), c.getTriggerMode(),
-                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
-                        ((AvailabilityCondition)c).getOperator());
-
-            } else if (c instanceof CompareCondition) {
-                newCondition = new CompareCondition(newTrigger.getId(), c.getTriggerMode(),
-                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
-                        ((CompareCondition)c).getOperator(),
-                        ((CompareCondition)c).getData2Multiplier(),
-                        dataIdMap.get(((CompareCondition)c).getData2Id()));
-
-            } else if (c instanceof StringCondition) {
-                newCondition = new StringCondition(newTrigger.getId(), c.getTriggerMode(),
-                        c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
-                        ((StringCondition)c).getOperator(), ((StringCondition)c).getPattern(),
-                        ((StringCondition)c).isIgnoreCase());
+            switch (c.getType()) {
+                case AVAILABILITY:
+                    newCondition = new AvailabilityCondition(child.getId(), c.getTriggerMode(),
+                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
+                            ((AvailabilityCondition)c).getOperator());
+                    break;
+                case COMPARE:
+                    newCondition = new CompareCondition(child.getId(), c.getTriggerMode(),
+                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
+                            ((CompareCondition)c).getOperator(),
+                            ((CompareCondition)c).getData2Multiplier(),
+                            dataIdMap.get(((CompareCondition)c).getData2Id()));
+                    break;
+                case EXTERNAL:
+                    newCondition = new ExternalCondition(child.getId(), c.getTriggerMode(),
+                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
+                            ((ExternalCondition)c).getSystemId(), ((ExternalCondition)c).getExpression());
+                    break;
+                case RANGE:
+                    newCondition = new ThresholdRangeCondition(child.getId(), c.getTriggerMode(),
+                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
+                            ((ThresholdRangeCondition)c).getOperatorLow(),
+                            ((ThresholdRangeCondition)c).getOperatorHigh(),
+                            ((ThresholdRangeCondition)c).getThresholdLow(),
+                            ((ThresholdRangeCondition)c).getThresholdHigh(),
+                            ((ThresholdRangeCondition)c).isInRange());
+                    break;
+                case STRING:
+                    newCondition = new StringCondition(child.getId(), c.getTriggerMode(),
+                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
+                            ((StringCondition)c).getOperator(), ((StringCondition)c).getPattern(),
+                            ((StringCondition)c).isIgnoreCase());
+                    break;
+                case THRESHOLD:
+                    newCondition = new ThresholdCondition(child.getId(), c.getTriggerMode(),
+                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
+                            ((ThresholdCondition)c).getOperator(), ((ThresholdCondition)c).getThreshold());
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected Condition type: " + c.getType().name());
             }
             if (newCondition != null) {
-                newCondition.setTenantId(newTrigger.getTenantId());
-                addCondition(newTrigger.getTenantId(), newTrigger.getId(), newCondition.getTriggerMode(), newCondition);
+                newCondition.setTenantId(child.getTenantId());
+                addCondition(child.getTenantId(), child.getId(), newCondition.getTriggerMode(), newCondition);
             }
         }
 
         for (Dampening d : dampenings) {
-            Dampening newDampening = new Dampening(newTrigger.getId(), d.getTriggerMode(), d.getType(),
+            Dampening newDampening = new Dampening(child.getId(), d.getTriggerMode(), d.getType(),
                     d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
-            newDampening.setTenantId(newTrigger.getTenantId());
+            newDampening.setTenantId(child.getTenantId());
 
-            addDampening(newTrigger.getTenantId(), newDampening);
+            addDampening(child.getTenantId(), newDampening);
         }
 
-        return newTrigger;
+        return child;
     }
 
     @Override
