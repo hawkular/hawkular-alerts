@@ -120,10 +120,25 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- A workaround for CASSANDRA-10071 -->
+    <dependency>
+      <groupId>com.thinkaurelius.thrift</groupId>
+      <artifactId>thrift-server</artifactId>
+      <version>0.3.7</version>
+      <scope>test</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.apache.cassandra</groupId>
       <artifactId>cassandra-all</artifactId>
       <scope>test</scope>
+      <exclusions>
+        <!-- A workaround for CASSANDRA-10071 -->
+        <exclusion>
+          <groupId>com.thinkaurelius.thrift</groupId>
+          <artifactId>thrift-server</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
   </dependencies>
