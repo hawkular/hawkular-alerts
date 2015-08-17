@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;

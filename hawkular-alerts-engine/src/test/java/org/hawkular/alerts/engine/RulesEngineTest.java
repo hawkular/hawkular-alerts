@@ -50,6 +50,7 @@ import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.data.StringData;
+import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
@@ -1248,7 +1249,7 @@ public class RulesEngineTest {
 
     @Test
     public void matchAnyTest() {
-        Trigger t1 = new Trigger("trigger-1", "Any-Two-Conditions");
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Any-Two-Conditions");
         t1.setFiringMatch(Match.ANY);
 
         ThresholdCondition t1c1 = new ThresholdCondition("trigger-1", 2, 1, "X",
@@ -1352,6 +1353,7 @@ public class RulesEngineTest {
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
     }
+
     @Test
     public void autoResolveTest() {
         // The single trigger has definitions for both FIRING and AUTORESOLVE modes
