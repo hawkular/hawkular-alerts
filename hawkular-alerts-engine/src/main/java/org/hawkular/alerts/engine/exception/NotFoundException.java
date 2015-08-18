@@ -16,13 +16,13 @@
  */
 package org.hawkular.alerts.engine.exception;
 
-//import javax.ejb.ApplicationException;
+import javax.ejb.ApplicationException;
 
 /**
  * Indicates a query for expected data did not return any results. Declared an {@link ApplicationException} because
  * we don't want these to be wrapped or to rollback an ongoing transaction.
  */
-//@ApplicationException(rollback = false, inherited = true)
+@ApplicationException(rollback = false, inherited = true)
 public class NotFoundException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
@@ -36,7 +36,7 @@ public class NotFoundException extends RuntimeException {
      * @param resourceId a resource id
      */
     public NotFoundException(String type, String tenantId, String id) {
-        super("Failed to fetch [" + type + "] with tenan/id [" + tenantId + "]/[" + id + "]");
+        super("Failed to fetch [" + type + "] with tenant/id [" + tenantId + "/" + id + "]");
     }
 
     public NotFoundException(String message) {

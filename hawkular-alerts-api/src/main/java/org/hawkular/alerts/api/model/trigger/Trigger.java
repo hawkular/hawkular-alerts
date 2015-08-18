@@ -47,11 +47,12 @@ public class Trigger {
     @JsonInclude
     private String name;
 
-    @JsonInclude
-    private String description;
-
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
+
+    /** A map with key based on actionPlugin and value a set of action's ids */
+    @JsonInclude(Include.NON_EMPTY)
+    private Map<String, Set<String>> actions;
 
     /** Disable automatically after firing */
     @JsonInclude
@@ -70,32 +71,31 @@ public class Trigger {
     private boolean autoResolveAlerts;
 
     @JsonInclude
-    private Severity severity;
+    private Match autoResolveMatch;
 
-    /** A map with key based on actionPlugin and value a set of action's ids */
+    /** Is a child trigger of the specified triggerId */
     @JsonInclude(Include.NON_EMPTY)
-    private Map<String, Set<String>> actions;
+    private String childOf;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private String description;
+
+    @JsonInclude
+    private boolean enabled;
 
     @JsonInclude
     private Match firingMatch;
-
-    @JsonInclude
-    private Match autoResolveMatch;
-
-    /** Is a parent trigger, non-firing, used to manage a set of child triggers. */
-    @JsonInclude
-    private boolean parent;
-
-    /** Is a child trigger of the specified triggerId */
-    @JsonInclude
-    private String childOf;
 
     /** Is a child trigger of the specified triggerId but currently orphaned (i.e. customized) */
     @JsonInclude
     private boolean orphan;
 
+    /** Is a parent trigger, non-firing, used to manage a set of child triggers. */
     @JsonInclude
-    private boolean enabled;
+    private boolean parent;
+
+    @JsonInclude
+    private Severity severity;
 
     @JsonIgnore
     private Mode mode;
@@ -110,16 +110,25 @@ public class Trigger {
         this("defaultTenant", "defaultName");
     }
 
-    public Trigger(String tenantId, String name) {
-        this(tenantId, generateId(), name, null);
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     * @param triggerId the triggerId, unique within the tenant.
+     * @param name the trigger display name.
+     */
+    public Trigger(String triggerId, String name) {
+        this(null, triggerId, name, null);
     }
 
-    public Trigger(String tenantId, String name, Map<String, String> context) {
-        this(tenantId, generateId(), name, context);
-    }
-
-    public static String generateId() {
-        return UUID.randomUUID().toString();
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     * @param triggerId the triggerId, unique within the tenant.
+     * @param name the trigger display name.
+     * @param context optional context data to be stored with the trigger and assigned to its generated alerts
+     */
+    public Trigger(String triggerId, String name, Map<String, String> context) {
+        this(null, triggerId, name, context);
     }
 
     public Trigger(String tenantId, String id, String name) {
@@ -135,21 +144,26 @@ public class Trigger {
         this.name = name;
         this.context = context;
 
+        this.actions = new HashMap<>();
         this.autoDisable = false;
         this.autoEnable = false;
         this.autoResolve = false;
         this.autoResolveAlerts = true;
-        this.severity = Severity.MEDIUM;
-        this.firingMatch = Match.ALL;
         this.autoResolveMatch = Match.ALL;
-        this.actions = new HashMap<>();
-        this.parent = false;
         this.childOf = null;
-        this.orphan = false;
-
+        this.description = null;
         this.enabled = false;
-        this.mode = Mode.FIRING;
+        this.firingMatch = Match.ALL;
+        this.orphan = false;
+        this.parent = false;
+        this.severity = Severity.MEDIUM;
+
         this.match = Match.ALL;
+        this.mode = Mode.FIRING;
+    }
+
+    public static String generateId() {
+        return UUID.randomUUID().toString();
     }
 
     public String getTenantId() {
@@ -374,7 +388,6 @@ public class Trigger {
         this.autoResolveMatch = autoResolveMatch;
         setMatch(this.mode == Mode.FIRING ? getFiringMatch() : getAutoResolveMatch());
     }
-
 
     @Override
     public boolean equals(Object o) {

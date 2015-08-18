@@ -75,11 +75,11 @@ public interface DefinitionsService {
      * no longer have a parent trigger associated and will then need to be managed independently.
      * @param tenantId Tenant where trigger is stored
      * @param triggerId Parent Trigger to be removed.
-     * @param leaveChildren If true then the non-orphan children are also removed.
-     * @param leaveOrphans If true then the orphan children are also removed.
+     * @param keepChildren If true the non-orphan child triggers for the parent are saved.
+     * @param keepOrphans If true the orphan child triggers for the parent are saved.
      * @throws Exception on any problem
      */
-    void removeParentTrigger(String tenantId, String parentId, boolean leaveChildren, boolean leaveOrphans)
+    void removeParentTrigger(String tenantId, String parentId, boolean keepChildren, boolean keepOrphans)
             throws Exception;
 
     /**
@@ -158,6 +158,17 @@ public interface DefinitionsService {
     Trigger addChildTrigger(String tenantId, String parentId, String childId, String childName,
             Map<String, String> childContext, Map<String, String> dataIdMap) throws Exception;
 
+    /**
+     * Orphan a child trigger.  The child trigger will no longer inherit parent updates.  It will be allowed
+     * to be independently updated.  It does maintain its parent reference and can again be tied to the
+     * parent via a call to {@link #unorphanChildTrigger(String, String, Map, Map)}.
+     * @param tenantId Tenant where trigger is stored
+     * @param childId The child triggerId
+     * @param childContext The child triggerContext. If null the context is inherited from the parent trigger
+     * @param dataIdMap Tokens to be replaced in the new trigger
+     * @return the child trigger
+     * @throws Exception
+     */
     Trigger orphanChildTrigger(String tenantId, String childId) throws Exception;
 
     /**

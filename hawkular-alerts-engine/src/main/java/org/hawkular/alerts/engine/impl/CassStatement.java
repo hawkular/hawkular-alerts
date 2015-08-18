@@ -224,8 +224,9 @@ public class CassStatement {
                 + "(tenantId, category, name, triggers) VALUES (?, ?, ?, ?) ";
 
         INSERT_TRIGGER = "INSERT INTO " + keyspace + ".triggers " +
-                "(name, description, autoDisable, autoEnable, autoResolve, autoResolveAlerts, severity, firingMatch, "
-                + "autoResolveMatch, id, enabled, tenantId, context) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
+                "(tenantId, id, name, context, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
+                + "autoResolveMatch, childOf, description, enabled, firingMatch, orphan, parent, severity) "
+                + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_TRIGGER_ACTIONS = "INSERT INTO " + keyspace + ".triggers_actions "
                 + "(tenantId, triggerId, actionPlugin, actions) VALUES (?, ?, ?, ?) ";
@@ -336,8 +337,8 @@ public class CassStatement {
                 + "FROM " + keyspace + ".tags_triggers "
                 + "WHERE tenantId = ? AND name = ? ";
 
-        SELECT_TRIGGER = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
-                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId, context "
+        SELECT_TRIGGER = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
+                + "autoResolveMatch, childOf, description, enabled, firingMatch, orphan, parent, severity "
                 + "FROM " + keyspace + ".triggers "
                 + "WHERE tenantId = ? AND id = ? ";
 
@@ -368,16 +369,19 @@ public class CassStatement {
                 + "FROM " + keyspace + ".dampenings "
                 + "WHERE tenantId = ? AND triggerId = ? and triggerMode = ? ";
 
-        SELECT_TRIGGERS_ALL = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
-                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId, context "
+        SELECT_TRIGGERS_ALL = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, "
+                + "autoResolveAlerts, autoResolveMatch, childOf, description, enabled, firingMatch, orphan, "
+                + "parent, severity "
                 + "FROM " + keyspace + ".triggers ";
 
-        SELECT_TRIGGERS_CHILDOF = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
-                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId, context "
+        SELECT_TRIGGERS_CHILDOF = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, "
+                + "autoResolveAlerts, autoResolveMatch, childOf, description, enabled, firingMatch, orphan, "
+                + "parent, severity "
                 + "FROM " + keyspace + ".triggers WHERE tenantId = ? AND childOf = ? ";
 
-        SELECT_TRIGGERS_TENANT = "SELECT name, description, autoDisable, autoEnable, autoResolve, "
-                + "autoResolveAlerts, severity, firingMatch, autoResolveMatch, id, enabled, tenantId, context "
+        SELECT_TRIGGERS_TENANT = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, "
+                + "autoResolveAlerts, autoResolveMatch, childOf, description, enabled, firingMatch, orphan, "
+                + "parent, severity "
                 + "FROM " + keyspace + ".triggers WHERE tenantId = ? ";
 
         UPDATE_ACTION = "UPDATE " + keyspace + ".actions SET properties = ? "
@@ -398,8 +402,9 @@ public class CassStatement {
                 + "WHERE tenantId = ? AND name = ? ";
 
         UPDATE_TRIGGER = "UPDATE " + keyspace + ".triggers "
-                + "SET name = ?, description = ?, autoDisable = ?, autoEnable = ?, autoResolve = ?, "
-                + "autoResolveAlerts = ?, severity = ?, firingMatch = ?, autoResolveMatch = ?, enabled = ? "
+                + "SET autoDisable = ?, autoEnable = ?, autoResolve = ?, autoResolveAlerts = ?, autoResolveMatch = ?, "
+                + "childOf = ?, description = ?,  enabled = ?, firingMatch = ?, name = ?, orphan = ?, parent = ?, "
+                + "severity = ?  "
                 + "WHERE tenantId = ? AND id = ? ";
 
     }

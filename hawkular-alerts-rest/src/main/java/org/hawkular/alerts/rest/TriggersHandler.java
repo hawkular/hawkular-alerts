@@ -21,6 +21,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 
 import java.util.Collection;
+import java.util.Map;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -214,6 +215,146 @@ public class TriggersHandler {
         } catch (NotFoundException e) {
             return ResponseUtil.notFound("Trigger " + triggerId + " doesn't exist for update");
 
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/{triggerId}/child")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(
+            value = "Create a new child trigger for the specified parent trigger. If childId is null, a (likely) unique"
+                    + " ID will be generated. If context is null it will be inherited from the parent.",
+            response = Trigger.class,
+            notes = "Returns Trigger created if operation finished correctly")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Trigger Created"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 404, message = "Parent trigger not found."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public Response createChildTrigger(
+            @ApiParam(required = true, value = "Parent Trigger id")
+            @PathParam("triggerId")
+            final String triggerId,
+            @ApiParam(required = false, name = "childId", value = "Child Trigger id. Generated if null.")
+            final String childId,
+            @ApiParam(required = true, name = "childName", value = "Child Trigger name. Unique.")
+            final String childName,
+            @ApiParam(required = false, name = "childContext", value = "Child Trigger context. Inherited if null")
+            final Map<String, String> childContext,
+            @ApiParam(required = true, name = "dataIdMap",
+                    value = "Condition DataId token replacements for each dataId in conditions.")
+            final Map<String, String> dataIdMap) {
+        try {
+            Trigger child = definitions.addChildTrigger(tenantId, triggerId, childId, childName, childContext,
+                    dataIdMap);
+            log.debugf("Child Trigger: %s ", child.toString());
+            return ResponseUtil.ok(child);
+
+        } catch (NotFoundException e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.notFound(e.getMessage());
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/{triggerId}/orphan/{childTriggerId}")
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Make a non-orphan child trigger into an orphan.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Trigger updated"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters") })
+    public Response orphanChildTrigger(
+            @ApiParam(value = "Parent Trigger id", required = true)//
+            @PathParam("triggerId")//
+            final String triggerId,
+            @ApiParam(value = "Child Trigger id to be made an orphan.", required = true)//
+            @PathParam("childTriggerId")//
+            final String childTriggerId) {
+        try {
+            Trigger child = definitions.orphanChildTrigger(tenantId, childTriggerId);
+            log.debugf("Orphan Child Trigger: %s ", child);
+            return ResponseUtil.ok();
+
+        } catch (NotFoundException e) {
+            return ResponseUtil.notFound("Child Trigger " + childTriggerId + " doesn't exist for update");
+
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/{triggerId}/unorphan/{childTriggerId}")
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Make am orphan child trigger into a non-orphan.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Trigger updated"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters") })
+    public Response unorphanChildTrigger(
+            @ApiParam(value = "Parent Trigger id", required = true)//
+            @PathParam("triggerId")//
+            final String triggerId,
+            @ApiParam(value = "Child Trigger id for the child to be converted", required = true)//
+            @PathParam("childTriggerId")//
+            final String childTriggerId,
+            @ApiParam(required = false, name = "childContext", value = "Child Trigger context. Inherited if null")//
+            final Map<String, String> childContext,
+            @ApiParam(required = true, name = "dataIdMap",
+                    value = "Condition DataId token replacements for each dataId in conditions.")//
+            final Map<String, String> dataIdMap) {
+        try {
+            Trigger child = definitions.unorphanChildTrigger(tenantId, childTriggerId, childContext, dataIdMap);
+            log.debugf("Child Trigger: %s ", child);
+            return ResponseUtil.ok();
+
+        } catch (NotFoundException e) {
+            return ResponseUtil.notFound("Trigger " + triggerId + " doesn't exist for update");
+
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @DELETE
+    @Path("/{triggerId}/parent")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(
+            value = "Delete a parent trigger. Use this endpoint when needing to preserve child triggers.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Parent Trigger Removed"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 404, message = "Parent Trigger not found"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public Response deleteParentTrigger(
+            @ApiParam(required = true, value = "Parent Trigger id")//
+            @PathParam("triggerId")//
+            final String triggerId,
+            @ApiParam(required = true, value = "Convert the non-orphan child triggers to standard triggers.")//
+            @QueryParam("keepChildren")//
+            final boolean keepChildren,
+            @ApiParam(required = true, value = "Convert the non-orphan child triggers to standard triggers.")//
+            @QueryParam("keepOrphans")//
+            final boolean keepOrphans) {
+        try {
+            definitions.removeParentTrigger(tenantId, triggerId, keepChildren, keepOrphans);
+            log.debugf("Remove Parent Trigger: %s/%s ", tenantId, triggerId);
+            return ResponseUtil.ok();
+
+        } catch (NotFoundException e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());

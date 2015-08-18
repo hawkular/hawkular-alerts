@@ -17,7 +17,6 @@
 package org.hawkular.alerts.rest
 
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
-import static org.hawkular.alerts.api.model.trigger.Trigger.Mode
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
@@ -32,6 +31,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Availability
 import org.hawkular.alerts.api.model.data.MixedData
 import org.hawkular.alerts.api.model.data.NumericData
+import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.FixMethodOrder
 import org.junit.Test

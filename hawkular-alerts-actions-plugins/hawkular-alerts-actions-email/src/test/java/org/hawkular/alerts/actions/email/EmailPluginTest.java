@@ -100,8 +100,7 @@ public class EmailPluginTest {
         /*
             Alert definition for threshold
          */
-        Trigger rtTrigger = new Trigger(rtTriggerId, "http://www.jboss.org");
-        rtTrigger.setTenantId(tenantId);
+        Trigger rtTrigger = new Trigger(tenantId, rtTriggerId, "http://www.jboss.org");
         ThresholdCondition rtFiringCondition = new ThresholdCondition(rtTriggerId, Mode.FIRING,
                 rtDataId, ThresholdCondition.Operator.GT, 1000d);
         ThresholdCondition rtResolveCondition = new ThresholdCondition(rtTriggerId, Mode.AUTORESOLVE,
@@ -173,8 +172,7 @@ public class EmailPluginTest {
         /*
             Alert definition for availability
          */
-        Trigger avTrigger = new Trigger(avTriggerId, "http://www.jboss.org");
-        avTrigger.setTenantId(tenantId);
+        Trigger avTrigger = new Trigger(tenantId, avTriggerId, "http://www.jboss.org");
         AvailabilityCondition avFiringCondition = new AvailabilityCondition(avTriggerId, Mode.FIRING,
                 avDataId, AvailabilityCondition.Operator.NOT_UP);
         AvailabilityCondition avResolveCondition = new AvailabilityCondition(avTriggerId, Mode.AUTORESOLVE,
@@ -246,8 +244,7 @@ public class EmailPluginTest {
         /*
             Alert definition for two conditions
          */
-        Trigger mixTrigger = new Trigger(mixTriggerId, "http://www.jboss.org");
-        mixTrigger.setTenantId(tenantId);
+        Trigger mixTrigger = new Trigger(tenantId, mixTriggerId, "http://www.jboss.org");
         ThresholdCondition mixRtFiringCondition = new ThresholdCondition(mixTriggerId, Mode.FIRING,
                 rtDataId, ThresholdCondition.Operator.GT, 1000d);
         ThresholdCondition mixRtResolveCondition = new ThresholdCondition(mixTriggerId, Mode.AUTORESOLVE,

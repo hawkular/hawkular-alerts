@@ -30,19 +30,21 @@ CREATE KEYSPACE ${keyspace} WITH replication = {'class': 'SimpleStrategy', 'repl
 
 CREATE TABLE ${keyspace}.triggers (
     tenantId text,
+    id text,
     name text,
-    description text,
+    context map<text,text>,
     autoDisable boolean,
     autoEnable boolean,
     autoResolve boolean,
     autoResolveAlerts boolean,
-    severity text,
-    firingMatch text,
     autoResolveMatch text,
-    id text,
+    childOf text,
+    description text,
     enabled boolean,
-    context map<text,text>,
+    firingMatch text,
+    orphan boolean,
     parent boolean,
+    severity text,
     PRIMARY KEY (tenantId, id)
 );
 

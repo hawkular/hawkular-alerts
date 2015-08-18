@@ -12,7 +12,7 @@
     "firingMatch": "ALL",
     "autoResolveMatch": "ALL",
     "parent": false,
-    "childOf": null
+    "childOf": null,
     "orphan": false,
     "actions": [
       {"actionPlugin": "snmp",
@@ -45,7 +45,7 @@
     "firingMatch": "ALL",
     "autoResolveMatch": "ALL",
     "parent": false,
-    "childOf": null
+    "childOf": null,
     "orphan": false,
     "actions": [
       {"actionPlugin": "snmp",
@@ -78,7 +78,7 @@
     "firingMatch": "ALL",
     "autoResolveMatch": "ALL",
     "parent": false,
-    "childOf": null
+    "childOf": null,
     "orphan": false,
     "actions": [
       {"actionPlugin": "snmp",
@@ -111,7 +111,7 @@
     "firingMatch": "ALL",
     "autoResolveMatch": "ALL",
     "parent": false,
-    "childOf": null
+    "childOf": null,
     "orphan": false,
     "actions": [
       {"actionPlugin": "snmp",
@@ -144,7 +144,7 @@
     "firingMatch": "ALL",
     "autoResolveMatch": "ALL",
     "parent": false,
-    "childOf": null
+    "childOf": null,
     "orphan": false,
     "actions": [
       {"actionPlugin": "snmp",
@@ -177,7 +177,7 @@
     "firingMatch": "ALL",
     "autoResolveMatch": "ALL",
     "parent": false,
-    "childOf": null
+    "childOf": null,
     "orphan": false,
     "actions": [
       {"actionPlugin": "snmp",
