@@ -141,13 +141,13 @@ public class EmailTemplate {
 
             StringWriter writerPlain = new StringWriter();
             StringWriter writerHtml = new StringWriter();
-            if (plain != null) {
+            if (plain != null && !plain.isEmpty()) {
                 ftlTemplate = Template.getPlainTextTemplate("plainTemplate", plain, ftlCfg);
                 ftlTemplate.process(templateData, writerPlain);
             }  else {
                 ftlTemplatePlain.process(templateData, writerPlain);
             }
-            if (html != null) {
+            if (html != null && !html.isEmpty()) {
                 ftlTemplate = Template.getPlainTextTemplate("htmlTemplate", html, ftlCfg);
                 ftlTemplate.process(templateData, writerHtml);
             } else {
