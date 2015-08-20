@@ -483,6 +483,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         try {
             deleteTags(tenantId, triggerId, null, null);
+            deleteTriggerActions(tenantId, triggerId);
             List<ResultSetFuture> futures = new ArrayList<>();
             futures.add(session.executeAsync(deleteDampenings.bind(tenantId, triggerId)));
             futures.add(session.executeAsync(deleteConditions.bind(tenantId, triggerId)));
@@ -516,7 +517,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     trigger.getSeverity().name(), trigger.getFiringMatch().name(),
                     trigger.getAutoResolveMatch().name(), trigger.isEnabled(), trigger.getTenantId(),
                     trigger.getId()));
-            deleteTriggerActions(trigger);
+            deleteTriggerActions(trigger.getTenantId(), trigger.getId());
             insertTriggerActions(trigger);
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -532,12 +533,12 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return trigger;
     }
 
-    private void deleteTriggerActions(Trigger trigger) throws Exception {
+    private void deleteTriggerActions(String tenantId, String triggerId) throws Exception {
         PreparedStatement deleteTriggerActions = CassStatement.get(session, CassStatement.DELETE_TRIGGER_ACTIONS);
         if (deleteTriggerActions == null) {
             throw new RuntimeException("updateTrigger PreparedStatement is null");
         }
-        session.execute(deleteTriggerActions.bind(trigger.getTenantId(), trigger.getId()));
+        session.execute(deleteTriggerActions.bind(tenantId, triggerId));
     }
 
     @Override

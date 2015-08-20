@@ -51,7 +51,7 @@ public class StandaloneActionPluginListener implements ActionListener {
     public void process(Action action) {
         try {
             init();
-            if (ActionPlugins.getPlugins().isEmpty()) {
+            if (plugins.isEmpty()) {
                 msgLog.warnNoPluginsFound();
                 return;
             }
@@ -60,7 +60,7 @@ public class StandaloneActionPluginListener implements ActionListener {
                 return;
             }
             String actionPlugin = action.getActionPlugin();
-            ActionPluginListener plugin = ActionPlugins.getPlugins().get(actionPlugin);
+            ActionPluginListener plugin = plugins.get(actionPlugin);
             if (plugin == null) {
                 log.debug("Received action [" + actionPlugin +
                         "] but no ActionPluginListener found on this deployment");
@@ -73,6 +73,7 @@ public class StandaloneActionPluginListener implements ActionListener {
                 Map<String, String> mixedProps = mixProperties(properties, defaultProperties);
 
                 PluginMessage pluginMessage = new StandalonePluginMessage(action, mixedProps);
+
                 plugin.process(pluginMessage);
             } else {
                 msgLog.warnCannotAccessToDefinitionsService();
