@@ -202,6 +202,9 @@ public class Trigger {
     }
 
     public Map<String, String> getContext() {
+        if (null == context) {
+            context = new HashMap<>();
+        }
         return context;
     }
 

@@ -224,7 +224,8 @@ public class AlertsEngineImpl implements AlertsEngine {
             throw new IllegalArgumentException("Trigger must be not null");
         }
         if (trigger.isParent()) {
-            throw new IllegalArgumentException("Can not load a parent Trigger");
+            log.debugf("Skipping reload of parent trigger [%s/%s]", trigger.getTenantId(), trigger.getId());
+            return;
         }
 
         // Look for the Trigger in the rules engine, if it is there then remove everything about it

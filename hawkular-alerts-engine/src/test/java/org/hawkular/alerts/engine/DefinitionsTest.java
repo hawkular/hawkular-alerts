@@ -18,12 +18,17 @@ package org.hawkular.alerts.engine;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
@@ -34,6 +39,7 @@ import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
+import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
@@ -68,52 +74,296 @@ public abstract class DefinitionsTest {
         assertTrue(definitionsService.getAllActions().size() > 0);
     }
 
-    //    @Test
-    //    public void test001CopyTrigger() throws Exception {
-    //        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-1");
-    //        assertTrue(t != null);
-    //
-    //        Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
-    //        assertEquals(cs.toString(),1, cs.size());
-    //        Condition c = cs.iterator().next();
-    //
-    //        Collection<Dampening> ds = definitionsService.getTriggerDampenings(TEST_TENANT, t.getId(), null);
-    //        assertEquals(cs.toString(),1 ,ds.size());
-    //        Dampening d = ds.iterator().next();
-    //
-    //        Map<String, String> dataIdMap = new HashMap<>(1);
-    //        dataIdMap.put(c.getDataId(), "NewDataId");
-    //
-    //        Trigger nt = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), dataIdMap);
-    //        assertNotNull(nt);
-    //        assertTrue(nt.toString(), !nt.getId().equals(t.getId()));
-    //        assertTrue(nt.toString(), nt.getName().equals(t.getName()));
-    //        assertTrue(nt.toString(), nt.getDescription().equals(t.getDescription()));
-    //        assertTrue(nt.toString(), nt.getFiringMatch().equals(t.getFiringMatch()));
-    //        assertTrue(nt.toString(), nt.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
-    //
-    //        Collection<Condition> ncs = definitionsService.getTriggerConditions(TEST_TENANT, nt.getId(), null);
-    //        assertTrue(ncs.toString(), ncs.size() == 1);
-    //        Condition nc = ncs.iterator().next();
-    //        assertTrue(nc.toString(), nc.getClass().equals(c.getClass()));
-    //        assertTrue(nc.toString(), nc.getTriggerId().equals(nt.getId()));
-    //        assertTrue(nc.toString(), nc.getTriggerMode().equals(c.getTriggerMode()));
-    //        assertTrue(nc.toString(), nc.getDataId().equals("NewDataId"));
-    //        assertTrue(nc.toString(), nc.getConditionSetIndex() == c.getConditionSetIndex());
-    //        assertTrue(nc.toString(), nc.getConditionSetSize() == c.getConditionSetSize());
-    //
-    //        Collection<Dampening> nds = definitionsService.getTriggerDampenings(TEST_TENANT, nt.getId(), null);
-    //        assertTrue(nds.toString(), nds.size() == 1);
-    //        Dampening nd = nds.iterator().next();
-    //        assertTrue(nd.toString(), nd.getTriggerId().equals(nt.getId()));
-    //        assertTrue(nd.toString(), nd.getTriggerMode().equals(d.getTriggerMode()));
-    //        assertTrue(nd.toString(), nd.getEvalTrueSetting() == d.getEvalTrueSetting());
-    //        assertTrue(nd.toString(), nd.getEvalTotalSetting() == d.getEvalTotalSetting());
-    //        assertTrue(nd.toString(), nd.getEvalTimeSetting() == d.getEvalTimeSetting());
-    //    }
+    @Test
+    public void test0010ParentTrigger() throws Exception {
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-7");
+        assertNotNull(t);
+
+        t = copyTrigger(t, "parent-trigger");
+        assertNotNull(t);
+
+        Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
+        assertEquals(cs.toString(), 1, cs.size());
+        Condition c = cs.iterator().next();
+
+        Collection<Dampening> ds = definitionsService.getTriggerDampenings(TEST_TENANT, t.getId(), null);
+        assertEquals(cs.toString(), 1, ds.size());
+        Dampening d = ds.iterator().next();
+
+        Map<String, String> dataIdMap = new HashMap<>(1);
+        dataIdMap.put("NumericData-Token", "NumericData-01");
+
+        Map<String, String> context = new HashMap<>(1);
+        context.put("context", "context-1");
+
+        Trigger nt1 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-1-trigger", "child-1",
+                context, dataIdMap);
+        assertNotNull(nt1);
+        dataIdMap.put("NumericData-Token", "NumericData-02");
+        context.put("context", "context-2");
+        Trigger nt2 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-2-trigger", "child-2",
+                context, dataIdMap);
+        assertNotNull(nt2);
+
+        Collection<Trigger> children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", false);
+        assertTrue(children != null);
+        assertEquals(2, children.size());
+        Iterator<Trigger> i = children.iterator();
+        nt1 = i.next();
+        if (nt1.getId().equals("child-1-trigger")) {
+            nt2 = i.next();
+        } else {
+            nt2 = nt1;
+            nt1 = i.next();
+        }
+
+        assertTrue(nt1.toString(), "child-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "child-1".equals(nt1.getName()));
+        assertNotNull(nt1.getContext());
+        assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
+        assertTrue(nt1.toString(), nt1.getDescription().equals(t.getDescription()));
+        assertTrue(nt1.toString(), nt1.isEnabled());
+        assertTrue(nt1.toString(), nt1.getFiringMatch().equals(t.getFiringMatch()));
+        assertTrue(nt1.toString(), nt1.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
+
+        assertTrue(nt2.toString(), "child-2-trigger".equals(nt2.getId()));
+        assertTrue(nt2.toString(), "child-2".equals(nt2.getName()));
+        assertNotNull(nt2.getContext());
+        assertTrue(nt2.toString(), "context-2".equals(nt2.getContext().get("context")));
+        assertTrue(nt2.toString(), nt2.getDescription().equals(t.getDescription()));
+        assertTrue(nt1.toString(), nt1.isEnabled());
+        assertTrue(nt2.toString(), nt2.getFiringMatch().equals(t.getFiringMatch()));
+        assertTrue(nt2.toString(), nt2.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
+
+        Collection<Condition> ncs = definitionsService.getTriggerConditions(TEST_TENANT, nt1.getId(), null);
+        assertTrue(ncs.toString(), ncs.size() == 1);
+        Condition nc = ncs.iterator().next();
+        assertTrue(nc.toString(), nc.getClass().equals(c.getClass()));
+        assertTrue(nc.toString(), nc.getTriggerId().equals(nt1.getId()));
+        assertTrue(nc.toString(), nc.getTriggerMode().equals(c.getTriggerMode()));
+        assertTrue(nc.toString(), nc.getDataId().equals("NumericData-01"));
+        assertTrue(nc.toString(), nc.getConditionSetIndex() == c.getConditionSetIndex());
+        assertTrue(nc.toString(), nc.getConditionSetSize() == c.getConditionSetSize());
+
+        ncs = definitionsService.getTriggerConditions(TEST_TENANT, nt2.getId(), null);
+        assertTrue(ncs.toString(), ncs.size() == 1);
+        nc = ncs.iterator().next();
+        assertTrue(nc.toString(), nc.getClass().equals(c.getClass()));
+        assertTrue(nc.toString(), nc.getTriggerId().equals(nt2.getId()));
+        assertTrue(nc.toString(), nc.getTriggerMode().equals(c.getTriggerMode()));
+        assertTrue(nc.toString(), nc.getDataId().equals("NumericData-02"));
+        assertTrue(nc.toString(), nc.getConditionSetIndex() == c.getConditionSetIndex());
+        assertTrue(nc.toString(), nc.getConditionSetSize() == c.getConditionSetSize());
+
+        Collection<Dampening> nds = definitionsService.getTriggerDampenings(TEST_TENANT, nt1.getId(), null);
+        assertTrue(nds.toString(), nds.size() == 1);
+        Dampening nd = nds.iterator().next();
+        assertTrue(nd.toString(), nd.getTriggerId().equals(nt1.getId()));
+        assertTrue(nd.toString(), nd.getTriggerMode().equals(d.getTriggerMode()));
+        assertTrue(nd.toString(), nd.getEvalTrueSetting() == d.getEvalTrueSetting());
+        assertTrue(nd.toString(), nd.getEvalTotalSetting() == d.getEvalTotalSetting());
+        assertTrue(nd.toString(), nd.getEvalTimeSetting() == d.getEvalTimeSetting());
+
+        nds = definitionsService.getTriggerDampenings(TEST_TENANT, nt2.getId(), null);
+        assertTrue(nds.toString(), nds.size() == 1);
+        nd = nds.iterator().next();
+        assertTrue(nd.toString(), nd.getTriggerId().equals(nt2.getId()));
+        assertTrue(nd.toString(), nd.getTriggerMode().equals(d.getTriggerMode()));
+        assertTrue(nd.toString(), nd.getEvalTrueSetting() == d.getEvalTrueSetting());
+        assertTrue(nd.toString(), nd.getEvalTotalSetting() == d.getEvalTotalSetting());
+        assertTrue(nd.toString(), nd.getEvalTimeSetting() == d.getEvalTimeSetting());
+
+        nt1.setName("child-1-update");
+        try {
+            definitionsService.updateTrigger(TEST_TENANT, nt1);
+            fail("Child trigger update should have failed.");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+
+        nt1 = definitionsService.orphanChildTrigger(TEST_TENANT, nt1.getId());
+        assertTrue(nt1.toString(), nt1.isOrphan());
+
+        nt1.setName("child-1-update");
+        nt1.setContext(null);
+        nt1.setDescription("Updated");
+        nt1.setEnabled(false);
+        try {
+            nt1 = definitionsService.updateTrigger(TEST_TENANT, nt1);
+        } catch (IllegalArgumentException e) {
+            fail("Orphan trigger update should have succeeded.");
+        }
+        assertNotNull(nt1);
+        assertTrue(nt1.toString(), nt1.isOrphan());
+        assertTrue(nt1.toString(), "child-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "child-1-update".equals(nt1.getName()));
+        assertTrue(nt1.toString(), nt1.getContext().isEmpty());
+        assertTrue(nt1.toString(), "Updated".equals(nt1.getDescription()));
+        assertTrue(nt1.toString(), !nt1.isEnabled());
+
+        dataIdMap.put("NumericData-Token", "NumericData-01");
+        context.put("context", "context-1");
+        nt1 = definitionsService.unorphanChildTrigger(TEST_TENANT, nt1.getId(), context, dataIdMap);
+        assertNotNull(nt1);
+        assertTrue(nt1.toString(), !nt1.isOrphan());
+        assertTrue(nt1.toString(), "child-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "child-1-update".equals(nt1.getName())); // name changes are maintained
+        assertNotNull(nt1.getContext());
+        assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
+        assertTrue(nt1.toString(), nt1.getDescription().equals(t.getDescription()));
+        assertTrue(nt1.toString(), nt1.isEnabled());
+        assertTrue(nt1.toString(), nt1.getFiringMatch().equals(t.getFiringMatch()));
+        assertTrue(nt1.toString(), nt1.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
+
+        ncs = definitionsService.getTriggerConditions(TEST_TENANT, nt1.getId(), null);
+        assertTrue(ncs.toString(), ncs.size() == 1);
+        nc = ncs.iterator().next();
+        assertTrue(nc.toString(), nc.getClass().equals(c.getClass()));
+        assertTrue(nc.toString(), nc.getTriggerId().equals(nt1.getId()));
+        assertTrue(nc.toString(), nc.getTriggerMode().equals(c.getTriggerMode()));
+        assertTrue(nc.toString(), nc.getDataId().equals("NumericData-01"));
+        assertTrue(nc.toString(), nc.getConditionSetIndex() == c.getConditionSetIndex());
+        assertTrue(nc.toString(), nc.getConditionSetSize() == c.getConditionSetSize());
+
+        definitionsService.removeParentTrigger(TEST_TENANT, "parent-trigger", false, false);
+
+        t = definitionsService.getTrigger(TEST_TENANT, "parent-trigger");
+        assertNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "child-1-trigger");
+        assertNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "child-2-trigger");
+        assertNull(t);
+    }
+
+    private Trigger copyTrigger(Trigger t, String newTriggerId) throws Exception {
+        Collection<Condition> conditions = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
+        Collection<Dampening> dampenings = definitionsService.getTriggerDampenings(TEST_TENANT, t.getId(), null);
+
+        String id = t.getId();
+        t.setId(newTriggerId);
+        definitionsService.addTrigger(TEST_TENANT, t);
+        t.setId(id);
+
+        Trigger nt = definitionsService.getTrigger(TEST_TENANT, newTriggerId);
+        for (Condition c : conditions) {
+            c.setTriggerId(newTriggerId);
+            definitionsService.addCondition(TEST_TENANT, newTriggerId, c.getTriggerMode(), c);
+        }
+        for (Dampening d : dampenings) {
+            d.setTriggerId(newTriggerId);
+            definitionsService.addDampening(TEST_TENANT, d);
+        }
+
+        return nt;
+    }
 
     @Test
-    public void test002BasicTags() throws Exception {
+    public void test0020ParentTriggerUpdate() throws Exception {
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-7");
+        assertNotNull(t);
+
+        t = copyTrigger(t, "parent-trigger");
+        assertNotNull(t);
+
+        Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
+        assertEquals(cs.toString(), 1, cs.size());
+        Condition c = cs.iterator().next();
+
+        Collection<Dampening> ds = definitionsService.getTriggerDampenings(TEST_TENANT, t.getId(), null);
+        assertEquals(cs.toString(), 1, ds.size());
+        Dampening d = ds.iterator().next();
+
+        Map<String, String> dataIdMap = new HashMap<>(1);
+        dataIdMap.put("NumericData-Token", "NumericData-01");
+
+        Map<String, String> context = new HashMap<>(1);
+        context.put("context", "context-1");
+
+        Trigger nt1 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-1-trigger", "child-1",
+                context, dataIdMap);
+        assertNotNull(nt1);
+        dataIdMap.put("NumericData-Token", "NumericData-02");
+        context.put("context", "context-2");
+        Trigger nt2 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-2-trigger", "child-2",
+                context, dataIdMap);
+        assertNotNull(nt2);
+
+        Collection<Trigger> children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", false);
+        assertTrue(children != null);
+        assertEquals(2, children.size());
+        Iterator<Trigger> i = children.iterator();
+        nt1 = i.next();
+        if (nt1.getId().equals("child-1-trigger")) {
+            nt2 = i.next();
+        } else {
+            nt2 = nt1;
+            nt1 = i.next();
+        }
+
+        nt1 = definitionsService.orphanChildTrigger(TEST_TENANT, nt1.getId());
+        assertTrue(nt1.toString(), nt1.isOrphan());
+
+        t.setContext(null);
+        t.setDescription("Updated");
+        t.setEnabled(false);
+        t = definitionsService.updateTrigger(TEST_TENANT, t);
+
+        assertNotNull(t);
+        assertTrue(t.toString(), t.isParent());
+        assertTrue(t.toString(), "parent-trigger".equals(t.getId()));
+        assertTrue(t.toString(), t.getContext().isEmpty());
+        assertTrue(t.toString(), "Updated".equals(t.getDescription()));
+        assertTrue(t.toString(), !t.isEnabled());
+
+        children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", false);
+        assertTrue(children != null);
+        assertEquals(1, children.size());
+
+        children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", true);
+        assertTrue(children != null);
+        assertEquals(2, children.size());
+        i = children.iterator();
+        nt1 = i.next();
+        if (nt1.getId().equals("child-1-trigger")) {
+            nt2 = i.next();
+        } else {
+            nt2 = nt1;
+            nt1 = i.next();
+        }
+
+        assertTrue(nt1.toString(), nt1.isOrphan());
+        assertTrue(nt1.toString(), "child-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "child-1".equals(nt1.getName()));
+        assertNotNull(nt1.getContext());
+        assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
+        assertTrue(nt1.toString(), !"Updated".equals(nt1.getDescription()));
+        assertTrue(nt1.toString(), nt1.isEnabled());
+
+        assertTrue(nt1.toString(), !nt2.isOrphan());
+        assertTrue(nt2.toString(), "child-2-trigger".equals(nt2.getId()));
+        assertTrue(nt2.toString(), "child-2".equals(nt2.getName()));
+        assertTrue(nt2.toString(), nt2.getContext().isEmpty());
+        assertTrue(nt2.toString(), "Updated".equals(nt2.getDescription()));
+        assertTrue(nt2.toString(), !nt2.isEnabled());
+
+        definitionsService.removeParentTrigger(TEST_TENANT, "parent-trigger", true, true);
+        t = definitionsService.getTrigger(TEST_TENANT, "parent-trigger");
+        assertNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "child-1-trigger");
+        assertNotNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "child-2-trigger");
+        assertNotNull(t);
+
+        definitionsService.removeTrigger(TEST_TENANT, "child-1-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "child-1-trigger");
+        assertNull(t);
+        definitionsService.removeTrigger(TEST_TENANT, "child-2-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "child-2-trigger");
+        assertNull(t);
+    }
+
+    @Test
+    public void test0030BasicTags() throws Exception {
         Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-1");
         assertNotNull(t);
 
@@ -143,7 +393,7 @@ public abstract class DefinitionsTest {
 
         definitionsService.removeTags(TEST_TENANT, "trigger-1", "testcategory", "testname");
         tags = definitionsService.getTriggerTags(TEST_TENANT, "trigger-1", null);
-        assertEquals(tags.toString(),1 ,tags.size());
+        assertEquals(tags.toString(), 1, tags.size());
         tag = tags.get(0);
         assertEquals("trigger-1", tag.getTriggerId());
         assertEquals("dataId", tag.getCategory());
@@ -153,14 +403,14 @@ public abstract class DefinitionsTest {
     }
 
     @Test
-    public void test003BasicAlert() throws Exception {
+    public void test0040BasicAlert() throws Exception {
         Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-1");
         assertNotNull(t);
 
         Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
         assertTrue(cs.toString(), cs.size() == 1);
 
-        ThresholdCondition threshold = (ThresholdCondition)cs.iterator().next();
+        ThresholdCondition threshold = (ThresholdCondition) cs.iterator().next();
         long dataTime = System.currentTimeMillis();
         NumericData data = new NumericData("NumericData-01", dataTime, 5.0d);
         ThresholdConditionEval eval = new ThresholdConditionEval(threshold, data);
@@ -284,18 +534,18 @@ public abstract class DefinitionsTest {
     }
 
     @Test
-    public void test004PagingAlerts() throws Exception {
+    public void test0050PagingAlerts() throws Exception {
         Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-6");
         assertNotNull(t);
 
         Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
         assertTrue(cs.toString(), cs.size() == 1);
 
-        AvailabilityCondition availability = (AvailabilityCondition)cs.iterator().next();
+        AvailabilityCondition availability = (AvailabilityCondition) cs.iterator().next();
 
         List<Alert> alerts = new ArrayList<>();
 
-        for (int i=0; i<107; i++) {
+        for (int i = 0; i < 107; i++) {
             long dataTime = System.currentTimeMillis();
             Availability data = new Availability("Availability-01", dataTime, Availability.AvailabilityType.DOWN);
             AvailabilityConditionEval eval = new AvailabilityConditionEval(availability, data);
@@ -326,7 +576,6 @@ public abstract class DefinitionsTest {
 
         List<Alert> result = alertsService.getAlerts(TEST_TENANT, null, null);
         assertEquals(107, result.size());
-
 
         /*
             Ordering and paging by alertId
@@ -363,7 +612,6 @@ public abstract class DefinitionsTest {
 
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByDescending(AlertComparator.Field.ALERT_ID.getText()).build();
-
 
         System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getAlerts(TEST_TENANT, null, pager);
@@ -445,7 +693,6 @@ public abstract class DefinitionsTest {
         System.out.println("first ctime: " + firstCtime + " last ctime: " + lastCtime);
 
         assertTrue(firstCtime > lastCtime);
-
 
         /*
             Ordering and paging by severity
@@ -561,6 +808,5 @@ public abstract class DefinitionsTest {
 
         assertTrue(firstStatus.compareTo(lastStatus) > 0);
     }
-
 
 }

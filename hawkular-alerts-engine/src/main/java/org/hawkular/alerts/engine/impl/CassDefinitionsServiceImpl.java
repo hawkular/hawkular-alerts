@@ -581,9 +581,12 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (null == currentTrigger) {
             throw new NotFoundException(Trigger.class.getName(), tenantId, trigger.getId());
         }
-        boolean ok = (null == currentTrigger.getChildOf()) ?
-                (null == trigger.getChildOf()) :
-                currentTrigger.getChildOf().equals(trigger.getChildOf());
+        if (currentTrigger.isChild() && !currentTrigger.isOrphan()) {
+            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        }
+        boolean ok = currentTrigger.isChild() ?
+                currentTrigger.getChildOf().equals(trigger.getChildOf()) :
+                !trigger.isChild();
         if (!ok) {
             throw new IllegalArgumentException("A child trigger can not change parents.");
         }
@@ -614,7 +617,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         for (Trigger child : childTriggers) {
             if (!child.isOrphan()) {
                 copyParentTrigger(parent, child);
-                updateTrigger(tenantId, child);
+                updateTrigger(child);
             }
         }
 
@@ -633,7 +636,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         child.setDescription(parent.getDescription());
         child.setEnabled(parent.isEnabled());
         child.setFiringMatch(parent.getFiringMatch());
-        child.setName(parent.getName());
         child.setSeverity(parent.getSeverity());
 
         return child;
@@ -648,9 +650,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(updateTrigger.bind(trigger.isAutoDisable(), trigger.isAutoEnable(),
                     trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger.getAutoResolveMatch().name(),
-                    trigger.getChildOf(),
-                    trigger.getDescription(), trigger.isEnabled(), trigger.getFiringMatch().name(), trigger.getName(),
-                    trigger.isOrphan(), trigger.isParent(), trigger.getSeverity().name(), trigger.getTenantId(),
+                    trigger.getChildOf(), trigger.getContext(), trigger.getDescription(), trigger.isEnabled(),
+                    trigger.getFiringMatch().name(), trigger.getName(), trigger.isOrphan(), trigger.isParent(),
+                    trigger.getSeverity().name(), trigger.getTenantId(),
                     trigger.getId()));
             deleteTriggerActions(trigger.getTenantId(), trigger.getId());
             insertTriggerActions(trigger);
@@ -908,21 +910,28 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
+    // This impl is not efficient. It actually pulls all triggers for the tenant and then filters out the
+    // triggers that are not the requested children.  To make this more efficient we'd likely need to
+    // create a new child_triggers table which duplicated the triggers table, and where we would maintain
+    // a replica entry for each child trigger.  We'd need a primary key like ((tenantId,parentId),childId) and
+    // then we could query for child triggers directly.  Because this method is expected to be called
+    // rarely, and because the trigger population is not expected to be huge (likely maxing out in the thousands),
+    // we may just get away with this dumb impl.
     @Override
     public Collection<Trigger> getChildTriggers(String tenantId, String parentId, boolean includeOrphans)
             throws Exception {
 
         session = CassCluster.getSession();
-        PreparedStatement selectTriggersChildOf = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_CHILDOF);
-        if (null == selectTriggersChildOf) {
+        PreparedStatement selectTriggersTenant = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
+        if (null == selectTriggersTenant) {
             throw new RuntimeException("selectTriggersChildOf PreparedStatement is null");
         }
 
         List<Trigger> triggers = new ArrayList<>();
         try {
-            ResultSet rsTriggers = session.execute(selectTriggersChildOf.bind(tenantId, parentId));
+            ResultSet rsTriggers = session.execute(selectTriggersTenant.bind(tenantId));
             for (Row row : rsTriggers) {
-                if (includeOrphans || !row.getBool("orphan")) {
+                if (parentId.equals(row.getString("childOf")) && (includeOrphans || !row.getBool("orphan"))) {
                     Trigger trigger = mapTrigger(row);
                     selectTriggerActions(trigger);
                     triggers.add(trigger);
@@ -1010,7 +1019,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (!dataIdTokens.equals(dataIdMap.keySet())) {
             throw new IllegalArgumentException(
                     "DataIdMap must contain the exact dataIds (keyset) expected by the condition set. Expected: "
-                            + dataIdMap.keySet() + ", dataIdMap: " + dataIdMap.keySet());
+                            + dataIdTokens + ", dataIdMap: " + dataIdMap.keySet());
         }
         Collection<Dampening> dampenings = getTriggerDampenings(tenantId, parentId, null);
 

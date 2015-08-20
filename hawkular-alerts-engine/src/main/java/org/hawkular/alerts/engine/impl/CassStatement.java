@@ -110,7 +110,6 @@ public class CassStatement {
     public static final String SELECT_TRIGGER_DAMPENINGS;
     public static final String SELECT_TRIGGER_DAMPENINGS_MODE;
     public static final String SELECT_TRIGGERS_ALL;
-    public static final String SELECT_TRIGGERS_CHILDOF;
     public static final String SELECT_TRIGGERS_TENANT;
 
     public static final String UPDATE_ACTION;
@@ -374,11 +373,6 @@ public class CassStatement {
                 + "parent, severity "
                 + "FROM " + keyspace + ".triggers ";
 
-        SELECT_TRIGGERS_CHILDOF = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, "
-                + "autoResolveAlerts, autoResolveMatch, childOf, description, enabled, firingMatch, orphan, "
-                + "parent, severity "
-                + "FROM " + keyspace + ".triggers WHERE tenantId = ? AND childOf = ? ";
-
         SELECT_TRIGGERS_TENANT = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, "
                 + "autoResolveAlerts, autoResolveMatch, childOf, description, enabled, firingMatch, orphan, "
                 + "parent, severity "
@@ -403,8 +397,8 @@ public class CassStatement {
 
         UPDATE_TRIGGER = "UPDATE " + keyspace + ".triggers "
                 + "SET autoDisable = ?, autoEnable = ?, autoResolve = ?, autoResolveAlerts = ?, autoResolveMatch = ?, "
-                + "childOf = ?, description = ?,  enabled = ?, firingMatch = ?, name = ?, orphan = ?, parent = ?, "
-                + "severity = ?  "
+                + "childOf = ?, context = ?, description = ?,  enabled = ?, firingMatch = ?, name = ?, orphan = ?, "
+                + "parent = ?, severity = ?  "
                 + "WHERE tenantId = ? AND id = ? ";
 
     }

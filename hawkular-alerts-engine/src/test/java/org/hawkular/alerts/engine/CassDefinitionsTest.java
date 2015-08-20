@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.engine;
 
+import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.engine.cassandra.EmbeddedCassandra;
 import org.hawkular.alerts.engine.impl.AlertProperties;
 import org.hawkular.alerts.engine.impl.CassCluster;
@@ -39,8 +40,7 @@ public class CassDefinitionsTest extends DefinitionsTest {
     private static final String EXTERNAL_CASSANDRA = "external_cassandra";
 
     static Session session;
-    static String keyspace;
-    static String externalCass;
+    static boolean externalCassandra;
 
     @BeforeClass
     public static void initSessionAndResetTestSchema() throws Exception {
@@ -48,45 +48,38 @@ public class CassDefinitionsTest extends DefinitionsTest {
         String testFolder = CassDefinitionsTest.class.getResource("/").getPath();
         System.setProperty(JBOSS_DATA_DIR, testFolder);
 
-        externalCass = System.getProperty(EXTERNAL_CASSANDRA);
+        externalCassandra = (null != System.getProperty(EXTERNAL_CASSANDRA));
 
-        if (externalCass == null) {
+        if (!externalCassandra) {
             System.out.print("Starting embedded Cassandra for unit testing...");
             EmbeddedCassandra.start();
-
+        } else {
+            System.out.print("Using External Cassandra for unit testing...");
         }
 
         session = CassCluster.getSession();
-        keyspace = AlertProperties.getProperty("hawkular-alerts.cassandra-keyspace", "hawkular_alerts_test");
-
         definitionsService = StandaloneAlerts.getDefinitionsService();
         alertsService = StandaloneAlerts.getAlertsService();
     }
 
     @AfterClass
     public static void cleanTestSchema() throws Exception {
+        String keyspace =
+                AlertProperties.getProperty("hawkular-alerts.cassandra-keyspace", "hawkular_alerts_test");
+
         session.execute("DROP KEYSPACE " + keyspace);
 
-        CassCluster.shutdown();
-
-        if (externalCass == null) {
+        if (!externalCassandra) {
             System.out.print("Stopping embedded Cassandra for unit testing...");
+            CassCluster.shutdown();
             EmbeddedCassandra.stop();
         }
     }
 
     @Before
     public void cleanAlerts() throws Exception {
-        /*
-            We don't have a "purge" public method for Alerts as this info should theoretically remain in the database.
-            But we are going to clean alerts data for a clean scenario between tests.
-         */
-        session.execute("TRUNCATE " + keyspace + ".alerts");
-        session.execute("TRUNCATE " + keyspace + ".alerts_triggers");
-        session.execute("TRUNCATE " + keyspace + ".alerts_ctimes");
-        session.execute("TRUNCATE " + keyspace + ".alerts_statuses");
-        session.execute("TRUNCATE " + keyspace + ".alerts_severities");
+        AlertsCriteria criteria = new AlertsCriteria();
+        System.out.printf("Deleted [%s] Alerts before test.\n", alertsService.deleteAlerts(TEST_TENANT, criteria));
     }
-
 
 }

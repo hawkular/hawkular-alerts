@@ -265,6 +265,9 @@ public class Alert {
     }
 
     public Map<String, String> getContext() {
+        if ( null == context ) {
+            context = new HashMap<>();
+        }
         return context;
     }
 
