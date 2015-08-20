@@ -114,7 +114,7 @@ public class AerogearPlugin implements ActionPluginListener {
                         alert.getSeverity().toString();
             } else {
                 preparedMsg = "Message received without data at " + System.currentTimeMillis();
-                msgLog.warnMessageReceivedWithoutPayload("pagerduty");
+                msgLog.warnMessageReceivedWithoutPayload("aerogear");
             }
         }
         return preparedMsg;
