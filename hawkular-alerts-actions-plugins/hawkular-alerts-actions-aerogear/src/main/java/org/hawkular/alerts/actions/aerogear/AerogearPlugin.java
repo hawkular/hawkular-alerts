@@ -67,8 +67,6 @@ public class AerogearPlugin implements ActionPluginListener {
 
     @Override
     public void process(PluginMessage msg) throws Exception {
-        msgLog.infoActionReceived("aerogear", msg.toString());
-
         if (pushSender == null) {
             msgLog.errorCannotSendMessage("aerogear", "Plugin is not started");
             return;
@@ -84,6 +82,8 @@ public class AerogearPlugin implements ActionPluginListener {
 
         UnifiedMessage unifiedMessage = alert.build();
         pushSender.send(unifiedMessage);
+
+        msgLog.infoActionReceived("aerogear", msg.toString());
     }
 
     void setup() {

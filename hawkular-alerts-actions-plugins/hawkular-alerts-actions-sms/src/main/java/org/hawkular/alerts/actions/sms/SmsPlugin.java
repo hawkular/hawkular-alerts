@@ -100,6 +100,8 @@ public class SmsPlugin implements ActionPluginListener {
         } catch (TwilioRestException e) {
             msgLog.errorCannotSendMessage("sms", e.getLocalizedMessage());
         }
+
+        msgLog.infoActionReceived("sms", msg.toString());
     }
 
     void setup() {

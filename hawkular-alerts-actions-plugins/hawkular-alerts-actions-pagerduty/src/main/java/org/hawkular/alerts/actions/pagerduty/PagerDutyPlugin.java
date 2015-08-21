@@ -71,8 +71,6 @@ public class PagerDutyPlugin implements ActionPluginListener {
 
     @Override
     public void process(PluginMessage msg) throws Exception {
-        msgLog.infoActionReceived("pagerduty", msg.toString());
-
         if (pagerDuty == null) {
             msgLog.errorCannotSendMessage("pagerduty", "Plugin is not started");
             return;
@@ -83,6 +81,8 @@ public class PagerDutyPlugin implements ActionPluginListener {
         if (!"success".equals(result.status())) {
             msgLog.errorCannotSendMessage("pagerduty", result.message());
         }
+
+        msgLog.infoActionReceived("pagerduty", msg.toString());
     }
 
     void setup() {

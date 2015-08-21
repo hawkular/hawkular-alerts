@@ -28,7 +28,6 @@ import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.condition.Alert;
-import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -40,7 +39,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @ActionPlugin(name = "file")
 public class FilePlugin implements ActionPluginListener {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(FilePlugin.class);
 
     private Map<String, String> defaultProperties = new HashMap<>();
     private ObjectMapper objectMapper;
@@ -93,6 +91,5 @@ public class FilePlugin implements ActionPluginListener {
             }
         }
         msgLog.infoActionReceived("file", msg.toString());
-        log.debug("Message received: " + msg.toString());
     }
 }

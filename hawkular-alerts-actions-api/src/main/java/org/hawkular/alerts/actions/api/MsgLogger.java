@@ -37,10 +37,6 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 240001, value = "Plugin [%s] has received a action message: [%s]")
     void infoActionReceived(String actionPlugin, String msg);
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 240003, value = "Plugin [%s] hast sent a registration request: [%s]")
-    void infoPluginRegistration(String actionPlugin, String msg);
-
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 240005, value = "Plugin [%s] cannot send a message to the bus. Error: [%s]")
     void errorCannotSendMessage(String actionPlugin, String msg);

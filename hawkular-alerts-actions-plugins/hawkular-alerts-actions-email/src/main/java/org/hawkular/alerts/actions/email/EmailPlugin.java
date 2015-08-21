@@ -198,6 +198,8 @@ public class EmailPlugin implements ActionPluginListener {
     public void process(PluginMessage msg) throws Exception {
         Message message = createMimeMessage(msg);
         Transport.send(message);
+
+        msgLog.infoActionReceived("email", msg.toString());
     }
 
     protected Message createMimeMessage(PluginMessage msg) throws Exception {
