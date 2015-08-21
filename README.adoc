@@ -34,17 +34,22 @@ It is a wrapper of the main *hawkular-alerts-api*.
 This component is responsible for the communication between the alerts engine and the bus. +
 *hawkular-alerts-engine* is decoupled from the bus, so it can be used in other scenarios +
 (i.e. standalone, third party alerts system).
-| hawkular-actions-api |
+| hawkular-alerts-bus-api |
+This is the public API for message objects used in *hawkular-alerts-bus*. +
+| hawkular-alerts-actions-api |
 Common API for action plugins. +
-An action plugin will be deployed as a .war artifact and it will interact with the bus via this API.
-| hawkular-actions-aerogear +
-hawkular-actions-email +
-hawkular-actions-sms +
-hawkular-actions-snmp |
-Project examples with the skeleton of a action plugin. +
+An action plugin will be deployed as a .war artifact.
+| hawkular-alerts-actions-bus |
+Component responsible of the communication of the plugins with the engine via bus. +
+It is used on bus deployments.
+| hawkular-alerts-actions-standalone |
+Component responsible of the communication of the plugins with the engine directly using Java API +
+It is used on standalone deployments.
+| hawkular-alerts-actions-plugins |
+Alert actions plugins. +
 Main responsabilities are: +
-- Register at deployment time into the alerts-engine. +
-- Process actions messages with specific plugin semantic.
+- Publish supported properties. +
+- Process actions messages.
 |=======================
 
 == Getting started
@@ -67,6 +72,16 @@ These integration tests can be executed using *-Prest* profile:
 mvn clean install -Prest
 ```
 
+== Standalone tests
+
+There is a integration test suite that downloads a wildfly server and deploys *hawkular-alerts* with an embedded
+cassandra service.
+These integration tests can be executed using *-Prest* profile:
+
+```shell
+mvn clean install -Pstandalone
+```
+
 == Performance tests
 
 There is a performance test suite focus in the *hawkular-alerts-engine* project.
@@ -76,7 +91,7 @@ These tests are not active by default, they can be run using *-Pperf* profile:
 mvn clean install -Pperf
 ```
 
-== Documentation
+== Building REST API documentation
 
 REST API documentation can be generated using *-Pdocgen* profile. +
 The doc is generated under *hawkular-alerts-rest/target* folder.
@@ -85,96 +100,11 @@ The doc is generated under *hawkular-alerts-rest/target* folder.
 mvn clean install -Pdocgen
 ```
 
-== Manual setup (optional)
+== Hawkular Alerts Documentation
 
-By default, the *-Prest* profile has all necessary to launch a server with dependencies to run the project.
-
-For development/debug scenarios it might be useful to create a manual setup of the environment required to run the
- project.
-
-*Hawkular Alerts* has a dependency on Cassandra 2.1.1 or later. A running Cassandra cluster, which can be a single node,
-is required for unit and integration tests.
-
-1. Setting up Cassandra
-
-```shell
-1.1. Install https://github.com/pcmanus/ccm
-     a. Review its build/install instructions for python package dependencies
-        that need to be installed, namely six and pyYaml.
-1.2. ccm create -v 2.1.2 hawkular
-1.3. ccm populate -n 1
-1.4. ccm start
-1.5. mvn install
-```
-
-2. Prepare *hawkular* in your local environment
-
-```shell
-git clone https://github.com/hawkular/hawkular.git
-cd hawkular
-mvn clean install -Pdev
-```
-
-Profile *-Pdev* creates a pre-configured wildfly-8.2.0.Final server with all dependencies needed in
-
-```shell
-$YOUR_FOLDER/hawkular/dist/target/hawkular-1.0.0-SNAPSHOT/wildfly-8.2.0.Final
-```
-
-We will call this wildfly server as *$HAWKULAR_HOME*
-
-[start=3]
-3. Prepare *hawkular-alerts* in your local environment
-
-```shell
-git clone https://github.com/hawkular/hawkular-alerts.git
-cd hawkular-alerts
-mvn clean install -Pdev
-```
-
-Profile *-Pdev* copies *hawkular-alerts* artifacts into *$HAWKULAR_HOME*. +
-If *hawkular* and *hawkular-alerts* are not in the same folder, you can define the location of wildfly server like:
-
-```shell
-HAWKULAR_HOME=$PATH_TO/hawkular/dist/target/hawkular-1.0.0-SNAPSHOT/wildfly-8.2.0.Final
-mvn clean install -Pdev -Dorg.hawkular.wildfly.home=$HAWKULAR_HOME
-```
-
-[start=4]
-4. Start hawkular with your local :
-
-```shell
-cd $HAWKULAR_HOME
-bin/standalone.sh
-```
-
-== Debug
-
-1. Set a DEBUG logger in the nest:
-
-[source,xml]
-----
-<logger category="org.hawkular.alerts">
-    <level name="DEBUG"/>
-</logger>
-----
-
-[start=2]
-2. Use curl to send messages directly to the bus for debugging:
-
-```shell
-curl -X POST -H "Content-Type: application/json" \
---data "{\"data\" : [ { \"id\": \"NumericData-01\", \"type\" : \"numeric\", \"value\" : 0.1} ]}" \
-http://localhost:8080/hawkular-bus/message/HawkularAlertData
-
-curl -X POST -H "Content-Type: application/json" \
---data "{\"data\" : [ { \"id\": \"StringData-01\", \"type\" : \"string\", \"value\" : \"Fred\"} ]}" \
-http://localhost:8080/hawkular-bus/message/HawkularAlertData
-
-curl -X POST -H "Content-Type: application/json" \
---data "{\"data\" : [ { \"id\": \"Availability-01\", \"type\" : \"availability\", \"value\" : \"UP\"} ]}" \
-http://localhost:8080/hawkular-bus/message/HawkularAlertData
-```
+* link:http://www.hawkular.org/docs/components/alerts/index.html[Installation and configuration].
+* link:http://www.hawkular.org/docs/dev/alerts.html[Developer guide]
+* link:http://www.hawkular.org/docs/rest/rest-alerts.html[REST API]
 
 == License
 
