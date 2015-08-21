@@ -59,7 +59,7 @@ CREATE TABLE ${keyspace}.triggers_actions (
 );
 
 -- #
-
+-- Note that the conditionId is a composed id: triggerId-triggerMode-csSize-csIndex. It provides a natural ordering.
 CREATE TABLE ${keyspace}.conditions (
     tenantId text,
     triggerId text,
@@ -80,7 +80,7 @@ CREATE TABLE ${keyspace}.conditions (
     thresholdLow double,
     thresholdHigh double,
     inRange boolean,
-    PRIMARY KEY (tenantId, triggerId, triggerMode, type, conditionId)
+    PRIMARY KEY (tenantId, triggerId, triggerMode, conditionId)
 );
 
 -- #

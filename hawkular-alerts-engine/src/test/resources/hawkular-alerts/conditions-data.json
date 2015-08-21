@@ -7,7 +7,7 @@
     "type": "threshold",
     "dataId": "NumericData-01",
     "operator": "LT",
-    "value": 10.0
+    "threshold": 10.0
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
     "triggerId": "trigger-2",
@@ -17,7 +17,7 @@
     "type": "threshold",
     "dataId": "NumericData-01",
     "operator": "GTE",
-    "value": 15.0
+    "threshold": 15.0
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
     "triggerId": "trigger-2",
@@ -27,7 +27,7 @@
     "type": "threshold",
     "dataId": "NumericData-02",
     "operator": "GTE",
-    "value": 15.0
+    "threshold": 15.0
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
     "triggerId": "trigger-3",
@@ -81,6 +81,6 @@
     "type": "threshold",
     "dataId": "NumericData-Token",
     "operator": "LT",
-    "value": 10.0
+    "threshold": 10.0
   }
 ]}

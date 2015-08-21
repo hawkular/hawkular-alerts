@@ -190,8 +190,6 @@ public interface DefinitionsService {
     Trigger unorphanChildTrigger(String tenantId, String childId, Map<String, String> childContext,
             Map<String, String> dataIdMap) throws Exception;
 
-
-
     /*
         CRUD interface for Dampening
      */
@@ -276,9 +274,6 @@ public interface DefinitionsService {
      *   conditionSetSize
      *   conditionSetIndex
      * </pre>
-     * <p>
-     * Parent triggers will add the condition to their non-orphan children.
-     * </p>
      * @param tenantId Tenant where trigger is stored
      * @param triggerId Trigger where condition will be stored
      * @param triggerMode Mode where condition is applied
@@ -288,6 +283,39 @@ public interface DefinitionsService {
      */
     Collection<Condition> addCondition(String tenantId, String triggerId, Mode triggerMode, Condition condition)
             throws Exception;
+
+    /**
+     * A convenience method that adds a new Condition to the existing condition set for the specified
+     * Parent Trigger and trigger mode.  The new condition will be assigned the highest conditionSetIndex for the
+     * updated conditionSet.  The non-orphan child triggers will have the new condition applied, using the
+     * provided dataIdMap.  The dataIdMap is of the form <code>Map&LTString, Map&LTString,String&GT&GT</code>.
+     * It is a map of the dataId tokens in the parent condition, to the actual dataIds to be used for the
+     * current child triggers. This map will usually have 1 entry but because a condition could have multiple
+     * dataIds (e.g CompareCondition), it may have multiple entries.  The inner map maps child triggerIds to
+     * the dataId to be used for that child trigger for the given token.  It should have 1 entry for each
+     * child trigger.
+     * <p>
+     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
+     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
+     * </p>
+     * The following Condition fields are ignored for the incoming condition, and set in the returned collection set:
+     * <pre>
+     *   conditionId
+     *   triggerId
+     *   triggerMode
+     *   conditionSetSize
+     *   conditionSetIndex
+     * </pre>
+     * @param tenantId Tenant where trigger is stored
+     * @param parentId ParentTrigger adding the condition and whose non-orphan children will also have it added.
+     * @param triggerMode Mode where condition is applied
+     * @param parentCondition Not null, the condition to add
+     * @param dataIdMap see above for details.
+     * @return The updated, persisted condition set for the parent
+     * @throws Exception on any problem
+     */
+    Collection<Condition> addParentCondition(String tenantId, String parentId, Mode triggerMode,
+            Condition parentCondition, Map<String, Map<String, String>> dataIdMap) throws Exception;
 
     /**
      * A convenience method that removes a Condition from an existing condition set.
@@ -404,7 +432,7 @@ public interface DefinitionsService {
      * @throws Exception on any problem
      */
     void addActionPlugin(String actionPlugin, Map<String, String> defaultProperties)
-        throws Exception;
+            throws Exception;
 
     /**
      * Remove an existing Plugin from the definitions service.
@@ -433,7 +461,7 @@ public interface DefinitionsService {
      * @throws Exception on any problem
      */
     void updateActionPlugin(String actionPlugin, Map<String, String> defaultProperties)
-        throws Exception;
+            throws Exception;
 
     /**
      * Get all list of plugins configured on the system.

@@ -41,6 +41,7 @@ public class CassDefinitionsTest extends DefinitionsTest {
 
     static Session session;
     static boolean externalCassandra;
+    static String keyspace;
 
     @BeforeClass
     public static void initSessionAndResetTestSchema() throws Exception {
@@ -57,6 +58,15 @@ public class CassDefinitionsTest extends DefinitionsTest {
             System.out.print("Using External Cassandra for unit testing...");
         }
 
+        keyspace = AlertProperties.getProperty("hawkular-alerts.cassandra-keyspace", "hawkular_alerts_test");
+
+        // try an clean up if this was somehow left around by a prior run
+        try {
+            session.execute("DROP KEYSPACE " + keyspace);
+        } catch (Throwable t) {
+            // never mind, it may not be there
+        }
+
         session = CassCluster.getSession();
         definitionsService = StandaloneAlerts.getDefinitionsService();
         alertsService = StandaloneAlerts.getAlertsService();
@@ -64,10 +74,13 @@ public class CassDefinitionsTest extends DefinitionsTest {
 
     @AfterClass
     public static void cleanTestSchema() throws Exception {
-        String keyspace =
-                AlertProperties.getProperty("hawkular-alerts.cassandra-keyspace", "hawkular_alerts_test");
 
-        session.execute("DROP KEYSPACE " + keyspace);
+        // try an clean up
+        try {
+            session.execute("DROP KEYSPACE " + keyspace);
+        } catch (Throwable t) {
+            // never mind, don't prevent further cleanup
+        }
 
         if (!externalCassandra) {
             System.out.print("Stopping embedded Cassandra for unit testing...");

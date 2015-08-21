@@ -349,14 +349,13 @@ public class CassStatement {
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, "
                 + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId "
                 + "FROM " + keyspace + ".conditions "
-                + "WHERE tenantId = ? AND triggerId = ? ORDER BY triggerId, triggerMode, type";
+                + "WHERE tenantId = ? AND triggerId = ?";
 
         SELECT_TRIGGER_CONDITIONS_TRIGGER_MODE = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, ignoreCase, "
                 + "threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId "
                 + "FROM " + keyspace + ".conditions "
-                + "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? "
-                + "ORDER BY triggerId, triggerMode, type";
+                + "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? ";
 
         SELECT_TRIGGER_DAMPENINGS = "SELECT tenantId, triggerId, triggerMode, type, "
                 + "evalTrueSetting, evalTotalSetting, evalTimeSetting, dampeningId "

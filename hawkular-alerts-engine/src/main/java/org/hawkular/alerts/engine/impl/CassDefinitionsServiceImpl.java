@@ -241,6 +241,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setThreshold(threshold);
                         newCondition.setTenantId(tenantId);
 
+                        log.infof("******* INIT THRESHOLD %s", newCondition);
+
                         initCondition(newCondition);
                         log.debugf("Init registration - Inserting [%s]", newCondition);
                     }
@@ -612,13 +614,11 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         String tenantId = parent.getTenantId();
         String parentId = parent.getId();
 
-        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, true);
+        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
 
         for (Trigger child : childTriggers) {
-            if (!child.isOrphan()) {
-                copyParentTrigger(parent, child);
-                updateTrigger(child);
-            }
+            copyParentTrigger(parent, child);
+            updateTrigger(child);
         }
 
         return updateTrigger(parent);
@@ -1035,51 +1035,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         addTrigger(tenantId, child);
 
         for (Condition c : conditions) {
-            Condition newCondition = null;
-            switch (c.getType()) {
-                case AVAILABILITY:
-                    newCondition = new AvailabilityCondition(child.getId(), c.getTriggerMode(),
-                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
-                            ((AvailabilityCondition) c).getOperator());
-                    break;
-                case COMPARE:
-                    newCondition = new CompareCondition(child.getId(), c.getTriggerMode(),
-                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
-                            ((CompareCondition) c).getOperator(),
-                            ((CompareCondition) c).getData2Multiplier(),
-                            dataIdMap.get(((CompareCondition) c).getData2Id()));
-                    break;
-                case EXTERNAL:
-                    newCondition = new ExternalCondition(child.getId(), c.getTriggerMode(),
-                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
-                            ((ExternalCondition) c).getSystemId(), ((ExternalCondition) c).getExpression());
-                    break;
-                case RANGE:
-                    newCondition = new ThresholdRangeCondition(child.getId(), c.getTriggerMode(),
-                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
-                            ((ThresholdRangeCondition) c).getOperatorLow(),
-                            ((ThresholdRangeCondition) c).getOperatorHigh(),
-                            ((ThresholdRangeCondition) c).getThresholdLow(),
-                            ((ThresholdRangeCondition) c).getThresholdHigh(),
-                            ((ThresholdRangeCondition) c).isInRange());
-                    break;
-                case STRING:
-                    newCondition = new StringCondition(child.getId(), c.getTriggerMode(),
-                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
-                            ((StringCondition) c).getOperator(), ((StringCondition) c).getPattern(),
-                            ((StringCondition) c).isIgnoreCase());
-                    break;
-                case THRESHOLD:
-                    newCondition = new ThresholdCondition(child.getId(), c.getTriggerMode(),
-                            c.getConditionSetSize(), c.getConditionSetIndex(), dataIdMap.get(c.getDataId()),
-                            ((ThresholdCondition) c).getOperator(), ((ThresholdCondition) c).getThreshold());
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unexpected Condition type: " + c.getType().name());
-            }
+            Condition newCondition = getChildCondition(child, c, dataIdMap);
             if (newCondition != null) {
-                newCondition.setTenantId(child.getTenantId());
-                addCondition(child.getTenantId(), child.getId(), newCondition.getTriggerMode(), newCondition);
+                addCondition(newCondition);
             }
         }
 
@@ -1088,10 +1046,67 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
             newDampening.setTenantId(child.getTenantId());
 
-            addDampening(child.getTenantId(), newDampening);
+            addDampening(newDampening);
         }
 
         return child;
+    }
+
+    private Condition getChildCondition(Trigger child, Condition parentCondition, Map<String, String> dataIdMap) {
+        Condition newCondition = null;
+        switch (parentCondition.getType()) {
+            case AVAILABILITY:
+                newCondition = new AvailabilityCondition(child.getId(), parentCondition.getTriggerMode(),
+                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
+                        dataIdMap.get(parentCondition.getDataId()),
+                        ((AvailabilityCondition) parentCondition).getOperator());
+                break;
+            case COMPARE:
+                newCondition = new CompareCondition(child.getId(), parentCondition.getTriggerMode(),
+                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
+                        dataIdMap.get(parentCondition.getDataId()),
+                        ((CompareCondition) parentCondition).getOperator(),
+                        ((CompareCondition) parentCondition).getData2Multiplier(),
+                        dataIdMap.get(((CompareCondition) parentCondition).getData2Id()));
+                break;
+            case EXTERNAL:
+                newCondition = new ExternalCondition(child.getId(), parentCondition.getTriggerMode(),
+                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
+                        dataIdMap.get(parentCondition.getDataId()),
+                        ((ExternalCondition) parentCondition).getSystemId(),
+                        ((ExternalCondition) parentCondition).getExpression());
+                break;
+            case RANGE:
+                newCondition = new ThresholdRangeCondition(child.getId(), parentCondition.getTriggerMode(),
+                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
+                        dataIdMap.get(parentCondition.getDataId()),
+                        ((ThresholdRangeCondition) parentCondition).getOperatorLow(),
+                        ((ThresholdRangeCondition) parentCondition).getOperatorHigh(),
+                        ((ThresholdRangeCondition) parentCondition).getThresholdLow(),
+                        ((ThresholdRangeCondition) parentCondition).getThresholdHigh(),
+                        ((ThresholdRangeCondition) parentCondition).isInRange());
+                break;
+            case STRING:
+                newCondition = new StringCondition(child.getId(), parentCondition.getTriggerMode(),
+                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
+                        dataIdMap.get(parentCondition.getDataId()),
+                        ((StringCondition) parentCondition).getOperator(),
+                        ((StringCondition) parentCondition).getPattern(),
+                        ((StringCondition) parentCondition).isIgnoreCase());
+                break;
+            case THRESHOLD:
+                newCondition = new ThresholdCondition(child.getId(), parentCondition.getTriggerMode(),
+                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
+                        dataIdMap.get(parentCondition.getDataId()),
+                        ((ThresholdCondition) parentCondition).getOperator(),
+                        ((ThresholdCondition) parentCondition).getThreshold());
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected Condition type: " + parentCondition.getType().name());
+        }
+
+        newCondition.setTenantId(child.getTenantId());
+        return newCondition;
     }
 
     @Override
@@ -1103,6 +1118,39 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         checkTenantId(tenantId, dampening);
+
+        String triggerId = dampening.getTriggerId();
+        Trigger trigger = getTrigger(tenantId, triggerId);
+        if (null == trigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
+        }
+        if (trigger.isChild() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        }
+
+        if (trigger.isParent()) {
+            return addParentDampening(trigger, dampening);
+        } else {
+            return addDampening(dampening);
+        }
+    }
+
+    private Dampening addParentDampening(Trigger parent, Dampening dampening) throws Exception {
+        String tenantId = parent.getTenantId();
+        String parentId = parent.getId();
+
+        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
+
+        for (Trigger child : childTriggers) {
+            dampening.setTriggerId(child.getId());
+            addDampening(dampening);
+        }
+
+        dampening.setTriggerId(parent.getId());
+        return addDampening(dampening);
+    }
+
+    private Dampening addDampening(Dampening dampening) throws Exception {
         session = CassCluster.getSession();
         PreparedStatement insertDampening = CassStatement.get(session, CassStatement.INSERT_DAMPENING);
         if (insertDampening == null) {
@@ -1135,21 +1183,57 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(dampeningId)) {
             throw new IllegalArgumentException("dampeningId must be not null");
         }
+
+        Dampening dampening = getDampening(tenantId, dampeningId);
+        if (null == dampening) {
+            log.debugf("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
+            return;
+        }
+
+        String triggerId = dampening.getTriggerId();
+        Trigger trigger = getTrigger(tenantId, triggerId);
+        if (null == trigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
+        }
+        if (trigger.isChild() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        }
+
+        if (trigger.isParent()) {
+            removeParentDampening(trigger, dampening);
+        } else {
+            removeDampening(dampening);
+        }
+    }
+
+    private void removeParentDampening(Trigger parent, Dampening dampening) throws Exception {
+        String tenantId = parent.getTenantId();
+        String parentId = parent.getId();
+
+        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
+
+        for (Trigger child : childTriggers) {
+            Collection<Dampening> dampenings = getTriggerDampenings(tenantId, child.getId(),
+                    dampening.getTriggerMode());
+            if (dampenings.isEmpty()) {
+                continue;
+            }
+            removeDampening(dampenings.iterator().next());
+        }
+
+        removeDampening(dampening);
+    }
+
+    private void removeDampening(Dampening dampening) throws Exception {
         session = CassCluster.getSession();
         PreparedStatement deleteDampeningId = CassStatement.get(session, CassStatement.DELETE_DAMPENING_ID);
         if (deleteDampeningId == null) {
             throw new RuntimeException("deleteDampeningId PreparedStatement is null");
         }
 
-        Dampening dampening = getDampening(tenantId, dampeningId);
-        if (dampening == null) {
-            log.debugf("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
-            return;
-        }
-
         try {
             session.execute(deleteDampeningId.bind(dampening.getTenantId(), dampening.getTriggerId(),
-                    dampening.getTriggerMode().name(), dampeningId));
+                    dampening.getTriggerMode().name(), dampening.getDampeningId()));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -1170,7 +1254,41 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(dampening)) {
             throw new IllegalArgumentException("DampeningId must be not null");
         }
+
         checkTenantId(tenantId, dampening);
+
+        String triggerId = dampening.getTriggerId();
+        Trigger trigger = getTrigger(tenantId, triggerId);
+        if (null == trigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
+        }
+        if (trigger.isChild() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        }
+
+        if (trigger.isParent()) {
+            return updateParentDampening(trigger, dampening);
+        } else {
+            return updateDampening(dampening);
+        }
+    }
+
+    private Dampening updateParentDampening(Trigger parent, Dampening dampening) throws Exception {
+        String tenantId = parent.getTenantId();
+        String parentId = parent.getId();
+
+        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
+
+        for (Trigger child : childTriggers) {
+            dampening.setTriggerId(child.getId());
+            updateDampening(dampening);
+        }
+
+        dampening.setTriggerId(parent.getId());
+        return updateDampening(dampening);
+    }
+
+    private Dampening updateDampening(Dampening dampening) throws Exception {
         session = CassCluster.getSession();
         PreparedStatement updateDampeningId = CassStatement.get(session, CassStatement.UPDATE_DAMPENING_ID);
         if (updateDampeningId == null) {
@@ -1333,6 +1451,97 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (condition == null) {
             throw new IllegalArgumentException("Condition must be not null");
         }
+
+        Trigger trigger = getTrigger(tenantId, triggerId);
+        if (null == trigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
+        }
+        if (trigger.isChild() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        }
+
+        condition.setTenantId(tenantId);
+        condition.setTriggerId(triggerId);
+        condition.setTriggerMode(triggerMode);
+
+        return addCondition(condition);
+    }
+
+    @Override
+    public Collection<Condition> addParentCondition(String tenantId, String parentId, Mode triggerMode,
+            Condition parentCondition, Map<String, Map<String, String>> dataIdMap) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(parentId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (triggerMode == null) {
+            throw new IllegalArgumentException("TriggerMode must be not null");
+        }
+        if (parentCondition == null) {
+            throw new IllegalArgumentException("Condition must be not null");
+        }
+
+        Trigger parent = getTrigger(tenantId, parentId);
+        if (null == parent) {
+            throw new IllegalArgumentException("Parent Trigger [" + tenantId + "/" + parentId + "] does not exist.");
+        }
+        if (!parent.isParent()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + parentId + "] is not a parent trigger.");
+        }
+
+        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
+
+        // first, validate the dataIdMap
+        if (!dataIdMap.containsKey(parentCondition.getDataId())) {
+            throw new IllegalArgumentException("Missing dataIdMap entry for dataId token ["
+                    + parentCondition.getDataId() + "]");
+        }
+        if (Condition.Type.COMPARE != parentCondition.getType()) {
+            CompareCondition cc = (CompareCondition) parentCondition;
+            if (!dataIdMap.containsKey(cc.getData2Id())) {
+                throw new IllegalArgumentException("Missing dataIdMap entry for CompareCondition data2Id token ["
+                        + cc.getData2Id() + "]");
+            }
+        }
+        for (Map<String, String> childDataIdMap : dataIdMap.values()) {
+            if (childDataIdMap.size() != childTriggers.size()) {
+                throw new IllegalArgumentException("childDataIdMap size [" + childDataIdMap.size()
+                        + "] must equal number of child triggers [" + childTriggers.size() + "]");
+            }
+            for (Trigger child : childTriggers) {
+                String value = childDataIdMap.get(child.getId());
+                if (isEmpty(value)) {
+                    throw new IllegalArgumentException(
+                            "Invalid childDataIdMap. Child key (triggerId) missing or has invalid dataId value: "
+                                    + child.getId());
+                }
+            }
+        }
+
+        // now, perform the additions
+        parentCondition.setTenantId(parent.getTenantId());
+        parentCondition.setTriggerId(parent.getId());
+        for (Trigger child : childTriggers) {
+            Map<String, String> conditionDataIdMap = new HashMap<>();
+            for (Map.Entry<String, Map<String, String>> entry : dataIdMap.entrySet()) {
+                conditionDataIdMap.put(entry.getKey(), entry.getValue().get(child.getId()));
+            }
+
+            Condition newCondition = getChildCondition(child, parentCondition, conditionDataIdMap);
+            Collection newChildConditions = addCondition(newCondition);
+            log.debugf("Updated child condition set: %s", newChildConditions);
+        }
+
+        return addCondition(parentCondition);
+    }
+
+    private Collection<Condition> addCondition(Condition condition) throws Exception {
+        String tenantId = condition.getTenantId();
+        String triggerId = condition.getTriggerId();
+        Mode triggerMode = condition.getTriggerMode();
+
         Collection<Condition> conditions = getTriggerConditions(tenantId, triggerId, triggerMode);
         conditions.add(condition);
         int i = 0;
@@ -1361,6 +1570,56 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         String triggerId = condition.getTriggerId();
         Mode triggerMode = condition.getTriggerMode();
+        Trigger trigger = getTrigger(tenantId, triggerId);
+        if (null == trigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
+        }
+        if (trigger.isChild() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        }
+
+        if (trigger.isParent()) {
+            return removeParentCondition(trigger, condition);
+        } else {
+            return removeCondition(condition);
+        }
+    }
+
+    private Collection<Condition> removeParentCondition(Trigger parent, Condition parentCondition) throws Exception {
+        String tenantId = parent.getTenantId();
+        String parentId = parent.getId();
+        Mode triggerMode = parentCondition.getTriggerMode();
+
+        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
+        log.debugf("Removing %s from %s child conditions...", parentCondition, childTriggers.size());
+
+        for (Trigger child : childTriggers) {
+            String childId = child.getId();
+            Collection<Condition> childConditions = getTriggerConditions(tenantId, childId, triggerMode);
+
+            int i = 0;
+            int size = childConditions.size() - 1;
+            Collection<Condition> newConditions = new ArrayList<>(size);
+            for (Condition c : childConditions) {
+                if (c.getConditionSetIndex() != parentCondition.getConditionSetIndex()) {
+                    c.setConditionSetSize(childConditions.size());
+                    c.setConditionSetIndex(++i);
+                    newConditions.add(c);
+                }
+            }
+            Collection<Condition> newChildConditions = setConditions(tenantId, child.getId(), triggerMode,
+                    newConditions);
+            log.debugf("Updated child condition set: %s", newChildConditions);
+        }
+
+        return removeCondition(parentCondition);
+    }
+
+    private Collection<Condition> removeCondition(Condition condition) throws Exception {
+        String tenantId = condition.getTenantId();
+        String triggerId = condition.getTriggerId();
+        Mode triggerMode = condition.getTriggerMode();
+        String conditionId = condition.getConditionId();
         Collection<Condition> conditions = getTriggerConditions(tenantId, triggerId, triggerMode);
 
         int i = 0;
@@ -1373,6 +1632,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 newConditions.add(c);
             }
         }
+
         return setConditions(tenantId, triggerId, triggerMode, newConditions);
     }
 
@@ -1395,14 +1655,76 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("ConditionId [" + conditionId + "] on tenant " + tenantId +
                     " does not exist.");
         }
+        if (existingCondition.getTriggerMode() != condition.getTriggerMode()) {
+            throw new IllegalArgumentException("The condition trigger mode ["
+                    + existingCondition.getTriggerMode().name() + "] can not be changed.");
+        }
+
         String triggerId = existingCondition.getTriggerId();
-        Mode triggerMode = existingCondition.getTriggerMode();
+        Trigger existingTrigger = getTrigger(tenantId, triggerId);
+        if (null == existingTrigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
+        }
+        if (existingTrigger.isChild() && !existingTrigger.isOrphan()) {
+            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        }
+
+        if (existingTrigger.isParent()) {
+            return updateParentCondition(existingTrigger, condition);
+        } else {
+            return updateCondition(existingTrigger, condition);
+        }
+    }
+
+    private Collection<Condition> updateParentCondition(Trigger parent, Condition parentCondition)
+            throws Exception {
+
+        String tenantId = parent.getTenantId();
+        String parentId = parent.getId();
+        Mode triggerMode = parentCondition.getTriggerMode();
+
+        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
+        log.debugf("Updating %s in %s child conditions...", parentCondition, childTriggers.size());
+
+        for (Trigger child : childTriggers) {
+            String childId = child.getId();
+            Collection<Condition> childConditions = getTriggerConditions(tenantId, childId, triggerMode);
+
+            int size = childConditions.size();
+            Collection<Condition> newConditions = new ArrayList<>(size);
+            Map<String, String> dataIdMap = new HashMap<>(2);
+            for (Condition c : childConditions) {
+                if (c.getConditionSetIndex() == parentCondition.getConditionSetIndex()) {
+                    dataIdMap.clear();
+                    dataIdMap.put(parentCondition.getDataId(), c.getDataId());
+                    if (Condition.Type.COMPARE == c.getType()) {
+                        dataIdMap.put(((CompareCondition) parentCondition).getData2Id(),
+                                ((CompareCondition) c).getData2Id());
+                    }
+                    newConditions.add(getChildCondition(parent, parentCondition, dataIdMap));
+                } else {
+                    newConditions.add(c);
+                }
+            }
+
+            Collection<Condition> newChildConditions = setConditions(tenantId, childId, triggerMode, newConditions);
+            log.debugf("Updated child condition set: %s", newChildConditions);
+        }
+
+        return updateCondition(parent, parentCondition);
+    }
+
+    private Collection<Condition> updateCondition(Trigger trigger, Condition condition) throws Exception {
+
+        String tenantId = trigger.getTenantId();
+        String triggerId = trigger.getId();
+        Mode triggerMode = condition.getTriggerMode();
         Collection<Condition> conditions = getTriggerConditions(tenantId, triggerId, triggerMode);
 
         int size = conditions.size();
         Collection<Condition> newConditions = new ArrayList<>(size);
         for (Condition c : conditions) {
-            if (c.getConditionId().equals(conditionId)) {
+            if (c.getConditionId().equals(condition.getConditionId())) {
                 newConditions.add(condition);
             } else {
                 newConditions.add(c);
@@ -1499,7 +1821,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                             sCond.getOperator().name(), sCond.getPattern(), sCond.isIgnoreCase())));
 
                 } else if (cond instanceof ThresholdCondition) {
-
                     ThresholdCondition tCond = (ThresholdCondition) cond;
                     futures.add(session.executeAsync(insertConditionThreshold.bind(tCond.getTenantId(),
                             tCond.getTriggerId(), tCond.getTriggerMode().name(), tCond.getConditionSetSize(),

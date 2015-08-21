@@ -196,5 +196,26 @@
         "actionId": "agpush-to-admin"
       }
     ]
+  },
+  {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+    "triggerId": "trigger-7",
+    "enabled": true,
+    "name": "Parent-NumericData-Token-low",
+    "description": "This is the description",
+    "autoDisable": false,
+    "autoEnable": false,
+    "autoResolve": false,
+    "autoResolveAlerts": true,
+    "severity": "HIGH",
+    "firingMatch": "ALL",
+    "autoResolveMatch": "ALL",
+    "parent": true,
+    "childOf": null,
+    "orphan": false,
+    "actions": [
+      {"actionPlugin": "email",
+       "actionId": "email-to-admin"
+      }
+    ]
   }
 ]}
