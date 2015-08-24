@@ -87,8 +87,7 @@ public class AlertsHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(
-            value = "Get alerts with optional filtering",
-            notes = "Pagination is not yet implemented.")
+            value = "Get alerts with optional filtering")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
@@ -154,7 +153,7 @@ public class AlertsHandler {
             @ApiParam(required = false, value = "user acknowledging the alerts")
             @QueryParam("ackBy")
             final String ackBy,
-            @ApiParam(required = false, value = "additional notes asscoiated with the acknowledgement")
+            @ApiParam(required = false, value = "additional notes associated with the acknowledgement")
             @QueryParam("ackNotes")
             final String ackNotes) {
         try {
@@ -211,7 +210,7 @@ public class AlertsHandler {
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 404, message = "Alert not found") })
     public Response deleteAlert(
-            @ApiParam(value = "Alert id to be deleted", required = true)
+            @ApiParam(required = true, value = "Alert id to be deleted")
             @PathParam("alertId")
             final String alertId) {
         try {

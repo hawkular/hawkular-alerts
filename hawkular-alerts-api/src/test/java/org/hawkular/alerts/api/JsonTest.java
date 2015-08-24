@@ -952,4 +952,30 @@ public class JsonTest {
         assertTrue(!output.contains("match"));
     }
 
+    @Test
+    public void jsonTriggerMinimalParametersTest() throws Exception {
+        String str = "{}";
+        Trigger trigger = objectMapper.readValue(str, Trigger.class);
+
+        assertNotNull(trigger.getId().equals("test"));
+        assertTrue(trigger.getName().equals("defaultName"));
+        assertNull(trigger.getDescription());
+        assertEquals(0, trigger.getActions().size());
+        assertTrue(trigger.getFiringMatch().equals(Match.ALL));
+        assertTrue(trigger.getAutoResolveMatch().equals(Match.ALL));
+
+        assertFalse(trigger.isEnabled());
+        assertFalse(trigger.isAutoDisable());
+        assertFalse(trigger.isAutoEnable());
+        assertFalse(trigger.isAutoResolve());
+        assertTrue(trigger.isAutoResolveAlerts());
+        assertEquals(Severity.MEDIUM, trigger.getSeverity());
+        assertNull(trigger.getContext());
+
+        String output = objectMapper.writeValueAsString(trigger);
+
+        assertTrue(output.contains("defaultName"));
+        assertTrue(!output.contains("match"));
+    }
+
 }
