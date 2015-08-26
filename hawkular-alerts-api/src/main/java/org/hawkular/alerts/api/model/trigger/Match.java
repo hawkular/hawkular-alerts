@@ -21,7 +21,7 @@ package org.hawkular.alerts.api.model.trigger;
  * evaluate to true, or whether <code>ANY<code> one is enough.
  *
  * @author jay shaughnessy
- * @author lucac ponce
+ * @author lucas ponce
  */
 public enum Match {
     ALL, ANY

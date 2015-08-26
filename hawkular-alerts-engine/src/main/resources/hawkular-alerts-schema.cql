@@ -38,12 +38,12 @@ CREATE TABLE ${keyspace}.triggers (
     autoResolve boolean,
     autoResolveAlerts boolean,
     autoResolveMatch text,
-    childOf text,
+    memberOf text,
     description text,
     enabled boolean,
     firingMatch text,
     orphan boolean,
-    parent boolean,
+    group boolean,
     severity text,
     PRIMARY KEY (tenantId, id)
 );

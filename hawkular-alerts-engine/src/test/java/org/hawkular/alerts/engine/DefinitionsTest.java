@@ -78,11 +78,11 @@ public abstract class DefinitionsTest {
     }
 
     @Test
-    public void test0010ParentTrigger() throws Exception {
+    public void test0010GroupTrigger() throws Exception {
         Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-7");
         assertNotNull(t);
 
-        t = copyTrigger(t, "parent-trigger");
+        t = copyTrigger(t, "group-trigger");
         assertNotNull(t);
 
         Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
@@ -99,29 +99,29 @@ public abstract class DefinitionsTest {
         Map<String, String> context = new HashMap<>(1);
         context.put("context", "context-1");
 
-        Trigger nt1 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-1-trigger", "child-1",
+        Trigger nt1 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-1-trigger", "member-1",
                 context, dataIdMap);
         assertNotNull(nt1);
         dataIdMap.put("NumericData-Token", "NumericData-02");
         context.put("context", "context-2");
-        Trigger nt2 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-2-trigger", "child-2",
+        Trigger nt2 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-2-trigger", "member-2",
                 context, dataIdMap);
         assertNotNull(nt2);
 
-        Collection<Trigger> children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", false);
-        assertTrue(children != null);
-        assertEquals(2, children.size());
-        Iterator<Trigger> i = children.iterator();
+        Collection<Trigger> memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", false);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        Iterator<Trigger> i = memberren.iterator();
         nt1 = i.next();
-        if (nt1.getId().equals("child-1-trigger")) {
+        if (nt1.getId().equals("member-1-trigger")) {
             nt2 = i.next();
         } else {
             nt2 = nt1;
             nt1 = i.next();
         }
 
-        assertTrue(nt1.toString(), "child-1-trigger".equals(nt1.getId()));
-        assertTrue(nt1.toString(), "child-1".equals(nt1.getName()));
+        assertTrue(nt1.toString(), "member-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "member-1".equals(nt1.getName()));
         assertNotNull(nt1.getContext());
         assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
         assertTrue(nt1.toString(), nt1.getDescription().equals(t.getDescription()));
@@ -129,8 +129,8 @@ public abstract class DefinitionsTest {
         assertTrue(nt1.toString(), nt1.getFiringMatch().equals(t.getFiringMatch()));
         assertTrue(nt1.toString(), nt1.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
 
-        assertTrue(nt2.toString(), "child-2-trigger".equals(nt2.getId()));
-        assertTrue(nt2.toString(), "child-2".equals(nt2.getName()));
+        assertTrue(nt2.toString(), "member-2-trigger".equals(nt2.getId()));
+        assertTrue(nt2.toString(), "member-2".equals(nt2.getName()));
         assertNotNull(nt2.getContext());
         assertTrue(nt2.toString(), "context-2".equals(nt2.getContext().get("context")));
         assertTrue(nt2.toString(), nt2.getDescription().equals(t.getDescription()));
@@ -176,41 +176,41 @@ public abstract class DefinitionsTest {
         assertTrue(nd.toString(), nd.getEvalTotalSetting() == d.getEvalTotalSetting());
         assertTrue(nd.toString(), nd.getEvalTimeSetting() == d.getEvalTimeSetting());
 
-        nt1.setName("child-1-update");
+        nt1.setName("member-1-update");
         try {
             definitionsService.updateTrigger(TEST_TENANT, nt1);
-            fail("Child trigger update should have failed.");
+            fail("Member trigger update should have failed.");
         } catch (IllegalArgumentException e) {
             // expected
         }
 
-        nt1 = definitionsService.orphanChildTrigger(TEST_TENANT, nt1.getId());
+        nt1 = definitionsService.orphanMemberTrigger(TEST_TENANT, nt1.getId());
         assertTrue(nt1.toString(), nt1.isOrphan());
 
-        nt1.setName("child-1-update");
+        nt1.setName("member-1-update");
         nt1.setContext(null);
         nt1.setDescription("Updated");
         nt1.setEnabled(false);
         try {
             nt1 = definitionsService.updateTrigger(TEST_TENANT, nt1);
         } catch (IllegalArgumentException e) {
-            fail("Orphan trigger update should have succeeded.");
+            fail("Orphan trigger update should have succeeded:" + e.getMessage());
         }
         assertNotNull(nt1);
         assertTrue(nt1.toString(), nt1.isOrphan());
-        assertTrue(nt1.toString(), "child-1-trigger".equals(nt1.getId()));
-        assertTrue(nt1.toString(), "child-1-update".equals(nt1.getName()));
+        assertTrue(nt1.toString(), "member-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "member-1-update".equals(nt1.getName()));
         assertTrue(nt1.toString(), nt1.getContext().isEmpty());
         assertTrue(nt1.toString(), "Updated".equals(nt1.getDescription()));
         assertTrue(nt1.toString(), !nt1.isEnabled());
 
         dataIdMap.put("NumericData-Token", "NumericData-01");
         context.put("context", "context-1");
-        nt1 = definitionsService.unorphanChildTrigger(TEST_TENANT, nt1.getId(), context, dataIdMap);
+        nt1 = definitionsService.unorphanMemberTrigger(TEST_TENANT, nt1.getId(), context, dataIdMap);
         assertNotNull(nt1);
         assertTrue(nt1.toString(), !nt1.isOrphan());
-        assertTrue(nt1.toString(), "child-1-trigger".equals(nt1.getId()));
-        assertTrue(nt1.toString(), "child-1-update".equals(nt1.getName())); // name changes are maintained
+        assertTrue(nt1.toString(), "member-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "member-1-update".equals(nt1.getName())); // name changes are maintained
         assertNotNull(nt1.getContext());
         assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
         assertTrue(nt1.toString(), nt1.getDescription().equals(t.getDescription()));
@@ -228,13 +228,13 @@ public abstract class DefinitionsTest {
         assertTrue(nc.toString(), nc.getConditionSetIndex() == c.getConditionSetIndex());
         assertTrue(nc.toString(), nc.getConditionSetSize() == c.getConditionSetSize());
 
-        definitionsService.removeParentTrigger(TEST_TENANT, "parent-trigger", false, false);
+        definitionsService.removeGroupTrigger(TEST_TENANT, "group-trigger", false, false);
 
-        t = definitionsService.getTrigger(TEST_TENANT, "parent-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "group-trigger");
         assertNull(t);
-        t = definitionsService.getTrigger(TEST_TENANT, "child-1-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-1-trigger");
         assertNull(t);
-        t = definitionsService.getTrigger(TEST_TENANT, "child-2-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-2-trigger");
         assertNull(t);
     }
 
@@ -244,28 +244,40 @@ public abstract class DefinitionsTest {
 
         String id = t.getId();
         t.setId(newTriggerId);
-        definitionsService.addTrigger(TEST_TENANT, t);
+        if (t.isGroup()) {
+            definitionsService.addGroupTrigger(TEST_TENANT, t);
+        } else {
+            definitionsService.addTrigger(TEST_TENANT, t);
+        }
         t.setId(id);
 
         Trigger nt = definitionsService.getTrigger(TEST_TENANT, newTriggerId);
         for (Condition c : conditions) {
             c.setTriggerId(newTriggerId);
-            definitionsService.addCondition(TEST_TENANT, newTriggerId, c.getTriggerMode(), c);
+            if (t.isGroup()) {
+                definitionsService.addGroupCondition(TEST_TENANT, newTriggerId, c.getTriggerMode(), c, null);
+            } else {
+                definitionsService.addCondition(TEST_TENANT, newTriggerId, c.getTriggerMode(), c);
+            }
         }
         for (Dampening d : dampenings) {
             d.setTriggerId(newTriggerId);
-            definitionsService.addDampening(TEST_TENANT, d);
+            if (t.isGroup()) {
+                definitionsService.addGroupDampening(TEST_TENANT, d);
+            } else {
+                definitionsService.addDampening(TEST_TENANT, d);
+            }
         }
 
         return nt;
     }
 
     @Test
-    public void test0020ParentTriggerUpdate() throws Exception {
+    public void test0020GroupTriggerUpdate() throws Exception {
         Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-7");
         assertNotNull(t);
 
-        t = copyTrigger(t, "parent-trigger");
+        t = copyTrigger(t, "group-trigger");
         assertNotNull(t);
 
         Map<String, String> dataIdMap = new HashMap<>(1);
@@ -274,52 +286,52 @@ public abstract class DefinitionsTest {
         Map<String, String> context = new HashMap<>(1);
         context.put("context", "context-1");
 
-        Trigger nt1 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-1-trigger", "child-1",
+        Trigger nt1 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-1-trigger", "member-1",
                 context, dataIdMap);
         assertNotNull(nt1);
         dataIdMap.put("NumericData-Token", "NumericData-02");
         context.put("context", "context-2");
-        Trigger nt2 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-2-trigger", "child-2",
+        Trigger nt2 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-2-trigger", "member-2",
                 context, dataIdMap);
         assertNotNull(nt2);
 
-        Collection<Trigger> children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", false);
-        assertTrue(children != null);
-        assertEquals(2, children.size());
-        Iterator<Trigger> i = children.iterator();
+        Collection<Trigger> memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", false);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        Iterator<Trigger> i = memberren.iterator();
         nt1 = i.next();
-        if (nt1.getId().equals("child-1-trigger")) {
+        if (nt1.getId().equals("member-1-trigger")) {
             nt2 = i.next();
         } else {
             nt2 = nt1;
             nt1 = i.next();
         }
 
-        nt1 = definitionsService.orphanChildTrigger(TEST_TENANT, nt1.getId());
+        nt1 = definitionsService.orphanMemberTrigger(TEST_TENANT, nt1.getId());
         assertTrue(nt1.toString(), nt1.isOrphan());
 
         t.setContext(null);
         t.setDescription("Updated");
         t.setEnabled(false);
-        t = definitionsService.updateTrigger(TEST_TENANT, t);
+        t = definitionsService.updateGroupTrigger(TEST_TENANT, t);
 
         assertNotNull(t);
-        assertTrue(t.toString(), t.isParent());
-        assertTrue(t.toString(), "parent-trigger".equals(t.getId()));
+        assertTrue(t.toString(), t.isGroup());
+        assertTrue(t.toString(), "group-trigger".equals(t.getId()));
         assertTrue(t.toString(), t.getContext().isEmpty());
         assertTrue(t.toString(), "Updated".equals(t.getDescription()));
         assertTrue(t.toString(), !t.isEnabled());
 
-        children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", false);
-        assertTrue(children != null);
-        assertEquals(1, children.size());
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", false);
+        assertTrue(memberren != null);
+        assertEquals(1, memberren.size());
 
-        children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", true);
-        assertTrue(children != null);
-        assertEquals(2, children.size());
-        i = children.iterator();
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        i = memberren.iterator();
         nt1 = i.next();
-        if (nt1.getId().equals("child-1-trigger")) {
+        if (nt1.getId().equals("member-1-trigger")) {
             nt2 = i.next();
         } else {
             nt2 = nt1;
@@ -327,70 +339,70 @@ public abstract class DefinitionsTest {
         }
 
         assertTrue(nt1.toString(), nt1.isOrphan());
-        assertTrue(nt1.toString(), "child-1-trigger".equals(nt1.getId()));
-        assertTrue(nt1.toString(), "child-1".equals(nt1.getName()));
+        assertTrue(nt1.toString(), "member-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "member-1".equals(nt1.getName()));
         assertNotNull(nt1.getContext());
         assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
         assertTrue(nt1.toString(), !"Updated".equals(nt1.getDescription()));
         assertTrue(nt1.toString(), nt1.isEnabled());
 
         assertTrue(nt1.toString(), !nt2.isOrphan());
-        assertTrue(nt2.toString(), "child-2-trigger".equals(nt2.getId()));
-        assertTrue(nt2.toString(), "child-2".equals(nt2.getName()));
+        assertTrue(nt2.toString(), "member-2-trigger".equals(nt2.getId()));
+        assertTrue(nt2.toString(), "member-2".equals(nt2.getName()));
         assertTrue(nt2.toString(), nt2.getContext().isEmpty());
         assertTrue(nt2.toString(), "Updated".equals(nt2.getDescription()));
         assertTrue(nt2.toString(), !nt2.isEnabled());
 
-        definitionsService.removeParentTrigger(TEST_TENANT, "parent-trigger", true, true);
-        t = definitionsService.getTrigger(TEST_TENANT, "parent-trigger");
+        definitionsService.removeGroupTrigger(TEST_TENANT, "group-trigger", true, true);
+        t = definitionsService.getTrigger(TEST_TENANT, "group-trigger");
         assertNull(t);
-        t = definitionsService.getTrigger(TEST_TENANT, "child-1-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-1-trigger");
         assertNotNull(t);
-        t = definitionsService.getTrigger(TEST_TENANT, "child-2-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-2-trigger");
         assertNotNull(t);
 
-        definitionsService.removeTrigger(TEST_TENANT, "child-1-trigger");
-        t = definitionsService.getTrigger(TEST_TENANT, "child-1-trigger");
+        definitionsService.removeTrigger(TEST_TENANT, "member-1-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-1-trigger");
         assertNull(t);
-        definitionsService.removeTrigger(TEST_TENANT, "child-2-trigger");
-        t = definitionsService.getTrigger(TEST_TENANT, "child-2-trigger");
+        definitionsService.removeTrigger(TEST_TENANT, "member-2-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-2-trigger");
         assertNull(t);
     }
 
     @Test
-    public void test0021ParentCondition() throws Exception {
+    public void test0021GroupCondition() throws Exception {
         Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-7");
         assertNotNull(t);
 
-        t = copyTrigger(t, "parent-trigger");
+        t = copyTrigger(t, "group-trigger");
         assertNotNull(t);
 
         Map<String, String> dataIdMap = new HashMap<>(1);
         dataIdMap.put("NumericData-Token", "NumericData-01");
 
-        Trigger nt1 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-1-trigger", "Child-1",
+        Trigger nt1 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-1-trigger", "Member-1",
                 null, dataIdMap);
         assertNotNull(nt1);
         dataIdMap.put("NumericData-Token", "NumericData-02");
-        Trigger nt2 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-2-trigger", "Child-2",
+        Trigger nt2 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-2-trigger", "Member-2",
                 null, dataIdMap);
         assertNotNull(nt2);
 
-        CompareCondition parentCondition = new CompareCondition(t.getId(), Mode.FIRING, "Data1Id-Token", Operator.LT,
+        CompareCondition groupCondition = new CompareCondition(t.getId(), Mode.FIRING, "Data1Id-Token", Operator.LT,
                 50.0D, "Data2Id-Token");
 
         Map<String, Map<String, String>> ccDataIdMap = new HashMap<>(2);
-        Map<String, String> data1IdChildMap = new HashMap<>(1);
-        Map<String, String> data2IdChildMap = new HashMap<>(1);
-        data1IdChildMap.put(nt1.getId(), "Data1Id-Child-1");
-        data1IdChildMap.put(nt2.getId(), "Data1Id-Child-2");
-        data2IdChildMap.put(nt1.getId(), "Data2Id-Child-1");
-        data2IdChildMap.put(nt2.getId(), "Data2Id-Child-2");
-        ccDataIdMap.put("Data1Id-Token", data1IdChildMap);
-        ccDataIdMap.put("Data2Id-Token", data2IdChildMap);
+        Map<String, String> data1IdMemberMap = new HashMap<>(1);
+        Map<String, String> data2IdMemberMap = new HashMap<>(1);
+        data1IdMemberMap.put(nt1.getId(), "Data1Id-Member-1");
+        data1IdMemberMap.put(nt2.getId(), "Data1Id-Member-2");
+        data2IdMemberMap.put(nt1.getId(), "Data2Id-Member-1");
+        data2IdMemberMap.put(nt2.getId(), "Data2Id-Member-2");
+        ccDataIdMap.put("Data1Id-Token", data1IdMemberMap);
+        ccDataIdMap.put("Data2Id-Token", data2IdMemberMap);
 
-        Collection<Condition> conditionSet = definitionsService.addParentCondition(TEST_TENANT, "parent-trigger",
-                Mode.FIRING, parentCondition, ccDataIdMap);
+        Collection<Condition> conditionSet = definitionsService.addGroupCondition(TEST_TENANT, "group-trigger",
+                Mode.FIRING, groupCondition, ccDataIdMap);
         assertNotNull(conditionSet);
         assertEquals(2, conditionSet.size());
         Iterator<Condition> ci = conditionSet.iterator();
@@ -399,7 +411,7 @@ public abstract class DefinitionsTest {
             c = ci.next();
         }
         CompareCondition cc = (CompareCondition) c;
-        parentCondition = cc;
+        groupCondition = cc;
         assertEquals(cc.toString(), cc.getTriggerId(), t.getId());
         assertEquals(cc.toString(), Mode.FIRING, cc.getTriggerMode());
         assertEquals(cc.toString(), cc.getDataId(), "Data1Id-Token");
@@ -409,11 +421,11 @@ public abstract class DefinitionsTest {
         assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
         assertEquals(cc.toString(), 2, cc.getConditionSetSize());
 
-        Collection<Trigger> children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", true);
-        assertTrue(children != null);
-        assertEquals(2, children.size());
-        for (Trigger child : children) {
-            conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, child.getId(), null);
+        Collection<Trigger> memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, member.getId(), null);
             assertEquals(2, conditionSet.size());
             ci = conditionSet.iterator();
             c = ci.next();
@@ -421,19 +433,19 @@ public abstract class DefinitionsTest {
                 c = ci.next();
             }
             cc = (CompareCondition) c;
-            assertEquals(cc.toString(), cc.getTriggerId(), child.getId());
+            assertEquals(cc.toString(), cc.getTriggerId(), member.getId());
             assertEquals(cc.toString(), Mode.FIRING, cc.getTriggerMode());
-            assertEquals(cc.toString(), cc.getDataId(), "Data1Id-" + child.getName());
-            assertEquals(cc.toString(), cc.getData2Id(), "Data2Id-" + child.getName());
+            assertEquals(cc.toString(), cc.getDataId(), "Data1Id-" + member.getName());
+            assertEquals(cc.toString(), cc.getData2Id(), "Data2Id-" + member.getName());
             assertEquals(cc.toString(), Operator.LT, cc.getOperator());
             assertTrue(cc.toString(), cc.getData2Multiplier() == 50D);
             assertEquals(cc.toString(), 2, cc.getConditionSetSize());
             assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
         }
 
-        parentCondition.setOperator(Operator.GT);
-        parentCondition.setData2Multiplier(75D);
-        conditionSet = definitionsService.updateCondition(TEST_TENANT, parentCondition);
+        groupCondition.setOperator(Operator.GT);
+        groupCondition.setData2Multiplier(75D);
+        conditionSet = definitionsService.updateGroupCondition(TEST_TENANT, groupCondition);
         assertNotNull(conditionSet);
         assertEquals(2, conditionSet.size());
         ci = conditionSet.iterator();
@@ -442,7 +454,7 @@ public abstract class DefinitionsTest {
             c = ci.next();
         }
         cc = (CompareCondition) c;
-        parentCondition = cc;
+        groupCondition = cc;
         assertEquals(cc.toString(), cc.getTriggerId(), t.getId());
         assertEquals(cc.toString(), Mode.FIRING, cc.getTriggerMode());
         assertEquals(cc.toString(), cc.getDataId(), "Data1Id-Token");
@@ -452,11 +464,11 @@ public abstract class DefinitionsTest {
         assertEquals(cc.toString(), 2, cc.getConditionSetSize());
         assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
 
-        children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", true);
-        assertTrue(children != null);
-        assertEquals(2, children.size());
-        for (Trigger child : children) {
-            conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, child.getId(), null);
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, member.getId(), null);
             assertEquals(2, conditionSet.size());
             ci = conditionSet.iterator();
             c = ci.next();
@@ -464,69 +476,69 @@ public abstract class DefinitionsTest {
                 c = ci.next();
             }
             cc = (CompareCondition) c;
-            assertEquals(cc.toString(), cc.getTriggerId(), child.getId());
+            assertEquals(cc.toString(), cc.getTriggerId(), member.getId());
             assertEquals(cc.toString(), Mode.FIRING, cc.getTriggerMode());
-            assertEquals(cc.toString(), cc.getDataId(), "Data1Id-" + child.getName());
-            assertEquals(cc.toString(), cc.getData2Id(), "Data2Id-" + child.getName());
+            assertEquals(cc.toString(), cc.getDataId(), "Data1Id-" + member.getName());
+            assertEquals(cc.toString(), cc.getData2Id(), "Data2Id-" + member.getName());
             assertEquals(cc.toString(), Operator.GT, cc.getOperator());
             assertTrue(cc.toString(), cc.getData2Multiplier() == 75D);
             assertEquals(cc.toString(), 2, cc.getConditionSetSize());
             assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
         }
 
-        conditionSet = definitionsService.removeCondition(TEST_TENANT, parentCondition.getConditionId());
+        conditionSet = definitionsService.removeGroupCondition(TEST_TENANT, groupCondition.getConditionId());
         assertNotNull(conditionSet);
         assertEquals(1, conditionSet.size());
         ci = conditionSet.iterator();
         c = ci.next();
         assertTrue(c.toString(), Condition.Type.COMPARE != c.getType());
 
-        children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", true);
-        assertTrue(children != null);
-        assertEquals(2, children.size());
-        for (Trigger child : children) {
-            conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, child.getId(), null);
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, member.getId(), null);
             assertEquals(1, conditionSet.size());
             ci = conditionSet.iterator();
             c = ci.next();
             assertTrue(c.toString(), Condition.Type.COMPARE != c.getType());
         }
 
-        definitionsService.removeParentTrigger(TEST_TENANT, "parent-trigger", false, false);
+        definitionsService.removeGroupTrigger(TEST_TENANT, "group-trigger", false, false);
 
-        t = definitionsService.getTrigger(TEST_TENANT, "parent-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "group-trigger");
         assertNull(t);
-        t = definitionsService.getTrigger(TEST_TENANT, "child-1-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-1-trigger");
         assertNull(t);
-        t = definitionsService.getTrigger(TEST_TENANT, "child-2-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-2-trigger");
         assertNull(t);
     }
 
     @Test
-    public void test0022ParentDampening() throws Exception {
+    public void test0022GroupDampening() throws Exception {
         Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-7");
         assertNotNull(t);
 
-        t = copyTrigger(t, "parent-trigger");
+        t = copyTrigger(t, "group-trigger");
         assertNotNull(t);
 
         Map<String, String> dataIdMap = new HashMap<>(1);
         dataIdMap.put("NumericData-Token", "NumericData-01");
 
-        Trigger nt1 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-1-trigger", "Child-1",
+        Trigger nt1 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-1-trigger", "Member-1",
                 null, dataIdMap);
         assertNotNull(nt1);
         dataIdMap.put("NumericData-Token", "NumericData-02");
-        Trigger nt2 = definitionsService.addChildTrigger(TEST_TENANT, t.getId(), "child-2-trigger", "Child-2",
+        Trigger nt2 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-2-trigger", "Member-2",
                 null, dataIdMap);
         assertNotNull(nt2);
 
-        Dampening parentDampening = Dampening.forStrict("parent-trigger", Mode.FIRING, 10);
+        Dampening groupDampening = Dampening.forStrict("group-trigger", Mode.FIRING, 10);
 
-        Dampening d = definitionsService.addDampening(TEST_TENANT, parentDampening);
+        Dampening d = definitionsService.addGroupDampening(TEST_TENANT, groupDampening);
         assertNotNull(d);
 
-        Collection<Dampening> ds = definitionsService.getTriggerDampenings(TEST_TENANT, "parent-trigger", null);
+        Collection<Dampening> ds = definitionsService.getTriggerDampenings(TEST_TENANT, "group-trigger", null);
         assertEquals(1, ds.size());
         d = ds.iterator().next();
         assertEquals(d.toString(), t.getId(), d.getTriggerId());
@@ -534,24 +546,24 @@ public abstract class DefinitionsTest {
         assertEquals(d.toString(), Dampening.Type.STRICT, d.getType());
         assertEquals(d.toString(), 10, d.getEvalTrueSetting());
 
-        Collection<Trigger> children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", true);
-        assertTrue(children != null);
-        assertEquals(2, children.size());
-        for (Trigger child : children) {
-            ds = definitionsService.getTriggerDampenings(TEST_TENANT, child.getId(), null);
+        Collection<Trigger> memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            ds = definitionsService.getTriggerDampenings(TEST_TENANT, member.getId(), null);
             assertEquals(1, ds.size());
             d = ds.iterator().next();
-            assertEquals(d.toString(), child.getId(), d.getTriggerId());
+            assertEquals(d.toString(), member.getId(), d.getTriggerId());
             assertEquals(d.toString(), Mode.FIRING, d.getTriggerMode());
             assertEquals(d.toString(), Dampening.Type.STRICT, d.getType());
             assertEquals(d.toString(), 10, d.getEvalTrueSetting());
         }
 
-        parentDampening = Dampening.forRelaxedCount("parent-trigger", Mode.FIRING, 5, 10);
-        d = definitionsService.updateDampening(TEST_TENANT, parentDampening);
+        groupDampening = Dampening.forRelaxedCount("group-trigger", Mode.FIRING, 5, 10);
+        d = definitionsService.updateGroupDampening(TEST_TENANT, groupDampening);
         assertNotNull(d);
 
-        ds = definitionsService.getTriggerDampenings(TEST_TENANT, "parent-trigger", null);
+        ds = definitionsService.getTriggerDampenings(TEST_TENANT, "group-trigger", null);
         assertEquals(1, ds.size());
         d = ds.iterator().next();
         assertEquals(d.toString(), t.getId(), d.getTriggerId());
@@ -560,39 +572,39 @@ public abstract class DefinitionsTest {
         assertEquals(d.toString(), 5, d.getEvalTrueSetting());
         assertEquals(d.toString(), 10, d.getEvalTotalSetting());
 
-        children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", true);
-        assertTrue(children != null);
-        assertEquals(2, children.size());
-        for (Trigger child : children) {
-            ds = definitionsService.getTriggerDampenings(TEST_TENANT, child.getId(), null);
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            ds = definitionsService.getTriggerDampenings(TEST_TENANT, member.getId(), null);
             assertEquals(1, ds.size());
             d = ds.iterator().next();
-            assertEquals(d.toString(), child.getId(), d.getTriggerId());
+            assertEquals(d.toString(), member.getId(), d.getTriggerId());
             assertEquals(d.toString(), Mode.FIRING, d.getTriggerMode());
             assertEquals(d.toString(), Dampening.Type.RELAXED_COUNT, d.getType());
             assertEquals(d.toString(), 5, d.getEvalTrueSetting());
             assertEquals(d.toString(), 10, d.getEvalTotalSetting());
         }
 
-        definitionsService.removeDampening(TEST_TENANT, parentDampening.getDampeningId());
-        ds = definitionsService.getTriggerDampenings(TEST_TENANT, "parent-trigger", null);
+        definitionsService.removeGroupDampening(TEST_TENANT, groupDampening.getDampeningId());
+        ds = definitionsService.getTriggerDampenings(TEST_TENANT, "group-trigger", null);
         assertTrue(ds.isEmpty());
 
-        children = definitionsService.getChildTriggers(TEST_TENANT, "parent-trigger", true);
-        assertTrue(children != null);
-        assertEquals(2, children.size());
-        for (Trigger child : children) {
-            ds = definitionsService.getTriggerDampenings(TEST_TENANT, child.getId(), null);
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            ds = definitionsService.getTriggerDampenings(TEST_TENANT, member.getId(), null);
             assertTrue(ds.isEmpty());
         }
 
-        definitionsService.removeParentTrigger(TEST_TENANT, "parent-trigger", false, false);
+        definitionsService.removeGroupTrigger(TEST_TENANT, "group-trigger", false, false);
 
-        t = definitionsService.getTrigger(TEST_TENANT, "parent-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "group-trigger");
         assertNull(t);
-        t = definitionsService.getTrigger(TEST_TENANT, "child-1-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-1-trigger");
         assertNull(t);
-        t = definitionsService.getTrigger(TEST_TENANT, "child-2-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-2-trigger");
         assertNull(t);
     }
 

@@ -6,5 +6,13 @@
    "evalTrueSetting": 2,
    "evalTotalSetting": 2,
    "evalTimeSetting": 0
+  },
+  {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+   "triggerId": "trigger-7",
+   "triggerMode": "FIRING",
+   "type": "RELAXED_COUNT",
+   "evalTrueSetting": 1,
+   "evalTotalSetting": 2,
+   "evalTimeSetting": 0
   }
 ]}

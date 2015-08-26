@@ -223,8 +223,8 @@ public class AlertsEngineImpl implements AlertsEngine {
         if (null == trigger) {
             throw new IllegalArgumentException("Trigger must be not null");
         }
-        if (trigger.isParent()) {
-            log.debugf("Skipping reload of parent trigger [%s/%s]", trigger.getTenantId(), trigger.getId());
+        if (trigger.isGroup()) {
+            log.debugf("Skipping reload of group trigger [%s/%s]", trigger.getTenantId(), trigger.getId());
             return;
         }
 

@@ -182,8 +182,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     Match autoResolveMatch = Match.valueOf((String) t.get("autoResolveMatch"));
                     List<Map<String, String>> actions = (List<Map<String, String>>) t.get("actions");
                     Map<String, String> context = (Map<String, String>) t.get("context");
-                    boolean parent = (Boolean) t.get("parent");
-                    String childOf = (String) t.get("childOf");
+                    boolean group = (Boolean) t.get("group");
+                    String memberOf = (String) t.get("memberOf");
                     boolean orphan = (Boolean) t.get("orphan");
 
                     Trigger trigger = new Trigger(tenantId, triggerId, name);
@@ -200,11 +200,12 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         trigger.addAction(action.get("actionPlugin"), action.get("actionId"));
                     }
                     trigger.setContext(context);
-                    trigger.setParent(parent);
-                    trigger.setChildOf(childOf);
+                    trigger.setGroup(group);
+                    trigger.setMemberOf(memberOf);
                     trigger.setOrphan(orphan);
 
-                    addTrigger(tenantId, trigger);
+                    addTrigger(trigger);
+
                     log.debugf("Init registration - Inserting [%s]", trigger);
                 }
             }
@@ -240,8 +241,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setOperator(ThresholdCondition.Operator.valueOf(operator));
                         newCondition.setThreshold(threshold);
                         newCondition.setTenantId(tenantId);
-
-                        log.infof("******* INIT THRESHOLD %s", newCondition);
 
                         initCondition(newCondition);
                         log.debugf("Init registration - Inserting [%s]", newCondition);
@@ -359,7 +358,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     Dampening newDampening = new Dampening(triggerId, triggerMode, Dampening.Type.valueOf(type),
                             evalTrueSetting, evalTotalSetting, evalTimeSetting);
 
-                    addDampening(tenantId, newDampening);
+                    newDampening.setTenantId(tenantId);
+                    addDampening(newDampening);
                     log.debugf("Init registration - Inserting [%s]", newDampening);
                 }
             }
@@ -431,10 +431,31 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TenantId must be not null");
         }
         if (isEmpty(trigger)) {
-            throw new IllegalArgumentException("TriggerId must be not null");
+            throw new IllegalArgumentException("Trigger must be not null");
         }
 
         checkTenantId(tenantId, trigger);
+        trigger.setGroup(false);
+
+        addTrigger(trigger);
+    }
+
+    @Override
+    public void addGroupTrigger(String tenantId, Trigger groupTrigger) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupTrigger)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+
+        checkTenantId(tenantId, groupTrigger);
+        groupTrigger.setGroup(true);
+
+        addTrigger(groupTrigger);
+    }
+
+    private void addTrigger(Trigger trigger) throws Exception {
         session = CassCluster.getSession();
         PreparedStatement insertTrigger = CassStatement.get(session, CassStatement.INSERT_TRIGGER);
         if (insertTrigger == null) {
@@ -444,9 +465,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(insertTrigger.bind(trigger.getTenantId(), trigger.getId(), trigger.getName(),
                     trigger.getContext(), trigger.isAutoDisable(), trigger.isAutoEnable(), trigger.isAutoResolve(),
-                    trigger.isAutoResolveAlerts(), trigger.getAutoResolveMatch().name(), trigger.getChildOf(),
+                    trigger.isAutoResolveAlerts(), trigger.getAutoResolveMatch().name(), trigger.getMemberOf(),
                     trigger.getDescription(), trigger.isEnabled(), trigger.getFiringMatch().name(),
-                    trigger.isOrphan(), trigger.isParent(), trigger.getSeverity().name()));
+                    trigger.isOrphan(), trigger.isGroup(), trigger.getSeverity().name()));
 
             insertTriggerActions(trigger);
         } catch (Exception e) {
@@ -486,55 +507,49 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (null == doomedTrigger) {
             throw new NotFoundException(Trigger.class.getName(), tenantId, triggerId);
         }
-
-        if (doomedTrigger.isParent()) {
-            removeParentTrigger(doomedTrigger, false, false);
-
-        } else {
-            removeTrigger(doomedTrigger);
+        if (doomedTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
         }
+        if (doomedTrigger.isMember()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be removed via the group.");
+        }
+
+        removeTrigger(doomedTrigger);
     }
 
     @Override
-    public void removeParentTrigger(String tenantId, String parentId, boolean keepChildren, boolean keepOrphans)
+    public void removeGroupTrigger(String tenantId, String groupId, boolean keepNonOrphans, boolean keepOrphans)
             throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        if (isEmpty(parentId)) {
-            throw new IllegalArgumentException("TriggerId must be not null");
+        if (isEmpty(groupId)) {
+            throw new IllegalArgumentException("GroupId must be not null");
         }
 
-        Trigger doomedTrigger = getTrigger(tenantId, parentId);
+        Trigger doomedTrigger = getTrigger(tenantId, groupId);
         if (null == doomedTrigger) {
-            throw new NotFoundException(Trigger.class.getName(), tenantId, parentId);
+            throw new NotFoundException(Trigger.class.getName(), tenantId, groupId);
         }
-        if (!doomedTrigger.isParent()) {
-            throw new IllegalArgumentException("Trigger [" + parentId + "] is not a parent trigger");
+        if (!doomedTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
         }
 
-        removeParentTrigger(doomedTrigger, keepChildren, keepOrphans);
-    }
+        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, true);
 
-    private void removeParentTrigger(Trigger parent, boolean keepChildren, boolean keepOrphans) throws Exception {
-
-        String tenantId = parent.getTenantId();
-        String parentId = parent.getId();
-
-        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, true);
-
-        for (Trigger child : childTriggers) {
-            if ((keepChildren && !child.isOrphan()) || (keepOrphans && child.isOrphan())) {
-                child.setChildOf(null);
-                child.setOrphan(false);
-                updateTrigger(child);
+        for (Trigger member : memberTriggers) {
+            if ((keepNonOrphans && !member.isOrphan()) || (keepOrphans && member.isOrphan())) {
+                member.setMemberOf(null);
+                member.setOrphan(false);
+                updateTrigger(member);
                 continue;
             }
 
-            removeTrigger(child);
+            removeTrigger(member);
         }
 
-        removeTrigger(parent);
+        removeTrigger(doomedTrigger);
     }
 
     private void removeTrigger(Trigger trigger) throws Exception {
@@ -579,66 +594,75 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         checkTenantId(tenantId, trigger);
+        String triggerId = trigger.getId();
         Trigger currentTrigger = getTrigger(tenantId, trigger.getId());
         if (null == currentTrigger) {
             throw new NotFoundException(Trigger.class.getName(), tenantId, trigger.getId());
         }
-        if (currentTrigger.isChild() && !currentTrigger.isOrphan()) {
-            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        if (currentTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
         }
-        boolean ok = currentTrigger.isChild() ?
-                currentTrigger.getChildOf().equals(trigger.getChildOf()) :
-                !trigger.isChild();
-        if (!ok) {
-            throw new IllegalArgumentException("A child trigger can not change parents.");
-        }
-        ok = (currentTrigger.isOrphan() == trigger.isOrphan());
-        if (!ok) {
-            throw new IllegalArgumentException("Orphan status can not be changed by this method.");
-        }
-        ok = (currentTrigger.isParent() == trigger.isParent());
-        if (!ok) {
-            throw new IllegalArgumentException("A parent trigger can not be changed to a non-parent..");
+        if (currentTrigger.isMember()) {
+            if (!currentTrigger.isOrphan()) {
+                throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                        + "] is a member trigger and must be updated via the group.");
+            }
+            if (!currentTrigger.getMemberOf().equals(trigger.getMemberOf())) {
+                throw new IllegalArgumentException("A member trigger can not change groups.");
+            }
+            if (currentTrigger.isOrphan() != trigger.isOrphan()) {
+                throw new IllegalArgumentException("Orphan status can not be changed by this method.");
+            }
         }
 
-        if (currentTrigger.isParent()) {
-            return updateParentTrigger(trigger);
-
-        } else {
-            return updateTrigger(trigger);
-        }
+        return updateTrigger(trigger);
     }
 
-    private Trigger updateParentTrigger(Trigger parent) throws Exception {
-
-        String tenantId = parent.getTenantId();
-        String parentId = parent.getId();
-
-        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
-
-        for (Trigger child : childTriggers) {
-            copyParentTrigger(parent, child);
-            updateTrigger(child);
+    @Override
+    public Trigger updateGroupTrigger(String tenantId, Trigger groupTrigger) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupTrigger)) {
+            throw new IllegalArgumentException("Trigger must be not null");
         }
 
-        return updateTrigger(parent);
+        checkTenantId(tenantId, groupTrigger);
+        String groupId = groupTrigger.getId();
+
+        Trigger currentTrigger = getTrigger(tenantId, groupId);
+        if (null == currentTrigger) {
+            throw new NotFoundException(Trigger.class.getName(), tenantId, groupTrigger.getId());
+        }
+        if (!currentTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
+        }
+
+        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+        for (Trigger member : memberTriggers) {
+            copyGroupTrigger(groupTrigger, member);
+            updateTrigger(member);
+        }
+
+        return updateTrigger(groupTrigger);
     }
 
-    private Trigger copyParentTrigger(Trigger parent, Trigger child) {
-        child.setActions(parent.getActions());
-        child.setAutoDisable(parent.isAutoDisable());
-        child.setAutoEnable(parent.isAutoEnable());
-        child.setAutoResolve(parent.isAutoResolve());
-        child.setAutoResolveAlerts(parent.isAutoResolveAlerts());
-        child.setAutoResolveMatch(parent.getAutoResolveMatch());
-        child.setChildOf(parent.getId());
-        child.setContext(parent.getContext());
-        child.setDescription(parent.getDescription());
-        child.setEnabled(parent.isEnabled());
-        child.setFiringMatch(parent.getFiringMatch());
-        child.setSeverity(parent.getSeverity());
+    private Trigger copyGroupTrigger(Trigger group, Trigger member) {
+        member.setActions(group.getActions());
+        member.setAutoDisable(group.isAutoDisable());
+        member.setAutoEnable(group.isAutoEnable());
+        member.setAutoResolve(group.isAutoResolve());
+        member.setAutoResolveAlerts(group.isAutoResolveAlerts());
+        member.setAutoResolveMatch(group.getAutoResolveMatch());
+        member.setMemberOf(group.getId());
+        member.setContext(group.getContext());
+        member.setDescription(group.getDescription());
+        member.setEnabled(group.isEnabled());
+        member.setFiringMatch(group.getFiringMatch());
+        member.setSeverity(group.getSeverity());
 
-        return child;
+        return member;
     }
 
     private Trigger updateTrigger(Trigger trigger) throws Exception {
@@ -650,8 +674,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(updateTrigger.bind(trigger.isAutoDisable(), trigger.isAutoEnable(),
                     trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger.getAutoResolveMatch().name(),
-                    trigger.getChildOf(), trigger.getContext(), trigger.getDescription(), trigger.isEnabled(),
-                    trigger.getFiringMatch().name(), trigger.getName(), trigger.isOrphan(), trigger.isParent(),
+                    trigger.getMemberOf(), trigger.getContext(), trigger.getDescription(), trigger.isEnabled(),
+                    trigger.getFiringMatch().name(), trigger.getName(), trigger.isOrphan(), trigger.isGroup(),
                     trigger.getSeverity().name(), trigger.getTenantId(),
                     trigger.getId()));
             deleteTriggerActions(trigger.getTenantId(), trigger.getId());
@@ -671,61 +695,61 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Trigger orphanChildTrigger(String tenantId, String childId) throws Exception {
+    public Trigger orphanMemberTrigger(String tenantId, String memberId) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        if (isEmpty(childId)) {
+        if (isEmpty(memberId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
 
-        checkTenantId(tenantId, childId);
+        checkTenantId(tenantId, memberId);
 
-        Trigger child = getTrigger(tenantId, childId);
-        if (null == child) {
-            throw new NotFoundException(Trigger.class.getName(), tenantId, childId);
+        Trigger member = getTrigger(tenantId, memberId);
+        if (null == member) {
+            throw new NotFoundException(Trigger.class.getName(), tenantId, memberId);
         }
-        if (!child.isChild()) {
-            throw new IllegalArgumentException("Trigger is not a child trigger: [" + tenantId + "/" + childId + "]");
+        if (!member.isMember()) {
+            throw new IllegalArgumentException("Trigger is not a member trigger: [" + tenantId + "/" + memberId + "]");
         }
-        if (child.isOrphan()) {
-            throw new IllegalArgumentException("Trigger is already an orphan: [" + tenantId + "/" + childId + "]");
+        if (member.isOrphan()) {
+            throw new IllegalArgumentException("Trigger is already an orphan: [" + tenantId + "/" + memberId + "]");
         }
 
-        child.setOrphan(true);
-        return updateTrigger(child);
+        member.setOrphan(true);
+        return updateTrigger(member);
     }
 
     @Override
-    public Trigger unorphanChildTrigger(String tenantId, String childId, Map<String, String> childContext,
+    public Trigger unorphanMemberTrigger(String tenantId, String memberId, Map<String, String> memberContext,
             Map<String, String> dataIdMap) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        if (isEmpty(childId)) {
+        if (isEmpty(memberId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
 
-        checkTenantId(tenantId, childId);
+        checkTenantId(tenantId, memberId);
 
-        Trigger orphanChild = getTrigger(tenantId, childId);
-        if (null == orphanChild) {
-            throw new NotFoundException(Trigger.class.getName(), tenantId, childId);
+        Trigger orphanMember = getTrigger(tenantId, memberId);
+        if (null == orphanMember) {
+            throw new NotFoundException(Trigger.class.getName(), tenantId, memberId);
         }
-        if (!orphanChild.isChild()) {
-            throw new IllegalArgumentException("Trigger is not a child trigger: [" + tenantId + "/" + childId + "]");
+        if (!orphanMember.isMember()) {
+            throw new IllegalArgumentException("Trigger is not a member trigger: [" + tenantId + "/" + memberId + "]");
         }
-        if (!orphanChild.isOrphan()) {
-            throw new IllegalArgumentException("Trigger is not an orphan: [" + tenantId + "/" + childId + "]");
+        if (!orphanMember.isOrphan()) {
+            throw new IllegalArgumentException("Trigger is not an orphan: [" + tenantId + "/" + memberId + "]");
         }
 
-        String parentId = orphanChild.getChildOf();
-        String childName = orphanChild.getName();
+        String groupId = orphanMember.getMemberOf();
+        String memberName = orphanMember.getName();
 
-        removeTrigger(tenantId, childId);
-        Trigger child = addChildTrigger(tenantId, parentId, childId, childName, childContext, dataIdMap);
+        removeTrigger(orphanMember);
+        Trigger member = addMemberTrigger(tenantId, groupId, memberId, memberName, memberContext, dataIdMap);
 
-        return child;
+        return member;
     }
 
     private void deleteTriggerActions(Trigger trigger) throws Exception {
@@ -911,27 +935,27 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     // This impl is not efficient. It actually pulls all triggers for the tenant and then filters out the
-    // triggers that are not the requested children.  To make this more efficient we'd likely need to
-    // create a new child_triggers table which duplicated the triggers table, and where we would maintain
-    // a replica entry for each child trigger.  We'd need a primary key like ((tenantId,parentId),childId) and
-    // then we could query for child triggers directly.  Because this method is expected to be called
+    // triggers that are not the requested members.  To make this more efficient we'd likely need to
+    // create a new member_triggers table which duplicated the triggers table, and where we would maintain
+    // a replica entry for each member trigger.  We'd need a primary key like ((tenantId,groupId),memberId) and
+    // then we could query for member triggers directly.  Because this method is expected to be called
     // rarely, and because the trigger population is not expected to be huge (likely maxing out in the thousands),
     // we may just get away with this dumb impl.
     @Override
-    public Collection<Trigger> getChildTriggers(String tenantId, String parentId, boolean includeOrphans)
+    public Collection<Trigger> getMemberTriggers(String tenantId, String groupId, boolean includeOrphans)
             throws Exception {
 
         session = CassCluster.getSession();
         PreparedStatement selectTriggersTenant = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
         if (null == selectTriggersTenant) {
-            throw new RuntimeException("selectTriggersChildOf PreparedStatement is null");
+            throw new RuntimeException("selectTriggersMemberOf PreparedStatement is null");
         }
 
         List<Trigger> triggers = new ArrayList<>();
         try {
             ResultSet rsTriggers = session.execute(selectTriggersTenant.bind(tenantId));
             for (Row row : rsTriggers) {
-                if (parentId.equals(row.getString("childOf")) && (includeOrphans || !row.getBool("orphan"))) {
+                if (groupId.equals(row.getString("memberOf")) && (includeOrphans || !row.getBool("orphan"))) {
                     Trigger trigger = mapTrigger(row);
                     selectTriggerActions(trigger);
                     triggers.add(trigger);
@@ -974,40 +998,40 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         trigger.setAutoResolve(row.getBool("autoResolve"));
         trigger.setAutoResolveAlerts(row.getBool("autoResolveAlerts"));
         trigger.setAutoResolveMatch(Match.valueOf(row.getString("autoResolveMatch")));
-        trigger.setChildOf(row.getString("childOf"));
+        trigger.setMemberOf(row.getString("memberOf"));
         trigger.setDescription(row.getString("description"));
         trigger.setEnabled(row.getBool("enabled"));
         trigger.setFiringMatch(Match.valueOf(row.getString("firingMatch")));
         trigger.setOrphan(row.getBool("orphan"));
-        trigger.setParent(row.getBool("parent"));
+        trigger.setGroup(row.getBool("group"));
         trigger.setSeverity(Severity.valueOf(row.getString("severity")));
 
         return trigger;
     }
 
     @Override
-    public Trigger addChildTrigger(String tenantId, String parentId, String childId, String childName,
-            Map<String, String> childContext, Map<String, String> dataIdMap) throws Exception {
+    public Trigger addMemberTrigger(String tenantId, String groupId, String memberId, String memberName,
+            Map<String, String> memberContext, Map<String, String> dataIdMap) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        if (isEmpty(parentId)) {
+        if (isEmpty(groupId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
-        if (isEmpty(childName)) {
-            throw new IllegalArgumentException("ChildName must be not null");
+        if (isEmpty(memberName)) {
+            throw new IllegalArgumentException("MemberName must be not null");
         }
         if (isEmpty(dataIdMap)) {
             throw new IllegalArgumentException("DataIdMap must be not null");
         }
-        Trigger parent = getTrigger(tenantId, parentId);
-        if (parent == null) {
+        Trigger group = getTrigger(tenantId, groupId);
+        if (group == null) {
             throw new IllegalArgumentException("Trigger not found for tenantId/triggerId [ " + tenantId + "]/[" +
-                    parentId + "]");
+                    groupId + "]");
         }
         // ensure we have a 1-1 mapping for the dataId substitution
         Set<String> dataIdTokens = new HashSet<>();
-        Collection<Condition> conditions = getTriggerConditions(tenantId, parentId, null);
+        Collection<Condition> conditions = getTriggerConditions(tenantId, groupId, null);
         for (Condition c : conditions) {
             if (c instanceof CompareCondition) {
                 dataIdTokens.add(c.getDataId());
@@ -1021,91 +1045,91 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     "DataIdMap must contain the exact dataIds (keyset) expected by the condition set. Expected: "
                             + dataIdTokens + ", dataIdMap: " + dataIdMap.keySet());
         }
-        Collection<Dampening> dampenings = getTriggerDampenings(tenantId, parentId, null);
+        Collection<Dampening> dampenings = getTriggerDampenings(tenantId, groupId, null);
 
-        childId = (null == childId) ? Trigger.generateId() : childId;
-        Trigger child = new Trigger(tenantId, childId, childName);
+        memberId = (null == memberId) ? Trigger.generateId() : memberId;
+        Trigger member = new Trigger(tenantId, memberId, memberName);
 
-        copyParentTrigger(parent, child);
+        copyGroupTrigger(group, member);
 
-        if (null != childContext) {
-            child.setContext(childContext);
+        if (null != memberContext) {
+            member.setContext(memberContext);
         }
 
-        addTrigger(tenantId, child);
+        addTrigger(tenantId, member);
 
         for (Condition c : conditions) {
-            Condition newCondition = getChildCondition(child, c, dataIdMap);
+            Condition newCondition = getMemberCondition(member, c, dataIdMap);
             if (newCondition != null) {
                 addCondition(newCondition);
             }
         }
 
         for (Dampening d : dampenings) {
-            Dampening newDampening = new Dampening(child.getId(), d.getTriggerMode(), d.getType(),
+            Dampening newDampening = new Dampening(member.getId(), d.getTriggerMode(), d.getType(),
                     d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
-            newDampening.setTenantId(child.getTenantId());
+            newDampening.setTenantId(member.getTenantId());
 
             addDampening(newDampening);
         }
 
-        return child;
+        return member;
     }
 
-    private Condition getChildCondition(Trigger child, Condition parentCondition, Map<String, String> dataIdMap) {
+    private Condition getMemberCondition(Trigger member, Condition groupCondition, Map<String, String> dataIdMap) {
         Condition newCondition = null;
-        switch (parentCondition.getType()) {
+        switch (groupCondition.getType()) {
             case AVAILABILITY:
-                newCondition = new AvailabilityCondition(child.getId(), parentCondition.getTriggerMode(),
-                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
-                        dataIdMap.get(parentCondition.getDataId()),
-                        ((AvailabilityCondition) parentCondition).getOperator());
+                newCondition = new AvailabilityCondition(member.getId(), groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((AvailabilityCondition) groupCondition).getOperator());
                 break;
             case COMPARE:
-                newCondition = new CompareCondition(child.getId(), parentCondition.getTriggerMode(),
-                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
-                        dataIdMap.get(parentCondition.getDataId()),
-                        ((CompareCondition) parentCondition).getOperator(),
-                        ((CompareCondition) parentCondition).getData2Multiplier(),
-                        dataIdMap.get(((CompareCondition) parentCondition).getData2Id()));
+                newCondition = new CompareCondition(member.getId(), groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((CompareCondition) groupCondition).getOperator(),
+                        ((CompareCondition) groupCondition).getData2Multiplier(),
+                        dataIdMap.get(((CompareCondition) groupCondition).getData2Id()));
                 break;
             case EXTERNAL:
-                newCondition = new ExternalCondition(child.getId(), parentCondition.getTriggerMode(),
-                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
-                        dataIdMap.get(parentCondition.getDataId()),
-                        ((ExternalCondition) parentCondition).getSystemId(),
-                        ((ExternalCondition) parentCondition).getExpression());
+                newCondition = new ExternalCondition(member.getId(), groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((ExternalCondition) groupCondition).getSystemId(),
+                        ((ExternalCondition) groupCondition).getExpression());
                 break;
             case RANGE:
-                newCondition = new ThresholdRangeCondition(child.getId(), parentCondition.getTriggerMode(),
-                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
-                        dataIdMap.get(parentCondition.getDataId()),
-                        ((ThresholdRangeCondition) parentCondition).getOperatorLow(),
-                        ((ThresholdRangeCondition) parentCondition).getOperatorHigh(),
-                        ((ThresholdRangeCondition) parentCondition).getThresholdLow(),
-                        ((ThresholdRangeCondition) parentCondition).getThresholdHigh(),
-                        ((ThresholdRangeCondition) parentCondition).isInRange());
+                newCondition = new ThresholdRangeCondition(member.getId(), groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((ThresholdRangeCondition) groupCondition).getOperatorLow(),
+                        ((ThresholdRangeCondition) groupCondition).getOperatorHigh(),
+                        ((ThresholdRangeCondition) groupCondition).getThresholdLow(),
+                        ((ThresholdRangeCondition) groupCondition).getThresholdHigh(),
+                        ((ThresholdRangeCondition) groupCondition).isInRange());
                 break;
             case STRING:
-                newCondition = new StringCondition(child.getId(), parentCondition.getTriggerMode(),
-                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
-                        dataIdMap.get(parentCondition.getDataId()),
-                        ((StringCondition) parentCondition).getOperator(),
-                        ((StringCondition) parentCondition).getPattern(),
-                        ((StringCondition) parentCondition).isIgnoreCase());
+                newCondition = new StringCondition(member.getId(), groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((StringCondition) groupCondition).getOperator(),
+                        ((StringCondition) groupCondition).getPattern(),
+                        ((StringCondition) groupCondition).isIgnoreCase());
                 break;
             case THRESHOLD:
-                newCondition = new ThresholdCondition(child.getId(), parentCondition.getTriggerMode(),
-                        parentCondition.getConditionSetSize(), parentCondition.getConditionSetIndex(),
-                        dataIdMap.get(parentCondition.getDataId()),
-                        ((ThresholdCondition) parentCondition).getOperator(),
-                        ((ThresholdCondition) parentCondition).getThreshold());
+                newCondition = new ThresholdCondition(member.getId(), groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((ThresholdCondition) groupCondition).getOperator(),
+                        ((ThresholdCondition) groupCondition).getThreshold());
                 break;
             default:
-                throw new IllegalArgumentException("Unexpected Condition type: " + parentCondition.getType().name());
+                throw new IllegalArgumentException("Unexpected Condition type: " + groupCondition.getType().name());
         }
 
-        newCondition.setTenantId(child.getTenantId());
+        newCondition.setTenantId(member.getTenantId());
         return newCondition;
     }
 
@@ -1117,6 +1141,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(dampening)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
+
         checkTenantId(tenantId, dampening);
 
         String triggerId = dampening.getTriggerId();
@@ -1124,29 +1149,45 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (null == trigger) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
         }
-        if (trigger.isChild() && !trigger.isOrphan()) {
-            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        if (trigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (trigger.isMember() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be managed via the group.");
         }
 
-        if (trigger.isParent()) {
-            return addParentDampening(trigger, dampening);
-        } else {
-            return addDampening(dampening);
-        }
+        return addDampening(dampening);
     }
 
-    private Dampening addParentDampening(Trigger parent, Dampening dampening) throws Exception {
-        String tenantId = parent.getTenantId();
-        String parentId = parent.getId();
+    @Override
+    public Dampening addGroupDampening(String tenantId, Dampening dampening) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(dampening)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
 
-        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
+        checkTenantId(tenantId, dampening);
 
-        for (Trigger child : childTriggers) {
-            dampening.setTriggerId(child.getId());
+        String groupId = dampening.getTriggerId();
+        Trigger groupTrigger = getTrigger(tenantId, groupId);
+        if (null == groupTrigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
+        }
+        if (!groupTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+        }
+
+        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+        for (Trigger member : memberTriggers) {
+            dampening.setTriggerId(member.getId());
             addDampening(dampening);
         }
 
-        dampening.setTriggerId(parent.getId());
+        dampening.setTriggerId(groupTrigger.getId());
         return addDampening(dampening);
     }
 
@@ -1195,25 +1236,45 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (null == trigger) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
         }
-        if (trigger.isChild() && !trigger.isOrphan()) {
-            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        if (trigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (trigger.isMember() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be managed via the group.");
         }
 
-        if (trigger.isParent()) {
-            removeParentDampening(trigger, dampening);
-        } else {
-            removeDampening(dampening);
-        }
+        removeDampening(dampening);
     }
 
-    private void removeParentDampening(Trigger parent, Dampening dampening) throws Exception {
-        String tenantId = parent.getTenantId();
-        String parentId = parent.getId();
+    @Override
+    public void removeGroupDampening(String tenantId, String dampeningId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(dampeningId)) {
+            throw new IllegalArgumentException("dampeningId must be not null");
+        }
 
-        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
+        Dampening dampening = getDampening(tenantId, dampeningId);
+        if (null == dampening) {
+            log.debugf("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
+            return;
+        }
 
-        for (Trigger child : childTriggers) {
-            Collection<Dampening> dampenings = getTriggerDampenings(tenantId, child.getId(),
+        String groupId = dampening.getTriggerId();
+        Trigger groupTrigger = getTrigger(tenantId, groupId);
+        if (null == groupTrigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
+        }
+        if (!groupTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+        }
+
+        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+        for (Trigger member : memberTriggers) {
+            Collection<Dampening> dampenings = getTriggerDampenings(tenantId, member.getId(),
                     dampening.getTriggerMode());
             if (dampenings.isEmpty()) {
                 continue;
@@ -1262,29 +1323,45 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (null == trigger) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
         }
-        if (trigger.isChild() && !trigger.isOrphan()) {
-            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        if (trigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (trigger.isMember() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be managed via the group.");
         }
 
-        if (trigger.isParent()) {
-            return updateParentDampening(trigger, dampening);
-        } else {
-            return updateDampening(dampening);
-        }
+        return updateDampening(dampening);
     }
 
-    private Dampening updateParentDampening(Trigger parent, Dampening dampening) throws Exception {
-        String tenantId = parent.getTenantId();
-        String parentId = parent.getId();
+    @Override
+    public Dampening updateGroupDampening(String tenantId, Dampening dampening) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(dampening)) {
+            throw new IllegalArgumentException("DampeningId must be not null");
+        }
 
-        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
+        checkTenantId(tenantId, dampening);
 
-        for (Trigger child : childTriggers) {
-            dampening.setTriggerId(child.getId());
+        String groupId = dampening.getTriggerId();
+        Trigger groupTrigger = getTrigger(tenantId, groupId);
+        if (null == groupTrigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
+        }
+        if (!groupTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+        }
+
+        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+        for (Trigger member : memberTriggers) {
+            dampening.setTriggerId(member.getId());
             updateDampening(dampening);
         }
 
-        dampening.setTriggerId(parent.getId());
+        dampening.setTriggerId(groupTrigger.getId());
         return updateDampening(dampening);
     }
 
@@ -1456,8 +1533,12 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (null == trigger) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
         }
-        if (trigger.isChild() && !trigger.isOrphan()) {
-            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        if (trigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (trigger.isMember() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be managed via the group.");
         }
 
         condition.setTenantId(tenantId);
@@ -1468,73 +1549,80 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Condition> addParentCondition(String tenantId, String parentId, Mode triggerMode,
-            Condition parentCondition, Map<String, Map<String, String>> dataIdMap) throws Exception {
+    public Collection<Condition> addGroupCondition(String tenantId, String groupId, Mode triggerMode,
+            Condition groupCondition, Map<String, Map<String, String>> dataIdMemberMap) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        if (isEmpty(parentId)) {
+        if (isEmpty(groupId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         if (triggerMode == null) {
             throw new IllegalArgumentException("TriggerMode must be not null");
         }
-        if (parentCondition == null) {
+        if (groupCondition == null) {
             throw new IllegalArgumentException("Condition must be not null");
         }
 
-        Trigger parent = getTrigger(tenantId, parentId);
-        if (null == parent) {
-            throw new IllegalArgumentException("Parent Trigger [" + tenantId + "/" + parentId + "] does not exist.");
+        Trigger group = getTrigger(tenantId, groupId);
+        if (null == group) {
+            throw new NotFoundException(Trigger.class.getName(), tenantId, groupId);
         }
-        if (!parent.isParent()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + parentId + "] is not a parent trigger.");
+        if (!group.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
         }
 
-        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
+        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
 
-        // first, validate the dataIdMap
-        if (!dataIdMap.containsKey(parentCondition.getDataId())) {
-            throw new IllegalArgumentException("Missing dataIdMap entry for dataId token ["
-                    + parentCondition.getDataId() + "]");
-        }
-        if (Condition.Type.COMPARE != parentCondition.getType()) {
-            CompareCondition cc = (CompareCondition) parentCondition;
-            if (!dataIdMap.containsKey(cc.getData2Id())) {
-                throw new IllegalArgumentException("Missing dataIdMap entry for CompareCondition data2Id token ["
-                        + cc.getData2Id() + "]");
+        // allow the dataIdMap to be null when there are no member triggers
+        if (!memberTriggers.isEmpty()) {
+            if (dataIdMemberMap == null) {
+                throw new IllegalArgumentException("DataIdMemberMap must be not null when member triggers exist.");
             }
-        }
-        for (Map<String, String> childDataIdMap : dataIdMap.values()) {
-            if (childDataIdMap.size() != childTriggers.size()) {
-                throw new IllegalArgumentException("childDataIdMap size [" + childDataIdMap.size()
-                        + "] must equal number of child triggers [" + childTriggers.size() + "]");
+
+            // first, validate the dataIdMap
+            if (!dataIdMemberMap.containsKey(groupCondition.getDataId())) {
+                throw new IllegalArgumentException("Missing dataIdMap entry for dataId token ["
+                        + groupCondition.getDataId() + "]");
             }
-            for (Trigger child : childTriggers) {
-                String value = childDataIdMap.get(child.getId());
-                if (isEmpty(value)) {
-                    throw new IllegalArgumentException(
-                            "Invalid childDataIdMap. Child key (triggerId) missing or has invalid dataId value: "
-                                    + child.getId());
+            if (Condition.Type.COMPARE == groupCondition.getType()) {
+                CompareCondition cc = (CompareCondition) groupCondition;
+                if (!dataIdMemberMap.containsKey(cc.getData2Id())) {
+                    throw new IllegalArgumentException("Missing dataIdMap entry for CompareCondition data2Id token ["
+                            + cc.getData2Id() + "]");
                 }
             }
-        }
-
-        // now, perform the additions
-        parentCondition.setTenantId(parent.getTenantId());
-        parentCondition.setTriggerId(parent.getId());
-        for (Trigger child : childTriggers) {
-            Map<String, String> conditionDataIdMap = new HashMap<>();
-            for (Map.Entry<String, Map<String, String>> entry : dataIdMap.entrySet()) {
-                conditionDataIdMap.put(entry.getKey(), entry.getValue().get(child.getId()));
+            for (Map<String, String> memberDataIdMap : dataIdMemberMap.values()) {
+                if (memberDataIdMap.size() != memberTriggers.size()) {
+                    throw new IllegalArgumentException("memberDataIdMap size [" + memberDataIdMap.size()
+                            + "] must equal number of member triggers [" + memberTriggers.size() + "]");
+                }
+                for (Trigger member : memberTriggers) {
+                    String value = memberDataIdMap.get(member.getId());
+                    if (isEmpty(value)) {
+                        throw new IllegalArgumentException(
+                                "Invalid memberDataIdMap. member key (triggerId) missing or has invalid dataId value: "
+                                        + member.getId());
+                    }
+                }
             }
 
-            Condition newCondition = getChildCondition(child, parentCondition, conditionDataIdMap);
-            Collection newChildConditions = addCondition(newCondition);
-            log.debugf("Updated child condition set: %s", newChildConditions);
+            // now, perform the additions
+            groupCondition.setTenantId(group.getTenantId());
+            groupCondition.setTriggerId(group.getId());
+            for (Trigger member : memberTriggers) {
+                Map<String, String> conditionDataIdMap = new HashMap<>();
+                for (Map.Entry<String, Map<String, String>> entry : dataIdMemberMap.entrySet()) {
+                    conditionDataIdMap.put(entry.getKey(), entry.getValue().get(member.getId()));
+                }
+
+                Condition newCondition = getMemberCondition(member, groupCondition, conditionDataIdMap);
+                Collection newMemberConditions = addCondition(newCondition);
+                log.debugf("Updated member condition set: %s", newMemberConditions);
+            }
         }
 
-        return addCondition(parentCondition);
+        return addCondition(groupCondition);
     }
 
     private Collection<Condition> addCondition(Condition condition) throws Exception {
@@ -1574,45 +1662,65 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (null == trigger) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
         }
-        if (trigger.isChild() && !trigger.isOrphan()) {
-            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        if (trigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (trigger.isMember() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be managed via the group.");
         }
 
-        if (trigger.isParent()) {
-            return removeParentCondition(trigger, condition);
-        } else {
-            return removeCondition(condition);
-        }
+        return removeCondition(condition);
     }
 
-    private Collection<Condition> removeParentCondition(Trigger parent, Condition parentCondition) throws Exception {
-        String tenantId = parent.getTenantId();
-        String parentId = parent.getId();
-        Mode triggerMode = parentCondition.getTriggerMode();
+    @Override
+    public Collection<Condition> removeGroupCondition(String tenantId, String conditionId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(conditionId)) {
+            throw new IllegalArgumentException("ConditionId must be not null");
+        }
 
-        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
-        log.debugf("Removing %s from %s child conditions...", parentCondition, childTriggers.size());
+        Condition condition = getCondition(tenantId, conditionId);
+        if (null == condition) {
+            log.debugf("Ignoring removeCondition [%s], the condition does not exist.", conditionId);
+            return null;
+        }
 
-        for (Trigger child : childTriggers) {
-            String childId = child.getId();
-            Collection<Condition> childConditions = getTriggerConditions(tenantId, childId, triggerMode);
+        String groupId = condition.getTriggerId();
+        Mode triggerMode = condition.getTriggerMode();
+        Trigger groupTrigger = getTrigger(tenantId, groupId);
+        if (null == groupTrigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
+        }
+        if (!groupTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+        }
+
+        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+        log.debugf("Removing %s from %s member conditions...", condition, memberTriggers.size());
+
+        for (Trigger member : memberTriggers) {
+            String memberId = member.getId();
+            Collection<Condition> memberConditions = getTriggerConditions(tenantId, memberId, triggerMode);
 
             int i = 0;
-            int size = childConditions.size() - 1;
+            int size = memberConditions.size() - 1;
             Collection<Condition> newConditions = new ArrayList<>(size);
-            for (Condition c : childConditions) {
-                if (c.getConditionSetIndex() != parentCondition.getConditionSetIndex()) {
-                    c.setConditionSetSize(childConditions.size());
+            for (Condition c : memberConditions) {
+                if (c.getConditionSetIndex() != condition.getConditionSetIndex()) {
+                    c.setConditionSetSize(memberConditions.size());
                     c.setConditionSetIndex(++i);
                     newConditions.add(c);
                 }
             }
-            Collection<Condition> newChildConditions = setConditions(tenantId, child.getId(), triggerMode,
+            Collection<Condition> newMemberConditions = setConditions(tenantId, member.getId(), triggerMode,
                     newConditions);
-            log.debugf("Updated child condition set: %s", newChildConditions);
+            log.debugf("Updated member condition set: %s", newMemberConditions);
         }
 
-        return removeCondition(parentCondition);
+        return removeCondition(condition);
     }
 
     private Collection<Condition> removeCondition(Condition condition) throws Exception {
@@ -1665,53 +1773,80 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (null == existingTrigger) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
         }
-        if (existingTrigger.isChild() && !existingTrigger.isOrphan()) {
-            throw new IllegalArgumentException("A non-orphan child trigger must be updated via the parent trigger.");
+        if (existingTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (existingTrigger.isMember() && !existingTrigger.isOrphan()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be managed via the group.");
         }
 
-        if (existingTrigger.isParent()) {
-            return updateParentCondition(existingTrigger, condition);
-        } else {
-            return updateCondition(existingTrigger, condition);
-        }
+        return updateCondition(existingTrigger, condition);
     }
 
-    private Collection<Condition> updateParentCondition(Trigger parent, Condition parentCondition)
-            throws Exception {
+    @Override
+    public Collection<Condition> updateGroupCondition(String tenantId, Condition condition) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (condition == null) {
+            throw new IllegalArgumentException("Condition must be not null");
+        }
 
-        String tenantId = parent.getTenantId();
-        String parentId = parent.getId();
-        Mode triggerMode = parentCondition.getTriggerMode();
+        String conditionId = condition.getConditionId();
+        if (isEmpty(conditionId)) {
+            throw new IllegalArgumentException("ConditionId must be not null");
+        }
 
-        Collection<Trigger> childTriggers = getChildTriggers(tenantId, parentId, false);
-        log.debugf("Updating %s in %s child conditions...", parentCondition, childTriggers.size());
+        Condition existingCondition = getCondition(tenantId, conditionId);
+        if (null == existingCondition) {
+            throw new IllegalArgumentException("ConditionId [" + conditionId + "] on tenant " + tenantId +
+                    " does not exist.");
+        }
+        Mode triggerMode = existingCondition.getTriggerMode();
+        if (triggerMode != condition.getTriggerMode()) {
+            throw new IllegalArgumentException("The condition trigger mode ["
+                    + existingCondition.getTriggerMode().name() + "] can not be changed.");
+        }
 
-        for (Trigger child : childTriggers) {
-            String childId = child.getId();
-            Collection<Condition> childConditions = getTriggerConditions(tenantId, childId, triggerMode);
+        String groupId = existingCondition.getTriggerId();
+        Trigger existingTrigger = getTrigger(tenantId, groupId);
+        if (null == existingTrigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
+        }
+        if (!existingTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+        }
 
-            int size = childConditions.size();
+        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+        log.debugf("Updating %s in %s member conditions...", condition, memberTriggers.size());
+
+        for (Trigger member : memberTriggers) {
+            String memberId = member.getId();
+            Collection<Condition> memberConditions = getTriggerConditions(tenantId, memberId, triggerMode);
+
+            int size = memberConditions.size();
             Collection<Condition> newConditions = new ArrayList<>(size);
             Map<String, String> dataIdMap = new HashMap<>(2);
-            for (Condition c : childConditions) {
-                if (c.getConditionSetIndex() == parentCondition.getConditionSetIndex()) {
+            for (Condition c : memberConditions) {
+                if (c.getConditionSetIndex() == condition.getConditionSetIndex()) {
                     dataIdMap.clear();
-                    dataIdMap.put(parentCondition.getDataId(), c.getDataId());
+                    dataIdMap.put(condition.getDataId(), c.getDataId());
                     if (Condition.Type.COMPARE == c.getType()) {
-                        dataIdMap.put(((CompareCondition) parentCondition).getData2Id(),
+                        dataIdMap.put(((CompareCondition) condition).getData2Id(),
                                 ((CompareCondition) c).getData2Id());
                     }
-                    newConditions.add(getChildCondition(parent, parentCondition, dataIdMap));
+                    newConditions.add(getMemberCondition(existingTrigger, condition, dataIdMap));
                 } else {
                     newConditions.add(c);
                 }
             }
 
-            Collection<Condition> newChildConditions = setConditions(tenantId, childId, triggerMode, newConditions);
-            log.debugf("Updated child condition set: %s", newChildConditions);
+            Collection<Condition> newMemberConditions = setConditions(tenantId, memberId, triggerMode, newConditions);
+            log.debugf("Updated member condition set: %s", newMemberConditions);
         }
 
-        return updateCondition(parent, parentCondition);
+        return updateCondition(existingTrigger, condition);
     }
 
     private Collection<Condition> updateCondition(Trigger trigger, Condition condition) throws Exception {
@@ -2631,7 +2766,63 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null or empty");
         }
+
         checkTenantId(tenantId, tag);
+
+        String triggerId = tag.getTriggerId();
+        Trigger trigger = getTrigger(tenantId, triggerId);
+        if (null == trigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
+        }
+        if (trigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (trigger.isMember() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be managed via the group.");
+        }
+
+        addTag(tag);
+    }
+
+    @Override
+    public void addGroupTag(String tenantId, Tag groupTag) throws Exception {
+        if (groupTag == null) {
+            throw new IllegalArgumentException("Tag must be not null");
+        }
+        if (isEmpty(groupTag.getTriggerId())) {
+            throw new IllegalArgumentException("Tag TriggerId must be not null or empty");
+        }
+        if (isEmpty(groupTag.getName())) {
+            throw new IllegalArgumentException("Tag Name must be not null or empty");
+        }
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null or empty");
+        }
+
+        checkTenantId(tenantId, groupTag);
+
+        String groupId = groupTag.getTriggerId();
+        Trigger groupTrigger = getTrigger(tenantId, groupId);
+        if (null == groupTrigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
+        }
+        if (!groupTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+        }
+
+        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+        for (Trigger member : memberTriggers) {
+            groupTag.setTriggerId(member.getId());
+            addTag(groupTag);
+        }
+
+        groupTag.setTriggerId(groupId);
+        addTag(groupTag);
+    }
+
+    private void addTag(Tag tag) throws Exception {
         session = CassCluster.getSession();
         try {
             insertTag(tag.getTenantId(), tag.getTriggerId(), tag.getCategory(), tag.getName(), tag.isVisible());
@@ -2649,8 +2840,57 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
+
+        Trigger trigger = getTrigger(tenantId, triggerId);
+        if (null == trigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
+        }
+        if (trigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (trigger.isMember() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be managed via the group.");
+        }
+
         try {
             deleteTags(tenantId, triggerId, category, name);
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public void removeGroupTags(String tenantId, String groupId, String category, String name) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+
+        Trigger groupTrigger = getTrigger(tenantId, groupId);
+        if (null == groupTrigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
+        }
+        if (!groupTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+        }
+
+        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+        for (Trigger member : memberTriggers) {
+            try {
+                deleteTags(tenantId, member.getId(), category, name);
+            } catch (Exception e) {
+                msgLog.errorDatabaseException(e.getMessage());
+                throw e;
+            }
+        }
+
+        try {
+            deleteTags(tenantId, groupId, category, name);
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;

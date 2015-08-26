@@ -73,9 +73,9 @@ public class Trigger {
     @JsonInclude
     private Match autoResolveMatch;
 
-    /** Is a child trigger of the specified triggerId */
+    /** Is a member trigger of the specified group triggerId */
     @JsonInclude(Include.NON_EMPTY)
-    private String childOf;
+    private String memberOf;
 
     @JsonInclude(Include.NON_EMPTY)
     private String description;
@@ -86,13 +86,13 @@ public class Trigger {
     @JsonInclude
     private Match firingMatch;
 
-    /** Is a child trigger of the specified triggerId but currently orphaned (i.e. customized) */
+    /** Is a member trigger of the specified triggerId but currently orphaned (i.e. customized) */
     @JsonInclude
     private boolean orphan;
 
-    /** Is a parent trigger, non-firing, used to manage a set of child triggers. */
+    /** Is a group trigger, non-firing, used to manage a set of member triggers. */
     @JsonInclude
-    private boolean parent;
+    private boolean group;
 
     @JsonInclude
     private Severity severity;
@@ -150,12 +150,12 @@ public class Trigger {
         this.autoResolve = false;
         this.autoResolveAlerts = true;
         this.autoResolveMatch = Match.ALL;
-        this.childOf = null;
+        this.memberOf = null;
         this.description = null;
         this.enabled = false;
         this.firingMatch = Match.ALL;
         this.orphan = false;
-        this.parent = false;
+        this.group = false;
         this.severity = Severity.MEDIUM;
 
         this.match = Match.ALL;
@@ -321,25 +321,29 @@ public class Trigger {
         }
     }
 
-    public boolean isParent() {
-        return parent;
+    public String getMemberOf() {
+        return memberOf;
     }
 
-    public void setParent(boolean parent) {
-        this.parent = parent;
+    public void setMemberOf(String memberOf) {
+        this.memberOf = memberOf;
     }
 
-    public String getChildOf() {
-        return childOf;
+    public boolean isGroup() {
+        return group;
     }
 
-    public void setChildOf(String childOf) {
-        this.childOf = childOf;
+    public void setGroup(boolean group) {
+        this.group = group;
     }
 
     @JsonIgnore
-    public boolean isChild() {
-        return null != childOf;
+    public boolean isMember() {
+        return !isEmpty(memberOf);
+    }
+
+    private boolean isEmpty(String s) {
+        return (null == s || s.trim().isEmpty());
     }
 
     public boolean isOrphan() {
@@ -360,7 +364,7 @@ public class Trigger {
 
     @JsonIgnore
     public boolean isLoadable() {
-        return !parent && enabled;
+        return !group && enabled;
     }
 
     @JsonIgnore
@@ -420,7 +424,7 @@ public class Trigger {
                 + ", autoDisable=" + autoDisable + ", autoEnable=" + autoEnable + ", autoResolve=" + autoResolve
                 + ", autoResolveAlerts=" + autoResolveAlerts + ", severity=" + severity + ", actions=" + actions
                 + ", firingMatch=" + firingMatch + ", autoResolveMatch=" + autoResolveMatch + ", context=" + context
-                + ", parent=" + parent + ", childOf=" + childOf + ", orphan=" + orphan + ", enabled=" + enabled
+                + ", group=" + group + ", memberOf=" + memberOf + ", orphan=" + orphan + ", enabled=" + enabled
                 + ", mode=" + mode + "]";
     }
 

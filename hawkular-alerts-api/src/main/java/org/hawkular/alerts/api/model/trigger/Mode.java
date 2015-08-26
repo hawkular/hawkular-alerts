@@ -24,7 +24,7 @@ package org.hawkular.alerts.api.model.trigger;
  * conditions or dampening definition.
  *
  * @author jay shaughnessy
- * @author lucac ponce
+ * @author lucas ponce
  */
 public enum Mode {
     FIRING, AUTORESOLVE

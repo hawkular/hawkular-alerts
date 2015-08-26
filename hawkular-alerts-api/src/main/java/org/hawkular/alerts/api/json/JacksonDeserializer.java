@@ -298,6 +298,12 @@ public class JacksonDeserializer {
             if (node.get("triggerMode") != null) {
                 condition.setTriggerMode(Mode.valueOf(node.get("triggerMode").textValue()));
             }
+            if (node.get("conditionSetSize") != null) {
+                condition.setConditionSetSize(node.get("conditionSetSize").intValue());
+            }
+            if (node.get("conditionSetIndex") != null) {
+                condition.setConditionSetIndex(node.get("conditionSetIndex").intValue());
+            }
         }
         return condition;
     }

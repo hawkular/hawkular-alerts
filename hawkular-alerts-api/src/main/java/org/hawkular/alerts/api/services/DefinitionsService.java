@@ -39,7 +39,7 @@ import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 public interface DefinitionsService {
 
     /*
-        CRUD interface for Trigger
+        CRUD interface for Triggers
      */
 
     /**
@@ -47,53 +47,98 @@ public interface DefinitionsService {
      * manipulated in separate calls. The new <code>Trigger</code> will be persisted.  When fully defined a call to
      * {@link #updateTrigger(String, Trigger)} is needed to enable the <code>Trigger</code>.
      * <p>
-     * Parent triggers must have <code>parent=true</code> at create time. A parent trigger can never be
-     * made a non-parent, and vice-versa.
+     * A non-group trigger can never be made into a group trigger, and vice-versa.
      * </p>
      * @param tenantId Tenant where trigger is created
      * @param trigger New trigger definition to be added
      * @throws Exception If the <code>Trigger</code> already exists.
+     * @see {@link #addGroupTrigger(String, Trigger)} for adding a group trigger.
      */
     void addTrigger(String tenantId, Trigger trigger) throws Exception;
 
     /**
-     * The <code>Trigger</code> will be removed from the Alerts engine, as needed, and will no longer be persisted.
+     * Create a new Group <code>Trigger</code>. <code>Conditions</code> and <code>Dampening</code> are
+     * manipulated in separate calls. The new <code>Group Trigger</code> will be persisted.  When fully
+     * defined a call to {@link #updateGroupTrigger(String, Trigger)} is needed to enable the <code>Trigger</code>.
      * <p>
-     * Parent triggers will also have all child triggers removed (including orphans).  To remove a parent trigger
-     * while leaving behind child triggers use {@link #removeParentTrigger(String, String, boolean, boolean)}.
+     * A non-group trigger can never be made into a group trigger, and vice-versa.
      * </p>
+     * @param tenantId Tenant where trigger is created
+     * @param groupTrigger New trigger definition to be added
+     * @throws Exception If the <code>Trigger</code> already exists.
+     * @see {@link #addTrigger(String, Trigger)} for adding a non-group trigger.
+     */
+    void addGroupTrigger(String tenantId, Trigger groupTrigger) throws Exception;
+
+    /**
+     * Generate a member trigger for the specified group trigger. The dataIdMap replaces the tokens in the
+     * group trigger's conditions with actual dataIds. The member trigger gets the enabled state of the group.
+     * @param tenantId Tenant where trigger is stored
+     * @param groupId Group triggerId from which to spawn the member trigger
+     * @param memberId The member triggerId, unique id within the tenant, if null an Id will be generated
+     * @param memberName The member triggerName, not null, unique name within the tenant
+     * @param memberContext The member triggerContext. If null the context is inherited from the group trigger
+     * @param dataIdMap Tokens to be replaced in the new trigger
+     * @return the member trigger
+     * @throws Exception on any problem
+     * @see {@link #addTrigger(String, Trigger)} for adding a non-group trigger.
+     * @see {@link #addGroupTrigger(String, Trigger)} for adding a group trigger.
+     */
+    Trigger addMemberTrigger(String tenantId, String groupId, String memberId, String memberName,
+            Map<String, String> memberContext, Map<String, String> dataIdMap) throws Exception;
+
+    /**
+     * The <code>Trigger</code> will be removed from the Alerts engine, as needed, and will no longer be persisted.
      * @param tenantId Tenant where trigger is stored
      * @param triggerId Trigger to be removed
+     * @throws NotFoundException if trigger is not found
      * @throws Exception on any problem
+     * @see {@link #removeGroupTrigger(String, String, boolean, boolean)} for removing a group trigger and its members.
      */
     void removeTrigger(String tenantId, String triggerId) throws Exception;
 
     /**
-     * The parent <code>Trigger</code> will be removed from the Alerts engine, as needed, and will no longer be
-     * persisted. The child triggers will be removed as well, depending on the settings for
-     * <code>leaveChildren</code> and <code>leaveOrphans</code>. Note that any child triggers not removed will
-     * no longer have a parent trigger associated and will then need to be managed independently.
+     * The group <code>Trigger</code> will be removed from the Alerts engine, as needed, and will no longer be
+     * persisted. The member triggers will be removed as well, depending on the settings for
+     * <code>leaveMember</code> and <code>leaveOrphans</code>. Note that any member triggers not removed will
+     * no longer have a group trigger associated and will then need to be managed independently.
      * @param tenantId Tenant where trigger is stored
-     * @param triggerId Parent Trigger to be removed.
-     * @param keepChildren If true the non-orphan child triggers for the parent are saved.
-     * @param keepOrphans If true the orphan child triggers for the parent are saved.
+     * @param groupId Group Trigger to be removed.
+     * @param keepNonOrphans If true the non-orphan member are maintained and made independent.
+     * @param keepOrphans If true the orphan member triggers are maintained and made independent.
+     * @throws NotFoundException if trigger is not found
      * @throws Exception on any problem
+     * @see {@link #removeTrigger(String, String)} for removing a non-group trigger
      */
-    void removeParentTrigger(String tenantId, String parentId, boolean keepChildren, boolean keepOrphans)
+    void removeGroupTrigger(String tenantId, String groupId, boolean keepNonOrphans, boolean keepOrphans)
             throws Exception;
 
     /**
      * Update the <code>Trigger</code>. <code>Conditions</code> and <code>Dampening</code> are
      * manipulated in separate calls. The updated <code>Trigger</code> will be persisted.  If enabled the
      * <code>Trigger</code> will be [re-]inserted into the Alerts engine and any prior dampening will be reset.
-     * <p>
-     * Parent triggers will also have all non-orphan child triggers similarly updated.
-     * </p>
      * @param tenantId Tenant where trigger is updated
      * @param trigger Existing trigger to be updated
-     * @throws Exception If the <code>Trigger</code> does not exist.
+     * @throws NotFoundException if trigger is not found
+     * @throws Exception on any problem
+     * @see {@link #updateGroupTrigger(String, Trigger)} for updating a group trigger
      */
     Trigger updateTrigger(String tenantId, Trigger trigger) throws Exception;
+
+    /**
+     * Update the group <code>Trigger</code>. <code>Conditions</code> and <code>Dampening</code> are
+     * manipulated in separate calls. The updated <code>Trigger</code> will be persisted.  If enabled the
+     * <code>Trigger</code> will be [re-]inserted into the Alerts engine and any prior dampening will be reset.
+     * <p>
+     * The group's non-orphan member triggers will be similarly updated.
+     * </p>
+     * @param tenantId Tenant where trigger is updated
+     * @param groupTrigger Existing trigger to be updated
+     * @throws NotFoundException if trigger is not found
+     * @throws Exception on any problem
+     * @see {@link #updateTrigger(String, Trigger)} for updating a non-group trigger.
+     */
+    Trigger updateGroupTrigger(String tenantId, Trigger groupTrigger) throws Exception;
 
     /**
      * Get a stored Trigger for a specific Tenant.
@@ -120,13 +165,13 @@ public interface DefinitionsService {
     Collection<Trigger> getTriggersByTag(String tenantId, String category, String name) throws Exception;
 
     /**
-     * Get the child triggers for the specified parent trigger.
-     * @param tenantId Tenant for the parent trigger
-     * @param parentId Parent triggerId
-     * @param includeOrphans if true, include orphan child triggers for the parent
+     * Get the member triggers for the specified group trigger.
+     * @param tenantId Tenant for the group trigger
+     * @param groupId Group triggerId
+     * @param includeOrphans if true, include orphan triggers for the group
      * @throws Exception on any problem
      */
-    Collection<Trigger> getChildTriggers(String tenantId, String parentId, boolean includeOrphans) throws Exception;
+    Collection<Trigger> getMemberTriggers(String tenantId, String groupId, boolean includeOrphans) throws Exception;
 
     /**
      * Get all stored Triggers for all Tenants
@@ -144,50 +189,37 @@ public interface DefinitionsService {
     Collection<Trigger> getAllTriggersByTag(String category, String name) throws Exception;
 
     /**
-     * Generate a child trigger for the specified parent trigger. The dataIdMap replaces the tokens in the
-     * parent trigger's conditions with actual dataIds. The child trigger gets the enabled state of the parent.
+     * Orphan a member trigger.  The member trigger will no longer inherit group updates.  It will be allowed
+     * to be independently updated.  It does maintain its group reference and can again be tied to the
+     * group via a call to {@link #unorphanMemberTrigger(String, String, Map, Map)}.
      * @param tenantId Tenant where trigger is stored
-     * @param parentId Parent triggerId from which to spawn the child trigger
-     * @param childId The child triggerId, unique id within the tenant, if null an Id will be generated
-     * @param childName The child triggerName, not null, unique name within the tenant
-     * @param childContext The child triggerContext. If null the context is inherited from the parent trigger
-     * @param dataIdMap Tokens to be replaced in the new trigger
-     * @return the child trigger
-     * @throws Exception on any problem
-     */
-    Trigger addChildTrigger(String tenantId, String parentId, String childId, String childName,
-            Map<String, String> childContext, Map<String, String> dataIdMap) throws Exception;
-
-    /**
-     * Orphan a child trigger.  The child trigger will no longer inherit parent updates.  It will be allowed
-     * to be independently updated.  It does maintain its parent reference and can again be tied to the
-     * parent via a call to {@link #unorphanChildTrigger(String, String, Map, Map)}.
-     * @param tenantId Tenant where trigger is stored
-     * @param childId The child triggerId
-     * @param childContext The child triggerContext. If null the context is inherited from the parent trigger
-     * @param dataIdMap Tokens to be replaced in the new trigger
-     * @return the child trigger
+     * @param memberId The member triggerId
+     * @return the member trigger
+     * @throws NotFoundException if trigger is not found
      * @throws Exception
+     * @see {@link #unorphanMemberTrigger(String, String, Map, Map)} to again have the trigger be a full group member.
      */
-    Trigger orphanChildTrigger(String tenantId, String childId) throws Exception;
+    Trigger orphanMemberTrigger(String tenantId, String memberId) throws Exception;
 
     /**
-     * Un-orphan a child trigger.  The child trigger is again synchronized with the parent definition. As an orphan
-     * it may have been altered in various ways. So, as when spawning a new child trigger, the context and dataIdMap
+     * Un-orphan a member trigger.  The member trigger is again synchronized with the group definition. As an orphan
+     * it may have been altered in various ways. So, as when spawning a new member trigger, the context and dataIdMap
      * are specified.
      * <p>
      * This is basically a convenience method that first performs a {@link #removeTrigger(String, String)} and
-     * then an {@link #addChildTrigger(String, String, String, String, Map, Map)}. But the child trigger must
-     * already exist for this call to succeed. The trigger will maintain the same parent, id, and name.
+     * then an {@link #addMemberTrigger(String, String, String, String, Map, Map)}. But the member trigger must
+     * already exist for this call to succeed. The trigger will maintain the same group, id, and name.
      * </p>
      * @param tenantId Tenant where trigger is stored
-     * @param childId The child triggerId
-     * @param childContext The child triggerContext. If null the context is inherited from the parent trigger
+     * @param memberId The member triggerId
+     * @param memberContext The member triggerContext. If null the context is inherited from the member trigger
      * @param dataIdMap Tokens to be replaced in the new trigger
-     * @return the child trigger
+     * @return the member trigger
+     * @throws NotFoundException if trigger is not found
      * @throws Exception
+     * @see {@link #orphanMemberTrigger(String, String)} for setting a member to be an orphan.
      */
-    Trigger unorphanChildTrigger(String tenantId, String childId, Map<String, String> childContext,
+    Trigger unorphanMemberTrigger(String tenantId, String memberId, Map<String, String> memberContext,
             Map<String, String> dataIdMap) throws Exception;
 
     /*
@@ -196,38 +228,70 @@ public interface DefinitionsService {
 
     /**
      * Add the <code>Dampening</code>. The relevant triggerId is specified in the Dampening object.
-     * <p>
-     * Parent triggers will apply the dampening to their spawned children.
-     * </p>
      * @param tenantId the owning tenant
      * @param dampening the Dampening definition, which should be tied to a trigger
      * @return the new Dampening
      * @throws Exception
+     * @see {@link #addGroupDampening(String, Dampening)} for adding group-level dampening
      */
     Dampening addDampening(String tenantId, Dampening dampening) throws Exception;
 
     /**
-     * Remove the specified <code>Dampening</code> from the relevant trigger.
+     * Add the <code>Dampening</code>. The relevant triggerId is specified in the Dampening object.
      * <p>
-     * Parent triggers will remove the dampening from their non-orphan children.
+     * The group's non-orphan member triggers will be similarly updated.
      * </p>
+     * @param tenantId the owning tenant
+     * @param groupDampening the Dampening definition, which should be tied to a trigger
+     * @return the new Dampening
+     * @throws Exception
+     * @see {@link #addDampening(String, Dampening)} for adding non-group dampening.
+     */
+    Dampening addGroupDampening(String tenantId, Dampening groupDampening) throws Exception;
+
+    /**
+     * Remove the specified <code>Dampening</code> from the relevant trigger.
      * @param tenantId the owning tenant
      * @param dampeningId the doomed dampening  record
      * @throws Exception
+     * @see {@link #removeGroupDampening(String, String)} for removing group-level dampening.
      */
     void removeDampening(String tenantId, String dampeningId) throws Exception;
 
     /**
-     * Update the <code>Dampening</code> on the relevant trigger.
+     * Remove the specified <code>Dampening</code> from the relevant group trigger.
      * <p>
-     * Parent triggers will update the dampening on their non-orphan children.
+     * The group's non-orphan member triggers will be similarly updated.
      * </p>
+     * @param tenantId the owning tenant
+     * @param groupDampeningId the doomed dampening record for the group trigger
+     * @throws Exception
+     * @see {@link #removeDampening(String, String)} for removing non-group dampening.
+     */
+    void removeGroupDampening(String tenantId, String groupDampeningId) throws Exception;
+
+    /**
+     * Update the <code>Dampening</code> on the relevant trigger.
      * @param tenantId the owning tenant
      * @param dampening the Dampening definition, which should be tied to a trigger
      * @return the new Dampening
      * @throws Exception
+     * @see {@link #updateGroupDampening(String, Dampening)} for group-level dampening.
      */
     Dampening updateDampening(String tenantId, Dampening dampening) throws Exception;
+
+    /**
+     * Update the <code>Dampening</code> on the relevant group trigger.
+     * <p>
+     * The group's non-orphan member triggers will be similarly updated.
+     * </p>
+     * @param tenantId the owning tenant
+     * @param groupDampening the Dampening definition, which should be tied to a group trigger
+     * @return the new Dampening
+     * @throws Exception
+     * @see {@link #updateDampening(String, Dampening)} for non-group dampening.
+     */
+    Dampening updateGroupDampening(String tenantId, Dampening groupDampening) throws Exception;
 
     Dampening getDampening(String tenantId, String dampeningId) throws Exception;
 
@@ -279,21 +343,22 @@ public interface DefinitionsService {
      * @param triggerMode Mode where condition is applied
      * @param condition Not null
      * @return The updated, persisted condition set
+     * @throws NotFoundException if trigger is not found
      * @throws Exception on any problem
+     * @see {@link #addGroupCondition(String, String, Mode, Condition, Map)} for group-level conditions.
      */
     Collection<Condition> addCondition(String tenantId, String triggerId, Mode triggerMode, Condition condition)
             throws Exception;
 
     /**
      * A convenience method that adds a new Condition to the existing condition set for the specified
-     * Parent Trigger and trigger mode.  The new condition will be assigned the highest conditionSetIndex for the
-     * updated conditionSet.  The non-orphan child triggers will have the new condition applied, using the
-     * provided dataIdMap.  The dataIdMap is of the form <code>Map&LTString, Map&LTString,String&GT&GT</code>.
-     * It is a map of the dataId tokens in the parent condition, to the actual dataIds to be used for the
-     * current child triggers. This map will usually have 1 entry but because a condition could have multiple
-     * dataIds (e.g CompareCondition), it may have multiple entries.  The inner map maps child triggerIds to
-     * the dataId to be used for that child trigger for the given token.  It should have 1 entry for each
-     * child trigger.
+     * Group Trigger and trigger mode.  The new condition will be assigned the highest conditionSetIndex for the
+     * updated conditionSet.  The non-orphan member triggers will have the new condition applied, using the
+     * provided dataIdMemberMap.  The dataIdMemberMap has the form <code>Map&LTString, Map&LTString,String&GT&GT</code>.
+     * The keys are the dataId tokens in the new condition, The values are themselves Maps with one entry
+     * per member trigger.  The value Map key is a memberId. The value is the dataId to be used for that member, for
+     * the relevant dataId token. This map will usually have 1 entry but because a condition could have multiple
+     * dataIds (e.g CompareCondition), it may have multiple entries.
      * <p>
      * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
      * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
@@ -307,15 +372,17 @@ public interface DefinitionsService {
      *   conditionSetIndex
      * </pre>
      * @param tenantId Tenant where trigger is stored
-     * @param parentId ParentTrigger adding the condition and whose non-orphan children will also have it added.
+     * @param groupId Group Trigger adding the condition and whose non-orphan members will also have it added.
      * @param triggerMode Mode where condition is applied
-     * @param parentCondition Not null, the condition to add
-     * @param dataIdMap see above for details.
-     * @return The updated, persisted condition set for the parent
+     * @param groupCondition Not null, the condition to add
+     * @param dataIdMemberMap see above for details.
+     * @return The updated, persisted condition set for the group
+     * @throws NotFoundException if trigger is not found
      * @throws Exception on any problem
+     * @see {@link #addCondition(String, String, Mode, Condition)} for non-group conditions.
      */
-    Collection<Condition> addParentCondition(String tenantId, String parentId, Mode triggerMode,
-            Condition parentCondition, Map<String, Map<String, String>> dataIdMap) throws Exception;
+    Collection<Condition> addGroupCondition(String tenantId, String groupId, Mode triggerMode,
+            Condition groupCondition, Map<String, Map<String, String>> dataIdMemberMap) throws Exception;
 
     /**
      * A convenience method that removes a Condition from an existing condition set.
@@ -323,31 +390,61 @@ public interface DefinitionsService {
      * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
      * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
      * </p>
-     * <p>
-     * Parent triggers will remove the condition from their non-orphan children.
-     * </p>
      * @param tenantId Tenant where trigger and his conditions are stored
      * @param conditionId Condition id to be removed
      * @return The updated, persisted condition set. Not null. Can be empty.
      * @throws Exception on any problem
+     * @see {@link #removeGroupCondition(String, String)} for group-level conditions.
      */
     Collection<Condition> removeCondition(String tenantId, String conditionId) throws Exception;
 
     /**
-     * A convenience method that updates an existing Condition from an existing condition set.
+     * A convenience method that removes a Condition from an existing condition set.
+     * <p>
+     * The group's non-orphan member triggers will be similarly updated.
+     * </p>
      * <p>
      * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
      * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
      * </p>
+     * @param tenantId Tenant where trigger and his conditions are stored
+     * @param groupConditionId Condition id to be removed from the group trigger
+     * @return The updated, persisted condition set. Not null. Can be empty.
+     * @throws Exception on any problem
+     * @see {@link #removeCondition(String, String)} for non-group conditions.
+     */
+    Collection<Condition> removeGroupCondition(String tenantId, String groupConditionId) throws Exception;
+
+    /**
+     * A convenience method that updates an existing condition.
      * <p>
-     * Parent triggers will update the condition on their non-orphan children.
+     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
+     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
      * </p>
      * @param tenantId
      * @param condition Not null. conditionId must be for an existing condition.
      * @return The updated, persisted condition set. Not null. Can be empty.
      * @throws Exception on any problem
+     * @see {@link #updateGroupCondition(String, Condition)} for group-level conditions.
      */
     Collection<Condition> updateCondition(String tenantId, Condition condition) throws Exception;
+
+    /**
+     * A convenience method that updates an existing group condition.
+     * <p>
+     * The group's non-orphan member triggers will be similarly updated.
+     * </p>
+     * <p>
+     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
+     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
+     * </p>
+     * @param tenantId
+     * @param groupCondition Not null. conditionId must be for an existing condition.
+     * @return The updated, persisted condition set. Not null. Can be empty.
+     * @throws Exception on any problem
+     * @see {@link #updateCondition(String, Condition)} for non-group conditions.
+     */
+    Collection<Condition> updateGroupCondition(String tenantId, Condition groupCondition) throws Exception;
 
     /**
      * The condition set for a trigger's trigger mode is treated as a whole.  When making any change to the
@@ -365,17 +462,22 @@ public interface DefinitionsService {
      *   conditionSetIndex
      * </pre>
      * <p>
-     * Parent triggers will set the conditions on their non-orphan children.
-     * </p>
+     * Note that due to the complexity of adding group-level conditions, it is only supported to
+     * add or remove a single group condition at one time.  So there is no <code>setGroupConditions</code>.
+     * Instead, use {@link #addGroupCondition(String, String, Mode, Condition, Map)} and
+     * {@link #removeGroupCondition(String, String)} as needed.
      * @param tenantId Tenant where trigger and his conditions are stored
      * @param triggerId Trigger where conditions will be stored
      * @param triggerMode Mode where conditions are applied
      * @param conditions Not null, Not Empty
      * @return The persisted condition set
      * @throws Exception on any problem
+     * @see {@link #removeGroupCondition(String, String)} to remove a group condition.
+     * @see {@link #addGroupCondition(String, String, Mode, Condition, Map)} to add a group condition.
      */
     Collection<Condition> setConditions(String tenantId, String triggerId, Mode triggerMode,
             Collection<Condition> conditions) throws Exception;
+
 
     Condition getCondition(String tenantId, String conditionId) throws Exception;
 
@@ -541,8 +643,20 @@ public interface DefinitionsService {
      * @param tenantId Tenant where tag is created
      * @param tag New tag to be created
      * @throws Exception on any problem
+     * @see {@link #addGroupTag(String, Tag)} for group-level tags.
      */
     void addTag(String tenantId, Tag tag) throws Exception;
+
+    /**
+     * Add Tag to the group Trigger and its members. Category is optional but highly recommended for
+     * efficiency and to avoid unwanted name collisions. If the Tag exists the call returns successfully but
+     * has no effect.
+     * @param tenantId Tenant where tag is created
+     * @param groupTag New tag to be created
+     * @throws Exception on any problem
+     * @see {@link #addTag(String, Tag)} for non-group level tags.
+     */
+    void addGroupTag(String tenantId, Tag groupTag) throws Exception;
 
     /**
      * Delete tag(s) for the specified trigger, optionally filtered by category and/or name.
@@ -550,8 +664,19 @@ public interface DefinitionsService {
      * @param category Nullable
      * @param name Nullable
      * @throws Exception on any problem
+     * @see {@link #removeGroupTags(String, String, String, String)} for group-level tags.
      */
     void removeTags(String tenantId, String triggerId, String category, String name) throws Exception;
+
+    /**
+     * Delete tag(s) for the specified group trigger, optionally filtered by category and/or name.
+     * @param groupId NotEmpty The group triggerid.
+     * @param category Nullable
+     * @param name Nullable
+     * @throws Exception on any problem
+     * @see {@link #removeTags(String, String, String, String)} for non-group-level tags.
+     */
+    void removeGroupTags(String tenantId, String groupId, String category, String name) throws Exception;
 
     /**
      * @param tenantId NotEmpty, must be the proper tenant for the specified trigger.
