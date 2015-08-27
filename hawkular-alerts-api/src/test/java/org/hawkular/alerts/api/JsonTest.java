@@ -967,8 +967,12 @@ public class JsonTest {
         assertFalse(trigger.isAutoEnable());
         assertFalse(trigger.isAutoResolve());
         assertTrue(trigger.isAutoResolveAlerts());
+        assertFalse(trigger.isGroup());
+        assertFalse(trigger.isMember());
+        assertFalse(trigger.isOrphan());
         assertEquals(Severity.MEDIUM, trigger.getSeverity());
-        assertNull(trigger.getContext());
+        assertNotNull(trigger.getContext());
+        assertTrue(trigger.getContext().isEmpty());
 
         String output = objectMapper.writeValueAsString(trigger);
 

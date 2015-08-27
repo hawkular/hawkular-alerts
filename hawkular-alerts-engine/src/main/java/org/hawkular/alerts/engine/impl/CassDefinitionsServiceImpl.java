@@ -46,12 +46,15 @@ import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Match;
+import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.engine.exception.NotFoundException;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.jboss.logging.Logger;
@@ -753,7 +756,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return member;
     }
 
-    private void deleteTriggerActions(Trigger trigger) throws Exception {
+    private void deleteTriggerActions(String tenantId, String triggerId) throws Exception {
         PreparedStatement deleteTriggerActions = CassStatement.get(session, CassStatement.DELETE_TRIGGER_ACTIONS);
         if (deleteTriggerActions == null) {
             throw new RuntimeException("updateTrigger PreparedStatement is null");
