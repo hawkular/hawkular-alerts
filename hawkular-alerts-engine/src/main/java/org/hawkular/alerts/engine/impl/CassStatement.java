@@ -48,7 +48,6 @@ public class CassStatement {
     public static final String DELETE_DAMPENING_ID;
     public static final String DELETE_DAMPENINGS;
     public static final String DELETE_TAGS;
-    public static final String DELETE_TAGS_BY_NAME;
     public static final String DELETE_TAGS_TRIGGERS;
     public static final String DELETE_TRIGGER_ACTIONS;
     public static final String DELETE_TRIGGER;
@@ -152,9 +151,7 @@ public class CassStatement {
 
         DELETE_DAMPENINGS = "DELETE FROM " + keyspace + ".dampenings " + "WHERE tenantId = ? AND triggerId = ? ";
 
-        DELETE_TAGS = "DELETE FROM " + keyspace + ".tags WHERE tenantId = ? AND triggerId = ? ";
-
-        DELETE_TAGS_BY_NAME = "DELETE FROM " + keyspace + ".tags "
+        DELETE_TAGS = "DELETE FROM " + keyspace + ".tags "
                 + "WHERE tenantId = ? AND triggerId = ? AND name = ?";
 
         DELETE_TAGS_TRIGGERS = "DELETE FROM " + keyspace + ".tags_triggers " + "WHERE tenantId = ? AND name = ? ";

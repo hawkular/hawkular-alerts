@@ -126,6 +126,32 @@ public class TriggersHandler {
         }
     }
 
+    @GET
+    @Path("/groups/{groupId}/members")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(
+            value = "Find all Group Member Trigger Definitions",
+            notes = "Pagination is not yet implemented")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response findGroupMembers(
+            @ApiParam(value = "Group TriggerId", required = true)//
+            @PathParam("groupId")//
+            final String groupId,
+            @ApiParam(value = "include Orphan members? No if omitted.", required = false)//
+            @QueryParam("includeOrphans")//
+            final boolean includeOrphans) {
+        try {
+            Collection<Trigger> members = definitions.getMemberTriggers(tenantId, groupId, includeOrphans);
+            log.debugf("Member Triggers: %s ", members);
+            return ResponseUtil.ok(members);
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
     @POST
     @Path("/")
     @Consumes(APPLICATION_JSON)
@@ -1077,7 +1103,7 @@ public class TriggersHandler {
         }
     }
 
-    @POST
+    @PUT
     @Path("/{triggerId}/tags")
     @ApiOperation(value = "Delete existing Tags from a Trigger")
     @ApiResponses(value = {
@@ -1104,7 +1130,7 @@ public class TriggersHandler {
         }
     }
 
-    @POST
+    @PUT
     @Path("/groups/{groupId}/tags")
     @ApiOperation(value = "Delete existing Tags from a Trigger")
     @ApiResponses(value = {

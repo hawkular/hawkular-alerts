@@ -625,11 +625,11 @@ class LifecycleITest extends AbstractITestBase {
         def alertId1 = resp.data[0].alertId;
         def alertId2 = resp.data[1].alertId;
         // RESOLVE manually 1 alert
-        resp = client.get(path: "resolve/" + alertId1,
+        resp = client.put(path: "resolve/" + alertId1,
                 query: [resolvedBy:"testUser", resolvedNotes:"testNotes"] )
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "ack/" + alertId2,
+        resp = client.put(path: "ack/" + alertId2,
                 query: [resolvedBy:"testUser", resolvedNotes:"testNotes"] )
         assertEquals(200, resp.status)
 

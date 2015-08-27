@@ -638,6 +638,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
         }
 
+        groupTrigger.setGroup(true);
         Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
 
         for (Trigger member : memberTriggers) {
@@ -2139,61 +2140,22 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void deleteTags(String tenantId, String triggerId, String category, String name) throws Exception {
-        session = CassCluster.getSession();
-        BoundStatement boundTags;
-        if (!isEmpty(name)) {
-            PreparedStatement deleteTagsByName = CassStatement.get(session, CassStatement.DELETE_TAGS_BY_NAME);
-            if (deleteTagsByName == null) {
-                throw new RuntimeException("deleteTagsByName PreparedStatement is null");
-            }
-            boundTags = deleteTagsByName.bind(tenantId, triggerId, name);
-        } else {
-            PreparedStatement deleteTags = CassStatement.get(session, CassStatement.DELETE_TAGS);
-            if (deleteTags == null) {
-                throw new RuntimeException("deleteTags PreparedStatement is null");
-            }
-            boundTags = deleteTags.bind(tenantId, triggerId);
-        }
-        try {
-            deleteTriggerByTagIndex(tenantId, triggerId, category, name);
-            session.execute(boundTags);
-        } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-    }
+        List<Tag> doomedTags = getTags(tenantId, triggerId, category, name);
 
-    private void deleteTriggerByTagIndex(String tenantId, String triggerId, String category, String name)
-            throws Exception {
-        List<Tag> tags;
-        if (category == null || name == null) {
-            tags = getTriggerTags(tenantId, triggerId, category);
-        } else {
-            tags = new ArrayList<>();
-            Tag singleTag = new Tag();
-            singleTag.setTenantId(tenantId);
-            singleTag.setCategory(category);
-            singleTag.setName(name);
-            tags.add(singleTag);
-        }
+        PreparedStatement deleteTags = CassStatement.get(session, CassStatement.DELETE_TAGS);
+        PreparedStatement deleteTagsTriggers = CassStatement.get(session, CassStatement.DELETE_TAGS_TRIGGERS);
+        PreparedStatement updateTagsTriggers = CassStatement.get(session, CassStatement.UPDATE_TAGS_TRIGGERS);
 
-        for (Tag tag : tags) {
-            Set<String> triggers = getTriggerIdsByTag(tag.getTenantId(), tag.getCategory(), tag.getName());
-            if (triggers.size() > 1) {
-                Set<String> updateTriggers = new HashSet<>(triggers);
-                updateTriggers.remove(triggerId);
-                PreparedStatement updateTagsTriggers = CassStatement.get(session, CassStatement.UPDATE_TAGS_TRIGGERS);
-                if (updateTagsTriggers == null) {
-                    throw new RuntimeException("updateTagsTriggers PreparedStatement is null");
+        for (Tag doomedTag : doomedTags) {
+            Set<String> triggerIds = new HashSet<>(getTriggerIdsByTag(tenantId, null, doomedTag.getName()));
+            if (triggerIds.remove(doomedTag.getTriggerId())) {
+                if (triggerIds.isEmpty()) {
+                    session.execute(deleteTagsTriggers.bind(tenantId, doomedTag.getName()));
+                } else {
+                    session.execute(updateTagsTriggers.bind(triggerIds, tenantId, doomedTag.getName()));
                 }
-                session.execute(updateTagsTriggers.bind(triggers, tag.getTenantId(), tag.getName()));
-            } else {
-                PreparedStatement deleteTagsTriggers = CassStatement.get(session, CassStatement.DELETE_TAGS_TRIGGERS);
-                if (deleteTagsTriggers == null) {
-                    throw new RuntimeException("deleteTagsTriggers PreparedStatement is null");
-                }
-                session.execute(deleteTagsTriggers.bind(tag.getTenantId(), tag.getName()));
             }
+            session.execute(deleteTags.bind(tenantId, doomedTag.getTriggerId(), doomedTag.getName()));
         }
     }
 

@@ -139,7 +139,7 @@ public class AlertsHandler {
         }
     }
 
-    @GET
+    @PUT
     @Path("/ack/{alertId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Set one alert Acknowledged")
@@ -357,7 +357,7 @@ public class AlertsHandler {
         }
     }
 
-    @GET
+    @PUT
     @Path("/resolve/{alertId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Set one alert Resolved")

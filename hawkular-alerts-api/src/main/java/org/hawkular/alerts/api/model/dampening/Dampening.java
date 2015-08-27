@@ -86,8 +86,8 @@ public class Dampening {
     @JsonIgnore
     private transient long trueEvalsStartTime;
 
-    @JsonIgnore
     // This Map<conditionSetIndex,ConditionEval> holds the most recent eval for each member of the condition set
+    @JsonIgnore
     private transient Map<Integer, ConditionEval> currentEvals = new HashMap<>(5);
 
     @JsonIgnore
