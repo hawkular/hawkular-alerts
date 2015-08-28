@@ -73,7 +73,6 @@ public class Trigger {
     @JsonInclude
     private Match autoResolveMatch;
 
-    /** Is a member trigger of the specified group triggerId */
     @JsonInclude(Include.NON_EMPTY)
     private String memberOf;
 
@@ -86,11 +85,9 @@ public class Trigger {
     @JsonInclude
     private Match firingMatch;
 
-    /** Is a member trigger of the specified triggerId but currently orphaned (i.e. customized) */
     @JsonInclude
     private boolean orphan;
 
-    /** Is a group trigger, non-firing, used to manage a set of member triggers. */
     @JsonInclude
     private boolean group;
 
@@ -325,6 +322,11 @@ public class Trigger {
         return memberOf;
     }
 
+    /**
+     * The group trigger in which this is a member trigger.  A trigger can be one of group-level, member-level, or
+     * neither.
+     * @param memberOf If set, the group-level triggerId.
+     */
     public void setMemberOf(String memberOf) {
         this.memberOf = memberOf;
     }
@@ -333,6 +335,11 @@ public class Trigger {
         return group;
     }
 
+    /**
+     * If true this is a group trigger: non-firing, used to manage a set of member triggers. A trigger can be one of
+     * group-level, member-level, or neither.
+     * @param group if true this is a group-level trigger.
+     */
     public void setGroup(boolean group) {
         this.group = group;
     }
@@ -350,6 +357,11 @@ public class Trigger {
         return orphan;
     }
 
+    /**
+     * A member trigger that is not being managed by the group. It maintains it's group trigger reference and
+     * can be un-orphaned.
+     * @param orphan true if this is an orphan member trigger.
+     */
     public void setOrphan(boolean orphan) {
         this.orphan = orphan;
     }

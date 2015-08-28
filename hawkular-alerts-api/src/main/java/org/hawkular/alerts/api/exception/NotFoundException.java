@@ -14,29 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.engine.exception;
+package org.hawkular.alerts.api.exception;
 
-import javax.ejb.ApplicationException;
 
 /**
  * Indicates a query for expected data did not return any results. Declared an {@link ApplicationException} because
  * we don't want these to be wrapped or to rollback an ongoing transaction.
  */
-@ApplicationException(rollback = false, inherited = true)
 public class NotFoundException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    // Default no-arg constructor required by JAXB
     public NotFoundException() {
-    }
-
-    /**
-     * Create an exception indicating the resource with the specified id was not found.
-     *
-     * @param resourceId a resource id
-     */
-    public NotFoundException(String type, String tenantId, String id) {
-        super("Failed to fetch [" + type + "] with tenant/id [" + tenantId + "/" + id + "]");
     }
 
     public NotFoundException(String message) {

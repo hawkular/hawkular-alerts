@@ -24,8 +24,9 @@ import org.hawkular.alerts.api.model.dampening.Dampening
 import org.hawkular.alerts.api.model.Severity
 import org.hawkular.alerts.api.model.trigger.Tag
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.api.json.MemberCondition
-import org.hawkular.alerts.api.json.MemberTrigger
+import org.hawkular.alerts.api.json.GroupConditionInfo
+import org.hawkular.alerts.api.json.GroupMemberInfo
+import org.hawkular.alerts.api.json.UnorphanMemberInfo
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.junit.Test
 
@@ -115,23 +116,23 @@ class TriggersITest extends AbstractITestBase {
         ThresholdCondition cond1 = new ThresholdCondition("group-trigger", "DataId1-Token",
             ThresholdCondition.Operator.GT, 10.0);
         Map<String, Map<String, String>> dataIdMemberMap = new HashMap<>();
-        MemberCondition memberCondition = new MemberCondition( cond1, dataIdMemberMap );
+        GroupConditionInfo groupConditionInfo = new GroupConditionInfo( cond1, dataIdMemberMap );
 
-        resp = client.post(path: "triggers/groups/group-trigger/conditions", body: memberCondition)
+        resp = client.post(path: "triggers/groups/group-trigger/conditions", body: groupConditionInfo)
         assertEquals(resp.toString(), 200, resp.status)
         assertEquals(1, resp.data.size())
 
         // create member 1
         Map<String,String> dataIdMap = new HashMap<>(1);
         dataIdMap.put("DataId1-Token", "DataId1-Child1");
-        MemberTrigger memberTrigger = new MemberTrigger("group-trigger", "member1", "member1", null, dataIdMap);
-        resp = client.post(path: "triggers/groups/members", body: memberTrigger);
+        GroupMemberInfo groupMemberInfo = new GroupMemberInfo("group-trigger", "member1", "member1", null, dataIdMap);
+        resp = client.post(path: "triggers/groups/members", body: groupMemberInfo);
         assertEquals(200, resp.status)
 
         // create member 2
         dataIdMap.put("DataId1-Token", "DataId1-Child2");
-        memberTrigger = new MemberTrigger("group-trigger", "member2", "member2", null, dataIdMap);
-        resp = client.post(path: "triggers/groups/members", body: memberTrigger);
+        groupMemberInfo = new GroupMemberInfo("group-trigger", "member2", "member2", null, dataIdMap);
+        resp = client.post(path: "triggers/groups/members", body: groupMemberInfo);
         assertEquals(200, resp.status)
 
         // orphan member2, it should no longer get updates
@@ -154,8 +155,8 @@ class TriggersITest extends AbstractITestBase {
         dataIdMap.clear();
         dataIdMap.put("member1", "DataId2-Member1");
         dataIdMemberMap.put("DataId2-Token", dataIdMap);
-        memberCondition = new MemberCondition(cond2, dataIdMemberMap);
-        resp = client.post(path: "triggers/groups/group-trigger/conditions", body: memberCondition)
+        groupConditionInfo = new GroupConditionInfo(cond2, dataIdMemberMap);
+        resp = client.post(path: "triggers/groups/group-trigger/conditions", body: groupConditionInfo)
         assertEquals(200, resp.status)
 
         // update the group trigger
@@ -237,8 +238,8 @@ class TriggersITest extends AbstractITestBase {
         dataIdMap.clear();
         dataIdMap.put("DataId1-Token", "DataId1-Child2");
         dataIdMap.put("DataId2-Token", "DataId2-Child2");
-        memberTrigger = new MemberTrigger("group-trigger", "member2", "member2", null, dataIdMap);
-        resp = client.post(path: "triggers/groups/members/member2/unorphan", body: memberTrigger);
+        UnorphanMemberInfo unorphanMemberInfo = new UnorphanMemberInfo(null, dataIdMap);
+        resp = client.post(path: "triggers/groups/members/member2/unorphan", body: unorphanMemberInfo);
         assertEquals(200, resp.status)
 
         // delete group tag

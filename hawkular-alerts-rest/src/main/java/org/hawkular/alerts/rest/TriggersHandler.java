@@ -36,15 +36,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
+import org.hawkular.alerts.api.exception.NotFoundException;
+import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.json.JacksonDeserializer;
-import org.hawkular.alerts.api.json.MemberTrigger;
+import org.hawkular.alerts.api.json.UnorphanMemberInfo;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.engine.exception.NotFoundException;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -234,23 +235,23 @@ public class TriggersHandler {
             @ApiResponse(code = 404, message = "Group trigger not found."),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public Response createGroupMember(
-            @ApiParam(value = "Member trigger to be created", name = "memberTrigger", required = true)//
-            final MemberTrigger memberTrigger) {
+            @ApiParam(value = "Group member trigger to be created", name = "groupMember", required = true)//
+            final GroupMemberInfo groupMember) {
         try {
-            if (null == memberTrigger) {
+            if (null == groupMember) {
                 return ResponseUtil.badRequest("MemberTrigger is null");
             }
-            String groupId = memberTrigger.getGroupId();
-            String memberName = memberTrigger.getMemberName();
+            String groupId = groupMember.getGroupId();
+            String memberName = groupMember.getMemberName();
             if (isEmpty(groupId)) {
                 return ResponseUtil.badRequest("MemberTrigger groupId is null");
             }
             if (isEmpty(memberName)) {
                 return ResponseUtil.badRequest("MemberTrigger memberName is null");
             }
-            Trigger child = definitions.addMemberTrigger(tenantId, groupId, memberTrigger.getMemberId(), memberName,
-                    memberTrigger.getMemberContext(),
-                    memberTrigger.getDataIdMap());
+            Trigger child = definitions.addMemberTrigger(tenantId, groupId, groupMember.getMemberId(), memberName,
+                    groupMember.getMemberContext(),
+                    groupMember.getDataIdMap());
             log.debugf("Child Trigger: %s ", child.toString());
             return ResponseUtil.ok(child);
 
@@ -393,14 +394,14 @@ public class TriggersHandler {
             final String memberId,
             @ApiParam(required = true, name = "memberTrigger",
                     value = "Only context and dataIdMap are used when changing back to a non-orphan.")//
-            final MemberTrigger memberTrigger) {
+            final UnorphanMemberInfo unorphanMemberInfo) {
         try {
-            if (null == memberTrigger) {
+            if (null == unorphanMemberInfo) {
                 return ResponseUtil.badRequest("MemberTrigger is null");
             }
-            Trigger child = definitions.unorphanMemberTrigger(tenantId, memberId, memberTrigger.getMemberContext(),
-                    memberTrigger.getDataIdMap());
-            log.debugf("Orphan Member Trigger: %s ", child);
+            Trigger child = definitions.unorphanMemberTrigger(tenantId, memberId, unorphanMemberInfo.getMemberContext(),
+                    unorphanMemberInfo.getDataIdMap());
+            log.debugf("Member Trigger: %s ", child);
             return ResponseUtil.ok();
 
         } catch (NotFoundException e) {
@@ -875,11 +876,11 @@ public class TriggersHandler {
     @Path("/groups/{groupId}/conditions")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Create a new condition for a specific trigger. Add/Delete/Update of a condition "
+    @ApiOperation(value = "Create a new group condition for a specific group trigger. Add/Delete/Update of a condition "
             + "effectively replaces the condition set for the trigger.  The new condition set is returned. "
             + "Clients code should then use the new condition set as ConditionIds may have changed!")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Condition created"),
+            @ApiResponse(code = 200, message = "Success, Group Condition created"),
             @ApiResponse(code = 404, message = "No trigger found"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
@@ -890,14 +891,14 @@ public class TriggersHandler {
             @ApiParam(value = "Json representation of a condition. For examples of Condition types, See "
                     + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
                     + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")//
-            String jsonMemberCondition) {
+            String jsonGroupConditionInfo) {
         try {
-            if (isEmpty(jsonMemberCondition) || !jsonMemberCondition.contains("type")) {
+            if (isEmpty(jsonGroupConditionInfo) || !jsonGroupConditionInfo.contains("type")) {
                 return ResponseUtil.badRequest("json condition empty or without type");
             }
 
             ObjectMapper om = new ObjectMapper();
-            JsonNode rootNode = om.readTree(jsonMemberCondition);
+            JsonNode rootNode = om.readTree(jsonGroupConditionInfo);
             JsonNode conditionNode = rootNode.get("condition");
             Condition condition = JacksonDeserializer.deserializeCondition(conditionNode);
             JsonNode dataIdMemberMapNode = rootNode.get("dataIdMemberMap");

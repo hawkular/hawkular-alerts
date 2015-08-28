@@ -71,8 +71,9 @@ public interface DefinitionsService {
     void addGroupTrigger(String tenantId, Trigger groupTrigger) throws Exception;
 
     /**
-     * Generate a member trigger for the specified group trigger. The dataIdMap replaces the tokens in the
-     * group trigger's conditions with actual dataIds. The member trigger gets the enabled state of the group.
+     * Generate a member trigger for the specified group trigger. See
+     * {@link org.hawkular.alerts.api.json.MemberTrigger#setDataIdMap(Map)} for an example of the
+     * <code>dataIdMap</code> parameter. The member trigger gets the enabled state of the group.
      * @param tenantId Tenant where trigger is stored
      * @param groupId Group triggerId from which to spawn the member trigger
      * @param memberId The member triggerId, unique id within the tenant, if null an Id will be generated
@@ -83,6 +84,8 @@ public interface DefinitionsService {
      * @throws Exception on any problem
      * @see {@link #addTrigger(String, Trigger)} for adding a non-group trigger.
      * @see {@link #addGroupTrigger(String, Trigger)} for adding a group trigger.
+     * @see {@link org.hawkular.alerts.api.json.MemberTrigger#setDataIdMap(Map)} for an example of the
+     * <code>dataIdMap</code> parameter.
      */
     Trigger addMemberTrigger(String tenantId, String groupId, String memberId, String memberName,
             Map<String, String> memberContext, Map<String, String> dataIdMap) throws Exception;
@@ -100,7 +103,7 @@ public interface DefinitionsService {
     /**
      * The group <code>Trigger</code> will be removed from the Alerts engine, as needed, and will no longer be
      * persisted. The member triggers will be removed as well, depending on the settings for
-     * <code>leaveMember</code> and <code>leaveOrphans</code>. Note that any member triggers not removed will
+     * <code>keepNonOrphans</code> and <code>keepOrphans</code>. Note that any member triggers not removed will
      * no longer have a group trigger associated and will then need to be managed independently.
      * @param tenantId Tenant where trigger is stored
      * @param groupId Group Trigger to be removed.
@@ -204,7 +207,8 @@ public interface DefinitionsService {
     /**
      * Un-orphan a member trigger.  The member trigger is again synchronized with the group definition. As an orphan
      * it may have been altered in various ways. So, as when spawning a new member trigger, the context and dataIdMap
-     * are specified.
+     * are specified. See {@link org.hawkular.alerts.api.json.MemberTrigger#setDataIdMap(Map)} for an example
+     * of setting the <code>dataIdMap</code>.
      * <p>
      * This is basically a convenience method that first performs a {@link #removeTrigger(String, String)} and
      * then an {@link #addMemberTrigger(String, String, String, String, Map, Map)}. But the member trigger must
@@ -218,6 +222,8 @@ public interface DefinitionsService {
      * @throws NotFoundException if trigger is not found
      * @throws Exception
      * @see {@link #orphanMemberTrigger(String, String)} for setting a member to be an orphan.
+     * @see {@link org.hawkular.alerts.api.json.MemberTrigger#setDataIdMap(Map)} for an example
+     * of setting the <code>dataIdMap</code>.
      */
     Trigger unorphanMemberTrigger(String tenantId, String memberId, Map<String, String> memberContext,
             Map<String, String> dataIdMap) throws Exception;
@@ -354,11 +360,8 @@ public interface DefinitionsService {
      * A convenience method that adds a new Condition to the existing condition set for the specified
      * Group Trigger and trigger mode.  The new condition will be assigned the highest conditionSetIndex for the
      * updated conditionSet.  The non-orphan member triggers will have the new condition applied, using the
-     * provided dataIdMemberMap.  The dataIdMemberMap has the form <code>Map&LTString, Map&LTString,String&GT&GT</code>.
-     * The keys are the dataId tokens in the new condition, The values are themselves Maps with one entry
-     * per member trigger.  The value Map key is a memberId. The value is the dataId to be used for that member, for
-     * the relevant dataId token. This map will usually have 1 entry but because a condition could have multiple
-     * dataIds (e.g CompareCondition), it may have multiple entries.
+     * provided dataIdMemberMap. See {@link org.hawkular.alerts.api.json.MemberCondition#setDataIdMemberMap(Map)} for
+     * an example of the <code>dataIdMemberMap</code> parameter.
      * <p>
      * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
      * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
@@ -380,6 +383,8 @@ public interface DefinitionsService {
      * @throws NotFoundException if trigger is not found
      * @throws Exception on any problem
      * @see {@link #addCondition(String, String, Mode, Condition)} for non-group conditions.
+     * @see {@link org.hawkular.alerts.api.json.MemberCondition#setDataIdMemberMap(Map)} for an example of the
+     * <code>dataIdMemberMap</code> parameter.
      */
     Collection<Condition> addGroupCondition(String tenantId, String groupId, Mode triggerMode,
             Condition groupCondition, Map<String, Map<String, String>> dataIdMemberMap) throws Exception;

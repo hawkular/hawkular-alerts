@@ -54,7 +54,7 @@ import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.engine.exception.NotFoundException;
+import org.hawkular.alerts.engine.exception.NotFoundApplicationException;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.jboss.logging.Logger;
@@ -508,7 +508,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         Trigger doomedTrigger = getTrigger(tenantId, triggerId);
         if (null == doomedTrigger) {
-            throw new NotFoundException(Trigger.class.getName(), tenantId, triggerId);
+            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, triggerId);
         }
         if (doomedTrigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
@@ -533,7 +533,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         Trigger doomedTrigger = getTrigger(tenantId, groupId);
         if (null == doomedTrigger) {
-            throw new NotFoundException(Trigger.class.getName(), tenantId, groupId);
+            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupId);
         }
         if (!doomedTrigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
@@ -600,7 +600,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         String triggerId = trigger.getId();
         Trigger currentTrigger = getTrigger(tenantId, trigger.getId());
         if (null == currentTrigger) {
-            throw new NotFoundException(Trigger.class.getName(), tenantId, trigger.getId());
+            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, trigger.getId());
         }
         if (currentTrigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
@@ -635,7 +635,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         Trigger currentTrigger = getTrigger(tenantId, groupId);
         if (null == currentTrigger) {
-            throw new NotFoundException(Trigger.class.getName(), tenantId, groupTrigger.getId());
+            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupTrigger.getId());
         }
         if (!currentTrigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
@@ -707,11 +707,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
 
-        checkTenantId(tenantId, memberId);
-
         Trigger member = getTrigger(tenantId, memberId);
         if (null == member) {
-            throw new NotFoundException(Trigger.class.getName(), tenantId, memberId);
+            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, memberId);
         }
         if (!member.isMember()) {
             throw new IllegalArgumentException("Trigger is not a member trigger: [" + tenantId + "/" + memberId + "]");
@@ -734,11 +732,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
 
-        checkTenantId(tenantId, memberId);
-
         Trigger orphanMember = getTrigger(tenantId, memberId);
         if (null == orphanMember) {
-            throw new NotFoundException(Trigger.class.getName(), tenantId, memberId);
+            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, memberId);
         }
         if (!orphanMember.isMember()) {
             throw new IllegalArgumentException("Trigger is not a member trigger: [" + tenantId + "/" + memberId + "]");
@@ -1098,11 +1094,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         dataIdMap.get(((CompareCondition) groupCondition).getData2Id()));
                 break;
             case EXTERNAL:
+                String tokenDataId = groupCondition.getDataId();
+                String memberDataId = dataIdMap.get(tokenDataId);
+                String tokenExpression = ((ExternalCondition) groupCondition).getExpression();
+                String memberExpression = isEmpty(tokenExpression) ? tokenExpression :
+                        tokenExpression.replace(tokenDataId, memberDataId);
                 newCondition = new ExternalCondition(member.getId(), groupCondition.getTriggerMode(),
                         groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
-                        dataIdMap.get(groupCondition.getDataId()),
+                        memberDataId,
                         ((ExternalCondition) groupCondition).getSystemId(),
-                        ((ExternalCondition) groupCondition).getExpression());
+                        memberExpression);
                 break;
             case RANGE:
                 newCondition = new ThresholdRangeCondition(member.getId(), groupCondition.getTriggerMode(),
@@ -1570,7 +1571,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         Trigger group = getTrigger(tenantId, groupId);
         if (null == group) {
-            throw new NotFoundException(Trigger.class.getName(), tenantId, groupId);
+            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupId);
         }
         if (!group.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");

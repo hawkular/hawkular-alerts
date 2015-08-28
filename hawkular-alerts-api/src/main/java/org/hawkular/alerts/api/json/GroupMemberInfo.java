@@ -19,12 +19,18 @@ package org.hawkular.alerts.api.json;
 import java.util.Map;
 
 /**
- * A convenience class used in the REST API to POST a Member Trigger.
- *
+ * A convenience class used in the REST API to POST a new group Member Trigger.
+ * <p>
+ * A group-level condition uses dataId tokens for the dataIds defined in the condition.  The group members
+ * must then replace the tokens with actual dataIds.  For example, we may define a group ThresholdCondition like
+ * ( $SystemLoad$ > 80 ).  Each member must then replace $SystemLoad$ with the actual system load dataId for that
+ * member. See {@link #setDataIdMap(Map)} for details on how to construct the map supplying the
+ * dataId substitutions.
+ * </p>
  * @author jay shaughnessy
  * @author lucas ponce
  */
-public class MemberTrigger {
+public class GroupMemberInfo {
 
     private String groupId;
     private String memberId;
@@ -32,11 +38,11 @@ public class MemberTrigger {
     private Map<String, String> memberContext;
     private Map<String, String> dataIdMap;
 
-    public MemberTrigger() {
+    public GroupMemberInfo() {
         // for json construction
     }
 
-    public MemberTrigger(String groupId, String memberId, String memberName, Map<String, String> memberContext,
+    public GroupMemberInfo(String groupId, String memberId, String memberName, Map<String, String> memberContext,
             Map<String, String> dataIdMap) {
         super();
         this.groupId = groupId;
@@ -86,15 +92,38 @@ public class MemberTrigger {
         return dataIdMap;
     }
 
-    /** Map of dataId "tokens" in the group conditions to dataIds to be set in the member conditions. Can be Null
-     * only if the group trigger does yet have any conditions defined. */
+    /**
+     * The <code>dataIdMap</code> is a map of the dataId tokens in the group conditions to the actual dataIds to
+     * be used for the member being added. For example, assume the group trigger has two conditions defined:
+     * ThresholdCondition( $SystemLoad$ > 80 ) and ThresholdCondition( $HeapUsed$ > 70 ).  And now let's assume we
+     * are adding a new member, Member1.  The map would look like this:
+     * <pre>
+     * {[key   = "$SystemLoad$",
+     *   value = "Member1SystemLoad"],
+     *  [key   = "$HeapUsed$",
+     *   value = "Member1HeapUsed"]
+     * }
+     * </pre>
+     * <p>
+     *  So, in the example the actual dataIds would be <code>Member1SystemLoad</code> and <code>Member1HeapUsed</code>.
+     *  With this Map we can now add the new member trigger.
+     * </p>
+     * <p>
+     * A NOTE ABOUT EXTERNAL CONDITIONS. <code>ExternalCondition.expression</code> will automatically have the
+     * same token replacement performed. So, all occurrences of the dataId token found in the expression, will be
+     * replaced with the mapping. This allows the expression of a group external condition to be automatically
+     * customized to the member.
+     *</p
+     * @param dataIdMap the dataId mappings to be used for the new member trigger.existing member triggers. Can be
+     * empty if the group has no current conditions.
+     */
     public void setDataIdMap(Map<String, String> dataIdMap) {
         this.dataIdMap = dataIdMap;
     }
 
     @Override
     public String toString() {
-        return "MemberTrigger [groupId=" + groupId + ", memberId=" + memberId + ", memberName=" + memberName
+        return "GroupMemberInfo [groupId=" + groupId + ", memberId=" + memberId + ", memberName=" + memberName
                 + ", memberContext=" + memberContext + ", dataIdMap=" + dataIdMap + "]";
     }
 
