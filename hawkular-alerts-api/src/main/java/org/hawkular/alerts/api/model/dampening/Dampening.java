@@ -25,8 +25,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
-import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
-import org.hawkular.alerts.api.model.trigger.TriggerTemplate.Match;
+import org.hawkular.alerts.api.model.trigger.Match;
+import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -86,8 +86,8 @@ public class Dampening {
     @JsonIgnore
     private transient long trueEvalsStartTime;
 
-    @JsonIgnore
     // This Map<conditionSetIndex,ConditionEval> holds the most recent eval for each member of the condition set
+    @JsonIgnore
     private transient Map<Integer, ConditionEval> currentEvals = new HashMap<>(5);
 
     @JsonIgnore

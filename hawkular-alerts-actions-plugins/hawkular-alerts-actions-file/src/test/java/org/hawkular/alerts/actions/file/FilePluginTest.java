@@ -36,6 +36,7 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -91,14 +92,13 @@ public class FilePluginTest {
         /*
             Alert definition for threshold
          */
-        Trigger rtTrigger = new Trigger(rtTriggerId, "http://www.jboss.org");
-        rtTrigger.setTenantId(tenantId);
-        ThresholdCondition rtFiringCondition = new ThresholdCondition(rtTriggerId, Trigger.Mode.FIRING,
+        Trigger rtTrigger = new Trigger(tenantId, rtTriggerId, "http://www.jboss.org");
+        ThresholdCondition rtFiringCondition = new ThresholdCondition(rtTriggerId, Mode.FIRING,
                 rtDataId, ThresholdCondition.Operator.GT, 1000d);
-        ThresholdCondition rtResolveCondition = new ThresholdCondition(rtTriggerId, Trigger.Mode.AUTORESOLVE,
+        ThresholdCondition rtResolveCondition = new ThresholdCondition(rtTriggerId, Mode.AUTORESOLVE,
                 rtDataId, ThresholdCondition.Operator.LTE, 1000d);
 
-        Dampening rtFiringDampening = Dampening.forStrictTime(rtTriggerId, Trigger.Mode.FIRING, 10000);
+        Dampening rtFiringDampening = Dampening.forStrictTime(rtTriggerId, Mode.FIRING, 10000);
 
         /*
             Demo bad data for threshold
@@ -159,14 +159,13 @@ public class FilePluginTest {
         /*
             Alert definition for availability
          */
-        Trigger avTrigger = new Trigger(avTriggerId, "http://www.jboss.org");
-        avTrigger.setTenantId(tenantId);
-        AvailabilityCondition avFiringCondition = new AvailabilityCondition(avTriggerId, Trigger.Mode.FIRING,
+        Trigger avTrigger = new Trigger(tenantId, avTriggerId, "http://www.jboss.org");
+        AvailabilityCondition avFiringCondition = new AvailabilityCondition(avTriggerId, Mode.FIRING,
                 avDataId, AvailabilityCondition.Operator.NOT_UP);
-        AvailabilityCondition avResolveCondition = new AvailabilityCondition(avTriggerId, Trigger.Mode.AUTORESOLVE,
+        AvailabilityCondition avResolveCondition = new AvailabilityCondition(avTriggerId, Mode.AUTORESOLVE,
                 avDataId, AvailabilityCondition.Operator.UP);
 
-        Dampening avFiringDampening = Dampening.forStrictTime(avTriggerId, Trigger.Mode.FIRING, 10000);
+        Dampening avFiringDampening = Dampening.forStrictTime(avTriggerId, Mode.FIRING, 10000);
 
         /*
             Demo bad data for availability
@@ -229,18 +228,17 @@ public class FilePluginTest {
         /*
             Alert definition for two conditions
          */
-        Trigger mixTrigger = new Trigger(mixTriggerId, "http://www.jboss.org");
-        mixTrigger.setTenantId(tenantId);
-        ThresholdCondition mixRtFiringCondition = new ThresholdCondition(mixTriggerId, Trigger.Mode.FIRING,
+        Trigger mixTrigger = new Trigger(tenantId, mixTriggerId, "http://www.jboss.org");
+        ThresholdCondition mixRtFiringCondition = new ThresholdCondition(mixTriggerId, Mode.FIRING,
                 rtDataId, ThresholdCondition.Operator.GT, 1000d);
-        ThresholdCondition mixRtResolveCondition = new ThresholdCondition(mixTriggerId, Trigger.Mode.AUTORESOLVE,
+        ThresholdCondition mixRtResolveCondition = new ThresholdCondition(mixTriggerId, Mode.AUTORESOLVE,
                 rtDataId, ThresholdCondition.Operator.LTE, 1000d);
-        AvailabilityCondition mixAvFiringCondition = new AvailabilityCondition(mixTriggerId, Trigger.Mode.FIRING,
+        AvailabilityCondition mixAvFiringCondition = new AvailabilityCondition(mixTriggerId, Mode.FIRING,
                 avDataId, AvailabilityCondition.Operator.NOT_UP);
-        AvailabilityCondition mixAvResolveCondition = new AvailabilityCondition(mixTriggerId, Trigger.Mode.AUTORESOLVE,
+        AvailabilityCondition mixAvResolveCondition = new AvailabilityCondition(mixTriggerId, Mode.AUTORESOLVE,
                 avDataId, AvailabilityCondition.Operator.UP);
 
-        Dampening mixFiringDampening = Dampening.forStrictTime(mixTriggerId, Trigger.Mode.FIRING, 10000);
+        Dampening mixFiringDampening = Dampening.forStrictTime(mixTriggerId, Mode.FIRING, 10000);
 
         /*
             Demo bad data for two conditions

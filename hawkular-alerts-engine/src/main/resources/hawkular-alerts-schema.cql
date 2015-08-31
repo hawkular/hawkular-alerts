@@ -30,18 +30,21 @@ CREATE KEYSPACE ${keyspace} WITH replication = {'class': 'SimpleStrategy', 'repl
 
 CREATE TABLE ${keyspace}.triggers (
     tenantId text,
+    id text,
     name text,
-    description text,
+    context map<text,text>,
     autoDisable boolean,
     autoEnable boolean,
     autoResolve boolean,
     autoResolveAlerts boolean,
-    severity text,
-    firingMatch text,
     autoResolveMatch text,
-    id text,
+    memberOf text,
+    description text,
     enabled boolean,
-    context map<text,text>,
+    firingMatch text,
+    orphan boolean,
+    group boolean,
+    severity text,
     PRIMARY KEY (tenantId, id)
 );
 
@@ -56,7 +59,7 @@ CREATE TABLE ${keyspace}.triggers_actions (
 );
 
 -- #
-
+-- Note that the conditionId is a composed id: triggerId-triggerMode-csSize-csIndex. It provides a natural ordering.
 CREATE TABLE ${keyspace}.conditions (
     tenantId text,
     triggerId text,
@@ -77,7 +80,7 @@ CREATE TABLE ${keyspace}.conditions (
     thresholdLow double,
     thresholdHigh double,
     inRange boolean,
-    PRIMARY KEY (tenantId, triggerId, triggerMode, type, conditionId)
+    PRIMARY KEY (tenantId, triggerId, triggerMode, conditionId)
 );
 
 -- #

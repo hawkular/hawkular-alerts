@@ -133,7 +133,7 @@ public class Alert {
         this.ctime = System.currentTimeMillis();
         this.status = Status.OPEN;
 
-        this.alertId = triggerId + "-" + ctime;
+        this.alertId = tenantId + "-" + triggerId + "-" + ctime;
     }
 
     public String getTenantId() {
@@ -265,6 +265,9 @@ public class Alert {
     }
 
     public Map<String, String> getContext() {
+        if ( null == context ) {
+            context = new HashMap<>();
+        }
         return context;
     }
 

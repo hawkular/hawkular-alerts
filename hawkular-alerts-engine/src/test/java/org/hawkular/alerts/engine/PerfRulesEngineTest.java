@@ -83,10 +83,10 @@ public class PerfRulesEngineTest {
 
         for (int i = 0; i < nDefinitions; i++) {
 
-            Trigger tN = new Trigger("trigger-" + i, "Threshold-LT");
+            Trigger tN = new Trigger("tenant", "trigger-" + i, "Threshold-LT");
             ThresholdCondition tNc1 = new ThresholdCondition("trigger-" + i,
-                                                             "NumericData-" + i,
-                                                             ThresholdCondition.Operator.LT, 10.0);
+                    "NumericData-" + i,
+                    ThresholdCondition.Operator.LT, 10.0);
             tN.setEnabled(true);
             definitions.add(tN);
             definitions.add(tNc1);
@@ -126,7 +126,7 @@ public class PerfRulesEngineTest {
         List definitions = new ArrayList();
 
         for (int i = 0; i < nDefinitions; i++) {
-            Trigger tN = new Trigger("trigger-" + i, "Range");
+            Trigger tN = new Trigger("tenant", "trigger-" + i, "Range");
             ThresholdRangeCondition tNc1 = new ThresholdRangeCondition("trigger-" + i,
                                                                        "NumericData-" + i,
                                                                        ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -172,7 +172,7 @@ public class PerfRulesEngineTest {
         List definitions = new ArrayList();
 
         for (int i = 0; i < nDefinitions; i++) {
-            Trigger tN = new Trigger("trigger-" + i, "Compare-D1-LT-Half-D2");
+            Trigger tN = new Trigger("tenant", "trigger-" + i, "Compare-D1-LT-Half-D2");
             CompareCondition tNc1 = new CompareCondition("trigger-" + i,
                                                          "NumericData-a-" + i,
                                                          CompareCondition.Operator.LT, 0.5, "NumericData-b-" + i);
@@ -218,7 +218,7 @@ public class PerfRulesEngineTest {
         List definitions = new ArrayList();
 
         for (int i = 0; i < nDefinitions; i++) {
-            Trigger tN = new Trigger("trigger-" + i, "String-StartsWith");
+            Trigger tN = new Trigger("tenant", "trigger-" + i, "String-StartsWith");
             StringCondition tNc1 = new StringCondition("trigger-" + i,
                                                        "StringData-" + i,
                                                        StringCondition.Operator.STARTS_WITH, "Fred", false);
@@ -261,10 +261,9 @@ public class PerfRulesEngineTest {
         List definitions = new ArrayList();
 
         for (int i = 0; i < nDefinitions; i++) {
-            Trigger tN = new Trigger("trigger-" + i, "Avail-DOWN");
-            AvailabilityCondition tNc1 = new AvailabilityCondition("trigger-" + i,
-                                                                   "AvailData-" + i,
-                                                                   AvailabilityCondition.Operator.NOT_UP);
+            Trigger tN = new Trigger("tenant", "trigger-" + i, "Avail-DOWN");
+            AvailabilityCondition tNc1 = new AvailabilityCondition("trigger-" + i, "AvailData-" + i,
+                    AvailabilityCondition.Operator.NOT_UP);
             tN.setEnabled(true);
             definitions.add(tN);
             definitions.add(tNc1);
@@ -306,16 +305,20 @@ public class PerfRulesEngineTest {
 
         for (int i = 0; i < nDefinitions; i++) {
 
-            Trigger tN = new Trigger("trigger-" + i, "Threshold-LT");
-            ThresholdCondition tNc1 = new ThresholdCondition("trigger-" + i, 2, 1,
-                                                             "NumericData-a-" + i,
-                                                             ThresholdCondition.Operator.LT, 10.0);
+            Trigger tN = new Trigger("tenant", "trigger-" + i, "Threshold-LT");
+            ThresholdCondition tNc1 = new ThresholdCondition("trigger-" + i,
+                    2,
+                    1,
+                    "NumericData-a-" + i,
+                    ThresholdCondition.Operator.LT,
+                    10.0);
             ThresholdRangeCondition tNc2 = new ThresholdRangeCondition("trigger-" + i, 2, 2,
-                                                                       "NumericData-b-" + i,
-                                                                       ThresholdRangeCondition.Operator.INCLUSIVE,
-                                                                       ThresholdRangeCondition.Operator.INCLUSIVE,
-                                                                       10.0, 15.0,
-                                                                       true);
+                    "NumericData-b-" + i,
+                    ThresholdRangeCondition.Operator.INCLUSIVE,
+                    ThresholdRangeCondition.Operator.INCLUSIVE,
+                    10.0,
+                    15.0,
+                    true);
 
             tN.setEnabled(true);
             definitions.add(tN);

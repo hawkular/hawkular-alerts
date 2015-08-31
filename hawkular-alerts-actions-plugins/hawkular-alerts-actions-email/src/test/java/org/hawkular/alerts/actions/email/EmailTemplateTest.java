@@ -69,8 +69,7 @@ public class EmailTemplateTest {
         /*
             Response Time definition
          */
-        Trigger tRT = new Trigger(TEST_TRIGGER_ID_RESPONSE_TIME, TEST_TRIGGER_NAME_RESPONSE_TIME);
-        tRT.setTenantId(TEST_TENANT);
+        Trigger tRT = new Trigger(TEST_TENANT, TEST_TRIGGER_ID_RESPONSE_TIME, TEST_TRIGGER_NAME_RESPONSE_TIME);
 
         Dampening dRT = Dampening.forStrictTime(TEST_TRIGGER_ID_RESPONSE_TIME, tRT.getMode(), 7000);
 
@@ -95,8 +94,7 @@ public class EmailTemplateTest {
         /*
             Availability definition
          */
-        Trigger tAV = new Trigger(TEST_TRIGGER_ID_AVAILABILITY, TEST_TRIGGER_NAME_AVAILABILITY);
-        tAV.setTenantId(TEST_TENANT);
+        Trigger tAV = new Trigger(TEST_TENANT, TEST_TRIGGER_ID_AVAILABILITY, TEST_TRIGGER_NAME_AVAILABILITY);
 
         Dampening dAV = Dampening.forStrictTime(TEST_TRIGGER_ID_AVAILABILITY, tAV.getMode(), 7000);
 

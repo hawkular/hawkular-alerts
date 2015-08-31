@@ -23,7 +23,7 @@ import org.hawkular.alerts.api.model.condition.ExternalCondition
 import org.hawkular.alerts.api.model.trigger.Tag
 import org.hawkular.alerts.api.model.trigger.Trigger
 
-import static org.hawkular.alerts.api.model.trigger.Trigger.Mode
+import org.hawkular.alerts.api.model.trigger.Mode
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 

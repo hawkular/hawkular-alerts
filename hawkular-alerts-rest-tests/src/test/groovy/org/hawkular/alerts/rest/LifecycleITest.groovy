@@ -17,7 +17,6 @@
 package org.hawkular.alerts.rest
 
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
-import static org.hawkular.alerts.api.model.trigger.Trigger.Mode
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
@@ -32,6 +31,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Availability
 import org.hawkular.alerts.api.model.data.MixedData
 import org.hawkular.alerts.api.model.data.NumericData
+import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.FixMethodOrder
 import org.junit.Test
@@ -625,11 +625,11 @@ class LifecycleITest extends AbstractITestBase {
         def alertId1 = resp.data[0].alertId;
         def alertId2 = resp.data[1].alertId;
         // RESOLVE manually 1 alert
-        resp = client.get(path: "resolve/" + alertId1,
+        resp = client.put(path: "resolve/" + alertId1,
                 query: [resolvedBy:"testUser", resolvedNotes:"testNotes"] )
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "ack/" + alertId2,
+        resp = client.put(path: "ack/" + alertId2,
                 query: [resolvedBy:"testUser", resolvedNotes:"testNotes"] )
         assertEquals(200, resp.status)
 

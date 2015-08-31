@@ -21,7 +21,9 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Availability
 import org.hawkular.alerts.api.model.data.MixedData
 import org.hawkular.alerts.api.model.data.NumericData
+import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
+
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
@@ -124,7 +126,7 @@ class ActionsITest extends AbstractITestBase {
 
         // ADD Firing condition
         AvailabilityCondition firingCond = new AvailabilityCondition("test-email-availability",
-                Trigger.Mode.FIRING, "test-email-availability", AvailabilityCondition.Operator.NOT_UP);
+                Mode.FIRING, "test-email-availability", AvailabilityCondition.Operator.NOT_UP);
 
         resp = client.post(path: "triggers/test-email-availability/conditions", body: firingCond)
         assertEquals(200, resp.status)
@@ -202,7 +204,7 @@ class ActionsITest extends AbstractITestBase {
 
         // ADD Firing condition
         ThresholdCondition firingCond = new ThresholdCondition("test-email-threshold",
-                Trigger.Mode.FIRING, "test-email-threshold", ThresholdCondition.Operator.GT, 300);
+                Mode.FIRING, "test-email-threshold", ThresholdCondition.Operator.GT, 300);
 
         resp = client.post(path: "triggers/test-email-threshold/conditions", body: firingCond)
         assertEquals(200, resp.status)

@@ -18,12 +18,15 @@ package org.hawkular.alerts.engine;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +35,8 @@ import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
+import org.hawkular.alerts.api.model.condition.CompareCondition;
+import org.hawkular.alerts.api.model.condition.CompareCondition.Operator;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -42,6 +47,7 @@ import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsCriteria;
@@ -72,51 +78,538 @@ public abstract class DefinitionsTest {
     }
 
     @Test
-    public void test001CopyTrigger() throws Exception {
-        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-1");
-        assertTrue(t != null);
+    public void test0010GroupTrigger() throws Exception {
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-7");
+        assertNotNull(t);
+
+        t = copyTrigger(t, "group-trigger");
+        assertNotNull(t);
 
         Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
-        assertEquals(cs.toString(),1, cs.size());
+        assertEquals(cs.toString(), 1, cs.size());
         Condition c = cs.iterator().next();
 
         Collection<Dampening> ds = definitionsService.getTriggerDampenings(TEST_TENANT, t.getId(), null);
-        assertEquals(cs.toString(),1 ,ds.size());
+        assertEquals(ds.toString(), 1, ds.size());
         Dampening d = ds.iterator().next();
 
         Map<String, String> dataIdMap = new HashMap<>(1);
-        dataIdMap.put(c.getDataId(), "NewDataId");
+        dataIdMap.put("NumericData-Token", "NumericData-01");
 
-        Trigger nt = definitionsService.copyTrigger(TEST_TENANT, t.getId(), dataIdMap);
-        assertNotNull(nt);
-        assertTrue(nt.toString(), !nt.getId().equals(t.getId()));
-        assertTrue(nt.toString(), nt.getName().equals(t.getName()));
-        assertTrue(nt.toString(), nt.getDescription().equals(t.getDescription()));
-        assertTrue(nt.toString(), nt.getFiringMatch().equals(t.getFiringMatch()));
-        assertTrue(nt.toString(), nt.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
+        Map<String, String> context = new HashMap<>(1);
+        context.put("context", "context-1");
 
-        Collection<Condition> ncs = definitionsService.getTriggerConditions(TEST_TENANT, nt.getId(), null);
+        Trigger nt1 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-1-trigger", "member-1",
+                context, dataIdMap);
+        assertNotNull(nt1);
+        dataIdMap.put("NumericData-Token", "NumericData-02");
+        context.put("context", "context-2");
+        Trigger nt2 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-2-trigger", "member-2",
+                context, dataIdMap);
+        assertNotNull(nt2);
+
+        Collection<Trigger> memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", false);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        Iterator<Trigger> i = memberren.iterator();
+        nt1 = i.next();
+        if (nt1.getId().equals("member-1-trigger")) {
+            nt2 = i.next();
+        } else {
+            nt2 = nt1;
+            nt1 = i.next();
+        }
+
+        assertTrue(nt1.toString(), "member-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "member-1".equals(nt1.getName()));
+        assertNotNull(nt1.getContext());
+        assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
+        assertTrue(nt1.toString(), nt1.getDescription().equals(t.getDescription()));
+        assertTrue(nt1.toString(), nt1.isEnabled());
+        assertTrue(nt1.toString(), nt1.getFiringMatch().equals(t.getFiringMatch()));
+        assertTrue(nt1.toString(), nt1.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
+
+        assertTrue(nt2.toString(), "member-2-trigger".equals(nt2.getId()));
+        assertTrue(nt2.toString(), "member-2".equals(nt2.getName()));
+        assertNotNull(nt2.getContext());
+        assertTrue(nt2.toString(), "context-2".equals(nt2.getContext().get("context")));
+        assertTrue(nt2.toString(), nt2.getDescription().equals(t.getDescription()));
+        assertTrue(nt1.toString(), nt1.isEnabled());
+        assertTrue(nt2.toString(), nt2.getFiringMatch().equals(t.getFiringMatch()));
+        assertTrue(nt2.toString(), nt2.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
+
+        Collection<Condition> ncs = definitionsService.getTriggerConditions(TEST_TENANT, nt1.getId(), null);
         assertTrue(ncs.toString(), ncs.size() == 1);
         Condition nc = ncs.iterator().next();
         assertTrue(nc.toString(), nc.getClass().equals(c.getClass()));
-        assertTrue(nc.toString(), nc.getTriggerId().equals(nt.getId()));
+        assertTrue(nc.toString(), nc.getTriggerId().equals(nt1.getId()));
         assertTrue(nc.toString(), nc.getTriggerMode().equals(c.getTriggerMode()));
-        assertTrue(nc.toString(), nc.getDataId().equals("NewDataId"));
+        assertTrue(nc.toString(), nc.getDataId().equals("NumericData-01"));
         assertTrue(nc.toString(), nc.getConditionSetIndex() == c.getConditionSetIndex());
         assertTrue(nc.toString(), nc.getConditionSetSize() == c.getConditionSetSize());
 
-        Collection<Dampening> nds = definitionsService.getTriggerDampenings(TEST_TENANT, nt.getId(), null);
+        ncs = definitionsService.getTriggerConditions(TEST_TENANT, nt2.getId(), null);
+        assertTrue(ncs.toString(), ncs.size() == 1);
+        nc = ncs.iterator().next();
+        assertTrue(nc.toString(), nc.getClass().equals(c.getClass()));
+        assertTrue(nc.toString(), nc.getTriggerId().equals(nt2.getId()));
+        assertTrue(nc.toString(), nc.getTriggerMode().equals(c.getTriggerMode()));
+        assertTrue(nc.toString(), nc.getDataId().equals("NumericData-02"));
+        assertTrue(nc.toString(), nc.getConditionSetIndex() == c.getConditionSetIndex());
+        assertTrue(nc.toString(), nc.getConditionSetSize() == c.getConditionSetSize());
+
+        Collection<Dampening> nds = definitionsService.getTriggerDampenings(TEST_TENANT, nt1.getId(), null);
         assertTrue(nds.toString(), nds.size() == 1);
         Dampening nd = nds.iterator().next();
-        assertTrue(nd.toString(), nd.getTriggerId().equals(nt.getId()));
+        assertTrue(nd.toString(), nd.getTriggerId().equals(nt1.getId()));
         assertTrue(nd.toString(), nd.getTriggerMode().equals(d.getTriggerMode()));
         assertTrue(nd.toString(), nd.getEvalTrueSetting() == d.getEvalTrueSetting());
         assertTrue(nd.toString(), nd.getEvalTotalSetting() == d.getEvalTotalSetting());
         assertTrue(nd.toString(), nd.getEvalTimeSetting() == d.getEvalTimeSetting());
+
+        nds = definitionsService.getTriggerDampenings(TEST_TENANT, nt2.getId(), null);
+        assertTrue(nds.toString(), nds.size() == 1);
+        nd = nds.iterator().next();
+        assertTrue(nd.toString(), nd.getTriggerId().equals(nt2.getId()));
+        assertTrue(nd.toString(), nd.getTriggerMode().equals(d.getTriggerMode()));
+        assertTrue(nd.toString(), nd.getEvalTrueSetting() == d.getEvalTrueSetting());
+        assertTrue(nd.toString(), nd.getEvalTotalSetting() == d.getEvalTotalSetting());
+        assertTrue(nd.toString(), nd.getEvalTimeSetting() == d.getEvalTimeSetting());
+
+        nt1.setName("member-1-update");
+        try {
+            definitionsService.updateTrigger(TEST_TENANT, nt1);
+            fail("Member trigger update should have failed.");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+
+        nt1 = definitionsService.orphanMemberTrigger(TEST_TENANT, nt1.getId());
+        assertTrue(nt1.toString(), nt1.isOrphan());
+
+        nt1.setName("member-1-update");
+        nt1.setContext(null);
+        nt1.setDescription("Updated");
+        nt1.setEnabled(false);
+        try {
+            nt1 = definitionsService.updateTrigger(TEST_TENANT, nt1);
+        } catch (IllegalArgumentException e) {
+            fail("Orphan trigger update should have succeeded:" + e.getMessage());
+        }
+        assertNotNull(nt1);
+        assertTrue(nt1.toString(), nt1.isOrphan());
+        assertTrue(nt1.toString(), "member-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "member-1-update".equals(nt1.getName()));
+        assertTrue(nt1.toString(), nt1.getContext().isEmpty());
+        assertTrue(nt1.toString(), "Updated".equals(nt1.getDescription()));
+        assertTrue(nt1.toString(), !nt1.isEnabled());
+
+        dataIdMap.put("NumericData-Token", "NumericData-01");
+        context.put("context", "context-1");
+        nt1 = definitionsService.unorphanMemberTrigger(TEST_TENANT, nt1.getId(), context, dataIdMap);
+        assertNotNull(nt1);
+        assertTrue(nt1.toString(), !nt1.isOrphan());
+        assertTrue(nt1.toString(), "member-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "member-1-update".equals(nt1.getName())); // name changes are maintained
+        assertNotNull(nt1.getContext());
+        assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
+        assertTrue(nt1.toString(), nt1.getDescription().equals(t.getDescription()));
+        assertTrue(nt1.toString(), nt1.isEnabled());
+        assertTrue(nt1.toString(), nt1.getFiringMatch().equals(t.getFiringMatch()));
+        assertTrue(nt1.toString(), nt1.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
+
+        ncs = definitionsService.getTriggerConditions(TEST_TENANT, nt1.getId(), null);
+        assertTrue(ncs.toString(), ncs.size() == 1);
+        nc = ncs.iterator().next();
+        assertTrue(nc.toString(), nc.getClass().equals(c.getClass()));
+        assertTrue(nc.toString(), nc.getTriggerId().equals(nt1.getId()));
+        assertTrue(nc.toString(), nc.getTriggerMode().equals(c.getTriggerMode()));
+        assertTrue(nc.toString(), nc.getDataId().equals("NumericData-01"));
+        assertTrue(nc.toString(), nc.getConditionSetIndex() == c.getConditionSetIndex());
+        assertTrue(nc.toString(), nc.getConditionSetSize() == c.getConditionSetSize());
+
+        definitionsService.removeGroupTrigger(TEST_TENANT, "group-trigger", false, false);
+
+        t = definitionsService.getTrigger(TEST_TENANT, "group-trigger");
+        assertNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "member-1-trigger");
+        assertNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "member-2-trigger");
+        assertNull(t);
+    }
+
+    private Trigger copyTrigger(Trigger t, String newTriggerId) throws Exception {
+        Collection<Condition> conditions = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
+        Collection<Dampening> dampenings = definitionsService.getTriggerDampenings(TEST_TENANT, t.getId(), null);
+
+        String id = t.getId();
+        t.setId(newTriggerId);
+        if (t.isGroup()) {
+            definitionsService.addGroupTrigger(TEST_TENANT, t);
+        } else {
+            definitionsService.addTrigger(TEST_TENANT, t);
+        }
+        t.setId(id);
+
+        Trigger nt = definitionsService.getTrigger(TEST_TENANT, newTriggerId);
+        for (Condition c : conditions) {
+            c.setTriggerId(newTriggerId);
+            if (t.isGroup()) {
+                definitionsService.addGroupCondition(TEST_TENANT, newTriggerId, c.getTriggerMode(), c, null);
+            } else {
+                definitionsService.addCondition(TEST_TENANT, newTriggerId, c.getTriggerMode(), c);
+            }
+        }
+        for (Dampening d : dampenings) {
+            d.setTriggerId(newTriggerId);
+            if (t.isGroup()) {
+                definitionsService.addGroupDampening(TEST_TENANT, d);
+            } else {
+                definitionsService.addDampening(TEST_TENANT, d);
+            }
+        }
+
+        return nt;
     }
 
     @Test
-    public void test002BasicTags() throws Exception {
+    public void test0020GroupTriggerUpdate() throws Exception {
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-7");
+        assertNotNull(t);
+
+        t = copyTrigger(t, "group-trigger");
+        assertNotNull(t);
+
+        Map<String, String> dataIdMap = new HashMap<>(1);
+        dataIdMap.put("NumericData-Token", "NumericData-01");
+
+        Map<String, String> context = new HashMap<>(1);
+        context.put("context", "context-1");
+
+        Trigger nt1 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-1-trigger", "member-1",
+                context, dataIdMap);
+        assertNotNull(nt1);
+        dataIdMap.put("NumericData-Token", "NumericData-02");
+        context.put("context", "context-2");
+        Trigger nt2 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-2-trigger", "member-2",
+                context, dataIdMap);
+        assertNotNull(nt2);
+
+        Collection<Trigger> memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", false);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        Iterator<Trigger> i = memberren.iterator();
+        nt1 = i.next();
+        if (nt1.getId().equals("member-1-trigger")) {
+            nt2 = i.next();
+        } else {
+            nt2 = nt1;
+            nt1 = i.next();
+        }
+
+        nt1 = definitionsService.orphanMemberTrigger(TEST_TENANT, nt1.getId());
+        assertTrue(nt1.toString(), nt1.isOrphan());
+
+        t.setContext(null);
+        t.setDescription("Updated");
+        t.setEnabled(false);
+        t = definitionsService.updateGroupTrigger(TEST_TENANT, t);
+
+        assertNotNull(t);
+        assertTrue(t.toString(), t.isGroup());
+        assertTrue(t.toString(), "group-trigger".equals(t.getId()));
+        assertTrue(t.toString(), t.getContext().isEmpty());
+        assertTrue(t.toString(), "Updated".equals(t.getDescription()));
+        assertTrue(t.toString(), !t.isEnabled());
+
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", false);
+        assertTrue(memberren != null);
+        assertEquals(1, memberren.size());
+
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        i = memberren.iterator();
+        nt1 = i.next();
+        if (nt1.getId().equals("member-1-trigger")) {
+            nt2 = i.next();
+        } else {
+            nt2 = nt1;
+            nt1 = i.next();
+        }
+
+        assertTrue(nt1.toString(), nt1.isOrphan());
+        assertTrue(nt1.toString(), "member-1-trigger".equals(nt1.getId()));
+        assertTrue(nt1.toString(), "member-1".equals(nt1.getName()));
+        assertNotNull(nt1.getContext());
+        assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
+        assertTrue(nt1.toString(), !"Updated".equals(nt1.getDescription()));
+        assertTrue(nt1.toString(), nt1.isEnabled());
+
+        assertTrue(nt1.toString(), !nt2.isOrphan());
+        assertTrue(nt2.toString(), "member-2-trigger".equals(nt2.getId()));
+        assertTrue(nt2.toString(), "member-2".equals(nt2.getName()));
+        assertTrue(nt2.toString(), nt2.getContext().isEmpty());
+        assertTrue(nt2.toString(), "Updated".equals(nt2.getDescription()));
+        assertTrue(nt2.toString(), !nt2.isEnabled());
+
+        definitionsService.removeGroupTrigger(TEST_TENANT, "group-trigger", true, true);
+        t = definitionsService.getTrigger(TEST_TENANT, "group-trigger");
+        assertNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "member-1-trigger");
+        assertNotNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "member-2-trigger");
+        assertNotNull(t);
+
+        definitionsService.removeTrigger(TEST_TENANT, "member-1-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-1-trigger");
+        assertNull(t);
+        definitionsService.removeTrigger(TEST_TENANT, "member-2-trigger");
+        t = definitionsService.getTrigger(TEST_TENANT, "member-2-trigger");
+        assertNull(t);
+    }
+
+    @Test
+    public void test0021GroupCondition() throws Exception {
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-7");
+        assertNotNull(t);
+
+        t = copyTrigger(t, "group-trigger");
+        assertNotNull(t);
+
+        Map<String, String> dataIdMap = new HashMap<>(1);
+        dataIdMap.put("NumericData-Token", "NumericData-01");
+
+        Trigger nt1 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-1-trigger", "Member-1",
+                null, dataIdMap);
+        assertNotNull(nt1);
+        dataIdMap.put("NumericData-Token", "NumericData-02");
+        Trigger nt2 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-2-trigger", "Member-2",
+                null, dataIdMap);
+        assertNotNull(nt2);
+
+        CompareCondition groupCondition = new CompareCondition(t.getId(), Mode.FIRING, "Data1Id-Token", Operator.LT,
+                50.0D, "Data2Id-Token");
+
+        Map<String, Map<String, String>> ccDataIdMap = new HashMap<>(2);
+        Map<String, String> data1IdMemberMap = new HashMap<>(1);
+        Map<String, String> data2IdMemberMap = new HashMap<>(1);
+        data1IdMemberMap.put(nt1.getId(), "Data1Id-Member-1");
+        data1IdMemberMap.put(nt2.getId(), "Data1Id-Member-2");
+        data2IdMemberMap.put(nt1.getId(), "Data2Id-Member-1");
+        data2IdMemberMap.put(nt2.getId(), "Data2Id-Member-2");
+        ccDataIdMap.put("Data1Id-Token", data1IdMemberMap);
+        ccDataIdMap.put("Data2Id-Token", data2IdMemberMap);
+
+        Collection<Condition> conditionSet = definitionsService.addGroupCondition(TEST_TENANT, "group-trigger",
+                Mode.FIRING, groupCondition, ccDataIdMap);
+        assertNotNull(conditionSet);
+        assertEquals(2, conditionSet.size());
+        Iterator<Condition> ci = conditionSet.iterator();
+        Condition c = ci.next();
+        if (Condition.Type.COMPARE != c.getType()) {
+            c = ci.next();
+        }
+        CompareCondition cc = (CompareCondition) c;
+        groupCondition = cc;
+        assertEquals(cc.toString(), cc.getTriggerId(), t.getId());
+        assertEquals(cc.toString(), Mode.FIRING, cc.getTriggerMode());
+        assertEquals(cc.toString(), cc.getDataId(), "Data1Id-Token");
+        assertEquals(cc.toString(), cc.getData2Id(), "Data2Id-Token");
+        assertEquals(cc.toString(), Operator.LT, cc.getOperator());
+        assertTrue(cc.toString(), cc.getData2Multiplier() == 50D);
+        assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
+        assertEquals(cc.toString(), 2, cc.getConditionSetSize());
+
+        Collection<Trigger> memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, member.getId(), null);
+            assertEquals(2, conditionSet.size());
+            ci = conditionSet.iterator();
+            c = ci.next();
+            if (Condition.Type.COMPARE != c.getType()) {
+                c = ci.next();
+            }
+            cc = (CompareCondition) c;
+            assertEquals(cc.toString(), cc.getTriggerId(), member.getId());
+            assertEquals(cc.toString(), Mode.FIRING, cc.getTriggerMode());
+            assertEquals(cc.toString(), cc.getDataId(), "Data1Id-" + member.getName());
+            assertEquals(cc.toString(), cc.getData2Id(), "Data2Id-" + member.getName());
+            assertEquals(cc.toString(), Operator.LT, cc.getOperator());
+            assertTrue(cc.toString(), cc.getData2Multiplier() == 50D);
+            assertEquals(cc.toString(), 2, cc.getConditionSetSize());
+            assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
+        }
+
+        groupCondition.setOperator(Operator.GT);
+        groupCondition.setData2Multiplier(75D);
+        conditionSet = definitionsService.updateGroupCondition(TEST_TENANT, groupCondition);
+        assertNotNull(conditionSet);
+        assertEquals(2, conditionSet.size());
+        ci = conditionSet.iterator();
+        c = ci.next();
+        if (Condition.Type.COMPARE != c.getType()) {
+            c = ci.next();
+        }
+        cc = (CompareCondition) c;
+        groupCondition = cc;
+        assertEquals(cc.toString(), cc.getTriggerId(), t.getId());
+        assertEquals(cc.toString(), Mode.FIRING, cc.getTriggerMode());
+        assertEquals(cc.toString(), cc.getDataId(), "Data1Id-Token");
+        assertEquals(cc.toString(), cc.getData2Id(), "Data2Id-Token");
+        assertEquals(cc.toString(), Operator.GT, cc.getOperator());
+        assertTrue(cc.toString(), cc.getData2Multiplier() == 75D);
+        assertEquals(cc.toString(), 2, cc.getConditionSetSize());
+        assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
+
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, member.getId(), null);
+            assertEquals(2, conditionSet.size());
+            ci = conditionSet.iterator();
+            c = ci.next();
+            if (Condition.Type.COMPARE != c.getType()) {
+                c = ci.next();
+            }
+            cc = (CompareCondition) c;
+            assertEquals(cc.toString(), cc.getTriggerId(), member.getId());
+            assertEquals(cc.toString(), Mode.FIRING, cc.getTriggerMode());
+            assertEquals(cc.toString(), cc.getDataId(), "Data1Id-" + member.getName());
+            assertEquals(cc.toString(), cc.getData2Id(), "Data2Id-" + member.getName());
+            assertEquals(cc.toString(), Operator.GT, cc.getOperator());
+            assertTrue(cc.toString(), cc.getData2Multiplier() == 75D);
+            assertEquals(cc.toString(), 2, cc.getConditionSetSize());
+            assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
+        }
+
+        conditionSet = definitionsService.removeGroupCondition(TEST_TENANT, groupCondition.getConditionId());
+        assertNotNull(conditionSet);
+        assertEquals(1, conditionSet.size());
+        ci = conditionSet.iterator();
+        c = ci.next();
+        assertTrue(c.toString(), Condition.Type.COMPARE != c.getType());
+
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, member.getId(), null);
+            assertEquals(1, conditionSet.size());
+            ci = conditionSet.iterator();
+            c = ci.next();
+            assertTrue(c.toString(), Condition.Type.COMPARE != c.getType());
+        }
+
+        definitionsService.removeGroupTrigger(TEST_TENANT, "group-trigger", false, false);
+
+        t = definitionsService.getTrigger(TEST_TENANT, "group-trigger");
+        assertNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "member-1-trigger");
+        assertNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "member-2-trigger");
+        assertNull(t);
+    }
+
+    @Test
+    public void test0022GroupDampening() throws Exception {
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-7");
+        assertNotNull(t);
+
+        t = copyTrigger(t, "group-trigger");
+        assertNotNull(t);
+
+        Map<String, String> dataIdMap = new HashMap<>(1);
+        dataIdMap.put("NumericData-Token", "NumericData-01");
+
+        Trigger nt1 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-1-trigger", "Member-1",
+                null, dataIdMap);
+        assertNotNull(nt1);
+        dataIdMap.put("NumericData-Token", "NumericData-02");
+        Trigger nt2 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-2-trigger", "Member-2",
+                null, dataIdMap);
+        assertNotNull(nt2);
+
+        Dampening groupDampening = Dampening.forStrict("group-trigger", Mode.FIRING, 10);
+
+        Dampening d = definitionsService.addGroupDampening(TEST_TENANT, groupDampening);
+        assertNotNull(d);
+
+        Collection<Dampening> ds = definitionsService.getTriggerDampenings(TEST_TENANT, "group-trigger", null);
+        assertEquals(1, ds.size());
+        d = ds.iterator().next();
+        assertEquals(d.toString(), t.getId(), d.getTriggerId());
+        assertEquals(d.toString(), Mode.FIRING, d.getTriggerMode());
+        assertEquals(d.toString(), Dampening.Type.STRICT, d.getType());
+        assertEquals(d.toString(), 10, d.getEvalTrueSetting());
+
+        Collection<Trigger> memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            ds = definitionsService.getTriggerDampenings(TEST_TENANT, member.getId(), null);
+            assertEquals(1, ds.size());
+            d = ds.iterator().next();
+            assertEquals(d.toString(), member.getId(), d.getTriggerId());
+            assertEquals(d.toString(), Mode.FIRING, d.getTriggerMode());
+            assertEquals(d.toString(), Dampening.Type.STRICT, d.getType());
+            assertEquals(d.toString(), 10, d.getEvalTrueSetting());
+        }
+
+        groupDampening = Dampening.forRelaxedCount("group-trigger", Mode.FIRING, 5, 10);
+        d = definitionsService.updateGroupDampening(TEST_TENANT, groupDampening);
+        assertNotNull(d);
+
+        ds = definitionsService.getTriggerDampenings(TEST_TENANT, "group-trigger", null);
+        assertEquals(1, ds.size());
+        d = ds.iterator().next();
+        assertEquals(d.toString(), t.getId(), d.getTriggerId());
+        assertEquals(d.toString(), Mode.FIRING, d.getTriggerMode());
+        assertEquals(d.toString(), Dampening.Type.RELAXED_COUNT, d.getType());
+        assertEquals(d.toString(), 5, d.getEvalTrueSetting());
+        assertEquals(d.toString(), 10, d.getEvalTotalSetting());
+
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            ds = definitionsService.getTriggerDampenings(TEST_TENANT, member.getId(), null);
+            assertEquals(1, ds.size());
+            d = ds.iterator().next();
+            assertEquals(d.toString(), member.getId(), d.getTriggerId());
+            assertEquals(d.toString(), Mode.FIRING, d.getTriggerMode());
+            assertEquals(d.toString(), Dampening.Type.RELAXED_COUNT, d.getType());
+            assertEquals(d.toString(), 5, d.getEvalTrueSetting());
+            assertEquals(d.toString(), 10, d.getEvalTotalSetting());
+        }
+
+        definitionsService.removeGroupDampening(TEST_TENANT, groupDampening.getDampeningId());
+        ds = definitionsService.getTriggerDampenings(TEST_TENANT, "group-trigger", null);
+        assertTrue(ds.isEmpty());
+
+        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(memberren != null);
+        assertEquals(2, memberren.size());
+        for (Trigger member : memberren) {
+            ds = definitionsService.getTriggerDampenings(TEST_TENANT, member.getId(), null);
+            assertTrue(ds.isEmpty());
+        }
+
+        definitionsService.removeGroupTrigger(TEST_TENANT, "group-trigger", false, false);
+
+        t = definitionsService.getTrigger(TEST_TENANT, "group-trigger");
+        assertNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "member-1-trigger");
+        assertNull(t);
+        t = definitionsService.getTrigger(TEST_TENANT, "member-2-trigger");
+        assertNull(t);
+    }
+
+    @Test
+    public void test0030BasicTags() throws Exception {
         Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-1");
         assertNotNull(t);
 
@@ -146,7 +639,7 @@ public abstract class DefinitionsTest {
 
         definitionsService.removeTags(TEST_TENANT, "trigger-1", "testcategory", "testname");
         tags = definitionsService.getTriggerTags(TEST_TENANT, "trigger-1", null);
-        assertEquals(tags.toString(),1 ,tags.size());
+        assertEquals(tags.toString(), 1, tags.size());
         tag = tags.get(0);
         assertEquals("trigger-1", tag.getTriggerId());
         assertEquals("dataId", tag.getCategory());
@@ -156,14 +649,14 @@ public abstract class DefinitionsTest {
     }
 
     @Test
-    public void test003BasicAlert() throws Exception {
+    public void test0040BasicAlert() throws Exception {
         Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-1");
         assertNotNull(t);
 
         Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
         assertTrue(cs.toString(), cs.size() == 1);
 
-        ThresholdCondition threshold = (ThresholdCondition)cs.iterator().next();
+        ThresholdCondition threshold = (ThresholdCondition) cs.iterator().next();
         long dataTime = System.currentTimeMillis();
         NumericData data = new NumericData("NumericData-01", dataTime, 5.0d);
         ThresholdConditionEval eval = new ThresholdConditionEval(threshold, data);
@@ -287,18 +780,18 @@ public abstract class DefinitionsTest {
     }
 
     @Test
-    public void test004PagingAlerts() throws Exception {
+    public void test0050PagingAlerts() throws Exception {
         Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-6");
         assertNotNull(t);
 
         Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
         assertTrue(cs.toString(), cs.size() == 1);
 
-        AvailabilityCondition availability = (AvailabilityCondition)cs.iterator().next();
+        AvailabilityCondition availability = (AvailabilityCondition) cs.iterator().next();
 
         List<Alert> alerts = new ArrayList<>();
 
-        for (int i=0; i<107; i++) {
+        for (int i = 0; i < 107; i++) {
             long dataTime = System.currentTimeMillis();
             Availability data = new Availability("Availability-01", dataTime, Availability.AvailabilityType.DOWN);
             AvailabilityConditionEval eval = new AvailabilityConditionEval(availability, data);
@@ -329,7 +822,6 @@ public abstract class DefinitionsTest {
 
         List<Alert> result = alertsService.getAlerts(TEST_TENANT, null, null);
         assertEquals(107, result.size());
-
 
         /*
             Ordering and paging by alertId
@@ -366,7 +858,6 @@ public abstract class DefinitionsTest {
 
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByDescending(AlertComparator.Field.ALERT_ID.getText()).build();
-
 
         System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getAlerts(TEST_TENANT, null, pager);
@@ -448,7 +939,6 @@ public abstract class DefinitionsTest {
         System.out.println("first ctime: " + firstCtime + " last ctime: " + lastCtime);
 
         assertTrue(firstCtime > lastCtime);
-
 
         /*
             Ordering and paging by severity
@@ -564,6 +1054,5 @@ public abstract class DefinitionsTest {
 
         assertTrue(firstStatus.compareTo(lastStatus) > 0);
     }
-
 
 }

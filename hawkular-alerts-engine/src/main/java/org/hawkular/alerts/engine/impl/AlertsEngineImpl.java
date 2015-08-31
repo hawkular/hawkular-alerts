@@ -180,7 +180,7 @@ public class AlertsEngineImpl implements AlertsEngine {
             msgLog.errorDefinitionsService("Triggers", e.getMessage());
         }
         if (triggers != null && !triggers.isEmpty()) {
-            triggers.stream().filter(Trigger::isEnabled).forEach(this::reloadTrigger);
+            triggers.stream().filter(Trigger::isLoadable).forEach(this::reloadTrigger);
         }
 
         rules.addGlobal("log", log);
@@ -211,7 +211,7 @@ public class AlertsEngineImpl implements AlertsEngine {
         }
         if (null == trigger) {
             log.debugf("Trigger not found for triggerId [" + triggerId + "], removing from rulebase if it exists");
-            Trigger doomedTrigger = new Trigger(triggerId, "doomed");
+            Trigger doomedTrigger = new Trigger(tenantId, triggerId, "doomed");
             removeTrigger(doomedTrigger);
             return;
         }
@@ -222,6 +222,10 @@ public class AlertsEngineImpl implements AlertsEngine {
     private void reloadTrigger(Trigger trigger) {
         if (null == trigger) {
             throw new IllegalArgumentException("Trigger must be not null");
+        }
+        if (trigger.isGroup()) {
+            log.debugf("Skipping reload of group trigger [%s/%s]", trigger.getTenantId(), trigger.getId());
+            return;
         }
 
         // Look for the Trigger in the rules engine, if it is there then remove everything about it

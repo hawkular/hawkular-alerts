@@ -50,9 +50,9 @@ import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.data.StringData;
+import org.hawkular.alerts.api.model.trigger.Match;
+import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
-import org.hawkular.alerts.api.model.trigger.TriggerTemplate.Match;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -106,14 +106,12 @@ public class JsonTest {
 
         assertTrue(!output.contains("evalSets"));
 
-        AvailabilityCondition aCond = new AvailabilityCondition("trigger-test",
-                "Default",
+        AvailabilityCondition aCond = new AvailabilityCondition("trigger-test", "Default",
                 AvailabilityCondition.Operator.UP);
         Availability aData = new Availability("Metric-test", 1, AvailabilityType.UP);
         AvailabilityConditionEval aEval = new AvailabilityConditionEval(aCond, aData);
 
-        ThresholdCondition tCond = new ThresholdCondition("trigger-test",
-                "Default",
+        ThresholdCondition tCond = new ThresholdCondition("trigger-test", "Default",
                 ThresholdCondition.Operator.LTE,
                 50.0);
         NumericData tData = new NumericData("Metric-test2", 2, 25.5);
@@ -969,8 +967,12 @@ public class JsonTest {
         assertFalse(trigger.isAutoEnable());
         assertFalse(trigger.isAutoResolve());
         assertTrue(trigger.isAutoResolveAlerts());
+        assertFalse(trigger.isGroup());
+        assertFalse(trigger.isMember());
+        assertFalse(trigger.isOrphan());
         assertEquals(Severity.MEDIUM, trigger.getSeverity());
-        assertNull(trigger.getContext());
+        assertNotNull(trigger.getContext());
+        assertTrue(trigger.getContext().isEmpty());
 
         String output = objectMapper.writeValueAsString(trigger);
 

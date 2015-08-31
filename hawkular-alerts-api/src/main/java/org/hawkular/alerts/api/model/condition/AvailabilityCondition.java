@@ -16,11 +16,11 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import static org.hawkular.alerts.api.model.trigger.Trigger.Mode.FIRING;
+import static org.hawkular.alerts.api.model.trigger.Mode.FIRING;
 
 import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
-import org.hawkular.alerts.api.model.trigger.Trigger.Mode;
+import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;

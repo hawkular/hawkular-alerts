@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals
 import org.hawkular.alerts.api.model.dampening.Dampening
 import org.hawkular.alerts.api.model.dampening.Dampening.Type
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.api.model.trigger.Trigger.Mode
+import org.hawkular.alerts.api.model.trigger.Mode
 import org.junit.Test
 
 /**
