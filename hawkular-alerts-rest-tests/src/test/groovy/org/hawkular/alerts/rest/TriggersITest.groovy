@@ -19,12 +19,13 @@ package org.hawkular.alerts.rest
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 
+import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.dampening.Dampening
 import org.hawkular.alerts.api.model.Severity
 import org.hawkular.alerts.api.model.trigger.Tag
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.api.json.GroupConditionInfo
+import org.hawkular.alerts.api.json.GroupConditionsInfo
 import org.hawkular.alerts.api.json.GroupMemberInfo
 import org.hawkular.alerts.api.json.UnorphanMemberInfo
 import org.hawkular.alerts.api.model.trigger.Mode
@@ -116,22 +117,22 @@ class TriggersITest extends AbstractITestBase {
         ThresholdCondition cond1 = new ThresholdCondition("group-trigger", "DataId1-Token",
             ThresholdCondition.Operator.GT, 10.0);
         Map<String, Map<String, String>> dataIdMemberMap = new HashMap<>();
-        GroupConditionInfo groupConditionInfo = new GroupConditionInfo( cond1, dataIdMemberMap );
+        GroupConditionsInfo groupConditionsInfo = new GroupConditionsInfo( cond1, dataIdMemberMap );
 
-        resp = client.post(path: "triggers/groups/group-trigger/conditions", body: groupConditionInfo)
+        resp = client.put(path: "triggers/groups/group-trigger/conditions/firing", body: groupConditionsInfo)
         assertEquals(resp.toString(), 200, resp.status)
         assertEquals(1, resp.data.size())
 
         // create member 1
-        Map<String,String> dataIdMap = new HashMap<>(1);
-        dataIdMap.put("DataId1-Token", "DataId1-Child1");
-        GroupMemberInfo groupMemberInfo = new GroupMemberInfo("group-trigger", "member1", "member1", null, dataIdMap);
+        Map<String,String> dataId1Map = new HashMap<>(2);
+        dataId1Map.put("DataId1-Token", "DataId1-Child1");
+        GroupMemberInfo groupMemberInfo = new GroupMemberInfo("group-trigger", "member1", "member1", null, dataId1Map);
         resp = client.post(path: "triggers/groups/members", body: groupMemberInfo);
         assertEquals(200, resp.status)
 
         // create member 2
-        dataIdMap.put("DataId1-Token", "DataId1-Child2");
-        groupMemberInfo = new GroupMemberInfo("group-trigger", "member2", "member2", null, dataIdMap);
+        dataId1Map.put("DataId1-Token", "DataId1-Child2");
+        groupMemberInfo = new GroupMemberInfo("group-trigger", "member2", "member2", null, dataId1Map);
         resp = client.post(path: "triggers/groups/members", body: groupMemberInfo);
         assertEquals(200, resp.status)
 
@@ -149,14 +150,20 @@ class TriggersITest extends AbstractITestBase {
         resp = client.post(path: "triggers/groups/tags", body: groupTag)
         assertEquals(200, resp.status)
 
-        // add another condition to the group
+        // add another condition to the group (only member1 is relevant, member2 is now an orphan)
         ThresholdCondition cond2 = new ThresholdCondition("group-trigger", "DataId2-Token",
             ThresholdCondition.Operator.LT, 20.0);
-        dataIdMap.clear();
-        dataIdMap.put("member1", "DataId2-Member1");
-        dataIdMemberMap.put("DataId2-Token", dataIdMap);
-        groupConditionInfo = new GroupConditionInfo(cond2, dataIdMemberMap);
-        resp = client.post(path: "triggers/groups/group-trigger/conditions", body: groupConditionInfo)
+        dataId1Map.clear();
+        dataId1Map.put("member1", "DataId1-Child1");
+        Map<String,String> dataId2Map = new HashMap<>(2);
+        dataId2Map.put("member1", "DataId2-Child1");
+        dataIdMemberMap.put("DataId1-Token", dataId1Map);
+        dataIdMemberMap.put("DataId2-Token", dataId2Map);
+        Collection<Condition> groupConditions = new ArrayList<>(2);
+        groupConditions.add(cond1);
+        groupConditions.add(cond2);
+        groupConditionsInfo = new GroupConditionsInfo(groupConditions, dataIdMemberMap);
+        resp = client.put(path: "triggers/groups/group-trigger/conditions/firing", body: groupConditionsInfo)
         assertEquals(200, resp.status)
 
         // update the group trigger
@@ -188,59 +195,93 @@ class TriggersITest extends AbstractITestBase {
             member = (Trigger)resp.data[1];
             orphanMember = (Trigger)resp.data[0];
         }
+        assertEquals( "member1", member.getName() );
+        assertEquals( false, member.isOrphan() );
+        assertEquals( true, member.isAutoDisable());
+        assertEquals( "member2", orphanMember.getName() );
+        assertEquals( true, orphanMember.isOrphan() );
+        assertEquals( false, orphanMember.isAutoDisable());
 
         // get the group trigger
         resp = client.get(path: "triggers/group-trigger")
         assertEquals(200, resp.status)
         groupTrigger = (Trigger)resp.data;
-
         assertEquals( "group-trigger", groupTrigger.getName() );
         assertEquals( true, groupTrigger.isGroup() );
         assertEquals( true, groupTrigger.isAutoDisable());
+
+        // get the group dampening
         resp = client.get(path: "triggers/group-trigger/dampenings")
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size());
+
+        // get the group tags
         resp = client.get(path: "triggers/group-trigger/tags", query: [category:"group-category"])
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size());
+
+        // get the group conditions
         resp = client.get(path: "triggers/group-trigger/conditions")
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size());
-        String groupConditionId = resp.data[0].conditionId;
+        groupConditions = (Collection<Condition>)resp.data;
+        cond1 = resp.data[0];
+        assertEquals("DataId1-Token", cond1.getDataId());
+        cond2 = resp.data[1];
+        assertEquals("DataId2-Token", cond2.getDataId());
 
-        assertEquals( "member1", member.getName() );
-        assertEquals( false, member.isOrphan() );
-        assertEquals( true, member.isAutoDisable());
+        // get the member1 dampening
         resp = client.get(path: "triggers/member1/dampenings")
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size());
+
+        // get the member1 tag
         resp = client.get(path: "triggers/member1/tags", query: [category:"group-category"])
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size());
+
+        // get the member1 conditions
         resp = client.get(path: "triggers/member1/conditions")
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size());
 
-        assertEquals( "member2", orphanMember.getName() );
-        assertEquals( true, orphanMember.isOrphan() );
-        assertEquals( false, orphanMember.isAutoDisable());
+        // check the member2 dampening
         resp = client.get(path: "triggers/member2/dampenings")
         assertEquals(200, resp.status)
         assertEquals(0, resp.data.size());
+
+        // check the member2 tag
         resp = client.get(path: "triggers/member2/tags", query: [category:"group-category"])
         assertEquals(200, resp.status)
         assertEquals(0, resp.data.size());
+
+        // get the member2 condition
         resp = client.get(path: "triggers/member2/conditions")
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size());
 
         // unorphan member2
-        dataIdMap.clear();
+        Map<String,String> dataIdMap = new HashMap<>(2);
         dataIdMap.put("DataId1-Token", "DataId1-Child2");
         dataIdMap.put("DataId2-Token", "DataId2-Child2");
         UnorphanMemberInfo unorphanMemberInfo = new UnorphanMemberInfo(null, dataIdMap);
         resp = client.post(path: "triggers/groups/members/member2/unorphan", body: unorphanMemberInfo);
         assertEquals(200, resp.status)
+
+        // get the member2 dampening
+        resp = client.get(path: "triggers/member2/dampenings")
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size());
+
+        // get the member2 tag
+        resp = client.get(path: "triggers/member2/tags", query: [category:"group-category"])
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size());
+
+        // get the member2 conditions
+        resp = client.get(path: "triggers/member2/conditions")
+        assertEquals(200, resp.status)
+        assertEquals(2, resp.data.size());
 
         // delete group tag
         resp = client.put(path: "triggers/groups/group-trigger/tags",
@@ -251,24 +292,39 @@ class TriggersITest extends AbstractITestBase {
         resp = client.delete(path: "triggers/groups/group-trigger/dampenings/" + did)
         assertEquals(200, resp.status)
 
-        // delete group condition
-        resp = client.delete(path: "triggers/groups/group-trigger/conditions/" + groupConditionId)
+        // delete group cond1 (done by re-setting conditions w/o the undesired condition)
+        groupConditions.clear();
+        groupConditions.add(cond2);
+        println groupConditions
+        assertEquals(1, groupConditions.size());
+        dataId2Map.clear();
+        dataId2Map.put("member1", "DataId2-Child1");
+        dataId2Map.put("member2", "DataId2-Child2");
+        dataIdMemberMap.clear();
+        dataIdMemberMap.put("DataId2-Token", dataId2Map);
+        groupConditionsInfo = new GroupConditionsInfo(groupConditions, dataIdMemberMap);
+        resp = client.put(path: "triggers/groups/group-trigger/conditions/firing", body: groupConditionsInfo)
         assertEquals(200, resp.status)
 
         // get the group trigger
         resp = client.get(path: "triggers/group-trigger")
         assertEquals(200, resp.status)
         groupTrigger = (Trigger)resp.data;
-
         assertEquals( "group-trigger", groupTrigger.getName() );
         assertEquals( true, groupTrigger.isGroup() );
         assertEquals( true, groupTrigger.isAutoDisable());
+
+        // check the group dampening
         resp = client.get(path: "triggers/group-trigger/dampenings")
         assertEquals(200, resp.status)
         assertEquals(0, resp.data.size());
+
+        // check the group tag
         resp = client.get(path: "triggers/group-trigger/tags", query: [category:"group-category"])
         assertEquals(200, resp.status)
         assertEquals(0, resp.data.size());
+
+        // check the group condition
         resp = client.get(path: "triggers/group-trigger/conditions")
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size());

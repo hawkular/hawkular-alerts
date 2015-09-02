@@ -20,6 +20,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
@@ -770,7 +771,7 @@ public class TriggersHandler {
     @GET
     @Path("/{triggerId}/conditions")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get a map with all conditions for a specific trigger.")
+    @ApiOperation(value = "Get all conditions for a specific trigger.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
@@ -791,11 +792,12 @@ public class TriggersHandler {
     @GET
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get a condition for a specific trigger id.")
+    @ApiOperation(value = "@Deprecated : Use GET /alerts/triggers/{triggerId}/conditions")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Condition found"),
             @ApiResponse(code = 404, message = "No Condition found"),
             @ApiResponse(code = 500, message = "Internal server error") })
+    @Deprecated
     public Response getTriggerCondition(
             @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
@@ -822,18 +824,136 @@ public class TriggersHandler {
         }
     }
 
+    @PUT
+    @Path("/{triggerId}/conditions/{triggerMode}")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Set the conditions for the trigger. This replaces any existing conditions. Returns "
+            + "the new conditions.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Condition Set created"),
+            @ApiResponse(code = 404, message = "No trigger found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public Response setConditions(
+            @ApiParam(value = "The relevant Trigger.", required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @ApiParam(value = "FIRING or AUTORESOLVE (not case sensitive).", required = true)
+            @PathParam("triggerMode")
+            final String triggerMode,
+            @ApiParam(value = "Json representation of a condition list. For examples of Condition types, See "
+                    + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
+                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")//
+            String jsonConditions) {
+        try {
+            Mode mode = Mode.valueOf(triggerMode.toUpperCase());
+            Collection<Condition> conditions = new ArrayList<>();
+            if (!isEmpty(jsonConditions)) {
+
+                ObjectMapper om = new ObjectMapper();
+                JsonNode rootNode = om.readTree(jsonConditions);
+                for (JsonNode conditionNode : rootNode) {
+                    Condition condition = JacksonDeserializer.deserializeCondition(conditionNode);
+                    if (condition == null) {
+                        return ResponseUtil.badRequest("Bad json conditions: " + jsonConditions);
+                    }
+                    condition.setTriggerId(triggerId);
+                    condition.setTriggerMode(mode);
+                    conditions.add(condition);
+                }
+            }
+
+            conditions = definitions.setConditions(tenantId, triggerId, mode, conditions);
+            log.debugf("Conditions: %s ", conditions);
+            return ResponseUtil.ok(conditions);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseUtil.badRequest("Bad trigger mode: " + triggerMode);
+        } catch (NotFoundException e) {
+            return ResponseUtil.notFound(e.getMessage());
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @PUT
+    @Path("/groups/{groupId}/conditions/{triggerMode}")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Set the conditions for the group trigger. This replaces any existing conditions on "
+            + "the group and member conditions.  Returns the new group conditions.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Group Condition Set created"),
+            @ApiResponse(code = 404, message = "No trigger found"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public Response setGroupConditions(
+            @ApiParam(value = "The relevant Group Trigger.", required = true)
+            @PathParam("groupId")
+            final String groupId,
+            @ApiParam(value = "FIRING or AUTORESOLVE (not case sensitive).", required = true)
+            @PathParam("triggerMode")
+            final String triggerMode,
+            @ApiParam(value = "Json representation of GroupConditionsInfo. For examples of Condition types, See "
+                    + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
+                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")//
+            String jsonGroupConditionsInfo) {
+        try {
+            if (isEmpty(jsonGroupConditionsInfo)) {
+                return ResponseUtil.badRequest("GroupConditionsInfo can not be null");
+            }
+
+            Mode mode = Mode.valueOf(triggerMode.toUpperCase());
+            Collection<Condition> conditions = new ArrayList<>();
+
+            ObjectMapper om = new ObjectMapper();
+            JsonNode rootNode = om.readTree(jsonGroupConditionsInfo);
+            JsonNode conditionsNode = rootNode.get("conditions");
+            for (JsonNode conditionNode : conditionsNode) {
+                Condition condition = JacksonDeserializer.deserializeCondition(conditionNode);
+                if (condition == null) {
+                    return ResponseUtil.badRequest("Bad json conditions: " + conditionsNode.toString());
+                }
+                condition.setTriggerId(groupId);
+                condition.setTriggerMode(mode);
+                conditions.add(condition);
+            }
+
+            JsonNode dataIdMemberMapNode = rootNode.get("dataIdMemberMap");
+            Map<String, Map<String, String>> dataIdMemberMap = null;
+            if (null != dataIdMemberMapNode) {
+                dataIdMemberMap = om.treeToValue(dataIdMemberMapNode, Map.class);
+            }
+
+            conditions = definitions.setGroupConditions(tenantId, groupId, mode, conditions, dataIdMemberMap);
+
+            log.debugf("Conditions: %s ", conditions);
+            return ResponseUtil.ok(conditions);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseUtil.badRequest("Bad trigger mode: " + triggerMode);
+        } catch (NotFoundException e) {
+            return ResponseUtil.notFound(e.getMessage());
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
     @POST
     @Path("/{triggerId}/conditions")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Create a new condition for a specific trigger. Add/Delete/Update of a condition "
-            + "effectively replaces the condition set for the trigger.  The new condition set is returned. "
-            + "Clients code should then use the new condition set as ConditionIds may have changed!")
+    @ApiOperation(value = "Deprecated : Use PUT /alerts/triggers/{triggerId}/conditions to set the entire "
+            + "condition set in one service.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Condition created"),
             @ApiResponse(code = 404, message = "No trigger found"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    @Deprecated
     public Response createCondition(
             @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
@@ -872,69 +992,17 @@ public class TriggersHandler {
         }
     }
 
-    @POST
-    @Path("/groups/{groupId}/conditions")
-    @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Create a new group condition for a specific group trigger. Add/Delete/Update of a condition "
-            + "effectively replaces the condition set for the trigger.  The new condition set is returned. "
-            + "Clients code should then use the new condition set as ConditionIds may have changed!")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Group Condition created"),
-            @ApiResponse(code = 404, message = "No trigger found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response createGroupCondition(
-            @ApiParam(value = "Group Trigger definition id to be retrieved", required = true)
-            @PathParam("groupId")
-            final String groupId,
-            @ApiParam(value = "Json representation of a condition. For examples of Condition types, See "
-                    + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
-                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")//
-            String jsonGroupConditionInfo) {
-        try {
-            if (isEmpty(jsonGroupConditionInfo) || !jsonGroupConditionInfo.contains("type")) {
-                return ResponseUtil.badRequest("json condition empty or without type");
-            }
-
-            ObjectMapper om = new ObjectMapper();
-            JsonNode rootNode = om.readTree(jsonGroupConditionInfo);
-            JsonNode conditionNode = rootNode.get("condition");
-            Condition condition = JacksonDeserializer.deserializeCondition(conditionNode);
-            JsonNode dataIdMemberMapNode = rootNode.get("dataIdMemberMap");
-            Map<String, Map<String, String>> dataIdMemberMap = null;
-            if (null != dataIdMemberMapNode) {
-                dataIdMemberMap = om.treeToValue(dataIdMemberMapNode, Map.class);
-            }
-
-            Collection<Condition> conditions;
-            condition.setTenantId(tenantId);
-            condition.setTriggerId(groupId);
-            conditions = definitions.addGroupCondition(tenantId, groupId, condition.getTriggerMode(), condition,
-                    dataIdMemberMap);
-
-            log.debugf("Conditions: %s ", conditions);
-            return ResponseUtil.ok(conditions);
-
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound(e.getMessage());
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
     @PUT
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing condition for a specific trigger. Add/Delete/Update of a condition "
-            + "effectively replaces the condition set for the trigger.  The new condition set is returned. "
-            + "Clients code should then use the new condition set as ConditionIds may have changed!")
+    @ApiOperation(value = "Deprecated : Use PUT /alerts/triggers/{triggerId}/conditions to set the entire "
+            + "condition set in one service.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Condition updated"),
             @ApiResponse(code = 404, message = "No Condition found"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    @Deprecated
     public Response updateCondition(
             @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
@@ -979,14 +1047,14 @@ public class TriggersHandler {
     @DELETE
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Delete an existing condition for a specific trigger. Add/Delete/Update of a condition "
-            + "effectively replaces the condition set for the trigger.  The new condition set is returned. "
-            + "Clients code should then use the new condition set as ConditionIds may have changed!")
+    @ApiOperation(value = "Deprecated : Use PUT /alerts/triggers/{triggerId}/conditions to set the entire "
+            + "condition set in one service.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Condition deleted"),
             @ApiResponse(code = 404, message = "No Condition found"),
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    @Deprecated
     public Response deleteCondition(
             @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
@@ -1007,45 +1075,6 @@ public class TriggersHandler {
                         triggerId);
             }
             Collection<Condition> conditions = definitions.removeCondition(tenantId, conditionId);
-            log.debugf("Conditions: %s ", conditions);
-            return ResponseUtil.ok(conditions);
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
-    @DELETE
-    @Path("/groups/{groupId}/conditions/{conditionId}")
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Delete an existing condition from a group trigger. Add/Delete/Update of a condition "
-            + "effectively replaces the condition set for the trigger.  The new condition set is returned. "
-            + "Clients code should then use the new condition set as ConditionIds may have changed!")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Condition deleted"),
-            @ApiResponse(code = 404, message = "No Condition found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response deleteGroupCondition(
-            @ApiParam(value = "Group Trigger definition id to be retrieved", required = true)
-            @PathParam("groupId")
-            final String groupId,
-            @PathParam("conditionId")
-            final String conditionId) {
-        try {
-            Trigger trigger = definitions.getTrigger(tenantId, groupId);
-            if (trigger == null) {
-                return ResponseUtil.notFound("No trigger found for triggerId: " + groupId);
-            }
-            Condition condition = definitions.getCondition(tenantId, conditionId);
-            if (condition == null) {
-                return ResponseUtil.notFound("No condition found for conditionId: " + conditionId);
-            }
-            if (!condition.getTriggerId().equals(groupId)) {
-                return ResponseUtil.badRequest("ConditionId: " + conditionId + " does not belong to triggerId: " +
-                        groupId);
-            }
-            Collection<Condition> conditions = definitions.removeGroupCondition(tenantId, conditionId);
             log.debugf("Conditions: %s ", conditions);
             return ResponseUtil.ok(conditions);
         } catch (Exception e) {
