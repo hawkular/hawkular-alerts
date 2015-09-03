@@ -16,6 +16,10 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.*;
+
+import java.util.Map;
+
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -69,6 +73,9 @@ public abstract class Condition {
      */
     @JsonInclude
     protected String conditionId;
+
+    @JsonInclude(Include.NON_NULL)
+    protected Map<String, String> context;
 
     public Condition() {
         // for json assembly
@@ -129,6 +136,14 @@ public abstract class Condition {
 
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
+    }
+
+    public Map<String, String> getContext() {
+        return context;
+    }
+
+    public void setContext(Map<String, String> context) {
+        this.context = context;
     }
 
     private void updateId() {

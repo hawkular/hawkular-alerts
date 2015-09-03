@@ -80,6 +80,7 @@ CREATE TABLE ${keyspace}.conditions (
     thresholdLow double,
     thresholdHigh double,
     inRange boolean,
+    context map<text,text>,
     PRIMARY KEY (tenantId, triggerId, triggerMode, conditionId)
 );
 
