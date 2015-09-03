@@ -19,6 +19,7 @@ package org.hawkular.alerts.external
 import java.util.List
 
 import org.hawkular.alerts.api.model.data.StringData
+import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ExternalCondition
 import org.hawkular.alerts.api.model.trigger.Tag
 import org.hawkular.alerts.api.model.trigger.Trigger
@@ -69,7 +70,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         ExternalCondition firingCond = new ExternalCondition("trigger-test-avg", Mode.FIRING, "external-dataId-avg",
             "HawkularMetrics", "metric:1:avg(" + metricId + " > 50),1");
 
-        resp = client.post(path: "triggers/trigger-test-avg/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/trigger-test-avg/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -152,7 +155,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         ExternalCondition firingCond = new ExternalCondition("trigger-test-avgd", Mode.FIRING, "external-dataId-avgd",
             "HawkularMetrics", "metric:1:avgd(" + metricId + " > 25),1");
 
-        resp = client.post(path: "triggers/trigger-test-avgd/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/trigger-test-avgd/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -240,7 +245,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         ExternalCondition firingCond = new ExternalCondition("trigger-test-avgw", Mode.FIRING, "external-dataId-avgw",
             "HawkularMetrics", "metric:1:avgw(" + metricId + " > 75),1");
 
-        resp = client.post(path: "triggers/trigger-test-avgw/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/trigger-test-avgw/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -328,7 +335,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         ExternalCondition firingCond = new ExternalCondition("trigger-test-min", Mode.FIRING, "external-dataId-min",
             "HawkularMetrics", "metric:1:min(" + metricId + " < 10),1");
 
-        resp = client.post(path: "triggers/trigger-test-min/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/trigger-test-min/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -412,7 +421,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         ExternalCondition firingCond = new ExternalCondition("trigger-test-max", Mode.FIRING, "external-dataId-max",
             "HawkularMetrics", "metric:1:max(" + metricId + " > 19),1");
 
-        resp = client.post(path: "triggers/trigger-test-max/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/trigger-test-max/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -496,7 +507,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         ExternalCondition firingCond = new ExternalCondition("trigger-test-range", Mode.FIRING, "external-dataId-range",
             "HawkularMetrics", "metric:1:range(" + metricId + " >= 10),1");
 
-        resp = client.post(path: "triggers/trigger-test-range/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/trigger-test-range/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -580,7 +593,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         ExternalCondition firingCond = new ExternalCondition("trigger-test-rangep", Mode.FIRING, "external-dataId-rangep",
             "HawkularMetrics", "metric:1:rangep(" + metricId + " >= 0.75),1");
 
-        resp = client.post(path: "triggers/trigger-test-rangep/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/trigger-test-rangep/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 

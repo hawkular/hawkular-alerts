@@ -17,6 +17,7 @@
 package org.hawkular.alerts.rest
 
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
+import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Availability
 import org.hawkular.alerts.api.model.data.MixedData
@@ -128,7 +129,9 @@ class ActionsITest extends AbstractITestBase {
         AvailabilityCondition firingCond = new AvailabilityCondition("test-email-availability",
                 Mode.FIRING, "test-email-availability", AvailabilityCondition.Operator.NOT_UP);
 
-        resp = client.post(path: "triggers/test-email-availability/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/test-email-availability/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -206,7 +209,9 @@ class ActionsITest extends AbstractITestBase {
         ThresholdCondition firingCond = new ThresholdCondition("test-email-threshold",
                 Mode.FIRING, "test-email-threshold", ThresholdCondition.Operator.GT, 300);
 
-        resp = client.post(path: "triggers/test-email-threshold/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/test-email-threshold/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 

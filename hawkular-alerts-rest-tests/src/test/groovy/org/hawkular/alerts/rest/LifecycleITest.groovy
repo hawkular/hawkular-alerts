@@ -27,6 +27,7 @@ import static org.junit.runners.MethodSorters.NAME_ASCENDING
 import org.hawkular.alerts.api.model.Severity
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval
+import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Availability
 import org.hawkular.alerts.api.model.data.MixedData
@@ -35,6 +36,7 @@ import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.FixMethodOrder
 import org.junit.Test
+
 
 /**
  * Alerts REST tests.
@@ -79,7 +81,10 @@ class LifecycleITest extends AbstractITestBase {
         AvailabilityCondition firingCond = new AvailabilityCondition("test-autodisable-trigger",
                 Mode.FIRING, "test-autodisable-avail", Operator.NOT_UP);
 
-        resp = client.post(path: "triggers/test-autodisable-trigger/conditions", body: firingCond)
+
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/test-autodisable-trigger/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -182,11 +187,13 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        // ADD Firing condition
+        // ADD Firing conditions
         AvailabilityCondition firingCond = new AvailabilityCondition("test-autoresolve-trigger",
                 Mode.FIRING, "test-autoresolve-avail", Operator.NOT_UP);
 
-        resp = client.post(path: "triggers/test-autoresolve-trigger/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/test-autoresolve-trigger/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -194,7 +201,9 @@ class LifecycleITest extends AbstractITestBase {
         AvailabilityCondition autoResolveCond = new AvailabilityCondition("test-autoresolve-trigger",
                 Mode.AUTORESOLVE, "test-autoresolve-avail", Operator.UP);
 
-        resp = client.post(path: "triggers/test-autoresolve-trigger/conditions", body: autoResolveCond)
+        conditions.clear();
+        conditions.add( autoResolveCond );
+        resp = client.put(path: "triggers/test-autoresolve-trigger/conditions/autoresolve", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -320,7 +329,9 @@ class LifecycleITest extends AbstractITestBase {
         AvailabilityCondition firingCond = new AvailabilityCondition("test-manual-trigger",
                 Mode.FIRING, "test-manual-avail", Operator.NOT_UP);
 
-        resp = client.post(path: "triggers/test-manual-trigger/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/test-manual-trigger/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -354,13 +365,13 @@ class LifecycleITest extends AbstractITestBase {
         }
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 20; ++i ) {
+        for ( int i=0; i < 30; ++i ) {
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger"] )
             if ( resp.status == 200 && resp.data.size() == 5 ) {
-                if ( i > 10 ) {
+                if ( i > 15 ) {
                     println( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
@@ -572,7 +583,9 @@ class LifecycleITest extends AbstractITestBase {
         AvailabilityCondition firingCond = new AvailabilityCondition("test-manual2-trigger",
                 Mode.FIRING, "test-manual2-avail", Operator.NOT_UP);
 
-        resp = client.post(path: "triggers/test-manual2-trigger/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/test-manual2-trigger/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -606,13 +619,13 @@ class LifecycleITest extends AbstractITestBase {
         }
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 20; ++i ) {
+        for ( int i=0; i < 30; ++i ) {
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger"] )
             if ( resp.status == 200 && resp.data != null && resp.data.size() == 5 ) {
-                if ( i > 10 ) {
+                if ( i > 15 ) {
                     println( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
@@ -683,7 +696,9 @@ class LifecycleITest extends AbstractITestBase {
         ThresholdCondition firingCond = new ThresholdCondition("test-autoresolve-threshold-trigger",
                 Mode.FIRING, "test-autoresolve-threshold", ThresholdCondition.Operator.GT, 100);
 
-        resp = client.post(path: "triggers/test-autoresolve-threshold-trigger/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/test-autoresolve-threshold-trigger/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -696,7 +711,9 @@ class LifecycleITest extends AbstractITestBase {
         ThresholdCondition autoResolveCond = new ThresholdCondition("test-autoresolve-threshold-trigger",
                 Mode.AUTORESOLVE, "test-autoresolve-threshold", ThresholdCondition.Operator.LTE, 100);
 
-        resp = client.post(path: "triggers/test-autoresolve-threshold-trigger/conditions", body: autoResolveCond)
+        conditions.clear();
+        conditions.add( autoResolveCond );
+        resp = client.put(path: "triggers/test-autoresolve-threshold-trigger/conditions/autoresolve", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -742,6 +759,7 @@ class LifecycleITest extends AbstractITestBase {
          */
         for ( int i=0; i < 20; ++i ) {
             Thread.sleep(500);
+
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
             /*
                 We should have only 1 alert
@@ -814,6 +832,7 @@ class LifecycleITest extends AbstractITestBase {
          */
         for ( int i=0; i < 20; ++i ) {
             Thread.sleep(500);
+
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-threshold-trigger"] )
             /*
                 We should have only 2 alert
@@ -859,7 +878,9 @@ class LifecycleITest extends AbstractITestBase {
         AvailabilityCondition firingCond = new AvailabilityCondition("test-autoenable-trigger",
                 Mode.FIRING, "test-autoenable-avail", Operator.NOT_UP);
 
-        resp = client.post(path: "triggers/test-autoenable-trigger/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/test-autoenable-trigger/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -968,7 +989,9 @@ class LifecycleITest extends AbstractITestBase {
         AvailabilityCondition firingCond = new AvailabilityCondition("test-manual-autoresolve-trigger",
                 Mode.FIRING, "test-manual-autoresolve-avail", Operator.NOT_UP);
 
-        resp = client.post(path: "triggers/test-manual-autoresolve-trigger/conditions", body: firingCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/test-manual-autoresolve-trigger/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
@@ -976,7 +999,9 @@ class LifecycleITest extends AbstractITestBase {
         AvailabilityCondition autoResolveCond = new AvailabilityCondition("test-manual-autoresolve-trigger",
                 Mode.AUTORESOLVE, "test-autoresolve-avail", Operator.UP);
 
-        resp = client.post(path: "triggers/test-manual-autoresolve-trigger/conditions", body: autoResolveCond)
+        conditions.clear();
+        conditions.add( autoResolveCond );
+        resp = client.put(path: "triggers/test-manual-autoresolve-trigger/conditions/autoresolve", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 

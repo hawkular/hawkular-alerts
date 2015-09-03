@@ -239,8 +239,8 @@ public abstract class DefinitionsTest {
     }
 
     private Trigger copyTrigger(Trigger t, String newTriggerId) throws Exception {
-        Collection<Condition> conditions = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
-        Collection<Dampening> dampenings = definitionsService.getTriggerDampenings(TEST_TENANT, t.getId(), null);
+        Collection<Condition> allConditions = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
+        Collection<Dampening> allDampenings = definitionsService.getTriggerDampenings(TEST_TENANT, t.getId(), null);
 
         String id = t.getId();
         t.setId(newTriggerId);
@@ -252,15 +252,27 @@ public abstract class DefinitionsTest {
         t.setId(id);
 
         Trigger nt = definitionsService.getTrigger(TEST_TENANT, newTriggerId);
-        for (Condition c : conditions) {
-            c.setTriggerId(newTriggerId);
+
+        Collection<Condition> conditions = new ArrayList<>();
+        for (Mode mode : Mode.values()) {
+            conditions.clear();
+            for (Condition c : allConditions) {
+                if (c.getTriggerMode() == mode) {
+                    c.setTriggerId(newTriggerId);
+                    conditions.add(c);
+                }
+            }
+            if (conditions.isEmpty()) {
+                continue;
+            }
             if (t.isGroup()) {
-                definitionsService.addGroupCondition(TEST_TENANT, newTriggerId, c.getTriggerMode(), c, null);
+                definitionsService.setGroupConditions(TEST_TENANT, newTriggerId, mode, conditions, null);
             } else {
-                definitionsService.addCondition(TEST_TENANT, newTriggerId, c.getTriggerMode(), c);
+                definitionsService.setConditions(TEST_TENANT, newTriggerId, mode, conditions);
             }
         }
-        for (Dampening d : dampenings) {
+
+        for (Dampening d : allDampenings) {
             d.setTriggerId(newTriggerId);
             if (t.isGroup()) {
                 definitionsService.addGroupDampening(TEST_TENANT, d);
@@ -379,30 +391,42 @@ public abstract class DefinitionsTest {
 
         Map<String, String> dataIdMap = new HashMap<>(1);
         dataIdMap.put("NumericData-Token", "NumericData-01");
-
         Trigger nt1 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-1-trigger", "Member-1",
                 null, dataIdMap);
         assertNotNull(nt1);
+
         dataIdMap.put("NumericData-Token", "NumericData-02");
         Trigger nt2 = definitionsService.addMemberTrigger(TEST_TENANT, t.getId(), "member-2-trigger", "Member-2",
                 null, dataIdMap);
         assertNotNull(nt2);
 
-        CompareCondition groupCondition = new CompareCondition(t.getId(), Mode.FIRING, "Data1Id-Token", Operator.LT,
-                50.0D, "Data2Id-Token");
+        Collection<Condition> groupConditions = definitionsService.getTriggerConditions(TEST_TENANT, "group-trigger",
+                null);
+        assertNotNull(groupConditions);
+        assertEquals(1, groupConditions.size());
 
-        Map<String, Map<String, String>> ccDataIdMap = new HashMap<>(2);
+        groupConditions = new ArrayList<>(groupConditions);
+
+        CompareCondition compareCondition = new CompareCondition(t.getId(), Mode.FIRING, "Data1Id-Token", Operator.LT,
+                50.0D, "Data2Id-Token");
+        groupConditions.add(compareCondition);
+
+        Map<String, Map<String, String>> dataIdMemberMap = new HashMap<>(3);
+        Map<String, String> numericDataMemberMap = new HashMap<>(1);
         Map<String, String> data1IdMemberMap = new HashMap<>(1);
         Map<String, String> data2IdMemberMap = new HashMap<>(1);
+        numericDataMemberMap.put(nt1.getId(), "NumericData-01");
+        numericDataMemberMap.put(nt2.getId(), "NumericData-02");
         data1IdMemberMap.put(nt1.getId(), "Data1Id-Member-1");
         data1IdMemberMap.put(nt2.getId(), "Data1Id-Member-2");
         data2IdMemberMap.put(nt1.getId(), "Data2Id-Member-1");
         data2IdMemberMap.put(nt2.getId(), "Data2Id-Member-2");
-        ccDataIdMap.put("Data1Id-Token", data1IdMemberMap);
-        ccDataIdMap.put("Data2Id-Token", data2IdMemberMap);
+        dataIdMemberMap.put("NumericData-Token", numericDataMemberMap);
+        dataIdMemberMap.put("Data1Id-Token", data1IdMemberMap);
+        dataIdMemberMap.put("Data2Id-Token", data2IdMemberMap);
 
-        Collection<Condition> conditionSet = definitionsService.addGroupCondition(TEST_TENANT, "group-trigger",
-                Mode.FIRING, groupCondition, ccDataIdMap);
+        Collection<Condition> conditionSet = definitionsService.setGroupConditions(TEST_TENANT, "group-trigger",
+                Mode.FIRING, groupConditions, dataIdMemberMap);
         assertNotNull(conditionSet);
         assertEquals(2, conditionSet.size());
         Iterator<Condition> ci = conditionSet.iterator();
@@ -411,7 +435,7 @@ public abstract class DefinitionsTest {
             c = ci.next();
         }
         CompareCondition cc = (CompareCondition) c;
-        groupCondition = cc;
+        compareCondition = cc;
         assertEquals(cc.toString(), cc.getTriggerId(), t.getId());
         assertEquals(cc.toString(), Mode.FIRING, cc.getTriggerMode());
         assertEquals(cc.toString(), cc.getDataId(), "Data1Id-Token");
@@ -421,10 +445,10 @@ public abstract class DefinitionsTest {
         assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
         assertEquals(cc.toString(), 2, cc.getConditionSetSize());
 
-        Collection<Trigger> memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
-        assertTrue(memberren != null);
-        assertEquals(2, memberren.size());
-        for (Trigger member : memberren) {
+        Collection<Trigger> members = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(members != null);
+        assertEquals(2, members.size());
+        for (Trigger member : members) {
             conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, member.getId(), null);
             assertEquals(2, conditionSet.size());
             ci = conditionSet.iterator();
@@ -443,9 +467,10 @@ public abstract class DefinitionsTest {
             assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
         }
 
-        groupCondition.setOperator(Operator.GT);
-        groupCondition.setData2Multiplier(75D);
-        conditionSet = definitionsService.updateGroupCondition(TEST_TENANT, groupCondition);
+        compareCondition.setOperator(Operator.GT);
+        compareCondition.setData2Multiplier(75D);
+        conditionSet = definitionsService.setGroupConditions(TEST_TENANT, "group-trigger", Mode.FIRING,
+                groupConditions, dataIdMemberMap);
         assertNotNull(conditionSet);
         assertEquals(2, conditionSet.size());
         ci = conditionSet.iterator();
@@ -454,7 +479,7 @@ public abstract class DefinitionsTest {
             c = ci.next();
         }
         cc = (CompareCondition) c;
-        groupCondition = cc;
+        compareCondition = cc;
         assertEquals(cc.toString(), cc.getTriggerId(), t.getId());
         assertEquals(cc.toString(), Mode.FIRING, cc.getTriggerMode());
         assertEquals(cc.toString(), cc.getDataId(), "Data1Id-Token");
@@ -464,10 +489,10 @@ public abstract class DefinitionsTest {
         assertEquals(cc.toString(), 2, cc.getConditionSetSize());
         assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
 
-        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
-        assertTrue(memberren != null);
-        assertEquals(2, memberren.size());
-        for (Trigger member : memberren) {
+        members = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(members != null);
+        assertEquals(2, members.size());
+        for (Trigger member : members) {
             conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, member.getId(), null);
             assertEquals(2, conditionSet.size());
             ci = conditionSet.iterator();
@@ -486,17 +511,22 @@ public abstract class DefinitionsTest {
             assertEquals(cc.toString(), 2, cc.getConditionSetIndex());
         }
 
-        conditionSet = definitionsService.removeGroupCondition(TEST_TENANT, groupCondition.getConditionId());
+        groupConditions.remove(compareCondition);
+        dataIdMemberMap.remove("Data1Id-Token");
+        dataIdMemberMap.remove("Data2Id-Token");
+
+        conditionSet = definitionsService.setGroupConditions(TEST_TENANT, "group-trigger", Mode.FIRING,
+                groupConditions, dataIdMemberMap);
         assertNotNull(conditionSet);
         assertEquals(1, conditionSet.size());
         ci = conditionSet.iterator();
         c = ci.next();
         assertTrue(c.toString(), Condition.Type.COMPARE != c.getType());
 
-        memberren = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
-        assertTrue(memberren != null);
-        assertEquals(2, memberren.size());
-        for (Trigger member : memberren) {
+        members = definitionsService.getMemberTriggers(TEST_TENANT, "group-trigger", true);
+        assertTrue(members != null);
+        assertEquals(2, members.size());
+        for (Trigger member : members) {
             conditionSet = definitionsService.getTriggerConditions(TEST_TENANT, member.getId(), null);
             assertEquals(1, conditionSet.size());
             ci = conditionSet.iterator();

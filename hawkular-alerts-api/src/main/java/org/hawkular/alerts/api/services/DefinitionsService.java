@@ -352,42 +352,11 @@ public interface DefinitionsService {
      * @throws NotFoundException if trigger is not found
      * @throws Exception on any problem
      * @see {@link #addGroupCondition(String, String, Mode, Condition, Map)} for group-level conditions.
+     * @deprecated use {@link #setConditions(String, String, Mode, Collection)}
      */
+    @Deprecated
     Collection<Condition> addCondition(String tenantId, String triggerId, Mode triggerMode, Condition condition)
             throws Exception;
-
-    /**
-     * A convenience method that adds a new Condition to the existing condition set for the specified
-     * Group Trigger and trigger mode.  The new condition will be assigned the highest conditionSetIndex for the
-     * updated conditionSet.  The non-orphan member triggers will have the new condition applied, using the
-     * provided dataIdMemberMap. See {@link org.hawkular.alerts.api.json.MemberCondition#setDataIdMemberMap(Map)} for
-     * an example of the <code>dataIdMemberMap</code> parameter.
-     * <p>
-     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
-     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
-     * </p>
-     * The following Condition fields are ignored for the incoming condition, and set in the returned collection set:
-     * <pre>
-     *   conditionId
-     *   triggerId
-     *   triggerMode
-     *   conditionSetSize
-     *   conditionSetIndex
-     * </pre>
-     * @param tenantId Tenant where trigger is stored
-     * @param groupId Group Trigger adding the condition and whose non-orphan members will also have it added.
-     * @param triggerMode Mode where condition is applied
-     * @param groupCondition Not null, the condition to add
-     * @param dataIdMemberMap see above for details.
-     * @return The updated, persisted condition set for the group
-     * @throws NotFoundException if trigger is not found
-     * @throws Exception on any problem
-     * @see {@link #addCondition(String, String, Mode, Condition)} for non-group conditions.
-     * @see {@link org.hawkular.alerts.api.json.MemberCondition#setDataIdMemberMap(Map)} for an example of the
-     * <code>dataIdMemberMap</code> parameter.
-     */
-    Collection<Condition> addGroupCondition(String tenantId, String groupId, Mode triggerMode,
-            Condition groupCondition, Map<String, Map<String, String>> dataIdMemberMap) throws Exception;
 
     /**
      * A convenience method that removes a Condition from an existing condition set.
@@ -400,25 +369,10 @@ public interface DefinitionsService {
      * @return The updated, persisted condition set. Not null. Can be empty.
      * @throws Exception on any problem
      * @see {@link #removeGroupCondition(String, String)} for group-level conditions.
+     * @deprecated use {@link #setConditions(String, String, Mode, Collection)}
      */
+    @Deprecated
     Collection<Condition> removeCondition(String tenantId, String conditionId) throws Exception;
-
-    /**
-     * A convenience method that removes a Condition from an existing condition set.
-     * <p>
-     * The group's non-orphan member triggers will be similarly updated.
-     * </p>
-     * <p>
-     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
-     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
-     * </p>
-     * @param tenantId Tenant where trigger and his conditions are stored
-     * @param groupConditionId Condition id to be removed from the group trigger
-     * @return The updated, persisted condition set. Not null. Can be empty.
-     * @throws Exception on any problem
-     * @see {@link #removeCondition(String, String)} for non-group conditions.
-     */
-    Collection<Condition> removeGroupCondition(String tenantId, String groupConditionId) throws Exception;
 
     /**
      * A convenience method that updates an existing condition.
@@ -431,25 +385,10 @@ public interface DefinitionsService {
      * @return The updated, persisted condition set. Not null. Can be empty.
      * @throws Exception on any problem
      * @see {@link #updateGroupCondition(String, Condition)} for group-level conditions.
+     * @deprecated use {@link #setConditions(String, String, Mode, Collection)}
      */
+    @Deprecated
     Collection<Condition> updateCondition(String tenantId, Condition condition) throws Exception;
-
-    /**
-     * A convenience method that updates an existing group condition.
-     * <p>
-     * The group's non-orphan member triggers will be similarly updated.
-     * </p>
-     * <p>
-     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
-     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
-     * </p>
-     * @param tenantId
-     * @param groupCondition Not null. conditionId must be for an existing condition.
-     * @return The updated, persisted condition set. Not null. Can be empty.
-     * @throws Exception on any problem
-     * @see {@link #updateCondition(String, Condition)} for non-group conditions.
-     */
-    Collection<Condition> updateGroupCondition(String tenantId, Condition groupCondition) throws Exception;
 
     /**
      * The condition set for a trigger's trigger mode is treated as a whole.  When making any change to the
@@ -483,7 +422,38 @@ public interface DefinitionsService {
     Collection<Condition> setConditions(String tenantId, String triggerId, Mode triggerMode,
             Collection<Condition> conditions) throws Exception;
 
+    /**
+     * The condition set for the specified Group Trigger and trigger mode.  The set conditions are ordered
+     * using the Collection ordering as the conditionSet ordering (assuming an ordered Collection implementation
+     * is supplied).  Any existing conditions are replaced. The non-orphan member triggers will have the new condition
+     * set applied, using the provided dataIdMemberMap.
+     * See {@link org.hawkular.alerts.api.json.GroupConditions#setDataIdMemberMap(Map)} for
+     * an example of the <code>dataIdMemberMap</code> parameter.  The following Condition fields are ignored for
+     * the incoming conditions, and set in the returned collection set:
+     * <pre>
+     *   conditionId
+     *   triggerId
+     *   triggerMode
+     *   conditionSetSize
+     *   conditionSetIndex
+     * </pre>
+     * @param tenantId Tenant where trigger is stored
+     * @param groupId Group Trigger adding the condition and whose non-orphan members will also have it added.
+     * @param triggerMode Mode where condition is applied
+     * @param groupCondition Not null, the condition to add
+     * @param dataIdMemberMap see above for details.
+     * @return The updated, persisted condition set for the group
+     * @throws NotFoundException if trigger is not found
+     * @throws Exception on any problem
+     * @see {@link #addCondition(String, String, Mode, Condition)} for non-group conditions.
+     * @see {@link org.hawkular.alerts.api.json.MemberCondition#setDataIdMemberMap(Map)} for an example of the
+     * <code>dataIdMemberMap</code> parameter.
+     */
+    Collection<Condition> setGroupConditions(String tenantId, String groupId, Mode triggerMode,
+            Collection<Condition> groupConditions, Map<String, Map<String, String>> dataIdMemberMap) throws Exception;
 
+
+    @Deprecated
     Condition getCondition(String tenantId, String conditionId) throws Exception;
 
     /**

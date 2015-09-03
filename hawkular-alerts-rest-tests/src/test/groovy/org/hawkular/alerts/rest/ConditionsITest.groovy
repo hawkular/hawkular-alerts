@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals
 
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.CompareCondition
+import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.StringCondition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition
@@ -46,17 +47,20 @@ class ConditionsITest extends AbstractITestBase {
         AvailabilityCondition testCond = new AvailabilityCondition("test-trigger-1",
                 "No-Metric", Operator.NOT_UP);
 
-        resp = client.post(path: "triggers/test-trigger-1/conditions", body: testCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( testCond );
+        resp = client.put(path: "triggers/test-trigger-1/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
         testCond.setOperator(Operator.UP)
-        resp = client.put(path: "triggers/test-trigger-1/conditions/" + testCond.conditionId, body: testCond)
+        resp = client.put(path: "triggers/test-trigger-1/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals("UP", resp.data[0].operator)
 
-        resp = client.delete(path: "triggers/test-trigger-1/conditions/" + testCond.conditionId)
+        conditions.clear();
+        resp = client.put(path: "triggers/test-trigger-1/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(0, resp.data.size())
 
@@ -76,18 +80,26 @@ class ConditionsITest extends AbstractITestBase {
         CompareCondition testCond = new CompareCondition("test-trigger-2",
                 "No-Metric-1", CompareCondition.Operator.LT, 1.0, "No-Metric-2");
 
-        resp = client.post(path: "triggers/test-trigger-2/conditions", body: testCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( testCond );
+        resp = client.put(path: "triggers/test-trigger-2/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
         testCond.setOperator(CompareCondition.Operator.GT)
-        resp = client.put(path: "triggers/test-trigger-2/conditions/" + testCond.getConditionId(), body: testCond)
+        resp = client.put(path: "triggers/test-trigger-2/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-2/conditions")
         assertEquals(1, resp.data.size())
         assertEquals("GT", resp.data[0].operator)
 
-        resp = client.delete(path: "triggers/test-trigger-2/conditions/" + testCond.getConditionId())
+        conditions.clear();
+        resp = client.put(path: "triggers/test-trigger-2/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-2/conditions")
+        assertEquals(0, resp.data.size())
 
         resp = client.delete(path: "triggers/test-trigger-2")
         assertEquals(200, resp.status)
@@ -105,18 +117,26 @@ class ConditionsITest extends AbstractITestBase {
         StringCondition testCond = new StringCondition("test-trigger-3",
                 "No-Metric", StringCondition.Operator.CONTAINS, "test", false);
 
-        resp = client.post(path: "triggers/test-trigger-3/conditions", body: testCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( testCond );
+        resp = client.put(path: "triggers/test-trigger-3/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
         testCond.setOperator(StringCondition.Operator.ENDS_WITH)
-        resp = client.put(path: "triggers/test-trigger-3/conditions/" + testCond.getConditionId(), body: testCond)
+        resp = client.put(path: "triggers/test-trigger-3/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-3/conditions")
         assertEquals(1, resp.data.size())
         assertEquals("ENDS_WITH", resp.data[0].operator)
 
-        resp = client.delete(path: "triggers/test-trigger-3/conditions/" + testCond.getConditionId())
+        conditions.clear();
+        resp = client.put(path: "triggers/test-trigger-3/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-3/conditions")
+        assertEquals(0, resp.data.size())
 
         resp = client.delete(path: "triggers/test-trigger-3")
         assertEquals(200, resp.status)
@@ -137,11 +157,10 @@ class ConditionsITest extends AbstractITestBase {
         ThresholdCondition testCond2 = new ThresholdCondition("test-trigger-4",
                 "No-Metric", ThresholdCondition.Operator.LT, 4.10);
 
-        resp = client.post(path: "triggers/test-trigger-4/conditions", body: testCond1)
-        assertEquals(200, resp.status)
-        assertEquals(1, resp.data.size())
-
-        resp = client.post(path: "triggers/test-trigger-4/conditions", body: testCond2)
+        Collection<Condition> conditions = new ArrayList<>(2);
+        conditions.add( testCond1 );
+        conditions.add( testCond2 );
+        resp = client.put(path: "triggers/test-trigger-4/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size())
 
@@ -149,26 +168,21 @@ class ConditionsITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size())
 
-        testCond1 = resp.data[0];
-        testCond2 = resp.data[1];
-
         testCond1.setOperator(ThresholdCondition.Operator.LTE)
-        resp = client.put(path: "triggers/test-trigger-4/conditions/" + testCond1.getConditionId(), body: testCond1)
+        resp = client.put(path: "triggers/test-trigger-4/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-4/conditions")
         assertEquals(2, resp.data.size())
         assertEquals("LTE", resp.data[0].operator)
 
-        resp = client.delete(path: "triggers/test-trigger-4/conditions/" + testCond1.getConditionId())
+        conditions.clear();
+        conditions.add(testCond2);
+        resp = client.put(path: "triggers/test-trigger-4/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "triggers/test-trigger-4/conditions")
-        assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-
-        testCond1 = resp.data[0];
-
-        resp = client.delete(path: "triggers/test-trigger-4/conditions/" + testCond1.getConditionId())
-        assertEquals(200, resp.status)
 
         resp = client.delete(path: "triggers/test-trigger-4")
         assertEquals(200, resp.status)
@@ -188,18 +202,26 @@ class ConditionsITest extends AbstractITestBase {
                 ThresholdRangeCondition.Operator.INCLUSIVE, ThresholdRangeCondition.Operator.EXCLUSIVE,
                 10.51, 10.99, true);
 
-        resp = client.post(path: "triggers/test-trigger-5/conditions", body: testCond)
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( testCond );
+        resp = client.put(path: "triggers/test-trigger-5/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
         testCond.setOperatorHigh(ThresholdRangeCondition.Operator.INCLUSIVE)
-        resp = client.put(path: "triggers/test-trigger-5/conditions/" + testCond.getConditionId(), body: testCond)
+        resp = client.put(path: "triggers/test-trigger-5/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-5/conditions")
         assertEquals(1, resp.data.size())
         assertEquals("INCLUSIVE", resp.data[0].operatorHigh)
 
-        resp = client.delete(path: "triggers/test-trigger-5/conditions/" + testCond.getConditionId())
+        conditions.clear();
+        resp = client.put(path: "triggers/test-trigger-5/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-5/conditions")
+        assertEquals(0, resp.data.size())
 
         resp = client.delete(path: "triggers/test-trigger-5")
         assertEquals(200, resp.status)
