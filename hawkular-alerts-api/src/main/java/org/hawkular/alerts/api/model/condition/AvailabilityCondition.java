@@ -61,6 +61,11 @@ public class AvailabilityCondition extends Condition {
         this(triggerId, triggerMode, 1, 1, dataId, operator);
     }
 
+    public AvailabilityCondition(String tenantId, String triggerId, Mode triggerMode,
+                                 String dataId, Operator operator) {
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, operator);
+    }
+
     public AvailabilityCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator) {
         this(triggerId, FIRING, conditionSetSize, conditionSetIndex, dataId, operator);
@@ -68,7 +73,12 @@ public class AvailabilityCondition extends Condition {
 
     public AvailabilityCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.AVAILABILITY);
+        this(null, triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, operator);
+    }
+
+    public AvailabilityCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize, int
+            conditionSetIndex, String dataId, Operator operator) {
+        super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.AVAILABILITY);
         this.dataId = dataId;
         this.operator = operator;
     }

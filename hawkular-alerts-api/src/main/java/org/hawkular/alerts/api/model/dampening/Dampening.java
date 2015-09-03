@@ -44,6 +44,9 @@ public class Dampening {
     };
 
     @JsonInclude
+    private String tenantId;
+
+    @JsonInclude
     private String triggerId;
 
     @JsonInclude
@@ -96,9 +99,6 @@ public class Dampening {
     @JsonIgnore
     private transient List<Set<ConditionEval>> satisfyingEvals = new ArrayList<Set<ConditionEval>>();
 
-    @JsonInclude
-    private String tenantId;
-
     public Dampening() {
         this("Default", Mode.FIRING, Type.STRICT, 1, 1, 0);
     }
@@ -112,10 +112,16 @@ public class Dampening {
      * @return the configured Dampening
      */
     public static Dampening forStrict(String triggerId, Mode triggerMode, int numConsecutiveTrueEvals) {
+        return forStrict(null, triggerId, triggerMode, numConsecutiveTrueEvals);
+    }
+
+    public static Dampening forStrict(String tenantId, String triggerId, Mode triggerMode,
+                                      int numConsecutiveTrueEvals) {
         if (numConsecutiveTrueEvals < 1) {
             throw new IllegalArgumentException("NumConsecutiveTrueEvals must be >= 1");
         }
-        return new Dampening(triggerId, triggerMode, Type.STRICT, numConsecutiveTrueEvals, numConsecutiveTrueEvals, 0);
+        return new Dampening(tenantId, triggerId, triggerMode, Type.STRICT, numConsecutiveTrueEvals,
+                numConsecutiveTrueEvals, 0);
     }
 
     /**
@@ -128,13 +134,18 @@ public class Dampening {
      * @return the configured Dampening
      */
     public static Dampening forRelaxedCount(String triggerId, Mode triggerMode, int numTrueEvals, int numTotalEvals) {
+        return forRelaxedCount(null, triggerId, triggerMode, numTrueEvals, numTotalEvals);
+    }
+
+    public static Dampening forRelaxedCount(String tenantId, String triggerId, Mode triggerMode, int numTrueEvals,
+                                            int numTotalEvals) {
         if (numTrueEvals < 1) {
             throw new IllegalArgumentException("NumTrueEvals must be >= 1");
         }
         if (numTotalEvals <= numTrueEvals) {
             throw new IllegalArgumentException("NumTotalEvals must be > NumTrueEvals");
         }
-        return new Dampening(triggerId, triggerMode, Type.RELAXED_COUNT, numTrueEvals, numTotalEvals, 0);
+        return new Dampening(tenantId, triggerId, triggerMode, Type.RELAXED_COUNT, numTrueEvals, numTotalEvals, 0);
     }
 
     /**
@@ -149,13 +160,18 @@ public class Dampening {
      * @return the configured Dampening
      */
     public static Dampening forRelaxedTime(String triggerId, Mode triggerMode, int numTrueEvals, long evalPeriod) {
+        return forRelaxedTime(null, triggerId, triggerMode, numTrueEvals, evalPeriod);
+    }
+
+    public static Dampening forRelaxedTime(String tenantId, String triggerId, Mode triggerMode, int numTrueEvals,
+                                           long evalPeriod) {
         if (numTrueEvals < 1) {
             throw new IllegalArgumentException("NumTrueEvals must be >= 1");
         }
         if (evalPeriod < 1) {
             throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
         }
-        return new Dampening(triggerId, triggerMode, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
+        return new Dampening(tenantId, triggerId, triggerMode, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
     }
 
     /**
@@ -169,10 +185,14 @@ public class Dampening {
      * @return the configured Dampening
      */
     public static Dampening forStrictTime(String triggerId, Mode triggerMode, long evalPeriod) {
+        return forStrictTime(null, triggerId, triggerMode, evalPeriod);
+    }
+
+    public static Dampening forStrictTime(String tenantId, String triggerId, Mode triggerMode, long evalPeriod) {
         if (evalPeriod < 1) {
             throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
         }
-        return new Dampening(triggerId, triggerMode, Type.STRICT_TIME, 0, 0, evalPeriod);
+        return new Dampening(tenantId, triggerId, triggerMode, Type.STRICT_TIME, 0, 0, evalPeriod);
     }
 
     /**
@@ -186,14 +206,24 @@ public class Dampening {
      * @return the configured Dampening
      */
     public static Dampening forStrictTimeout(String triggerId, Mode triggerMode, long evalPeriod) {
+        return forStrictTimeout(null, triggerId, triggerMode, evalPeriod);
+    }
+
+    public static Dampening forStrictTimeout(String tenantId, String triggerId, Mode triggerMode, long evalPeriod) {
         if (evalPeriod < 1) {
             throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
         }
-        return new Dampening(triggerId, triggerMode, Type.STRICT_TIMEOUT, 0, 0, evalPeriod);
+        return new Dampening(tenantId, triggerId, triggerMode, Type.STRICT_TIMEOUT, 0, 0, evalPeriod);
     }
+
 
     public Dampening(String triggerId, Mode triggerMode, Type type, int evalTrueSetting, int evalTotalSetting,
             long evalTimeSetting) {
+        this(null, triggerId, triggerMode, type, evalTrueSetting, evalTotalSetting, evalTimeSetting);
+    }
+
+    public Dampening(String tenantId, String triggerId, Mode triggerMode, Type type, int evalTrueSetting,
+                     int evalTotalSetting, long evalTimeSetting) {
         super();
         this.triggerId = triggerId;
         this.type = type;

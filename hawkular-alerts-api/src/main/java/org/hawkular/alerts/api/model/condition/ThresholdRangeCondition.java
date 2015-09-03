@@ -90,6 +90,14 @@ public class ThresholdRangeCondition extends Condition {
              thresholdLow, thresholdHigh, inRange);
     }
 
+    public ThresholdRangeCondition(String tenantId, String triggerId, Mode triggerMode,
+                                   String dataId, Operator operatorLow, Operator operatorHigh,
+                                   Double thresholdLow, Double thresholdHigh, boolean inRange) {
+
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, operatorLow, operatorHigh,
+                thresholdLow, thresholdHigh, inRange);
+    }
+
     public ThresholdRangeCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operatorLow, Operator operatorHigh,
             Double thresholdLow, Double thresholdHigh, boolean inRange) {
@@ -101,7 +109,14 @@ public class ThresholdRangeCondition extends Condition {
     public ThresholdRangeCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operatorLow, Operator operatorHigh,
             Double thresholdLow, Double thresholdHigh, boolean inRange) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.RANGE);
+        this(null, triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, operatorLow, operatorHigh,
+                thresholdLow, thresholdHigh, inRange);
+    }
+
+    public ThresholdRangeCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
+                                   int conditionSetIndex, String dataId, Operator operatorLow, Operator operatorHigh,
+                                   Double thresholdLow, Double thresholdHigh, boolean inRange) {
+        super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.RANGE);
         this.dataId = dataId;
         this.operatorLow = operatorLow;
         this.operatorHigh = operatorHigh;

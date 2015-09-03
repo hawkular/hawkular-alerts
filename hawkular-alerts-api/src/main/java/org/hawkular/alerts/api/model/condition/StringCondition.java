@@ -71,7 +71,13 @@ public class StringCondition extends Condition {
 
     public StringCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator, String pattern, boolean ignoreCase) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.STRING);
+        this(null, triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, operator, pattern, ignoreCase);
+    }
+
+    public StringCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
+                           int conditionSetIndex, String dataId, Operator operator, String pattern,
+                           boolean ignoreCase) {
+        super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.STRING);
         this.dataId = dataId;
         this.operator = operator;
         this.pattern = pattern;

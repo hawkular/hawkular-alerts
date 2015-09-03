@@ -18,6 +18,7 @@ package org.hawkular.alerts.api.model.condition;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.hawkular.alerts.api.model.trigger.Mode;
@@ -74,14 +75,16 @@ public abstract class Condition {
     @JsonInclude
     protected String conditionId;
 
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 
     public Condition() {
         // for json assembly
     }
 
-    public Condition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex, Type type) {
+    public Condition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+                     Type type) {
+        this.tenantId = tenantId;
         this.triggerId = triggerId;
         this.triggerMode = triggerMode;
         this.conditionSetSize = conditionSetSize;
@@ -139,6 +142,9 @@ public abstract class Condition {
     }
 
     public Map<String, String> getContext() {
+        if (null == context) {
+            context = new HashMap<>();
+        }
         return context;
     }
 

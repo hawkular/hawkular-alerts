@@ -44,6 +44,7 @@
     <module>hawkular-alerts-actions-aerogear</module>
     <module>hawkular-alerts-actions-pagerduty</module>
     <module>hawkular-alerts-actions-file</module>
+    <module>hawkular-alerts-actions-tests</module>
   </modules>
 
   <dependencies>
