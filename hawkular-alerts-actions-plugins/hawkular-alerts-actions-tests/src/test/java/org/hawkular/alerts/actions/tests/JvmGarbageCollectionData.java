@@ -61,28 +61,28 @@ public class JvmGarbageCollectionData extends CommonData {
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdCondition(TEST_TENANT,
-                trigger.getId(),
+        firingCondition = new ThresholdCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdCondition.Operator.GT,
                 1000d);
+        firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "GC Duration");
         firingCondition.getContext().put("unit", "ms");
 
-        autoResolveCondition = new ThresholdCondition(TEST_TENANT,
-                trigger.getId(),
+        autoResolveCondition = new ThresholdCondition(trigger.getId(),
                 Mode.AUTORESOLVE,
                 dataId,
                 ThresholdCondition.Operator.LTE,
                 1000d);
+        autoResolveCondition.setTenantId(TEST_TENANT);
         autoResolveCondition.getContext().put("description", "GC Duration");
         autoResolveCondition.getContext().put("unit", "ms");
 
-        firingDampening = Dampening.forStrictTimeout(TEST_TENANT,
-                trigger.getId(),
+        firingDampening = Dampening.forStrictTimeout(trigger.getId(),
                 Mode.FIRING,
                 10000);
+        firingDampening.setTenantId(TEST_TENANT);
 
     }
 

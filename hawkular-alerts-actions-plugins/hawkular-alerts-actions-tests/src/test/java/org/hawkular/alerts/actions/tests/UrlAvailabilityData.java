@@ -60,24 +60,24 @@ public class UrlAvailabilityData extends CommonData {
                 triggerDescription,
                 context);
 
-        firingCondition = new AvailabilityCondition(TEST_TENANT,
-                trigger.getId(),
+        firingCondition = new AvailabilityCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 AvailabilityCondition.Operator.NOT_UP);
+        firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "Availability");
 
-        autoResolveCondition = new AvailabilityCondition(TEST_TENANT,
-                trigger.getId(),
+        autoResolveCondition = new AvailabilityCondition(trigger.getId(),
                 Mode.AUTORESOLVE,
                 dataId,
                 AvailabilityCondition.Operator.UP);
+        autoResolveCondition.setTenantId(TEST_TENANT);
         autoResolveCondition.getContext().put("description", "Availability");
 
-        firingDampening = Dampening.forStrictTime(TEST_TENANT,
-                trigger.getId(),
+        firingDampening = Dampening.forStrictTime(trigger.getId(),
                 Mode.FIRING,
                 10000);
+        firingDampening.setTenantId(TEST_TENANT);
 
     }
 

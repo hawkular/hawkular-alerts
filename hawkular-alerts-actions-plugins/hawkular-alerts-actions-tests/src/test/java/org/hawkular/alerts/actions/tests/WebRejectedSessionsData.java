@@ -61,28 +61,28 @@ public class WebRejectedSessionsData extends CommonData {
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdCondition(TEST_TENANT,
-                trigger.getId(),
+        firingCondition = new ThresholdCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdCondition.Operator.GT,
                 65d);
+        firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "Rejected Sessions");
         firingCondition.getContext().put("unit", "sessions");
 
-        autoResolveCondition = new ThresholdCondition(TEST_TENANT,
-                trigger.getId(),
+        autoResolveCondition = new ThresholdCondition(trigger.getId(),
                 Mode.AUTORESOLVE,
                 dataId,
                 ThresholdCondition.Operator.LTE,
                 65d);
+        autoResolveCondition.setTenantId(TEST_TENANT);
         autoResolveCondition.getContext().put("description", "Rejected Sessions");
         autoResolveCondition.getContext().put("unit", "sessions");
 
-        firingDampening = Dampening.forStrictTimeout(TEST_TENANT,
-                trigger.getId(),
+        firingDampening = Dampening.forStrictTimeout(trigger.getId(),
                 Mode.FIRING,
                 10000);
+        firingDampening.setTenantId(TEST_TENANT);
 
     }
 

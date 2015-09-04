@@ -61,8 +61,7 @@ public class WebContainerPendingRequestsData extends CommonData {
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdRangeCondition(TEST_TENANT,
-                trigger.getId(),
+        firingCondition = new ThresholdRangeCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -70,11 +69,11 @@ public class WebContainerPendingRequestsData extends CommonData {
                 200d,
                 5000d,
                 false);
+        firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "Pending Requests");
         firingCondition.getContext().put("unit", "requests");
 
-        autoResolveCondition = new ThresholdRangeCondition(TEST_TENANT,
-                trigger.getId(),
+        autoResolveCondition = new ThresholdRangeCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
@@ -82,13 +81,14 @@ public class WebContainerPendingRequestsData extends CommonData {
                 200d,
                 5000d,
                 true);
+        autoResolveCondition.setTenantId(TEST_TENANT);
         autoResolveCondition.getContext().put("description", "Pending Requests");
         autoResolveCondition.getContext().put("unit", "requests");
 
-        firingDampening = Dampening.forStrictTimeout(TEST_TENANT,
-                trigger.getId(),
+        firingDampening = Dampening.forStrictTimeout(trigger.getId(),
                 Mode.FIRING,
                 10000);
+        firingDampening.setTenantId(TEST_TENANT);
 
     }
 

@@ -63,26 +63,15 @@ public class ThresholdCondition extends Condition {
         this(triggerId, triggerMode, 1, 1, dataId, operator, threshold);
     }
 
-    public ThresholdCondition(String tenantId, String triggerId, Mode triggerMode,
-                              String dataId, Operator operator, Double threshold) {
-
-        this(tenantId, triggerId, triggerMode, 1, 1, dataId, operator, threshold);
-    }
-
     public ThresholdCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator, Double threshold) {
 
         this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, operator, threshold);
     }
 
-    public ThresholdCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
-            String dataId, Operator operator, Double threshold) {
-        this(null, triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, operator, threshold);
-    }
-
-    public ThresholdCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
+    public ThresholdCondition(String triggerId, Mode triggerMode, int conditionSetSize,
                               int conditionSetIndex, String dataId, Operator operator, Double threshold) {
-        super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.THRESHOLD);
+        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.THRESHOLD);
         this.dataId = dataId;
         this.operator = operator;
         this.threshold = threshold;

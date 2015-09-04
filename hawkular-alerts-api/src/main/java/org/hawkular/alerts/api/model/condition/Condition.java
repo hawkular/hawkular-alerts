@@ -82,9 +82,7 @@ public abstract class Condition {
         // for json assembly
     }
 
-    public Condition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
-                     Type type) {
-        this.tenantId = tenantId;
+    public Condition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex, Type type) {
         this.triggerId = triggerId;
         this.triggerMode = triggerMode;
         this.conditionSetSize = conditionSetSize;

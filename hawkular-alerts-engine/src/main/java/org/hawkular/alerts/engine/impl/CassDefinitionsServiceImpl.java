@@ -229,7 +229,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     Mode triggerMode = Mode.valueOf((String) c.get("triggerMode"));
                     int conditionSetSize = (Integer) c.get("conditionSetSize");
                     int conditionSetIndex = (Integer) c.get("conditionSetIndex");
-                    String description = (String) c.get("description");
                     String type = (String) c.get("type");
                     Map<String, String> context = (Map<String, String>) c.get("context");
                     if (type != null && !type.isEmpty() && type.equals("threshold")) {

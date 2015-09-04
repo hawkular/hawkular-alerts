@@ -61,8 +61,7 @@ public class JvmNonHeapUsageData extends CommonData {
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdRangeCondition(TEST_TENANT,
-                trigger.getId(),
+        firingCondition = new ThresholdRangeCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -70,11 +69,11 @@ public class JvmNonHeapUsageData extends CommonData {
                 100d,
                 300d,
                 false);
+        firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "Heap Usage");
         firingCondition.getContext().put("unit", "Mb");
 
-        autoResolveCondition = new ThresholdRangeCondition(TEST_TENANT,
-                trigger.getId(),
+        autoResolveCondition = new ThresholdRangeCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
@@ -82,13 +81,14 @@ public class JvmNonHeapUsageData extends CommonData {
                 100d,
                 300d,
                 true);
+        autoResolveCondition.setTenantId(TEST_TENANT);
         autoResolveCondition.getContext().put("description", "Heap Usage");
         autoResolveCondition.getContext().put("unit", "Mb");
 
-        firingDampening = Dampening.forStrictTimeout(TEST_TENANT,
-                trigger.getId(),
+        firingDampening = Dampening.forStrictTimeout(trigger.getId(),
                 Mode.FIRING,
                 10000);
+        firingDampening.setTenantId(TEST_TENANT);
 
     }
 
