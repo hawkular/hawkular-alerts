@@ -7,7 +7,11 @@
     "type": "threshold",
     "dataId": "NumericData-01",
     "operator": "LT",
-    "threshold": 10.0
+    "threshold": 10.0,
+    "context": {
+      "description": "Response Time",
+      "unit": "ms"
+    }
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
     "triggerId": "trigger-2",
@@ -17,7 +21,11 @@
     "type": "threshold",
     "dataId": "NumericData-01",
     "operator": "GTE",
-    "threshold": 15.0
+    "threshold": 15.0,
+    "context": {
+      "description": "Response Time",
+      "unit": "ms"
+    }
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
     "triggerId": "trigger-2",
@@ -27,7 +35,11 @@
     "type": "threshold",
     "dataId": "NumericData-02",
     "operator": "GTE",
-    "threshold": 15.0
+    "threshold": 15.0,
+    "context": {
+      "description": "Response Time",
+      "unit": "ms"
+    }
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
     "triggerId": "trigger-3",
@@ -40,7 +52,11 @@
     "operatorHigh": "INCLUSIVE",
     "thresholdLow": 10.0,
     "thresholdHigh": 15.0,
-    "inRange": true
+    "inRange": true,
+    "context": {
+      "description": "Response Time",
+      "unit": "ms"
+    }
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
     "triggerId": "trigger-4",
@@ -51,7 +67,11 @@
     "dataId": "NumericData-01",
     "operator": "LT",
     "data2Multiplier": 0.5,
-    "data2Id": "NumericData-02"
+    "data2Id": "NumericData-02",
+    "context": {
+      "description": "Response Time",
+      "unit": "ms"
+    }
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
     "triggerId": "trigger-5",
@@ -62,7 +82,10 @@
     "dataId": "StringData-01",
     "operator": "STARTS_WITH",
     "pattern": "Fred",
-    "ignoreCase": false
+    "ignoreCase": false,
+    "context": {
+      "description": "Server Name"
+    }
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
     "triggerId": "trigger-6",
@@ -71,7 +94,10 @@
     "conditionSetIndex": 1,
     "type": "availability",
     "dataId": "Availability-01",
-    "operator": "NOT_UP"
+    "operator": "NOT_UP",
+    "context": {
+      "description": "Server"
+    }
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
     "triggerId": "trigger-7",
@@ -81,6 +107,10 @@
     "type": "threshold",
     "dataId": "NumericData-Token",
     "operator": "LT",
-    "threshold": 10.0
+    "threshold": 10.0,
+    "context": {
+      "description": "Response Time",
+      "unit": "ms"
+    }
   }
 ]}

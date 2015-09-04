@@ -66,8 +66,8 @@ public class AvailabilityCondition extends Condition {
         this(triggerId, FIRING, conditionSetSize, conditionSetIndex, dataId, operator);
     }
 
-    public AvailabilityCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
-            String dataId, Operator operator) {
+    public AvailabilityCondition(String triggerId, Mode triggerMode, int conditionSetSize, int
+            conditionSetIndex, String dataId, Operator operator) {
         super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.AVAILABILITY);
         this.dataId = dataId;
         this.operator = operator;

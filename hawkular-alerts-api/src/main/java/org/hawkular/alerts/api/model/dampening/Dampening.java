@@ -44,6 +44,9 @@ public class Dampening {
     };
 
     @JsonInclude
+    private String tenantId;
+
+    @JsonInclude
     private String triggerId;
 
     @JsonInclude
@@ -96,9 +99,6 @@ public class Dampening {
     @JsonIgnore
     private transient List<Set<ConditionEval>> satisfyingEvals = new ArrayList<Set<ConditionEval>>();
 
-    @JsonInclude
-    private String tenantId;
-
     public Dampening() {
         this("Default", Mode.FIRING, Type.STRICT, 1, 1, 0);
     }
@@ -115,7 +115,8 @@ public class Dampening {
         if (numConsecutiveTrueEvals < 1) {
             throw new IllegalArgumentException("NumConsecutiveTrueEvals must be >= 1");
         }
-        return new Dampening(triggerId, triggerMode, Type.STRICT, numConsecutiveTrueEvals, numConsecutiveTrueEvals, 0);
+        return new Dampening(triggerId, triggerMode, Type.STRICT, numConsecutiveTrueEvals,
+                numConsecutiveTrueEvals, 0);
     }
 
     /**
@@ -193,7 +194,7 @@ public class Dampening {
     }
 
     public Dampening(String triggerId, Mode triggerMode, Type type, int evalTrueSetting, int evalTotalSetting,
-            long evalTimeSetting) {
+                     long evalTimeSetting) {
         super();
         this.triggerId = triggerId;
         this.type = type;

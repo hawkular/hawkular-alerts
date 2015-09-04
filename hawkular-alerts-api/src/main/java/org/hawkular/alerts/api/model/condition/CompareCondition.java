@@ -72,8 +72,9 @@ public class CompareCondition extends Condition {
         this(triggerId, FIRING, conditionSetSize, conditionSetIndex, dataId, operator, data2Multiplier, data2Id);
     }
 
-    public CompareCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
-            String dataId, Operator operator, Double data2Multiplier, String data2Id) {
+    public CompareCondition(String triggerId, Mode triggerMode, int conditionSetSize,
+                            int conditionSetIndex, String dataId, Operator operator, Double data2Multiplier,
+                            String data2Id) {
         super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.COMPARE);
         this.dataId = dataId;
         this.operator = operator;

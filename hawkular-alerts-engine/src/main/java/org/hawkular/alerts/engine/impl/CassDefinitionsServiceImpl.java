@@ -230,6 +230,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     int conditionSetSize = (Integer) c.get("conditionSetSize");
                     int conditionSetIndex = (Integer) c.get("conditionSetIndex");
                     String type = (String) c.get("type");
+                    Map<String, String> context = (Map<String, String>) c.get("context");
                     if (type != null && !type.isEmpty() && type.equals("threshold")) {
                         String dataId = (String) c.get("dataId");
                         String operator = (String) c.get("operator");
@@ -244,6 +245,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setOperator(ThresholdCondition.Operator.valueOf(operator));
                         newCondition.setThreshold(threshold);
                         newCondition.setTenantId(tenantId);
+                        newCondition.setContext(context);
 
                         initCondition(newCondition);
                         log.debugf("Init registration - Inserting [%s]", newCondition);
@@ -268,6 +270,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setThresholdHigh(thresholdHigh);
                         newCondition.setInRange(inRange);
                         newCondition.setTenantId(tenantId);
+                        newCondition.setContext(context);
 
                         initCondition(newCondition);
                         log.debugf("Init registration - Inserting [%s]", newCondition);
@@ -288,6 +291,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setData2Multiplier(data2Multiplier);
                         newCondition.setData2Id(data2Id);
                         newCondition.setTenantId(tenantId);
+                        newCondition.setContext(context);
 
                         initCondition(newCondition);
                         log.debugf("Init registration - Inserting [%s]", newCondition);
@@ -308,6 +312,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setPattern(pattern);
                         newCondition.setIgnoreCase(ignoreCase);
                         newCondition.setTenantId(tenantId);
+                        newCondition.setContext(context);
 
                         initCondition(newCondition);
                         log.debugf("Init registration - Inserting [%s]", newCondition);
@@ -324,6 +329,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setDataId(dataId);
                         newCondition.setOperator(AvailabilityCondition.Operator.valueOf(operator));
                         newCondition.setTenantId(tenantId);
+                        newCondition.setContext(context);
 
                         initCondition(newCondition);
                         log.debugf("Init registration - Inserting [%s]", newCondition);
@@ -1851,9 +1857,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 if (cond instanceof AvailabilityCondition) {
 
                     AvailabilityCondition aCond = (AvailabilityCondition) cond;
-                    futures.add(session.executeAsync(insertConditionAvailability.bind(aCond.getTenantId(), aCond
-                            .getTriggerId(),
-                            aCond.getTriggerMode().name(), aCond.getConditionSetSize(), aCond.getConditionSetIndex(),
+                    futures.add(session.executeAsync(insertConditionAvailability.bind(aCond.getTenantId(),
+                            aCond.getTriggerId(), aCond.getTriggerMode().name(), aCond.getContext(),
+                            aCond.getConditionSetSize(), aCond.getConditionSetIndex(),
                             aCond.getConditionId(), aCond.getDataId(), aCond.getOperator().name())));
 
                 } else if (cond instanceof CompareCondition) {
@@ -1861,41 +1867,43 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     CompareCondition cCond = (CompareCondition) cond;
                     dataIds.add(cCond.getData2Id());
                     futures.add(session.executeAsync(insertConditionCompare.bind(cCond.getTenantId(),
-                            cCond.getTriggerId(), cCond.getTriggerMode().name(), cCond.getConditionSetSize(),
-                            cCond.getConditionSetIndex(), cCond.getConditionId(), cCond.getDataId(),
-                            cCond.getOperator().name(), cCond.getData2Id(), cCond.getData2Multiplier())));
+                            cCond.getTriggerId(), cCond.getTriggerMode().name(), cCond.getContext(),
+                            cCond.getConditionSetSize(), cCond.getConditionSetIndex(),
+                            cCond.getConditionId(), cCond.getDataId(), cCond.getOperator().name(), cCond.getData2Id(),
+                            cCond.getData2Multiplier())));
 
                 } else if (cond instanceof ExternalCondition) {
 
                     ExternalCondition eCond = (ExternalCondition) cond;
-                    futures.add(session.executeAsync(insertConditionExternal.bind(eCond.getTenantId(), eCond
-                            .getTriggerId(), eCond.getTriggerMode().name(), eCond.getConditionSetSize(),
-                            eCond.getConditionSetIndex(), eCond.getConditionId(), eCond.getDataId(),
-                            eCond.getSystemId(), eCond.getExpression())));
+                    futures.add(session.executeAsync(insertConditionExternal.bind(eCond.getTenantId(),
+                            eCond.getTriggerId(), eCond.getTriggerMode().name(), eCond.getContext(),
+                            eCond.getConditionSetSize(), eCond.getConditionSetIndex(), eCond.getConditionId(),
+                            eCond.getDataId(), eCond.getSystemId(), eCond.getExpression())));
 
                 } else if (cond instanceof StringCondition) {
 
                     StringCondition sCond = (StringCondition) cond;
-                    futures.add(session.executeAsync(insertConditionString.bind(sCond.getTenantId(), sCond
-                            .getTriggerId(), sCond.getTriggerMode().name(), sCond.getConditionSetSize(),
-                            sCond.getConditionSetIndex(), sCond.getConditionId(), sCond.getDataId(),
-                            sCond.getOperator().name(), sCond.getPattern(), sCond.isIgnoreCase())));
+                    futures.add(session.executeAsync(insertConditionString.bind(sCond.getTenantId(),
+                            sCond.getTriggerId(), sCond.getTriggerMode().name(), sCond.getContext(),
+                            sCond.getConditionSetSize(), sCond.getConditionSetIndex(), sCond.getConditionId(),
+                            sCond.getDataId(), sCond.getOperator().name(), sCond.getPattern(), sCond.isIgnoreCase())));
 
                 } else if (cond instanceof ThresholdCondition) {
                     ThresholdCondition tCond = (ThresholdCondition) cond;
                     futures.add(session.executeAsync(insertConditionThreshold.bind(tCond.getTenantId(),
-                            tCond.getTriggerId(), tCond.getTriggerMode().name(), tCond.getConditionSetSize(),
-                            tCond.getConditionSetIndex(), tCond.getConditionId(), tCond.getDataId(),
-                            tCond.getOperator().name(), tCond.getThreshold())));
+                            tCond.getTriggerId(), tCond.getTriggerMode().name(), tCond.getContext(),
+                            tCond.getConditionSetSize(), tCond.getConditionSetIndex(),
+                            tCond.getConditionId(), tCond.getDataId(), tCond.getOperator().name(),
+                            tCond.getThreshold())));
 
                 } else if (cond instanceof ThresholdRangeCondition) {
 
                     ThresholdRangeCondition rCond = (ThresholdRangeCondition) cond;
                     futures.add(session.executeAsync(insertConditionThresholdRange.bind(rCond.getTenantId(),
-                            rCond.getTriggerId(), rCond.getTriggerMode().name(), rCond.getConditionSetSize(),
-                            rCond.getConditionSetIndex(), rCond.getConditionId(), rCond.getDataId(),
-                            rCond.getOperatorLow().name(), rCond.getOperatorHigh().name(), rCond.getThresholdLow(),
-                            rCond.getThresholdHigh(), rCond.isInRange())));
+                            rCond.getTriggerId(), rCond.getTriggerMode().name(), rCond.getContext(),
+                            rCond.getConditionSetSize(), rCond.getConditionSetIndex(), rCond.getConditionId(),
+                            rCond.getDataId(), rCond.getOperatorLow().name(), rCond.getOperatorHigh().name(),
+                            rCond.getThresholdLow(), rCond.getThresholdHigh(), rCond.isInRange())));
 
                 } else {
                     throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
@@ -2213,6 +2221,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     aCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
                     aCondition.setDataId(row.getString("dataId"));
                     aCondition.setOperator(AvailabilityCondition.Operator.valueOf(row.getString("operator")));
+                    aCondition.setContext(row.getMap("context", String.class, String.class));
                     condition = aCondition;
                     break;
                 case COMPARE:
@@ -2226,6 +2235,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     cCondition.setOperator(CompareCondition.Operator.valueOf(row.getString("operator")));
                     cCondition.setData2Id(row.getString("data2Id"));
                     cCondition.setData2Multiplier(row.getDouble("data2Multiplier"));
+                    cCondition.setContext(row.getMap("context", String.class, String.class));
                     condition = cCondition;
                     break;
                 case EXTERNAL:
@@ -2238,6 +2248,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     eCondition.setDataId(row.getString("dataId"));
                     eCondition.setSystemId(row.getString("operator"));
                     eCondition.setExpression(row.getString("pattern"));
+                    eCondition.setContext(row.getMap("context", String.class, String.class));
                     condition = eCondition;
                     break;
                 case RANGE:
@@ -2255,6 +2266,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     rCondition.setThresholdLow(row.getDouble("thresholdLow"));
                     rCondition.setThresholdHigh(row.getDouble("thresholdHigh"));
                     rCondition.setInRange(row.getBool("inRange"));
+                    rCondition.setContext(row.getMap("context", String.class, String.class));
                     condition = rCondition;
                     break;
                 case STRING:
@@ -2268,6 +2280,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     sCondition.setOperator(StringCondition.Operator.valueOf(row.getString("operator")));
                     sCondition.setPattern(row.getString("pattern"));
                     sCondition.setIgnoreCase(row.getBool("ignoreCase"));
+                    sCondition.setContext(row.getMap("context", String.class, String.class));
                     condition = sCondition;
                     break;
                 case THRESHOLD:
@@ -2280,6 +2293,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     tCondition.setDataId(row.getString("dataId"));
                     tCondition.setOperator(ThresholdCondition.Operator.valueOf(row.getString("operator")));
                     tCondition.setThreshold(row.getDouble("threshold"));
+                    tCondition.setContext(row.getMap("context", String.class, String.class));
                     condition = tCondition;
                     break;
                 default:

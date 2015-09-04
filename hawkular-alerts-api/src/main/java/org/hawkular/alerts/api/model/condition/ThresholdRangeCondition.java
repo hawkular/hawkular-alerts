@@ -98,9 +98,9 @@ public class ThresholdRangeCondition extends Condition {
                 thresholdLow, thresholdHigh, inRange);
     }
 
-    public ThresholdRangeCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
-            String dataId, Operator operatorLow, Operator operatorHigh,
-            Double thresholdLow, Double thresholdHigh, boolean inRange) {
+    public ThresholdRangeCondition(String triggerId, Mode triggerMode, int conditionSetSize,
+                                   int conditionSetIndex, String dataId, Operator operatorLow, Operator operatorHigh,
+                                   Double thresholdLow, Double thresholdHigh, boolean inRange) {
         super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.RANGE);
         this.dataId = dataId;
         this.operatorLow = operatorLow;
