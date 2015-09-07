@@ -25,24 +25,24 @@ import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
-import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
-import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
+import org.hawkular.alerts.api.model.condition.ThresholdCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Provide test data for Active Session Alerts on Web resources
+ * Provide test data for Response Time Alerts on Url resources
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class WebActiveSessionsData extends CommonData {
+public class WebRequestsResponseTimeData extends CommonData {
 
     public static Trigger trigger;
-    public static ThresholdRangeCondition firingCondition;
-    public static ThresholdRangeCondition autoResolveCondition;
+    public static ThresholdCondition firingCondition;
+    public static ThresholdCondition autoResolveCondition;
     public static Dampening firingDampening;
 
     static {
@@ -50,40 +50,34 @@ public class WebActiveSessionsData extends CommonData {
         Map<String, String> context = new HashMap<>();
         context.put("resourceType", "App Server");
         context.put("resourceName", "thevault~Local");
-        context.put("category", "Web Sessions");
+        context.put("category", "Web Requests");
 
-        String triggerId = "thevault~local-web-active-sessions-trigger";
-        String triggerDescription = "Web Active Sessions for thevault~Local";
-        String dataId = "thevault~local-web-active-sessions-data-id";
+        String triggerId = "thevault~local-web-request-response-time-trigger";
+        String triggerDescription = "Web Request Response Time for thevault~Local";
+        String dataId = "thevault~local-web-request-response-time-data-id";
 
         trigger = new Trigger(TEST_TENANT,
                 triggerId,
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdRangeCondition(trigger.getId(),
+        firingCondition = new ThresholdCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
-                ThresholdRangeCondition.Operator.INCLUSIVE,
-                ThresholdRangeCondition.Operator.INCLUSIVE,
-                200d,
-                5000d,
-                false);
+                ThresholdCondition.Operator.GT,
+                1000d);
         firingCondition.setTenantId(TEST_TENANT);
-        firingCondition.getContext().put("description", "Active Sessions");
-        firingCondition.getContext().put("unit", "sessions");
+        firingCondition.getContext().put("description", "Response Time");
+        firingCondition.getContext().put("unit", "ms");
 
-        autoResolveCondition = new ThresholdRangeCondition(trigger.getId(),
-                Mode.FIRING,
+        autoResolveCondition = new ThresholdCondition(trigger.getId(),
+                Mode.AUTORESOLVE,
                 dataId,
-                ThresholdRangeCondition.Operator.EXCLUSIVE,
-                ThresholdRangeCondition.Operator.EXCLUSIVE,
-                200d,
-                5000d,
-                true);
+                ThresholdCondition.Operator.LTE,
+                1000d);
         autoResolveCondition.setTenantId(TEST_TENANT);
-        autoResolveCondition.getContext().put("description", "Active Sessions");
-        autoResolveCondition.getContext().put("unit", "sessions");
+        autoResolveCondition.getContext().put("description", "Response Time");
+        autoResolveCondition.getContext().put("unit", "ms");
 
         firingDampening = Dampening.forStrictTimeout(trigger.getId(),
                 Mode.FIRING,
@@ -98,8 +92,8 @@ public class WebActiveSessionsData extends CommonData {
 
         NumericData rtBadData1 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis(),
-                5010d);
-        ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(firingCondition, rtBadData1);
+                1900d);
+        ThresholdConditionEval eval1 = new ThresholdConditionEval(firingCondition, rtBadData1);
 
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);
@@ -108,8 +102,8 @@ public class WebActiveSessionsData extends CommonData {
         // 5 seconds later
         NumericData rtBadData2 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
-                5014d);
-        ThresholdRangeConditionEval eval2 = new ThresholdRangeConditionEval(firingCondition, rtBadData2);
+                1800d);
+        ThresholdConditionEval eval2 = new ThresholdConditionEval(firingCondition, rtBadData2);
 
         Set<ConditionEval> evalSet2 = new HashSet<>();
         evalSet2.add(eval2);
@@ -128,8 +122,8 @@ public class WebActiveSessionsData extends CommonData {
 
         NumericData rtGoodData = new NumericData(autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
-                1000d);
-        ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(autoResolveCondition, rtGoodData);
+                900d);
+        ThresholdConditionEval eval1 = new ThresholdConditionEval(autoResolveCondition, rtGoodData);
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);
         resolvedEvals.add(evalSet1);
@@ -138,6 +132,7 @@ public class WebActiveSessionsData extends CommonData {
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
         unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;
     }

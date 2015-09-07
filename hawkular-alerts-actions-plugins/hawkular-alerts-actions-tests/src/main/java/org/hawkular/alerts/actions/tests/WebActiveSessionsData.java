@@ -33,12 +33,12 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Provide test data for Current Request Threads Alerts on Container resources
+ * Provide test data for Active Session Alerts on Web resources
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class WebContainerCurrentThreadsData extends CommonData {
+public class WebActiveSessionsData extends CommonData {
 
     public static Trigger trigger;
     public static ThresholdRangeCondition firingCondition;
@@ -50,11 +50,11 @@ public class WebContainerCurrentThreadsData extends CommonData {
         Map<String, String> context = new HashMap<>();
         context.put("resourceType", "App Server");
         context.put("resourceName", "thevault~Local");
-        context.put("category", "Web Container");
+        context.put("category", "Web Sessions");
 
-        String triggerId = "thevault~local-container-current-threads-trigger";
-        String triggerDescription = "Current Container Threads for thevault~Local";
-        String dataId = "thevault~local-container-current-threads-data-id";
+        String triggerId = "thevault~local-web-active-sessions-trigger";
+        String triggerDescription = "Web Active Sessions for thevault~Local";
+        String dataId = "thevault~local-web-active-sessions-data-id";
 
         trigger = new Trigger(TEST_TENANT,
                 triggerId,
@@ -70,8 +70,8 @@ public class WebContainerCurrentThreadsData extends CommonData {
                 5000d,
                 false);
         firingCondition.setTenantId(TEST_TENANT);
-        firingCondition.getContext().put("description", "Current Threads");
-        firingCondition.getContext().put("unit", "threads");
+        firingCondition.getContext().put("description", "Active Sessions");
+        firingCondition.getContext().put("unit", "sessions");
 
         autoResolveCondition = new ThresholdRangeCondition(trigger.getId(),
                 Mode.FIRING,
@@ -82,8 +82,8 @@ public class WebContainerCurrentThreadsData extends CommonData {
                 5000d,
                 true);
         autoResolveCondition.setTenantId(TEST_TENANT);
-        autoResolveCondition.getContext().put("description", "Current Threads");
-        autoResolveCondition.getContext().put("unit", "threads");
+        autoResolveCondition.getContext().put("description", "Active Sessions");
+        autoResolveCondition.getContext().put("unit", "sessions");
 
         firingDampening = Dampening.forStrictTimeout(trigger.getId(),
                 Mode.FIRING,
@@ -138,6 +138,7 @@ public class WebContainerCurrentThreadsData extends CommonData {
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
         unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;
     }

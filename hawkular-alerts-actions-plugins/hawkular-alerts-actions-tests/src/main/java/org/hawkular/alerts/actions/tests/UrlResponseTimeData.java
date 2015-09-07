@@ -24,25 +24,25 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.Alert;
-import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
-import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.condition.ThresholdCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.Availability;
+import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Provide test data for Availability Alerts on Url resources
+ * Provide test data for Response Time Alerts on Url resources
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class UrlAvailabilityData extends CommonData {
+public class UrlResponseTimeData extends CommonData {
 
     public static Trigger trigger;
-    public static AvailabilityCondition firingCondition;
-    public static AvailabilityCondition autoResolveCondition;
+    public static ThresholdCondition firingCondition;
+    public static ThresholdCondition autoResolveCondition;
     public static Dampening firingDampening;
 
     static {
@@ -51,30 +51,34 @@ public class UrlAvailabilityData extends CommonData {
         context.put("resourceType", "URL");
         context.put("resourceName", "http://www.jboss.org");
 
-        String triggerId = "jboss-url-availability-trigger";
-        String triggerDescription = "Availability for http://www.jboss.org";
-        String dataId = "jboss-url-availability-data-id";
+        String triggerId = "jboss-url-response-time-trigger";
+        String triggerDescription = "Response Time for http://www.jboss.org";
+        String dataId = "jboss-url-response-time-data-id";
 
         trigger = new Trigger(TEST_TENANT,
                 triggerId,
                 triggerDescription,
                 context);
 
-        firingCondition = new AvailabilityCondition(trigger.getId(),
+        firingCondition = new ThresholdCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
-                AvailabilityCondition.Operator.NOT_UP);
+                ThresholdCondition.Operator.GT,
+                1000d);
         firingCondition.setTenantId(TEST_TENANT);
-        firingCondition.getContext().put("description", "Availability");
+        firingCondition.getContext().put("description", "Response Time");
+        firingCondition.getContext().put("unit", "ms");
 
-        autoResolveCondition = new AvailabilityCondition(trigger.getId(),
+        autoResolveCondition = new ThresholdCondition(trigger.getId(),
                 Mode.AUTORESOLVE,
                 dataId,
-                AvailabilityCondition.Operator.UP);
+                ThresholdCondition.Operator.LTE,
+                1000d);
         autoResolveCondition.setTenantId(TEST_TENANT);
-        autoResolveCondition.getContext().put("description", "Availability");
+        autoResolveCondition.getContext().put("description", "Response Time");
+        autoResolveCondition.getContext().put("unit", "ms");
 
-        firingDampening = Dampening.forStrictTime(trigger.getId(),
+        firingDampening = Dampening.forStrictTimeout(trigger.getId(),
                 Mode.FIRING,
                 10000);
         firingDampening.setTenantId(TEST_TENANT);
@@ -85,20 +89,20 @@ public class UrlAvailabilityData extends CommonData {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Availability avBadData1 = new Availability(firingCondition.getDataId(),
+        NumericData rtBadData1 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis(),
-                Availability.AvailabilityType.DOWN);
-        AvailabilityConditionEval eval1 = new AvailabilityConditionEval(firingCondition, avBadData1);
+                1900d);
+        ThresholdConditionEval eval1 = new ThresholdConditionEval(firingCondition, rtBadData1);
 
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Availability avBadData2 = new Availability(firingCondition.getDataId(),
+        NumericData rtBadData2 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
-                Availability.AvailabilityType.DOWN);
-        AvailabilityConditionEval eval2 = new AvailabilityConditionEval(firingCondition, avBadData2);
+                1800d);
+        ThresholdConditionEval eval2 = new ThresholdConditionEval(firingCondition, rtBadData2);
 
         Set<ConditionEval> evalSet2 = new HashSet<>();
         evalSet2.add(eval2);
@@ -115,9 +119,10 @@ public class UrlAvailabilityData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Availability avGoodData = new Availability(autoResolveCondition.getDataId(), System.currentTimeMillis() + 20000,
-                Availability.AvailabilityType.UP);
-        AvailabilityConditionEval eval1 = new AvailabilityConditionEval(autoResolveCondition, avGoodData);
+        NumericData rtGoodData = new NumericData(autoResolveCondition.getDataId(),
+                System.currentTimeMillis() + 20000,
+                900d);
+        ThresholdConditionEval eval1 = new ThresholdConditionEval(autoResolveCondition, rtGoodData);
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);
         resolvedEvals.add(evalSet1);
@@ -126,6 +131,7 @@ public class UrlAvailabilityData extends CommonData {
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
         unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;
     }

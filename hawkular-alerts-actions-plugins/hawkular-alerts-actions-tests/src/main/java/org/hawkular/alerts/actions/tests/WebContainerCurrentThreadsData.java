@@ -25,24 +25,24 @@ import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
-import org.hawkular.alerts.api.model.condition.ThresholdCondition;
-import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
+import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Provide test data for Garbage Collection Alerts on Jvm resources
+ * Provide test data for Current Request Threads Alerts on Container resources
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class JvmGarbageCollectionData extends CommonData {
+public class WebContainerCurrentThreadsData extends CommonData {
 
     public static Trigger trigger;
-    public static ThresholdCondition firingCondition;
-    public static ThresholdCondition autoResolveCondition;
+    public static ThresholdRangeCondition firingCondition;
+    public static ThresholdRangeCondition autoResolveCondition;
     public static Dampening firingDampening;
 
     static {
@@ -50,34 +50,40 @@ public class JvmGarbageCollectionData extends CommonData {
         Map<String, String> context = new HashMap<>();
         context.put("resourceType", "App Server");
         context.put("resourceName", "thevault~Local");
-        context.put("category", "JVM");
+        context.put("category", "Web Container");
 
-        String triggerId = "thevault~local-jvm-garbage-collection-trigger";
-        String triggerDescription = "JVM Garbage Collection for thevault~Local";
-        String dataId = "thevault~local-jvm-garbage-collection-data-id";
+        String triggerId = "thevault~local-container-current-threads-trigger";
+        String triggerDescription = "Current Container Threads for thevault~Local";
+        String dataId = "thevault~local-container-current-threads-data-id";
 
         trigger = new Trigger(TEST_TENANT,
                 triggerId,
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdCondition(trigger.getId(),
+        firingCondition = new ThresholdRangeCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
-                ThresholdCondition.Operator.GT,
-                1000d);
+                ThresholdRangeCondition.Operator.INCLUSIVE,
+                ThresholdRangeCondition.Operator.INCLUSIVE,
+                200d,
+                5000d,
+                false);
         firingCondition.setTenantId(TEST_TENANT);
-        firingCondition.getContext().put("description", "GC Duration");
-        firingCondition.getContext().put("unit", "ms");
+        firingCondition.getContext().put("description", "Current Threads");
+        firingCondition.getContext().put("unit", "threads");
 
-        autoResolveCondition = new ThresholdCondition(trigger.getId(),
-                Mode.AUTORESOLVE,
+        autoResolveCondition = new ThresholdRangeCondition(trigger.getId(),
+                Mode.FIRING,
                 dataId,
-                ThresholdCondition.Operator.LTE,
-                1000d);
+                ThresholdRangeCondition.Operator.EXCLUSIVE,
+                ThresholdRangeCondition.Operator.EXCLUSIVE,
+                200d,
+                5000d,
+                true);
         autoResolveCondition.setTenantId(TEST_TENANT);
-        autoResolveCondition.getContext().put("description", "GC Duration");
-        autoResolveCondition.getContext().put("unit", "ms");
+        autoResolveCondition.getContext().put("description", "Current Threads");
+        autoResolveCondition.getContext().put("unit", "threads");
 
         firingDampening = Dampening.forStrictTimeout(trigger.getId(),
                 Mode.FIRING,
@@ -92,8 +98,8 @@ public class JvmGarbageCollectionData extends CommonData {
 
         NumericData rtBadData1 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis(),
-                1900d);
-        ThresholdConditionEval eval1 = new ThresholdConditionEval(firingCondition, rtBadData1);
+                5010d);
+        ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(firingCondition, rtBadData1);
 
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);
@@ -102,8 +108,8 @@ public class JvmGarbageCollectionData extends CommonData {
         // 5 seconds later
         NumericData rtBadData2 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
-                1800d);
-        ThresholdConditionEval eval2 = new ThresholdConditionEval(firingCondition, rtBadData2);
+                5014d);
+        ThresholdRangeConditionEval eval2 = new ThresholdRangeConditionEval(firingCondition, rtBadData2);
 
         Set<ConditionEval> evalSet2 = new HashSet<>();
         evalSet2.add(eval2);
@@ -122,8 +128,8 @@ public class JvmGarbageCollectionData extends CommonData {
 
         NumericData rtGoodData = new NumericData(autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
-                900d);
-        ThresholdConditionEval eval1 = new ThresholdConditionEval(autoResolveCondition, rtGoodData);
+                1000d);
+        ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(autoResolveCondition, rtGoodData);
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);
         resolvedEvals.add(evalSet1);
@@ -132,6 +138,7 @@ public class JvmGarbageCollectionData extends CommonData {
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
         unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;
     }

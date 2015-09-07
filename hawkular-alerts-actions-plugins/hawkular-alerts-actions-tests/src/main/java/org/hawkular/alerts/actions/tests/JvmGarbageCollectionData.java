@@ -25,24 +25,24 @@ import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
-import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
-import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
+import org.hawkular.alerts.api.model.condition.ThresholdCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Provide test data for Pending Requests Alerts on Container resources
+ * Provide test data for Garbage Collection Alerts on Jvm resources
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class WebContainerPendingRequestsData extends CommonData {
+public class JvmGarbageCollectionData extends CommonData {
 
     public static Trigger trigger;
-    public static ThresholdRangeCondition firingCondition;
-    public static ThresholdRangeCondition autoResolveCondition;
+    public static ThresholdCondition firingCondition;
+    public static ThresholdCondition autoResolveCondition;
     public static Dampening firingDampening;
 
     static {
@@ -50,40 +50,34 @@ public class WebContainerPendingRequestsData extends CommonData {
         Map<String, String> context = new HashMap<>();
         context.put("resourceType", "App Server");
         context.put("resourceName", "thevault~Local");
-        context.put("category", "Web Container");
+        context.put("category", "JVM");
 
-        String triggerId = "thevault~local-container-pending-requests-trigger";
-        String triggerDescription = "Pending Container Requests for thevault~Local";
-        String dataId = "thevault~local-container-pending-requests-data-id";
+        String triggerId = "thevault~local-jvm-garbage-collection-trigger";
+        String triggerDescription = "JVM Garbage Collection for thevault~Local";
+        String dataId = "thevault~local-jvm-garbage-collection-data-id";
 
         trigger = new Trigger(TEST_TENANT,
                 triggerId,
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdRangeCondition(trigger.getId(),
+        firingCondition = new ThresholdCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
-                ThresholdRangeCondition.Operator.INCLUSIVE,
-                ThresholdRangeCondition.Operator.INCLUSIVE,
-                200d,
-                5000d,
-                false);
+                ThresholdCondition.Operator.GT,
+                1000d);
         firingCondition.setTenantId(TEST_TENANT);
-        firingCondition.getContext().put("description", "Pending Requests");
-        firingCondition.getContext().put("unit", "requests");
+        firingCondition.getContext().put("description", "GC Duration");
+        firingCondition.getContext().put("unit", "ms");
 
-        autoResolveCondition = new ThresholdRangeCondition(trigger.getId(),
-                Mode.FIRING,
+        autoResolveCondition = new ThresholdCondition(trigger.getId(),
+                Mode.AUTORESOLVE,
                 dataId,
-                ThresholdRangeCondition.Operator.EXCLUSIVE,
-                ThresholdRangeCondition.Operator.EXCLUSIVE,
-                200d,
-                5000d,
-                true);
+                ThresholdCondition.Operator.LTE,
+                1000d);
         autoResolveCondition.setTenantId(TEST_TENANT);
-        autoResolveCondition.getContext().put("description", "Pending Requests");
-        autoResolveCondition.getContext().put("unit", "requests");
+        autoResolveCondition.getContext().put("description", "GC Duration");
+        autoResolveCondition.getContext().put("unit", "ms");
 
         firingDampening = Dampening.forStrictTimeout(trigger.getId(),
                 Mode.FIRING,
@@ -98,8 +92,8 @@ public class WebContainerPendingRequestsData extends CommonData {
 
         NumericData rtBadData1 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis(),
-                5010d);
-        ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(firingCondition, rtBadData1);
+                1900d);
+        ThresholdConditionEval eval1 = new ThresholdConditionEval(firingCondition, rtBadData1);
 
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);
@@ -108,8 +102,8 @@ public class WebContainerPendingRequestsData extends CommonData {
         // 5 seconds later
         NumericData rtBadData2 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
-                5014d);
-        ThresholdRangeConditionEval eval2 = new ThresholdRangeConditionEval(firingCondition, rtBadData2);
+                1800d);
+        ThresholdConditionEval eval2 = new ThresholdConditionEval(firingCondition, rtBadData2);
 
         Set<ConditionEval> evalSet2 = new HashSet<>();
         evalSet2.add(eval2);
@@ -128,8 +122,8 @@ public class WebContainerPendingRequestsData extends CommonData {
 
         NumericData rtGoodData = new NumericData(autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
-                1000d);
-        ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(autoResolveCondition, rtGoodData);
+                900d);
+        ThresholdConditionEval eval1 = new ThresholdConditionEval(autoResolveCondition, rtGoodData);
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);
         resolvedEvals.add(evalSet1);
@@ -138,6 +132,7 @@ public class WebContainerPendingRequestsData extends CommonData {
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
         unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;
     }
