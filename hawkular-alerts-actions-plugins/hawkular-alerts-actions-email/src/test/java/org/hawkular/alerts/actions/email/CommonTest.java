@@ -21,6 +21,8 @@ import java.io.FileOutputStream;
 
 import javax.mail.Message;
 
+import org.junit.BeforeClass;
+
 /**
  * Helper methods for tests
  *
@@ -28,6 +30,11 @@ import javax.mail.Message;
  * @author Lucas Ponce
  */
 public class CommonTest {
+
+    @BeforeClass
+    public static void setUnitTest() {
+        System.setProperty(EmailPlugin.MAIL_SESSION_OFFLINE, "true");
+    }
 
     protected void writeEmailFile(Message msg, String fileName) throws Exception {
         File dir = new File("target/test-emails");

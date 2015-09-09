@@ -54,6 +54,21 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
  */
 public class PluginMessageDescription {
 
+    /** Context property "resourceType". Supported at Trigger.getContext() level */
+    public static final String CONTEXT_PROPERTY_RESOURCE_TYPE = "resourceType";
+
+    /** Context property "resourceName". Supported at Trigger.getContext() level */
+    public static final String CONTEXT_PROPERTY_RESOURCE_NAME = "resourceName";
+
+    /** Context property "unit". Supported at Condition.getContext() level */
+    public static final String CONTEXT_PROPERTY_UNIT = "unit";
+
+    /** Context property "description". Supported at Condition.getContext() level */
+    public static final String CONTEXT_PROPERTY_DESCRIPTION = "description";
+
+    /** Context property "description". Supported at Condition.getContext() level with CompareCondition classes */
+    public static final String CONTEXT_PROPERTY_DESCRIPTION2 = "description2";
+
     /** Shortcut for PluginMessage.getAction().message */
     private String message;
 
@@ -202,10 +217,10 @@ public class PluginMessageDescription {
             trigger = alert.getTrigger();
             if (trigger.getContext() != null &&
                     !trigger.getContext().isEmpty() &&
-                    trigger.getContext().containsKey("resourceType") &&
-                    trigger.getContext().containsKey("resourceName")) {
-                triggerDescription = trigger.getContext().get("resourceType") + " " +
-                        trigger.getContext().get("resourceName");
+                    trigger.getContext().containsKey(CONTEXT_PROPERTY_RESOURCE_TYPE) &&
+                    trigger.getContext().containsKey(CONTEXT_PROPERTY_RESOURCE_NAME)) {
+                triggerDescription = trigger.getContext().get(CONTEXT_PROPERTY_RESOURCE_TYPE) + " " +
+                        trigger.getContext().get(CONTEXT_PROPERTY_RESOURCE_NAME);
             } else {
                 triggerDescription = trigger.getName();
             }
@@ -249,6 +264,8 @@ public class PluginMessageDescription {
             case STRICT_TIMEOUT:
                 description += "after " + (d.getEvalTimeSetting()/1000) + " s";
                 break;
+            default:
+                throw new IllegalArgumentException(d.getType().name());
         }
         return description;
     }
@@ -284,59 +301,62 @@ public class PluginMessageDescription {
         for (int i = 0; i < numConditions; i++) {
             ConditionDescription condDesc = conditions[i];
             condDesc.average = ( condDesc.data.stream().reduce(0.0, (j,k) -> j+k ) ) / condDesc.data.size();
-            if (condDesc.condition.getContext().containsKey("unit")) {
+            if (condDesc.condition.getContext().containsKey(CONTEXT_PROPERTY_UNIT)) {
                 condDesc.averageDescription = decimalFormat.format(condDesc.average) + " " +
-                        condDesc.condition.getContext().get("unit");
+                        condDesc.condition.getContext().get(CONTEXT_PROPERTY_UNIT);
             }
         }
     }
 
     private Condition extractCondition(ConditionEval conditionEval) {
         if (conditionEval == null) return null;
-        if (conditionEval instanceof AvailabilityConditionEval) {
-            return ((AvailabilityConditionEval) conditionEval).getCondition();
-        } else if (conditionEval instanceof CompareConditionEval) {
-            return ((CompareConditionEval) conditionEval).getCondition();
-        } else if (conditionEval instanceof ExternalConditionEval) {
-            return ((ExternalConditionEval) conditionEval).getCondition();
-        } else if (conditionEval instanceof StringConditionEval) {
-            return ((StringConditionEval) conditionEval).getCondition();
-        } else if (conditionEval instanceof ThresholdConditionEval) {
-            return ((ThresholdConditionEval) conditionEval).getCondition();
-        } else if (conditionEval instanceof ThresholdRangeConditionEval) {
-            return ((ThresholdRangeConditionEval) conditionEval).getCondition();
-        } else {
-            return null;
+        switch (conditionEval.getType()) {
+            case AVAILABILITY:
+                return ((AvailabilityConditionEval) conditionEval).getCondition();
+            case COMPARE:
+                return ((CompareConditionEval) conditionEval).getCondition();
+            case EXTERNAL:
+                return ((ExternalConditionEval) conditionEval).getCondition();
+            case STRING:
+                return ((StringConditionEval) conditionEval).getCondition();
+            case THRESHOLD:
+                return ((ThresholdConditionEval) conditionEval).getCondition();
+            case RANGE:
+                return ((ThresholdRangeConditionEval) conditionEval).getCondition();
+            default:
+                return null;
         }
     }
 
     private Double extractValue(ConditionEval conditionEval) {
         if (conditionEval == null) return 0d;
-        if (conditionEval instanceof ThresholdConditionEval) {
-            return ((ThresholdConditionEval) conditionEval).getValue();
-        } else if (conditionEval instanceof ThresholdRangeConditionEval) {
-            return ((ThresholdRangeConditionEval) conditionEval).getValue();
-        } else {
-            return 0d;
+        switch (conditionEval.getType()) {
+            case THRESHOLD:
+                return ((ThresholdConditionEval) conditionEval).getValue();
+            case RANGE:
+                return ((ThresholdRangeConditionEval) conditionEval).getValue();
+            default:
+                return 0d;
         }
     }
 
     private String description(Condition condition) {
         if (condition == null) return null;
-        if (condition instanceof AvailabilityCondition) {
-            return availability((AvailabilityCondition) condition);
-        } else if (condition instanceof CompareCondition) {
-            return compare((CompareCondition) condition);
-        } else if (condition instanceof ExternalCondition) {
-            return external((ExternalCondition) condition);
-        } else if (condition instanceof StringCondition) {
-            return string((StringCondition) condition);
-        } else if (condition instanceof ThresholdCondition) {
-            return threshold((ThresholdCondition) condition);
-        } else if (condition instanceof ThresholdRangeCondition) {
-            return range((ThresholdRangeCondition) condition);
-        } else {
-            return null;
+        switch (condition.getType()) {
+            case AVAILABILITY:
+                return availability((AvailabilityCondition) condition);
+            case COMPARE:
+                return compare((CompareCondition) condition);
+            case EXTERNAL:
+                return external((ExternalCondition) condition);
+            case STRING:
+                return string((StringCondition) condition);
+            case THRESHOLD:
+                return threshold((ThresholdCondition) condition);
+            case RANGE:
+                return range((ThresholdRangeCondition) condition);
+            default:
+                return null;
         }
     }
 
@@ -352,8 +372,8 @@ public class PluginMessageDescription {
      */
     public String availability(AvailabilityCondition condition) {
         String description;
-        if (condition.getContext() != null && condition.getContext().get("description") != null) {
-            description = condition.getContext().get("description");
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION) != null) {
+            description = condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION);
         } else {
             description = condition.getDataId();
         }
@@ -368,6 +388,8 @@ public class PluginMessageDescription {
             case UP:
                 description += " is up";
                 break;
+            default:
+                throw new IllegalArgumentException(operator.name());
         }
         return description;
     }
@@ -388,8 +410,8 @@ public class PluginMessageDescription {
      */
     public String compare(CompareCondition condition) {
         String description;
-        if (condition.getContext() != null && condition.getContext().get("description") != null) {
-            description = condition.getContext().get("description");
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION) != null) {
+            description = condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION);
         } else {
             description = condition.getDataId();
         }
@@ -407,12 +429,14 @@ public class PluginMessageDescription {
             case GTE:
                 description += " greater or equals than ";
                 break;
+            default:
+                throw new IllegalArgumentException(operator.name());
         }
         if (condition.getData2Multiplier() != 1.0) {
             description += "( " + condition.getData2Multiplier() + " ";
         }
-        if (condition.getContext() != null && condition.getContext().get("description2") != null) {
-            description += condition.getContext().get("description2");
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION2) != null) {
+            description += condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION2);
         } else {
             description += condition.getData2Id();
         }
@@ -447,8 +471,8 @@ public class PluginMessageDescription {
      */
     public String string(StringCondition condition) {
         String description;
-        if (condition.getContext() != null && condition.getContext().get("description") != null) {
-            description = condition.getContext().get("description");
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION) != null) {
+            description = condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION);
         } else {
             description = condition.getDataId();
         }
@@ -472,6 +496,8 @@ public class PluginMessageDescription {
             case MATCH:
                 description += "matches to ";
                 break;
+            default:
+                throw new IllegalArgumentException(operator.name());
         }
         description += condition.getPattern();
         if (condition.isIgnoreCase()) {
@@ -495,8 +521,8 @@ public class PluginMessageDescription {
      */
     public String threshold(ThresholdCondition condition) {
         String description;
-        if (condition.getContext() != null && condition.getContext().get("description") != null) {
-            description = condition.getContext().get("description");
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION) != null) {
+            description = condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION);
         } else {
             description = condition.getDataId();
         }
@@ -513,10 +539,12 @@ public class PluginMessageDescription {
             case LTE:
                 description += " less or equal than ";
                 break;
+            default:
+                throw new IllegalArgumentException(condition.getOperator().name());
         }
         description += condition.getThreshold();
-        if (condition.getContext() != null && condition.getContext().get("unit") != null) {
-            description += " " + condition.getContext().get("unit");
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_UNIT) != null) {
+            description += " " + condition.getContext().get(CONTEXT_PROPERTY_UNIT);
         } else {
             description += " (threshold)";
         }
@@ -538,8 +566,8 @@ public class PluginMessageDescription {
      */
     public String range(ThresholdRangeCondition condition) {
         String description;
-        if (condition.getContext() != null && condition.getContext().get("description") != null) {
-            description = condition.getContext().get("description");
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION) != null) {
+            description = condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION);
         } else {
             description = condition.getDataId();
         }
@@ -563,8 +591,8 @@ public class PluginMessageDescription {
         } else {
             description += ")";
         }
-        if (condition.getContext() != null && condition.getContext().get("unit") != null) {
-            description += " " + condition.getContext().get("unit");
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_UNIT) != null) {
+            description += " " + condition.getContext().get(CONTEXT_PROPERTY_UNIT);
         } else {
             description += " (range)";
         }

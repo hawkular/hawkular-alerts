@@ -53,15 +53,23 @@ import org.jboss.logging.Logger;
 public class EmailPlugin implements ActionPluginListener {
     public static final String PLUGIN_NAME = "email";
 
-    public static final String MAIL_SESSION_PROPERTY = "org.hawkular.actions.email.session";
+    public static final String MAIL_SESSION_PROPERTY = "org.hawkular.alerts.actions.email.session";
+
+    /**
+     * This property is used for testing porpuses.
+     * When present javax.mail.Session will not be initialized.
+     * This is useful on unit tests scenario where the objective is to validate the email composition instead of
+     * email transport cappabilities.
+     */
+    public static final String MAIL_SESSION_OFFLINE = "org.hawkular.alerts.actions.email.session.offline";
 
     public static final String MESSAGE_ID = "Message-ID";
     public static final String IN_REPLY_TO = "in-reply-to";
 
-    public static final String DEFAULT_FROM_PROPERTY = "org.hawkular.actions.email.default.from";
+    public static final String DEFAULT_FROM_PROPERTY = "org.hawkular.alerts.actions.email.default.from";
     public static final String DEFAULT_FROM = System.getProperty(DEFAULT_FROM_PROPERTY, "noreply@hawkular.org");
 
-    public static final String DEFAULT_FROM_NAME_PROPERTY = "org.hawkular.actions.email.default.from-name";
+    public static final String DEFAULT_FROM_NAME_PROPERTY = "org.hawkular.alerts.actions.email.default.from-name";
     public static final String DEFAULT_FROM_NAME = System.getProperty(DEFAULT_FROM_NAME_PROPERTY, "Hawkular");
 
     public static final String HAWKULAR_BASE_URL = "HAWKULAR_BASE_URL";
@@ -187,6 +195,12 @@ public class EmailPlugin implements ActionPluginListener {
         defaultProperties.put(PROP_TEMPLATE_HTML, "");
 
         emailTemplate = new EmailTemplate();
+
+        boolean offLine = System.getProperty(MAIL_SESSION_OFFLINE) != null;
+
+        if (mailSession == null && !offLine) {
+            initMailSession();
+        }
     }
 
     private void initMailSession() {
@@ -211,9 +225,6 @@ public class EmailPlugin implements ActionPluginListener {
 
     @Override
     public void process(PluginMessage msg) throws Exception {
-        if (mailSession == null) {
-            initMailSession();
-        }
         Message message = createMimeMessage(msg);
         Transport.send(message);
 
