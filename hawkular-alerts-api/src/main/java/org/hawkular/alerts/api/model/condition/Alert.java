@@ -98,7 +98,6 @@ public class Alert {
      * over time, but an alert should be attached with the relevant instance.
      */
     @JsonInclude(Include.NON_EMPTY)
-    @Thin
     private Trigger trigger;
 
     /*
