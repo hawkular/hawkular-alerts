@@ -103,7 +103,7 @@
                                         <table width="540" cellspacing="0" cellpadding="0" border="0" class="flexible-container" style="margin:0 auto;">
                                             <tr>
                                                 <td align="center" style="padding-bottom:25px;">
-                                                    <#if alert?? && alert.status?? && alert.status == 'RESOLVED'>
+                                                    <#if status?? && status == 'resolved'>
                                                     <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAABoCAYAAAA6sjRJAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDowMDgwMTE3NDA3MjA2ODExODA4M0Q5RkNBQjM0RTkxNyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo3MDVBNDk0NTBFQkExMUU1ODIxQUFGRDlFRUJBM0ZBOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo3MDVBNDk0NDBFQkExMUU1ODIxQUFGRDlFRUJBM0ZBOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M2IChNYWNpbnRvc2gpIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6Rjg3RjExNzQwNzIwNjgxMTgwODNENUE0NkNCRkIyRTkiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MDA4MDExNzQwNzIwNjgxMTgwODNEOUZDQUIzNEU5MTciLz4gPC9yZGY6RGVzY3Jp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
                                                     " alt="Icon: alert resolved flag" border="0" width="60"
                                                          height="52" />
@@ -112,18 +112,25 @@
                                                     </#if>
                                                 </td>
                                             </tr>
-                                            <tr>
-                                                <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:15px; font-weight:bold; line-height:24px;">
-                                                    <#if htmlSubject??>
-                                                        ${htmlSubject}
-                                                    </#if>
-                                                </td>
-                                            </tr>
+                                            <#list conditions as condition>
+                                                <tr>
+                                                    <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:15px; font-weight:bold; line-height:24px;">
+                                                        ${condition.description}
+                                                    </td>
+                                                </tr>
+                                                <#if condition.averageDescription??>
+                                                    <tr>
+                                                        <td align="center" style="color:#999999; font-family:Open sans,sans-serif; font-size:13px; line-height:21px; padding-bottom:7px;">
+                                                        (Average ${condition.averageDescription})
+                                                        </td>
+                                                    </tr>
+                                                </#if>
+                                            </#list>
                                             <tr>
                                                 <td align="center" style="line-height:24px; padding-bottom:15px;">
-                                                    <a class="link" href="<#if url??>${url}<#else>http://www.hawkular.org</#if>" target="_blank"
+                                                    <a class="link" href="<#if baseUrl??>${baseUrl}<#else>http://www.hawkular.org</#if>" target="_blank"
                                                        style="color:#0099d3; font-family:Open sans,sans-serif;
-                                                       font-size:15px; text-decoration: none;"><#if alert?? && alert.trigger?? && alert.trigger.name??>${alert.trigger.name}</#if></a>
+                                                       font-size:15px; text-decoration: none;"><#if triggerDescription??>${triggerDescription}</#if></a>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -133,35 +140,9 @@
                                             </tr>
                                             <tr>
                                                 <td align="center" style="color:#999999; font-family:Open sans,sans-serif; font-size:13px; line-height:21px; padding-bottom:7px;">
-                                                <#if alert?? && alert.dampening?? && alert.dampening.type == 'STRICT_TIME'>alert triggered after ${alert.dampening.evalTimeSetting/1000} seconds </#if>
+                                                <#if dampeningDescription??>${dampeningDescription}</#if>
                                                 </td>
                                             </tr>
-                                            <#if condition?? && condition.type == 'THRESHOLD' && average??>
-                                            <tr>
-                                                <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:13px; line-height:21px;">
-                                                    Average response time: <span style="font-size:15px;">${average}</span> ms
-                                                </td>
-                                            </tr>
-                                                <tr>
-                                                    <td align="center" style="color:#999999; font-family:Open sans,sans-serif; font-size:13px; line-height:21px; padding-bottom:7px;">
-                                                        threshold is ${condition.threshold} ms
-                                                    </td>
-                                                </tr>
-                                            </#if>
-                                            <#if (numConditions > 1)>
-                                                <tr>
-                                                    <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:13px; line-height:21px;">
-                                                        Conditions:
-                                                    </td>
-                                                </tr>
-                                                <#list condDescs as condDesc>
-                                                    <tr>
-                                                        <td align="center" style="color:#999999; font-family:Open sans,sans-serif; font-size:13px; line-height:21px; padding-bottom:7px;">
-                                                        ${condDesc.type}: ${condDesc.description}
-                                                        </td>
-                                                    </tr>
-                                                </#list>
-                                            </#if>
                                             <#if alert?? && alert.status?? && alert.status == 'ACKNOWLEDGED'>
                                                 <tr>
                                                     <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:13px; line-height:21px;">
@@ -216,7 +197,7 @@
                                 </tr>
 
                                 <!-- View -->
-                                <#if url??>
+                                <#if baseUrl??>
                                 <tr>
                                     <td>
                                         <table width="600" cellspacing="0" cellpadding="0" border="0" class="flexible-container" style="margin:0 auto;">
@@ -230,7 +211,7 @@
                                 </tr>
                                 <tr>
                                     <td align="center" style="padding-bottom:50px;">
-                                        <a class="btn-primary" href="${url}" target="_blank" style="display:block; background-color:#0085cf; border:1px solid #006e9c; border-radius:1px; color:#ffffff; font-family:Open sans,sans-serif; font-size:14px; font-weight:600; line-height:1.3333333; padding:6px 10px; text-decoration:none; width: 100px;">
+                                        <a class="btn-primary" href="${baseUrl}" target="_blank" style="display:block; background-color:#0085cf; border:1px solid #006e9c; border-radius:1px; color:#ffffff; font-family:Open sans,sans-serif; font-size:14px; font-weight:600; line-height:1.3333333; padding:6px 10px; text-decoration:none; width: 100px;">
                                             View Metrics
                                         </a>
                                     </td>

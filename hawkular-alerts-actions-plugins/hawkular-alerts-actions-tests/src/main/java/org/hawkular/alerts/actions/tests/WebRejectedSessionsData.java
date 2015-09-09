@@ -33,12 +33,12 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Provide test data for Expired Session Alerts on Web resources
+ * Provide test data for Rejected Session Alerts on Web resources
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class WebExpiredSessionsData extends CommonData {
+public class WebRejectedSessionsData extends CommonData {
 
     public static Trigger trigger;
     public static ThresholdCondition firingCondition;
@@ -52,9 +52,9 @@ public class WebExpiredSessionsData extends CommonData {
         context.put("resourceName", "thevault~Local");
         context.put("category", "Web Sessions");
 
-        String triggerId = "thevault~local-web-expired-sessions-trigger";
-        String triggerDescription = "Expired Web Sessions for thevault~Local";
-        String dataId = "thevault~local-web-expired-sessions-data-id";
+        String triggerId = "thevault~local-web-rejected-sessions-trigger";
+        String triggerDescription = "Rejected Web Sessions for thevault~Local";
+        String dataId = "thevault~local-web-rejected-sessions-data-id";
 
         trigger = new Trigger(TEST_TENANT,
                 triggerId,
@@ -67,7 +67,7 @@ public class WebExpiredSessionsData extends CommonData {
                 ThresholdCondition.Operator.GT,
                 65d);
         firingCondition.setTenantId(TEST_TENANT);
-        firingCondition.getContext().put("description", "Expired Sessions");
+        firingCondition.getContext().put("description", "Rejected Sessions");
         firingCondition.getContext().put("unit", "sessions");
 
         autoResolveCondition = new ThresholdCondition(trigger.getId(),
@@ -76,7 +76,7 @@ public class WebExpiredSessionsData extends CommonData {
                 ThresholdCondition.Operator.LTE,
                 65d);
         autoResolveCondition.setTenantId(TEST_TENANT);
-        autoResolveCondition.getContext().put("description", "Expired Sessions");
+        autoResolveCondition.getContext().put("description", "Rejected Sessions");
         autoResolveCondition.getContext().put("unit", "sessions");
 
         firingDampening = Dampening.forStrictTimeout(trigger.getId(),
@@ -132,6 +132,7 @@ public class WebExpiredSessionsData extends CommonData {
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
         unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;
     }

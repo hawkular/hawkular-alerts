@@ -25,24 +25,24 @@ import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
-import org.hawkular.alerts.api.model.condition.ThresholdCondition;
-import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
+import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Provide test data for Response Time Alerts on Url resources
+ * Provide test data for Heap Usage Alerts on Jvm resources
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class WebRequestsResponseTimeData extends CommonData {
+public class JvmHeapUsageData extends CommonData {
 
     public static Trigger trigger;
-    public static ThresholdCondition firingCondition;
-    public static ThresholdCondition autoResolveCondition;
+    public static ThresholdRangeCondition firingCondition;
+    public static ThresholdRangeCondition autoResolveCondition;
     public static Dampening firingDampening;
 
     static {
@@ -50,34 +50,40 @@ public class WebRequestsResponseTimeData extends CommonData {
         Map<String, String> context = new HashMap<>();
         context.put("resourceType", "App Server");
         context.put("resourceName", "thevault~Local");
-        context.put("category", "Web Requests");
+        context.put("category", "JVM");
 
-        String triggerId = "thevault~local-web-request-response-time-trigger";
-        String triggerDescription = "Web Request Response Time for thevault~Local";
-        String dataId = "thevault~local-web-request-response-time-data-id";
+        String triggerId = "thevault~local-jvm-heap-usage-trigger";
+        String triggerDescription = "JVM Heap Usage for thevault~Local";
+        String dataId = "thevault~local-jvm-heap-usage-data-id";
 
         trigger = new Trigger(TEST_TENANT,
                 triggerId,
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdCondition(trigger.getId(),
+        firingCondition = new ThresholdRangeCondition(trigger.getId(),
                 Mode.FIRING,
                 dataId,
-                ThresholdCondition.Operator.GT,
-                1000d);
+                ThresholdRangeCondition.Operator.INCLUSIVE,
+                ThresholdRangeCondition.Operator.INCLUSIVE,
+                100d,
+                300d,
+                false);
         firingCondition.setTenantId(TEST_TENANT);
-        firingCondition.getContext().put("description", "Response Time");
-        firingCondition.getContext().put("unit", "ms");
+        firingCondition.getContext().put("description", "Heap Usage");
+        firingCondition.getContext().put("unit", "Mb");
 
-        autoResolveCondition = new ThresholdCondition(trigger.getId(),
-                Mode.AUTORESOLVE,
+        autoResolveCondition = new ThresholdRangeCondition(trigger.getId(),
+                Mode.FIRING,
                 dataId,
-                ThresholdCondition.Operator.LTE,
-                1000d);
+                ThresholdRangeCondition.Operator.EXCLUSIVE,
+                ThresholdRangeCondition.Operator.EXCLUSIVE,
+                100d,
+                300d,
+                true);
         autoResolveCondition.setTenantId(TEST_TENANT);
-        autoResolveCondition.getContext().put("description", "Response Time");
-        autoResolveCondition.getContext().put("unit", "ms");
+        autoResolveCondition.getContext().put("description", "Heap Usage");
+        autoResolveCondition.getContext().put("unit", "Mb");
 
         firingDampening = Dampening.forStrictTimeout(trigger.getId(),
                 Mode.FIRING,
@@ -92,8 +98,8 @@ public class WebRequestsResponseTimeData extends CommonData {
 
         NumericData rtBadData1 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis(),
-                1900d);
-        ThresholdConditionEval eval1 = new ThresholdConditionEval(firingCondition, rtBadData1);
+                315d);
+        ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(firingCondition, rtBadData1);
 
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);
@@ -102,8 +108,8 @@ public class WebRequestsResponseTimeData extends CommonData {
         // 5 seconds later
         NumericData rtBadData2 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
-                1800d);
-        ThresholdConditionEval eval2 = new ThresholdConditionEval(firingCondition, rtBadData2);
+                350d);
+        ThresholdRangeConditionEval eval2 = new ThresholdRangeConditionEval(firingCondition, rtBadData2);
 
         Set<ConditionEval> evalSet2 = new HashSet<>();
         evalSet2.add(eval2);
@@ -122,8 +128,8 @@ public class WebRequestsResponseTimeData extends CommonData {
 
         NumericData rtGoodData = new NumericData(autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
-                900d);
-        ThresholdConditionEval eval1 = new ThresholdConditionEval(autoResolveCondition, rtGoodData);
+                150d);
+        ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(autoResolveCondition, rtGoodData);
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);
         resolvedEvals.add(evalSet1);
@@ -132,6 +138,7 @@ public class WebRequestsResponseTimeData extends CommonData {
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
         unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;
     }

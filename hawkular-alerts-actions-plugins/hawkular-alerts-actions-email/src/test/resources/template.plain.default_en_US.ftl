@@ -2,24 +2,19 @@ HAWKULAR
 
 --
 
-<#if plainSubject??>
-${plainSubject}
+${emailSubject}
 
-</#if>
 Start time:
 <#if alert??>
-${alert.ctime?number_to_datetime} <#if alert.dampening?? && alert.dampening.type == 'STRICT_TIME'>(Alert triggered after ${alert.dampening.evalTimeSetting/1000} seconds )</#if>
-
-</#if>
-<#if type?? && type == 'THRESHOLD' && average?? && condition??>
-Average response time:
-${average} ms (threshold is ${condition.threshold} ms)
+${alert.ctime?number_to_datetime}
+<#if dampeningDescription??>(${dampeningDescription})</#if>
 
 </#if>
 <#if (numConditions > 1)>
 Conditions:
-    <#list condDescs as condDesc>
-    ${condDesc.type}: ${condDesc.description}
+    <#list conditions as condition>
+    ${condition.description} <#if condition.averageDescription??>(Average ${condition.averageDescription}) </#if>
+
     </#list>
 </#if>
 <#if alert?? && alert.status?? && alert.status == 'ACKNOWLEDGED'>
@@ -48,7 +43,7 @@ ${alert.resolvedNotes}
 </#if>
 </#if>
 
-<#if url??>
+<#if baseUrl??>
 To view metrics of this alert, access your Hawkular account:
-${url}
+${baseUrl}
 </#if>

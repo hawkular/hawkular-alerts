@@ -32,6 +32,13 @@ public abstract class CommonData {
     public static final String RESOLVED_BY = "resolve-user";
     public static final String RESOLVED_NOTES = "These resolved notes are automatically generated";
 
+    /**
+     * Modify the current alert with ACKNOWLEDGE status.
+     * It doesnt clone the alert.
+     *
+     * @param openAlert the open Alert
+     * @return the same alert with status modified to ACKNOWLEDGE
+     */
     public static Alert ackAlert(Alert openAlert) {
         if (null == openAlert) return null;
         openAlert.setStatus(Alert.Status.ACKNOWLEDGED);

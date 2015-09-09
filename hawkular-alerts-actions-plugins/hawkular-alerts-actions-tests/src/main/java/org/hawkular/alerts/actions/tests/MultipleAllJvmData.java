@@ -74,6 +74,8 @@ public class MultipleAllJvmData extends CommonData {
 
         firingConditions[0] = new ThresholdCondition(trigger.getId(),
                 Mode.FIRING,
+                3,
+                1,
                 dataId[0],
                 ThresholdCondition.Operator.GT,
                 1000d);
@@ -83,6 +85,8 @@ public class MultipleAllJvmData extends CommonData {
 
         autoResolveConditions[0] = new ThresholdCondition(trigger.getId(),
                 Mode.AUTORESOLVE,
+                3,
+                1,
                 dataId[0],
                 ThresholdCondition.Operator.LTE,
                 1000d);
@@ -93,6 +97,8 @@ public class MultipleAllJvmData extends CommonData {
 
         firingConditions[1] = new ThresholdRangeCondition(trigger.getId(),
                 Mode.FIRING,
+                3,
+                2,
                 dataId[1],
                 ThresholdRangeCondition.Operator.INCLUSIVE,
                 ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -105,6 +111,8 @@ public class MultipleAllJvmData extends CommonData {
 
         autoResolveConditions[1] = new ThresholdRangeCondition(trigger.getId(),
                 Mode.FIRING,
+                3,
+                2,
                 dataId[1],
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
@@ -118,6 +126,8 @@ public class MultipleAllJvmData extends CommonData {
 
         firingConditions[2] = new ThresholdRangeCondition(trigger.getId(),
                 Mode.FIRING,
+                3,
+                3,
                 dataId[2],
                 ThresholdRangeCondition.Operator.INCLUSIVE,
                 ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -125,19 +135,21 @@ public class MultipleAllJvmData extends CommonData {
                 300d,
                 false);
         firingConditions[2].setTenantId(TEST_TENANT);
-        firingConditions[2].getContext().put("description", "Heap Usage");
+        firingConditions[2].getContext().put("description", "Non Heap Usage");
         firingConditions[2].getContext().put("unit", "Mb");
 
         autoResolveConditions[2] = new ThresholdRangeCondition(trigger.getId(),
                 Mode.FIRING,
+                3,
+                3,
                 dataId[2],
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
                 100d,
-                300d,
+                200d,
                 true);
         autoResolveConditions[2].setTenantId(TEST_TENANT);
-        autoResolveConditions[2].getContext().put("description", "Heap Usage");
+        autoResolveConditions[2].getContext().put("description", "Non Heap Usage");
         autoResolveConditions[2].getContext().put("unit", "Mb");
 
         firingDampening = Dampening.forStrictTimeout(trigger.getId(),
@@ -170,7 +182,7 @@ public class MultipleAllJvmData extends CommonData {
 
         NumericData rtBadData1c = new NumericData(firingConditions[2].getDataId(),
                 System.currentTimeMillis(),
-                315d);
+                215d);
         ThresholdRangeConditionEval eval1c = new ThresholdRangeConditionEval((ThresholdRangeCondition)
                 firingConditions[2], rtBadData1c);
 
@@ -199,7 +211,7 @@ public class MultipleAllJvmData extends CommonData {
 
         NumericData rtBadData2c = new NumericData(firingConditions[2].getDataId(),
                 System.currentTimeMillis() + 5000,
-                350d);
+                250d);
         ThresholdRangeConditionEval eval2c = new ThresholdRangeConditionEval((ThresholdRangeCondition)
                 firingConditions[2], rtBadData2c);
 
@@ -236,7 +248,7 @@ public class MultipleAllJvmData extends CommonData {
 
         NumericData rtGoodData = new NumericData(autoResolveConditions[2].getDataId(),
                 System.currentTimeMillis() + 20000,
-                150d);
+                125d);
         ThresholdRangeConditionEval eval1C = new ThresholdRangeConditionEval((ThresholdRangeCondition)
                 autoResolveConditions[2], rtGoodData);
 
@@ -248,6 +260,7 @@ public class MultipleAllJvmData extends CommonData {
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
         unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;
     }

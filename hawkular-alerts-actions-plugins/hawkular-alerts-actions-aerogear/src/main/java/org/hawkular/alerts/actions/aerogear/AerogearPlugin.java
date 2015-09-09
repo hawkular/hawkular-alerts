@@ -36,11 +36,11 @@ import org.jboss.aerogear.unifiedpush.message.UnifiedMessage;
  */
 @ActionPlugin(name = "aerogear")
 public class AerogearPlugin implements ActionPluginListener {
-    static final String ROOT_SERVER_URL_PROPERTY = "org.hawkular.actions.aerogear.root.server.url";
+    static final String ROOT_SERVER_URL_PROPERTY = "org.hawkular.alerts.actions.aerogear.root.server.url";
     static final String ROOT_SERVER_URL = System.getProperty(ROOT_SERVER_URL_PROPERTY);
-    static final String APPLICATION_ID_PROPERTY = "org.hawkular.actions.aerogear.application.id";
+    static final String APPLICATION_ID_PROPERTY = "org.hawkular.alerts.actions.aerogear.application.id";
     static final String APPLICATION_ID = System.getProperty(APPLICATION_ID_PROPERTY);
-    static final String MASTER_SECRET_PROPERTY = "org.hawkular.actions.aerogear.master.secret";
+    static final String MASTER_SECRET_PROPERTY = "org.hawkular.alerts.actions.aerogear.master.secret";
     static final String MASTER_SECRET = System.getProperty(MASTER_SECRET_PROPERTY);
 
     private final MsgLogger msgLog = MsgLogger.LOGGER;

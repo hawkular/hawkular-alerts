@@ -33,12 +33,12 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Provide test data for Heap Usage Alerts on Jvm resources
+ * Provide test data for Non Heap Usage Alerts on Jvm resources
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class JvmHeapUsageData extends CommonData {
+public class JvmNonHeapUsageData extends CommonData {
 
     public static Trigger trigger;
     public static ThresholdRangeCondition firingCondition;
@@ -52,9 +52,9 @@ public class JvmHeapUsageData extends CommonData {
         context.put("resourceName", "thevault~Local");
         context.put("category", "JVM");
 
-        String triggerId = "thevault~local-jvm-heap-usage-trigger";
-        String triggerDescription = "JVM Heap Usage for thevault~Local";
-        String dataId = "thevault~local-jvm-heap-usage-data-id";
+        String triggerId = "thevault~local-jvm-non-heap-usage-trigger";
+        String triggerDescription = "JVM Non-Heap Usage for thevault~Local";
+        String dataId = "thevault~local-jvm-non-heap-usage-data-id";
 
         trigger = new Trigger(TEST_TENANT,
                 triggerId,
@@ -70,7 +70,7 @@ public class JvmHeapUsageData extends CommonData {
                 300d,
                 false);
         firingCondition.setTenantId(TEST_TENANT);
-        firingCondition.getContext().put("description", "Heap Usage");
+        firingCondition.getContext().put("description", "Non Heap Usage");
         firingCondition.getContext().put("unit", "Mb");
 
         autoResolveCondition = new ThresholdRangeCondition(trigger.getId(),
@@ -82,7 +82,7 @@ public class JvmHeapUsageData extends CommonData {
                 300d,
                 true);
         autoResolveCondition.setTenantId(TEST_TENANT);
-        autoResolveCondition.getContext().put("description", "Heap Usage");
+        autoResolveCondition.getContext().put("description", "Non Heap Usage");
         autoResolveCondition.getContext().put("unit", "Mb");
 
         firingDampening = Dampening.forStrictTimeout(trigger.getId(),
@@ -138,6 +138,7 @@ public class JvmHeapUsageData extends CommonData {
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
         unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;
     }

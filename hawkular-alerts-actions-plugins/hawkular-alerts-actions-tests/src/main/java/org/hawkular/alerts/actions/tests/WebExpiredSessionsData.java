@@ -33,12 +33,12 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Provide test data for Response Time Alerts on Url resources
+ * Provide test data for Expired Session Alerts on Web resources
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class UrlResponseTimeData extends CommonData {
+public class WebExpiredSessionsData extends CommonData {
 
     public static Trigger trigger;
     public static ThresholdCondition firingCondition;
@@ -48,12 +48,13 @@ public class UrlResponseTimeData extends CommonData {
     static {
 
         Map<String, String> context = new HashMap<>();
-        context.put("resourceType", "URL");
-        context.put("resourceName", "http://www.jboss.org");
+        context.put("resourceType", "App Server");
+        context.put("resourceName", "thevault~Local");
+        context.put("category", "Web Sessions");
 
-        String triggerId = "jboss-url-response-time-trigger";
-        String triggerDescription = "Response Time for http://www.jboss.org";
-        String dataId = "jboss-url-response-time-data-id";
+        String triggerId = "thevault~local-web-expired-sessions-trigger";
+        String triggerDescription = "Expired Web Sessions for thevault~Local";
+        String dataId = "thevault~local-web-expired-sessions-data-id";
 
         trigger = new Trigger(TEST_TENANT,
                 triggerId,
@@ -64,19 +65,19 @@ public class UrlResponseTimeData extends CommonData {
                 Mode.FIRING,
                 dataId,
                 ThresholdCondition.Operator.GT,
-                1000d);
+                65d);
         firingCondition.setTenantId(TEST_TENANT);
-        firingCondition.getContext().put("description", "Response Time");
-        firingCondition.getContext().put("unit", "ms");
+        firingCondition.getContext().put("description", "Expired Sessions");
+        firingCondition.getContext().put("unit", "sessions");
 
         autoResolveCondition = new ThresholdCondition(trigger.getId(),
                 Mode.AUTORESOLVE,
                 dataId,
                 ThresholdCondition.Operator.LTE,
-                1000d);
+                65d);
         autoResolveCondition.setTenantId(TEST_TENANT);
-        autoResolveCondition.getContext().put("description", "Response Time");
-        autoResolveCondition.getContext().put("unit", "ms");
+        autoResolveCondition.getContext().put("description", "Expired Sessions");
+        autoResolveCondition.getContext().put("unit", "sessions");
 
         firingDampening = Dampening.forStrictTimeout(trigger.getId(),
                 Mode.FIRING,
@@ -91,7 +92,7 @@ public class UrlResponseTimeData extends CommonData {
 
         NumericData rtBadData1 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis(),
-                1900d);
+                100d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(firingCondition, rtBadData1);
 
         Set<ConditionEval> evalSet1 = new HashSet<>();
@@ -101,7 +102,7 @@ public class UrlResponseTimeData extends CommonData {
         // 5 seconds later
         NumericData rtBadData2 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
-                1800d);
+                101d);
         ThresholdConditionEval eval2 = new ThresholdConditionEval(firingCondition, rtBadData2);
 
         Set<ConditionEval> evalSet2 = new HashSet<>();
@@ -121,7 +122,7 @@ public class UrlResponseTimeData extends CommonData {
 
         NumericData rtGoodData = new NumericData(autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
-                900d);
+                30d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(autoResolveCondition, rtGoodData);
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);
@@ -131,6 +132,7 @@ public class UrlResponseTimeData extends CommonData {
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
         unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;
     }
