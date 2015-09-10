@@ -869,7 +869,7 @@ public class TriggersHandler {
             return ResponseUtil.ok(conditions);
 
         } catch (IllegalArgumentException e) {
-            return ResponseUtil.badRequest("Bad trigger mode: " + triggerMode);
+            return ResponseUtil.badRequest("Bad argument: " + e.getMessage());
         } catch (NotFoundException e) {
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
