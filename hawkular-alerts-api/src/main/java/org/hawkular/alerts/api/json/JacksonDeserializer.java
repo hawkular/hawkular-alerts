@@ -304,6 +304,9 @@ public class JacksonDeserializer {
             if (node.get("conditionSetIndex") != null) {
                 condition.setConditionSetIndex(node.get("conditionSetIndex").intValue());
             }
+            if (node.get("context") != null) {
+                condition.setContext(deserializeMap(node.get("context")));
+            }
         }
         return condition;
     }
