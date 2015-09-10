@@ -45,6 +45,7 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.external.metrics.Expression.Func;
 import org.hawkular.metrics.core.api.Aggregate;
 import org.hawkular.metrics.core.api.MetricId;
+import org.hawkular.metrics.core.api.MetricType;
 import org.hawkular.metrics.core.api.MetricsService;
 import org.jboss.logging.Logger;
 
@@ -205,7 +206,7 @@ public class Manager {
             try {
                 Func func = expression.getFunc();
                 String tenantId = trigger.getTenantId();
-                MetricId metricId = new MetricId(expression.getMetric());
+                MetricId metricId = new MetricId(tenantId, MetricType.GAUGE, expression.getMetric());
                 long end = System.currentTimeMillis();
                 long start = end - (expression.getPeriod() * 60000);
 
@@ -214,26 +215,26 @@ public class Manager {
                 Double value = Double.NaN;
                 switch (func) {
                     case avg: {
-                        value = metrics.findGaugeData(tenantId, metricId, start, end, Aggregate.Average)
+                        value = metrics.findGaugeData(metricId, start, end, Aggregate.Average)
                                 .toBlocking().last();
                         break;
                     }
                     case avgd: {
                         Double avgToday = metrics
-                                .findGaugeData(tenantId, metricId, start, end, Aggregate.Average)
+                                .findGaugeData(metricId, start, end, Aggregate.Average)
                                 .toBlocking().last();
                         Double avgYesterday = metrics
-                                .findGaugeData(tenantId, metricId, (start - DAY), (end - DAY),
+                                .findGaugeData(metricId, (start - DAY), (end - DAY),
                                         Aggregate.Average).toBlocking().last();
                         value = ((avgToday - avgYesterday) / avgYesterday) * 100;
                         break;
                     }
                     case avgw: {
                         Double avgToday = metrics
-                                .findGaugeData(tenantId, metricId, start, end, Aggregate.Average)
+                                .findGaugeData(metricId, start, end, Aggregate.Average)
                                 .toBlocking().last();
                         Double avgLastWeek = metrics
-                                .findGaugeData(tenantId, metricId, (start - WEEK), (end - WEEK),
+                                .findGaugeData(metricId, (start - WEEK), (end - WEEK),
                                         Aggregate.Average).toBlocking().last();
                         value = ((avgToday - avgLastWeek) / avgLastWeek) * 100;
                         break;
@@ -243,7 +244,7 @@ public class Manager {
                         break;
                     }
                     case range: {
-                        Iterator<Double> iterator = metrics.findGaugeData(tenantId, metricId, start, end,
+                        Iterator<Double> iterator = metrics.findGaugeData(metricId, start, end,
                                 Aggregate.Min, Aggregate.Max)
                                 .toBlocking().toIterable().iterator();
                         Double min = iterator.next();
@@ -252,7 +253,7 @@ public class Manager {
                         break;
                     }
                     case rangep: {
-                        Iterator<Double> iterator = metrics.findGaugeData(tenantId, metricId, start, end,
+                        Iterator<Double> iterator = metrics.findGaugeData(metricId, start, end,
                                 Aggregate.Min, Aggregate.Max, Aggregate.Average)
                                 .toBlocking().toIterable().iterator();
                         Double min = iterator.next();
@@ -266,12 +267,12 @@ public class Manager {
                         break;
                     }
                     case max: {
-                        value = metrics.findGaugeData(tenantId, metricId, start, end, Aggregate.Max)
+                        value = metrics.findGaugeData(metricId, start, end, Aggregate.Max)
                                 .toBlocking().last();
                         break;
                     }
                     case min: {
-                        value = metrics.findGaugeData(tenantId, metricId, start, end, Aggregate.Min)
+                        value = metrics.findGaugeData(metricId, start, end, Aggregate.Min)
                                 .toBlocking().last();
                         break;
                     }
