@@ -113,6 +113,8 @@ public class PluginMessageDescription {
     /** Base URL to be used on templates to build links into main UI */
     private String baseUrl;
 
+    private DecimalFormat decimalFormat = new DecimalFormat("####0.0");
+
     /**
      * Helper inner class to store a Condition with a calculated description.
      * It stores a list of data of Firing ConditionEval for Threshold and ThresholdRange conditions types.
@@ -297,7 +299,6 @@ public class PluginMessageDescription {
         conditions = values.toArray(new ConditionDescription[values.size()]);
         numConditions = conditions.length;
 
-        DecimalFormat decimalFormat = new DecimalFormat("####0.00");
         for (int i = 0; i < numConditions; i++) {
             ConditionDescription condDesc = conditions[i];
             condDesc.average = ( condDesc.data.stream().reduce(0.0, (j,k) -> j+k ) ) / condDesc.data.size();
@@ -433,7 +434,7 @@ public class PluginMessageDescription {
                 throw new IllegalArgumentException(operator.name());
         }
         if (condition.getData2Multiplier() != 1.0) {
-            description += "( " + condition.getData2Multiplier() + " ";
+            description += "( " + decimalFormat.format(condition.getData2Multiplier()) + " ";
         }
         if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION2) != null) {
             description += condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION2);
@@ -542,7 +543,7 @@ public class PluginMessageDescription {
             default:
                 throw new IllegalArgumentException(condition.getOperator().name());
         }
-        description += condition.getThreshold();
+        description += decimalFormat.format(condition.getThreshold());
         if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_UNIT) != null) {
             description += " " + condition.getContext().get(CONTEXT_PROPERTY_UNIT);
         } else {
@@ -583,9 +584,9 @@ public class PluginMessageDescription {
         } else {
             description += "(";
         }
-        description += condition.getThresholdLow();
+        description += decimalFormat.format(condition.getThresholdLow());
         description += ", ";
-        description += condition.getThresholdHigh();
+        description += decimalFormat.format(condition.getThresholdHigh());
         if (operatorHigh.equals(ThresholdRangeCondition.Operator.INCLUSIVE)) {
             description += "]";
         } else {
