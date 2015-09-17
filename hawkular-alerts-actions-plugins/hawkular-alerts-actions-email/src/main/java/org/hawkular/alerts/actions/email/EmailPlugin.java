@@ -272,14 +272,14 @@ public class EmailPlugin implements ActionPluginListener {
 
         String to = props.get(PROP_TO + "." + statusStr);
         to = to == null ? props.get(PROP_TO) : to;
-        if (to != null) {
+        if (to != null && !to.isEmpty()) {
             Address toAddress = new InternetAddress(to);
             email.addRecipient(Message.RecipientType.TO, toAddress);
         }
 
         String ccs = props.get(PROP_CC + "." + statusStr);
         ccs = ccs == null ? props.get(PROP_CC) : ccs;
-        if (ccs != null) {
+        if (ccs != null && !ccs.isEmpty()) {
             String[] multipleCc = ccs.split(",");
             for (String cc : multipleCc) {
                 Address toAddress = new InternetAddress(cc);
