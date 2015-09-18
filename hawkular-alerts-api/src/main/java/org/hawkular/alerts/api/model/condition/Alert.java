@@ -20,7 +20,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +28,7 @@ import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -59,8 +59,12 @@ public class Alert {
     @JsonInclude
     private String alertId;
 
-    @JsonInclude
-    private String triggerId;
+    /*
+     * If set this should be the trigger as defined when the alert was fired.  A trigger definition can change
+     * over time, but an alert should be attached with the relevant instance.
+     */
+    @JsonInclude(Include.NON_EMPTY)
+    private Trigger trigger;
 
     @JsonInclude
     private long ctime;
@@ -94,13 +98,6 @@ public class Alert {
     private String resolvedNotes;
 
     /*
-     * If set this should be the trigger as defined when the alert was fired.  A trigger definition can change
-     * over time, but an alert should be attached with the relevant instance.
-     */
-    @JsonInclude(Include.NON_EMPTY)
-    private Trigger trigger;
-
-    /*
      * This is the dampening attached to a trigger when the alert was fired.
      * As a trigger, the dampening can change during time, but an alert should be attached with a specific instance.
      */
@@ -112,27 +109,20 @@ public class Alert {
     @Thin
     private List<Set<ConditionEval>> resolvedEvalSets;
 
-    /*
-     * This should be initialized to the owning trigger's context. It is not set automatically so as to allow
-     * for flexibility.  Note, this is not marked as Thin, whereas the trigger is Thin.
-     */
-    @JsonInclude(Include.NON_EMPTY)
-    private Map<String, String> context;
-
     public Alert() {
         // for json assembly
     }
 
-    public Alert(String tenantId, String triggerId, Severity severity, List<Set<ConditionEval>> evalSets) {
+    public Alert(String tenantId, Trigger trigger, Severity severity, List<Set<ConditionEval>> evalSets) {
         this.tenantId = tenantId;
-        this.triggerId = triggerId;
+        this.trigger = trigger;
         this.severity = (null == severity) ? Severity.MEDIUM : severity;
         this.evalSets = evalSets;
 
         this.ctime = System.currentTimeMillis();
         this.status = Status.OPEN;
 
-        this.alertId = tenantId + "-" + triggerId + "-" + ctime;
+        this.alertId = tenantId + "-" + trigger.getId() + "-" + ctime;
     }
 
     public String getTenantId() {
@@ -165,14 +155,6 @@ public class Alert {
 
     public void setCtime(long ctime) {
         this.ctime = ctime;
-    }
-
-    public String getTriggerId() {
-        return triggerId;
-    }
-
-    public void setTriggerId(String triggerId) {
-        this.triggerId = triggerId;
     }
 
     public Severity getSeverity() {
@@ -255,38 +237,22 @@ public class Alert {
         this.trigger = trigger;
     }
 
+    @JsonIgnore
+    public String getTriggerId() {
+        return trigger.getId();
+    }
+
+    @JsonIgnore
+    public Map<String, String> getContext() {
+        return trigger.getContext();
+    }
+
     public Dampening getDampening() {
         return dampening;
     }
 
     public void setDampening(Dampening dampening) {
         this.dampening = dampening;
-    }
-
-    public Map<String, String> getContext() {
-        if ( null == context ) {
-            context = new HashMap<>();
-        }
-        return context;
-    }
-
-    public void setContext(Map<String, String> context) {
-        this.context = context;
-    }
-
-    /**
-     * Add context information.
-     * @param name context key.
-     * @param value context value.
-     */
-    public void addProperty(String name, String value) {
-        if (null == name || null == value) {
-            throw new IllegalArgumentException("Propety must have non-null name and value");
-        }
-        if (null == context) {
-            context = new HashMap<>();
-        }
-        context.put(name, value);
     }
 
     @Override
@@ -318,7 +284,7 @@ public class Alert {
     public String toString() {
         return "Alert [alertId=" + alertId + ", status=" + status + ", ackTime=" + ackTime
                 + ", ackBy=" + ackBy + ", resolvedTime=" + resolvedTime + ", resolvedBy=" + resolvedBy + ", context="
-                + context + "]";
+                + trigger.getContext() + "]";
     }
 
 }

@@ -105,10 +105,8 @@ public class UrlAvailabilityData extends CommonData {
         evalSet2.add(eval2);
         satisfyingEvals.add(evalSet2);
 
-        Alert openAlert = new Alert(trigger.getTenantId(), trigger.getId(), trigger.getSeverity(), satisfyingEvals);
-        openAlert.setTrigger(trigger);
+        Alert openAlert = new Alert(trigger.getTenantId(), trigger, trigger.getSeverity(), satisfyingEvals);
         openAlert.setDampening(firingDampening);
-        openAlert.setContext(trigger.getContext());
 
         return openAlert;
     }

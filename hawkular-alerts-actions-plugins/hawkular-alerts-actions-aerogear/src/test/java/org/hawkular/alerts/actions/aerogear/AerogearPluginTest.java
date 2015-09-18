@@ -40,6 +40,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.jboss.aerogear.unifiedpush.PushSender;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -85,7 +86,8 @@ public class AerogearPluginTest {
         System.setProperty(AerogearPlugin.APPLICATION_ID_PROPERTY, "4d564d56qs4056-d0sq564065");
         System.setProperty(AerogearPlugin.MASTER_SECRET_PROPERTY, "sddqs--sqd-qs--d-qs000dsq0d");
 
-        Alert alert = new Alert(TEST_TENANT, "trigger-test", Severity.MEDIUM, null);
+        Trigger trigger = new Trigger(TEST_TENANT, "trigger-test", "trigger-test");
+        Alert alert = new Alert(TEST_TENANT, trigger, Severity.MEDIUM, null);
 
         AvailabilityCondition aCond = new AvailabilityCondition("trigger-test",
                 "Default",

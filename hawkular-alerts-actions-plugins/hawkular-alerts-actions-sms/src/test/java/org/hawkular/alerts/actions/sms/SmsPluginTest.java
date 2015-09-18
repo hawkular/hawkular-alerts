@@ -41,6 +41,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -88,7 +89,8 @@ public class SmsPluginTest {
         System.setProperty(SmsPlugin.AUTH_TOKEN_PROPERTY, "token");
         System.setProperty(SmsPlugin.FROM_PROPERTY, "+14158141829");
 
-        Alert alert = new Alert(TEST_TENANT, "trigger-test", Severity.MEDIUM, null);
+        Trigger trigger = new Trigger( TEST_TENANT, "trigger-test", "trigger-test");
+        Alert alert = new Alert(TEST_TENANT, trigger, Severity.MEDIUM, null);
 
         AvailabilityCondition aCond = new AvailabilityCondition("trigger-test",
                 "Default",

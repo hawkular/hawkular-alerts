@@ -98,7 +98,8 @@ public class JsonTest {
 
     @Test
     public void jsonAlertTest() throws Exception {
-        Alert alert = new Alert(TEST_TENANT, "trigger-test", Severity.MEDIUM, null);
+        Trigger trigger = new Trigger(TEST_TENANT,"trigger-test", "trigger-test");
+        Alert alert = new Alert(TEST_TENANT, trigger, Severity.MEDIUM, null);
 
         String output = objectMapper.writeValueAsString(alert);
 
@@ -133,7 +134,11 @@ public class JsonTest {
     public void jsonToAlertTest() throws Exception {
         String jsonAlert = "{\"tenantId\":\"jdoe\"," +
                 "\"alertId\":\"trigger-test|1436964192878\"," +
-                "\"triggerId\":\"trigger-test\"," +
+                "\"trigger\":{\"tenantId\":\"jdoe\"," +
+                              "\"id\":\"trigger-test\"," +
+                              "\"name\":\"trigger-test\"," +
+                              "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}" +
+                              "}," +
                 "\"ctime\":1436964192878," +
                 "\"evalSets\":[" +
                     "[{\"evalTimestamp\":1436964294055," +
@@ -169,8 +174,8 @@ public class JsonTest {
                 "\"ackNotes\":null," +
                 "\"resolvedTime\":0," +
                 "\"resolvedBy\":null," +
-                "\"resolvedNotes\":null," +
-                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
+                "\"resolvedNotes\":null" +
+                "}";
 
         ObjectMapper mapper = new ObjectMapper();
         Alert alert = mapper.readValue(jsonAlert, Alert.class);

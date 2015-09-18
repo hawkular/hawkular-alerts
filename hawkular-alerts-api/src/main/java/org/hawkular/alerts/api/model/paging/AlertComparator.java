@@ -83,16 +83,18 @@ public class AlertComparator implements Comparator<Alert> {
             case ALERT_ID:
                 return o1.getAlertId().compareTo(o2.getAlertId()) * iOrder;
             case TRIGGER_ID:
-                if (o1.getTriggerId() == null && o2.getTriggerId() == null) {
+                String o1TriggerId = o1.getTriggerId();
+                String o2TriggerId = o2.getTriggerId();
+                if (o1TriggerId == null && o2TriggerId == null) {
                     return 0;
                 }
-                if (o1.getTriggerId() == null && o2.getTriggerId() != null) {
+                if (o1TriggerId == null && o2TriggerId != null) {
                     return 1;
                 }
-                if (o1.getTriggerId() != null && o2.getTriggerId() == null) {
+                if (o1TriggerId != null && o2TriggerId == null) {
                     return -1;
                 }
-                return o1.getTriggerId().compareTo(o2.getTriggerId()) * iOrder;
+                return o1TriggerId.compareTo(o2TriggerId) * iOrder;
             case CTIME:
                 return (int)((o1.getCtime() - o2.getCtime()) * iOrder);
             case SEVERITY:

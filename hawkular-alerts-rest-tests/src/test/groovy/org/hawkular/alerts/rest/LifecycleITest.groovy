@@ -154,8 +154,8 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("testUser", resp.data[0].resolvedBy)
         assertEquals("testNotes", resp.data[0].resolvedNotes)
         assertNull(resp.data[0].resolvedEvalSets)
-        assertNotNull(resp.data[0].context);
-        Map<String,String> alertContext = (Map<String,String>)resp.data[0].context;
+        assertNotNull(resp.data[0].trigger.context);
+        Map<String,String> alertContext = (Map<String,String>)resp.data[0].trigger.context;
         assertEquals("contextValue", alertContext.get("contextName"));
         assertEquals("contextValue2", alertContext.get("contextName2"));
 
@@ -430,7 +430,7 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "", query: [startTime:t01Start,endTime:t02Start] )
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-        assertEquals("test-autodisable-trigger", resp.data[0].triggerId)
+        assertEquals("test-autodisable-trigger", resp.data[0].trigger.id)
 
         // FETCH the alert above again, this time by alert id
         def alertId = resp.data[0].alertId
@@ -508,13 +508,13 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals("LOW", resp.data[0].severity)
-        assertEquals("test-autodisable-trigger", resp.data[0].triggerId)
+        assertEquals("test-autodisable-trigger", resp.data[0].trigger.id)
 
         resp = client.get(path: "", query: [startTime:start,severities:"HIGH"] )
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals("HIGH", resp.data[0].severity)
-        assertEquals("test-autoresolve-trigger", resp.data[0].triggerId)
+        assertEquals("test-autoresolve-trigger", resp.data[0].trigger.id)
 
         // test thinning as well as verifying the RESOLVED status fetch (using the autoresolve alert)
         resp = client.get(path: "",

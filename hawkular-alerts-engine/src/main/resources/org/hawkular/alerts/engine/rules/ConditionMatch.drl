@@ -296,10 +296,8 @@ rule AlertOnSatisfiedDampening
             log.debug("AlertOnSatisfiedDampening! " + $d.log());
         }
 
-        Alert newAlert = new Alert( $t.getTenantId(), $tid, $t.getSeverity(), $d.getSatisfyingEvals() );
-        newAlert.setTrigger($t);
+        Alert newAlert = new Alert( $t.getTenantId(), $t, $t.getSeverity(), $d.getSatisfyingEvals() );
         newAlert.setDampening($d);
-        newAlert.setContext($t.getContext());
         alerts.add(newAlert);
         if (actions != null) {
             for (String actionPlugin : $t.getActions().keySet()) {

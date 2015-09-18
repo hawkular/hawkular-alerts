@@ -52,6 +52,12 @@
     <!-- Hawkular Alerts dependencies -->
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-actions-api</artifactId>
       <version>${project.version}</version>
     </dependency>
