@@ -19,7 +19,7 @@ package org.hawkular.alerts.api.model.condition;
 import java.util.Map;
 
 import org.hawkular.alerts.api.model.condition.Condition.Type;
-import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.data.Data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -52,13 +52,13 @@ public class CompareConditionEval extends ConditionEval {
         this.context2 = null;
     }
 
-    public CompareConditionEval(CompareCondition condition, NumericData data1, NumericData data2) {
-        super(Type.COMPARE, condition.match(data1.getValue(), data2.getValue()),
+    public CompareConditionEval(CompareCondition condition, Data data1, Data data2) {
+        super(Type.COMPARE, condition.match(Double.valueOf(data1.getValue()), Double.valueOf(data2.getValue())),
                 ((data1.getTimestamp() > data1.getTimestamp()) ? data1.getTimestamp() : data2.getTimestamp()),
                 data1.getContext());
         this.condition = condition;
-        this.value1 = data1.getValue();
-        this.value2 = data2.getValue();
+        this.value1 = Double.valueOf(data1.getValue());
+        this.value2 = Double.valueOf(data2.getValue());
         this.context2 = data2.getContext();
     }
 
@@ -117,15 +117,21 @@ public class CompareConditionEval extends ConditionEval {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         CompareConditionEval that = (CompareConditionEval) o;
 
-        if (condition != null ? !condition.equals(that.condition) : that.condition != null) return false;
-        if (value1 != null ? !value1.equals(that.value1) : that.value1 != null) return false;
-        if (value2 != null ? !value2.equals(that.value2) : that.value2 != null) return false;
+        if (condition != null ? !condition.equals(that.condition) : that.condition != null)
+            return false;
+        if (value1 != null ? !value1.equals(that.value1) : that.value1 != null)
+            return false;
+        if (value2 != null ? !value2.equals(that.value2) : that.value2 != null)
+            return false;
         return !(context2 != null ? !context2.equals(that.context2) : that.context2 != null);
     }
 

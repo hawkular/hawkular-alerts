@@ -29,10 +29,8 @@ import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.Availability;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
-import org.hawkular.alerts.api.model.data.NumericData;
-import org.hawkular.alerts.api.model.data.StringData;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.rules.RulesEngine;
@@ -95,12 +93,12 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(new NumericData("NumericData-" + i, (i * nQueue) + j, 5.0));
+                    datums.add(Data.forNumeric("NumericData-" + i, (i * nQueue) + j, 5.0));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(new NumericData("NumericData-" + i, i, 5.0));
+                datums.add(Data.forNumeric("NumericData-" + i, i, 5.0));
             }
         }
 
@@ -141,12 +139,12 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(new NumericData("NumericData-" + i, (i * nQueue) + j, 12.5));
+                    datums.add(Data.forNumeric("NumericData-" + i, (i * nQueue) + j, 12.5));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(new NumericData("NumericData-" + i, i, 12.5));
+                datums.add(Data.forNumeric("NumericData-" + i, i, 12.5));
             }
         }
 
@@ -185,14 +183,14 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(new NumericData("NumericData-a-" + i, (i * nQueue) + j, 10d));
-                    datums.add(new NumericData("NumericData-b-" + i, (i * nQueue) + j, 30d));
+                    datums.add(Data.forNumeric("NumericData-a-" + i, (i * nQueue) + j, 10d));
+                    datums.add(Data.forNumeric("NumericData-b-" + i, (i * nQueue) + j, 30d));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(new NumericData("NumericData-a-" + i, i, 10d));
-                datums.add(new NumericData("NumericData-b-" + i, i, 30d));
+                datums.add(Data.forNumeric("NumericData-a-" + i, i, 10d));
+                datums.add(Data.forNumeric("NumericData-b-" + i, i, 30d));
             }
         }
 
@@ -230,12 +228,12 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(new StringData("StringData-" + i, (i * nQueue) + j, "Fred And Barney"));
+                    datums.add(new Data("StringData-" + i, (i * nQueue) + j, "Fred And Barney"));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(new StringData("StringData-" + i, i, "Fred And Barney"));
+                datums.add(new Data("StringData-" + i, i, "Fred And Barney"));
             }
         }
 
@@ -272,13 +270,13 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(new Availability("AvailData-" + i, (i * nQueue) + j,
-                                                Availability.AvailabilityType.DOWN));
+                    datums.add(Data.forAvailability("AvailData-" + i, (i * nQueue) + j,
+                            AvailabilityType.DOWN));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(new Availability("AvailData-" + i, i, Availability.AvailabilityType.DOWN));
+                datums.add(Data.forAvailability("AvailData-" + i, i, AvailabilityType.DOWN));
             }
         }
 
@@ -329,14 +327,14 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(new NumericData("NumericData-a-" + i, (i * nQueue) + j, 5.0));
-                    datums.add(new NumericData("NumericData-b-" + i, (i * nQueue) + j, 12.5));
+                    datums.add(Data.forNumeric("NumericData-a-" + i, (i * nQueue) + j, 5.0));
+                    datums.add(Data.forNumeric("NumericData-b-" + i, (i * nQueue) + j, 12.5));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(new NumericData("NumericData-a-" + i, i, 5.0));
-                datums.add(new NumericData("NumericData-b-" + i, i, 12.5));
+                datums.add(Data.forNumeric("NumericData-a-" + i, i, 5.0));
+                datums.add(Data.forNumeric("NumericData-b-" + i, i, 12.5));
 
             }
         }
@@ -514,6 +512,7 @@ public class PerfRulesEngineTest {
     }
 
     public class PerfLogger extends Logger {
+        private static final long serialVersionUID = 1L;
 
         public PerfLogger(String name) {
             super(name);

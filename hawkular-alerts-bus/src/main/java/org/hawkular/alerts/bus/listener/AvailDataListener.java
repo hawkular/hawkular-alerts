@@ -27,7 +27,6 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.jms.MessageListener;
 
-import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
@@ -84,7 +83,7 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
         Set<String> activeAvailabilityIds = cacheManager.getActiveAvailabilityIds();
         for (SingleAvail a : data) {
             if (isNeeded(activeAvailabilityIds, a.getId())) {
-                alertData.add(new Availability(a.getId(), a.getTimestamp(), a.getAvail()));
+                alertData.add(new Data(a.getId(), a.getTimestamp(), a.getAvail()));
             }
         }
 

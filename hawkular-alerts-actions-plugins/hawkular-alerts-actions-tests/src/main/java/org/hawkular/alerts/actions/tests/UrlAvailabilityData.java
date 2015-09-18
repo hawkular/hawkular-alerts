@@ -28,12 +28,13 @@ import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.Availability;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Provide test data for Availability Alerts on Url resources
+ * Provide test data for Data Alerts on Url resources
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -52,7 +53,7 @@ public class UrlAvailabilityData extends CommonData {
         context.put("resourceName", "http://www.jboss.org");
 
         String triggerId = "jboss-url-availability-trigger";
-        String triggerDescription = "Availability for http://www.jboss.org";
+        String triggerDescription = "Data for http://www.jboss.org";
         String dataId = "jboss-url-availability-data-id";
 
         trigger = new Trigger(TEST_TENANT,
@@ -85,9 +86,9 @@ public class UrlAvailabilityData extends CommonData {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Availability avBadData1 = new Availability(firingCondition.getDataId(),
+        Data avBadData1 = Data.forAvailability(firingCondition.getDataId(),
                 System.currentTimeMillis(),
-                Availability.AvailabilityType.DOWN);
+                AvailabilityType.DOWN);
         AvailabilityConditionEval eval1 = new AvailabilityConditionEval(firingCondition, avBadData1);
 
         Set<ConditionEval> evalSet1 = new HashSet<>();
@@ -95,9 +96,9 @@ public class UrlAvailabilityData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Availability avBadData2 = new Availability(firingCondition.getDataId(),
+        Data avBadData2 = Data.forAvailability(firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
-                Availability.AvailabilityType.DOWN);
+                AvailabilityType.DOWN);
         AvailabilityConditionEval eval2 = new AvailabilityConditionEval(firingCondition, avBadData2);
 
         Set<ConditionEval> evalSet2 = new HashSet<>();
@@ -115,8 +116,8 @@ public class UrlAvailabilityData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Availability avGoodData = new Availability(autoResolveCondition.getDataId(), System.currentTimeMillis() + 20000,
-                Availability.AvailabilityType.UP);
+        Data avGoodData = Data.forAvailability(autoResolveCondition.getDataId(), System.currentTimeMillis() + 20000,
+                AvailabilityType.UP);
         AvailabilityConditionEval eval1 = new AvailabilityConditionEval(autoResolveCondition, avGoodData);
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1);

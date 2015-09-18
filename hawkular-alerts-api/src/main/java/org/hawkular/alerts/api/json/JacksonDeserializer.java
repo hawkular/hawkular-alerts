@@ -39,7 +39,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
-import org.hawkular.alerts.api.model.data.Availability;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.core.JsonLocation;
@@ -95,7 +95,7 @@ public class JacksonDeserializer {
                         aConditionEval.setCondition((AvailabilityCondition)condition);
                     }
                     if (node.get("value") != null) {
-                        aConditionEval.setValue(Availability.AvailabilityType.valueOf(node.get("value").textValue()));
+                        aConditionEval.setValue(AvailabilityType.valueOf(node.get("value").textValue()));
                     }
                     break;
                 }

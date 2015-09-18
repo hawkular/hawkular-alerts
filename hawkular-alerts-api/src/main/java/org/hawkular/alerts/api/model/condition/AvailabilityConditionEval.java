@@ -17,8 +17,8 @@
 package org.hawkular.alerts.api.model.condition;
 
 import org.hawkular.alerts.api.model.condition.Condition.Type;
-import org.hawkular.alerts.api.model.data.Availability;
-import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
+import org.hawkular.alerts.api.model.data.Data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -43,10 +43,11 @@ public class AvailabilityConditionEval extends ConditionEval {
         this.value = null;
     }
 
-    public AvailabilityConditionEval(AvailabilityCondition condition, Availability avail) {
-        super(Type.AVAILABILITY, condition.match(avail.getValue()), avail.getTimestamp(), avail.getContext());
+    public AvailabilityConditionEval(AvailabilityCondition condition, Data avail) {
+        super(Type.AVAILABILITY, condition.match(AvailabilityType.valueOf(avail.getValue())), avail.getTimestamp(),
+                avail.getContext());
         this.condition = condition;
-        this.value = avail.getValue();
+        this.value = AvailabilityType.valueOf(avail.getValue());
     }
 
     public AvailabilityCondition getCondition() {

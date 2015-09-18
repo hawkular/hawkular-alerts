@@ -31,7 +31,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
@@ -162,7 +162,7 @@ public class MultipleAllJvmData extends CommonData {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        NumericData rtBadData1a = new NumericData(firingConditions[0].getDataId(),
+        Data rtBadData1a = Data.forNumeric(firingConditions[0].getDataId(),
                 System.currentTimeMillis(),
                 1900d);
         ThresholdConditionEval eval1a = new ThresholdConditionEval((ThresholdCondition) firingConditions[0],
@@ -172,7 +172,7 @@ public class MultipleAllJvmData extends CommonData {
 
         evalSet1.add(eval1a);
 
-        NumericData rtBadData1b = new NumericData(firingConditions[1].getDataId(),
+        Data rtBadData1b = Data.forNumeric(firingConditions[1].getDataId(),
                 System.currentTimeMillis(),
                 315d);
         ThresholdRangeConditionEval eval1b = new ThresholdRangeConditionEval((ThresholdRangeCondition)
@@ -180,7 +180,7 @@ public class MultipleAllJvmData extends CommonData {
 
         evalSet1.add(eval1b);
 
-        NumericData rtBadData1c = new NumericData(firingConditions[2].getDataId(),
+        Data rtBadData1c = Data.forNumeric(firingConditions[2].getDataId(),
                 System.currentTimeMillis(),
                 215d);
         ThresholdRangeConditionEval eval1c = new ThresholdRangeConditionEval((ThresholdRangeCondition)
@@ -191,7 +191,7 @@ public class MultipleAllJvmData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        NumericData rtBadData2a = new NumericData(firingConditions[0].getDataId(),
+        Data rtBadData2a = Data.forNumeric(firingConditions[0].getDataId(),
                 System.currentTimeMillis() + 5000,
                 1800d);
         ThresholdConditionEval eval2a = new ThresholdConditionEval((ThresholdCondition) firingConditions[0],
@@ -201,7 +201,7 @@ public class MultipleAllJvmData extends CommonData {
 
         evalSet2.add(eval2a);
 
-        NumericData rtBadData2b = new NumericData(firingConditions[1].getDataId(),
+        Data rtBadData2b = Data.forNumeric(firingConditions[1].getDataId(),
                 System.currentTimeMillis() + 5000,
                 350d);
         ThresholdRangeConditionEval eval2b = new ThresholdRangeConditionEval((ThresholdRangeCondition)
@@ -209,7 +209,7 @@ public class MultipleAllJvmData extends CommonData {
 
         evalSet2.add(eval2b);
 
-        NumericData rtBadData2c = new NumericData(firingConditions[2].getDataId(),
+        Data rtBadData2c = Data.forNumeric(firingConditions[2].getDataId(),
                 System.currentTimeMillis() + 5000,
                 250d);
         ThresholdRangeConditionEval eval2c = new ThresholdRangeConditionEval((ThresholdRangeCondition)
@@ -230,7 +230,7 @@ public class MultipleAllJvmData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        NumericData rtGoodDataA = new NumericData(autoResolveConditions[0].getDataId(),
+        Data rtGoodDataA = Data.forNumeric(autoResolveConditions[0].getDataId(),
                 System.currentTimeMillis() + 20000,
                 900d);
         ThresholdConditionEval eval1A = new ThresholdConditionEval((ThresholdCondition) autoResolveConditions[0],
@@ -238,7 +238,7 @@ public class MultipleAllJvmData extends CommonData {
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1A);
 
-        NumericData rtGoodDataB = new NumericData(autoResolveConditions[1].getDataId(),
+        Data rtGoodDataB = Data.forNumeric(autoResolveConditions[1].getDataId(),
                 System.currentTimeMillis() + 20000,
                 150d);
         ThresholdRangeConditionEval eval1B = new ThresholdRangeConditionEval((ThresholdRangeCondition)
@@ -246,7 +246,7 @@ public class MultipleAllJvmData extends CommonData {
 
         evalSet1.add(eval1B);
 
-        NumericData rtGoodData = new NumericData(autoResolveConditions[2].getDataId(),
+        Data rtGoodData = Data.forNumeric(autoResolveConditions[2].getDataId(),
                 System.currentTimeMillis() + 20000,
                 125d);
         ThresholdRangeConditionEval eval1C = new ThresholdRangeConditionEval((ThresholdRangeCondition)

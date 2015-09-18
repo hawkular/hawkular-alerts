@@ -32,10 +32,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.dampening.Dampening.Type;
-import org.hawkular.alerts.api.model.data.Availability;
-import org.hawkular.alerts.api.model.data.Availability.AvailabilityType
-import org.hawkular.alerts.api.model.data.NumericData;
-import org.hawkular.alerts.api.model.data.StringData;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
@@ -76,7 +73,7 @@ rule Threshold
     when 
         $t : Trigger( $tid : id, $tmode : mode )
         $c : ThresholdCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d : NumericData( $did == id )
+        $d : Data( $did == id )
     then
         ThresholdConditionEval ce = new ThresholdConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -89,7 +86,7 @@ rule ThresholdRange
     when 
         $t : Trigger( $tid : id, $tmode : mode )
         $c : ThresholdRangeCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d : NumericData( $did == id )
+        $d : Data( $did == id )
     then
         ThresholdRangeConditionEval ce = new ThresholdRangeConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -110,8 +107,8 @@ rule Compare
     when 
         $t  : Trigger( $tid : id, $tmode : mode )
         $c  : CompareCondition ( triggerId == $tid, triggerMode == $tmode, $d1id : dataId, $d2id : data2Id )
-        $d1 : NumericData( $d1id == id )
-        $d2 : NumericData( $d2id == id )
+        $d1 : Data( $d1id == id )
+        $d2 : Data( $d2id == id )
     then
         CompareConditionEval ce = new CompareConditionEval($c, $d1, $d2);
         if (log != null && log.isDebugEnabled()) {
@@ -124,7 +121,7 @@ rule Availability
     when 
         $t : Trigger( $tid : id, $tmode : mode )
         $c : AvailabilityCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d : Availability( $did == id )
+        $d : Data( $did == id )
     then
         AvailabilityConditionEval ce = new AvailabilityConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -137,7 +134,7 @@ rule String
     when 
         $t : Trigger( $tid : id, $tmode : mode )
         $c : StringCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId  )
-        $d : StringData( $did == id )
+        $d : Data( $did == id )
     then
         StringConditionEval ce = new StringConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -150,7 +147,7 @@ rule External
     when 
         $t : Trigger( $tid : id, $tmode : mode )
         $c : ExternalCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId  )
-        $d : StringData( $did == id )
+        $d : Data( $did == id )
     then
         ExternalConditionEval ce = new ExternalConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -164,9 +161,9 @@ end
 // in the (above) rules, that generate ConditionEval facts, because one Datum can generate multiple evals, for different
 // Triggers.
 
-rule RetractProcessedNumericData
+rule RetractProcessedData
     when
-        $d : NumericData()
+        $d : Data()
     then
         if (log != null && log.isDebugEnabled()) {
             log.debug( "Retracting " + $d + "..." );
@@ -174,25 +171,6 @@ rule RetractProcessedNumericData
         retract ( $d );
 end
 
-rule RetractProcessedStringData
-    when
-        $d : StringData()
-    then
-        if (log != null && log.isDebugEnabled()) {
-            log.debug( "Retracting " + $d + "..." );
-        }
-        retract ( $d );
-end
-
-rule RetractProcessedAvailabilityData
-    when
-        $d : Availability()
-    then
-        if (log != null && log.isDebugEnabled()) {
-            log.debug( "Retracting " + $d + "..." );
-        }
-        retract ( $d );
-end
 
 ////// DAMPENING
 //

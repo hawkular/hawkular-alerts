@@ -17,7 +17,7 @@
 package org.hawkular.alerts.api.model.condition;
 
 import org.hawkular.alerts.api.model.condition.Condition.Type;
-import org.hawkular.alerts.api.model.data.StringData;
+import org.hawkular.alerts.api.model.data.Data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -42,7 +42,7 @@ public class StringConditionEval extends ConditionEval {
         this.value = null;
     }
 
-    public StringConditionEval(StringCondition condition, StringData data) {
+    public StringConditionEval(StringCondition condition, Data data) {
         super(Type.STRING, condition.match(data.getValue()), data.getTimestamp(), data.getContext());
         this.condition = condition;
         this.value = data.getValue();
@@ -86,14 +86,19 @@ public class StringConditionEval extends ConditionEval {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         StringConditionEval that = (StringConditionEval) o;
 
-        if (condition != null ? !condition.equals(that.condition) : that.condition != null) return false;
-        if (value != null ? !value.equals(that.value) : that.value != null) return false;
+        if (condition != null ? !condition.equals(that.condition) : that.condition != null)
+            return false;
+        if (value != null ? !value.equals(that.value) : that.value != null)
+            return false;
 
         return true;
     }

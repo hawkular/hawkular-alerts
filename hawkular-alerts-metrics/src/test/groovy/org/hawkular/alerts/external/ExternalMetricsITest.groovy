@@ -18,7 +18,7 @@ package org.hawkular.alerts.external
 
 import java.util.List
 
-import org.hawkular.alerts.api.model.data.StringData
+import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ExternalCondition
 import org.hawkular.alerts.api.model.trigger.Trigger

@@ -36,8 +36,8 @@ import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
-import org.hawkular.alerts.api.model.data.Availability;
-import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
+import org.hawkular.alerts.api.model.data.Data;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -84,14 +84,14 @@ public class PagerDutyPluginTest {
         AvailabilityCondition aCond = new AvailabilityCondition("trigger-test",
                 "Default",
                 AvailabilityCondition.Operator.UP);
-        Availability aData = new Availability("Metric-test", 1, Availability.AvailabilityType.UP);
+        Data aData = Data.forAvailability("Metric-test", 1, AvailabilityType.UP);
         AvailabilityConditionEval aEval = new AvailabilityConditionEval(aCond, aData);
 
         ThresholdCondition tCond = new ThresholdCondition("trigger-test",
                 "Default",
                 ThresholdCondition.Operator.LTE,
                 50.0);
-        NumericData tData = new NumericData("Metric-test2", 2, 25.5);
+        Data tData = Data.forNumeric("Metric-test2", 2, 25.5);
         ThresholdConditionEval tEval = new ThresholdConditionEval(tCond, tData);
 
         Set<ConditionEval> evals = new HashSet<>();

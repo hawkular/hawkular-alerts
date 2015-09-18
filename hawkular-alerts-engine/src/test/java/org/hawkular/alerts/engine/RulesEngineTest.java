@@ -45,11 +45,8 @@ import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.Availability;
-import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
-import org.hawkular.alerts.api.model.data.NumericData;
-import org.hawkular.alerts.api.model.data.StringData;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
@@ -116,9 +113,9 @@ public class RulesEngineTest {
                 "NumericData-01",
                 ThresholdCondition.Operator.GTE, 10.0);
 
-        datums.add(new NumericData("NumericData-01", 1, 10.0));
-        datums.add(new NumericData("NumericData-01", 2, 5.0));
-        datums.add(new NumericData("NumericData-01", 3, 15.0));
+        datums.add(Data.forNumeric("NumericData-01", 1, 10.0));
+        datums.add(Data.forNumeric("NumericData-01", 2, 5.0));
+        datums.add(Data.forNumeric("NumericData-01", 3, 15.0));
 
         // default dampening
 
@@ -259,9 +256,9 @@ public class RulesEngineTest {
                 10.0, 15.0,
                 false);
 
-        datums.add(new NumericData("NumericData-01", 1, 10.0));
-        datums.add(new NumericData("NumericData-01", 2, 5.0));
-        datums.add(new NumericData("NumericData-01", 3, 15.0));
+        datums.add(Data.forNumeric("NumericData-01", 1, 10.0));
+        datums.add(Data.forNumeric("NumericData-01", 2, 5.0));
+        datums.add(Data.forNumeric("NumericData-01", 3, 15.0));
 
         // default dampening
 
@@ -366,8 +363,8 @@ public class RulesEngineTest {
         // dataId, we need several rule executions to test all of the above triggers.
 
         // Test LT (also LTE)
-        datums.add(new NumericData("NumericData-01", 1, 10.0));
-        datums.add(new NumericData("NumericData-02", 2, 30.0));
+        datums.add(Data.forNumeric("NumericData-01", 1, 10.0));
+        datums.add(Data.forNumeric("NumericData-02", 2, 30.0));
 
         rulesEngine.addData(datums);
 
@@ -413,8 +410,8 @@ public class RulesEngineTest {
         // Test LTE + GTE
         datums.clear();
         alerts.clear();
-        datums.add(new NumericData("NumericData-01", 1, 10.0));
-        datums.add(new NumericData("NumericData-02", 2, 20.0));
+        datums.add(Data.forNumeric("NumericData-01", 1, 10.0));
+        datums.add(Data.forNumeric("NumericData-02", 2, 20.0));
 
         rulesEngine.addData(datums);
 
@@ -460,8 +457,8 @@ public class RulesEngineTest {
         // Test GT (also GTE)
         datums.clear();
         alerts.clear();
-        datums.add(new NumericData("NumericData-01", 1, 15.0));
-        datums.add(new NumericData("NumericData-02", 2, 20.0));
+        datums.add(Data.forNumeric("NumericData-01", 1, 15.0));
+        datums.add(Data.forNumeric("NumericData-02", 2, 20.0));
 
         rulesEngine.addData(datums);
 
@@ -541,10 +538,10 @@ public class RulesEngineTest {
                 "StringData-02", // note
                 StringCondition.Operator.NOT_EQUAL, "Fred", false);
 
-        datums.add(new StringData("StringData-01", 1, "Fred"));
-        datums.add(new StringData("StringData-01", 2, "Fred And Barney"));
+        datums.add(new Data("StringData-01", 1, "Fred"));
+        datums.add(new Data("StringData-01", 2, "Fred And Barney"));
 
-        datums.add(new StringData("StringData-02", 1, "Barney And Fred"));
+        datums.add(new Data("StringData-02", 1, "Barney And Fred"));
 
         // default dampening
 
@@ -710,10 +707,10 @@ public class RulesEngineTest {
                 "StringData-02", // note
                 StringCondition.Operator.NOT_EQUAL, "FRED", true);
 
-        datums.add(new StringData("StringData-01", 1, "Fred"));
-        datums.add(new StringData("StringData-01", 2, "Fred And Barney"));
+        datums.add(new Data("StringData-01", 1, "Fred"));
+        datums.add(new Data("StringData-01", 2, "Fred And Barney"));
 
-        datums.add(new StringData("StringData-02", 1, "Barney And Fred"));
+        datums.add(new Data("StringData-02", 1, "Barney And Fred"));
 
         // default dampening
 
@@ -849,9 +846,9 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.NOT_UP);
 
-        datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(new Availability("AvailData-01", 3, AvailabilityType.UP));
+        datums.add(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("AvailData-01", 3, AvailabilityType.UP));
 
         // default dampening
 
@@ -901,7 +898,7 @@ public class RulesEngineTest {
         ExternalCondition t1c1 = new ExternalCondition("trigger-1", Mode.FIRING, 1, 1,
                 "ExternalData-01", "HawkularMetrics", "metric:5:avg(foo > 100.5)");
 
-        datums.add(new StringData("ExternalData-01", 1, "Ignored"));
+        datums.add(new Data("ExternalData-01", 1, "Ignored"));
 
         // default dampening
 
@@ -939,13 +936,13 @@ public class RulesEngineTest {
 
         Dampening t1d = Dampening.forStrict("trigger-1", Mode.FIRING, 3);
 
-        datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(new Availability("AvailData-01", 3, AvailabilityType.UP));
-        datums.add(new Availability("AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 5, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 6, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 7, AvailabilityType.UP));
+        datums.add(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("AvailData-01", 3, AvailabilityType.UP));
+        datums.add(Data.forAvailability("AvailData-01", 4, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 5, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 6, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 7, AvailabilityType.UP));
 
         t1.setEnabled(true);
 
@@ -985,13 +982,13 @@ public class RulesEngineTest {
 
         Dampening t1d = Dampening.forRelaxedCount("trigger-1", Mode.FIRING, 3, 5);
 
-        datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(new Availability("AvailData-01", 3, AvailabilityType.UP));
-        datums.add(new Availability("AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 5, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 6, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 7, AvailabilityType.UP));
+        datums.add(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("AvailData-01", 3, AvailabilityType.UP));
+        datums.add(Data.forAvailability("AvailData-01", 4, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 5, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 6, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 7, AvailabilityType.UP));
 
         t1.setEnabled(true);
 
@@ -1038,7 +1035,7 @@ public class RulesEngineTest {
         rulesEngine.addFact(t1c1);
         rulesEngine.addFact(t1d);
 
-        datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1051,10 +1048,10 @@ public class RulesEngineTest {
         }
 
         datums.clear();
-        datums.add(new Availability("AvailData-01", 2, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 3, AvailabilityType.UP));
-        datums.add(new Availability("AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 5, AvailabilityType.UP));
+        datums.add(Data.forAvailability("AvailData-01", 2, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 3, AvailabilityType.UP));
+        datums.add(Data.forAvailability("AvailData-01", 4, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 5, AvailabilityType.UP));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1097,7 +1094,7 @@ public class RulesEngineTest {
         long start = System.currentTimeMillis();
         int i = 0;
         while ((alerts.size() == 0) && ((System.currentTimeMillis() - start) < 500)) {
-            rulesEngine.addData(new Availability("AvailData-01", ++i, AvailabilityType.DOWN));
+            rulesEngine.addData(Data.forAvailability("AvailData-01", ++i, AvailabilityType.DOWN));
             rulesEngine.fire();
         }
 
@@ -1137,7 +1134,7 @@ public class RulesEngineTest {
         assertTrue(alerts.isEmpty());
         assertTrue(pendingTimeouts.isEmpty());
 
-        rulesEngine.addData(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
+        rulesEngine.addData(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
         rulesEngine.fire();
 
         assertTrue(alerts.isEmpty());
@@ -1188,9 +1185,9 @@ public class RulesEngineTest {
         //   1) one datum for a specific dataId will will be processed at a time
         //   2) only the most recent conditionEvals will be used in a condition set tuple for a multi-condition trigger
 
-        datums.add(new NumericData("NumericData-01", 1, 10.0));  // eval(d1,t1) = no match,
-        datums.add(new NumericData("NumericData-01", 2, 5.0));   // eval(d1,t2) =    match, replaces eval(d1,t1)
-        datums.add(new NumericData("NumericData-01", 3, 15.0));  // eval(d1,t3) = no match, replaces eval(d1,t2)
+        datums.add(Data.forNumeric("NumericData-01", 1, 10.0));  // eval(d1,t1) = no match,
+        datums.add(Data.forNumeric("NumericData-01", 2, 5.0));   // eval(d1,t2) =    match, replaces eval(d1,t1)
+        datums.add(Data.forNumeric("NumericData-01", 3, 15.0));  // eval(d1,t3) = no match, replaces eval(d1,t2)
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1199,9 +1196,9 @@ public class RulesEngineTest {
 
         datums.clear();
         // eval(d2,t4) = no match, tuple(eval(d1,t3), eval(d2,t4)) = false
-        datums.add(new NumericData("NumericData-02", 4, 10.0));
+        datums.add(Data.forNumeric("NumericData-02", 4, 10.0));
         // eval(d2,t5) =    match, tuple(eval(d1,t3), eval(d2,t5)) = false
-        datums.add(new NumericData("NumericData-02", 5, 150.0));
+        datums.add(Data.forNumeric("NumericData-02", 5, 150.0));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1210,7 +1207,7 @@ public class RulesEngineTest {
 
         datums.clear();
         // eval(d1,t6) =    match, tuple(eval(d1,t6), eval(d2,t5)) = true
-        datums.add(new NumericData("NumericData-01", 6, 8.0));
+        datums.add(Data.forNumeric("NumericData-01", 6, 8.0));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1268,25 +1265,25 @@ public class RulesEngineTest {
 
         // for clarity deliver datums independently
 
-        datums.add(new NumericData("X", 1, 125.0));  // match, dampening eval true (X), no alert
+        datums.add(Data.forNumeric("X", 1, 125.0));  // match, dampening eval true (X), no alert
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         datums.clear();
-        datums.add(new NumericData("X", 2, 50.0));   // no match, dampening reset
+        datums.add(Data.forNumeric("X", 2, 50.0));   // no match, dampening reset
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         datums.clear();
-        datums.add(new NumericData("Y", 3, 300.0));  // match, dampening eval true (Y), no alert
+        datums.add(Data.forNumeric("Y", 3, 300.0));  // match, dampening eval true (Y), no alert
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         datums.clear();
-        datums.add(new NumericData("X", 4, 110.0));  // match, dampening eval true (X,Y), alert! dampening reset
+        datums.add(Data.forNumeric("X", 4, 110.0));  // match, dampening eval true (X,Y), alert! dampening reset
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 1, alerts.size());
@@ -1348,7 +1345,7 @@ public class RulesEngineTest {
 
         alerts.clear();
         datums.clear();
-        datums.add(new NumericData("Y", 5, 150.0));  // match, dampening eval true (X), no alert
+        datums.add(Data.forNumeric("Y", 5, 150.0));  // match, dampening eval true (X), no alert
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
@@ -1369,14 +1366,14 @@ public class RulesEngineTest {
                 "AvailData-01", AvailabilityCondition.Operator.UP);
         Dampening smt1d = Dampening.forStrict("trigger-1", Mode.AUTORESOLVE, 2);
 
-        datums.add(new Availability("AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(new Availability("AvailData-01", 3, AvailabilityType.UP));
-        datums.add(new Availability("AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 5, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 6, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 7, AvailabilityType.DOWN));
-        datums.add(new Availability("AvailData-01", 8, AvailabilityType.UP));
+        datums.add(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("AvailData-01", 3, AvailabilityType.UP));
+        datums.add(Data.forAvailability("AvailData-01", 4, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 5, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 6, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 7, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("AvailData-01", 8, AvailabilityType.UP));
 
         t1.setEnabled(true);
         t1.setAutoDisable(false);
@@ -1422,7 +1419,7 @@ public class RulesEngineTest {
 
         alerts.clear();
         datums.clear();
-        datums.add(new Availability("AvailData-01", 9, AvailabilityType.UP));
+        datums.add(Data.forAvailability("AvailData-01", 9, AvailabilityType.UP));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1443,13 +1440,13 @@ public class RulesEngineTest {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition fmt1c1 = new AvailabilityCondition("trigger-1", Mode.FIRING, 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
-        Availability adata = new Availability("AvailData-01", System.currentTimeMillis(), AvailabilityType.UP);
+        Data adata = Data.forAvailability("AvailData-01", System.currentTimeMillis(), AvailabilityType.UP);
         AvailabilityConditionEval fmt1c1eval = new AvailabilityConditionEval(fmt1c1, adata);
         Dampening fmt1d = Dampening.forStrict("trigger-1", Mode.FIRING, 2);
 
         ThresholdCondition fmt1c2 = new ThresholdCondition("trigger-1", Mode.FIRING, 1, 1,
                 "ThreData-01", ThresholdCondition.Operator.GT, 10d);
-        NumericData ndata = new NumericData("ThreData-01", System.currentTimeMillis(), 20d);
+        Data ndata = Data.forNumeric("ThreData-01", System.currentTimeMillis(), 20d);
         ThresholdConditionEval fmt1c2eval = new ThresholdConditionEval(fmt1c2, ndata);
 
         rulesEngine.addFact(t1);

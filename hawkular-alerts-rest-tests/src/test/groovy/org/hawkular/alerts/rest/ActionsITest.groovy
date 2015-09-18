@@ -19,9 +19,8 @@ package org.hawkular.alerts.rest
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
-import org.hawkular.alerts.api.model.data.Availability
-import org.hawkular.alerts.api.model.data.MixedData
-import org.hawkular.alerts.api.model.data.NumericData
+import org.hawkular.alerts.api.model.data.AvailabilityType
+import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 
@@ -157,10 +156,10 @@ class ActionsITest extends AbstractITestBase {
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<5; i++) {
-            Availability avail = new Availability("test-email-availability", System.currentTimeMillis(), "DOWN");
-            MixedData mixedData = new MixedData();
-            mixedData.getAvailability().add(avail);
-            resp = client.post(path: "data", body: mixedData);
+            Data avail = new Data("test-email-availability", System.currentTimeMillis(), "DOWN");
+            Collection<Data> datums = new ArrayList<>();
+            datums.add(avail);
+            resp = client.post(path: "data", body: datums);
             assertEquals(200, resp.status)
         }
 
@@ -234,13 +233,13 @@ class ActionsITest extends AbstractITestBase {
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-email-threshold"] )
         assertEquals(200, resp.status)
 
-        // Send in DOWN avail data to fire the trigger
+        // Send in data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<5; i++) {
-            NumericData threshold = new NumericData("test-email-threshold", System.currentTimeMillis(), 305.5 + i);
-            MixedData mixedData = new MixedData();
-            mixedData.getNumericData().add(threshold);
-            resp = client.post(path: "data", body: mixedData);
+            Data threshold = new Data("test-email-threshold", System.currentTimeMillis(), String.valueOf(305.5 + i));
+            Collection<Data> datums = new ArrayList<>();
+            datums.add(threshold);
+            resp = client.post(path: "data", body: datums);
             assertEquals(200, resp.status)
         }
 

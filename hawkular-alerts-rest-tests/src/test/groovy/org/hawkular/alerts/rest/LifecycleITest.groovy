@@ -17,6 +17,8 @@
 package org.hawkular.alerts.rest
 
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
+import static org.hawkular.alerts.api.model.data.AvailabilityType.DOWN
+import static org.hawkular.alerts.api.model.data.AvailabilityType.UP
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
@@ -29,9 +31,7 @@ import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
-import org.hawkular.alerts.api.model.data.Availability
-import org.hawkular.alerts.api.model.data.MixedData
-import org.hawkular.alerts.api.model.data.NumericData
+import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.FixMethodOrder
@@ -114,9 +114,8 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // Send in avail data to fire the trigger
-        String jsonData = "{\"availability\":" +
-                "[{\"id\":\"test-autodisable-avail\",\"timestamp\":" + System.currentTimeMillis() +
-                      ",\"value\":\"DOWN\",\"type\":\"AVAILABILITY\"}]}";
+        String jsonData =
+            "[{\"id\":\"test-autodisable-avail\",\"timestamp\":" + System.currentTimeMillis() + ",\"value\":\"DOWN\"}]";
         resp = client.post(path: "data", body: jsonData);
         assertEquals(200, resp.status)
 
@@ -234,10 +233,10 @@ class LifecycleITest extends AbstractITestBase {
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         Map<String,String> context = new HashMap<>(1);
         context.put("contextName","contextValue");
-        Availability avail = new Availability("test-autoresolve-avail", System.currentTimeMillis(), "DOWN", context);
-        MixedData mixedData = new MixedData();
-        mixedData.getAvailability().add(avail);
-        resp = client.post(path: "data", body: mixedData);
+        Data avail = Data.forAvailability("test-autoresolve-avail", System.currentTimeMillis(), DOWN, context);
+        Collection<Data> datums = new ArrayList<Data>();
+        datums.add(avail);
+        resp = client.post(path: "data", body: datums);
         assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
@@ -280,10 +279,10 @@ class LifecycleITest extends AbstractITestBase {
 
         // Send in UP avail data to autoresolve the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
-        avail = new Availability("test-autoresolve-avail", System.currentTimeMillis(), "UP");
-        mixedData.clear();
-        mixedData.getAvailability().add(avail);
-        resp = client.post(path: "data", body: mixedData);
+        avail = Data.forAvailability("test-autoresolve-avail", System.currentTimeMillis(), UP);
+        datums.clear();
+        datums.add(avail);
+        resp = client.post(path: "data", body: datums);
         assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
@@ -360,10 +359,10 @@ class LifecycleITest extends AbstractITestBase {
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<5; i++) {
-            Availability avail = new Availability("test-manual-avail", System.currentTimeMillis(), "DOWN");
-            MixedData mixedData = new MixedData();
-            mixedData.getAvailability().add(avail);
-            resp = client.post(path: "data", body: mixedData);
+            Data avail = Data.forAvailability("test-manual-avail", System.currentTimeMillis(), DOWN);
+            Collection<Data> datums = new ArrayList<>();
+            datums.add(avail);
+            resp = client.post(path: "data", body: datums);
             assertEquals(200, resp.status)
         }
 
@@ -614,10 +613,10 @@ class LifecycleITest extends AbstractITestBase {
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<5; i++) {
-            Availability avail = new Availability("test-manual2-avail", System.currentTimeMillis(), "DOWN");
-            MixedData mixedData = new MixedData();
-            mixedData.getAvailability().add(avail);
-            resp = client.post(path: "data", body: mixedData);
+            Data avail = Data.forAvailability("test-manual2-avail", System.currentTimeMillis(), DOWN);
+            Collection<Data> datums = new ArrayList<>();
+            datums.add(avail);
+            resp = client.post(path: "data", body: datums);
             assertEquals(200, resp.status)
         }
 
@@ -646,7 +645,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         resp = client.put(path: "ack/" + alertId2,
-                query: [resolvedBy:"testUser", resolvedNotes:"testNotes"] )
+                query: [ackBy:"testUser", ackNotes:"testNotes"] )
         assertEquals(200, resp.status)
 
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger",statuses:"OPEN"] )
@@ -751,10 +750,10 @@ class LifecycleITest extends AbstractITestBase {
             Step 8: Sending "bad" data to fire the trigger
                     Using direct API instead bus messages
          */
-        NumericData responseTime = new NumericData("test-autoresolve-threshold", System.currentTimeMillis(), 101);
-        MixedData mixedData = new MixedData();
-        mixedData.getNumericData().add(responseTime);
-        resp = client.post(path: "data", body: mixedData);
+        Data responseTime = Data.forNumeric("test-autoresolve-threshold", System.currentTimeMillis(), 101);
+        Collection<Data> datums = new ArrayList<>();
+        datums.add(responseTime);
+        resp = client.post(path: "data", body: datums);
         assertEquals(200, resp.status)
 
         /*
@@ -783,10 +782,10 @@ class LifecycleITest extends AbstractITestBase {
         /*
             Step 10: Sending "bad" data to fire the trigger, should not fire, trigger now in AutoResolve mode
          */
-        responseTime = new NumericData("test-autoresolve-threshold", System.currentTimeMillis(), 102);
-        mixedData = new MixedData();
-        mixedData.getNumericData().add(responseTime);
-        resp = client.post(path: "data", body: mixedData);
+        responseTime = Data.forNumeric("test-autoresolve-threshold", System.currentTimeMillis(), 102);
+        datums = new ArrayList<>();
+        datums.add(responseTime);
+        resp = client.post(path: "data", body: datums);
         assertEquals(200, resp.status)
 
         /*
@@ -803,10 +802,10 @@ class LifecycleITest extends AbstractITestBase {
         /*
             Step 12: Sending "good" data to change trigger from FIRING to AUTORESOLVE
          */
-        responseTime = new NumericData("test-autoresolve-threshold", System.currentTimeMillis(), 95);
-        mixedData = new MixedData();
-        mixedData.getNumericData().add(responseTime);
-        resp = client.post(path: "data", body: mixedData);
+        responseTime = Data.forNumeric("test-autoresolve-threshold", System.currentTimeMillis(), 95);
+        datums = new ArrayList<>();
+        datums.add(responseTime);
+        resp = client.post(path: "data", body: datums);
         assertEquals(200, resp.status)
 
         /*
@@ -823,10 +822,10 @@ class LifecycleITest extends AbstractITestBase {
         /*
             Step 14: Sending "bad" data to fire the trigger
          */
-        responseTime = new NumericData("test-autoresolve-threshold", System.currentTimeMillis(), 103);
-        mixedData = new MixedData();
-        mixedData.getNumericData().add(responseTime);
-        resp = client.post(path: "data", body: mixedData);
+        responseTime = Data.forNumeric("test-autoresolve-threshold", System.currentTimeMillis(), 103);
+        datums = new ArrayList<>();
+        datums.add(responseTime);
+        resp = client.post(path: "data", body: datums);
         assertEquals(200, resp.status)
 
         /*
@@ -910,10 +909,10 @@ class LifecycleITest extends AbstractITestBase {
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<2; i++) {
-            Availability avail = new Availability("test-autoenable-avail", System.currentTimeMillis(), "DOWN");
-            MixedData mixedData = new MixedData();
-            mixedData.getAvailability().add(avail);
-            resp = client.post(path: "data", body: mixedData);
+            Data avail = Data.forAvailability("test-autoenable-avail", System.currentTimeMillis(), DOWN);
+            Collection<Data> datums = new ArrayList<>();
+            datums.add(avail);
+            resp = client.post(path: "data", body: datums);
             assertEquals(200, resp.status)
         }
 
@@ -1031,10 +1030,10 @@ class LifecycleITest extends AbstractITestBase {
 
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
-        Availability avail = new Availability("test-manual-autoresolve-avail", System.currentTimeMillis(), "DOWN");
-        MixedData mixedData = new MixedData();
-        mixedData.getAvailability().add(avail);
-        resp = client.post(path: "data", body: mixedData);
+        Data avail = Data.forAvailability("test-manual-autoresolve-avail", System.currentTimeMillis(), DOWN);
+        Collection<Data> datums = new ArrayList<>();
+        datums.add(avail);
+        resp = client.post(path: "data", body: datums);
         assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
@@ -1083,10 +1082,10 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // Send in another DOWN data and we should get another alert assuming the trigger was reset to Firing mode
-        avail = new Availability("test-manual-autoresolve-avail", System.currentTimeMillis(), "DOWN");
-        mixedData = new MixedData();
-        mixedData.getAvailability().add(avail);
-        resp = client.post(path: "data", body: mixedData);
+        avail = Data.forAvailability("test-manual-autoresolve-avail", System.currentTimeMillis(), DOWN);
+        datums = new ArrayList<>();
+        datums.add(avail);
+        resp = client.post(path: "data", body: datums);
         assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...

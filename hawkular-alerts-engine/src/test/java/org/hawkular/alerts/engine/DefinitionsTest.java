@@ -42,8 +42,8 @@ import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.Availability;
-import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
@@ -678,7 +678,7 @@ public abstract class DefinitionsTest {
 
         ThresholdCondition threshold = (ThresholdCondition) cs.iterator().next();
         long dataTime = System.currentTimeMillis();
-        NumericData data = new NumericData("NumericData-01", dataTime, 5.0d);
+        Data data = Data.forNumeric("NumericData-01", dataTime, 5.0d);
         ThresholdConditionEval eval = new ThresholdConditionEval(threshold, data);
         Set<ConditionEval> evalSet = new HashSet<>();
         evalSet.add(eval);
@@ -807,7 +807,7 @@ public abstract class DefinitionsTest {
 
         for (int i = 0; i < 107; i++) {
             long dataTime = System.currentTimeMillis();
-            Availability data = new Availability("Availability-01", dataTime, Availability.AvailabilityType.DOWN);
+            Data data = Data.forAvailability("Availability-01", dataTime, AvailabilityType.DOWN);
             AvailabilityConditionEval eval = new AvailabilityConditionEval(availability, data);
             Set<ConditionEval> evalSet = new HashSet<>();
             evalSet.add(eval);

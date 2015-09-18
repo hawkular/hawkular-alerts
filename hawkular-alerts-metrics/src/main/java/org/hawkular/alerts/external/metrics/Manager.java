@@ -35,7 +35,7 @@ import javax.inject.Inject;
 
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
-import org.hawkular.alerts.api.model.data.StringData;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
@@ -306,7 +306,7 @@ public class Manager {
             }
 
             try {
-                StringData externalData = new StringData(externalCondition.getDataId(), System.currentTimeMillis(),
+                Data externalData = new Data(externalCondition.getDataId(), System.currentTimeMillis(),
                         value.toString());
                 log.debugf("Sending External Condition Data to Alerts! %s", externalData);
                 alerts.sendData(externalData);
