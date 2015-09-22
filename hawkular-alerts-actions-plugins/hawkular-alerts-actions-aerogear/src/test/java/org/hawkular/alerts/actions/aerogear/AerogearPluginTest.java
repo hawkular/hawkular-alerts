@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.actions.api.PluginMessage;
-import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
@@ -86,8 +85,8 @@ public class AerogearPluginTest {
         System.setProperty(AerogearPlugin.APPLICATION_ID_PROPERTY, "4d564d56qs4056-d0sq564065");
         System.setProperty(AerogearPlugin.MASTER_SECRET_PROPERTY, "sddqs--sqd-qs--d-qs000dsq0d");
 
-        Trigger trigger = new Trigger(TEST_TENANT, "trigger-test", "trigger-test");
-        Alert alert = new Alert(TEST_TENANT, trigger, Severity.MEDIUM, null);
+        Trigger trigger = new Trigger( TEST_TENANT, "trigger-test", "trigger-test");
+        Alert alert = new Alert(TEST_TENANT, trigger, null);
 
         AvailabilityCondition aCond = new AvailabilityCondition("trigger-test",
                 "Default",

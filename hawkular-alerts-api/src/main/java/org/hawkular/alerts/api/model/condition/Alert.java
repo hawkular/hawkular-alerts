@@ -16,16 +16,14 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.api.model.event.Thin;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -38,40 +36,11 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class Alert {
-
-    /**
-     * Used to annotate fields that should be thinned in order to return/deserialize a lightweight Alert
-     */
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.FIELD)
-    public @interface Thin {
-    }
+public class Alert extends Event {
 
     public enum Status {
         OPEN, ACKNOWLEDGED, RESOLVED
     };
-
-    @JsonInclude
-    private String tenantId;
-
-    // This is a generated composite of form: triggerId|ctime
-    @JsonInclude
-    private String alertId;
-
-    /*
-     * If set this should be the trigger as defined when the alert was fired.  A trigger definition can change
-     * over time, but an alert should be attached with the relevant instance.
-     */
-    @JsonInclude(Include.NON_EMPTY)
-    private Trigger trigger;
-
-    @JsonInclude
-    private long ctime;
-
-    @JsonInclude(Include.NON_EMPTY)
-    @Thin
-    private List<Set<ConditionEval>> evalSets;
 
     @JsonInclude
     private Severity severity;
@@ -97,14 +66,6 @@ public class Alert {
     @JsonInclude
     private String resolvedNotes;
 
-    /*
-     * This is the dampening attached to a trigger when the alert was fired.
-     * As a trigger, the dampening can change during time, but an alert should be attached with a specific instance.
-     */
-    @JsonInclude(Include.NON_EMPTY)
-    @Thin
-    private Dampening dampening;
-
     @JsonInclude(Include.NON_EMPTY)
     @Thin
     private List<Set<ConditionEval>> resolvedEvalSets;
@@ -113,48 +74,27 @@ public class Alert {
         // for json assembly
     }
 
-    public Alert(String tenantId, Trigger trigger, Severity severity, List<Set<ConditionEval>> evalSets) {
-        this.tenantId = tenantId;
-        this.trigger = trigger;
-        this.severity = (null == severity) ? Severity.MEDIUM : severity;
-        this.evalSets = evalSets;
+    /**
+     * Assumes default dampening.
+     */
+    public Alert(String tenantId, Trigger trigger, List<Set<ConditionEval>> evalSets) {
+        this(tenantId, trigger, null, evalSets);
+    }
 
-        this.ctime = System.currentTimeMillis();
+    public Alert(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets) {
+        super(tenantId, trigger, dampening, evalSets);
+
         this.status = Status.OPEN;
-
-        this.alertId = tenantId + "-" + trigger.getId() + "-" + ctime;
+        this.severity = trigger.getSeverity();
     }
 
-    public String getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
-    }
-
+    @JsonIgnore
     public String getAlertId() {
-        return alertId;
+        return id;
     }
 
     public void setAlertId(String alertId) {
-        this.alertId = alertId;
-    }
-
-    public List<Set<ConditionEval>> getEvalSets() {
-        return evalSets;
-    }
-
-    public void setEvalSets(List<Set<ConditionEval>> evalSets) {
-        this.evalSets = evalSets;
-    }
-
-    public long getCtime() {
-        return ctime;
-    }
-
-    public void setCtime(long ctime) {
-        this.ctime = ctime;
+        this.id = alertId;
     }
 
     public Severity getSeverity() {
@@ -229,62 +169,16 @@ public class Alert {
         this.resolvedEvalSets = resolvedEvalSets;
     }
 
-    public Trigger getTrigger() {
-        return trigger;
-    }
-
-    public void setTrigger(Trigger trigger) {
-        this.trigger = trigger;
-    }
-
-    @JsonIgnore
-    public String getTriggerId() {
-        return trigger.getId();
-    }
-
     @JsonIgnore
     public Map<String, String> getContext() {
-        return trigger.getContext();
-    }
-
-    public Dampening getDampening() {
-        return dampening;
-    }
-
-    public void setDampening(Dampening dampening) {
-        this.dampening = dampening;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((alertId == null) ? 0 : alertId.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        Alert other = (Alert) obj;
-        if (alertId == null) {
-            if (other.alertId != null)
-                return false;
-        } else if (!alertId.equals(other.alertId))
-            return false;
-        return true;
+        return getTrigger().getContext();
     }
 
     @Override
     public String toString() {
-        return "Alert [alertId=" + alertId + ", status=" + status + ", ackTime=" + ackTime
+        return "Alert [alertId=" + id + ", status=" + status + ", ackTime=" + ackTime
                 + ", ackBy=" + ackBy + ", resolvedTime=" + resolvedTime + ", resolvedBy=" + resolvedBy + ", context="
-                + trigger.getContext() + "]";
+                + getContext() + "]";
     }
 
 }

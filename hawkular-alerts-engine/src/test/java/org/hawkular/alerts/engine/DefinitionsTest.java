@@ -684,7 +684,7 @@ public abstract class DefinitionsTest {
         evalSet.add(eval);
         List<Set<ConditionEval>> evals = new ArrayList<>();
         evals.add(evalSet);
-        Alert alert = new Alert(TEST_TENANT, t, t.getSeverity(), evals);
+        Alert alert = new Alert(TEST_TENANT, t, evals);
         List<Alert> alerts = new ArrayList<>();
         alerts.add(alert);
 
@@ -813,7 +813,7 @@ public abstract class DefinitionsTest {
             evalSet.add(eval);
             List<Set<ConditionEval>> evals = new ArrayList<>();
             evals.add(evalSet);
-            Alert alert = new Alert(TEST_TENANT, t, t.getSeverity(), evals);
+            Alert alert = new Alert(TEST_TENANT, t, evals);
             int iAlert = i % 3;
             switch (iAlert) {
                 case 2:

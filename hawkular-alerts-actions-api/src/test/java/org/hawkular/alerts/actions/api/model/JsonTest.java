@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.actions.api.PluginMessage;
-import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
@@ -55,7 +54,7 @@ public class JsonTest {
     @BeforeClass
     public static void initTest() {
         Trigger trigger = new Trigger(TEST_TENANT, "trigger-test", "trigger-test");
-        Alert alert = new Alert(TEST_TENANT, trigger, Severity.MEDIUM, null);
+        Alert alert = new Alert(TEST_TENANT, trigger, null);
 
         AvailabilityCondition aCond = new AvailabilityCondition("trigger-test", "Default",
                 AvailabilityCondition.Operator.UP);

@@ -115,8 +115,7 @@ public class JvmHeapUsageData extends CommonData {
         evalSet2.add(eval2);
         satisfyingEvals.add(evalSet2);
 
-        Alert openAlert = new Alert(trigger.getTenantId(), trigger, trigger.getSeverity(), satisfyingEvals);
-        openAlert.setDampening(firingDampening);
+        Alert openAlert = new Alert(trigger.getTenantId(), trigger, firingDampening, satisfyingEvals);
 
         return openAlert;
     }

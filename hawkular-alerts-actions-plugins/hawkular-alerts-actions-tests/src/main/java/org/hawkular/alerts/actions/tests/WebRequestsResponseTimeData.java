@@ -28,7 +28,7 @@ import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
@@ -90,7 +90,7 @@ public class WebRequestsResponseTimeData extends CommonData {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Data rtBadData1 = Data.forNumeric(firingCondition.getDataId(),
+        NumericData rtBadData1 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis(),
                 1900d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(firingCondition, rtBadData1);
@@ -100,7 +100,7 @@ public class WebRequestsResponseTimeData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Data rtBadData2 = Data.forNumeric(firingCondition.getDataId(),
+        NumericData rtBadData2 = new NumericData(firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
                 1800d);
         ThresholdConditionEval eval2 = new ThresholdConditionEval(firingCondition, rtBadData2);
@@ -109,8 +109,7 @@ public class WebRequestsResponseTimeData extends CommonData {
         evalSet2.add(eval2);
         satisfyingEvals.add(evalSet2);
 
-        Alert openAlert = new Alert(trigger.getTenantId(), trigger, trigger.getSeverity(), satisfyingEvals);
-        openAlert.setDampening(firingDampening);
+        Alert openAlert = new Alert(trigger.getTenantId(), trigger, firingDampening, satisfyingEvals);
 
         return openAlert;
     }
@@ -118,7 +117,7 @@ public class WebRequestsResponseTimeData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Data rtGoodData = Data.forNumeric(autoResolveCondition.getDataId(),
+        NumericData rtGoodData = new NumericData(autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
                 900d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(autoResolveCondition, rtGoodData);
