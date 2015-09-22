@@ -42,9 +42,12 @@ public class Data implements Comparable<Data> {
     @JsonInclude(Include.NON_EMPTY)
     protected String value;
 
-    /** For multi-value condition types. Null otherwise. See the condition type for expected key-value information */
-    @JsonInclude(Include.NON_EMPTY)
-    protected Map<String, String> values;
+    /** [FUTURE]
+     * For multi-value condition types. Null otherwise. See the condition type for expected key-value information.
+     * Note: if and when we need this we may want to get rid of the 'value' field and roll the single-value case
+     * into this structure. */
+    //@JsonInclude(Include.NON_EMPTY)
+    //protected Map<String, String> values;
 
     /** Optional, non-evaluated contextual data to be kept with the datum */
     @JsonInclude(Include.NON_EMPTY)
@@ -100,14 +103,12 @@ public class Data implements Comparable<Data> {
      * @param id not null
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param value the value, mutually exclusive with values
-     * @param values the values,  mutually exclusive with value
      * @param context optional, contextual name-value pairs to be stored with the data.
      */
     private Data(String id, long timestamp, String value, Map<String, String> values, Map<String, String> context) {
         this.id = id;
         this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
         this.value = value;
-        this.values = values;
         this.context = context;
     }
 
@@ -154,24 +155,6 @@ public class Data implements Comparable<Data> {
         this.value = value;
     }
 
-    public Map<String, String> getValues() {
-        return values;
-    }
-
-    public void setValues(Map<String, String> values) {
-        this.values = values;
-    }
-
-    public void addValue(String name, String value) {
-        if (null == name || null == value) {
-            throw new IllegalArgumentException("Values must have non-null name and value");
-        }
-        if (null == values) {
-            values = new HashMap<>();
-        }
-        values.put(name, value);
-    }
-
     public Map<String, String> getContext() {
         return context;
     }
@@ -190,21 +173,13 @@ public class Data implements Comparable<Data> {
         context.put(name, value);
     }
 
-    @Override
-    public String toString() {
-        return "Data [id=" + id + ", timestamp=" + timestamp + ", value=" + value + ", values=" + values
-                + ", context=" + context + "]";
-    }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((context == null) ? 0 : context.hashCode());
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
-        result = prime * result + ((value == null) ? 0 : value.hashCode());
-        result = prime * result + ((values == null) ? 0 : values.hashCode());
         return result;
     }
 
@@ -217,27 +192,12 @@ public class Data implements Comparable<Data> {
         if (getClass() != obj.getClass())
             return false;
         Data other = (Data) obj;
-        if (context == null) {
-            if (other.context != null)
-                return false;
-        } else if (!context.equals(other.context))
-            return false;
         if (id == null) {
             if (other.id != null)
                 return false;
         } else if (!id.equals(other.id))
             return false;
         if (timestamp != other.timestamp)
-            return false;
-        if (value == null) {
-            if (other.value != null)
-                return false;
-        } else if (!value.equals(other.value))
-            return false;
-        if (values == null) {
-            if (other.values != null)
-                return false;
-        } else if (!values.equals(other.values))
             return false;
         return true;
     }
@@ -255,4 +215,10 @@ public class Data implements Comparable<Data> {
 
         return Long.compare(this.timestamp, o.timestamp);
     }
+
+    @Override
+    public String toString() {
+        return "Data [id=" + id + ", timestamp=" + timestamp + ", value=" + value + ", context=" + context + "]";
+    }
+
 }
