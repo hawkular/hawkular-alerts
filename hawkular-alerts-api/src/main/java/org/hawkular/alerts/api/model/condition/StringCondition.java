@@ -16,7 +16,6 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -29,7 +28,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Lucas Ponce
  */
 public class StringCondition extends Condition {
-    private static final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         EQUAL, NOT_EQUAL, STARTS_WITH, ENDS_WITH, CONTAINS, MATCH
@@ -136,8 +134,7 @@ public class StringCondition extends Condition {
             case MATCH:
                 return value.matches(ignoreCase ? ("(?i)" + pattern) : pattern);
             default:
-                msgLog.warnUnknowOperatorOnCondition(operator.name(), this.getClass().getName());
-                return false;
+                throw new IllegalStateException("Unknown operator: " + operator.name());
         }
     }
 

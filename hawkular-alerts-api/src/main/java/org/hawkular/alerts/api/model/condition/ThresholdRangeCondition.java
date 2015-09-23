@@ -16,7 +16,6 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -28,7 +27,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Lucas Ponce
  */
 public class ThresholdRangeCondition extends Condition {
-    private static final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         INCLUSIVE("[", "]"), EXCLUSIVE("(", ")");
@@ -175,8 +173,7 @@ public class ThresholdRangeCondition extends Condition {
                 aboveLow = value > thresholdLow;
                 break;
             default:
-                msgLog.warnUnknowOperatorOnCondition(operatorLow.name(), this.getClass().getName());
-                return false;
+                throw new IllegalStateException("Unknown operatorLow: " + operatorLow.name());
         }
 
         if (!aboveLow) {
@@ -191,8 +188,7 @@ public class ThresholdRangeCondition extends Condition {
                 belowHigh = value < thresholdHigh;
                 break;
             default:
-                msgLog.warnUnknowOperatorOnCondition(operatorHigh.name(), this.getClass().getName());
-                return false;
+                throw new IllegalStateException("Unknown operatorHigh: " + operatorLow.name());
         }
 
         return (belowHigh == inRange);
