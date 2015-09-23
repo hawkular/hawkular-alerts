@@ -23,6 +23,7 @@ import java.util.Set;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 
@@ -51,6 +52,13 @@ public interface AlertsService {
      * @throws Exception any problem
      */
     void addAlerts(Collection<Alert> alerts) throws Exception;
+
+    /**
+     * Persist the provided events.
+     * @param events Set of unpersisted Events.
+     * @throws Exception any problem
+     */
+    void addEvents(Collection<Event> events) throws Exception;
 
     /**
      * Delete the requested Alerts, as described by the provided criteria.

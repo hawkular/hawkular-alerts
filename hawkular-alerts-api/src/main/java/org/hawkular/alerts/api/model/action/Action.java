@@ -16,18 +16,18 @@
  */
 package org.hawkular.alerts.api.model.action;
 
-import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * A base class for action representation from the perspective of the alerts engine.
- * An action is the abstract concept of a consequence of an alert.
+ * An action is the abstract concept of a consequence of an event.
  * A Trigger definition can be linked with a list of actions.
  *
  * Alert engine only needs to know an action id and message/payload.
- * Action payload can optionally have an alert as payload.
+ * Action payload can optionally have an event as payload.
  *
  * Action plugins will be responsible to process the action according its own plugin configuration.
  *
@@ -49,7 +49,7 @@ public class Action {
     private String message;
 
     @JsonInclude(Include.NON_NULL)
-    private Alert alert;
+    private Event event;
 
     public Action() { }
 
@@ -60,11 +60,11 @@ public class Action {
         this.message = message;
     }
 
-    public Action(String tenantId, String actionPlugin, String actionId, Alert alert) {
+    public Action(String tenantId, String actionPlugin, String actionId, Event event) {
         this.tenantId = tenantId;
         this.actionPlugin = actionPlugin;
         this.actionId = actionId;
-        this.alert = alert;
+        this.event = event;
     }
 
     public String getTenantId() {
@@ -99,12 +99,12 @@ public class Action {
         this.actionPlugin = actionPlugin;
     }
 
-    public Alert getAlert() {
-        return alert;
+    public Event getEvent() {
+        return event;
     }
 
-    public void setAlert(Alert alert) {
-        this.alert = alert;
+    public void setEvent(Event event) {
+        this.event = event;
     }
 
     @Override
@@ -117,7 +117,7 @@ public class Action {
         if (!tenantId.equals(action.tenantId)) return false;
         if (!actionPlugin.equals(action.actionPlugin)) return false;
         if (!actionId.equals(action.actionId)) return false;
-        return alert.equals(action.alert);
+        return event.equals(action.event);
 
     }
 
@@ -136,7 +136,7 @@ public class Action {
                 ", actionPlugin='" + actionPlugin + '\'' +
                 ", actionId='" + actionId + '\'' +
                 ", message='" + message + '\'' +
-                ", alert=" + alert +
+                ", event=" + event +
                 '}';
     }
 }

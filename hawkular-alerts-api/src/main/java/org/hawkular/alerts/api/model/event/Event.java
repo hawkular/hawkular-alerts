@@ -16,13 +16,16 @@
  */
 package org.hawkular.alerts.api.model.event;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -48,13 +51,16 @@ public class Event {
 
     // A description of the event, suitable for display
     @JsonInclude
-    private String eventText;
+    private String text;
 
     @JsonInclude(Include.NON_EMPTY)
     private Map<String, String> context;
 
+    // TODO: WE NEED TO POTENTIALLY CONSOLIDATE OUR TAG APPROACH.  I THINK MAYBE WE SHOULD MOVE THE CURRENT Tag TO
+    // A NAME-VALUE PAIR, GET RID OF HIDDEN, AND CHANGE triggerId to a more generic ID.  The Tag as is is not
+    // going to work here, but for now leave as is/.
     @JsonInclude(Include.NON_EMPTY)
-    private Map<String, String> tags;
+    private Set<Tag> tags;
 
     // Null for API-generated Events. Otherwise the Trigger that created the event (@ctime)
     @JsonInclude(Include.NON_EMPTY)
@@ -75,28 +81,29 @@ public class Event {
         // for json assembly
     }
 
-    public Event(String tenantId, String id, String eventText, Map<String, String> context, Map<String, String> tags) {
+    public Event(String tenantId, String id, String text, Map<String, String> context, Set<Tag> tags) {
         this.tenantId = tenantId;
         this.id = id;
-        this.eventText = eventText;
+        this.text = text;
         this.context = context;
         this.tags = tags;
 
         this.ctime = System.currentTimeMillis();
     }
 
-    public Event(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets) {
+    public Event(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets,
+            Set<Tag> tags) {
         this.tenantId = tenantId;
         this.trigger = trigger;
         this.dampening = dampening;
         this.evalSets = evalSets;
+        this.tags = tags;
 
         this.ctime = System.currentTimeMillis();
 
         this.id = trigger.getId() + "-" + this.ctime;
-        this.eventText = trigger.getDescription(); // is this sufficient text?
+        this.text = isEmpty(trigger.getDescription()) ? trigger.getName() : trigger.getDescription();
         this.context = trigger.getContext();
-        // this.tags = ???
     }
 
     public String getTenantId() {
@@ -123,30 +130,30 @@ public class Event {
         this.ctime = ctime;
     }
 
-    public String getEventText() {
-        return eventText;
+    public String getText() {
+        return text;
     }
 
-    public void setEventText(String eventText) {
-        this.eventText = eventText;
+    public void setText(String text) {
+        this.text = text;
     }
 
-    public Map<String, String> getTags() {
+    public Collection<Tag> getTags() {
         if (null == tags) {
-            tags = new HashMap<>();
+            tags = new HashSet<>();
         }
         return tags;
     }
 
-    public void setTags(Map<String, String> tags) {
-        this.tags = context;
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
     }
 
-    public void addTag(String name, String value) {
-        if (null == name || null == value) {
-            throw new IllegalArgumentException("Propety must have non-null name and value");
+    public void addTag(Tag tag) {
+        if (null == tag) {
+            throw new IllegalArgumentException("Tag must be non-null");
         }
-        getTags().put(name, value);
+        getTags().add(tag);
     }
 
     public Map<String, String> getContext() {
@@ -220,6 +227,10 @@ public class Event {
         } else if (!tenantId.equals(other.tenantId))
             return false;
         return true;
+    }
+
+    private static boolean isEmpty(String s) {
+        return null == s || s.trim().isEmpty();
     }
 
 }

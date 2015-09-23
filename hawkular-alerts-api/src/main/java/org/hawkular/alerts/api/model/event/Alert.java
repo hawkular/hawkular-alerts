@@ -81,7 +81,7 @@ public class Alert extends Event {
     }
 
     public Alert(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets) {
-        super(tenantId, trigger, dampening, evalSets);
+        super(tenantId, trigger, dampening, evalSets, null);
 
         this.status = Status.OPEN;
         this.severity = trigger.getSeverity();

@@ -23,13 +23,14 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.hawkular.alerts.api.model.Severity;
+import org.hawkular.alerts.api.model.event.EventType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
- * A trigger definition.
+ * A Trigger definition.  A Trigger can fire an Alert or an Event.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -46,6 +47,20 @@ public class Trigger {
     /** For display */
     @JsonInclude
     private String name;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private String description;
+
+    @JsonInclude
+    private EventType eventType;
+
+    // defaults to non-null trigger description, otherwise trigger name
+    @JsonInclude
+    private String eventText;
+
+    // Ignored for Event Triggers
+    @JsonInclude
+    private Severity severity;
 
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
@@ -79,9 +94,6 @@ public class Trigger {
     @JsonInclude(Include.NON_EMPTY)
     private String memberOf;
 
-    @JsonInclude(Include.NON_EMPTY)
-    private String description;
-
     @JsonInclude
     private boolean enabled;
 
@@ -93,9 +105,6 @@ public class Trigger {
 
     @JsonInclude
     private boolean group;
-
-    @JsonInclude
-    private Severity severity;
 
     @JsonIgnore
     private Mode mode;
@@ -204,6 +213,22 @@ public class Trigger {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public EventType getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(EventType eventType) {
+        this.eventType = eventType;
+    }
+
+    public String getEventText() {
+        return eventText;
+    }
+
+    public void setEventText(String eventText) {
+        this.eventText = eventText;
     }
 
     public Map<String, String> getContext() {
@@ -451,11 +476,11 @@ public class Trigger {
     @Override
     public String toString() {
         return "Trigger [tenantId=" + tenantId + ", id=" + id + ", name=" + name + ", description=" + description
-                + ", autoDisable=" + autoDisable + ", autoEnable=" + autoEnable + ", autoResolve=" + autoResolve
-                + ", autoResolveAlerts=" + autoResolveAlerts + ", severity=" + severity + ", actions=" + actions
-                + ", firingMatch=" + firingMatch + ", autoResolveMatch=" + autoResolveMatch + ", context=" + context
-                + ", group=" + group + ", memberOf=" + memberOf + ", orphan=" + orphan + ", enabled=" + enabled
-                + ", mode=" + mode + ", tags=" + tags + "]";
+                + ", eventType=" + eventType + ", eventText=" + eventText + ", severity=" + severity + ", context="
+                + context + ", actions=" + actions + ", autoDisable=" + autoDisable + ", autoEnable=" + autoEnable
+                + ", autoResolve=" + autoResolve + ", autoResolveAlerts=" + autoResolveAlerts + ", autoResolveMatch="
+                + autoResolveMatch + ", memberOf=" + memberOf + ", enabled=" + enabled + ", firingMatch="
+                + firingMatch + ", orphan=" + orphan + ", group=" + group + ", mode=" + mode + ", tags=" + tags + "]";
     }
 
 }

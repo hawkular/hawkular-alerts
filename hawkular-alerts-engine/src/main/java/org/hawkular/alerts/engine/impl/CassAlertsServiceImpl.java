@@ -37,9 +37,10 @@ import javax.ejb.TransactionAttributeType;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.AlertComparator.Field;
 import org.hawkular.alerts.api.model.paging.Order;
@@ -140,6 +141,24 @@ public class CassAlertsServiceImpl implements AlertsService {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
+
+        // Every Alert has a corresponding Event
+        Collection<Event> events = new ArrayList<>(alerts.size());
+        for (Alert a : alerts) {
+            Trigger trigger = a.getTrigger();
+            String tenantId = trigger.getTenantId();
+            Set<Tag> tags = new HashSet(definitionsService.getTriggerTags(tenantId, trigger.getId(), null));
+            Event e = new Event(tenantId, trigger, a.getDampening(), a.getEvalSets(), tags);
+        }
+        addEvents(events);
+    }
+
+    @Override
+    public void addEvents(Collection<Event> events) throws Exception {
+        if (events == null) {
+            throw new IllegalArgumentException("Events must be not null");
+        }
+        log.info("TBD: INSERT EVENTS! " + events);
     }
 
     @Override

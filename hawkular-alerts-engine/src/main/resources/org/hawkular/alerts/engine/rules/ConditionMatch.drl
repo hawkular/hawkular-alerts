@@ -16,7 +16,7 @@
  */
 package org.hawkular.alerts.engine.rules
 
-import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
@@ -33,7 +33,9 @@ import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.dampening.Dampening.Type;
 import org.hawkular.alerts.api.model.data.Data;
-import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.api.model.event.EventType;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
@@ -49,6 +51,7 @@ import org.hawkular.alerts.api.model.event.Alert;
 global Logger log;
 global ActionsService actions;
 global List alerts;
+global List events;
 global Set pendingTimeouts;
 global Map autoResolvedTriggers;
 global Set disabledTriggers;
@@ -282,7 +285,7 @@ end
 
 
 
-////// ALERT GENERATION / TRIGGER MODE HANDLING
+////// EVENT GENERATION / TRIGGER MODE HANDLING
 
 // If a Trigger's FIRE mode Dampening is satisfied, then the Trigger fires and generates an Alert.  The Trigger's
 // FIRE mode Dampening fact is then reset and updated in working memory, ready to again track evals for the Trigger.
@@ -293,16 +296,31 @@ rule AlertOnSatisfiedDampening
         $t  : Trigger( mode == Mode.FIRING, $tid : id )
         $d  : Dampening( triggerMode == Mode.FIRING, triggerId == $tid, satisfied == true )
     then
-        if (log != null && log.isDebugEnabled()) {
-            log.debug("AlertOnSatisfiedDampening! " + $d.log());
+        Event newEvent;
+
+        // Only some triggers generate an alert
+        if ($t.getEventType() == EventType.ALERT) {
+            if (log != null && log.isDebugEnabled()) {
+                log.debug("Alert! Dampening Satisfied! " + $d.log());
+            }
+ 
+            newEvent = new Alert( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
+            // Adding an Alert will implicitly add the related Event
+            alerts.add((Alert)newEvent);
+
+        } else {
+            if (log != null && log.isDebugEnabled() && $t.getEventType() == EventType.EVENT) {
+                log.debug("Event! Dampening Satisfied! " + $d.log());
+            }
+
+            newEvent = new Event( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals(), null );
+            events.add(newEvent);
         }
 
-        Alert newAlert = new Alert( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
-        alerts.add(newAlert);
         if (actions != null) {
             for (String actionPlugin : $t.getActions().keySet()) {
                 for (String actionId : $t.getActions().get(actionPlugin)) {
-                    Action action = new Action($t.getTenantId(), actionPlugin, actionId, newAlert);
+                    Action action = new Action($t.getTenantId(), actionPlugin, actionId, newEvent);
                     actions.send(action);
                 }
             }

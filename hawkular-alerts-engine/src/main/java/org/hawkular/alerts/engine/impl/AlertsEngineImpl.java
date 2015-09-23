@@ -33,11 +33,12 @@ import javax.ejb.Singleton;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
-import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsService;
@@ -68,6 +69,7 @@ public class AlertsEngineImpl implements AlertsEngine {
 
     private final List<Data> pendingData;
     private final List<Alert> alerts;
+    private final List<Event> events;
     private final Set<Dampening> pendingTimeouts;
     private final Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers;
     private final Set<Trigger> disabledTriggers;
@@ -90,6 +92,7 @@ public class AlertsEngineImpl implements AlertsEngine {
     public AlertsEngineImpl() {
         pendingData = new ArrayList<>();
         alerts = new ArrayList<>();
+        events = new ArrayList<>();
         pendingTimeouts = new HashSet<>();
         autoResolvedTriggers = new HashMap<>();
         disabledTriggers = new HashSet<>();
@@ -157,6 +160,7 @@ public class AlertsEngineImpl implements AlertsEngine {
 
         pendingData.clear();
         alerts.clear();
+        events.clear();
         pendingTimeouts.clear();
         autoResolvedTriggers.clear();
         disabledTriggers.clear();
@@ -186,6 +190,7 @@ public class AlertsEngineImpl implements AlertsEngine {
         rules.addGlobal("log", log);
         rules.addGlobal("actions", actions);
         rules.addGlobal("alerts", alerts);
+        rules.addGlobal("events", events);
         rules.addGlobal("pendingTimeouts", pendingTimeouts);
         rules.addGlobal("autoResolvedTriggers", autoResolvedTriggers);
         rules.addGlobal("disabledTriggers", disabledTriggers);
@@ -341,6 +346,8 @@ public class AlertsEngineImpl implements AlertsEngine {
                     rules.fire();
                     alertsService.addAlerts(alerts);
                     alerts.clear();
+                    alertsService.addEvents(events);
+                    events.clear();
                     handleDisabledTriggers();
                     handleAutoResolvedTriggers();
 
@@ -350,6 +357,7 @@ public class AlertsEngineImpl implements AlertsEngine {
                     msgLog.errorProcessingRules(e.getMessage());
                 } finally {
                     alerts.clear();
+                    events.clear();
                 }
             }
         }
