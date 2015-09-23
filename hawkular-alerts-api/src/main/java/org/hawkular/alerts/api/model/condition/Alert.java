@@ -17,7 +17,6 @@
 package org.hawkular.alerts.api.model.condition;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
@@ -70,6 +69,7 @@ public class Alert extends Event {
     @Thin
     private List<Set<ConditionEval>> resolvedEvalSets;
 
+
     public Alert() {
         // for json assembly
     }
@@ -95,6 +95,11 @@ public class Alert extends Event {
 
     public void setAlertId(String alertId) {
         this.id = alertId;
+    }
+
+    @JsonIgnore
+    public String getTriggerId() {
+        return getTrigger().getId();
     }
 
     public Severity getSeverity() {
@@ -167,11 +172,6 @@ public class Alert extends Event {
 
     public void setResolvedEvalSets(List<Set<ConditionEval>> resolvedEvalSets) {
         this.resolvedEvalSets = resolvedEvalSets;
-    }
-
-    @JsonIgnore
-    public Map<String, String> getContext() {
-        return getTrigger().getContext();
     }
 
     @Override

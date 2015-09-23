@@ -28,7 +28,7 @@ import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
@@ -89,7 +89,7 @@ public class UrlResponseTimeData extends CommonData {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        NumericData rtBadData1 = new NumericData(firingCondition.getDataId(),
+        Data rtBadData1 = Data.forNumeric(firingCondition.getDataId(),
                 System.currentTimeMillis(),
                 1900d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(firingCondition, rtBadData1);
@@ -99,7 +99,7 @@ public class UrlResponseTimeData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        NumericData rtBadData2 = new NumericData(firingCondition.getDataId(),
+        Data rtBadData2 = Data.forNumeric(firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
                 1800d);
         ThresholdConditionEval eval2 = new ThresholdConditionEval(firingCondition, rtBadData2);
@@ -116,7 +116,7 @@ public class UrlResponseTimeData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        NumericData rtGoodData = new NumericData(autoResolveCondition.getDataId(),
+        Data rtGoodData = Data.forNumeric(autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
                 900d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(autoResolveCondition, rtGoodData);

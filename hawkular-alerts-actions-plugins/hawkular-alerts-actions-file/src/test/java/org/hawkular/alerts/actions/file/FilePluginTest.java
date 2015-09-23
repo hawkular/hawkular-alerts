@@ -137,7 +137,7 @@ public class FilePluginTest {
          */
         Data rtGoodData = Data.forNumeric(rtDataId, System.currentTimeMillis() + 20000, 998d);
 
-        Alert rtAlertResolved = new Alert(rtTrigger.getTenantId(), rtTrigger, 
+        Alert rtAlertResolved = new Alert(rtTrigger.getTenantId(), rtTrigger,
                 getEvalList(rtFiringCondition, rtBadData));
         rtAlertResolved.setDampening(rtFiringDampening);
         rtAlertResolved.setStatus(Alert.Status.RESOLVED);

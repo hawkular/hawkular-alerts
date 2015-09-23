@@ -133,13 +133,16 @@ public class JsonTest {
     @Test
     public void jsonToAlertTest() throws Exception {
         String jsonAlert = "{\"tenantId\":\"jdoe\"," +
-                "\"alertId\":\"trigger-test|1436964192878\"," +
+                "\"id\":\"trigger-test|1436964192878\"," +
                 "\"trigger\":{\"tenantId\":\"jdoe\"," +
-                "\"id\":\"trigger-test\"," +
-                "\"name\":\"trigger-test\"," +
-                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}" +
-                "}," +
+                              "\"id\":\"trigger-test\"," +
+                              "\"name\":\"trigger-test\"," +
+                              "\"description\":\"trigger-test\"," +
+                              "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}" +
+                             "}," +
                 "\"ctime\":1436964192878," +
+                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}," +
+                "\"eventText\":\"trigger-test\"," +
                 "\"evalSets\":[" +
                     "[{\"evalTimestamp\":1436964294055," +
                         "\"dataTimestamp\":2," +
@@ -176,7 +179,6 @@ public class JsonTest {
                 "\"resolvedBy\":null," +
                 "\"resolvedNotes\":null" +
                 "}";
-
         ObjectMapper mapper = new ObjectMapper();
         Alert alert = mapper.readValue(jsonAlert, Alert.class);
         assertNotNull(alert);
@@ -187,6 +189,7 @@ public class JsonTest {
         assertTrue(alert.getContext().size() == 2);
         assertTrue(alert.getContext().get("n1").equals("v1"));
         assertTrue(alert.getContext().get("n2").equals("v2"));
+        assertEquals("trigger-test", alert.getEventText());
 
         /*
             Testing thin deserializer
