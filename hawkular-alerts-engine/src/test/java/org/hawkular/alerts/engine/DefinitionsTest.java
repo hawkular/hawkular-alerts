@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
-import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.CompareCondition;

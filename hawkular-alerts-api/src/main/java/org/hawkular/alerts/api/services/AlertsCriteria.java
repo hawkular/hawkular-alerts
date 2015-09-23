@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.hawkular.alerts.api.model.Severity;
-import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.event.Alert;
 
 /**
  * Query criteria for fetching Alerts.

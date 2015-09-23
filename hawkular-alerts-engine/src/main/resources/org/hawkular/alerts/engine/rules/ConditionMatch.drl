@@ -43,7 +43,8 @@ import org.jboss.logging.Logger;
 
 import java.util.Set;
 import java.util.List;
-import java.util.Map;
+import java.util.Map
+import org.hawkular.alerts.api.model.event.Alert;
 
 global Logger log;
 global ActionsService actions;

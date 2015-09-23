@@ -37,8 +37,8 @@ import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.PluginMessage;
-import org.hawkular.alerts.api.model.condition.Alert;
-import org.hawkular.alerts.api.model.condition.Alert.Status;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.jboss.logging.Logger;
 
 /**

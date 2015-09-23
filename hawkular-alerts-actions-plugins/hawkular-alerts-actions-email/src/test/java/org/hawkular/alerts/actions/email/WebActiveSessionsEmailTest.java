@@ -27,7 +27,7 @@ import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.actions.tests.TestPluginMessage;
 import org.hawkular.alerts.actions.tests.WebActiveSessionsData;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

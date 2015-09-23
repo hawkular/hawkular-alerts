@@ -14,15 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.api.model.condition;
+package org.hawkular.alerts.api.model.event;
 
 import java.util.List;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
+import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.event.Event;
-import org.hawkular.alerts.api.model.event.Thin;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;

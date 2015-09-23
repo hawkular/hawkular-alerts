@@ -16,9 +16,11 @@
  */
 package org.hawkular.alerts.api.model;
 
+import org.hawkular.alerts.api.model.event.Alert;
+
 /**
  * Severity set for a {@link org.hawkular.alerts.api.model.trigger.Trigger} and assigned to an
- * {@link org.hawkular.alerts.api.model.condition.Alert} it generates.
+ * {@link Alert} it generates.
  *
  * @author jay shaughnessy
  * @author lucac ponce
