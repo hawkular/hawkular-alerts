@@ -90,5 +90,73 @@ public class EventConditionTest {
         assertFalse(condition.match(event3));
     }
 
+    @Test
+    public void testContextExpression() {
+        EventCondition condition = new EventCondition("trigger-1", "context.server == 'MyServer'");
+
+        Event event1 = new Event();
+        event1.addContext("server", "MyServer");
+
+        assertTrue(condition.match(event1));
+
+        condition.setExpression("context.server != 'MyServer'");
+
+        assertFalse(condition.match(event1));
+
+        condition.setExpression("context.quantity >= 11");
+
+        event1.addContext("quantity", "11");
+
+        assertTrue(condition.match(event1));
+
+        event1.addContext("quantity", "12");
+
+        assertTrue(condition.match(event1));
+
+        event1.addContext("quantity", "10");
+
+        assertFalse(condition.match(event1));
+
+        condition.setExpression("context.log.category starts 'WARN'");
+
+        event1.addContext("log.category", "WARNING");
+
+        assertTrue(condition.match(event1));
+    }
+
+    @Test
+    public void testTagExpression() {
+        EventCondition condition = new EventCondition("trigger-1", "tags.server == 'MyServer'");
+
+        Event event1 = new Event();
+        event1.addTag("server", "MyServer");
+
+        assertTrue(condition.match(event1));
+
+        condition.setExpression("tags.server != 'MyServer'");
+
+        assertFalse(condition.match(event1));
+
+        condition.setExpression("tags.quantity >= 11");
+
+        event1.addTag("quantity", "11");
+
+        assertTrue(condition.match(event1));
+
+        event1.addTag("quantity", "12");
+
+        assertTrue(condition.match(event1));
+
+        event1.addTag("quantity", "10");
+
+        assertFalse(condition.match(event1));
+
+        condition.setExpression("tags.log.category starts 'WARN'");
+
+        event1.addTag("log.category", "WARNING");
+
+        assertTrue(condition.match(event1));
+    }
+
 
 }
