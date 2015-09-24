@@ -30,6 +30,9 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class EventCondition extends Condition {
 
+    @JsonInclude
+    private String eventName;
+
     @JsonInclude(Include.NON_NULL)
     private String expression;
 
@@ -55,8 +58,16 @@ public class EventCondition extends Condition {
         this.expression = expression;
     }
 
+    public String getEventName() {
+        return eventName;
+    }
+
+    public void setEventName(String eventName) {
+        this.eventName = eventName;
+    }
+
     public String getLog(Event value) {
-        return triggerId + " : " + value + " " + expression;
+        return triggerId + " " + eventName + " : " + value + " " + expression;
     }
 
     @Override
