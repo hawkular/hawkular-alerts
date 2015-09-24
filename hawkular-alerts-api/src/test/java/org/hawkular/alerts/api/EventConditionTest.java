@@ -64,5 +64,31 @@ public class EventConditionTest {
         assertTrue(condition.match(event2));
     }
 
-    
+    @Test
+    public void testCtimeExpression() {
+        EventCondition condition = new EventCondition("trigger-1", "ctime > 10");
+
+        Event event1 = new Event();
+        event1.setCtime(11);
+
+        assertTrue(condition.match(event1));
+
+        Event event2 = new Event();
+        event2.setCtime(9);
+
+        assertFalse(condition.match(event2));
+
+        condition.setExpression("ctime == 10");
+
+        Event event3 = new Event();
+        event3.setCtime(10);
+
+        assertTrue(condition.match(event3));
+
+        condition.setExpression("ctime != 10");
+
+        assertFalse(condition.match(event3));
+    }
+
+
 }
