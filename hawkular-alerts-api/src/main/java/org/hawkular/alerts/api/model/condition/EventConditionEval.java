@@ -17,7 +17,6 @@
 package org.hawkular.alerts.api.model.condition;
 
 import org.hawkular.alerts.api.model.condition.Condition.Type;
-import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
 
 import com.fasterxml.jackson.annotation.JsonInclude;

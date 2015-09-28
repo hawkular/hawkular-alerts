@@ -99,7 +99,7 @@ public class EventCondition extends Condition {
     private static final String TENANT_ID = "tenantId";
     private static final String ID = "id";
     private static final String CTIME = "ctime";
-    private static final String EVENT_TEXT = "eventText";
+    private static final String TEXT = "text";
     private static final String CONTEXT = "context.";
     private static final String TAGS = "tags.";
 
@@ -173,8 +173,8 @@ public class EventCondition extends Condition {
             sEventValue = value.getId();
         } else if (CTIME.equals(eventField)) {
             lEventValue = value.getCtime();
-        } else if (EVENT_TEXT.equals(eventField)) {
-            sEventValue = value.getEventText();
+        } else if (TEXT.equals(eventField)) {
+            sEventValue = value.getText();
         } else if (eventField.startsWith(CONTEXT)) {
             // We get the key from context.<key> string
             String key = eventField.substring(8);
