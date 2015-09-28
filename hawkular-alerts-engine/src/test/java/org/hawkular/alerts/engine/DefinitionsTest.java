@@ -48,7 +48,6 @@ import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Mode;
-import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
@@ -647,35 +646,26 @@ public abstract class DefinitionsTest {
         assertTrue(cs.toString(), cs.size() == 1);
         Condition c = cs.iterator().next();
 
-        // check for the implicit tag
-        List<Tag> tags = definitionsService.getTriggerTags(TEST_TENANT, "trigger-1", "dataId");
-        assertTrue(tags.toString(), tags.size() == 1);
-        Tag tag = tags.get(0);
-        assertEquals("trigger-1", tag.getTriggerId());
-        assertEquals("dataId", tag.getCategory());
-        assertEquals(c.getDataId(), tag.getName());
-        assertEquals(false, tag.isVisible());
+        Map<String, String> tags = new HashMap<>(t.getTags());
+        tags.put("testname", "testvalue");
+        t.setTags(tags);
+        Map<String, String> newTag = new HashMap<>(1);
+        definitionsService.updateTrigger(TEST_TENANT, t);
 
-        Tag newTag = new Tag("trigger-1", "testcategory", "testname", true);
-        definitionsService.addTag(TEST_TENANT, newTag);
+        t = definitionsService.getTrigger(TEST_TENANT, "trigger-1");
+        assertEquals(3, t.getTags().size());
+        assertEquals("tvalue1", t.getTags().get("tname1"));
+        assertEquals("tvalue2", t.getTags().get("tname2"));
+        assertEquals("testvalue", t.getTags().get("testname"));
 
-        tags = definitionsService.getTriggerTags(TEST_TENANT, "trigger-1", null);
-        assertTrue(tags.toString(), tags.size() == 2);
-        tag = tags.get(1); // new one should be second by the implicit sort
-        assertEquals("trigger-1", tag.getTriggerId());
-        assertEquals("testcategory", tag.getCategory());
-        assertEquals("testname", tag.getName());
-        assertEquals(true, tag.isVisible());
-
-        definitionsService.removeTags(TEST_TENANT, "trigger-1", "testcategory", "testname");
-        tags = definitionsService.getTriggerTags(TEST_TENANT, "trigger-1", null);
-        assertEquals(tags.toString(), 1, tags.size());
-        tag = tags.get(0);
-        assertEquals("trigger-1", tag.getTriggerId());
-        assertEquals("dataId", tag.getCategory());
-
-        tags = definitionsService.getTriggerTags(TEST_TENANT, "dummy", null);
-        assertTrue(tags.toString(), tags.size() == 0);
+        Collection<Trigger> triggers = definitionsService.getTriggersByTag(TEST_TENANT, "testname", "bogus");
+        assertEquals(0, triggers.size());
+        triggers = definitionsService.getTriggersByTag(TEST_TENANT, "bogus", "testvalue");
+        assertEquals(0, triggers.size());
+        triggers = definitionsService.getTriggersByTag(TEST_TENANT, "testname", "testvalue");
+        assertEquals(1, triggers.size());
+        triggers = definitionsService.getTriggersByTag(TEST_TENANT, "testname", "*");
+        assertEquals(1, triggers.size());
     }
 
     @Test
@@ -748,19 +738,13 @@ public abstract class DefinitionsTest {
 
         // Using tags
         criteria = new AlertsCriteria();
-        Tag tag = new Tag();
-        tag.setTenantId(TEST_TENANT);
-        tag.setCategory("dataId");
-        criteria.setTag(tag);
+        criteria.addTag("tname1", "*");
         result = alertsService.getAlerts(TEST_TENANT, criteria, null);
         assertTrue(result.toString(), result.size() == 1);
 
         // More specific tags
         criteria = new AlertsCriteria();
-        tag = new Tag();
-        tag.setTenantId(TEST_TENANT);
-        tag.setName("NumericData-01");
-        criteria.setTag(tag);
+        criteria.addTag("tname2", "tvalue2");
         result = alertsService.getAlerts(TEST_TENANT, criteria, null);
         assertTrue(result.toString(), result.size() == 1);
 

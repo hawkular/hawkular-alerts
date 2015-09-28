@@ -47,8 +47,7 @@ public class CassStatement {
     public static final String DELETE_CONDITIONS_MODE;
     public static final String DELETE_DAMPENING_ID;
     public static final String DELETE_DAMPENINGS;
-    public static final String DELETE_TAGS;
-    public static final String DELETE_TAGS_TRIGGERS;
+    public static final String DELETE_TAG;
     public static final String DELETE_TRIGGER_ACTIONS;
     public static final String DELETE_TRIGGER;
 
@@ -68,7 +67,6 @@ public class CassStatement {
     public static final String INSERT_CONDITION_THRESHOLD_RANGE;
     public static final String INSERT_DAMPENING;
     public static final String INSERT_TAG;
-    public static final String INSERT_TAGS_TRIGGERS;
     public static final String INSERT_TRIGGER;
     public static final String INSERT_TRIGGER_ACTIONS;
 
@@ -94,14 +92,9 @@ public class CassStatement {
     public static final String SELECT_DAMPENING_ID;
     public static final String SELECT_DAMPENINGS_ALL;
     public static final String SELECT_DAMPENINGS_BY_TENANT;
-    public static final String SELECT_PARTITIONS_TAGS;
-    public static final String SELECT_TAGS;
-    public static final String SELECT_TAGS_BY_CATEGORY;
-    public static final String SELECT_TAGS_BY_CATEGORY_AND_NAME;
+    public static final String SELECT_PARTITIONS_TRIGGERS;
     public static final String SELECT_TAGS_BY_NAME;
-    public static final String SELECT_TAGS_TRIGGERS_BY_CATEGORY;
-    public static final String SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME;
-    public static final String SELECT_TAGS_TRIGGERS_BY_NAME;
+    public static final String SELECT_TAGS_BY_NAME_AND_VALUE;
     public static final String SELECT_TRIGGER;
     public static final String SELECT_TRIGGER_ACTIONS;
     public static final String SELECT_TRIGGER_CONDITIONS;
@@ -116,7 +109,6 @@ public class CassStatement {
     public static final String UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String UPDATE_ALERT;
     public static final String UPDATE_DAMPENING_ID;
-    public static final String UPDATE_TAGS_TRIGGERS;
     public static final String UPDATE_TRIGGER;
 
     static {
@@ -151,10 +143,8 @@ public class CassStatement {
 
         DELETE_DAMPENINGS = "DELETE FROM " + keyspace + ".dampenings " + "WHERE tenantId = ? AND triggerId = ? ";
 
-        DELETE_TAGS = "DELETE FROM " + keyspace + ".tags "
-                + "WHERE tenantId = ? AND triggerId = ? AND name = ?";
-
-        DELETE_TAGS_TRIGGERS = "DELETE FROM " + keyspace + ".tags_triggers " + "WHERE tenantId = ? AND name = ? ";
+        DELETE_TAG = "DELETE FROM " + keyspace + ".tags "
+                + "WHERE tenantId = ? AND type = ? AND name = ? and value = ? AND id = ?";
 
         DELETE_TRIGGER_ACTIONS = "DELETE FROM " + keyspace + ".triggers_actions "
                 + "WHERE tenantId = ? AND triggerId = ? ";
@@ -216,15 +206,12 @@ public class CassStatement {
                 + "dampeningId, tenantId) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_TAG = "INSERT INTO " + keyspace + ".tags "
-                + "(tenantId, triggerId, category, name, visible) VALUES (?, ?, ?, ?, ?) ";
-
-        INSERT_TAGS_TRIGGERS = "INSERT INTO " + keyspace + ".tags_triggers "
-                + "(tenantId, category, name, triggers) VALUES (?, ?, ?, ?) ";
+                + "(tenantId, type, name, value, id) VALUES (?, ?, ?, ?, ?) ";
 
         INSERT_TRIGGER = "INSERT INTO " + keyspace + ".triggers " +
                 "(tenantId, id, name, context, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
-                + "autoResolveMatch, memberOf, description, enabled, firingMatch, orphan, group, severity) "
-                + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
+                + "autoResolveMatch, memberOf, description, enabled, firingMatch, orphan, group, severity, tags) "
+                + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_TRIGGER_ACTIONS = "INSERT INTO " + keyspace + ".triggers_actions "
                 + "(tenantId, triggerId, actionPlugin, actions) VALUES (?, ?, ?, ?) ";
@@ -309,37 +296,18 @@ public class CassStatement {
 
         // This is for use as a pre-query to gather all partitions to be subsequently queried. If the
         // partition key changes this should also change.
-        SELECT_PARTITIONS_TAGS = "SELECT DISTINCT tenantid FROM " + keyspace + ".triggers ";
+        SELECT_PARTITIONS_TRIGGERS = "SELECT DISTINCT tenantid FROM " + keyspace + ".triggers ";
 
-        SELECT_TAGS = "SELECT tenantId, triggerId, category, name, visible "
+        SELECT_TAGS_BY_NAME = "SELECT tenantId, value, id "
                 + "FROM " + keyspace + ".tags "
-                + "WHERE tenantId = ? AND triggerId = ? ORDER BY triggerId, name ";
+                + "WHERE tenantId = ? AND type = ? and name = ? ";
 
-        SELECT_TAGS_BY_CATEGORY = "SELECT tenantId, triggerId, category, name, visible "
+        SELECT_TAGS_BY_NAME_AND_VALUE = "SELECT tenantId, id "
                 + "FROM " + keyspace + ".tags "
-                + "WHERE tenantId = ? AND triggerId = ? AND category = ? ";
-
-        SELECT_TAGS_BY_CATEGORY_AND_NAME = "SELECT tenantId, triggerId, category, name, visible "
-                + "FROM " + keyspace + ".tags "
-                + "WHERE tenantId = ? AND triggerId = ? AND category = ? AND name = ? ";
-
-        SELECT_TAGS_BY_NAME = "SELECT tenantId, triggerId, category, name, visible "
-                + "FROM " + keyspace + ".tags "
-                + "WHERE tenantId = ? AND triggerId = ? AND name = ? ";
-
-        SELECT_TAGS_TRIGGERS_BY_CATEGORY = "SELECT tenantId, triggers FROM " + keyspace
-                + ".tags_triggers WHERE tenantId = ? AND category = ? ";
-
-        SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME = "SELECT tenantId, triggers "
-                + "FROM " + keyspace + ".tags_triggers "
-                + "WHERE tenantId = ? AND category = ? AND name = ? ";
-
-        SELECT_TAGS_TRIGGERS_BY_NAME = "SELECT tenantId, triggers "
-                + "FROM " + keyspace + ".tags_triggers "
-                + "WHERE tenantId = ? AND name = ? ";
+                + "WHERE tenantId = ? AND type = ? and name = ? AND value = ? ";
 
         SELECT_TRIGGER = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
-                + "autoResolveMatch, memberOf, description, enabled, firingMatch, orphan, group, severity "
+                + "autoResolveMatch, memberOf, description, enabled, firingMatch, orphan, group, severity, tags "
                 + "FROM " + keyspace + ".triggers "
                 + "WHERE tenantId = ? AND id = ? ";
 
@@ -373,12 +341,12 @@ public class CassStatement {
 
         SELECT_TRIGGERS_ALL = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, "
                 + "autoResolveAlerts, autoResolveMatch, memberOf, description, enabled, firingMatch, orphan, "
-                + "group, severity "
+                + "group, severity, tags "
                 + "FROM " + keyspace + ".triggers ";
 
         SELECT_TRIGGERS_TENANT = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, "
                 + "autoResolveAlerts, autoResolveMatch, memberOf, description, enabled, firingMatch, orphan, "
-                + "group, severity "
+                + "group, severity, tags "
                 + "FROM " + keyspace + ".triggers WHERE tenantId = ? ";
 
         UPDATE_ACTION = "UPDATE " + keyspace + ".actions SET properties = ? "
@@ -395,13 +363,10 @@ public class CassStatement {
                 + "SET type = ?, evalTrueSetting = ?, evalTotalSetting = ?, evalTimeSetting = ? "
                 + "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? AND dampeningId = ? ";
 
-        UPDATE_TAGS_TRIGGERS = "UPDATE " + keyspace + ".tags_triggers SET triggers = ? "
-                + "WHERE tenantId = ? AND name = ? ";
-
         UPDATE_TRIGGER = "UPDATE " + keyspace + ".triggers "
                 + "SET autoDisable = ?, autoEnable = ?, autoResolve = ?, autoResolveAlerts = ?, autoResolveMatch = ?, "
                 + "memberOf = ?, context = ?, description = ?,  enabled = ?, firingMatch = ?, name = ?, orphan = ?, "
-                + "group = ?, severity = ?  "
+                + "group = ?, severity = ?, tags = ? "
                 + "WHERE tenantId = ? AND id = ? ";
 
     }

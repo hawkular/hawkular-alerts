@@ -44,7 +44,6 @@ import org.hawkular.alerts.api.json.UnorphanMemberInfo;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Mode;
-import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
@@ -112,14 +111,14 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success, Triggers list found. Can be empty."),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response findTriggersByTag(
-            @ApiParam(required = false, value = "The tag category. If not supplied or empty only tag name is used")
-            @QueryParam("category")
-            final String category,
-            @ApiParam(required = false, value = "The tag name. If not supplied or empty only tag category is used")
+            @ApiParam(required = true, value = "The tag name.")
             @QueryParam("name")
-            final String name) {
+            final String name,
+            @ApiParam(required = true, value = "The tag value. Set to '*' to match all values for the tag name.")
+            @QueryParam("value")
+            final String value) {
         try {
-            Collection<Trigger> triggers = definitions.getTriggersByTag(tenantId, category, name);
+            Collection<Trigger> triggers = definitions.getTriggersByTag(tenantId, name, value);
             log.debugf("Triggers: %s ", triggers);
             return ResponseUtil.ok(triggers);
         } catch (Exception e) {
@@ -1077,137 +1076,6 @@ public class TriggersHandler {
             Collection<Condition> conditions = definitions.removeCondition(tenantId, conditionId);
             log.debugf("Conditions: %s ", conditions);
             return ResponseUtil.ok(conditions);
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
-    @POST
-    @Path("/tags")
-    @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Create a new trigger tag", notes = "Returns Tag created if operation finished correctly")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Tag created"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response createTag(
-            @ApiParam(value = "Tag to be created", required = true)
-            final Tag tag) {
-        try {
-            if (isEmpty(tag.getTriggerId()) || isEmpty(tag.getName())) {
-                return ResponseUtil.badRequest("Invalid tag, triggerId or name required");
-            }
-            definitions.addTag(tenantId, tag);
-            log.debugf("Tag: %s ", tag);
-            return ResponseUtil.ok(tag);
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
-    @POST
-    @Path("/groups/tags")
-    @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Create a new group trigger tag",
-            notes = "Returns Tag created if operation finished correctly")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Tag created"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response createGroupTag(
-            @ApiParam(value = "Tag to be created", required = true) final Tag tag) {
-        try {
-            if (isEmpty(tag.getTriggerId()) || isEmpty(tag.getName())) {
-                return ResponseUtil.badRequest("Invalid tag, triggerId or name required");
-            }
-            definitions.addGroupTag(tenantId, tag);
-            log.debugf("Tag: %s ", tag);
-            return ResponseUtil.ok(tag);
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
-    @PUT
-    @Path("/{triggerId}/tags")
-    @ApiOperation(value = "Delete existing Tags from a Trigger")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Tags deleted"),
-            @ApiResponse(code = 404, message = "No Trigger Found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response deleteTags(
-            @ApiParam(value = "Trigger id of tags to be deleted", required = true)
-            @PathParam("triggerId")
-            final String triggerId,
-            @ApiParam(value = "Category of tags to be deleted", required = false)
-            @QueryParam("category")
-            final String category,
-            @ApiParam(value = "Name of tags to be deleted", required = false)
-            @QueryParam("name")
-            final String name) {
-        try {
-            definitions.removeTags(tenantId, triggerId, category, name);
-            return ResponseUtil.ok();
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
-    @PUT
-    @Path("/groups/{groupId}/tags")
-    @ApiOperation(value = "Delete existing Tags from a Trigger")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Tags deleted"),
-            @ApiResponse(code = 404, message = "No Trigger Found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response deleteGroupTags(
-            @ApiParam(value = "Trigger id of tags to be deleted", required = true)
-            @PathParam("groupId")
-            final String groupId,
-            @ApiParam(value = "Category of tags to be deleted", required = false)
-            @QueryParam("category")
-            final String category,
-            @ApiParam(value = "Name of tags to be deleted", required = false)
-            @QueryParam("name")
-            final String name) {
-        try {
-            definitions.removeGroupTags(tenantId, groupId, category, name);
-            return ResponseUtil.ok();
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
-    @GET
-    @Path("/{triggerId}/tags")
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get tags for a trigger.",
-            responseContainer = "Collection<Tag>",
-            response = Tag.class)
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response getTriggerTags(
-            @ApiParam(value = "Trigger id for the retrieved Tags", required = true)
-            @PathParam("triggerId")
-            final String triggerId,
-            @ApiParam(value = "Category of tags to be retrieved", required = false)
-            @QueryParam("category")
-            final String category) {
-        try {
-            Collection<Tag> tags = definitions.getTriggerTags(tenantId, triggerId, category);
-            log.debugf("Tags: " + tags);
-            return ResponseUtil.ok(tags);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());

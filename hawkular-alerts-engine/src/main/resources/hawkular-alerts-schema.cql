@@ -45,6 +45,7 @@ CREATE TABLE ${keyspace}.triggers (
     orphan boolean,
     group boolean,
     severity text,
+    tags map<text,text>,
     PRIMARY KEY (tenantId, id)
 );
 
@@ -129,30 +130,12 @@ CREATE TABLE ${keyspace}.actions (
 
 CREATE TABLE ${keyspace}.tags (
     tenantId text,
-    triggerId text,
-    category text,
+    type text,
     name text,
-    visible boolean,
-    PRIMARY KEY (tenantId, triggerId, name)
+    value text,
+    id text,
+    PRIMARY KEY (( tenantId, type, name ), value, id)
 );
-
--- #
-
-CREATE INDEX tags_category ON ${keyspace}.tags(category);
-
--- #
-
-CREATE TABLE ${keyspace}.tags_triggers (
-    tenantId text,
-    category text,
-    name text,
-    triggers set<text>,
-    PRIMARY KEY (tenantId, name)
-);
-
--- #
-
-CREATE INDEX tags_triggers_category ON ${keyspace}.tags_triggers(category);
 
 -- #
 
