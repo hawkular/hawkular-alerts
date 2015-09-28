@@ -66,6 +66,9 @@ class LifecycleITest extends AbstractITestBase {
         context.put("contextName2","contextValue2");
         Trigger testTrigger = new Trigger("test-autodisable-trigger", "test-autodisable-trigger", context);
 
+        // sub-test: add tag and ensure it carries through to the alert
+        testTrigger.addTag("test-autodisable-tname","test-autodisable-tvalue");
+
         // remove if it exists
         resp = client.delete(path: "triggers/test-autodisable-trigger")
         assert(200 == resp.status || 404 == resp.status)
@@ -414,12 +417,12 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertTrue(resp.data.isEmpty())
 
-        // FETCH alerts for bogus tag, should not be any
-        resp = client.get(path: "", query: [startTime:start,tags:"XXX"] )
+        // FETCH alerts for bogus name tag, should not be any
+        resp = client.get(path: "", query: [startTime:start,tags:"XXX|*"] )
         assertEquals(200, resp.status)
         assertTrue(resp.data.isEmpty())
 
-        // FETCH alerts for bogus category|tag, should not be any
+        // FETCH alerts for bogus name|value tag, should not be any
         resp = client.get(path: "", query: [startTime:start,tags:"XXX|YYY"] )
         assertEquals(200, resp.status)
         assertTrue(resp.data.isEmpty())
@@ -438,13 +441,13 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(alertId, resp.data[0].alertId)
 
         // FETCH the alert above again, this time by tag
-        resp = client.get(path: "", query: [startTime:start,tags:"dataId|test-autodisable-avail"] )
+        //resp = client.get(path: "", query: [startTime:start,tags:"test-autodisable-tname|test-autodisable-tvalue"] )
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals(alertId, resp.data[0].alertId)
 
         // FETCH the alert above again, this time by union of (good) triggerId and (bad) tag
-        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger",tags:"XXX"] )
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger",tags:"XXX|*"] )
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals(alertId, resp.data[0].alertId)

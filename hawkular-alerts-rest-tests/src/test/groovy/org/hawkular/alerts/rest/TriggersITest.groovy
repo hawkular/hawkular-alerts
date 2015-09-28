@@ -23,7 +23,6 @@ import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.dampening.Dampening
 import org.hawkular.alerts.api.model.Severity
-import org.hawkular.alerts.api.model.trigger.Tag
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.json.GroupConditionsInfo
 import org.hawkular.alerts.api.json.GroupMemberInfo
@@ -145,9 +144,9 @@ class TriggersITest extends AbstractITestBase {
         resp = client.post(path: "triggers/groups/group-trigger/dampenings", body: groupDampening);
         assertEquals(200, resp.status)
 
-        // add tag to the group
-        Tag groupTag = new Tag("group-trigger", "group-category", "group-name", true);
-        resp = client.post(path: "triggers/groups/tags", body: groupTag)
+        // add tag to the group (via update)
+        groupTrigger.addTag( "group-tname", "group-tvalue" );
+        resp = client.put(path: "triggers/groups/group-trigger", body: groupTrigger)
         assertEquals(200, resp.status)
 
         // add another condition to the group (only member1 is relevant, member2 is now an orphan)
@@ -215,10 +214,10 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size());
 
-        // get the group tags
-        resp = client.get(path: "triggers/group-trigger/tags", query: [category:"group-category"])
-        assertEquals(200, resp.status)
-        assertEquals(1, resp.data.size());
+        // check the group tags
+        Map<String, String> groupTags = groupTrigger.getTags();
+        assertEquals(1, groupTags.size());
+        assertEquals("group-tvalue", groupTags.get("group-tname"));
 
         // get the group conditions
         resp = client.get(path: "triggers/group-trigger/conditions")
@@ -230,13 +229,21 @@ class TriggersITest extends AbstractITestBase {
         cond2 = resp.data[1];
         assertEquals("DataId2-Token", cond2.getDataId());
 
+        // get the member1 trigger
+        resp = client.get(path: "triggers/member1")
+        assertEquals(200, resp.status)
+        def member1 = (Trigger)resp.data;
+        assertEquals( "member1", member1.getName() );
+        assertEquals( true, member1.isMember() );
+        assertEquals( true, member1.isAutoDisable());
+
+        // check the member1 tag
+        Map<String, String> memberTags = member1.getTags();
+        assertEquals(1, memberTags.size());
+        assertEquals("group-tvalue", memberTags.get("group-tname"));
+
         // get the member1 dampening
         resp = client.get(path: "triggers/member1/dampenings")
-        assertEquals(200, resp.status)
-        assertEquals(1, resp.data.size());
-
-        // get the member1 tag
-        resp = client.get(path: "triggers/member1/tags", query: [category:"group-category"])
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size());
 
@@ -245,13 +252,20 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size());
 
-        // check the member2 dampening
-        resp = client.get(path: "triggers/member2/dampenings")
+        // get the member2 trigger
+        resp = client.get(path: "triggers/member2")
         assertEquals(200, resp.status)
-        assertEquals(0, resp.data.size());
+        def member2 = (Trigger)resp.data;
+        assertEquals( "member2", member2.getName() );
+        assertEquals( true, member2.isMember() );
+        assertEquals( false, member2.isAutoDisable());
 
         // check the member2 tag
-        resp = client.get(path: "triggers/member2/tags", query: [category:"group-category"])
+        memberTags = member2.getTags();
+        assertEquals(0, memberTags.size());
+
+        // check the member2 dampening
+        resp = client.get(path: "triggers/member2/dampenings")
         assertEquals(200, resp.status)
         assertEquals(0, resp.data.size());
 
@@ -268,24 +282,32 @@ class TriggersITest extends AbstractITestBase {
         resp = client.post(path: "triggers/groups/members/member2/unorphan", body: unorphanMemberInfo);
         assertEquals(200, resp.status)
 
-        // get the member2 dampening
+        // get the member2 trigger
+        resp = client.get(path: "triggers/member2")
+        assertEquals(200, resp.status)
+        member2 = (Trigger)resp.data;
+        assertEquals( "member2", member2.getName() );
+        assertEquals( false, member2.isOrphan() );
+        assertEquals( true, member2.isAutoDisable());
+
+        // check the member2 tag
+        memberTags = member2.getTags();
+        assertEquals(1, memberTags.size());
+        assertEquals("group-tvalue", memberTags.get("group-tname"));
+
+        // check the member2 dampening
         resp = client.get(path: "triggers/member2/dampenings")
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size());
 
-        // get the member2 tag
-        resp = client.get(path: "triggers/member2/tags", query: [category:"group-category"])
-        assertEquals(200, resp.status)
-        assertEquals(1, resp.data.size());
-
-        // get the member2 conditions
+        // get the member2 condition
         resp = client.get(path: "triggers/member2/conditions")
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size());
 
         // delete group tag
-        resp = client.put(path: "triggers/groups/group-trigger/tags",
-                          query: [category:"group-category",name:"group-name"])
+        groupTrigger.getTags().clear();
+        resp = client.put(path: "triggers/groups/group-trigger", body: groupTrigger)
         assertEquals(200, resp.status)
 
         // delete group dampening
@@ -315,14 +337,8 @@ class TriggersITest extends AbstractITestBase {
         assertEquals( true, groupTrigger.isAutoDisable());
 
         // check the group dampening
-        resp = client.get(path: "triggers/group-trigger/dampenings")
-        assertEquals(200, resp.status)
-        assertEquals(0, resp.data.size());
-
-        // check the group tag
-        resp = client.get(path: "triggers/group-trigger/tags", query: [category:"group-category"])
-        assertEquals(200, resp.status)
-        assertEquals(0, resp.data.size());
+        groupTags = groupTrigger.getTags();
+        assertEquals(0, groupTags.size());
 
         // check the group condition
         resp = client.get(path: "triggers/group-trigger/conditions")
@@ -339,9 +355,6 @@ class TriggersITest extends AbstractITestBase {
             assertEquals( false, member.isOrphan() );
             assertEquals( true, member.isAutoDisable());
             resp = client.get(path: "triggers/" + name + "/dampenings")
-            assertEquals(200, resp.status)
-            assertEquals(0, resp.data.size());
-            resp = client.get(path: "triggers/" + name + "/tags", query: [category:"group-category"])
             assertEquals(200, resp.status)
             assertEquals(0, resp.data.size());
             resp = client.get(path: "triggers/" + name + "/conditions")
@@ -364,6 +377,7 @@ class TriggersITest extends AbstractITestBase {
     @Test
     void testTag() {
         Trigger testTrigger = new Trigger("test-trigger-1", "No-Metric");
+        testTrigger.addTag("tname", "tvalue");
 
         // remove if it exists
         def resp = client.delete(path: "triggers/test-trigger-1")
@@ -378,40 +392,29 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals("No-Metric", resp.data.name)
 
-        Tag testTag = new Tag("test-trigger-1", "test-category", "test-name", true);
-        resp = client.post(path: "triggers/tags", body: testTag)
-        assertEquals(200, resp.status)
+        Map<String, String> tags = resp.data.tags;
+        assertEquals("tvalue", tags.get("tname"));
 
-        resp = client.get(path: "triggers/test-trigger-1/tags", query: [category:"test-category"] );
-        assertEquals(200, resp.status)
-        assertEquals("test-name", resp.data.iterator().next().name)
-
-        resp = client.get(path: "triggers/test-trigger-1/tags");
-        assertEquals(200, resp.status)
-        assertEquals("test-name", resp.data.iterator().next().name)
-
-        resp = client.get(path: "triggers/tag", query: [category:"test-category"] );
+        resp = client.get(path: "triggers/tag", query: [tname:"tname",tvalue:"tvalue"] );
         assertEquals(200, resp.status)
         assertEquals("test-trigger-1", resp.data.iterator().next().id)
 
-        resp = client.get(path: "triggers/tag", query: [name:"test-name"] );
+        resp = client.get(path: "triggers/tag", query: [tname:"tname",tvalue:"*"] );
         assertEquals(200, resp.status)
         assertEquals("test-trigger-1", resp.data.iterator().next().id)
 
-        resp = client.get(path: "triggers/tag", query: [category:"test-category",name:"test-name"] );
-        assertEquals(200, resp.status)
-        assertEquals("test-trigger-1", resp.data.iterator().next().id)
-
-        resp = client.get(path: "triggers/tag", query: [category:"funky",name:"funky"] );
+        resp = client.get(path: "triggers/tag", query: [tname:"funky",tvalue:"funky"] );
         assertEquals(200, resp.status)
         assertEquals(false, resp.data.iterator().hasNext())
 
         // delete the tag
-        resp = client.put(path: "triggers/test-trigger-1/tags", query: [category:"test-category"] )
+        testTrigger.getTags().clear();
+        resp = client.put(path: "triggers/test-trigger-1", body: testTrigger )
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "triggers/test-trigger-1/tags");
+        resp = client.get(path: "triggers/tag", query: [tname:"tname",tvalue:"tvalue"] );
         assertEquals(200, resp.status)
+        assertEquals(0, resp.data.size())
 
         // delete the trigger
         resp = client.delete(path: "triggers/test-trigger-1")

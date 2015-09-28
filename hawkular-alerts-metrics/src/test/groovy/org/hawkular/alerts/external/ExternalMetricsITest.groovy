@@ -21,7 +21,6 @@ import java.util.List
 import org.hawkular.alerts.api.model.data.StringData
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ExternalCondition
-import org.hawkular.alerts.api.model.trigger.Tag
 import org.hawkular.alerts.api.model.trigger.Trigger
 
 import org.hawkular.alerts.api.model.trigger.Mode
@@ -62,6 +61,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         triggerTestAvg.setAutoDisable(true);
 
+        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
+        triggerTestAvg.addTag("HawkularMetrics", "MetricsCondition" );
+
         resp = client.post(path: "triggers", body: triggerTestAvg)
         assertEquals(200, resp.status)
 
@@ -75,11 +77,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.put(path: "triggers/trigger-test-avg/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-
-        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
-        Tag tag = new Tag( "trigger-test-avg", "HawkularMetrics", "MetricsCondition" );
-        resp = client.post(path: "triggers/tags/", body: tag)
-        assertEquals(200, resp.status)
 
         // FETCH trigger to validate and get the tenantId
         resp = client.get(path: "triggers/trigger-test-avg");
@@ -147,6 +144,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         triggerTestAvgD.setAutoDisable(true);
 
+        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
+        triggerTestAvgD.addTag("HawkularMetrics", "MetricsCondition" );
+
         resp = client.post(path: "triggers", body: triggerTestAvgD)
         assertEquals(200, resp.status)
 
@@ -160,11 +160,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.put(path: "triggers/trigger-test-avgd/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-
-        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
-        Tag tag = new Tag( "trigger-test-avgd", "HawkularMetrics", "MetricsCondition" );
-        resp = client.post(path: "triggers/tags/", body: tag)
-        assertEquals(200, resp.status)
 
         // FETCH trigger to validate and get the tenantId
         resp = client.get(path: "triggers/trigger-test-avgd");
@@ -235,7 +230,10 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.delete(path: "triggers/trigger-test-avgw")
         assertTrue(200 == resp.status || 404 == resp.status)
 
-       triggerTestAvgW.setAutoDisable(true);
+        triggerTestAvgW.setAutoDisable(true);
+
+        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
+        triggerTestAvgW.addTag("HawkularMetrics", "MetricsCondition" );
 
         resp = client.post(path: "triggers", body:triggerTestAvgW)
         assertEquals(200, resp.status)
@@ -250,11 +248,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.put(path: "triggers/trigger-test-avgw/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-
-        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
-        Tag tag = new Tag( "trigger-test-avgw", "HawkularMetrics", "MetricsCondition" );
-        resp = client.post(path: "triggers/tags/", body: tag)
-        assertEquals(200, resp.status)
 
         // FETCH trigger to validate and get the tenantId
         resp = client.get(path: "triggers/trigger-test-avgw");
@@ -325,7 +318,10 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.delete(path: "triggers/trigger-test-min")
         assertTrue(200 == resp.status || 404 == resp.status)
 
-       triggerTestMin.setAutoDisable(true);
+        triggerTestMin.setAutoDisable(true);
+
+        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
+        triggerTestMin.addTag("HawkularMetrics", "MetricsCondition" );
 
         resp = client.post(path: "triggers", body:triggerTestMin)
         assertEquals(200, resp.status)
@@ -340,11 +336,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.put(path: "triggers/trigger-test-min/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-
-        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
-        Tag tag = new Tag( "trigger-test-min", "HawkularMetrics", "MetricsCondition" );
-        resp = client.post(path: "triggers/tags/", body: tag)
-        assertEquals(200, resp.status)
 
         // FETCH trigger to validate and get the tenantId
         resp = client.get(path: "triggers/trigger-test-min");
@@ -413,6 +404,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         triggerTestMax.setAutoDisable(true);
 
+        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
+        triggerTestMax.addTag("HawkularMetrics", "MetricsCondition" );
+
         resp = client.post(path: "triggers", body: triggerTestMax)
         assertEquals(200, resp.status)
 
@@ -426,11 +420,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.put(path: "triggers/trigger-test-max/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-
-        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
-        Tag tag = new Tag( "trigger-test-max", "HawkularMetrics", "MetricsCondition" );
-        resp = client.post(path: "triggers/tags/", body: tag)
-        assertEquals(200, resp.status)
 
         // FETCH trigger to validate and get the tenantId
         resp = client.get(path: "triggers/trigger-test-max");
@@ -499,6 +488,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         triggerTestRange.setAutoDisable(true);
 
+        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
+        triggerTestRange.addTag("HawkularMetrics", "MetricsCondition" );
+
         resp = client.post(path: "triggers", body: triggerTestRange)
         assertEquals(200, resp.status)
 
@@ -512,11 +504,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.put(path: "triggers/trigger-test-range/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-
-        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
-        Tag tag = new Tag( "trigger-test-range", "HawkularMetrics", "MetricsCondition" );
-        resp = client.post(path: "triggers/tags/", body: tag)
-        assertEquals(200, resp.status)
 
         // FETCH trigger to validate and get the tenantId
         resp = client.get(path: "triggers/trigger-test-range");
@@ -585,6 +572,9 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         triggerTestRangep.setAutoDisable(true);
 
+        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
+        triggerTestRangep.addTag("HawkularMetrics", "MetricsCondition" );
+
         resp = client.post(path: "triggers", body: triggerTestRangep)
         assertEquals(200, resp.status)
 
@@ -598,11 +588,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.put(path: "triggers/trigger-test-rangep/conditions/firing", body: conditions)
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-
-        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
-        Tag tag = new Tag( "trigger-test-rangep", "HawkularMetrics", "MetricsCondition" );
-        resp = client.post(path: "triggers/tags/", body: tag)
-        assertEquals(200, resp.status)
 
         // FETCH trigger to validate and get the tenantId
         resp = client.get(path: "triggers/trigger-test-rangep");

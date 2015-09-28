@@ -20,11 +20,11 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.EJB;
@@ -47,7 +47,6 @@ import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.data.MixedData;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
-import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.engine.service.AlertsEngine;
@@ -261,7 +260,7 @@ public class AlertsHandler {
             @QueryParam("severities")
             final String severities,
             @ApiParam(required = false, value = "filter out alerts for unspecified tags, comma separated list of tags, "
-                    + "each tag of format [category|]name")
+                    + "each tag of format 'tname|tvalue'. Specify '*' for tvalue to match all tvalues.")
             @QueryParam("tags")
             final String tags
             ) {
@@ -304,21 +303,16 @@ public class AlertsHandler {
         }
         if (!isEmpty(tags)) {
             String[] tagTokens = tags.split(",");
-            List<Tag> tagList = new ArrayList<>(tagTokens.length);
+            Map<String, String> tagsMap = new HashMap<>(tagTokens.length);
             for (String tagToken : tagTokens) {
                 String[] fields = tagToken.split("\\|");
-                Tag newTag;
-                if (fields.length > 0 && fields.length < 3) {
-                    if (fields.length == 1) {
-                        newTag = new Tag(fields[0]);
-                    } else {
-                        newTag = new Tag(fields[0], fields[1]);
-                    }
-                    newTag.setTenantId(tenantId);
-                    tagList.add(newTag);
+                if (fields.length == 2) {
+                    tagsMap.put(fields[0], fields[1]);
+                } else {
+                    log.debugf("Invalid Tag Criteria %s", Arrays.toString(fields));
                 }
             }
-            criteria.setTags(tagList);
+            criteria.setTags(tagsMap);
         }
         if (null != thin) {
             criteria.setThin(thin.booleanValue());

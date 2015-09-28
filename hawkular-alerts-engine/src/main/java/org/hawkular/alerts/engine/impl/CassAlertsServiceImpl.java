@@ -36,6 +36,7 @@ import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
+import org.hawkular.alerts.api.model.TagType;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
@@ -46,7 +47,6 @@ import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Mode;
-import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsCriteria;
@@ -72,7 +72,7 @@ import com.google.common.util.concurrent.Futures;
  */
 @Local(AlertsService.class)
 @Stateless
-@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
+@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class CassAlertsServiceImpl implements AlertsService {
 
     private final MsgLogger msgLog = MsgLogger.LOGGER;
@@ -354,10 +354,10 @@ public class CassAlertsServiceImpl implements AlertsService {
         **Note** currently explicitTriggerIds and triggerIds determined via tags are joined together (treated as one
         triggerId filter). I'm not sure this is right but it seems to make the most sense.
      */
-    private boolean extractTriggerIds(Set<String> triggerIds, AlertsCriteria criteria) throws Exception {
+    private boolean extractTriggerIds(String tenantId, Set<String> triggerIds, AlertsCriteria criteria)
+            throws Exception {
         boolean hasTriggerId = !isEmpty(criteria.getTriggerId());
         boolean hasTriggerIds = !isEmpty(criteria.getTriggerIds());
-        boolean hasTag = null != criteria.getTag();
         boolean hasTags = !isEmpty(criteria.getTags());
 
         /*
@@ -379,26 +379,19 @@ public class CassAlertsServiceImpl implements AlertsService {
         /*
             Indirect trigger ids by tags
          */
-        if (hasTag || hasTags) {
-            Set<Tag> tags = new HashSet<>();
-            if (hasTags) {
-                tags.addAll(criteria.getTags());
-            }
-            if (hasTag) {
-                tags.add(criteria.getTag());
-            }
-            triggerIds.addAll(getTriggersIdByTags(tags));
+        if (hasTags) {
+            triggerIds.addAll(getTriggerIdsByTags(tenantId, criteria.getTags()));
         }
 
         // Return true if any trigger or tag criteria was specified, regardless of whether it results in any
         // triggerIds, because tags may not actually result in triggerIds but that does not mean the filter was
         // not specified. In that case the overall fetch of alerts should return no alerts.
-        return hasTriggerId || hasTriggerIds || hasTag || hasTags;
+        return hasTriggerId || hasTriggerIds || hasTags;
     }
 
     private boolean filterByTriggers(String tenantId, Set<String> alertsId, AlertsCriteria criteria) throws Exception {
         Set<String> triggerIds = new HashSet<>();
-        boolean filterByTriggers = extractTriggerIds(triggerIds, criteria);
+        boolean filterByTriggers = extractTriggerIds(tenantId, triggerIds, criteria);
 
         if (triggerIds.size() > 0) {
             List<ResultSetFuture> futures = new ArrayList<>();
@@ -554,35 +547,24 @@ public class CassAlertsServiceImpl implements AlertsService {
         return filterByAlerts;
     }
 
-    private Collection<String> getTriggersIdByTags(Collection<Tag> tags) throws Exception {
+    private Collection<String> getTriggerIdsByTags(String tenantId, Map<String, String> tags) throws Exception {
         Set<String> triggerIds = new HashSet<>();
         List<ResultSetFuture> futures = new ArrayList<>();
-        PreparedStatement selectTagsTriggersByCategoryAndName = CassStatement.get(session,
-                CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME);
-        PreparedStatement selectTagsTriggersByCategory = CassStatement.get(session,
-                CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY);
-        PreparedStatement selectTagsTriggersByName = CassStatement.get(session,
-                CassStatement.SELECT_TAGS_TRIGGERS_BY_NAME);
+        PreparedStatement selectTagsByName = CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME);
+        PreparedStatement selectTagsByNameAndValue = CassStatement.get(session,
+                CassStatement.SELECT_TAGS_BY_NAME_AND_VALUE);
 
-        for (Tag tag : tags) {
-            if (tag.getCategory() != null || tag.getName() != null) {
-                BoundStatement boundTag;
-                if (!isEmpty(tag.getCategory()) && !isEmpty(tag.getName())) {
-                    boundTag = selectTagsTriggersByCategoryAndName.bind(tag.getTenantId(), tag.getCategory(),
-                            tag.getName());
-                } else if (!isEmpty(tag.getCategory())) {
-                    boundTag = selectTagsTriggersByCategory.bind(tag.getTenantId(), tag.getCategory());
-                } else {
-                    boundTag = selectTagsTriggersByName.bind(tag.getTenantId(), tag.getName());
-                }
-                futures.add(session.executeAsync(boundTag));
-            }
+        for (Map.Entry<String, String> tag : tags.entrySet()) {
+            boolean nameOnly = "*".equals(tag.getValue());
+            BoundStatement bs = nameOnly ?
+                    selectTagsByName.bind(tenantId, TagType.TRIGGER.name(), tag.getKey()) :
+                    selectTagsByNameAndValue.bind(tenantId, TagType.TRIGGER.name(), tag.getKey(), tag.getValue());
+            futures.add(session.executeAsync(bs));
         }
-        List<ResultSet> rsTriggers = Futures.allAsList(futures).get();
-        rsTriggers.stream().forEach(r -> {
+        List<ResultSet> rsTags = Futures.allAsList(futures).get();
+        rsTags.stream().forEach(r -> {
             for (Row row : r) {
-                Set<String> triggers = row.getSet("triggers", String.class);
-                triggerIds.addAll(triggers);
+                triggerIds.add(row.getString("id"));
             }
         });
         return triggerIds;
@@ -838,6 +820,10 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     private boolean isEmpty(Collection<?> c) {
         return null == c || c.isEmpty();
+    }
+
+    private boolean isEmpty(Map<?, ?> m) {
+        return null == m || m.isEmpty();
     }
 
     private boolean isEmpty(String s) {

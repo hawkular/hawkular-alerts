@@ -50,6 +50,9 @@ public class Trigger {
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 
+    @JsonInclude(Include.NON_EMPTY)
+    protected Map<String, String> tags;
+
     /** A map with key based on actionPlugin and value a set of action's ids */
     @JsonInclude(Include.NON_EMPTY)
     private Map<String, Set<String>> actions;
@@ -129,10 +132,14 @@ public class Trigger {
     }
 
     public Trigger(String tenantId, String id, String name) {
-        this(tenantId, id, name, null);
+        this(tenantId, id, name, null, null);
     }
 
     public Trigger(String tenantId, String id, String name, Map<String, String> context) {
+        this(tenantId, id, name, context, null);
+    }
+
+    public Trigger(String tenantId, String id, String name, Map<String, String> context, Map<String, String> tags) {
         if (id == null || id.isEmpty()) {
             throw new IllegalArgumentException("Trigger id must be non-empty");
         }
@@ -140,6 +147,7 @@ public class Trigger {
         this.id = id;
         this.name = name;
         this.context = context;
+        this.tags = tags;
 
         this.actions = new HashMap<>();
         this.autoDisable = false;
@@ -209,19 +217,29 @@ public class Trigger {
         this.context = context;
     }
 
-    /**
-     * Add context information.
-     * @param name context key.
-     * @param value context value.
-     */
-    public void addProperty(String name, String value) {
+    public void addContext(String name, String value) {
         if (null == name || null == value) {
-            throw new IllegalArgumentException("Propety must have non-null name and value");
+            throw new IllegalArgumentException("Context must have non-null name and value");
         }
-        if (null == context) {
-            context = new HashMap<>();
+        getContext().put(name, value);
+    }
+
+    public Map<String, String> getTags() {
+        if (null == tags) {
+            tags = new HashMap<>();
         }
-        context.put(name, value);
+        return tags;
+    }
+
+    public void setTags(Map<String, String> tags) {
+        this.tags = tags;
+    }
+
+    public void addTag(String name, String value) {
+        if (null == name || null == value) {
+            throw new IllegalArgumentException("Tag must have non-null name and value");
+        }
+        getTags().put(name, value);
     }
 
     public boolean isAutoDisable() {
@@ -437,7 +455,7 @@ public class Trigger {
                 + ", autoResolveAlerts=" + autoResolveAlerts + ", severity=" + severity + ", actions=" + actions
                 + ", firingMatch=" + firingMatch + ", autoResolveMatch=" + autoResolveMatch + ", context=" + context
                 + ", group=" + group + ", memberOf=" + memberOf + ", orphan=" + orphan + ", enabled=" + enabled
-                + ", mode=" + mode + "]";
+                + ", mode=" + mode + ", tags=" + tags + "]";
     }
 
 }

@@ -60,8 +60,8 @@ import org.jboss.logging.Logger;
 public class Manager {
     private final Logger log = Logger.getLogger(Manager.class);
 
-    private static final String TAG_CATEGORY = "HawkularMetrics";
-    private static final String TAG_NAME = "MetricsCondition";
+    private static final String TAG_NAME = "HawkularMetrics";
+    private static final String TAG_VALUE = "MetricsCondition";
 
     private static final long DAY = 24L * 60L * 1000L;
     private static final long WEEK = 7L * DAY;
@@ -114,7 +114,7 @@ public class Manager {
             Set<ExternalCondition> activeConditions = new HashSet<>();
 
             // get all of the triggers tagged for hawkular metrics
-            Collection<Trigger> triggers = definitions.getAllTriggersByTag(TAG_CATEGORY, TAG_NAME);
+            Collection<Trigger> triggers = definitions.getAllTriggersByTag(TAG_NAME, TAG_VALUE);
             log.debugf("Found [%s] External Metrics Triggers!", triggers.size());
 
             // for each trigger look for Metrics Conditions and start running them
@@ -136,7 +136,7 @@ public class Manager {
                 for (Condition condition : conditions) {
                     if (condition instanceof ExternalCondition) {
                         ExternalCondition externalCondition = (ExternalCondition) condition;
-                        if (TAG_CATEGORY.equals(externalCondition.getSystemId())) {
+                        if (TAG_NAME.equals(externalCondition.getSystemId())) {
                             log.debugf("Found Metrics ExternalCondition! %s", externalCondition);
                             activeConditions.add(externalCondition);
                             if (expressionFutures.containsKey(externalCondition)) {

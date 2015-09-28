@@ -17,10 +17,11 @@
 package org.hawkular.alerts.api.services;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.Alert;
-import org.hawkular.alerts.api.model.trigger.Tag;
 
 /**
  * Query criteria for fetching Alerts.
@@ -38,8 +39,7 @@ public class AlertsCriteria {
     Collection<Severity> severities = null;
     String triggerId = null;
     Collection<String> triggerIds = null;
-    Tag tag = null;
-    Collection<Tag> tags = null;
+    Map<String, String> tags = null;
     boolean thin = false;
 
     public AlertsCriteria() {
@@ -122,26 +122,19 @@ public class AlertsCriteria {
         this.triggerIds = triggerIds;
     }
 
-    public Tag getTag() {
-        return tag;
-    }
-
-    /**
-     * @param tag fetched Alerts must be for triggers with the specified Tag. Ignored if Tags filter is set.
-     */
-    public void setTag(Tag tag) {
-        this.tag = tag;
-    }
-
-    public Collection<Tag> getTags() {
+    public Map<String, String> getTags() {
         return tags;
     }
 
-    /**
-     * @param tags fetched Alerts must be for trigger with any of the specified Tags.
-     */
-    public void setTags(Collection<Tag> tags) {
+    public void setTags(Map<String, String> tags) {
         this.tags = tags;
+    }
+
+    public void addTag(String tname, String tvalue) {
+        if (null == tags) {
+            tags = new HashMap<>();
+        }
+        tags.put(tname, tvalue);
     }
 
     public Severity getSeverity() {
@@ -175,7 +168,6 @@ public class AlertsCriteria {
                 || null != severity
                 || null != triggerId
                 || null != alertId
-                || null != tag
                 || (null != statusSet && !statusSet.isEmpty())
                 || (null != severities && !severities.isEmpty())
                 || (null != triggerIds && !triggerIds.isEmpty())
@@ -188,6 +180,6 @@ public class AlertsCriteria {
         return "AlertsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", alertId=" + alertId
                 + ", alertIds=" + alertIds + ", status=" + status + ", statusSet=" + statusSet + ", severity="
                 + severity + ", severities=" + severities + ", triggerId=" + triggerId + ", triggerIds=" + triggerIds
-                + ", tag=" + tag + ", tags=" + tags + ", thin=" + thin + "]";
+                + ", tags=" + tags + ", thin=" + thin + "]";
     }
 }

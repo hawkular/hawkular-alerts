@@ -17,14 +17,12 @@
 package org.hawkular.alerts.api.services;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Mode;
-import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 
@@ -159,13 +157,13 @@ public interface DefinitionsService {
     Collection<Trigger> getTriggers(String tenantId) throws Exception;
 
     /**
-     * Get all stored Triggers with a specific Tag. Category and Name can not both be null.
+     * Get all stored Triggers with a specific Tag.
      * @param tenantId Tenant where trigger is stored
-     * @param category The tag category, if null or empty fetch only by tag name
-     * @param name The tag name, if null or empty fetch only by tag category
+     * @param tname The tag name, not null.
+     * @param tvalue The tag value, not null. Set to '*' to match all values for the tname.
      * @throws Exception on any problem
      */
-    Collection<Trigger> getTriggersByTag(String tenantId, String category, String name) throws Exception;
+    Collection<Trigger> getTriggersByTag(String tenantId, String tname, String tvalue) throws Exception;
 
     /**
      * Get the member triggers for the specified group trigger.
@@ -183,13 +181,12 @@ public interface DefinitionsService {
     Collection<Trigger> getAllTriggers() throws Exception;
 
     /**
-     * Get all stored Triggers for all Tenants with a specific Tag. This can be inefficient, especially if
-     * querying by name only.
-     * @param category The tag category, if null or empty fetch only by tag name
-     * @param name The tag name, required
+     * Get all stored Triggers for all Tenants with a specific Tag. This can be inefficient.
+     * @param tname The tag name, not null.
+     * @param tvalue The tag value, not null. Set to '*' to match all values for the tname.
      * @throws Exception on any problem
      */
-    Collection<Trigger> getAllTriggersByTag(String category, String name) throws Exception;
+    Collection<Trigger> getAllTriggersByTag(String tname, String tvalue) throws Exception;
 
     /**
      * Orphan a member trigger.  The member trigger will no longer inherit group updates.  It will be allowed
@@ -606,61 +603,6 @@ public interface DefinitionsService {
     Collection<String> getActions(String tenantId, String actionPlugin) throws Exception;
 
     Map<String, String> getAction(String tenantId, String actionPlugin, String actionId) throws Exception;
-
-    /*
-    CRUD interface for Tag
-    */
-
-    /**
-     * Add Tag to the specified Trigger (tenantId+triggerid). Category is optional but highly recommended for
-     * efficiency and to avoid unwanted name collisions. If the Tag exists the call returns successfully but
-     * has no effect.
-     * @param tenantId Tenant where tag is created
-     * @param tag New tag to be created
-     * @throws Exception on any problem
-     * @see {@link #addGroupTag(String, Tag)} for group-level tags.
-     */
-    void addTag(String tenantId, Tag tag) throws Exception;
-
-    /**
-     * Add Tag to the group Trigger and its members. Category is optional but highly recommended for
-     * efficiency and to avoid unwanted name collisions. If the Tag exists the call returns successfully but
-     * has no effect.
-     * @param tenantId Tenant where tag is created
-     * @param groupTag New tag to be created
-     * @throws Exception on any problem
-     * @see {@link #addTag(String, Tag)} for non-group level tags.
-     */
-    void addGroupTag(String tenantId, Tag groupTag) throws Exception;
-
-    /**
-     * Delete tag(s) for the specified trigger, optionally filtered by category and/or name.
-     * @param triggerId NotEmpty
-     * @param category Nullable
-     * @param name Nullable
-     * @throws Exception on any problem
-     * @see {@link #removeGroupTags(String, String, String, String)} for group-level tags.
-     */
-    void removeTags(String tenantId, String triggerId, String category, String name) throws Exception;
-
-    /**
-     * Delete tag(s) for the specified group trigger, optionally filtered by category and/or name.
-     * @param groupId NotEmpty The group triggerid.
-     * @param category Nullable
-     * @param name Nullable
-     * @throws Exception on any problem
-     * @see {@link #removeTags(String, String, String, String)} for non-group-level tags.
-     */
-    void removeGroupTags(String tenantId, String groupId, String category, String name) throws Exception;
-
-    /**
-     * @param tenantId NotEmpty, must be the proper tenant for the specified trigger.
-     * @param triggerId NotEmpty
-     * @param category Nullable.
-     * @return The existing Tags for the trigger, optionally filtered by category. Sorted by category, name.
-     * @throws Exception on any problem
-     */
-    List<Tag> getTriggerTags(String tenantId, String triggerId, String category) throws Exception;
 
     void registerListener(DefinitionsListener listener, EventType eventType, EventType... eventTypes);
 }

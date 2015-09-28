@@ -38,6 +38,7 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.model.Severity;
+import org.hawkular.alerts.api.model.TagType;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -48,7 +49,6 @@ import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
-import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
@@ -185,6 +185,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     Match autoResolveMatch = Match.valueOf((String) t.get("autoResolveMatch"));
                     List<Map<String, String>> actions = (List<Map<String, String>>) t.get("actions");
                     Map<String, String> context = (Map<String, String>) t.get("context");
+                    Map<String, String> tags = (Map<String, String>) t.get("tags");
                     boolean group = (Boolean) t.get("group");
                     String memberOf = (String) t.get("memberOf");
                     boolean orphan = (Boolean) t.get("orphan");
@@ -203,6 +204,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         trigger.addAction(action.get("actionPlugin"), action.get("actionId"));
                     }
                     trigger.setContext(context);
+                    trigger.setTags(tags);
                     trigger.setGroup(group);
                     trigger.setMemberOf(memberOf);
                     trigger.setOrphan(orphan);
@@ -476,9 +478,11 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     trigger.getContext(), trigger.isAutoDisable(), trigger.isAutoEnable(), trigger.isAutoResolve(),
                     trigger.isAutoResolveAlerts(), trigger.getAutoResolveMatch().name(), trigger.getMemberOf(),
                     trigger.getDescription(), trigger.isEnabled(), trigger.getFiringMatch().name(),
-                    trigger.isOrphan(), trigger.isGroup(), trigger.getSeverity().name()));
+                    trigger.isOrphan(), trigger.isGroup(), trigger.getSeverity().name(), trigger.getTags()));
 
             insertTriggerActions(trigger);
+            insertTags(trigger.getTenantId(), TagType.TRIGGER, trigger.getId(), trigger.getTags());
+
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -551,7 +555,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             if ((keepNonOrphans && !member.isOrphan()) || (keepOrphans && member.isOrphan())) {
                 member.setMemberOf(null);
                 member.setOrphan(false);
-                updateTrigger(member);
+                updateTrigger(member, member.getActions(), member.getTags());
                 continue;
             }
 
@@ -577,7 +581,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         try {
-            deleteTags(tenantId, triggerId, null, null);
+            deleteTags(tenantId, TagType.TRIGGER, triggerId, trigger.getTags());
             deleteTriggerActions(tenantId, triggerId);
             List<ResultSetFuture> futures = new ArrayList<>();
             futures.add(session.executeAsync(deleteDampenings.bind(tenantId, triggerId)));
@@ -604,27 +608,27 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         checkTenantId(tenantId, trigger);
         String triggerId = trigger.getId();
-        Trigger currentTrigger = getTrigger(tenantId, trigger.getId());
-        if (null == currentTrigger) {
+        Trigger existingTrigger = getTrigger(tenantId, trigger.getId());
+        if (null == existingTrigger) {
             throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, trigger.getId());
         }
-        if (currentTrigger.isGroup()) {
+        if (existingTrigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
         }
-        if (currentTrigger.isMember()) {
-            if (!currentTrigger.isOrphan()) {
+        if (existingTrigger.isMember()) {
+            if (!existingTrigger.isOrphan()) {
                 throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
                         + "] is a member trigger and must be updated via the group.");
             }
-            if (!currentTrigger.getMemberOf().equals(trigger.getMemberOf())) {
+            if (!existingTrigger.getMemberOf().equals(trigger.getMemberOf())) {
                 throw new IllegalArgumentException("A member trigger can not change groups.");
             }
-            if (currentTrigger.isOrphan() != trigger.isOrphan()) {
+            if (existingTrigger.isOrphan() != trigger.isOrphan()) {
                 throw new IllegalArgumentException("Orphan status can not be changed by this method.");
             }
         }
 
-        return updateTrigger(trigger);
+        return updateTrigger(trigger, existingTrigger.getActions(), existingTrigger.getTags());
     }
 
     @Override
@@ -639,23 +643,27 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         checkTenantId(tenantId, groupTrigger);
         String groupId = groupTrigger.getId();
 
-        Trigger currentTrigger = getTrigger(tenantId, groupId);
-        if (null == currentTrigger) {
+        Trigger existingGroupTrigger = getTrigger(tenantId, groupId);
+        if (null == existingGroupTrigger) {
             throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupTrigger.getId());
         }
-        if (!currentTrigger.isGroup()) {
+        if (!existingGroupTrigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
         }
 
         groupTrigger.setGroup(true);
         Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
 
+        // This works for the existing members as well, because they are all the same as the existing group trigger
+        Map<String, Set<String>> existingActions = existingGroupTrigger.getActions();
+        Map<String, String> existingTags = existingGroupTrigger.getTags();
+
         for (Trigger member : memberTriggers) {
             copyGroupTrigger(groupTrigger, member);
-            updateTrigger(member);
+            updateTrigger(member, existingActions, existingTags);
         }
 
-        return updateTrigger(groupTrigger);
+        return updateTrigger(groupTrigger, existingActions, existingTags);
     }
 
     private Trigger copyGroupTrigger(Trigger group, Trigger member) {
@@ -671,11 +679,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         member.setEnabled(group.isEnabled());
         member.setFiringMatch(group.getFiringMatch());
         member.setSeverity(group.getSeverity());
+        member.setTags(group.getTags());
 
         return member;
     }
 
-    private Trigger updateTrigger(Trigger trigger) throws Exception {
+    private Trigger updateTrigger(Trigger trigger, Map<String, Set<String>> existingActions,
+            Map<String, String> existingTags)
+            throws Exception {
         session = CassCluster.getSession();
         PreparedStatement updateTrigger = CassStatement.get(session, CassStatement.UPDATE_TRIGGER);
         if (updateTrigger == null) {
@@ -686,10 +697,15 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger.getAutoResolveMatch().name(),
                     trigger.getMemberOf(), trigger.getContext(), trigger.getDescription(), trigger.isEnabled(),
                     trigger.getFiringMatch().name(), trigger.getName(), trigger.isOrphan(), trigger.isGroup(),
-                    trigger.getSeverity().name(), trigger.getTenantId(),
-                    trigger.getId()));
-            deleteTriggerActions(trigger.getTenantId(), trigger.getId());
-            insertTriggerActions(trigger);
+                    trigger.getSeverity().name(), trigger.getTags(), trigger.getTenantId(), trigger.getId()));
+            if (!trigger.getActions().equals(existingActions)) {
+                deleteTriggerActions(trigger.getTenantId(), trigger.getId());
+                insertTriggerActions(trigger);
+            }
+            if (!trigger.getTags().equals(existingTags)) {
+                deleteTags(trigger.getTenantId(), TagType.TRIGGER, trigger.getId(), existingTags);
+                insertTags(trigger.getTenantId(), TagType.TRIGGER, trigger.getId(), trigger.getTags());
+            }
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -725,7 +741,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         member.setOrphan(true);
-        return updateTrigger(member);
+        return updateTrigger(member, member.getActions(), member.getTags());
     }
 
     @Override
@@ -838,46 +854,53 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     // TODO: This performs a cross-tenant fetch and may be inefficient at scale
     @Override
-    public Collection<Trigger> getAllTriggersByTag(String category, String name) throws Exception {
-        if (isEmpty(name)) {
-            throw new IllegalArgumentException("Name must be not null");
+    public Collection<Trigger> getAllTriggersByTag(String tname, String tvalue) throws Exception {
+        if (isEmpty(tname)) {
+            throw new IllegalArgumentException("tname must be not null");
         }
+        if (isEmpty(tvalue)) {
+            throw new IllegalArgumentException("tvalue must be not null (use '*' for all");
+        }
+
         session = CassCluster.getSession();
 
         try {
-            // first, get all the partitions for tags (i.e. tenants)
-            BoundStatement bs = CassStatement.get(session, CassStatement.SELECT_PARTITIONS_TAGS).bind();
+            // first, get all the partitions (i.e. tenants) for triggers
+            BoundStatement bs = CassStatement.get(session, CassStatement.SELECT_PARTITIONS_TRIGGERS).bind();
             Set<String> tenants = new HashSet<>();
             for (Row row : session.execute(bs)) {
                 tenants.add(row.getString("tenantId"));
             }
 
             // next, get all of the tagged triggerIds
-            PreparedStatement selectTagsTriggers = isEmpty(category) ?
-                    CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_BY_NAME) :
-                    CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME);
-            if (selectTagsTriggers == null) {
-                throw new RuntimeException("selectTagsTriggersByTag PreparedStatement is null");
+            boolean nameOnly = "*".equals(tvalue);
+            PreparedStatement selectTags = nameOnly ?
+                    CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME) :
+                    CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME_AND_VALUE);
+            if (selectTags == null) {
+                throw new RuntimeException("selectTags PreparedStatement is null");
             }
 
             Map<String, Set<String>> tenantTriggerIdsMap = new HashMap<>();
-            List<ResultSetFuture> futures = isEmpty(category) ?
+            List<ResultSetFuture> futures = nameOnly ?
                     tenants.stream()
-                            .map(tenantId -> session.executeAsync(selectTagsTriggers.bind(tenantId, name)))
+                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, tname)))
                             .collect(Collectors.toList()) :
                     tenants.stream()
-                            .map(tenantId -> session.executeAsync(selectTagsTriggers.bind(tenantId, category, name)))
+                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, tname,
+                                    tvalue)))
                             .collect(Collectors.toList());
             List<ResultSet> rsTriggerIds = Futures.allAsList(futures).get();
             rsTriggerIds.stream().forEach(rs -> {
                 for (Row row : rs) {
                     String tenantId = row.getString("tenantId");
-                    Set<String> triggerIds = row.getSet("triggers", String.class);
+                    String triggerId = row.getString("id");
                     Set<String> storedTriggerIds = tenantTriggerIdsMap.get(tenantId);
-                    if (null != storedTriggerIds) {
-                        triggerIds.addAll(storedTriggerIds);
+                    if (null == storedTriggerIds) {
+                        storedTriggerIds = new HashSet<>();
                     }
-                    tenantTriggerIdsMap.put(tenantId, triggerIds);
+                    storedTriggerIds.add(triggerId);
+                    tenantTriggerIdsMap.put(tenantId, storedTriggerIds);
                 }
             });
 
@@ -907,17 +930,17 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Trigger> getTriggersByTag(String tenantId, String category, String name) throws Exception {
+    public Collection<Trigger> getTriggersByTag(String tenantId, String tname, String tvalue) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("tenantId must be not null");
         }
-        if (isEmpty(category) && isEmpty(name)) {
+        if (isEmpty(tname) && isEmpty(tvalue)) {
             throw new IllegalArgumentException("Category and Name can not both be null");
         }
         session = CassCluster.getSession();
 
         try {
-            Set<String> triggerIds = getTriggerIdsByTag(tenantId, category, name);
+            Set<String> triggerIds = getTriggerIdsByTag(tenantId, tname, tvalue);
 
             // Now, generate a result set of Triggers using the triggerIds
             List<Trigger> triggers = new ArrayList<>(triggerIds.size());
@@ -1011,6 +1034,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         trigger.setOrphan(row.getBool("orphan"));
         trigger.setGroup(row.getBool("group"));
         trigger.setSeverity(Severity.valueOf(row.getString("severity")));
+        trigger.setTags(row.getMap("tags", String.class, String.class));
 
         return trigger;
     }
@@ -1088,12 +1112,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         // add any tags
-        Collection<Tag> tags = getTriggerTags(tenantId, groupId, null);
-
-        for (Tag tag : tags) {
-            tag.setTriggerId(memberId);
-            addTag(tag);
-        }
+        insertTags(tenantId, TagType.TRIGGER, member.getId(), member.getTags());
 
         return member;
     }
@@ -1840,7 +1859,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         // Now add the new condition set
         try {
-            List<String> dataIds = new ArrayList<>(2);
+            //List<String> dataIds = new ArrayList<>(2);
 
             List<ResultSetFuture> futures = new ArrayList<>();
 
@@ -1852,7 +1871,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 cond.setConditionSetSize(conditions.size());
                 cond.setConditionSetIndex(++i);
 
-                dataIds.add(cond.getDataId());
+                //dataIds.add(cond.getDataId());
 
                 if (cond instanceof AvailabilityCondition) {
 
@@ -1865,7 +1884,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 } else if (cond instanceof CompareCondition) {
 
                     CompareCondition cCond = (CompareCondition) cond;
-                    dataIds.add(cCond.getData2Id());
+                    //dataIds.add(cCond.getData2Id());
                     futures.add(session.executeAsync(insertConditionCompare.bind(cCond.getTenantId(),
                             cCond.getTriggerId(), cCond.getTriggerMode().name(), cCond.getContext(),
                             cCond.getConditionSetSize(), cCond.getConditionSetIndex(),
@@ -1909,11 +1928,15 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
                 }
 
+                // TODO: ARE THESE TAGS STILL NEEDED BY THE HAWKULAR UI? THIS IS CLUNKY.
+                // I DON'T THINK THEY ARE USED. REMOVING...
                 // generate the automatic dataId tags for search
-                for (String dataId : dataIds) {
-                    insertTag(cond.getTenantId(), cond.getTriggerId(), "dataId", dataId, false);
-                }
-                dataIds.clear();
+                //Map<String, String> dataIdTags = new HashMap<>(dataIds.size());
+                //for (String dataId : dataIds) {
+                //    dataIdTags.put(dataId, "dataId");
+                //}
+                //insertTags(cond.getTenantId(), TagType.TRIGGER, cond.getTriggerId(), dataIdTags);
+                //dataIds.clear();
             }
             Futures.allAsList(futures).get();
 
@@ -1931,118 +1954,49 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return conditions;
     }
 
-    private void insertTag(String tenantId, String triggerId, String category, String name, boolean visible)
+    private void insertTags(String tenantId, TagType type, String id, Map<String, String> tags)
             throws Exception {
-
-        // Do not store null values for category as it is a query-able field. Although secondary indexes allow
-        // nulls they are not really a good idea, use empty string to minimally make the rows queryable.
-        if (null == category) {
-            category = "";
-        }
-
-        // If the desired Tag already exists just return
-        if (!getTags(tenantId, triggerId, category, name).isEmpty()) {
+        if (isEmpty(tags)) {
             return;
         }
-        PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
-        if (insertTag == null) {
-            throw new RuntimeException("insertTag PreparedStatement is null");
-        }
-        session.execute(insertTag.bind(tenantId, triggerId, category, name, visible));
-        insertTriggerByTagIndex(tenantId, category, name, triggerId);
-    }
 
-    private void insertTriggerByTagIndex(String tenantId, String category, String name, String triggerId) {
-        Set<String> triggers = getTriggerIdsByTag(tenantId, category, name);
-        triggers = new HashSet<>(triggers);
-        if (triggers.isEmpty()) {
-            triggers.add(triggerId);
-            PreparedStatement insertTagsTriggers = CassStatement.get(session, CassStatement.INSERT_TAGS_TRIGGERS);
-            if (insertTagsTriggers == null) {
-                throw new RuntimeException("insertTagsTriggers PreparedStatement is null");
-            }
-            session.execute(insertTagsTriggers.bind(tenantId, category, name, triggers));
-        } else {
-            if (!triggers.contains(triggerId)) {
-                triggers.add(triggerId);
-                PreparedStatement updateTagsTriggers = CassStatement.get(session, CassStatement.UPDATE_TAGS_TRIGGERS);
-                if (updateTagsTriggers == null) {
-                    throw new RuntimeException("updateTagsTriggers PreparedStatement is null");
-                }
-                session.execute(updateTagsTriggers.bind(triggers, tenantId, name));
-            }
+        PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
+
+        List<ResultSetFuture> futures = new ArrayList<>(tags.size());
+        for (Map.Entry<String, String> tag : tags.entrySet()) {
+            futures.add(session.executeAsync(insertTag.bind(tenantId, type.name(), tag.getKey(), tag.getValue(), id)));
         }
+        Futures.allAsList(futures).get();
     }
 
     @SuppressWarnings("unchecked")
-    private Set<String> getTriggerIdsByTag(String tenantId, String category, String name) {
-        Set triggerTags = new HashSet<>();
-
-        PreparedStatement selectTagsTriggers = null;
-        if (isEmpty(category)) {
-            selectTagsTriggers = CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_BY_NAME);
-        } else if (isEmpty(name)) {
-            selectTagsTriggers = CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY);
-        } else {
-            selectTagsTriggers = CassStatement.get(session, CassStatement.SELECT_TAGS_TRIGGERS_BY_CATEGORY_AND_NAME);
+    private Set<String> getTriggerIdsByTag(String tenantId, String tname, String tvalue) {
+        if (isEmpty(tname)) {
+            throw new IllegalArgumentException("tname must be not null");
         }
-        if (selectTagsTriggers == null) {
+        if (isEmpty(tvalue)) {
+            throw new IllegalArgumentException("tvalue must be not null (use '*' for all");
+        }
+
+        boolean nameOnly = "*".equals(tvalue);
+
+        PreparedStatement selectTags = null;
+        selectTags = nameOnly ?
+                CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME) :
+                CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME_AND_VALUE);
+        if (selectTags == null) {
             throw new RuntimeException("selectTagsTriggers PreparedStatement is null");
         }
-        BoundStatement bs = null;
-        if (isEmpty(category)) {
-            bs = selectTagsTriggers.bind(tenantId, name);
-        } else if (isEmpty(name)) {
-            bs = selectTagsTriggers.bind(tenantId, category);
-        } else {
-            bs = selectTagsTriggers.bind(tenantId, category, name);
-        }
+
+        BoundStatement bs = nameOnly ?
+                selectTags.bind(tenantId, TagType.TRIGGER.name(), tname) :
+                selectTags.bind(tenantId, TagType.TRIGGER.name(), tname, tvalue);
         ResultSet rsTriggersTags = session.execute(bs);
+        Set<String> triggerIds = new HashSet<>();
         for (Row row : rsTriggersTags) {
-            triggerTags = row.getSet("triggers", String.class);
+            triggerIds.add(row.getString("id"));
         }
-        return triggerTags;
-    }
-
-    private List<Tag> getTags(String tenantId, String triggerId, String category, String name)
-            throws Exception {
-        BoundStatement boundTags;
-        if (!isEmpty(category) && !isEmpty(name)) {
-            PreparedStatement selectTagsByCategoryAndName = CassStatement.get(session,
-                    CassStatement.SELECT_TAGS_BY_CATEGORY_AND_NAME);
-            if (selectTagsByCategoryAndName == null) {
-                throw new RuntimeException("selectTagsByCategoryAndName PreparedStatement is null");
-            }
-            boundTags = selectTagsByCategoryAndName.bind(tenantId, triggerId, category, name);
-        } else if (!isEmpty(category)) {
-            PreparedStatement selectTagsByCategory = CassStatement.get(session, CassStatement.SELECT_TAGS_BY_CATEGORY);
-            if (selectTagsByCategory == null) {
-                throw new RuntimeException("selectTagsByCategory PreparedStatement is null");
-            }
-            boundTags = selectTagsByCategory.bind(tenantId, triggerId, category);
-        } else if (!isEmpty(name)) {
-            PreparedStatement selectTagsByName = CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME);
-            if (selectTagsByName == null) {
-                throw new RuntimeException("selectTagsByName PreparedStatement is null");
-            }
-            boundTags = selectTagsByName.bind(tenantId, triggerId, name);
-        } else {
-            PreparedStatement selectTags = CassStatement.get(session, CassStatement.SELECT_TAGS);
-            boundTags = selectTags.bind(tenantId, triggerId);
-        }
-
-        List<Tag> tags = new ArrayList<>();
-        ResultSet rsTags = session.execute(boundTags);
-        for (Row row : rsTags) {
-            Tag tag = new Tag();
-            tag.setTenantId(row.getString("tenantId"));
-            tag.setTriggerId(row.getString("triggerId"));
-            tag.setCategory(row.getString("category"));
-            tag.setName(row.getString("name"));
-            tag.setVisible(row.getBool("visible"));
-            tags.add(tag);
-        }
-        return tags;
+        return triggerIds;
     }
 
     private void removeConditions(String tenantId, String triggerId, Mode triggerMode) throws Exception {
@@ -2063,8 +2017,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(deleteConditionsMode.bind(tenantId, triggerId, triggerMode.name()));
 
+            // TODO: DELETING THE DATAID TAG THING, I THINK IT IS NOW UNUSED IN UI AND CLUNKY.
             // if removing conditions remove the automatically-added dataId tags
-            deleteTags(tenantId, triggerId, "dataId", null);
+            //deleteTags(tenantId, triggerId, "dataId", null);
 
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -2072,24 +2027,18 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
-    private void deleteTags(String tenantId, String triggerId, String category, String name) throws Exception {
-        List<Tag> doomedTags = getTags(tenantId, triggerId, category, name);
-
-        PreparedStatement deleteTags = CassStatement.get(session, CassStatement.DELETE_TAGS);
-        PreparedStatement deleteTagsTriggers = CassStatement.get(session, CassStatement.DELETE_TAGS_TRIGGERS);
-        PreparedStatement updateTagsTriggers = CassStatement.get(session, CassStatement.UPDATE_TAGS_TRIGGERS);
-
-        for (Tag doomedTag : doomedTags) {
-            Set<String> triggerIds = new HashSet<>(getTriggerIdsByTag(tenantId, null, doomedTag.getName()));
-            if (triggerIds.remove(doomedTag.getTriggerId())) {
-                if (triggerIds.isEmpty()) {
-                    session.execute(deleteTagsTriggers.bind(tenantId, doomedTag.getName()));
-                } else {
-                    session.execute(updateTagsTriggers.bind(triggerIds, tenantId, doomedTag.getName()));
-                }
-            }
-            session.execute(deleteTags.bind(tenantId, doomedTag.getTriggerId(), doomedTag.getName()));
+    private void deleteTags(String tenantId, TagType type, String id, Map<String, String> tags) throws Exception {
+        if (isEmpty(tags)) {
+            return;
         }
+
+        PreparedStatement deleteTag = CassStatement.get(session, CassStatement.DELETE_TAG);
+
+        List<ResultSetFuture> futures = new ArrayList<>(tags.size());
+        for (Map.Entry<String, String> tag : tags.entrySet()) {
+            futures.add(session.executeAsync(deleteTag.bind(tenantId, type.name(), tag.getKey(), tag.getValue(), id)));
+        }
+        Futures.allAsList(futures).get();
     }
 
     @Override
@@ -2655,171 +2604,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void addTag(String tenantId, Tag tag) throws Exception {
-        if (tag == null) {
-            throw new IllegalArgumentException("Tag must be not null");
-        }
-        if (isEmpty(tag.getTriggerId())) {
-            throw new IllegalArgumentException("Tag TriggerId must be not null or empty");
-        }
-        if (isEmpty(tag.getName())) {
-            throw new IllegalArgumentException("Tag Name must be not null or empty");
-        }
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null or empty");
-        }
-
-        checkTenantId(tenantId, tag);
-
-        String triggerId = tag.getTriggerId();
-        Trigger trigger = getTrigger(tenantId, triggerId);
-        if (null == trigger) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
-        }
-        if (trigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
-        }
-        if (trigger.isMember() && !trigger.isOrphan()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
-                    + "] is a member trigger and must be managed via the group.");
-        }
-
-        addTag(tag);
-    }
-
-    @Override
-    public void addGroupTag(String tenantId, Tag groupTag) throws Exception {
-        if (groupTag == null) {
-            throw new IllegalArgumentException("Tag must be not null");
-        }
-        if (isEmpty(groupTag.getTriggerId())) {
-            throw new IllegalArgumentException("Tag TriggerId must be not null or empty");
-        }
-        if (isEmpty(groupTag.getName())) {
-            throw new IllegalArgumentException("Tag Name must be not null or empty");
-        }
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null or empty");
-        }
-
-        checkTenantId(tenantId, groupTag);
-
-        String groupId = groupTag.getTriggerId();
-        Trigger groupTrigger = getTrigger(tenantId, groupId);
-        if (null == groupTrigger) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
-        }
-        if (!groupTrigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
-        }
-
-        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
-
-        for (Trigger member : memberTriggers) {
-            groupTag.setTriggerId(member.getId());
-            addTag(groupTag);
-        }
-
-        groupTag.setTriggerId(groupId);
-        addTag(groupTag);
-    }
-
-    private void addTag(Tag tag) throws Exception {
-        session = CassCluster.getSession();
-        try {
-            insertTag(tag.getTenantId(), tag.getTriggerId(), tag.getCategory(), tag.getName(), tag.isVisible());
-        } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public void removeTags(String tenantId, String triggerId, String category, String name) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
-        }
-        if (isEmpty(triggerId)) {
-            throw new IllegalArgumentException("TriggerId must be not null");
-        }
-
-        Trigger trigger = getTrigger(tenantId, triggerId);
-        if (null == trigger) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
-        }
-        if (trigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
-        }
-        if (trigger.isMember() && !trigger.isOrphan()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
-                    + "] is a member trigger and must be managed via the group.");
-        }
-
-        try {
-            deleteTags(tenantId, triggerId, category, name);
-        } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public void removeGroupTags(String tenantId, String groupId, String category, String name) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
-        }
-        if (isEmpty(groupId)) {
-            throw new IllegalArgumentException("TriggerId must be not null");
-        }
-
-        Trigger groupTrigger = getTrigger(tenantId, groupId);
-        if (null == groupTrigger) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
-        }
-        if (!groupTrigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
-        }
-
-        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
-
-        for (Trigger member : memberTriggers) {
-            try {
-                deleteTags(tenantId, member.getId(), category, name);
-            } catch (Exception e) {
-                msgLog.errorDatabaseException(e.getMessage());
-                throw e;
-            }
-        }
-
-        try {
-            deleteTags(tenantId, groupId, category, name);
-        } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public List<Tag> getTriggerTags(String tenantId, String triggerId, String category) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
-        }
-        if (isEmpty(triggerId)) {
-            throw new IllegalArgumentException("TriggerId must be not null");
-        }
-        session = CassCluster.getSession();
-
-        List<Tag> tags;
-        try {
-            tags = getTags(tenantId, triggerId, category, null);
-        } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-        return tags;
-    }
-
-    @Override
     public void registerListener(DefinitionsListener listener, EventType eventType, EventType... eventTypes) {
         EnumSet<EventType> types = EnumSet.of(eventType, eventTypes);
         log.debugf("Registering listeners %s for event types", listener, types);
@@ -2876,11 +2660,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             Dampening dampening = (Dampening) obj;
             if (dampening.getTenantId() == null || !dampening.getTenantId().equals(tenantId)) {
                 dampening.setTenantId(tenantId);
-            }
-        } else if (obj instanceof Tag) {
-            Tag tag = (Tag) obj;
-            if (tag.getTenantId() == null || !tag.getTenantId().equals(tenantId)) {
-                tag.setTenantId(tenantId);
             }
         }
     }
