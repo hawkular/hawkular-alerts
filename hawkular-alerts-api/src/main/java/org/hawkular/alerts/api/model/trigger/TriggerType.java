@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.api.model.event;
+package org.hawkular.alerts.api.model.trigger;
 
 /**
  * What the trigger produces.
@@ -22,6 +22,6 @@ package org.hawkular.alerts.api.model.event;
  * @author jay shaughnessy
  * @author lucas ponce
  */
-public enum EventType {
+public enum TriggerType {
     ALERT, EVENT
 }

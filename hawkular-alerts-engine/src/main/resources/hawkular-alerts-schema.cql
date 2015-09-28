@@ -181,3 +181,14 @@ CREATE TABLE ${keyspace}.alerts_severities (
     severity text,
     PRIMARY KEY (tenantId, severity, alertId)
 );
+
+-- #
+
+CREATE TABLE ${keyspace}.events (
+    tenantId text,
+    id text,
+    category text,
+    payload text,
+    PRIMARY KEY ((tenantId, category), id)
+);
+

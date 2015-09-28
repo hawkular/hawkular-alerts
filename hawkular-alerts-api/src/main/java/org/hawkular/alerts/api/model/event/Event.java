@@ -24,6 +24,7 @@ import java.util.Set;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerType;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -45,6 +46,10 @@ public class Event {
 
     @JsonInclude
     protected long ctime;
+
+    // category of Event, suitable for display, recommended to be, but not limited to, an EventCategory.name.
+    @JsonInclude
+    private String category;
 
     // A description of the event, suitable for display
     @JsonInclude
@@ -75,15 +80,16 @@ public class Event {
         // for json assembly
     }
 
-    public Event(String tenantId, String id, String text) {
-        this(tenantId, id, text, null, null);
+    public Event(String tenantId, String id, String category, String text) {
+        this(tenantId, id, category, text, null, null);
     }
 
-    public Event(String tenantId, String id, String text, Map<String, String> context) {
-        this(tenantId, id, text, context, null);
+    public Event(String tenantId, String id, String category, String text, Map<String, String> context) {
+        this(tenantId, id, category, text, context, null);
     }
 
-    public Event(String tenantId, String id, String text, Map<String, String> context, Map<String, String> tags) {
+    public Event(String tenantId, String id, String category, String text, Map<String, String> context,
+            Map<String, String> tags) {
         this.tenantId = tenantId;
         this.id = id;
         this.text = text;
@@ -91,6 +97,14 @@ public class Event {
         this.tags = tags;
 
         this.ctime = System.currentTimeMillis();
+    }
+
+    /**
+     * Convenience constructor for an Alerting Event.
+     * @param alert the Non-Thin Alert, it must be fully defined.
+     */
+    public Event(Alert alert) {
+        this(alert.getTenantId(), alert.getTrigger(), alert.getDampening(), alert.getEvalSets());
     }
 
     public Event(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets) {
@@ -102,6 +116,8 @@ public class Event {
         this.ctime = System.currentTimeMillis();
 
         this.id = trigger.getId() + "-" + this.ctime;
+        this.category = TriggerType.ALERT == trigger.getType() ?
+                EventCategory.ALERT.name() : EventCategory.TRIGGER.name();
         this.text = isEmpty(trigger.getDescription()) ? trigger.getName() : trigger.getDescription();
         this.context = trigger.getContext();
         this.tags = trigger.getTags();
@@ -121,6 +137,14 @@ public class Event {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public long getCtime() {
@@ -228,6 +252,12 @@ public class Event {
         } else if (!tenantId.equals(other.tenantId))
             return false;
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Event [tenantId=" + tenantId + ", id=" + id + ", ctime=" + ctime + ", category=" + category
+                + ", text=" + text + ", context=" + context + ", tags=" + tags + ", trigger=" + trigger + "]";
     }
 
     private static boolean isEmpty(String s) {

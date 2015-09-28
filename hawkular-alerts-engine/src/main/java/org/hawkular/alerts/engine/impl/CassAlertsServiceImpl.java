@@ -115,41 +115,44 @@ public class CassAlertsServiceImpl implements AlertsService {
         PreparedStatement insertAlertCtime = CassStatement.get(session, CassStatement.INSERT_ALERT_CTIME);
         PreparedStatement insertAlertStatus = CassStatement.get(session, CassStatement.INSERT_ALERT_STATUS);
         PreparedStatement insertAlertSeverity = CassStatement.get(session, CassStatement.INSERT_ALERT_SEVERITY);
+        PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
+
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
-            alerts.stream()
-                    .forEach(a -> {
-                        futures.add(session.executeAsync(insertAlert.bind(a.getTenantId(), a.getAlertId(),
-                                JsonUtil.toJson(a))));
-                        futures.add(session.executeAsync(insertAlertTrigger.bind(a.getTenantId(),
-                                a.getAlertId(),
-                                a.getTriggerId())));
-                        futures.add(session.executeAsync(insertAlertCtime.bind(a.getTenantId(),
-                                a.getAlertId(), a.getCtime())));
-                        futures.add(session.executeAsync(insertAlertStatus.bind(a.getTenantId(),
-                                a.getAlertId(),
-                                a.getStatus().name())));
-                        futures.add(session.executeAsync(insertAlertSeverity.bind(a.getTenantId(),
-                                a.getAlertId(),
-                                a.getSeverity().name())));
-                    });
+            alerts.stream().forEach(a -> {
+                futures.add(session.executeAsync(insertAlert.bind(a.getTenantId(), a.getAlertId(),
+                        JsonUtil.toJson(a))));
+                futures.add(session.executeAsync(insertAlertTrigger.bind(a.getTenantId(),
+                        a.getAlertId(),
+                        a.getTriggerId())));
+                futures.add(session.executeAsync(insertAlertCtime.bind(a.getTenantId(),
+                        a.getAlertId(), a.getCtime())));
+                futures.add(session.executeAsync(insertAlertStatus.bind(a.getTenantId(),
+                        a.getAlertId(),
+                        a.getStatus().name())));
+                futures.add(session.executeAsync(insertAlertSeverity.bind(a.getTenantId(),
+                        a.getAlertId(),
+                        a.getSeverity().name())));
+
+                a.getTags().entrySet().stream().forEach(tag -> {
+                    futures.add(session.executeAsync(insertTag.bind(a.getTenantId(), TagType.ALERT.name(),
+                            tag.getKey(), tag.getValue(), a.getId())));
+                });
+            });
             /*
                 main method is synchronous so we need to wait until futures are completed
              */
             Futures.allAsList(futures).get();
+
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
 
         // Every Alert has a corresponding Event
-        Collection<Event> events = new ArrayList<>(alerts.size());
-        for (Alert a : alerts) {
-            Trigger trigger = a.getTrigger();
-            String tenantId = trigger.getTenantId();
-            Set<Tag> tags = new HashSet(definitionsService.getTriggerTags(tenantId, trigger.getId(), null));
-            Event e = new Event(tenantId, trigger, a.getDampening(), a.getEvalSets(), tags);
-        }
+        List<Event> events = alerts.stream()
+                .map(Event::new)
+                .collect(Collectors.toList());
         addEvents(events);
     }
 
@@ -158,7 +161,31 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (events == null) {
             throw new IllegalArgumentException("Events must be not null");
         }
-        log.info("TBD: INSERT EVENTS! " + events);
+
+        session = CassCluster.getSession();
+        PreparedStatement insertEvent = CassStatement.get(session, CassStatement.INSERT_EVENT);
+        PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
+
+        try {
+            List<ResultSetFuture> futures = new ArrayList<>();
+            events.stream().forEach(e -> {
+                futures.add(session.executeAsync(insertEvent.bind(e.getTenantId(), e.getCategory(), e.getId(),
+                        JsonUtil.toJson(e))));
+
+                e.getTags().entrySet().stream().forEach(tag -> {
+                    futures.add(session.executeAsync(insertTag.bind(e.getTenantId(), TagType.EVENT.name(),
+                            tag.getKey(), tag.getValue(), e.getId())));
+                });
+            });
+            /*
+                main method is synchronous so we need to wait until futures are completed
+             */
+            Futures.allAsList(futures).get();
+
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
     }
 
     @Override

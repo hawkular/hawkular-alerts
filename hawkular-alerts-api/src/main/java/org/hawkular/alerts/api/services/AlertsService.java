@@ -47,7 +47,7 @@ public interface AlertsService {
     void ackAlerts(String tenantId, Collection<String> alertIds, String ackBy, String ackNotes) throws Exception;
 
     /**
-     * Persist the provided alerts.
+     * Persist the provided alerts. Note that every alert will also get a corresponding event.
      * @param alerts Set of unpersisted Alerts.
      * @throws Exception any problem
      */

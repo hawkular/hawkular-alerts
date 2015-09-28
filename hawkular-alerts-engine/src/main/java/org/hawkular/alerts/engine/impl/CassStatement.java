@@ -66,6 +66,7 @@ public class CassStatement {
     public static final String INSERT_CONDITION_THRESHOLD;
     public static final String INSERT_CONDITION_THRESHOLD_RANGE;
     public static final String INSERT_DAMPENING;
+    public static final String INSERT_EVENT;
     public static final String INSERT_TAG;
     public static final String INSERT_TRIGGER;
     public static final String INSERT_TRIGGER_ACTIONS;
@@ -204,6 +205,9 @@ public class CassStatement {
         INSERT_DAMPENING = "INSERT INTO " + keyspace + ".dampenings "
                 + "(triggerId, triggerMode, type, evalTrueSetting, evalTotalSetting, evalTimeSetting, "
                 + "dampeningId, tenantId) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ";
+
+        INSERT_EVENT = "INSERT INTO " + keyspace + ".events "
+                + "(tenantId, category, id payload) VALUES (?, ?, ?, ?) ";
 
         INSERT_TAG = "INSERT INTO " + keyspace + ".tags "
                 + "(tenantId, type, name, value, id) VALUES (?, ?, ?, ?, ?) ";

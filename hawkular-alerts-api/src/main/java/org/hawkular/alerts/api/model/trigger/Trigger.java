@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.hawkular.alerts.api.model.Severity;
-import org.hawkular.alerts.api.model.event.EventType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -44,15 +43,15 @@ public class Trigger {
     @JsonInclude
     private String id;
 
+    @JsonInclude
+    private TriggerType type;
+
     /** For display */
     @JsonInclude
     private String name;
 
     @JsonInclude(Include.NON_EMPTY)
     private String description;
-
-    @JsonInclude
-    private EventType eventType;
 
     // defaults to non-null trigger description, otherwise trigger name
     @JsonInclude
@@ -154,6 +153,7 @@ public class Trigger {
         }
         this.tenantId = tenantId;
         this.id = id;
+        this.type = TriggerType.ALERT; // Is this an OK default, or should it be a parameter?
         this.name = name;
         this.context = context;
         this.tags = tags;
@@ -196,6 +196,14 @@ public class Trigger {
         this.id = id;
     }
 
+    public TriggerType getType() {
+        return type;
+    }
+
+    public void setType(TriggerType type) {
+        this.type = type;
+    }
+
     public String getName() {
         return name;
     }
@@ -213,14 +221,6 @@ public class Trigger {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public EventType getEventType() {
-        return eventType;
-    }
-
-    public void setEventType(EventType eventType) {
-        this.eventType = eventType;
     }
 
     public String getEventText() {
@@ -475,8 +475,9 @@ public class Trigger {
 
     @Override
     public String toString() {
-        return "Trigger [tenantId=" + tenantId + ", id=" + id + ", name=" + name + ", description=" + description
-                + ", eventType=" + eventType + ", eventText=" + eventText + ", severity=" + severity + ", context="
+        return "Trigger [tenantId=" + tenantId + ", id=" + id + ", type=" + type.name() + ", name=" + name
+                + ", description=" + description
+                + ", eventType=" + type + ", eventText=" + eventText + ", severity=" + severity + ", context="
                 + context + ", actions=" + actions + ", autoDisable=" + autoDisable + ", autoEnable=" + autoEnable
                 + ", autoResolve=" + autoResolve + ", autoResolveAlerts=" + autoResolveAlerts + ", autoResolveMatch="
                 + autoResolveMatch + ", memberOf=" + memberOf + ", enabled=" + enabled + ", firingMatch="

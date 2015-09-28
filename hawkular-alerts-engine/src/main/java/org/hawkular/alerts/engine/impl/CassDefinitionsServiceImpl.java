@@ -1950,6 +1950,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
+        if (insertTag == null) {
+            throw new RuntimeException("insertTag PreparedStatement is null");
+        }
 
         List<ResultSetFuture> futures = new ArrayList<>(tags.size());
         for (Map.Entry<String, String> tag : tags.entrySet()) {
