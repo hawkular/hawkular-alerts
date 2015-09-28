@@ -36,7 +36,6 @@ import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
-import org.hawkular.alerts.api.model.TagType;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;

@@ -112,13 +112,13 @@ public class TriggersHandler {
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response findTriggersByTag(
             @ApiParam(required = true, value = "The tag name.")
-            @QueryParam("tname")
-            final String tname,
+            @QueryParam("name")
+            final String name,
             @ApiParam(required = true, value = "The tag value. Set to '*' to match all values for the tag name.")
-            @QueryParam("tvalue")
-            final String tvalue) {
+            @QueryParam("value")
+            final String value) {
         try {
-            Collection<Trigger> triggers = definitions.getTriggersByTag(tenantId, tname, tvalue);
+            Collection<Trigger> triggers = definitions.getTriggersByTag(tenantId, name, value);
             log.debugf("Triggers: %s ", triggers);
             return ResponseUtil.ok(triggers);
         } catch (Exception e) {

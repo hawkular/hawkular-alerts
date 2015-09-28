@@ -144,7 +144,7 @@ public class CassStatement {
         DELETE_DAMPENINGS = "DELETE FROM " + keyspace + ".dampenings " + "WHERE tenantId = ? AND triggerId = ? ";
 
         DELETE_TAG = "DELETE FROM " + keyspace + ".tags "
-                + "WHERE tenantId = ? AND type = ? AND tname = ? and tvalue = ? AND id = ?";
+                + "WHERE tenantId = ? AND type = ? AND name = ? and value = ? AND id = ?";
 
         DELETE_TRIGGER_ACTIONS = "DELETE FROM " + keyspace + ".triggers_actions "
                 + "WHERE tenantId = ? AND triggerId = ? ";
@@ -206,7 +206,7 @@ public class CassStatement {
                 + "dampeningId, tenantId) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_TAG = "INSERT INTO " + keyspace + ".tags "
-                + "(tenantId, type, tname, tvalue, id) VALUES (?, ?, ?, ?, ?) ";
+                + "(tenantId, type, name, value, id) VALUES (?, ?, ?, ?, ?) ";
 
         INSERT_TRIGGER = "INSERT INTO " + keyspace + ".triggers " +
                 "(tenantId, id, name, context, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
@@ -298,13 +298,13 @@ public class CassStatement {
         // partition key changes this should also change.
         SELECT_PARTITIONS_TRIGGERS = "SELECT DISTINCT tenantid FROM " + keyspace + ".triggers ";
 
-        SELECT_TAGS_BY_NAME = "SELECT tenantId, tvalue, id "
+        SELECT_TAGS_BY_NAME = "SELECT tenantId, value, id "
                 + "FROM " + keyspace + ".tags "
-                + "WHERE tenantId = ? AND type = ? and tname = ? ";
+                + "WHERE tenantId = ? AND type = ? and name = ? ";
 
         SELECT_TAGS_BY_NAME_AND_VALUE = "SELECT tenantId, id "
                 + "FROM " + keyspace + ".tags "
-                + "WHERE tenantId = ? AND type = ? and tname = ? AND tvalue = ? ";
+                + "WHERE tenantId = ? AND type = ? and name = ? AND value = ? ";
 
         SELECT_TRIGGER = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
                 + "autoResolveMatch, memberOf, description, enabled, firingMatch, orphan, group, severity, tags "

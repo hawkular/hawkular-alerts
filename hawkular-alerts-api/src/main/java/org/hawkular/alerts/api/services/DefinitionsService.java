@@ -159,11 +159,11 @@ public interface DefinitionsService {
     /**
      * Get all stored Triggers with a specific Tag.
      * @param tenantId Tenant where trigger is stored
-     * @param tname The tag name, not null.
-     * @param tvalue The tag value, not null. Set to '*' to match all values for the tname.
+     * @param name The tag name, not null.
+     * @param value The tag value, not null. Set to '*' to match all values for the name.
      * @throws Exception on any problem
      */
-    Collection<Trigger> getTriggersByTag(String tenantId, String tname, String tvalue) throws Exception;
+    Collection<Trigger> getTriggersByTag(String tenantId, String name, String value) throws Exception;
 
     /**
      * Get the member triggers for the specified group trigger.
@@ -182,11 +182,11 @@ public interface DefinitionsService {
 
     /**
      * Get all stored Triggers for all Tenants with a specific Tag. This can be inefficient.
-     * @param tname The tag name, not null.
-     * @param tvalue The tag value, not null. Set to '*' to match all values for the tname.
+     * @param name The tag name, not null.
+     * @param value The tag value, not null. Set to '*' to match all values for the name.
      * @throws Exception on any problem
      */
-    Collection<Trigger> getAllTriggersByTag(String tname, String tvalue) throws Exception;
+    Collection<Trigger> getAllTriggersByTag(String name, String value) throws Exception;
 
     /**
      * Orphan a member trigger.  The member trigger will no longer inherit group updates.  It will be allowed

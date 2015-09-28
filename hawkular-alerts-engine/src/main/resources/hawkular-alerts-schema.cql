@@ -131,10 +131,10 @@ CREATE TABLE ${keyspace}.actions (
 CREATE TABLE ${keyspace}.tags (
     tenantId text,
     type text,
-    tname text,
-    tvalue text,
+    name text,
+    value text,
     id text,
-    PRIMARY KEY (( tenantId, type, tname ), tvalue, id)
+    PRIMARY KEY (( tenantId, type, name ), value, id)
 );
 
 -- #

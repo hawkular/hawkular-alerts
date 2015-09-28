@@ -38,7 +38,6 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.model.Severity;
-import org.hawkular.alerts.api.model.TagType;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -854,12 +853,12 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     // TODO: This performs a cross-tenant fetch and may be inefficient at scale
     @Override
-    public Collection<Trigger> getAllTriggersByTag(String tname, String tvalue) throws Exception {
-        if (isEmpty(tname)) {
-            throw new IllegalArgumentException("tname must be not null");
+    public Collection<Trigger> getAllTriggersByTag(String name, String value) throws Exception {
+        if (isEmpty(name)) {
+            throw new IllegalArgumentException("name must be not null");
         }
-        if (isEmpty(tvalue)) {
-            throw new IllegalArgumentException("tvalue must be not null (use '*' for all");
+        if (isEmpty(value)) {
+            throw new IllegalArgumentException("value must be not null (use '*' for all");
         }
 
         session = CassCluster.getSession();
@@ -873,7 +872,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             }
 
             // next, get all of the tagged triggerIds
-            boolean nameOnly = "*".equals(tvalue);
+            boolean nameOnly = "*".equals(value);
             PreparedStatement selectTags = nameOnly ?
                     CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME) :
                     CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME_AND_VALUE);
@@ -884,11 +883,11 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             Map<String, Set<String>> tenantTriggerIdsMap = new HashMap<>();
             List<ResultSetFuture> futures = nameOnly ?
                     tenants.stream()
-                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, tname)))
+                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name)))
                             .collect(Collectors.toList()) :
                     tenants.stream()
-                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, tname,
-                                    tvalue)))
+                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name,
+                                    value)))
                             .collect(Collectors.toList());
             List<ResultSet> rsTriggerIds = Futures.allAsList(futures).get();
             rsTriggerIds.stream().forEach(rs -> {
@@ -930,17 +929,17 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Trigger> getTriggersByTag(String tenantId, String tname, String tvalue) throws Exception {
+    public Collection<Trigger> getTriggersByTag(String tenantId, String name, String value) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("tenantId must be not null");
         }
-        if (isEmpty(tname) && isEmpty(tvalue)) {
+        if (isEmpty(name) && isEmpty(value)) {
             throw new IllegalArgumentException("Category and Name can not both be null");
         }
         session = CassCluster.getSession();
 
         try {
-            Set<String> triggerIds = getTriggerIdsByTag(tenantId, tname, tvalue);
+            Set<String> triggerIds = getTriggerIdsByTag(tenantId, name, value);
 
             // Now, generate a result set of Triggers using the triggerIds
             List<Trigger> triggers = new ArrayList<>(triggerIds.size());
@@ -1927,16 +1926,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 } else {
                     throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
                 }
-
-                // TODO: ARE THESE TAGS STILL NEEDED BY THE HAWKULAR UI? THIS IS CLUNKY.
-                // I DON'T THINK THEY ARE USED. REMOVING...
-                // generate the automatic dataId tags for search
-                //Map<String, String> dataIdTags = new HashMap<>(dataIds.size());
-                //for (String dataId : dataIds) {
-                //    dataIdTags.put(dataId, "dataId");
-                //}
-                //insertTags(cond.getTenantId(), TagType.TRIGGER, cond.getTriggerId(), dataIdTags);
-                //dataIds.clear();
             }
             Futures.allAsList(futures).get();
 
@@ -1970,15 +1959,15 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @SuppressWarnings("unchecked")
-    private Set<String> getTriggerIdsByTag(String tenantId, String tname, String tvalue) {
-        if (isEmpty(tname)) {
-            throw new IllegalArgumentException("tname must be not null");
+    private Set<String> getTriggerIdsByTag(String tenantId, String name, String value) {
+        if (isEmpty(name)) {
+            throw new IllegalArgumentException("name must be not null");
         }
-        if (isEmpty(tvalue)) {
-            throw new IllegalArgumentException("tvalue must be not null (use '*' for all");
+        if (isEmpty(value)) {
+            throw new IllegalArgumentException("value must be not null (use '*' for all");
         }
 
-        boolean nameOnly = "*".equals(tvalue);
+        boolean nameOnly = "*".equals(value);
 
         PreparedStatement selectTags = null;
         selectTags = nameOnly ?
@@ -1989,8 +1978,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         BoundStatement bs = nameOnly ?
-                selectTags.bind(tenantId, TagType.TRIGGER.name(), tname) :
-                selectTags.bind(tenantId, TagType.TRIGGER.name(), tname, tvalue);
+                selectTags.bind(tenantId, TagType.TRIGGER.name(), name) :
+                selectTags.bind(tenantId, TagType.TRIGGER.name(), name, value);
         ResultSet rsTriggersTags = session.execute(bs);
         Set<String> triggerIds = new HashSet<>();
         for (Row row : rsTriggersTags) {
@@ -2016,10 +2005,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         try {
             session.execute(deleteConditionsMode.bind(tenantId, triggerId, triggerMode.name()));
-
-            // TODO: DELETING THE DATAID TAG THING, I THINK IT IS NOW UNUSED IN UI AND CLUNKY.
-            // if removing conditions remove the automatically-added dataId tags
-            //deleteTags(tenantId, triggerId, "dataId", null);
 
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());

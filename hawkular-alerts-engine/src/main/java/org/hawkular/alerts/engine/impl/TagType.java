@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.api.model;
+package org.hawkular.alerts.engine.impl;
 
 /**
  * The type of Tag being stored or fethed.

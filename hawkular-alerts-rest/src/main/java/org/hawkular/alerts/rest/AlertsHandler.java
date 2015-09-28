@@ -260,7 +260,7 @@ public class AlertsHandler {
             @QueryParam("severities")
             final String severities,
             @ApiParam(required = false, value = "filter out alerts for unspecified tags, comma separated list of tags, "
-                    + "each tag of format 'tname|tvalue'. Specify '*' for tvalue to match all tvalues.")
+                    + "each tag of format 'name|value'. Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags
             ) {

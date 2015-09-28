@@ -130,11 +130,11 @@ public class AlertsCriteria {
         this.tags = tags;
     }
 
-    public void addTag(String tname, String tvalue) {
+    public void addTag(String name, String value) {
         if (null == tags) {
             tags = new HashMap<>();
         }
-        tags.put(tname, tvalue);
+        tags.put(name, value);
     }
 
     public Severity getSeverity() {

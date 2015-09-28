@@ -441,7 +441,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(alertId, resp.data[0].alertId)
 
         // FETCH the alert above again, this time by tag
-        //resp = client.get(path: "", query: [startTime:start,tags:"test-autodisable-tname|test-autodisable-tvalue"] )
+        resp = client.get(path: "", query: [startTime:start,tags:"test-autodisable-tname|test-autodisable-tvalue"] )
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals(alertId, resp.data[0].alertId)
