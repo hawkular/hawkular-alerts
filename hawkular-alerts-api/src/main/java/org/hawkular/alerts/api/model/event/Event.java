@@ -16,16 +16,13 @@
  */
 package org.hawkular.alerts.api.model.event;
 
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.trigger.Tag;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -56,11 +53,8 @@ public class Event {
     @JsonInclude(Include.NON_EMPTY)
     private Map<String, String> context;
 
-    // TODO: WE NEED TO POTENTIALLY CONSOLIDATE OUR TAG APPROACH.  I THINK MAYBE WE SHOULD MOVE THE CURRENT Tag TO
-    // A NAME-VALUE PAIR, GET RID OF HIDDEN, AND CHANGE triggerId to a more generic ID.  The Tag as is is not
-    // going to work here, but for now leave as is/.
     @JsonInclude(Include.NON_EMPTY)
-    private Set<Tag> tags;
+    protected Map<String, String> tags;
 
     // Null for API-generated Events. Otherwise the Trigger that created the event (@ctime)
     @JsonInclude(Include.NON_EMPTY)
@@ -81,7 +75,15 @@ public class Event {
         // for json assembly
     }
 
-    public Event(String tenantId, String id, String text, Map<String, String> context, Set<Tag> tags) {
+    public Event(String tenantId, String id, String text) {
+        this(tenantId, id, text, null, null);
+    }
+
+    public Event(String tenantId, String id, String text, Map<String, String> context) {
+        this(tenantId, id, text, context, null);
+    }
+
+    public Event(String tenantId, String id, String text, Map<String, String> context, Map<String, String> tags) {
         this.tenantId = tenantId;
         this.id = id;
         this.text = text;
@@ -91,19 +93,18 @@ public class Event {
         this.ctime = System.currentTimeMillis();
     }
 
-    public Event(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets,
-            Set<Tag> tags) {
+    public Event(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets) {
         this.tenantId = tenantId;
         this.trigger = trigger;
         this.dampening = dampening;
         this.evalSets = evalSets;
-        this.tags = tags;
 
         this.ctime = System.currentTimeMillis();
 
         this.id = trigger.getId() + "-" + this.ctime;
         this.text = isEmpty(trigger.getDescription()) ? trigger.getName() : trigger.getDescription();
         this.context = trigger.getContext();
+        this.tags = trigger.getTags();
     }
 
     public String getTenantId() {
@@ -138,22 +139,22 @@ public class Event {
         this.text = text;
     }
 
-    public Collection<Tag> getTags() {
+    public Map<String, String> getTags() {
         if (null == tags) {
-            tags = new HashSet<>();
+            tags = new HashMap<>();
         }
         return tags;
     }
 
-    public void setTags(Set<Tag> tags) {
+    public void setTags(Map<String, String> tags) {
         this.tags = tags;
     }
 
-    public void addTag(Tag tag) {
-        if (null == tag) {
-            throw new IllegalArgumentException("Tag must be non-null");
+    public void addTag(String name, String value) {
+        if (null == name || null == value) {
+            throw new IllegalArgumentException("Tag must have non-null name and value");
         }
-        getTags().add(tag);
+        getTags().put(name, value);
     }
 
     public Map<String, String> getContext() {
