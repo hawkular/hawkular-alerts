@@ -173,7 +173,6 @@ public class Data implements Comparable<Data> {
         context.put(name, value);
     }
 
-
     @Override
     public int hashCode() {
         final int prime = 31;

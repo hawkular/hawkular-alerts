@@ -48,13 +48,13 @@ public class Event {
 
     // A description of the event, suitable for display
     @JsonInclude
-    private String eventText;
+    private String text;
 
     @JsonInclude(Include.NON_EMPTY)
     private Map<String, String> context;
 
     @JsonInclude(Include.NON_EMPTY)
-    private Map<String, String> tags;
+    protected Map<String, String> tags;
 
     // Null for API-generated Events. Otherwise the Trigger that created the event (@ctime)
     @JsonInclude(Include.NON_EMPTY)
@@ -75,10 +75,18 @@ public class Event {
         // for json assembly
     }
 
-    public Event(String tenantId, String id, String eventText, Map<String, String> context, Map<String, String> tags) {
+    public Event(String tenantId, String id, String text) {
+        this(tenantId, id, text, null, null);
+    }
+
+    public Event(String tenantId, String id, String text, Map<String, String> context) {
+        this(tenantId, id, text, context, null);
+    }
+
+    public Event(String tenantId, String id, String text, Map<String, String> context, Map<String, String> tags) {
         this.tenantId = tenantId;
         this.id = id;
-        this.eventText = eventText;
+        this.text = text;
         this.context = context;
         this.tags = tags;
 
@@ -94,9 +102,9 @@ public class Event {
         this.ctime = System.currentTimeMillis();
 
         this.id = trigger.getId() + "-" + this.ctime;
-        this.eventText = trigger.getDescription(); // is this sufficient text?
+        this.text = isEmpty(trigger.getDescription()) ? trigger.getName() : trigger.getDescription();
         this.context = trigger.getContext();
-        // this.tags = ???
+        this.tags = trigger.getTags();
     }
 
     public String getTenantId() {
@@ -123,12 +131,12 @@ public class Event {
         this.ctime = ctime;
     }
 
-    public String getEventText() {
-        return eventText;
+    public String getText() {
+        return text;
     }
 
-    public void setEventText(String eventText) {
-        this.eventText = eventText;
+    public void setText(String text) {
+        this.text = text;
     }
 
     public Map<String, String> getTags() {
@@ -139,12 +147,12 @@ public class Event {
     }
 
     public void setTags(Map<String, String> tags) {
-        this.tags = context;
+        this.tags = tags;
     }
 
     public void addTag(String name, String value) {
         if (null == name || null == value) {
-            throw new IllegalArgumentException("Propety must have non-null name and value");
+            throw new IllegalArgumentException("Tag must have non-null name and value");
         }
         getTags().put(name, value);
     }
@@ -220,6 +228,10 @@ public class Event {
         } else if (!tenantId.equals(other.tenantId))
             return false;
         return true;
+    }
+
+    private static boolean isEmpty(String s) {
+        return null == s || s.trim().isEmpty();
     }
 
 }

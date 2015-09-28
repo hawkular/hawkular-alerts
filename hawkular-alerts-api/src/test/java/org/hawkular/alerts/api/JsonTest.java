@@ -142,7 +142,7 @@ public class JsonTest {
                              "}," +
                 "\"ctime\":1436964192878," +
                 "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}," +
-                "\"eventText\":\"trigger-test\"," +
+                "\"text\":\"trigger-test\"," +
                 "\"evalSets\":[" +
                     "[{\"evalTimestamp\":1436964294055," +
                         "\"dataTimestamp\":2," +
@@ -189,7 +189,7 @@ public class JsonTest {
         assertTrue(alert.getContext().size() == 2);
         assertTrue(alert.getContext().get("n1").equals("v1"));
         assertTrue(alert.getContext().get("n2").equals("v2"));
-        assertEquals("trigger-test", alert.getEventText());
+        assertEquals("trigger-test", alert.getText());
 
         /*
             Testing thin deserializer

@@ -34,7 +34,7 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Provide test data for Availability Alerts on Url resources
+ * Provide test data for Data Alerts on Url resources
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -53,7 +53,7 @@ public class UrlAvailabilityData extends CommonData {
         context.put("resourceName", "http://www.jboss.org");
 
         String triggerId = "jboss-url-availability-trigger";
-        String triggerDescription = "Availability for http://www.jboss.org";
+        String triggerDescription = "Data for http://www.jboss.org";
         String dataId = "jboss-url-availability-data-id";
 
         trigger = new Trigger(TEST_TENANT,
