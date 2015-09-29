@@ -28,6 +28,7 @@ import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -61,7 +62,7 @@ public class FilePlugin implements ActionPluginListener {
 
     @Override
     public void process(PluginMessage msg) throws Exception {
-        if (msg == null || msg.getAction() == null || msg.getAction().getAlert() == null) {
+        if (msg == null || msg.getAction() == null || msg.getAction().getEvent() == null) {
             msgLog.warnMessageReceivedWithoutPayload("file");
         }
 
@@ -69,21 +70,21 @@ public class FilePlugin implements ActionPluginListener {
         path = path == null ? defaultProperties.get("path") : path;
         path = path == null ? System.getProperty("user.home") : path;
 
-        Alert alert = msg.getAction().getAlert();
-        String fileName = alert.getAlertId() + "-timestamp-" + System.currentTimeMillis() + ".txt";
+        Event event = msg.getAction() != null ? (Alert) msg.getAction().getEvent() : null;
+        String fileName = event.getId() + "-timestamp-" + System.currentTimeMillis() + ".txt";
 
         File pathFile = new File(path);
         if (!pathFile.exists()) {
             pathFile.mkdirs();
         }
-        File alertFile = new File(pathFile, fileName);
-        if (!alertFile.exists()) {
-            alertFile.createNewFile();
+        File eventFile = new File(pathFile, fileName);
+        if (!eventFile.exists()) {
+            eventFile.createNewFile();
         }
         BufferedWriter writer = null;
         try {
-            writer = new BufferedWriter(new FileWriter(alertFile));
-            String jsonAlert = objectMapper.writeValueAsString(alert);
+            writer = new BufferedWriter(new FileWriter(eventFile));
+            String jsonAlert = objectMapper.writeValueAsString(event);
             writer.write(jsonAlert);
         } finally {
             if (writer != null) {

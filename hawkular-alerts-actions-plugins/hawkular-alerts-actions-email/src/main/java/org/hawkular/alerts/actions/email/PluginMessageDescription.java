@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.actions.api.PluginMessage;
-import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
@@ -41,6 +40,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
@@ -207,7 +207,7 @@ public class PluginMessageDescription {
             throw new IllegalArgumentException("Properties cannot be null on PluginMessage");
         }
         message = pm.getAction().getMessage();
-        alert = pm.getAction().getAlert();
+        alert = (Alert) pm.getAction().getEvent();
         props = pm.getProperties();
         if (alert != null && alert.getStatus() != null) {
             status = alert.getStatus().name().toLowerCase();
