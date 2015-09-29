@@ -20,10 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.MsgLogger;
-import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.jboss.aerogear.unifiedpush.DefaultPushSender;
 import org.jboss.aerogear.unifiedpush.PushSender;
@@ -66,7 +66,7 @@ public class AerogearPlugin implements ActionPluginListener {
     }
 
     @Override
-    public void process(PluginMessage msg) throws Exception {
+    public void process(ActionMessage msg) throws Exception {
         if (pushSender == null) {
             msgLog.errorCannotSendMessage("aerogear", "Plugin is not started");
             return;
@@ -105,7 +105,7 @@ public class AerogearPlugin implements ActionPluginListener {
         return value == null || value.trim().isEmpty();
     }
 
-    private String prepareMessage(PluginMessage msg) {
+    private String prepareMessage(ActionMessage msg) {
         String preparedMsg = null;
         if (msg.getAction() != null && msg.getAction().getAlert() != null) {
             Alert alert = msg.getAction().getAlert();

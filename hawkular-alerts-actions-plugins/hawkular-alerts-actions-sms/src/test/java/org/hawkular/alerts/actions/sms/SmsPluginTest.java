@@ -30,7 +30,7 @@ import java.util.Set;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
@@ -58,15 +58,15 @@ public class SmsPluginTest {
 
     private static final String TEST_TENANT = "jdoe";
 
-    public static PluginMessage testMessage;
+    public static ActionMessage testMessage;
     public static String phoneTo;
     public static String preparedMessage;
 
-    public static class TestPluginMessage implements PluginMessage {
+    public static class TestActionMessage implements ActionMessage {
         Action action;
         Map<String, String> properties;
 
-        public TestPluginMessage(Action action, Map<String, String> properties) {
+        public TestActionMessage(Action action, Map<String, String> properties) {
             this.action = action;
             this.properties = properties;
         }
@@ -122,7 +122,7 @@ public class SmsPluginTest {
 
         Map<String, String> properties = new HashMap<>();
         properties.put("phone", phoneTo);
-        testMessage = new TestPluginMessage(incomingAction, properties);
+        testMessage = new TestActionMessage(incomingAction, properties);
     }
 
     private MessageFactory messageFactory;

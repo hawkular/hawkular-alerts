@@ -14,25 +14,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.actions.api;
+package org.hawkular.alerts.bus.api;
 
 import java.util.Map;
 
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.bus.common.BasicMessage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * A message sent to the plugin from the alerts engine
- * It has the alert payload as well as action properties
+ * Message send from the alerts engine through the bus and received by the action plugins architecture.
  *
  * @author Lucas Ponce
  */
-public interface PluginMessage {
+public class BusActionMessage extends BasicMessage implements ActionMessage {
 
     @JsonInclude
-    Action getAction();
+    Action action;
 
     @JsonInclude
-    Map<String, String> getProperties();
+    Map<String, String> properties;
+
+    public BusActionMessage() {
+    }
+
+    public BusActionMessage(Action action, Map<String, String> properties) {
+        this.action = action;
+        this.properties = properties;
+    }
+
+    @Override
+    public Action getAction() {
+        return action;
+    }
+
+    @Override
+    public Map<String, String> getProperties() {
+        return properties;
+    }
 }

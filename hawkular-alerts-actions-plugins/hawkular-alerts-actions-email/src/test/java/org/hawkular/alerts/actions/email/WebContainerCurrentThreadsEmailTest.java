@@ -23,8 +23,8 @@ import java.util.Map;
 
 import javax.mail.Message;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
-import org.hawkular.alerts.actions.tests.TestPluginMessage;
+import org.hawkular.alerts.actions.api.ActionMessage;
+import org.hawkular.alerts.actions.tests.TestActionMessage;
 import org.hawkular.alerts.actions.tests.WebContainerCurrentThreadsData;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
@@ -58,7 +58,7 @@ public class WebContainerCurrentThreadsEmailTest extends CommonTest {
 
         Action openAction = new Action(openAlert.getTriggerId(), "email", "email-to-test", openAlert);
 
-        PluginMessage openMessage = new TestPluginMessage(openAction, properties);
+        ActionMessage openMessage = new TestActionMessage(openAction, properties);
 
         Message email = plugin.createMimeMessage(openMessage);
         assertNotNull(email);
@@ -72,7 +72,7 @@ public class WebContainerCurrentThreadsEmailTest extends CommonTest {
 
         Action ackAction = new Action(ackAlert.getTriggerId(), "email", "email-to-test", ackAlert);
 
-        PluginMessage ackMessage = new TestPluginMessage(ackAction, properties);
+        ActionMessage ackMessage = new TestActionMessage(ackAction, properties);
 
         Message email = plugin.createMimeMessage(ackMessage);
         assertNotNull(email);
@@ -87,7 +87,7 @@ public class WebContainerCurrentThreadsEmailTest extends CommonTest {
 
         Action resolvedAction = new Action(resolvedAlert.getTriggerId(), "email", "email-to-test", resolvedAlert);
 
-        PluginMessage resolvedMessage = new TestPluginMessage(resolvedAction, properties);
+        ActionMessage resolvedMessage = new TestActionMessage(resolvedAction, properties);
 
         Message email = plugin.createMimeMessage(resolvedMessage);
         assertNotNull(email);

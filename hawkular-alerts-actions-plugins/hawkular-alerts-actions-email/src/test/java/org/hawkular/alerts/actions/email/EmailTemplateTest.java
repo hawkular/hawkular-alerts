@@ -23,9 +23,9 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.tests.JvmGarbageCollectionData;
-import org.hawkular.alerts.actions.tests.TestPluginMessage;
+import org.hawkular.alerts.actions.tests.TestActionMessage;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.junit.BeforeClass;
@@ -65,7 +65,7 @@ public class EmailTemplateTest {
     public void loadTemplatesFromPropertiesTest() throws Exception {
         Alert openAlert = JvmGarbageCollectionData.getOpenAlert();
         Action openAction = new Action(openAlert.getTriggerId(), "email", "email-to-test", openAlert);
-        PluginMessage openMessage = new TestPluginMessage(openAction, properties);
+        ActionMessage openMessage = new TestActionMessage(openAction, properties);
 
         properties.put("template.plain", "Tiny template: ${emailSubject}");
 
@@ -83,7 +83,7 @@ public class EmailTemplateTest {
     public void loadTemplatesFromPropertiesWithLocaleTest() throws Exception {
         Alert openAlert = JvmGarbageCollectionData.getOpenAlert();
         Action openAction = new Action(openAlert.getTriggerId(), "email", "email-to-test", openAlert);
-        PluginMessage openMessage = new TestPluginMessage(openAction, properties);
+        ActionMessage openMessage = new TestActionMessage(openAction, properties);
 
         // This template can be defined as default at plugin level
         properties.put("template.plain", "Tiny template: ${emailSubject}");

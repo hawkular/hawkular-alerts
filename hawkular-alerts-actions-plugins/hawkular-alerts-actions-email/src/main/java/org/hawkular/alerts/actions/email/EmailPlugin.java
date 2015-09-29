@@ -33,10 +33,10 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.MsgLogger;
-import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Alert.Status;
 import org.jboss.logging.Logger;
@@ -224,14 +224,14 @@ public class EmailPlugin implements ActionPluginListener {
     }
 
     @Override
-    public void process(PluginMessage msg) throws Exception {
+    public void process(ActionMessage msg) throws Exception {
         Message message = createMimeMessage(msg);
         Transport.send(message);
 
         msgLog.infoActionReceived("email", msg.toString());
     }
 
-    protected Message createMimeMessage(PluginMessage msg) throws Exception {
+    protected Message createMimeMessage(ActionMessage msg) throws Exception {
         Message email = new EmailMimeMessage(mailSession);
 
         Map<String, String> props = msg.getProperties();

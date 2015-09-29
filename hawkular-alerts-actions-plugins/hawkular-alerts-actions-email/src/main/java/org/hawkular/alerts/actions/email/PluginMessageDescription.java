@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
@@ -196,7 +196,7 @@ public class PluginMessageDescription {
      *
      * @param pm the PluginMessage
      */
-    public PluginMessageDescription(PluginMessage pm) {
+    public PluginMessageDescription(ActionMessage pm) {
         if (pm == null) {
             throw new IllegalArgumentException("PluginMessage cannot be null");
         }

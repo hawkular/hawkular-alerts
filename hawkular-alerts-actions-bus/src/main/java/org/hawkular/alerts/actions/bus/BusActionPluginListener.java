@@ -23,7 +23,7 @@ import javax.ejb.TransactionAttributeType;
 import javax.jms.MessageListener;
 
 import org.hawkular.alerts.actions.api.ActionPluginListener;
-import org.hawkular.alerts.bus.api.BusPluginMessage;
+import org.hawkular.alerts.bus.api.BusActionMessage;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
 
@@ -36,12 +36,12 @@ import org.jboss.logging.Logger;
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAlertsActionsTopic")})
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
-public class BusActionPluginListener extends BasicMessageListener<BusPluginMessage> {
+public class BusActionPluginListener extends BasicMessageListener<BusActionMessage> {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(BusActionPluginListener.class);
 
     @Override
-    protected void onBasicMessage(BusPluginMessage basicMessage) {
+    protected void onBasicMessage(BusActionMessage basicMessage) {
         if (ActionPlugins.getPlugins().isEmpty()) {
             msgLog.warnNoPluginsFound();
             return;

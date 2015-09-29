@@ -21,8 +21,8 @@ import java.util.Map;
 
 import javax.naming.InitialContext;
 
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
-import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
@@ -72,7 +72,7 @@ public class StandaloneActionPluginListener implements ActionListener {
                 Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
                 Map<String, String> mixedProps = mixProperties(properties, defaultProperties);
 
-                PluginMessage pluginMessage = new StandalonePluginMessage(action, mixedProps);
+                ActionMessage pluginMessage = new StandaloneActionMessage(action, mixedProps);
 
                 plugin.process(pluginMessage);
             } else {

@@ -22,10 +22,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.MsgLogger;
-import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.condition.Alert;
 
 import com.google.gson.Gson;
@@ -70,7 +70,7 @@ public class PagerDutyPlugin implements ActionPluginListener {
     }
 
     @Override
-    public void process(PluginMessage msg) throws Exception {
+    public void process(ActionMessage msg) throws Exception {
         if (pagerDuty == null) {
             msgLog.errorCannotSendMessage("pagerduty", "Plugin is not started");
             return;
@@ -144,7 +144,7 @@ public class PagerDutyPlugin implements ActionPluginListener {
         return value == null || value.trim().isEmpty();
     }
 
-    private String prepareMessage(PluginMessage msg) {
+    private String prepareMessage(ActionMessage msg) {
         String preparedMsg = null;
         if (msg.getAction() != null && msg.getAction().getAlert() != null) {
             Alert alert = msg.getAction().getAlert();

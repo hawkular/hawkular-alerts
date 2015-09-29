@@ -23,10 +23,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.MsgLogger;
-import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.condition.Alert;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,7 +60,7 @@ public class FilePlugin implements ActionPluginListener {
     }
 
     @Override
-    public void process(PluginMessage msg) throws Exception {
+    public void process(ActionMessage msg) throws Exception {
         if (msg == null || msg.getAction() == null || msg.getAction().getAlert() == null) {
             msgLog.warnMessageReceivedWithoutPayload("file");
         }

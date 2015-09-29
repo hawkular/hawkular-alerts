@@ -18,18 +18,18 @@ package org.hawkular.alerts.actions.standalone;
 
 import java.util.Map;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.api.model.action.Action;
 
 /**
  * @author Lucas Ponce
  */
-public class StandalonePluginMessage implements PluginMessage {
+public class StandaloneActionMessage implements ActionMessage {
 
     Action action;
     Map<String, String> properties;
 
-    public StandalonePluginMessage(Action action, Map<String, String> properties) {
+    public StandaloneActionMessage(Action action, Map<String, String> properties) {
         this.action = action;
         this.properties = properties;
     }

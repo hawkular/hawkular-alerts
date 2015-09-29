@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
@@ -54,16 +54,16 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class AerogearPluginTest {
     private static final String TEST_TENANT = "jdoe";
 
-    public static PluginMessage testMessage;
-    public static PluginMessage testBroadcastMessage;
+    public static ActionMessage testMessage;
+    public static ActionMessage testBroadcastMessage;
     public static String preparedMessage;
     public static String alias;
 
-    public static class TestPluginMessage implements PluginMessage {
+    public static class TestActionMessage implements ActionMessage {
         Action action;
         Map<String, String> properties;
 
-        public TestPluginMessage(Action action, Map<String, String> properties) {
+        public TestActionMessage(Action action, Map<String, String> properties) {
             this.action = action;
             this.properties = properties;
         }
@@ -120,9 +120,9 @@ public class AerogearPluginTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("alias", alias);
 
-        testMessage = new TestPluginMessage(incomingAction, properties);
+        testMessage = new TestActionMessage(incomingAction, properties);
 
-        testBroadcastMessage = new TestPluginMessage(incomingAction, Collections.EMPTY_MAP);
+        testBroadcastMessage = new TestActionMessage(incomingAction, Collections.EMPTY_MAP);
     }
 
     private PushSender pushSender;

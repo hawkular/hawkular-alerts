@@ -31,7 +31,7 @@ import javax.naming.InitialContext;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.bus.api.BusPluginMessage;
+import org.hawkular.alerts.bus.api.BusActionMessage;
 import org.hawkular.alerts.bus.log.MsgLogger;
 import org.hawkular.bus.common.ConnectionContextFactory;
 import org.hawkular.bus.common.Endpoint;
@@ -84,7 +84,7 @@ public class ActionPluginSender implements ActionListener {
                 Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
                 Map<String, String> mixedProps = mixProperties(properties, defaultProperties);
 
-                BusPluginMessage pluginMessage = new BusPluginMessage(action, mixedProps);
+                BusActionMessage pluginMessage = new BusActionMessage(action, mixedProps);
                 MessageId mid = new MessageProcessor().send(pcc, pluginMessage);
                 log.debug("Sent action message [" + mid.getId() + "] to the bus");
             } else {
