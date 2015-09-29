@@ -94,7 +94,8 @@ public class JsonTest {
         PluginMessage newMsg = objectMapper.readValue(json, TestPluginMessage.class);
 
         assertEquals("v2", newMsg.getProperties().get("k2"));
-        assertEquals("trigger-test", newMsg.getAction().getAlert().getTriggerId());
+        System.out.println(newMsg.getAction().getEvent());
+        assertTrue(newMsg.getAction().getEvent().getId().startsWith("trigger-test"));
     }
 
     public static class TestPluginMessage implements PluginMessage {

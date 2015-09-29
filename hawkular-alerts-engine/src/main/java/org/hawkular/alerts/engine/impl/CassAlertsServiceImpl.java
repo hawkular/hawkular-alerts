@@ -241,102 +241,112 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         List<Alert> alerts = new ArrayList<>();
         Set<String> alertIds = new HashSet<>();
+        boolean activeFilter = false;
 
         try {
             if (filter) {
                 /*
                     Get alertsIds explicitly added into the criteria. Start with these as there is no query involved
                 */
-                Set<String> alertIdsFilteredByAlerts = new HashSet<>();
-                boolean filterByAlerts = filterByAlerts(alertIdsFilteredByAlerts, criteria);
-                if (filterByAlerts) {
-                    alertIds.addAll(alertIdsFilteredByAlerts);
+                if (criteria.hasAlertIdCriteria()) {
+                    Set<String> alertIdsFilteredByAlerts = filterByAlerts(criteria);
+                    if (activeFilter) {
+                        alertIds.retainAll(alertIdsFilteredByAlerts);
+                        if (alertIds.isEmpty()) {
+                            return new Page<>(alerts, pager, 0);
+                        }
+                    } else {
+                        alertIds.addAll(alertIdsFilteredByAlerts);
+                    }
+                    activeFilter = true;
+                }
+
+                /*
+                    Get alertIds via tags
+                */
+                if (criteria.hasTagCriteria()) {
+                    Set<String> alertIdsFilteredByTags = getIdsByTags(tenantId, TagType.ALERT, criteria.getTags());
+                    if (activeFilter) {
+                        alertIds.retainAll(alertIdsFilteredByTags);
+                        if (alertIds.isEmpty()) {
+                            return new Page<>(alerts, pager, 0);
+                        }
+                    } else {
+                        alertIds.addAll(alertIdsFilteredByTags);
+                    }
+                    activeFilter = true;
                 }
 
                 /*
                     Get alertIds filtered by triggerIds clause
                  */
-                Set<String> alertIdsFilteredByTriggers = new HashSet<>();
-                boolean filterByTriggers = filterByTriggers(tenantId, alertIdsFilteredByTriggers, criteria);
-                if (filterByTriggers) {
-                    if (alertIds.isEmpty()) {
-                        alertIds.addAll(alertIdsFilteredByTriggers);
-                    } else {
+                if (criteria.hasTriggerIdCriteria()) {
+                    Set<String> alertIdsFilteredByTriggers = filterByTriggers(tenantId, criteria);
+                    if (activeFilter) {
                         alertIds.retainAll(alertIdsFilteredByTriggers);
+                        if (alertIds.isEmpty()) {
+                            return new Page<>(alerts, pager, 0);
+                        }
+                    } else {
+                        alertIds.addAll(alertIdsFilteredByTriggers);
                     }
-                    if (alertIds.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
-                    }
+                    activeFilter = true;
                 }
 
                 /*
-                    Get alertsIds filtered by ctime clause
+                    Get alertsIds filtered by time clause
                  */
-                Set<String> alertIdsFilteredByCtime = new HashSet<>();
-                boolean filterByCtime = filterByCtime(tenantId, alertIdsFilteredByCtime, criteria);
-                if (filterByCtime) {
-                    if (alertIds.isEmpty()) {
-                        alertIds.addAll(alertIdsFilteredByCtime);
+                if (criteria.hasCTimeCriteria()) {
+                    Set<String> alertIdsFilteredByTime = filterByCTime(tenantId, criteria);
+                    if (activeFilter) {
+                        alertIds.retainAll(alertIdsFilteredByTime);
+                        if (alertIds.isEmpty()) {
+                            return new Page<>(alerts, pager, 0);
+                        }
                     } else {
-                        alertIds.retainAll(alertIdsFilteredByCtime);
+                        alertIds.addAll(alertIdsFilteredByTime);
                     }
-                    if (alertIds.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
-                    }
+                    activeFilter = true;
                 }
 
                 /*
-                Get alertsIds filtered by severities clause
+                     Get alertsIds filtered by severities clause
                 */
-                Set<String> alertIdsFilteredBySeverity = new HashSet<>();
-                boolean filterBySeverity = filterBySeverities(tenantId, alertIdsFilteredBySeverity, criteria);
-                if (filterBySeverity) {
-                    if (alertIds.isEmpty()) {
-                        alertIds.addAll(alertIdsFilteredBySeverity);
-                    } else {
+                if (criteria.hasSeverityCriteria()) {
+                    Set<String> alertIdsFilteredBySeverity = filterBySeverities(tenantId, criteria);
+                    if (activeFilter) {
                         alertIds.retainAll(alertIdsFilteredBySeverity);
+                        if (alertIds.isEmpty()) {
+                            return new Page<>(alerts, pager, 0);
+                        }
+                    } else {
+                        alertIds.addAll(alertIdsFilteredBySeverity);
                     }
-                    if (alertIds.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
-                    }
+                    activeFilter = true;
                 }
 
                 /*
                     Get alertsIds filtered by statuses clause
                  */
-                Set<String> alertIdsFilteredByStatus = new HashSet<>();
-                boolean filterByStatus = filterByStatuses(tenantId, alertIdsFilteredByStatus, criteria);
-                if (filterByStatus) {
-                    if (alertIds.isEmpty()) {
-                        alertIds.addAll(alertIdsFilteredByStatus);
-                    } else {
+                if (criteria.hasStatusCriteria()) {
+                    Set<String> alertIdsFilteredByStatus = filterByStatuses(tenantId, criteria);
+                    if (activeFilter) {
                         alertIds.retainAll(alertIdsFilteredByStatus);
+                        if (alertIds.isEmpty()) {
+                            return new Page<>(alerts, pager, 0);
+                        }
+                    } else {
+                        alertIds.addAll(alertIdsFilteredByStatus);
                     }
-
-                    if (alertIds.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
-                    }
+                    activeFilter = true;
                 }
-            }
 
-            if (!filter) {
                 /*
-                    Get all alerts - Single query
+                    If we have reached this point then we have at least 1 filtered alertId, so now
+                    get the resulting Alerts...
                  */
-                PreparedStatement selectAlertsByTenant = CassStatement.get(session,
-                        CassStatement.SELECT_ALERTS_BY_TENANT);
-                ResultSet rsAlerts = session.execute(selectAlertsByTenant.bind(tenantId));
-                for (Row row : rsAlerts) {
-                    String payload = row.getString("payload");
-                    Alert alert = JsonUtil.fromJson(payload, Alert.class, thin);
-                    alerts.add(alert);
-                }
-            } else {
-                /*
-                    We have a filter, so we are going to perform several queries with alertsIds filtering
-                 */
-                PreparedStatement selectAlertsByTenantAndAlert = CassStatement.get(session,
-                        CassStatement.SELECT_ALERT);
+                PreparedStatement selectAlertsByTenantAndAlert = CassStatement
+                        .get(session, CassStatement.SELECT_ALERT);
                 List<ResultSetFuture> futures = alertIds.stream().map(alertId ->
                         session.executeAsync(selectAlertsByTenantAndAlert.bind(tenantId, alertId)))
                         .collect(Collectors.toList());
@@ -348,6 +358,19 @@ public class CassAlertsServiceImpl implements AlertsService {
                         alerts.add(alert);
                     }
                 });
+
+            } else {
+                /*
+                    Get all alerts - Single query
+                 */
+                PreparedStatement selectAlertsByTenant = CassStatement.get(session,
+                        CassStatement.SELECT_ALERTS_BY_TENANT);
+                ResultSet rsAlerts = session.execute(selectAlertsByTenant.bind(tenantId));
+                for (Row row : rsAlerts) {
+                    String payload = row.getString("payload");
+                    Alert alert = JsonUtil.fromJson(payload, Alert.class, thin);
+                    alerts.add(alert);
+                }
             }
 
         } catch (Exception e) {
@@ -392,22 +415,42 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
     }
 
-    /*
-        Trigger ids can be passed explicitly in the criteria or indirectly via tags.
-        This helper method extracts the list of triggers id and populates the set passed as argument.
+    private Set<String> filterByTriggers(String tenantId, AlertsCriteria criteria) throws Exception {
+        Set<String> result = Collections.EMPTY_SET;
+        Set<String> triggerIds = extractTriggerIds(tenantId, criteria);
 
-        **Note** currently explicitTriggerIds and triggerIds determined via tags are joined together (treated as one
-        triggerId filter). I'm not sure this is right but it seems to make the most sense.
-     */
-    private boolean extractTriggerIds(String tenantId, Set<String> triggerIds, AlertsCriteria criteria)
-            throws Exception {
+        if (triggerIds.size() > 0) {
+            List<ResultSetFuture> futures = new ArrayList<>();
+            PreparedStatement selectAlertsTriggers = CassStatement.get(session, CassStatement.SELECT_ALERTS_TRIGGERS);
+
+            for (String triggerId : triggerIds) {
+                if (isEmpty(triggerId)) {
+                    continue;
+                }
+                futures.add(session.executeAsync(selectAlertsTriggers.bind(tenantId, triggerId)));
+            }
+            List<ResultSet> rsAlertIdsByTriggerIds = Futures.allAsList(futures).get();
+
+            Set<String> alertIds = new HashSet<>();
+            rsAlertIdsByTriggerIds.stream().forEach(r -> {
+                for (Row row : r) {
+                    String alertId = row.getString("alertId");
+                    alertIds.add(alertId);
+                }
+            });
+            result = alertIds;
+        }
+
+        return result;
+    }
+
+    private Set<String> extractTriggerIds(String tenantId, AlertsCriteria criteria) {
+
         boolean hasTriggerId = !isEmpty(criteria.getTriggerId());
         boolean hasTriggerIds = !isEmpty(criteria.getTriggerIds());
-        boolean hasTags = !isEmpty(criteria.getTags());
 
-        /*
-            Explicit trigger ids
-         */
+        Set<String> triggerIds = hasTriggerId || hasTriggerIds ? new HashSet<>() : Collections.EMPTY_SET;
+
         if (!hasTriggerIds) {
             if (hasTriggerId) {
                 triggerIds.add(criteria.getTriggerId());
@@ -421,58 +464,14 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
         }
 
-        /*
-            Indirect trigger ids by tags
-         */
-        if (hasTags) {
-            triggerIds.addAll(getTriggerIdsByTags(tenantId, criteria.getTags()));
-        }
-
-        // Return true if any trigger or tag criteria was specified, regardless of whether it results in any
-        // triggerIds, because tags may not actually result in triggerIds but that does not mean the filter was
-        // not specified. In that case the overall fetch of alerts should return no alerts.
-        return hasTriggerId || hasTriggerIds || hasTags;
+        return triggerIds;
     }
 
-    private boolean filterByTriggers(String tenantId, Set<String> alertsId, AlertsCriteria criteria) throws Exception {
-        Set<String> triggerIds = new HashSet<>();
-        boolean filterByTriggers = extractTriggerIds(tenantId, triggerIds, criteria);
+    private Set<String> filterByCTime(String tenantId, AlertsCriteria criteria) throws Exception {
+        Set<String> result = Collections.EMPTY_SET;
 
-        if (triggerIds.size() > 0) {
-            List<ResultSetFuture> futures = new ArrayList<>();
-            PreparedStatement selectAlertsTriggers = CassStatement.get(session, CassStatement.SELECT_ALERTS_TRIGGERS);
-
-            for (String triggerId : triggerIds) {
-                if (isEmpty(triggerId)) {
-                    continue;
-                }
-                futures.add(session.executeAsync(selectAlertsTriggers.bind(tenantId, triggerId)));
-            }
-
-            List<ResultSet> rsAlertIdsByTriggerIds = Futures.allAsList(futures).get();
-
-            rsAlertIdsByTriggerIds.stream().forEach(r -> {
-                for (Row row : r) {
-                    String alertId = row.getString("alertId");
-                    alertsId.add(alertId);
-                }
-            });
-            /*
-                If there is not alertId but we have triggersId means that we have an empty result.
-                So we need to sure a alertId to mark that we have an empty result for future joins.
-             */
-            if (alertsId.isEmpty()) {
-                alertsId.add("no-result-fake-alert-id");
-            }
-        }
-
-        return filterByTriggers;
-    }
-
-    private boolean filterByCtime(String tenantId, Set<String> alertsId, AlertsCriteria criteria) throws Exception {
-        boolean filterByCtime = false;
         if (criteria.getStartTime() != null || criteria.getEndTime() != null) {
-            filterByCtime = true;
+            result = new HashSet<>();
 
             BoundStatement boundCtime;
             if (criteria.getStartTime() != null && criteria.getEndTime() != null) {
@@ -491,20 +490,17 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
 
             ResultSet rsAlertsCtimes = session.execute(boundCtime);
-            if (rsAlertsCtimes.isExhausted()) {
-                alertsId.add("no-result-fake-alert-id");
-            } else {
-                for (Row row : rsAlertsCtimes) {
-                    String alertId = row.getString("alertId");
-                    alertsId.add(alertId);
-                }
+            for (Row row : rsAlertsCtimes) {
+                String alertId = row.getString("alertId");
+                result.add(alertId);
             }
         }
-        return filterByCtime;
+        return result;
     }
 
-    private boolean filterByStatuses(String tenantId, Set<String> alertsId, AlertsCriteria criteria) throws Exception {
-        boolean filterByStatus = false;
+    private Set<String> filterByStatuses(String tenantId, AlertsCriteria criteria) throws Exception {
+        Set<String> result = Collections.EMPTY_SET;
+
         Set<Alert.Status> statuses = new HashSet<>();
         if (isEmpty(criteria.getStatusSet())) {
             if (criteria.getStatus() != null) {
@@ -515,34 +511,30 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
 
         if (statuses.size() > 0) {
-            filterByStatus = true;
             PreparedStatement selectAlertStatusByTenantAndStatus = CassStatement.get(session,
                     CassStatement.SELECT_ALERT_STATUS_BY_TENANT_AND_STATUS);
             List<ResultSetFuture> futures = statuses.stream().map(status ->
                     session.executeAsync(selectAlertStatusByTenantAndStatus.bind(tenantId, status.name())))
                     .collect(Collectors.toList());
-
             List<ResultSet> rsAlertStatuses = Futures.allAsList(futures).get();
+
+            Set<String> alertIds = new HashSet<>();
             rsAlertStatuses.stream().forEach(r -> {
                 for (Row row : r) {
                     String alertId = row.getString("alertId");
-                    alertsId.add(alertId);
+                    alertIds.add(alertId);
                 }
             });
-            /*
-                If there is not alertId but we have triggersId means that we have an empty result.
-                So we need to sure a alertId to mark that we have an empty result for future joins.
-             */
-            if (alertsId.isEmpty()) {
-                alertsId.add("no-result-fake-alert-id");
-            }
+            result = alertIds;
         }
-        return filterByStatus;
+        return result;
     }
 
-    private boolean filterBySeverities(String tenantId, Set<String> alertsId, AlertsCriteria criteria)
+    private Set<String> filterBySeverities(String tenantId, AlertsCriteria criteria)
             throws Exception {
-        boolean filterBySeverity = false;
+
+        Set<String> result = Collections.EMPTY_SET;
+
         Set<Severity> severities = new HashSet<>();
         if (isEmpty(criteria.getSeverities())) {
             if (criteria.getSeverity() != null) {
@@ -553,47 +545,43 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
 
         if (severities.size() > 0) {
-            filterBySeverity = true;
             PreparedStatement selectAlertSeverityByTenantAndSeverity = CassStatement.get(session,
                     CassStatement.SELECT_ALERT_SEVERITY_BY_TENANT_AND_SEVERITY);
             List<ResultSetFuture> futures = severities.stream().map(severity ->
                     session.executeAsync(selectAlertSeverityByTenantAndSeverity.bind(tenantId, severity.name())))
                     .collect(Collectors.toList());
-
             List<ResultSet> rsAlertSeverities = Futures.allAsList(futures).get();
+
+            Set<String> alertIds = new HashSet<>();
             rsAlertSeverities.stream().forEach(r -> {
                 for (Row row : r) {
                     String alertId = row.getString("alertId");
-                    alertsId.add(alertId);
+                    alertIds.add(alertId);
                 }
             });
-            /*
-                If there is not alertId but we have triggersId means that we have an empty result.
-                So we need to sure a alertId to mark that we have an empty result for future joins.
-             */
-            if (alertsId.isEmpty()) {
-                alertsId.add("no-result-fake-alert-id");
-            }
+            result = alertIds;
         }
-        return filterBySeverity;
+
+        return result;
     }
 
-    private boolean filterByAlerts(Set<String> alertsId, AlertsCriteria criteria) {
-        boolean filterByAlerts = false;
+    private Set<String> filterByAlerts(AlertsCriteria criteria) {
+        Set<String> result = Collections.EMPTY_SET;
         if (isEmpty(criteria.getAlertIds())) {
             if (!isEmpty(criteria.getAlertId())) {
-                filterByAlerts = true;
-                alertsId.add(criteria.getAlertId());
+                result = new HashSet<>(1);
+                result.add(criteria.getAlertId());
             }
         } else {
-            filterByAlerts = true;
-            alertsId.addAll(criteria.getAlertIds());
+            result = new HashSet<>();
+            result.addAll(criteria.getAlertIds());
         }
-        return filterByAlerts;
+        return result;
     }
 
-    private Collection<String> getTriggerIdsByTags(String tenantId, Map<String, String> tags) throws Exception {
-        Set<String> triggerIds = new HashSet<>();
+    private Set<String> getIdsByTags(String tenantId, TagType tagType, Map<String, String> tags)
+            throws Exception {
+        Set<String> ids = new HashSet<>();
         List<ResultSetFuture> futures = new ArrayList<>();
         PreparedStatement selectTagsByName = CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME);
         PreparedStatement selectTagsByNameAndValue = CassStatement.get(session,
@@ -602,17 +590,17 @@ public class CassAlertsServiceImpl implements AlertsService {
         for (Map.Entry<String, String> tag : tags.entrySet()) {
             boolean nameOnly = "*".equals(tag.getValue());
             BoundStatement bs = nameOnly ?
-                    selectTagsByName.bind(tenantId, TagType.TRIGGER.name(), tag.getKey()) :
-                    selectTagsByNameAndValue.bind(tenantId, TagType.TRIGGER.name(), tag.getKey(), tag.getValue());
+                    selectTagsByName.bind(tenantId, tagType.name(), tag.getKey()) :
+                    selectTagsByNameAndValue.bind(tenantId, tagType.name(), tag.getKey(), tag.getValue());
             futures.add(session.executeAsync(bs));
         }
         List<ResultSet> rsTags = Futures.allAsList(futures).get();
         rsTags.stream().forEach(r -> {
             for (Row row : r) {
-                triggerIds.add(row.getString("id"));
+                ids.add(row.getString("id"));
             }
         });
-        return triggerIds;
+        return ids;
     }
 
     @Override
@@ -865,10 +853,6 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     private boolean isEmpty(Collection<?> c) {
         return null == c || c.isEmpty();
-    }
-
-    private boolean isEmpty(Map<?, ?> m) {
-        return null == m || m.isEmpty();
     }
 
     private boolean isEmpty(String s) {

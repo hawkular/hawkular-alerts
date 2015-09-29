@@ -207,7 +207,7 @@ public class CassStatement {
                 + "dampeningId, tenantId) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_EVENT = "INSERT INTO " + keyspace + ".events "
-                + "(tenantId, category, id payload) VALUES (?, ?, ?, ?) ";
+                + "(tenantId, category, id, payload) VALUES (?, ?, ?, ?) ";
 
         INSERT_TAG = "INSERT INTO " + keyspace + ".tags "
                 + "(tenantId, type, name, value, id) VALUES (?, ?, ?, ?, ?) ";

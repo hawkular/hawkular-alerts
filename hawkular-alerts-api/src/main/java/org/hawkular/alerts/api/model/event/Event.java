@@ -28,6 +28,9 @@ import org.hawkular.alerts.api.model.trigger.TriggerType;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * An Alert is an Event.  For the most part an Event can be thought of as an Alert without life-cycle. Alerts are
@@ -36,6 +39,12 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "category")
+@JsonSubTypes({
+        @Type(value = Alert.class, name = "ALERT") })
 public class Event {
 
     @JsonInclude
