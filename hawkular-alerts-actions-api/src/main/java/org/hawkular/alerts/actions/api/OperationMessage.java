@@ -17,7 +17,6 @@
 package org.hawkular.alerts.actions.api;
 
 import java.util.Map;
-import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -25,11 +24,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * A message sent to the alerts engine from the plugin
  * It defines a code of operation and payloads
  *
- * It used for plugin registration but additional operations should be supported
+ * Payload is a generic map.
  *
  * @author Lucas Ponce
  */
-public interface PluginOperationMessage {
+public interface OperationMessage {
 
     enum Operation {
         REGISTRATION
@@ -39,11 +38,5 @@ public interface PluginOperationMessage {
     Operation getOperation();
 
     @JsonInclude
-    String getActionPlugin();
-
-    @JsonInclude
-    Set<String> getPropertyNames();
-
-    @JsonInclude
-    Map<String, String> getDefaultProperties();
+    Map<String, String> getPayload();
 }

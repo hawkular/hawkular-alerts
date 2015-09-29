@@ -18,12 +18,8 @@ package org.hawkular.alerts.engine.impl;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import javax.ejb.Asynchronous;
 import javax.ejb.Local;
 import javax.ejb.Singleton;
 import javax.ejb.TransactionAttribute;
@@ -50,40 +46,20 @@ public class MemActionsServiceImpl implements ActionsService {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(MemActionsServiceImpl.class);
 
-    private static final String ACTIONS_THREAD_POOL = "hawkular-alerts.actions-thread-pool";
-
-    ExecutorService actionsExecutor;
     List<ActionListener> listeners = new CopyOnWriteArrayList<ActionListener>();
 
     public MemActionsServiceImpl() {
         log.debugf("Creating instance.");
     }
 
-    @PostConstruct
-    public void initPool() {
-        int nThreads = Integer.parseInt(AlertProperties.getProperty(ACTIONS_THREAD_POOL, "10"));
-        ActionThreadFactory actionsThreadFactory = new ActionThreadFactory();
-        actionsExecutor = Executors.newFixedThreadPool(nThreads, actionsThreadFactory);
-        if (actionsExecutor == null) {
-            throw new IllegalStateException("Actions ThreadPool has not been initialized");
-        }
-    }
-
-    @PreDestroy
-    public void release() {
-        if (actionsExecutor != null) {
-            actionsExecutor.shutdown();
-        }
-    }
-
+    @Asynchronous
     @Override
     public void send(Action action) {
         if (action == null || action.getActionId() == null || action.getActionId().isEmpty()) {
             throw new IllegalArgumentException("Action must be not null");
         }
         for (ActionListener listener : listeners) {
-            ActionWorker worker = new ActionWorker(listener, action);
-            actionsExecutor.execute(worker);
+            listener.process(action);
         }
     }
 
@@ -94,35 +70,6 @@ public class MemActionsServiceImpl implements ActionsService {
         }
         listeners.add(listener);
         msgLog.infoActionListenerRegistered(listener.toString());
-    }
-
-    public class ActionThreadFactory implements ThreadFactory {
-
-        private int numThread = 0;
-        private String prefix = "Alert-Action-Worker-";
-
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread newThread = new Thread(r, prefix + numThread);
-            numThread++;
-            return newThread;
-        }
-    }
-
-    public class ActionWorker implements Runnable {
-
-        private ActionListener listener;
-        private Action action;
-
-        public ActionWorker(ActionListener listener, Action action) {
-            this.listener = listener;
-            this.action = action;
-        }
-
-        @Override
-        public void run() {
-            listener.process(action);
-        }
     }
 
 }

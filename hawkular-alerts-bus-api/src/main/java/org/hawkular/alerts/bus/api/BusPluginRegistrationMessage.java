@@ -19,7 +19,6 @@ package org.hawkular.alerts.bus.api;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.actions.api.PluginOperationMessage;
 import org.hawkular.bus.common.BasicMessage;
 
 /**
@@ -27,57 +26,43 @@ import org.hawkular.bus.common.BasicMessage;
  *
  * @author Lucas Ponce
  */
-public class BusPluginOperationMessage extends BasicMessage implements PluginOperationMessage {
+public class BusPluginRegistrationMessage extends BasicMessage {
 
-    Operation operation;
     String actionPlugin;
     Set<String> propertyNames;
     Map<String, String> defaultProperties;
 
-    public BusPluginOperationMessage() {
+    public BusPluginRegistrationMessage() {
     }
 
-    public BusPluginOperationMessage(Operation operation, String actionPlugin, Set<String> propertyNames,
-            Map<String, String> defaultProperties) {
-        this.operation = operation;
+    public BusPluginRegistrationMessage(String actionPlugin, Set<String> propertyNames,
+                                        Map<String, String> defaultProperties) {
         this.actionPlugin = actionPlugin;
         this.propertyNames = propertyNames;
         this.defaultProperties = defaultProperties;
     }
 
-    public void setOperation(Operation operation) {
-        this.operation = operation;
+    public String getActionPlugin() {
+        return actionPlugin;
     }
 
     public void setActionPlugin(String actionPlugin) {
         this.actionPlugin = actionPlugin;
     }
 
-    public void setPropertyNames(Set<String> propertyNames) {
-        this.propertyNames = propertyNames;
-    }
-
-    public void setDefaultProperties(Map<String, String> defaultProperties) {
-        this.defaultProperties = defaultProperties;
-    }
-
-    @Override
-    public Operation getOperation() {
-        return operation;
-    }
-
-    @Override
-    public String getActionPlugin() {
-        return actionPlugin;
-    }
-
-    @Override
     public Set<String> getPropertyNames() {
         return propertyNames;
     }
 
-    @Override
+    public void setPropertyNames(Set<String> propertyNames) {
+        this.propertyNames = propertyNames;
+    }
+
     public Map<String, String> getDefaultProperties() {
         return defaultProperties;
+    }
+
+    public void setDefaultProperties(Map<String, String> defaultProperties) {
+        this.defaultProperties = defaultProperties;
     }
 }

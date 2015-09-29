@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.ejb.Asynchronous;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
@@ -70,6 +71,7 @@ public class ActionPluginSender implements ActionListener {
     public ActionPluginSender() {
     }
 
+    @Asynchronous
     @Override
     public void process(Action action) {
         try {
