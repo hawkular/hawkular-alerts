@@ -112,5 +112,19 @@
       "description": "Response Time",
       "unit": "ms"
     }
+  },
+  {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+    "triggerId": "trigger-8",
+    "triggerMode": "FIRING",
+    "conditionSetSize": 1,
+    "conditionSetIndex": 1,
+    "type": "threshold",
+    "dataId": "NumericData-01",
+    "operator": "LT",
+    "threshold": 10.0,
+    "context": {
+      "description": "Response Time",
+      "unit": "ms"
+    }
   }
 ]}

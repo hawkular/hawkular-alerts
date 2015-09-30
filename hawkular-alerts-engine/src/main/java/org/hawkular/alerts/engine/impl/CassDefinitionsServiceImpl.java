@@ -49,6 +49,7 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerType;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
 import org.hawkular.alerts.api.services.DefinitionsListener;
@@ -172,6 +173,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 for (Map<String, Object> t : aTriggers) {
                     String tenantId = (String) t.get("tenantId");
                     String triggerId = (String) t.get("triggerId");
+                    String typeName = (String) t.get("type");
+                    TriggerType type = (null != typeName) ?
+                            TriggerType.valueOf((String) t.get("type")) : TriggerType.ALERT;
                     boolean enabled = (Boolean) t.get("enabled");
                     String name = (String) t.get("name");
                     String description = (String) t.get("description");
@@ -190,6 +194,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     boolean orphan = (Boolean) t.get("orphan");
 
                     Trigger trigger = new Trigger(tenantId, triggerId, name);
+                    trigger.setType(type);
                     trigger.setEnabled(enabled);
                     trigger.setAutoDisable(autoDisable);
                     trigger.setAutoEnable(autoEnable);
@@ -473,7 +478,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         try {
-            session.execute(insertTrigger.bind(trigger.getTenantId(), trigger.getId(), trigger.getName(),
+            session.execute(insertTrigger.bind(trigger.getTenantId(), trigger.getId(), trigger.getType().name(),
+                    trigger.getName(),
                     trigger.getContext(), trigger.isAutoDisable(), trigger.isAutoEnable(), trigger.isAutoResolve(),
                     trigger.isAutoResolveAlerts(), trigger.getAutoResolveMatch().name(), trigger.getMemberOf(),
                     trigger.getDescription(), trigger.isEnabled(), trigger.getFiringMatch().name(),
@@ -679,6 +685,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         member.setFiringMatch(group.getFiringMatch());
         member.setSeverity(group.getSeverity());
         member.setTags(group.getTags());
+        member.setType(group.getType());
 
         return member;
     }
@@ -1018,6 +1025,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         trigger.setTenantId(row.getString("tenantId"));
         trigger.setId(row.getString("id"));
+        trigger.setType(TriggerType.valueOf(row.getString("type")));
         trigger.setName(row.getString("name"));
         trigger.setContext(row.getMap("context", String.class, String.class));
 

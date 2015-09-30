@@ -70,6 +70,15 @@ public interface AlertsService {
     int deleteAlerts(String tenantId, AlertsCriteria criteria) throws Exception;
 
     /**
+     * Delete the requested Events, as described by the provided criteria.
+     * @param tenantId Tenant where alerts are stored
+     * @param criteria specifying the Events to be deleted. Not null.
+     * @returns the number of events deleted
+     * @throws Exception any problem
+     */
+    int deleteEvents(String tenantId, EventsCriteria criteria) throws Exception;
+
+    /**
      * @param tenantId Tenant where alerts are stored
      * @param alertId the Alert to get.
      * @param thin If true don't include evalSets and resolveEvalSets in the returned Alert
@@ -86,6 +95,24 @@ public interface AlertsService {
      * @throws Exception any problem
      */
     Page<Alert> getAlerts(String tenantId, AlertsCriteria criteria, Pager pager) throws Exception;
+
+    /**
+     * @param tenantId Tenant where events are stored
+     * @param eventId the Event to get.
+     * @param thin If true don't include evalSets in the returned Event
+     * @return the Event or null if not found.
+     * @throws Exception any problem
+     */
+    Event getEvent(String tenantId, String eventId, boolean thin) throws Exception;
+
+    /**
+     * @param tenantId Tenant where events are stored
+     * @param criteria If null returns all events (not recommended)
+     * @param pager Paging requirement for fetching events. Optional. Return all if null.
+     * @return NotNull, can be empty.
+     * @throws Exception any problem
+     */
+    Page<Event> getEvents(String tenantId, EventsCriteria criteria, Pager pager) throws Exception;
 
     /**
      * The alerts must already have been added. Set the alerts to RESOLVED status. The resolvedTime will be set to the

@@ -44,6 +44,7 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
@@ -52,6 +53,7 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.services.EventsCriteria;
 import org.junit.Test;
 
 /**
@@ -791,6 +793,11 @@ public abstract class DefinitionsTest {
         criteria.setStatusSet(statuses);
         result = alertsService.getAlerts(TEST_TENANT, criteria, null);
         assertTrue(result.toString(), result.size() == 0);
+
+        criteria = new AlertsCriteria();
+        criteria.setTriggerId(alert.getTriggerId());
+        int numDeleted = alertsService.deleteAlerts(TEST_TENANT, criteria);
+        assertEquals(1, numDeleted);
     }
 
     @Test
@@ -1067,6 +1074,138 @@ public abstract class DefinitionsTest {
         System.out.println("first status: " + firstStatus + " last status: " + lastStatus);
 
         assertTrue(firstStatus.compareTo(lastStatus) > 0);
+    }
+
+    @Test
+    public void test0060BasicEvent() throws Exception {
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-8");
+        assertNotNull(t);
+
+        Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
+        assertTrue(cs.toString(), cs.size() == 1);
+
+        ThresholdCondition threshold = (ThresholdCondition) cs.iterator().next();
+        long dataTime = System.currentTimeMillis();
+        Data data = Data.forNumeric("NumericData-01", dataTime, 5.0d);
+        ThresholdConditionEval eval = new ThresholdConditionEval(threshold, data);
+        Set<ConditionEval> evalSet = new HashSet<>();
+        evalSet.add(eval);
+        List<Set<ConditionEval>> evals = new ArrayList<>();
+        evals.add(evalSet);
+        Event event = new Event(TEST_TENANT, t, null, evals);
+        List<Event> events = new ArrayList<>();
+        events.add(event);
+
+        alertsService.addEvents(events);
+
+        // No filter
+        List<Event> result = alertsService.getEvents(TEST_TENANT, null, null);
+        assertTrue(result.toString(), !result.isEmpty());
+
+        // Specific trigger
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setTriggerId("trigger-8");
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertTrue(result.toString(), result.size() == 1);
+
+        criteria = new EventsCriteria();
+        List<String> triggerIds = new ArrayList<>();
+        triggerIds.add("trigger-8");
+        triggerIds.add("trigger-9");
+        criteria.setTriggerIds(triggerIds);
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertTrue(result.toString(), result.size() == 1);
+
+        // No trigger
+        criteria = new EventsCriteria();
+        criteria.setTriggerId("trigger-9");
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(0, result.size());
+
+        criteria = new EventsCriteria();
+        triggerIds = new ArrayList<>();
+        triggerIds.add("trigger-9");
+        triggerIds.add("trigger-10");
+        criteria.setTriggerIds(triggerIds);
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(0, result.size());
+
+        // Specific time
+        criteria = new EventsCriteria();
+        criteria.setStartTime(dataTime - 100);
+        criteria.setEndTime(dataTime + 100);
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(1, result.size());
+
+        // Out of time interval
+        criteria = new EventsCriteria();
+        criteria.setStartTime(dataTime + 10000);
+        criteria.setEndTime(dataTime + 20000);
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(0, result.size());
+
+        // Using tags
+        criteria = new EventsCriteria();
+        criteria.addTag("trigger8-name1", "*");
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(1, result.size());
+
+        // More specific tags
+        criteria = new EventsCriteria();
+        criteria.addTag("trigger8-name2", "value2");
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(1, result.size());
+
+        // Using eventId
+        criteria = new EventsCriteria();
+        criteria.setEventId(event.getId());
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(1, result.size());
+
+        // Using category
+        criteria = new EventsCriteria();
+        criteria.setCategory(event.getCategory());
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(1, result.size());
+
+        // Using bad category
+        criteria = new EventsCriteria();
+        criteria.setCategory("UNKNOWN");
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(0, result.size());
+
+        // Combine triggerId and ctime
+        criteria = new EventsCriteria();
+        criteria.setTriggerId(event.getTrigger().getId());
+        criteria.setStartTime(dataTime - 100);
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(1, result.size());
+
+        // Combine triggerId, ctime and alertsId
+        criteria = new EventsCriteria();
+        criteria.setTriggerId(event.getTrigger().getId());
+        criteria.setStartTime(dataTime - 100);
+        criteria.setEventId(event.getId());
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(1, result.size());
+
+        // Combine triggerIds, ctime and category
+        criteria = new EventsCriteria();
+        ArrayList<String> triggersIds = new ArrayList<>();
+        triggersIds.add(event.getTrigger().getId());
+        criteria.setTriggerIds(triggersIds);
+        criteria.setStartTime(dataTime - 100);
+        HashSet<String> categories = new HashSet<>();
+        categories.add("UNKNOWN");
+        criteria.setCategories(categories);
+        result = alertsService.getEvents(TEST_TENANT, criteria, null);
+        assertEquals(0, result.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTriggerId(event.getTrigger().getId());
+        int numDeleted = alertsService.deleteEvents(TEST_TENANT, criteria);
+        assertEquals(1, numDeleted);
+
     }
 
 }

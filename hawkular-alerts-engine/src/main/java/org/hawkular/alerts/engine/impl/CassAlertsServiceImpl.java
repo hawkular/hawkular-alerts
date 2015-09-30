@@ -43,6 +43,7 @@ import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.AlertComparator.Field;
+import org.hawkular.alerts.api.model.paging.EventComparator;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
@@ -52,6 +53,7 @@ import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.jboss.logging.Logger;
@@ -164,14 +166,24 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         session = CassCluster.getSession();
         PreparedStatement insertEvent = CassStatement.get(session, CassStatement.INSERT_EVENT);
+        PreparedStatement insertEventCategory = CassStatement.get(session, CassStatement.INSERT_EVENT_CATEGORY);
+        PreparedStatement insertEventCtime = CassStatement.get(session, CassStatement.INSERT_EVENT_CTIME);
+        PreparedStatement insertEventTrigger = CassStatement.get(session, CassStatement.INSERT_EVENT_TRIGGER);
         PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
 
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
             events.stream().forEach(e -> {
-                futures.add(session.executeAsync(insertEvent.bind(e.getTenantId(), e.getCategory(), e.getId(),
+                futures.add(session.executeAsync(insertEvent.bind(e.getTenantId(), e.getId(),
                         JsonUtil.toJson(e))));
-
+                futures.add(session.executeAsync(insertEventCategory.bind(e.getTenantId(), e.getCategory(),
+                        e.getId())));
+                futures.add(session.executeAsync(insertEventCtime.bind(e.getTenantId(), e.getCtime(),
+                        e.getId())));
+                if (null != e.getTrigger()) {
+                    futures.add(session.executeAsync(insertEventTrigger.bind(e.getTenantId(), e.getTrigger().getId(),
+                            e.getId())));
+                }
                 e.getTags().entrySet().stream().forEach(tag -> {
                     futures.add(session.executeAsync(insertTag.bind(e.getTenantId(), TagType.EVENT.name(),
                             tag.getKey(), tag.getValue(), e.getId())));
@@ -214,6 +226,34 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw e;
         }
         return alert;
+    }
+
+    @Override
+    public Event getEvent(String tenantId, String eventId, boolean thin) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(eventId)) {
+            throw new IllegalArgumentException("EventId must be not null");
+        }
+        session = CassCluster.getSession();
+        PreparedStatement selectEvent = CassStatement.get(session, CassStatement.SELECT_EVENT);
+        if (selectEvent == null) {
+            throw new RuntimeException("selectEvent PreparedStatement is null");
+        }
+        Event event = null;
+        try {
+            ResultSet rsEvent = session.execute(selectEvent.bind(tenantId, eventId));
+            Iterator<Row> itEvent = rsEvent.iterator();
+            if (itEvent.hasNext()) {
+                Row row = itEvent.next();
+                event = JsonUtil.fromJson(row.getString("payload"), Event.class, thin);
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return event;
     }
 
     // TODO (jshaughn) The DB-Level filtering approach implemented below is a best-practice for dealing
@@ -415,13 +455,27 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
     }
 
+    private Set<String> filterByAlerts(AlertsCriteria criteria) {
+        Set<String> result = Collections.EMPTY_SET;
+        if (isEmpty(criteria.getAlertIds())) {
+            if (!isEmpty(criteria.getAlertId())) {
+                result = new HashSet<>(1);
+                result.add(criteria.getAlertId());
+            }
+        } else {
+            result = new HashSet<>();
+            result.addAll(criteria.getAlertIds());
+        }
+        return result;
+    }
+
     private Set<String> filterByTriggers(String tenantId, AlertsCriteria criteria) throws Exception {
         Set<String> result = Collections.EMPTY_SET;
         Set<String> triggerIds = extractTriggerIds(tenantId, criteria);
 
         if (triggerIds.size() > 0) {
             List<ResultSetFuture> futures = new ArrayList<>();
-            PreparedStatement selectAlertsTriggers = CassStatement.get(session, CassStatement.SELECT_ALERTS_TRIGGERS);
+            PreparedStatement selectAlertsTriggers = CassStatement.get(session, CassStatement.SELECT_ALERT_TRIGGER);
 
             for (String triggerId : triggerIds) {
                 if (isEmpty(triggerId)) {
@@ -512,7 +566,7 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         if (statuses.size() > 0) {
             PreparedStatement selectAlertStatusByTenantAndStatus = CassStatement.get(session,
-                    CassStatement.SELECT_ALERT_STATUS_BY_TENANT_AND_STATUS);
+                    CassStatement.SELECT_ALERT_STATUS);
             List<ResultSetFuture> futures = statuses.stream().map(status ->
                     session.executeAsync(selectAlertStatusByTenantAndStatus.bind(tenantId, status.name())))
                     .collect(Collectors.toList());
@@ -546,7 +600,7 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         if (severities.size() > 0) {
             PreparedStatement selectAlertSeverityByTenantAndSeverity = CassStatement.get(session,
-                    CassStatement.SELECT_ALERT_SEVERITY_BY_TENANT_AND_SEVERITY);
+                    CassStatement.SELECT_ALERT_SEVERITY);
             List<ResultSetFuture> futures = severities.stream().map(severity ->
                     session.executeAsync(selectAlertSeverityByTenantAndSeverity.bind(tenantId, severity.name())))
                     .collect(Collectors.toList());
@@ -565,16 +619,16 @@ public class CassAlertsServiceImpl implements AlertsService {
         return result;
     }
 
-    private Set<String> filterByAlerts(AlertsCriteria criteria) {
+    private Set<String> filterByEvents(EventsCriteria criteria) {
         Set<String> result = Collections.EMPTY_SET;
-        if (isEmpty(criteria.getAlertIds())) {
-            if (!isEmpty(criteria.getAlertId())) {
+        if (isEmpty(criteria.getEventIds())) {
+            if (!isEmpty(criteria.getEventId())) {
                 result = new HashSet<>(1);
-                result.add(criteria.getAlertId());
+                result.add(criteria.getEventId());
             }
         } else {
             result = new HashSet<>();
-            result.addAll(criteria.getAlertIds());
+            result.addAll(criteria.getEventIds());
         }
         return result;
     }
@@ -601,6 +655,336 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
         });
         return ids;
+    }
+
+    // TODO (jshaughn) The DB-Level filtering approach implemented below is a best-practice for dealing
+    // with Cassandra.  It's basically a series of queries, one for each filter, with a progressive
+    // intersection of the resulting ID set.  This will work well in most cases but we may want to consider
+    // an optimization for dealing with large Event populations.  Certain filters dealing with low-cardinality
+    // values, like category, could start pulling a large number of event ids.  If we have reduced the
+    // result set to a small number, via the more narrowing filters, (TBD via perf tests, a threshold that makes
+    // sense), we may want to pull the resulting events and apply the low-cardinality filters here in the code,
+    // in a post-fetch step. For example, if we have filters "ctime > 123" and "category == Alert", and the ctime
+    // filter returns 10 eventIds. We may want to pull the 10 events and apply the category filter in the code. For
+    // large Event history, the category filter applied to the DB could return a huge set of ids.
+    @Override
+    public Page<Event> getEvents(String tenantId, EventsCriteria criteria, Pager pager) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        session = CassCluster.getSession();
+        boolean filter = (null != criteria && criteria.hasCriteria());
+        boolean thin = (null != criteria && criteria.isThin());
+
+        if (filter) {
+            log.debugf("getEvents criteria: %s", criteria.toString());
+        }
+
+        List<Event> events = new ArrayList<>();
+        Set<String> eventIds = new HashSet<>();
+        boolean activeFilter = false;
+
+        try {
+            if (filter) {
+                /*
+                    Get eventIds explicitly added into the criteria. Start with these as there is no query involved
+                */
+                if (criteria.hasEventIdCriteria()) {
+                    Set<String> idsFilteredByEvents = filterByEvents(criteria);
+                    if (activeFilter) {
+                        eventIds.retainAll(idsFilteredByEvents);
+                        if (eventIds.isEmpty()) {
+                            return new Page<>(events, pager, 0);
+                        }
+                    } else {
+                        eventIds.addAll(idsFilteredByEvents);
+                    }
+                    activeFilter = true;
+                }
+
+                /*
+                    Get eventIds via tags
+                */
+                if (criteria.hasTagCriteria()) {
+                    Set<String> idsFilteredByTags = getIdsByTags(tenantId, TagType.EVENT, criteria.getTags());
+                    if (activeFilter) {
+                        eventIds.retainAll(idsFilteredByTags);
+                        if (eventIds.isEmpty()) {
+                            return new Page<>(events, pager, 0);
+                        }
+                    } else {
+                        eventIds.addAll(idsFilteredByTags);
+                    }
+                    activeFilter = true;
+                }
+
+                /*
+                    Get eventIds filtered by triggerIds clause
+                 */
+                if (criteria.hasTriggerIdCriteria()) {
+                    Set<String> idsFilteredByTriggers = filterByTriggers(tenantId, criteria);
+                    if (activeFilter) {
+                        eventIds.retainAll(idsFilteredByTriggers);
+                        if (eventIds.isEmpty()) {
+                            return new Page<>(events, pager, 0);
+                        }
+                    } else {
+                        eventIds.addAll(idsFilteredByTriggers);
+                    }
+                    activeFilter = true;
+                }
+
+                /*
+                    Get alertsIds filtered by time clause
+                 */
+                if (criteria.hasCTimeCriteria()) {
+                    Set<String> idsFilteredByTime = filterByCTime(tenantId, criteria);
+                    if (activeFilter) {
+                        eventIds.retainAll(idsFilteredByTime);
+                        if (eventIds.isEmpty()) {
+                            return new Page<>(events, pager, 0);
+                        }
+                    } else {
+                        eventIds.addAll(idsFilteredByTime);
+                    }
+                    activeFilter = true;
+                }
+
+                /*
+                     Get alertsIds filtered by categories clause
+                */
+                if (criteria.hasCategoryCriteria()) {
+                    Set<String> idsFilteredByCategory = filterByCategories(tenantId, criteria);
+                    if (activeFilter) {
+                        eventIds.retainAll(idsFilteredByCategory);
+                        if (eventIds.isEmpty()) {
+                            return new Page<>(events, pager, 0);
+                        }
+                    } else {
+                        eventIds.addAll(idsFilteredByCategory);
+                    }
+                    activeFilter = true;
+                }
+
+                /*
+                    If we have reached this point then we have at least 1 filtered alertId, so now
+                    get the resulting Alerts...
+                 */
+                PreparedStatement selectEvent = CassStatement
+                        .get(session, CassStatement.SELECT_EVENT);
+                List<ResultSetFuture> futures = eventIds.stream().map(id ->
+                        session.executeAsync(selectEvent.bind(tenantId, id)))
+                        .collect(Collectors.toList());
+                List<ResultSet> rsEvents = Futures.allAsList(futures).get();
+                rsEvents.stream().forEach(r -> {
+                    for (Row row : r) {
+                        String payload = row.getString("payload");
+                        Event event = JsonUtil.fromJson(payload, Event.class, thin);
+                        events.add(event);
+                    }
+                });
+
+            } else {
+                /*
+                    Get all events for the tenant - We could pull all events and toss those outside the tenant
+                    but perhaps slightly better is to get the valid partitions and then concurrently query each...
+
+                PreparedStatement selectPartitionsEvents = CassStatement.get(session,
+                        CassStatement.SELECT_PARTITIONS_EVENTS);
+                PreparedStatement selectEventsByPartition = CassStatement.get(session,
+                        CassStatement.SELECT_EVENTS_BY_PARTITION);
+
+                Set<String> categories = new HashSet<>();
+                ResultSet rsPartitions = session.execute(selectPartitionsEvents.bind());
+                for (Row row : rsPartitions) {
+                    if (tenantId.equals(row.getString("tenantId"))) {
+                        categories.add(row.getString("category"));
+                    }
+                }
+
+                List<ResultSetFuture> futures = categories.stream().map(category ->
+                        session.executeAsync(selectEventsByPartition.bind(tenantId, category)))
+                        .collect(Collectors.toList());
+                List<ResultSet> rsEvents = Futures.allAsList(futures).get();
+                rsEvents.stream().forEach(r -> {
+                    for (Row row : r) {
+                        String payload = row.getString("payload");
+                        Event event = JsonUtil.fromJson(payload, Event.class, thin);
+                        events.add(event);
+                    }
+                });
+                */
+
+                /*
+                Get all events - Single query
+                */
+                PreparedStatement selectEventsByTenant = CassStatement.get(session,
+                        CassStatement.SELECT_EVENTS_BY_TENANT);
+                ResultSet rsEvents = session.execute(selectEventsByTenant.bind(tenantId));
+                for (Row row : rsEvents) {
+                    String payload = row.getString("payload");
+                    Event event = JsonUtil.fromJson(payload, Event.class, thin);
+                    events.add(event);
+                }
+
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+
+        return prepareEventsPage(events, pager);
+    }
+
+    private Page<Event> prepareEventsPage(List<Event> events, Pager pager) {
+        if (pager != null) {
+            if (pager.getOrder() != null
+                    && !pager.getOrder().isEmpty()
+                    && pager.getOrder().get(0).getField() == null) {
+                pager = Pager.builder()
+                        .withPageSize(pager.getPageSize())
+                        .withStartPage(pager.getPageNumber())
+                        .orderBy(EventComparator.Field.ID.getText(), Order.Direction.DESCENDING).build();
+            }
+            List<Event> ordered = events;
+            if (pager.getOrder() != null) {
+                pager.getOrder()
+                        .stream()
+                        .filter(o -> o.getField() != null && o.getDirection() != null)
+                        .forEach(o -> {
+                            EventComparator comparator = new EventComparator(EventComparator.Field.getField(
+                                    o.getField()), o.getDirection());
+                            Collections.sort(ordered, comparator);
+                        });
+            }
+            if (!pager.isLimited() || ordered.size() < pager.getStart()) {
+                pager = new Pager(0, ordered.size(), pager.getOrder());
+                return new Page(ordered, pager, ordered.size());
+            }
+            if (pager.getEnd() >= ordered.size()) {
+                return new Page(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
+            }
+            return new Page(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
+        } else {
+            pager = Pager.builder().withPageSize(events.size()).orderBy(EventComparator.Field.ID.getText(),
+                    Order.Direction.ASCENDING).build();
+            return new Page(events, pager, events.size());
+        }
+    }
+
+    private Set<String> filterByTriggers(String tenantId, EventsCriteria criteria) throws Exception {
+        Set<String> result = Collections.EMPTY_SET;
+        Set<String> triggerIds = extractTriggerIds(tenantId, criteria);
+
+        if (triggerIds.size() > 0) {
+            List<ResultSetFuture> futures = new ArrayList<>();
+            PreparedStatement selectEventsTriggers = CassStatement.get(session, CassStatement.SELECT_EVENT_TRIGGER);
+
+            for (String triggerId : triggerIds) {
+                if (isEmpty(triggerId)) {
+                    continue;
+                }
+                futures.add(session.executeAsync(selectEventsTriggers.bind(tenantId, triggerId)));
+            }
+            List<ResultSet> rsIdsByTriggerIds = Futures.allAsList(futures).get();
+
+            Set<String> eventIds = new HashSet<>();
+            rsIdsByTriggerIds.stream().forEach(r -> {
+                for (Row row : r) {
+                    String eventId = row.getString("id");
+                    eventIds.add(eventId);
+                }
+            });
+            result = eventIds;
+        }
+
+        return result;
+    }
+
+    private Set<String> extractTriggerIds(String tenantId, EventsCriteria criteria) {
+
+        boolean hasTriggerId = !isEmpty(criteria.getTriggerId());
+        boolean hasTriggerIds = !isEmpty(criteria.getTriggerIds());
+
+        Set<String> triggerIds = hasTriggerId || hasTriggerIds ? new HashSet<>() : Collections.EMPTY_SET;
+
+        if (!hasTriggerIds) {
+            if (hasTriggerId) {
+                triggerIds.add(criteria.getTriggerId());
+            }
+        } else {
+            for (String triggerId : criteria.getTriggerIds()) {
+                if (isEmpty(triggerId)) {
+                    continue;
+                }
+                triggerIds.add(triggerId);
+            }
+        }
+
+        return triggerIds;
+    }
+
+    private Set<String> filterByCTime(String tenantId, EventsCriteria criteria) throws Exception {
+        Set<String> result = Collections.EMPTY_SET;
+
+        if (criteria.getStartTime() != null || criteria.getEndTime() != null) {
+            result = new HashSet<>();
+
+            BoundStatement boundCtime;
+            if (criteria.getStartTime() != null && criteria.getEndTime() != null) {
+                PreparedStatement selectEventCTimeStartEnd = CassStatement.get(session,
+                        CassStatement.SELECT_EVENT_CTIME_START_END);
+                boundCtime = selectEventCTimeStartEnd.bind(tenantId, criteria.getStartTime(),
+                        criteria.getEndTime());
+            } else if (criteria.getStartTime() != null) {
+                PreparedStatement selectEventCTimeStart = CassStatement.get(session,
+                        CassStatement.SELECT_EVENT_CTIME_START);
+                boundCtime = selectEventCTimeStart.bind(tenantId, criteria.getStartTime());
+            } else {
+                PreparedStatement selectEventCTimeEnd = CassStatement.get(session,
+                        CassStatement.SELECT_EVENT_CTIME_END);
+                boundCtime = selectEventCTimeEnd.bind(tenantId, criteria.getEndTime());
+            }
+
+            ResultSet rsIdsCtimes = session.execute(boundCtime);
+            for (Row row : rsIdsCtimes) {
+                String eventId = row.getString("id");
+                result.add(eventId);
+            }
+        }
+        return result;
+    }
+
+    private Set<String> filterByCategories(String tenantId, EventsCriteria criteria) throws Exception {
+        Set<String> result = Collections.EMPTY_SET;
+
+        Set<String> categories = new HashSet<>();
+        if (isEmpty(criteria.getCategories())) {
+            if (criteria.getCategory() != null) {
+                categories.add(criteria.getCategory());
+            }
+        } else {
+            categories.addAll(criteria.getCategories());
+        }
+
+        if (categories.size() > 0) {
+            PreparedStatement selectEventCategory = CassStatement.get(session,
+                    CassStatement.SELECT_EVENT_CATEGORY);
+            List<ResultSetFuture> futures = categories.stream().map(category ->
+                    session.executeAsync(selectEventCategory.bind(tenantId, category)))
+                    .collect(Collectors.toList());
+            List<ResultSet> rsAlertStatuses = Futures.allAsList(futures).get();
+
+            Set<String> eventIds = new HashSet<>();
+            rsAlertStatuses.stream().forEach(r -> {
+                for (Row row : r) {
+                    String eventId = row.getString("id");
+                    eventIds.add(eventId);
+                }
+            });
+            result = eventIds;
+        }
+        return result;
     }
 
     @Override
@@ -666,6 +1050,47 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
 
         return alertsToDelete.size();
+    }
+
+    @Override
+    public int deleteEvents(String tenantId, EventsCriteria criteria) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (null == criteria) {
+            throw new IllegalArgumentException("Criteria must be not null");
+        }
+
+        // no need to fetch the evalSets to perform the necessary deletes
+        criteria.setThin(true);
+        List<Event> eventsToDelete = getEvents(tenantId, criteria, null);
+
+        if (eventsToDelete.isEmpty()) {
+            return 0;
+        }
+
+        PreparedStatement deleteEvent = CassStatement.get(session, CassStatement.DELETE_EVENT);
+        PreparedStatement deleteEventCategory = CassStatement.get(session, CassStatement.DELETE_EVENT_CATEGORY);
+        PreparedStatement deleteEventCTime = CassStatement.get(session, CassStatement.DELETE_EVENT_CTIME);
+        PreparedStatement deleteEventTrigger = CassStatement.get(session, CassStatement.DELETE_EVENT_TRIGGER);
+        if (deleteEvent == null || deleteEventCTime == null || deleteEventCategory == null
+                || deleteEventTrigger == null) {
+            throw new RuntimeException("delete*Events PreparedStatement is null");
+        }
+
+        for (Event e : eventsToDelete) {
+            String id = e.getId();
+            List<ResultSetFuture> futures = new ArrayList<>();
+            futures.add(session.executeAsync(deleteEvent.bind(tenantId, id)));
+            futures.add(session.executeAsync(deleteEventCategory.bind(tenantId, e.getCategory(), id)));
+            futures.add(session.executeAsync(deleteEventCTime.bind(tenantId, e.getCtime(), id)));
+            if (null != e.getTrigger()) {
+                futures.add(session.executeAsync(deleteEventTrigger.bind(tenantId, e.getTrigger().getId(), id)));
+            }
+            Futures.allAsList(futures).get();
+        }
+
+        return eventsToDelete.size();
     }
 
     @Override
@@ -736,37 +1161,27 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
         session = CassCluster.getSession();
         try {
-            /*
-                Not sure if these queries can be wrapped in an async way as they have dependencies with results.
-                Async pattern could bring race hazards here.
-             */
-            PreparedStatement selectAlertStatus = CassStatement.get(session,
-                    CassStatement.SELECT_ALERT_STATUS);
-            PreparedStatement insertAlertStatus = CassStatement.get(session,
-                    CassStatement.INSERT_ALERT_STATUS);
+            // we need to delete the current status index entry, and enter the new one. And update the
+            // alert.  We can do all of this concurrently/async because each call operates on a different key;
             PreparedStatement deleteAlertStatus = CassStatement.get(session,
                     CassStatement.DELETE_ALERT_STATUS);
+            PreparedStatement insertAlertStatus = CassStatement.get(session,
+                    CassStatement.INSERT_ALERT_STATUS);
             PreparedStatement updateAlert = CassStatement.get(session,
                     CassStatement.UPDATE_ALERT);
 
             List<ResultSetFuture> futures = new ArrayList<>();
-            futures.add(session.executeAsync(selectAlertStatus.bind(alert.getTenantId(), Alert.Status.OPEN.name(),
-                    alert.getAlertId())));
-            futures.add(session.executeAsync(selectAlertStatus.bind(alert.getTenantId(),
-                    Alert.Status.ACKNOWLEDGED.name(), alert.getAlertId())));
-            futures.add(session.executeAsync(selectAlertStatus.bind(alert.getTenantId(), Alert.Status.RESOLVED.name(),
+            for (Alert.Status statusToDelete : EnumSet.complementOf(EnumSet.of(alert.getStatus()))) {
+                futures.add(session.executeAsync(deleteAlertStatus.bind(alert.getTenantId(), statusToDelete,
+                        alert.getAlertId())));
+            }
+            futures.add(session.executeAsync(insertAlertStatus.bind(alert.getTenantId(), alert.getAlertId(), alert
+                    .getStatus().name())));
+            futures.add(session.executeAsync(updateAlert.bind(JsonUtil.toJson(alert), alert.getTenantId(),
                     alert.getAlertId())));
 
             List<ResultSet> rsAlertsStatusToDelete = Futures.allAsList(futures).get();
-            rsAlertsStatusToDelete.stream().forEach(r -> {
-                for (Row row : r) {
-                    String alertIdToDelete = row.getString("alertId");
-                    String statusToDelete = row.getString("status");
-                    session.execute(deleteAlertStatus.bind(alert.getTenantId(), statusToDelete, alertIdToDelete));
-                }
-            });
-            session.execute(insertAlertStatus.bind(alert.getTenantId(), alert.getAlertId(), alert.getStatus().name()));
-            session.execute(updateAlert.bind(JsonUtil.toJson(alert), alert.getTenantId(), alert.getAlertId()));
+
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
