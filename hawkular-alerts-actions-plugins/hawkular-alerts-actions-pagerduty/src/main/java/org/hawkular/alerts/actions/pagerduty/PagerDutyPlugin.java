@@ -23,9 +23,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
-import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.MsgLogger;
+import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.api.model.condition.Alert;
 
 import com.google.gson.Gson;
@@ -43,7 +43,7 @@ import retrofit.converter.GsonConverter;
  *
  * @author Thomas Segismont
  */
-@ActionPlugin(name = "pagerduty")
+@Plugin(name = "pagerduty")
 public class PagerDutyPlugin implements ActionPluginListener {
     static final String API_KEY_PROPERTY = "org.hawkular.actions.pagerduty.api.key";
     static final String API_KEY = System.getProperty(API_KEY_PROPERTY);
@@ -72,14 +72,14 @@ public class PagerDutyPlugin implements ActionPluginListener {
     @Override
     public void process(ActionMessage msg) throws Exception {
         if (pagerDuty == null) {
-            msgLog.errorCannotSendMessage("pagerduty", "Plugin is not started");
+            msgLog.errorCannotProcessMessage("pagerduty", "Plugin is not started");
             return;
         }
 
         Trigger trigger = new Trigger.Builder(prepareMessage(msg)).build();
         NotifyResult result = pagerDuty.notify(trigger);
         if (!"success".equals(result.status())) {
-            msgLog.errorCannotSendMessage("pagerduty", result.message());
+            msgLog.errorCannotProcessMessage("pagerduty", result.message());
         }
 
         msgLog.infoActionReceived("pagerduty", msg.toString());

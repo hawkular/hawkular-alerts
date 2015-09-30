@@ -56,4 +56,9 @@ public interface MsgLogger extends BasicLogger {
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 260008, value = "Cannot connect to the broker. Attempt [%s]. Trying in [%s] ms. Error: [%s]")
     void warnCannotConnectBroker(int attempt, int next, String msg);
+
+    @LogMessage(level = Logger.Level.INFO)
+    @Message(id = 260009, value = "Plugin [%s] has sent an operation message: [%s]")
+    void infoPluginOperation(String actionPlugin, String msg);
+
 }

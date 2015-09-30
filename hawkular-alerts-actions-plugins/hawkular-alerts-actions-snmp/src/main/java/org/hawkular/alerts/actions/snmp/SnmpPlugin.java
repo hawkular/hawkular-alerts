@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
-import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.MsgLogger;
+import org.hawkular.alerts.actions.api.Plugin;
 
 /**
  * An example of listener for snmp processing.
@@ -31,7 +31,7 @@ import org.hawkular.alerts.actions.api.MsgLogger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ActionPlugin(name = "snmp")
+@Plugin(name = "snmp")
 public class SnmpPlugin implements ActionPluginListener {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     Map<String, String> defaultProperties = new HashMap<>();

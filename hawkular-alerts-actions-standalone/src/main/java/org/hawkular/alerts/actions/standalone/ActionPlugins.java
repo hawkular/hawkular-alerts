@@ -26,8 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.Plugin;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -51,11 +51,11 @@ public class ActionPlugins {
             plugins = new HashMap<>();
             List<URL> webInfUrls = getWebInfUrls();
             for (URL webInfUrl : webInfUrls) {
-                List<Class> pluginClasses = findAnnotationInClasses(webInfUrl, ActionPlugin.class);
+                List<Class> pluginClasses = findAnnotationInClasses(webInfUrl, Plugin.class);
                 for (Class pluginClass : pluginClasses) {
-                    Annotation actionPlugin = pluginClass.getDeclaredAnnotation(ActionPlugin.class);
-                    if (actionPlugin instanceof ActionPlugin) {
-                        String name = ((ActionPlugin) actionPlugin).name();
+                    Annotation actionPlugin = pluginClass.getDeclaredAnnotation(Plugin.class);
+                    if (actionPlugin instanceof Plugin) {
+                        String name = ((Plugin) actionPlugin).name();
                         Object newInstance = pluginClass.newInstance();
                         if (newInstance instanceof ActionPluginListener) {
                             ActionPluginListener pluginInstance = (ActionPluginListener)newInstance;

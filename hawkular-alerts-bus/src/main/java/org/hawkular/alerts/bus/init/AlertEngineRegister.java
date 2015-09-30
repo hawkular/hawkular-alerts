@@ -17,6 +17,7 @@
 package org.hawkular.alerts.bus.init;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
@@ -24,7 +25,7 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.services.ActionsService;
-import org.hawkular.alerts.bus.sender.ActionPluginSender;
+import org.hawkular.alerts.bus.sender.BusActionListener;
 import org.jboss.logging.Logger;
 
 /**
@@ -42,10 +43,23 @@ public class AlertEngineRegister {
     @EJB
     ActionsService actions;
 
+    BusActionListener actionListener;
+
     @PostConstruct
     public void init() {
-        ActionPluginSender sender = new ActionPluginSender();
-        actions.addListener(sender);
-        log.debugf("Registering sender: [%s]", sender);
+        actionListener = new BusActionListener();
+        actions.addListener(actionListener);
+        log.debugf("Registering ActionListener: [%s]", actionListener);
+    }
+
+    @PreDestroy
+    public void close() {
+        if (actionListener != null) {
+            try {
+                actionListener.close();
+            } catch (Exception e) {
+                log.debugf(e.getMessage(), e);
+            }
+        }
     }
 }

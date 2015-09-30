@@ -26,9 +26,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.hawkular.alerts.actions.api.ActionMessage;
-import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.MsgLogger;
+import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.api.model.condition.Alert;
 
 import com.twilio.sdk.TwilioRestClient;
@@ -43,7 +43,7 @@ import com.twilio.sdk.resource.instance.Account;
  * @author Lucas Ponce
  * @author Thomas Segismont
  */
-@ActionPlugin(name = "sms")
+@Plugin(name = "sms")
 public class SmsPlugin implements ActionPluginListener {
     static final String ACCOUNT_SID_PROPERTY = "org.hawkular.actions.sms.sid";
     static final String ACCOUNT_SID = System.getProperty(ACCOUNT_SID_PROPERTY);
@@ -77,17 +77,17 @@ public class SmsPlugin implements ActionPluginListener {
     @Override
     public void process(ActionMessage msg) throws Exception {
         if (messageFactory == null) {
-            msgLog.errorCannotSendMessage("sms", "Plugin is not started");
+            msgLog.errorCannotProcessMessage("sms", "Plugin is not started");
             return;
         }
         Map<String, String> properties = msg.getProperties();
         if (properties == null || properties.isEmpty()) {
-            msgLog.errorCannotSendMessage("sms", "Missing message properties");
+            msgLog.errorCannotProcessMessage("sms", "Missing message properties");
             return;
         }
         String to = properties.get("phone");
         if (StringUtils.isBlank(to)) {
-            msgLog.errorCannotSendMessage("sms", "Missing recipient");
+            msgLog.errorCannotProcessMessage("sms", "Missing recipient");
             return;
         }
         List<NameValuePair> params = new ArrayList<>(3);
@@ -98,7 +98,7 @@ public class SmsPlugin implements ActionPluginListener {
         try {
             messageFactory.create(params);
         } catch (TwilioRestException e) {
-            msgLog.errorCannotSendMessage("sms", e.getLocalizedMessage());
+            msgLog.errorCannotProcessMessage("sms", e.getLocalizedMessage());
         }
 
         msgLog.infoActionReceived("sms", msg.toString());

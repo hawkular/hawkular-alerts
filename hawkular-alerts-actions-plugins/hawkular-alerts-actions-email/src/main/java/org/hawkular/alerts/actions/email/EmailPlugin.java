@@ -34,9 +34,13 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
-import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
 import org.hawkular.alerts.actions.api.MsgLogger;
+import org.hawkular.alerts.actions.api.OperationMessage;
+import org.hawkular.alerts.actions.api.OperationMessage.Operation;
+import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Alert.Status;
 import org.jboss.logging.Logger;
@@ -49,7 +53,7 @@ import org.jboss.logging.Logger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ActionPlugin(name = "email")
+@Plugin(name = "email")
 public class EmailPlugin implements ActionPluginListener {
     public static final String PLUGIN_NAME = "email";
 
@@ -184,6 +188,9 @@ public class EmailPlugin implements ActionPluginListener {
 
     EmailTemplate emailTemplate;
 
+    @Sender
+    ActionPluginSender sender;
+
     public EmailPlugin() {
 
         defaultProperties.put(PROP_FROM, DEFAULT_FROM);
@@ -223,12 +230,33 @@ public class EmailPlugin implements ActionPluginListener {
         return defaultProperties;
     }
 
+    // FIXME debug method to test preliminar CDI implementation
+    private void testSender() {
+        if (sender == null) {
+            log.error("Sender is null. why ?");
+        } else {
+            OperationMessage newMessage = sender.createMessage(Operation.RESULT);
+            newMessage.getPayload().put("result", new Date().toString());
+            try {
+                sender.send(newMessage);
+            } catch (Exception e) {
+                log.error("Error sending OperationMessage", e);
+            }
+        }
+    }
+
+
+
     @Override
     public void process(ActionMessage msg) throws Exception {
-        Message message = createMimeMessage(msg);
-        Transport.send(message);
+        try {
+            Message message = createMimeMessage(msg);
+            Transport.send(message);
+            msgLog.infoActionReceived("email", msg.toString());
+        } catch (Exception e) {
 
-        msgLog.infoActionReceived("email", msg.toString());
+        }
+        testSender();
     }
 
     protected Message createMimeMessage(ActionMessage msg) throws Exception {

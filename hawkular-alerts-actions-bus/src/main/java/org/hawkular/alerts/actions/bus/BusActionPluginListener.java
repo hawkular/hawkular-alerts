@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.actions.bus;
 
+import java.util.Collection;
+
+import javax.annotation.PreDestroy;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.MessageDriven;
 import javax.ejb.TransactionAttribute;
@@ -23,6 +26,7 @@ import javax.ejb.TransactionAttributeType;
 import javax.jms.MessageListener;
 
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
 import org.hawkular.alerts.bus.api.BusActionMessage;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
@@ -66,4 +70,15 @@ public class BusActionPluginListener extends BasicMessageListener<BusActionMessa
             msgLog.error("Plugin [" + actionPlugin + "] processing error", e);
         }
     }
+
+    @PreDestroy
+    public void close() throws Exception {
+        Collection<ActionPluginSender> senders = ActionPlugins.getSenders().values();
+        for (ActionPluginSender sender: senders) {
+            if (sender instanceof BusActionPluginSender) {
+                ((BusActionPluginSender)sender).close();
+            }
+        }
+    }
+
 }

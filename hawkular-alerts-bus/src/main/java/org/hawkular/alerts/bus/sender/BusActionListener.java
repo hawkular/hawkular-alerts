@@ -20,11 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ejb.Asynchronous;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
 import javax.jms.JMSException;
 import javax.jms.TopicConnectionFactory;
 import javax.naming.InitialContext;
@@ -44,18 +39,15 @@ import org.jboss.logging.Logger;
 
 
 /**
- * An implementation of {@link org.hawkular.alerts.api.services.ActionListener} that will send listener
- * messages through the bus.
+ * An implementation of {@link org.hawkular.alerts.api.services.ActionListener} that will process action messages
+ * through the bus architecture.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Startup
-@Singleton
-@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
-public class ActionPluginSender implements ActionListener {
+public class BusActionListener implements ActionListener {
     private final MsgLogger msgLogger = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(ActionPluginSender.class);
+    private final Logger log = Logger.getLogger(BusActionListener.class);
     private static final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
     private static final String ACTIONS_TOPIC = "HawkularAlertsActionsTopic";
     private static final String DEFINITIONS_SERVICE =
@@ -68,10 +60,9 @@ public class ActionPluginSender implements ActionListener {
 
     DefinitionsService definitions;
 
-    public ActionPluginSender() {
+    public BusActionListener() {
     }
 
-    @Asynchronous
     @Override
     public void process(Action action) {
         try {
@@ -95,19 +86,6 @@ public class ActionPluginSender implements ActionListener {
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             msgLogger.errorProcessingAction(e.getMessage());
-        } finally {
-            if (pcc != null) {
-                try {
-                    pcc.close();
-                    pcc = null;
-                } catch (IOException ignored) { }
-            }
-            if (ccf != null) {
-                try {
-                    ccf.close();
-                    ccf = null;
-                } catch (JMSException ignored) { }
-            }
         }
     }
 
@@ -126,6 +104,21 @@ public class ActionPluginSender implements ActionListener {
         }
         if (definitions == null) {
             definitions = (DefinitionsService) ctx.lookup(DEFINITIONS_SERVICE);
+        }
+    }
+
+    public void close() throws Exception {
+        if (pcc != null) {
+            try {
+                pcc.close();
+                pcc = null;
+            } catch (IOException ignored) { }
+        }
+        if (ccf != null) {
+            try {
+                ccf.close();
+                ccf = null;
+            } catch (JMSException ignored) { }
         }
     }
 

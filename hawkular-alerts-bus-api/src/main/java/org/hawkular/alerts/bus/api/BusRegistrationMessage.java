@@ -26,17 +26,17 @@ import org.hawkular.bus.common.BasicMessage;
  *
  * @author Lucas Ponce
  */
-public class BusPluginRegistrationMessage extends BasicMessage {
+public class BusRegistrationMessage extends BasicMessage {
 
     String actionPlugin;
     Set<String> propertyNames;
     Map<String, String> defaultProperties;
 
-    public BusPluginRegistrationMessage() {
+    public BusRegistrationMessage() {
     }
 
-    public BusPluginRegistrationMessage(String actionPlugin, Set<String> propertyNames,
-                                        Map<String, String> defaultProperties) {
+    public BusRegistrationMessage(String actionPlugin, Set<String> propertyNames,
+                                  Map<String, String> defaultProperties) {
         this.actionPlugin = actionPlugin;
         this.propertyNames = propertyNames;
         this.defaultProperties = defaultProperties;

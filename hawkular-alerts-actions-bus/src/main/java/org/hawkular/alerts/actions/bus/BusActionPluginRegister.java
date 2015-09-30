@@ -29,7 +29,7 @@ import javax.jms.JMSException;
 import javax.jms.QueueConnectionFactory;
 
 import org.hawkular.alerts.actions.api.ActionPluginListener;
-import org.hawkular.alerts.bus.api.BusPluginRegistrationMessage;
+import org.hawkular.alerts.bus.api.BusRegistrationMessage;
 import org.hawkular.bus.common.ConnectionContextFactory;
 import org.hawkular.bus.common.Endpoint;
 import org.hawkular.bus.common.MessageId;
@@ -89,7 +89,7 @@ public class BusActionPluginRegister {
             Map<String, ActionPluginListener> plugins = ActionPlugins.getPlugins();
             for (String actionPlugin : plugins.keySet()) {
                 ActionPluginListener actionPluginListener = plugins.get(actionPlugin);
-                BusPluginRegistrationMessage msg = new BusPluginRegistrationMessage(actionPlugin,
+                BusRegistrationMessage msg = new BusRegistrationMessage(actionPlugin,
                         actionPluginListener.getProperties(),
                         actionPluginListener.getDefaultProperties());
                 MessageId mid = new MessageProcessor().send(pcc, msg);

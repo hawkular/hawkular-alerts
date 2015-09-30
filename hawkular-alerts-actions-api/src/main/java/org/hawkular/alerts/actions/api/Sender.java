@@ -16,27 +16,19 @@
  */
 package org.hawkular.alerts.actions.api;
 
-import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * A message sent to the alerts engine from the plugin
- * It defines a code of operation and generic payload.
+ * Mark an ActionPluginSender to be injected inside an ActionPluginListener.
+ * Only one injected ActionPluginSender instance is permitted by ActionPluginListener class.
  *
- * Payload is represented as a generic map of strings.
- *
+ * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public interface OperationMessage {
-
-    enum Operation {
-        RESULT
-    }
-
-    @JsonInclude
-    Operation getOperation();
-
-    @JsonInclude
-    Map<String, String> getPayload();
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface Sender {
 }
