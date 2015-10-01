@@ -46,6 +46,7 @@ import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
+import org.hawkular.alerts.api.model.paging.EventComparator;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Mode;
@@ -1205,6 +1206,288 @@ public abstract class DefinitionsTest {
         criteria.setTriggerId(event.getTrigger().getId());
         int numDeleted = alertsService.deleteEvents(TEST_TENANT, criteria);
         assertEquals(1, numDeleted);
+    }
+
+    @Test
+    public void test0070PagingEvents() throws Exception {
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-8");
+        assertNotNull(t);
+
+        Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
+        assertTrue(cs.toString(), cs.size() == 1);
+
+        ThresholdCondition threshold = (ThresholdCondition) cs.iterator().next();
+
+        List<Event> events = new ArrayList<>();
+
+        for (int i = 0; i < 107; i++) {
+            long dataTime = System.currentTimeMillis();
+            Data data = Data.forNumeric("NumericData-01", dataTime, 5.0d + i);
+            ThresholdConditionEval eval = new ThresholdConditionEval(threshold, data);
+            Set<ConditionEval> evalSet = new HashSet<>();
+            evalSet.add(eval);
+            List<Set<ConditionEval>> evals = new ArrayList<>();
+            evals.add(evalSet);
+            Event event = new Event(TEST_TENANT, t, null, evals);
+            int iEvent = i % 3;
+            switch (iEvent) {
+                case 2:
+                    event.setCategory("C2");
+                    event.setText("T2");
+                    break;
+                case 1:
+                    event.setCategory("C1");
+                    event.setText("T1");
+                    break;
+                case 0:
+                    event.setCategory("C0");
+                    event.setText("T0");
+            }
+            events.add(event);
+            Thread.sleep(2); // events for the same trigger must not come in at the same exact ms.
+        }
+
+        alertsService.addEvents(events);
+
+        List<Event> result = alertsService.getEvents(TEST_TENANT, null, null);
+        assertEquals(107, result.size());
+
+        /*
+            Ordering and paging by Id
+         */
+        Pager pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByAscending(EventComparator.Field.ID.getName()).build();
+
+        String firstEventId;
+        String lastEventId;
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        Page<Event> page = alertsService.getEvents(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        firstEventId = page.get(0).getId();
+
+        assertEquals(107, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = alertsService.getEvents(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(7, page.size());
+
+        lastEventId = page.get(6).getId();
+
+        System.out.println("first event: " + firstEventId + " last event: " + lastEventId);
+
+        assertTrue(firstEventId.compareTo(lastEventId) < 0);
+
+        pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByDescending(EventComparator.Field.ID.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = alertsService.getEvents(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        firstEventId = page.get(0).getId();
+
+        assertEquals(107, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = alertsService.getEvents(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(7, page.size());
+
+        lastEventId = page.get(6).getId();
+
+        System.out.println("first eventt: " + firstEventId + " last event: " + lastEventId);
+
+        assertTrue(firstEventId.compareTo(lastEventId) > 0);
+
+        /*
+            Ordering and paging by ctime
+         */
+        pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByAscending(EventComparator.Field.CTIME.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = alertsService.getEvents(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        long firstCtime = page.get(0).getCtime();
+
+        assertEquals(107, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = alertsService.getEvents(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(7, page.size());
+
+        long lastCtime = page.get(6).getCtime();
+
+        System.out.println("first ctime: " + firstCtime + " last ctime: " + lastCtime);
+
+        assertTrue(firstCtime < lastCtime);
+
+        pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByDescending(EventComparator.Field.CTIME.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = alertsService.getEvents(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        firstCtime = page.get(0).getCtime();
+
+        assertEquals(107, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = alertsService.getEvents(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(7, page.size());
+
+        lastCtime = page.get(6).getCtime();
+
+        System.out.println("first ctime: " + firstCtime + " last ctime: " + lastCtime);
+
+        assertTrue(firstCtime > lastCtime);
+
+        /*
+            Ordering and paging by category
+         */
+        pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByAscending(EventComparator.Field.CATEGORY.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = alertsService.getEvents(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        String firstCategory = page.get(0).getCategory();
+
+        assertEquals(107, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = alertsService.getEvents(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(7, page.size());
+
+        String lastCategory = page.get(6).getCategory();
+
+        System.out.println("first category: " + firstCategory + " last category: " + lastCategory);
+
+        assertTrue(firstCategory.compareTo(lastCategory) < 0);
+
+        pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByDescending(EventComparator.Field.CATEGORY.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = alertsService.getEvents(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        firstCategory = page.get(0).getCategory();
+
+        assertEquals(107, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = alertsService.getEvents(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(7, page.size());
+
+        lastCategory = page.get(6).getCategory();
+
+        System.out.println("first category: " + firstCategory + " last category: " + lastCategory);
+
+        assertTrue(firstCategory.compareTo(lastCategory) > 0);
+
+        /*
+            Ordering and paging by event text
+         */
+        pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByAscending(EventComparator.Field.TEXT.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = alertsService.getEvents(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        String firstText = page.get(0).getText();
+
+        assertEquals(107, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = alertsService.getEvents(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(7, page.size());
+
+        String lastText = page.get(6).getText();
+
+        System.out.println("first status: " + firstText + " last status: " + lastText);
+
+        assertTrue(firstText.compareTo(lastText) < 0);
+
+        pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByDescending(EventComparator.Field.TEXT.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = alertsService.getEvents(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        firstText = page.get(0).getText();
+
+        assertEquals(107, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = alertsService.getEvents(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(7, page.size());
+
+        lastText = page.get(6).getText();
+
+        System.out.println("first text: " + firstText + " last text: " + lastText);
+
+        assertTrue(firstText.compareTo(lastText) > 0);
+
+        //cleanup
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setTriggerId(t.getId());
+        int numDeleted = alertsService.deleteEvents(TEST_TENANT, criteria);
+        assertEquals(107, numDeleted);
 
     }
 

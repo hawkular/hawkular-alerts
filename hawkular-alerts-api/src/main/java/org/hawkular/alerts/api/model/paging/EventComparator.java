@@ -28,26 +28,27 @@ public class EventComparator implements Comparator<Event> {
 
     public enum Field {
         ID("id"),
-        TRIGGER_ID("triggerId"),
+        CATEGORY("category"),
         CTIME("ctime"),
-        CATEGORY("category");
+        TEXT("text"),
+        TRIGGER_ID("triggerId");
 
-        private String text;
+        private String name;
 
-        Field(String text) {
-            this.text = text;
+        Field(String name) {
+            this.name = name;
         }
 
-        public String getText() {
-            return this.text;
+        public String getName() {
+            return this.name;
         }
 
-        public static Field getField(String text) {
-            if (text == null || text.isEmpty()) {
+        public static Field getField(String name) {
+            if (name == null || name.isEmpty()) {
                 return ID;
             }
             for (Field f : values()) {
-                if (f.getText().compareToIgnoreCase(text) == 0) {
+                if (f.getName().compareToIgnoreCase(name) == 0) {
                     return f;
                 }
             }
@@ -82,6 +83,34 @@ public class EventComparator implements Comparator<Event> {
         switch (field) {
             case ID:
                 return o1.getId().compareTo(o2.getId()) * iOrder;
+
+            case CATEGORY:
+                if (o1.getCategory() == null && o2.getCategory() == null) {
+                    return 0;
+                }
+                if (o1.getCategory() == null && o2.getCategory() != null) {
+                    return 1;
+                }
+                if (o1.getCategory() != null && o2.getCategory() == null) {
+                    return -1;
+                }
+                return o1.getCategory().compareTo(o2.getCategory()) * iOrder;
+
+            case CTIME:
+                return (int) ((o1.getCtime() - o2.getCtime()) * iOrder);
+
+            case TEXT:
+                if (o1.getText() == null && o2.getText() == null) {
+                    return 0;
+                }
+                if (o1.getText() == null && o2.getText() != null) {
+                    return 1;
+                }
+                if (o1.getText() != null && o2.getText() == null) {
+                    return -1;
+                }
+                return o1.getText().compareTo(o2.getText()) * iOrder;
+
             case TRIGGER_ID:
                 String o1TriggerId = null == o1.getTrigger() ? null : o1.getTrigger().getId();
                 String o2TriggerId = null == o2.getTrigger() ? null : o2.getTrigger().getId();
@@ -95,19 +124,7 @@ public class EventComparator implements Comparator<Event> {
                     return -1;
                 }
                 return o1TriggerId.compareTo(o2TriggerId) * iOrder;
-            case CTIME:
-                return (int) ((o1.getCtime() - o2.getCtime()) * iOrder);
-            case CATEGORY:
-                if (o1.getCategory() == null && o2.getCategory() == null) {
-                    return 0;
-                }
-                if (o1.getCategory() == null && o2.getCategory() != null) {
-                    return 1;
-                }
-                if (o1.getCategory() != null && o2.getCategory() == null) {
-                    return -1;
-                }
-                return o1.getCategory().compareTo(o2.getCategory()) * iOrder;
+
         }
         return 0;
     }

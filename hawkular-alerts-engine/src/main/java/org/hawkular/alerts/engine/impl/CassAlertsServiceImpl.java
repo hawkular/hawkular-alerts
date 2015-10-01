@@ -844,7 +844,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 pager = Pager.builder()
                         .withPageSize(pager.getPageSize())
                         .withStartPage(pager.getPageNumber())
-                        .orderBy(EventComparator.Field.ID.getText(), Order.Direction.DESCENDING).build();
+                        .orderBy(EventComparator.Field.ID.getName(), Order.Direction.DESCENDING).build();
             }
             List<Event> ordered = events;
             if (pager.getOrder() != null) {
@@ -866,7 +866,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
             return new Page(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
         } else {
-            pager = Pager.builder().withPageSize(events.size()).orderBy(EventComparator.Field.ID.getText(),
+            pager = Pager.builder().withPageSize(events.size()).orderBy(EventComparator.Field.ID.getName(),
                     Order.Direction.ASCENDING).build();
             return new Page(events, pager, events.size());
         }
