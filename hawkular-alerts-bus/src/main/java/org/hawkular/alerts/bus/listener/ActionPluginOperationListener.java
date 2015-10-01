@@ -23,7 +23,9 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.jms.MessageListener;
 
-import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.bus.api.BusOperationMessage;
 import org.hawkular.alerts.bus.log.MsgLogger;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
@@ -44,12 +46,19 @@ public class ActionPluginOperationListener extends BasicMessageListener<BusOpera
     private final Logger log = Logger.getLogger(ActionPluginOperationListener.class);
 
     @EJB
-    DefinitionsService definitions;
+    ActionsService actions;
 
     @Override
     protected void onBasicMessage(BusOperationMessage msg) {
-        // FIXME
-        log.infof("OPERATION: Message received: [%s]", msg);
-
+        log.debugf("Message received: [%s]", msg);
+        if (msg != null && msg.getPayload().containsKey("action")) {
+            String jsonAction = msg.getPayload().get("action");
+            Action updatedAction = JsonUtil.fromJson(jsonAction, Action.class);
+            actions.updateResult(updatedAction);
+            log.debugf("Operation message received from plugin [%s] with payload [%s]",
+                    updatedAction.getActionPlugin(), updatedAction.getResult());
+        } else {
+            msgLog.warnOperationMessageWithoutPayload();
+        }
     }
 }

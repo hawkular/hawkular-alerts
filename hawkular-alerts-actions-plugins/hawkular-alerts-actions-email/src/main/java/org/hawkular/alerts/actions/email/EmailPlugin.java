@@ -41,6 +41,8 @@ import org.hawkular.alerts.actions.api.OperationMessage;
 import org.hawkular.alerts.actions.api.OperationMessage.Operation;
 import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.actions.api.Sender;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Alert.Status;
 import org.jboss.logging.Logger;
@@ -191,6 +193,9 @@ public class EmailPlugin implements ActionPluginListener {
     @Sender
     ActionPluginSender sender;
 
+    private static final String MESSAGE_PROCESSED = "PROCESSED";
+    private static final String MESSAGE_FAILED = "FAILED";
+
     public EmailPlugin() {
 
         defaultProperties.put(PROP_FROM, DEFAULT_FROM);
@@ -230,33 +235,40 @@ public class EmailPlugin implements ActionPluginListener {
         return defaultProperties;
     }
 
-    // FIXME debug method to test preliminar CDI implementation
-    private void testSender() {
+    private void sendResult(Action action) {
         if (sender == null) {
-            log.error("Sender is null. why ?");
-        } else {
-            OperationMessage newMessage = sender.createMessage(Operation.RESULT);
-            newMessage.getPayload().put("result", new Date().toString());
-            try {
-                sender.send(newMessage);
-            } catch (Exception e) {
-                log.error("Error sending OperationMessage", e);
-            }
+            throw new IllegalStateException("ActionPluginSender is not present in the plugin");
+        }
+        if (action == null) {
+            throw new IllegalStateException("Action to update result must be not null");
+        }
+        OperationMessage newMessage = sender.createMessage(Operation.RESULT);
+        newMessage.getPayload().put("action", JsonUtil.toJson(action));
+        try {
+            sender.send(newMessage);
+        } catch (Exception e) {
+            log.error("Error sending OperationMessage", e);
         }
     }
 
-
-
     @Override
     public void process(ActionMessage msg) throws Exception {
+        if (msg == null || msg.getAction() == null) {
+            msgLog.warnMessageReceivedWithoutPayload("email");
+        }
         try {
             Message message = createMimeMessage(msg);
             Transport.send(message);
             msgLog.infoActionReceived("email", msg.toString());
+            Action successAction = msg.getAction();
+            successAction.setResult(MESSAGE_PROCESSED);
+            sendResult(successAction);
         } catch (Exception e) {
-
+            msgLog.errorCannotProcessMessage("email", e.getMessage());
+            Action failedAction = msg.getAction();
+            failedAction.setResult(MESSAGE_FAILED);
+            sendResult(failedAction);
         }
-        testSender();
     }
 
     protected Message createMimeMessage(ActionMessage msg) throws Exception {

@@ -134,12 +134,15 @@ public class Action {
         return result;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return "Action{" +
                 "tenantId='" + tenantId + '\'' +
                 ", actionPlugin='" + actionPlugin + '\'' +
                 ", actionId='" + actionId + '\'' +
                 ", alert=" + alert +
+                ", ctime=" + ctime +
+                ", result='" + result + '\'' +
                 '}';
     }
 }

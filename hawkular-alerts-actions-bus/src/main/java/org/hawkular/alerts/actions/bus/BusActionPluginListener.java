@@ -64,8 +64,8 @@ public class BusActionPluginListener extends BasicMessageListener<BusActionMessa
         }
         try {
             plugin.process(basicMessage);
-            msgLog.infoActionReceived(actionPlugin, basicMessage.getMessageId().getId());
-            log.debug("Received payload: " + basicMessage.toJSON());
+            log.debugf("Plugin [%s] has received a action message: [%s]", actionPlugin,
+                    basicMessage.getMessageId().getId());
         } catch (Exception e) {
             msgLog.error("Plugin [" + actionPlugin + "] processing error", e);
         }

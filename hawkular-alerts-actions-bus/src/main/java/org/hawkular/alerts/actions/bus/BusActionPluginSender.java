@@ -130,7 +130,7 @@ public class BusActionPluginSender implements ActionPluginSender {
         init();
         try {
             MessageId mid = new MessageProcessor().send(pcc, (BusOperationMessage)msg);
-            msgLog.infoPluginOperation(actionPlugin, mid.toString());
+            log.debugf("Plugin [%s] has sent an operation message: [%s]", actionPlugin, mid.toString());
         } catch (JMSException e) {
             log.debug(e.getMessage(), e);
             msgLog.errorCannotSendMessage(e.getMessage());

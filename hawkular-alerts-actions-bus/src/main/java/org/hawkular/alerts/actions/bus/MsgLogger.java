@@ -33,10 +33,6 @@ import org.jboss.logging.annotations.ValidIdRange;
 public interface MsgLogger extends BasicLogger {
     MsgLogger LOGGER = Logger.getMessageLogger(MsgLogger.class, MsgLogger.class.getPackage().getName());
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 260001, value = "Plugin [%s] has received a action message: [%s]")
-    void infoActionReceived(String actionPlugin, String msg);
-
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 260002, value = "No ActionPluginListener found on plugin deployment")
     void warnNoPluginsFound();
@@ -56,9 +52,4 @@ public interface MsgLogger extends BasicLogger {
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 260008, value = "Cannot connect to the broker. Attempt [%s]. Trying in [%s] ms. Error: [%s]")
     void warnCannotConnectBroker(int attempt, int next, String msg);
-
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 260009, value = "Plugin [%s] has sent an operation message: [%s]")
-    void infoPluginOperation(String actionPlugin, String msg);
-
 }

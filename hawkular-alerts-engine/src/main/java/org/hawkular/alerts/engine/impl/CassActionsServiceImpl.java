@@ -97,7 +97,9 @@ public class CassActionsServiceImpl implements ActionsService {
     }
 
     private void insertActionHistory(Action action) {
-        String result = action.getResult() == null ? WAITING_RESULT : action.getResult();
+        if (action.getResult() == null) {
+            action.setResult(WAITING_RESULT);
+        }
         try {
             session = CassCluster.getSession();
             PreparedStatement insertActionHistory = CassStatement.get(session,
@@ -111,7 +113,7 @@ public class CassActionsServiceImpl implements ActionsService {
                     action.getActionId(), action.getAlert().getAlertId(), action.getCtime(), JsonUtil.toJson(action))));
             futures.add(session.executeAsync(insertActionHistoryResult.bind(action.getTenantId(),
                     action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(), action.getCtime(),
-                    result)));
+                    action.getResult())));
 
             Futures.allAsList(futures).get();
         } catch (Exception e) {
@@ -139,8 +141,9 @@ public class CassActionsServiceImpl implements ActionsService {
     }
 
     private void updateActionHistory(Action action) {
-        String result = action.getResult() == null ? UNKNOWN_RESULT : action.getResult();
-
+        if (action.getResult() == null) {
+            action.setResult(UNKNOWN_RESULT);
+        }
         try {
             Action oldActionHistory = selectActionHistory(action.getTenantId(), action.getActionPlugin(),
                     action.getActionId(), action.getAlert().getAlertId(), action.getCtime());
@@ -161,9 +164,9 @@ public class CassActionsServiceImpl implements ActionsService {
             futures.add(session.executeAsync(deleteActionHistoryResult.bind(action.getTenantId(), oldResult,
                     action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
                     action.getCtime())));
-            futures.add(session.executeAsync(insertActionHistoryResult.bind(action.getTenantId(), result,
+            futures.add(session.executeAsync(insertActionHistoryResult.bind(action.getTenantId(),
                     action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
-                    action.getCtime())));
+                    action.getCtime(), action.getResult())));
             futures.add(session.executeAsync(updateActionHistory.bind(JsonUtil.toJson(action), action.getTenantId(),
                     action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
                     action.getCtime())));
