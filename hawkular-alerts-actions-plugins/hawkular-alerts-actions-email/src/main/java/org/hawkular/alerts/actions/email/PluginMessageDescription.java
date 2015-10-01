@@ -69,9 +69,6 @@ public class PluginMessageDescription {
     /** Context property "description". Supported at Condition.getContext() level with CompareCondition classes */
     public static final String CONTEXT_PROPERTY_DESCRIPTION2 = "description2";
 
-    /** Shortcut for PluginMessage.getAction().message */
-    private String message;
-
     /** Shortcut for PluginMessage.getAction().alert */
     private Alert alert;
 
@@ -206,7 +203,6 @@ public class PluginMessageDescription {
         if (pm.getProperties() == null) {
             throw new IllegalArgumentException("Properties cannot be null on PluginMessage");
         }
-        message = pm.getAction().getMessage();
         alert = pm.getAction().getAlert();
         props = pm.getProperties();
         if (alert != null && alert.getStatus() != null) {
@@ -606,14 +602,6 @@ public class PluginMessageDescription {
 
     public void setEmailSubject(String emailSubject) {
         this.emailSubject = emailSubject;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
     }
 
     public Alert getAlert() {

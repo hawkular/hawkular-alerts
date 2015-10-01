@@ -46,25 +46,22 @@ public class Action {
     private String actionId;
 
     @JsonInclude(Include.NON_NULL)
-    private String message;
-
-    @JsonInclude(Include.NON_NULL)
     private Alert alert;
 
-    public Action() { }
+    @JsonInclude
+    private long ctime;
 
-    public Action(String tenantId, String actionPlugin, String actionId, String message) {
-        this.tenantId = tenantId;
-        this.actionPlugin = actionPlugin;
-        this.actionId = actionId;
-        this.message = message;
-    }
+    @JsonInclude(Include.NON_NULL)
+    private String result;
+
+    public Action() { }
 
     public Action(String tenantId, String actionPlugin, String actionId, Alert alert) {
         this.tenantId = tenantId;
         this.actionPlugin = actionPlugin;
         this.actionId = actionId;
         this.alert = alert;
+        this.ctime = System.currentTimeMillis();
     }
 
     public String getTenantId() {
@@ -73,14 +70,6 @@ public class Action {
 
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
     }
 
     public String getActionId() {
@@ -107,6 +96,22 @@ public class Action {
         this.alert = alert;
     }
 
+    public long getCtime() {
+        return ctime;
+    }
+
+    public void setCtime(long ctime) {
+        this.ctime = ctime;
+    }
+
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -129,13 +134,11 @@ public class Action {
         return result;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return "Action{" +
                 "tenantId='" + tenantId + '\'' +
                 ", actionPlugin='" + actionPlugin + '\'' +
                 ", actionId='" + actionId + '\'' +
-                ", message='" + message + '\'' +
                 ", alert=" + alert +
                 '}';
     }

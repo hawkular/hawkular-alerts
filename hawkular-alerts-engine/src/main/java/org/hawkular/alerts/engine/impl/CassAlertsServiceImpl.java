@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Local;
 import javax.ejb.Stateless;
@@ -89,18 +88,6 @@ public class CassAlertsServiceImpl implements AlertsService {
     ActionsService actionsService;
 
     public CassAlertsServiceImpl() {
-    }
-
-    @PostConstruct
-    public void initServices() {
-        try {
-            session = CassCluster.getSession();
-        } catch (Throwable t) {
-            if (log.isDebugEnabled()) {
-                t.printStackTrace();
-            }
-            msgLog.errorCannotInitializeAlertsService(t.getMessage());
-        }
     }
 
     @Override

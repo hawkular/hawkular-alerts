@@ -29,12 +29,18 @@ import org.hawkular.alerts.api.model.action.Action;
 public interface ActionsService {
 
     /**
-     * Send a action to an internal queue.
-     * Primary used by the alerts-engine implementation to send a action.
+     * Send an action to be processed by the plugins architecture.
      *
      * @param action Action to send
      */
     void send(Action action);
+
+    /**
+     * Update the result of an action.
+     *
+     * @param action Action
+     */
+    void updateResult(Action action);
 
     /**
      * Register a listener that will process asynchronously.
