@@ -104,6 +104,10 @@ public class CassActionsServiceImpl implements ActionsService {
             session = CassCluster.getSession();
             PreparedStatement insertActionHistory = CassStatement.get(session,
                     CassStatement.INSERT_ACTION_HISTORY);
+            PreparedStatement insertActionHistoryAlert = CassStatement.get(session,
+                    CassStatement.INSERT_ACTION_HISTORY_ALERT);
+            PreparedStatement insertActionHistoryCtime = CassStatement.get(session,
+                    CassStatement.INSERT_ACTION_HISTORY_CTIME);
             PreparedStatement insertActionHistoryResult = CassStatement.get(session,
                     CassStatement.INSERT_ACTION_HISTORY_RESULT);
 
@@ -111,9 +115,15 @@ public class CassActionsServiceImpl implements ActionsService {
 
             futures.add(session.executeAsync(insertActionHistory.bind(action.getTenantId(), action.getActionPlugin(),
                     action.getActionId(), action.getAlert().getAlertId(), action.getCtime(), JsonUtil.toJson(action))));
+            futures.add(session.executeAsync(insertActionHistoryAlert.bind(action.getTenantId(),
+                    action.getAlert().getAlertId(), action.getActionPlugin(), action.getActionId(),
+                    action.getCtime())));
+            futures.add(session.executeAsync(insertActionHistoryCtime.bind(action.getTenantId(),
+                    action.getCtime(), action.getActionPlugin(), action.getActionId(),
+                    action.getAlert().getAlertId())));
             futures.add(session.executeAsync(insertActionHistoryResult.bind(action.getTenantId(),
-                    action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(), action.getCtime(),
-                    action.getResult())));
+                    action.getResult(), action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
+                    action.getCtime())));
 
             Futures.allAsList(futures).get();
         } catch (Exception e) {
@@ -165,8 +175,9 @@ public class CassActionsServiceImpl implements ActionsService {
                     action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
                     action.getCtime())));
             futures.add(session.executeAsync(insertActionHistoryResult.bind(action.getTenantId(),
-                    action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
-                    action.getCtime(), action.getResult())));
+                    action.getResult(), action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
+                    action.getCtime())));
+
             futures.add(session.executeAsync(updateActionHistory.bind(JsonUtil.toJson(action), action.getTenantId(),
                     action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
                     action.getCtime())));

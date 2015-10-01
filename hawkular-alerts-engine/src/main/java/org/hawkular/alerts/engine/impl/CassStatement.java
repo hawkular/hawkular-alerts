@@ -37,6 +37,8 @@ public class CassStatement {
     private static final Map<String, PreparedStatement> statementMap = new HashMap<>();
 
     public static final String DELETE_ACTION;
+    public static final String DELETE_ACTION_HISTORY_ALERT;
+    public static final String DELETE_ACTION_HISTORY_CTIME;
     public static final String DELETE_ACTION_HISTORY_RESULT;
     public static final String DELETE_ACTION_PLUGIN;
     public static final String DELETE_ALERT;
@@ -54,6 +56,8 @@ public class CassStatement {
 
     public static final String INSERT_ACTION;
     public static final String INSERT_ACTION_HISTORY;
+    public static final String INSERT_ACTION_HISTORY_ALERT;
+    public static final String INSERT_ACTION_HISTORY_CTIME;
     public static final String INSERT_ACTION_HISTORY_RESULT;
     public static final String INSERT_ACTION_PLUGIN;
     public static final String INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES;
@@ -122,7 +126,13 @@ public class CassStatement {
         DELETE_ACTION = "DELETE FROM " + keyspace + ".actions "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
 
-        DELETE_ACTION_HISTORY_RESULT = "DELETE FROM " + keyspace + ".actions_history_result " +
+        DELETE_ACTION_HISTORY_ALERT = "DELETE FROM " + keyspace + ".actions_history_alerts " +
+                "WHERE tenantId = ? AND alertId = ? AND actionPlugin = ? AND actionId = ? AND ctime = ?";
+
+        DELETE_ACTION_HISTORY_CTIME = "DELETE FROM " + keyspace + ".actions_history_ctimes " +
+                "WHERE tenantId = ? AND ctime = ? AND actionPlugin = ? AND actionId = ? AND alertId = ?";
+
+        DELETE_ACTION_HISTORY_RESULT = "DELETE FROM " + keyspace + ".actions_history_results " +
                 "WHERE tenantId = ? AND result = ? AND actionPlugin = ? AND actionId = ? AND alertId = ? AND ctime = ?";
 
         DELETE_ACTION_PLUGIN = "DELETE FROM " + keyspace + ".action_plugins WHERE actionPlugin = ? ";
@@ -166,8 +176,16 @@ public class CassStatement {
                 + "(tenantId, actionPlugin, actionId, alertId, ctime, payload) VALUES (?, ?, ?, ?, ?, ?) " +
                 "IF NOT EXISTS";
 
-        INSERT_ACTION_HISTORY_RESULT = "INSERT INTO " + keyspace + ".actions_history_result "
-                + "(tenantId, actionPlugin, actionId, alertId, ctime, result) VALUES (?, ?, ?, ?, ?, ?) " +
+        INSERT_ACTION_HISTORY_ALERT = "INSERT INTO " + keyspace + ".actions_history_alerts "
+                + "(tenantId, alertId, actionPlugin, actionId, ctime) VALUES (?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
+        INSERT_ACTION_HISTORY_CTIME = "INSERT INTO " + keyspace + ".actions_history_ctimes "
+                + "(tenantId, ctime, actionPlugin, actionId, alertId) VALUES (?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
+        INSERT_ACTION_HISTORY_RESULT = "INSERT INTO " + keyspace + ".actions_history_results "
+                + "(tenantId, result, actionPlugin, actionId, alertId, ctime) VALUES (?, ?, ?, ?, ?, ?) " +
                 "IF NOT EXISTS";
 
         INSERT_ACTION_PLUGIN = "INSERT INTO " + keyspace + ".action_plugins "
