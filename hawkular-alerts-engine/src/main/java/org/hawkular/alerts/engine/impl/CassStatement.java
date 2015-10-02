@@ -37,6 +37,7 @@ public class CassStatement {
     private static final Map<String, PreparedStatement> statementMap = new HashMap<>();
 
     public static final String DELETE_ACTION;
+    public static final String DELETE_ACTION_HISTORY_ACTION;
     public static final String DELETE_ACTION_HISTORY_ALERT;
     public static final String DELETE_ACTION_HISTORY_CTIME;
     public static final String DELETE_ACTION_HISTORY_RESULT;
@@ -56,6 +57,7 @@ public class CassStatement {
 
     public static final String INSERT_ACTION;
     public static final String INSERT_ACTION_HISTORY;
+    public static final String INSERT_ACTION_HISTORY_ACTION;
     public static final String INSERT_ACTION_HISTORY_ALERT;
     public static final String INSERT_ACTION_HISTORY_CTIME;
     public static final String INSERT_ACTION_HISTORY_RESULT;
@@ -79,6 +81,14 @@ public class CassStatement {
 
     public static final String SELECT_ACTION;
     public static final String SELECT_ACTION_HISTORY;
+    public static final String SELECT_ACTION_HISTORY_ACTION_ID;
+    public static final String SELECT_ACTION_HISTORY_ACTION_PLUGIN;
+    public static final String SELECT_ACTION_HISTORY_ALERT_ID;
+    public static final String SELECT_ACTION_HISTORY_BY_TENANT;
+    public static final String SELECT_ACTION_HISTORY_CTIME_END;
+    public static final String SELECT_ACTION_HISTORY_CTIME_START;
+    public static final String SELECT_ACTION_HISTORY_CTIME_START_END;
+    public static final String SELECT_ACTION_HISTORY_RESULT;
     public static final String SELECT_ACTIONS_ALL;
     public static final String SELECT_ACTIONS_BY_TENANT;
     public static final String SELECT_ACTION_PLUGIN;
@@ -125,6 +135,9 @@ public class CassStatement {
 
         DELETE_ACTION = "DELETE FROM " + keyspace + ".actions "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
+
+        DELETE_ACTION_HISTORY_ACTION = "DELETE FROM " + keyspace + ".actions_history_actions " +
+                "WHERE tenantId = ? AND actionId = ? AND actionPlugin = ? AND alertId = ? AND ctime = ?";
 
         DELETE_ACTION_HISTORY_ALERT = "DELETE FROM " + keyspace + ".actions_history_alerts " +
                 "WHERE tenantId = ? AND alertId = ? AND actionPlugin = ? AND actionId = ? AND ctime = ?";
@@ -174,6 +187,10 @@ public class CassStatement {
 
         INSERT_ACTION_HISTORY = "INSERT INTO " + keyspace + ".actions_history "
                 + "(tenantId, actionPlugin, actionId, alertId, ctime, payload) VALUES (?, ?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
+        INSERT_ACTION_HISTORY_ACTION = "INSERT INTO " + keyspace + ".actions_history_actions "
+                + "(tenantId, actionId, actionPlugin, alertId, ctime) VALUES (?, ?, ?, ?, ?) " +
                 "IF NOT EXISTS";
 
         INSERT_ACTION_HISTORY_ALERT = "INSERT INTO " + keyspace + ".actions_history_alerts "
@@ -255,6 +272,30 @@ public class CassStatement {
 
         SELECT_ACTION_HISTORY = "SELECT payload FROM " + keyspace + ".actions_history " +
                 "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? AND alertId = ? and ctime = ?";
+
+        SELECT_ACTION_HISTORY_ACTION_ID = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_actions WHERE tenantId = ? AND actionId = ?";
+
+        SELECT_ACTION_HISTORY_ACTION_PLUGIN = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history WHERE tenantId = ? AND actionPlugin = ?";
+
+        SELECT_ACTION_HISTORY_ALERT_ID = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_alerts WHERE tenantId = ? AND alertId = ?";
+
+        SELECT_ACTION_HISTORY_BY_TENANT = "SELECT payload FROM " + keyspace + ".actions_history " +
+                "WHERE tenantId = ?";
+
+        SELECT_ACTION_HISTORY_CTIME_END = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " + keyspace +
+                ".actions_history_ctimes WHERE tenandId = ? AND ctime <= ?";
+
+        SELECT_ACTION_HISTORY_CTIME_START = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " + keyspace +
+                ".actions_history_ctimes WHERE tenandId = ? AND ctime >= ?";
+
+        SELECT_ACTION_HISTORY_CTIME_START_END = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_ctimes WHERE tenandId = ? AND ctime >= ? AND ctime <= ?";
+
+        SELECT_ACTION_HISTORY_RESULT = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_results WHERE tenandId = ? AND result = ?";
 
         SELECT_ACTIONS_ALL = "SELECT tenantId, actionPlugin, actionId " + "FROM " + keyspace + ".actions ";
 

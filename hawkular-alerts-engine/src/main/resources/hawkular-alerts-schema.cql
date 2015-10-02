@@ -140,6 +140,17 @@ CREATE TABLE ${keyspace}.actions_history (
 
 -- #
 
+CREATE TABLE ${keyspace}.actions_history_actions (
+    tenantId text,
+    actionPlugin text,
+    actionId text,
+    alertId text,
+    ctime bigint,
+    PRIMARY KEY (tenantId, actionId, actionPlugin, alertId, ctime)
+);
+
+-- #
+
 CREATE TABLE ${keyspace}.actions_history_alerts (
     tenantId text,
     actionPlugin text,

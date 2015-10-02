@@ -17,6 +17,8 @@
 package org.hawkular.alerts.api.services;
 
 import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.paging.Page;
+import org.hawkular.alerts.api.model.paging.Pager;
 
 /**
  * A interface used to send actions.
@@ -48,4 +50,14 @@ public interface ActionsService {
      * @param listener the listener
      */
     void addListener(ActionListener listener);
+
+    /**
+     *
+     * @param tenantId Tenant where actions are stored
+     * @param criteria If null returns all actions (not recommended)
+     * @param pager Paging requirement for fetching actions. Optional. Return all if null.
+     * @return NotNull, can be empty.
+     * @throws Exception
+     */
+    Page<Action> getActions(String tenantId, ActionsCriteria criteria, Pager pager) throws Exception;
 }

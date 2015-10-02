@@ -16,10 +16,16 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import static org.hawkular.alerts.api.model.paging.ActionComparator.*;
+
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import javax.ejb.Asynchronous;
 import javax.ejb.Local;
@@ -29,11 +35,17 @@ import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.paging.ActionComparator;
+import org.hawkular.alerts.api.model.paging.Order;
+import org.hawkular.alerts.api.model.paging.Page;
+import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.services.ActionListener;
+import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.jboss.logging.Logger;
 
+import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
@@ -57,7 +69,7 @@ public class CassActionsServiceImpl implements ActionsService {
     private static final String WAITING_RESULT = "WAITING";
     private static final String UNKNOWN_RESULT = "UNKWON";
 
-    List<ActionListener> listeners = new CopyOnWriteArrayList<ActionListener>();
+    List<ActionListener> listeners = new CopyOnWriteArrayList<>();
 
     private Session session;
 
@@ -104,6 +116,8 @@ public class CassActionsServiceImpl implements ActionsService {
             session = CassCluster.getSession();
             PreparedStatement insertActionHistory = CassStatement.get(session,
                     CassStatement.INSERT_ACTION_HISTORY);
+            PreparedStatement insertActionHistoryAction = CassStatement.get(session,
+                    CassStatement.INSERT_ACTION_HISTORY_ACTION);
             PreparedStatement insertActionHistoryAlert = CassStatement.get(session,
                     CassStatement.INSERT_ACTION_HISTORY_ALERT);
             PreparedStatement insertActionHistoryCtime = CassStatement.get(session,
@@ -115,6 +129,9 @@ public class CassActionsServiceImpl implements ActionsService {
 
             futures.add(session.executeAsync(insertActionHistory.bind(action.getTenantId(), action.getActionPlugin(),
                     action.getActionId(), action.getAlert().getAlertId(), action.getCtime(), JsonUtil.toJson(action))));
+            futures.add(session.executeAsync(insertActionHistoryAction.bind(action.getTenantId(),
+                    action.getActionId(), action.getActionPlugin(), action.getAlert().getAlertId(),
+                    action.getCtime())));
             futures.add(session.executeAsync(insertActionHistoryAlert.bind(action.getTenantId(),
                     action.getAlert().getAlertId(), action.getActionPlugin(), action.getActionId(),
                     action.getCtime())));
@@ -195,6 +212,383 @@ public class CassActionsServiceImpl implements ActionsService {
         }
         listeners.add(listener);
         msgLog.infoActionListenerRegistered(listener.toString());
+    }
+
+    @Override
+    public Page<Action> getActions(String tenantId, ActionsCriteria criteria, Pager pager) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        session = CassCluster.getSession();
+        boolean filter = (null != criteria && criteria.hasCriteria());
+
+        List<Action> actions = new ArrayList<>();
+        Set<ActionHistoryPK> actionPks = new HashSet<>();
+
+        if (filter) {
+            /*
+             * Get Action PKs filtered by ctime
+             */
+            Set<ActionHistoryPK> actionPKsfilteredByCtime = new HashSet<>();
+            boolean filterByCtime = filterByCtime(tenantId, actionPKsfilteredByCtime, criteria);
+            if (filterByCtime) {
+                actionPks.addAll(actionPKsfilteredByCtime);
+                if (actionPks.isEmpty()) {
+                    return new Page<>(actions, pager, 0);
+                }
+            }
+
+            /*
+             * Get Action PKs filtered by actionPlugin
+             */
+            Set<ActionHistoryPK> actionPKsfilteredByActionPlugin = new HashSet<>();
+            boolean filterByActionPlugin = filterByActionPlugin(tenantId, actionPKsfilteredByActionPlugin, criteria);
+            if (filterByActionPlugin) {
+                if (actionPks.isEmpty()) {
+                    actionPks.addAll(actionPKsfilteredByActionPlugin);
+                } else {
+                    actionPks.retainAll(actionPKsfilteredByActionPlugin);
+                }
+                if (actionPks.isEmpty()) {
+                    return new Page<>(actions, pager, 0);
+                }
+            }
+
+            /*
+             * Get Action PKs filtered by actionId
+             */
+            Set<ActionHistoryPK> actionPKsfilteredByActionId = new HashSet<>();
+            boolean filterByActionId = filterByActionId(tenantId, actionPKsfilteredByActionId, criteria);
+            if (filterByActionId) {
+                if (actionPks.isEmpty()) {
+                    actionPks.addAll(actionPKsfilteredByActionId);
+                } else {
+                    actionPks.retainAll(actionPKsfilteredByActionId);
+                }
+                if (actionPks.isEmpty()) {
+                    return new Page<>(actions, pager, 0);
+                }
+            }
+
+            /*
+             * Get Action PKs filtered by alertId
+             */
+            Set<ActionHistoryPK> actionPKsfilteredByAlertId = new HashSet<>();
+            boolean filterByAlertId = filterByAlertId(tenantId, actionPKsfilteredByAlertId, criteria);
+            if (filterByAlertId) {
+                if (actionPks.isEmpty()) {
+                    actionPks.addAll(actionPKsfilteredByAlertId);
+                } else {
+                    actionPks.retainAll(actionPKsfilteredByAlertId);
+                }
+                if (actionPks.isEmpty()) {
+                    return new Page<>(actions, pager, 0);
+                }
+            }
+
+            /*
+             * Get Action PKs filtered by result
+             */
+            Set<ActionHistoryPK> actionPKsfilteredByResult = new HashSet<>();
+            boolean filterByResult = filterByResult(tenantId, actionPKsfilteredByResult, criteria);
+            if (filterByResult) {
+                if (actionPks.isEmpty()) {
+                    actionPks.addAll(actionPKsfilteredByResult);
+                } else {
+                    actionPks.retainAll(actionPKsfilteredByResult);
+                }
+                if (actionPks.isEmpty()) {
+                    return new Page<>(actions, pager, 0);
+                }
+            }
+        }
+
+        if (!filter) {
+            /*
+             * Get all actions
+             */
+            PreparedStatement selectActionHistoryByTenant = CassStatement.get(session,
+                    CassStatement.SELECT_ACTION_HISTORY_BY_TENANT);
+            ResultSet rsActionHistoryByTenant = session.execute(selectActionHistoryByTenant.bind(tenantId));
+            Iterator<Row> itActionHistoryByTenant = rsActionHistoryByTenant.iterator();
+            while (itActionHistoryByTenant.hasNext()) {
+                Row row = itActionHistoryByTenant.next();
+                Action actionHistory = JsonUtil.fromJson(row.getString("payload"), Action.class);
+                actions.add(actionHistory);
+            }
+        } else {
+            PreparedStatement selectActionHistory = CassStatement.get(session,
+                    CassStatement.SELECT_ACTION_HISTORY);
+            List<ResultSetFuture> futures = actionPks.stream().map(actionPk ->
+                    session.executeAsync(selectActionHistory.bind(actionPk.tenantId, actionPk.actionPlugin, actionPk
+                            .actionId, actionPk.alertId, actionPk.ctime))).collect(Collectors.toList());
+            List<ResultSet> rsActionHistory = Futures.allAsList(futures).get();
+            rsActionHistory.stream().forEach(r -> {
+                for (Row row : r) {
+                    Action actionHistory = JsonUtil.fromJson(row.getString("payload"), Action.class);
+                    actions.add(actionHistory);
+                }
+            });
+        }
+
+        return preparePage(actions, pager);
+    }
+
+    private boolean filterByCtime(String tenantId, Set<ActionHistoryPK> actionPks, ActionsCriteria criteria)
+        throws Exception {
+        boolean filterByCtime = false;
+        if (criteria.getStartTime() != null || criteria.getEndTime() != null) {
+            filterByCtime = true;
+
+            BoundStatement boundCtime;
+            if (criteria.getStartTime() != null && criteria.getEndTime() != null) {
+                PreparedStatement selectActionHistoryCTimeStartEnd = CassStatement.get(session,
+                        CassStatement.SELECT_ACTION_HISTORY_CTIME_START_END);
+                boundCtime = selectActionHistoryCTimeStartEnd.bind(tenantId, criteria.getStartTime(),
+                        criteria.getEndTime());
+            } else if (criteria.getStartTime() != null) {
+                PreparedStatement selectActionHistoryCTimeStart = CassStatement.get(session,
+                        CassStatement.SELECT_ACTION_HISTORY_CTIME_START);
+                boundCtime = selectActionHistoryCTimeStart.bind(tenantId, criteria.getStartTime());
+            } else {
+                PreparedStatement selectActionHistoryCTimeEnd = CassStatement.get(session,
+                        CassStatement.SELECT_ACTION_HISTORY_CTIME_END);
+                boundCtime = selectActionHistoryCTimeEnd.bind(tenantId, criteria.getEndTime());
+            }
+
+            ResultSet rsActionHistoryCtimes = session.execute(boundCtime);
+            Iterator<Row> itActionHistoryCtimes = rsActionHistoryCtimes.iterator();
+            while (itActionHistoryCtimes.hasNext()) {
+                Row row = itActionHistoryCtimes.next();
+                ActionHistoryPK actionHistoryPK = new ActionHistoryPK();
+                actionHistoryPK.tenantId = tenantId;
+                actionHistoryPK.actionPlugin = row.getString("actionPlugin");
+                actionHistoryPK.actionId = row.getString("actionId");
+                actionHistoryPK.alertId = row.getString("alertId");
+                actionHistoryPK.ctime = row.getLong("ctime");
+                actionPks.add(actionHistoryPK);
+            }
+        }
+        return filterByCtime;
+    }
+
+    private boolean filterByActionPlugin(String tenantId, Set<ActionHistoryPK> actionPks, ActionsCriteria criteria)
+            throws Exception {
+        boolean filterByActionPlugin = false;
+        if (criteria.getActionPlugin() != null
+                || (criteria.getActionPlugins() != null && !criteria.getActionPlugins().isEmpty())) {
+            filterByActionPlugin = true;
+
+            PreparedStatement selectActionHistoryActionPlugin = CassStatement.get(session,
+                    CassStatement.SELECT_ACTION_HISTORY_ACTION_PLUGIN);
+
+            List<ResultSetFuture> futures = new ArrayList<>();
+            if (criteria.getActionPlugin() != null) {
+                futures.add(session.executeAsync(selectActionHistoryActionPlugin.bind(tenantId,
+                        criteria.getActionPlugin())));
+            }
+            if (criteria.getActionPlugins() != null && !criteria.getActionPlugins().isEmpty()) {
+                for (String actionPlugin : criteria.getActionPlugins()) {
+                    futures.add(session.executeAsync(selectActionHistoryActionPlugin.bind(tenantId, actionPlugin)));
+                }
+            }
+
+            List<ResultSet> rsActionHistory = Futures.allAsList(futures).get();
+            rsActionHistory.stream().forEach(r -> {
+                for (Row row : r) {
+                    ActionHistoryPK actionHistoryPK = new ActionHistoryPK();
+                    actionHistoryPK.tenantId = tenantId;
+                    actionHistoryPK.actionPlugin = row.getString("actionPlugin");
+                    actionHistoryPK.actionId = row.getString("actionId");
+                    actionHistoryPK.alertId = row.getString("alertId");
+                    actionHistoryPK.ctime = row.getLong("ctime");
+                    actionPks.add(actionHistoryPK);
+                }
+            });
+        }
+        return filterByActionPlugin;
+    }
+
+    private boolean filterByActionId(String tenantId, Set<ActionHistoryPK> actionPks, ActionsCriteria criteria)
+            throws Exception {
+        boolean filterByActionId = false;
+        if (criteria.getActionId() != null
+                || (criteria.getActionIds() != null && !criteria.getActionIds().isEmpty())) {
+            filterByActionId = true;
+
+            PreparedStatement selectActionHistoryActionId = CassStatement.get(session,
+                    CassStatement.SELECT_ACTION_HISTORY_ACTION_ID);
+
+            List<ResultSetFuture> futures = new ArrayList<>();
+            if (criteria.getActionId() != null) {
+                futures.add(session.executeAsync(selectActionHistoryActionId.bind(tenantId, criteria.getActionId())));
+            }
+            if (criteria.getActionIds() != null && !criteria.getActionIds().isEmpty()) {
+                for (String actionId : criteria.getActionIds()) {
+                    futures.add(session.executeAsync(selectActionHistoryActionId.bind(tenantId, actionId)));
+                }
+            }
+
+            List<ResultSet> rsActionHistory = Futures.allAsList(futures).get();
+            rsActionHistory.stream().forEach(r -> {
+                for (Row row : r) {
+                    ActionHistoryPK actionHistoryPK = new ActionHistoryPK();
+                    actionHistoryPK.tenantId = tenantId;
+                    actionHistoryPK.actionPlugin = row.getString("actionPlugin");
+                    actionHistoryPK.actionId = row.getString("actionId");
+                    actionHistoryPK.alertId = row.getString("alertId");
+                    actionHistoryPK.ctime = row.getLong("ctime");
+                    actionPks.add(actionHistoryPK);
+                }
+            });
+        }
+        return filterByActionId;
+    }
+
+    private boolean filterByAlertId(String tenantId, Set<ActionHistoryPK> actionPks, ActionsCriteria criteria)
+            throws Exception {
+        boolean filterByAlertId = false;
+        if (criteria.getAlertId() != null
+                || (criteria.getAlertIds() != null && !criteria.getAlertIds().isEmpty())) {
+            filterByAlertId = true;
+
+            PreparedStatement selectActionHistoryAlertId = CassStatement.get(session,
+                    CassStatement.SELECT_ACTION_HISTORY_ALERT_ID);
+
+            List<ResultSetFuture> futures = new ArrayList<>();
+            if (criteria.getAlertId() != null) {
+                futures.add(session.executeAsync(selectActionHistoryAlertId.bind(tenantId, criteria.getAlertId())));
+            }
+            if (criteria.getAlertIds() != null && !criteria.getAlertIds().isEmpty()) {
+                for (String alertId : criteria.getAlertIds()) {
+                    futures.add(session.executeAsync(selectActionHistoryAlertId.bind(tenantId, alertId)));
+                }
+            }
+
+            List<ResultSet> rsActionHistory = Futures.allAsList(futures).get();
+            rsActionHistory.stream().forEach(r -> {
+                for (Row row : r) {
+                    ActionHistoryPK actionHistoryPK = new ActionHistoryPK();
+                    actionHistoryPK.tenantId = tenantId;
+                    actionHistoryPK.actionPlugin = row.getString("actionPlugin");
+                    actionHistoryPK.actionId = row.getString("actionId");
+                    actionHistoryPK.alertId = row.getString("alertId");
+                    actionHistoryPK.ctime = row.getLong("ctime");
+                    actionPks.add(actionHistoryPK);
+                }
+            });
+        }
+        return filterByAlertId;
+    }
+
+    private boolean filterByResult(String tenantId, Set<ActionHistoryPK> actionPks, ActionsCriteria criteria)
+            throws Exception {
+        boolean filterByResult = false;
+        if (criteria.getResult() != null
+                || (criteria.getResults() != null && !criteria.getResults().isEmpty())) {
+            filterByResult = true;
+
+            PreparedStatement selectActionHistoryResult = CassStatement.get(session,
+                    CassStatement.SELECT_ACTION_HISTORY_RESULT);
+
+            List<ResultSetFuture> futures = new ArrayList<>();
+            if (criteria.getResult() != null) {
+                futures.add(session.executeAsync(selectActionHistoryResult.bind(tenantId, criteria.getResult())));
+            }
+            if (criteria.getResults() != null && !criteria.getResults().isEmpty()) {
+                for (String result : criteria.getResults()) {
+                    futures.add(session.executeAsync(selectActionHistoryResult.bind(tenantId, result)));
+                }
+            }
+
+            List<ResultSet> rsActionHistory = Futures.allAsList(futures).get();
+            rsActionHistory.stream().forEach(r -> {
+                for (Row row : r) {
+                    ActionHistoryPK actionHistoryPK = new ActionHistoryPK();
+                    actionHistoryPK.tenantId = tenantId;
+                    actionHistoryPK.actionPlugin = row.getString("actionPlugin");
+                    actionHistoryPK.actionId = row.getString("actionId");
+                    actionHistoryPK.alertId = row.getString("alertId");
+                    actionHistoryPK.ctime = row.getLong("ctime");
+                    actionPks.add(actionHistoryPK);
+                }
+            });
+        }
+        return filterByResult;
+    }
+
+    private Page<Action> preparePage(List<Action> actions, Pager pager) {
+        if (pager != null) {
+            if (pager.getOrder() != null
+                    && !pager.getOrder().isEmpty()
+                    && pager.getOrder().get(0).getField() == null) {
+                pager = Pager.builder()
+                        .withPageSize(pager.getPageSize())
+                        .withStartPage(pager.getPageNumber())
+                        .orderBy(Field.ALERT_ID.getText(), Order.Direction.DESCENDING).build();
+            }
+            List<Action> ordered = actions;
+            if (pager.getOrder() != null) {
+                pager.getOrder().stream().filter(o -> o.getField() != null && o.getDirection() != null)
+                        .forEach(o -> {
+                            ActionComparator comparator = new ActionComparator(
+                                    Field.getField(o.getField()),
+                                    o.getDirection());
+                            Collections.sort(ordered, comparator);
+                        });
+            }
+            if (!pager.isLimited() || ordered.size() < pager.getStart()) {
+                pager = new Pager(0, ordered.size(), pager.getOrder());
+                return new Page(ordered, pager, ordered.size());
+            }
+            if (pager.getEnd() >= ordered.size()) {
+                return new Page(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
+            }
+            return new Page(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
+        } else {
+            pager = Pager.builder().withPageSize(actions.size()).orderBy(Field.ALERT_ID.getText(),
+                    Order.Direction.ASCENDING).build();
+            return new Page(actions, pager, actions.size());
+        }
+    }
+
+
+    private boolean isEmpty(String s) {
+        return null == s || s.trim().isEmpty();
+    }
+
+    private class ActionHistoryPK {
+        public String tenantId;
+        public String actionPlugin;
+        public String actionId;
+        public String alertId;
+        public long ctime;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ActionHistoryPK that = (ActionHistoryPK) o;
+
+            if (ctime != that.ctime) return false;
+            if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
+            if (actionPlugin != null ? !actionPlugin.equals(that.actionPlugin) : that.actionPlugin != null)
+                return false;
+            if (actionId != null ? !actionId.equals(that.actionId) : that.actionId != null) return false;
+            return !(alertId != null ? !alertId.equals(that.alertId) : that.alertId != null);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = tenantId != null ? tenantId.hashCode() : 0;
+            result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
+            result = 31 * result + (actionId != null ? actionId.hashCode() : 0);
+            result = 31 * result + (alertId != null ? alertId.hashCode() : 0);
+            result = 31 * result + (int) (ctime ^ (ctime >>> 32));
+            return result;
+        }
     }
 
 }
