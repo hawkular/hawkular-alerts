@@ -1118,13 +1118,13 @@ public abstract class DefinitionsTest {
         assertEquals(10 * 4, actions.size());
 
         ActionsCriteria criteria = new ActionsCriteria();
-        criteria.setStartTime(2l);
+        criteria.setStartTime(2L);
 
         actions = actionsService.getActions("my-organization", criteria, null);
         assertEquals(8 * 4, actions.size());
 
-        criteria.setStartTime(2l);
-        criteria.setEndTime(3l);
+        criteria.setStartTime(2L);
+        criteria.setEndTime(3L);
 
         actions = actionsService.getActions("my-organization", criteria, null);
         assertEquals(2 * 4, actions.size());
@@ -1172,7 +1172,7 @@ public abstract class DefinitionsTest {
         assertEquals(10 * 2, actions.size());
 
         criteria = new ActionsCriteria();
-        criteria.setStartTime(2l);
+        criteria.setStartTime(2L);
         criteria.setActionPlugin("plugin1");
         criteria.setActionId("action1");
         actions = actionsService.getActions("my-organization", criteria, null);
