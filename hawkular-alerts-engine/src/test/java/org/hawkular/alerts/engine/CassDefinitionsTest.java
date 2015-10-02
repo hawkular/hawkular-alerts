@@ -70,6 +70,7 @@ public class CassDefinitionsTest extends DefinitionsTest {
         session = CassCluster.getSession();
         definitionsService = StandaloneAlerts.getDefinitionsService();
         alertsService = StandaloneAlerts.getAlertsService();
+        actionsService = StandaloneAlerts.getActionsService();
     }
 
     @AfterClass

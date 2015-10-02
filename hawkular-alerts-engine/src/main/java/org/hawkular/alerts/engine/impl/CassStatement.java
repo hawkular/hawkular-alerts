@@ -286,16 +286,16 @@ public class CassStatement {
                 "WHERE tenantId = ?";
 
         SELECT_ACTION_HISTORY_CTIME_END = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " + keyspace +
-                ".actions_history_ctimes WHERE tenandId = ? AND ctime <= ?";
+                ".actions_history_ctimes WHERE tenantId = ? AND ctime <= ?";
 
         SELECT_ACTION_HISTORY_CTIME_START = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " + keyspace +
-                ".actions_history_ctimes WHERE tenandId = ? AND ctime >= ?";
+                ".actions_history_ctimes WHERE tenantId = ? AND ctime >= ?";
 
         SELECT_ACTION_HISTORY_CTIME_START_END = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
-                keyspace + ".actions_history_ctimes WHERE tenandId = ? AND ctime >= ? AND ctime <= ?";
+                keyspace + ".actions_history_ctimes WHERE tenantId = ? AND ctime >= ? AND ctime <= ?";
 
         SELECT_ACTION_HISTORY_RESULT = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
-                keyspace + ".actions_history_results WHERE tenandId = ? AND result = ?";
+                keyspace + ".actions_history_results WHERE tenantId = ? AND result = ?";
 
         SELECT_ACTIONS_ALL = "SELECT tenantId, actionPlugin, actionId " + "FROM " + keyspace + ".actions ";
 
