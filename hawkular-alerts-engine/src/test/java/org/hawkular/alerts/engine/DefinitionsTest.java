@@ -46,6 +46,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Availability;
 import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.paging.ActionComparator;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
@@ -1178,4 +1179,86 @@ public abstract class DefinitionsTest {
         actions = actionsService.getActions("my-organization", criteria, null);
         assertEquals(8 * 1, actions.size());
     }
+
+    @Test
+    public void test0080PaginationActionsHistory() throws Exception {
+        for (int i = 0; i < 103; i++) {
+            Alert testAlert = new Alert();
+            testAlert.setTenantId("my-organization");
+            testAlert.setTriggerId("test-trigger");
+            testAlert.setSeverity(Severity.CRITICAL);
+            testAlert.setCtime(i);
+            testAlert.setAlertId("test-alert" + i);
+            Action action1 = new Action(testAlert.getTenantId(), "plugin1", "action1", testAlert);
+            Action action2 = new Action(testAlert.getTenantId(), "plugin1", "action2", testAlert);
+            Action action3 = new Action(testAlert.getTenantId(), "plugin2", "action1", testAlert);
+            Action action4 = new Action(testAlert.getTenantId(), "plugin2", "action2", testAlert);
+            action1.setCtime(i);
+            action2.setCtime(i);
+            action3.setCtime(i);
+            action4.setCtime(i);
+            action1.setResult("result1");
+            action2.setResult("result2");
+            action3.setResult("result3");
+            action4.setResult("result4");
+            actionsService.send(action1);
+            actionsService.send(action2);
+            actionsService.send(action3);
+            actionsService.send(action4);
+        }
+
+        List<Action> actions = actionsService.getActions("my-organization", null, null);
+        assertEquals(103 * 4, actions.size());
+
+        Pager pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByAscending(ActionComparator.Field.ALERT_ID.getText()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        Page<Action> page = actionsService.getActions("my-organization", null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        Action firstAction = page.get(0);
+
+        assertEquals(103 * 4, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = actionsService.getActions("my-organization", null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(2, page.size());
+
+        Action lastAction = page.get(1);
+
+        assertTrue(firstAction.getAlert().getAlertId().compareTo(lastAction.getAlert().getAlertId()) < 0);
+
+        pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByDescending(ActionComparator.Field.RESULT.getText()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = actionsService.getActions("my-organization", null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        firstAction = page.get(0);
+
+        assertEquals(103 * 4, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = actionsService.getActions("my-organization", null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(2, page.size());
+
+        lastAction = page.get(1);
+
+        assertTrue(firstAction.getResult().compareTo(lastAction.getResult()) > 0);
+    }
+
 }
