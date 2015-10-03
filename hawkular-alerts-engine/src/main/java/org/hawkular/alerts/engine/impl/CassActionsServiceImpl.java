@@ -552,6 +552,50 @@ public class CassActionsServiceImpl implements ActionsService {
         }
     }
 
+    @Override
+    public int deleteActions(String tenantId, ActionsCriteria criteria) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (null == criteria) {
+            throw new IllegalArgumentException("Criteria must be not null");
+        }
+
+        List<Action> actionsToDelete = getActions(tenantId, criteria, null);
+        if (actionsToDelete == null || actionsToDelete.isEmpty()) {
+            return 0;
+        }
+
+        PreparedStatement deleteActionHistory = CassStatement.get(session,
+                CassStatement.DELETE_ACTION_HISTORY);
+        PreparedStatement deleteActionHistoryAction = CassStatement.get(session,
+                CassStatement.DELETE_ACTION_HISTORY_ACTION);
+        PreparedStatement deleteActionHistoryAlert = CassStatement.get(session,
+                CassStatement.DELETE_ACTION_HISTORY_ALERT);
+        PreparedStatement deleteActionHistoryCtime = CassStatement.get(session,
+                CassStatement.DELETE_ACTION_HISTORY_CTIME);
+        PreparedStatement deleteActionHistoryResult = CassStatement.get(session,
+                CassStatement.DELETE_ACTION_HISTORY_RESULT);
+
+        for (Action action : actionsToDelete) {
+            List<ResultSetFuture> futures = new ArrayList<>();
+            futures.add(session.executeAsync(deleteActionHistory.bind(action.getTenantId(), action.getActionPlugin(),
+                    action.getActionId(), action.getAlert().getAlertId(), action.getCtime())));
+            futures.add(session.executeAsync(deleteActionHistoryAction.bind(action.getTenantId(), action.getActionId(),
+                    action.getActionPlugin(), action.getAlert().getAlertId(), action.getCtime())));
+            futures.add(session.executeAsync(deleteActionHistoryAlert.bind(action.getTenantId(),
+                    action.getAlert().getAlertId(), action.getActionPlugin(), action.getActionId(),
+                    action.getCtime())));
+            futures.add(session.executeAsync(deleteActionHistoryCtime.bind(action.getTenantId(), action.getCtime(),
+                    action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId())));
+            futures.add(session.executeAsync(deleteActionHistoryResult.bind(action.getTenantId(),
+                    action.getResult(), action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
+                    action.getCtime())));
+            Futures.allAsList(futures).get();
+        }
+
+        return actionsToDelete.size();
+    }
 
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();

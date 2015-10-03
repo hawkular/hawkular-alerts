@@ -37,6 +37,7 @@ public class CassStatement {
     private static final Map<String, PreparedStatement> statementMap = new HashMap<>();
 
     public static final String DELETE_ACTION;
+    public static final String DELETE_ACTION_HISTORY;
     public static final String DELETE_ACTION_HISTORY_ACTION;
     public static final String DELETE_ACTION_HISTORY_ALERT;
     public static final String DELETE_ACTION_HISTORY_CTIME;
@@ -135,6 +136,9 @@ public class CassStatement {
 
         DELETE_ACTION = "DELETE FROM " + keyspace + ".actions "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
+
+        DELETE_ACTION_HISTORY = "DELETE FROM " + keyspace + ".actions_history " +
+                "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? AND alertId = ? AND ctime = ?";
 
         DELETE_ACTION_HISTORY_ACTION = "DELETE FROM " + keyspace + ".actions_history_actions " +
                 "WHERE tenantId = ? AND actionId = ? AND actionPlugin = ? AND alertId = ? AND ctime = ?";

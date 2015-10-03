@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.engine;
 
+import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.engine.cassandra.EmbeddedCassandra;
 import org.hawkular.alerts.engine.impl.AlertProperties;
@@ -34,7 +35,7 @@ import com.datastax.driver.core.Session;
  * @author Lucas Ponce
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class CassDefinitionsTest extends DefinitionsTest {
+public class CassPersistenceTest extends PersistenceTest {
 
     private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
     private static final String EXTERNAL_CASSANDRA = "external_cassandra";
@@ -46,7 +47,7 @@ public class CassDefinitionsTest extends DefinitionsTest {
     @BeforeClass
     public static void initSessionAndResetTestSchema() throws Exception {
 
-        String testFolder = CassDefinitionsTest.class.getResource("/").getPath();
+        String testFolder = CassPersistenceTest.class.getResource("/").getPath();
         System.setProperty(JBOSS_DATA_DIR, testFolder);
 
         externalCassandra = (null != System.getProperty(EXTERNAL_CASSANDRA));
@@ -94,6 +95,12 @@ public class CassDefinitionsTest extends DefinitionsTest {
     public void cleanAlerts() throws Exception {
         AlertsCriteria criteria = new AlertsCriteria();
         System.out.printf("Deleted [%s] Alerts before test.\n", alertsService.deleteAlerts(TEST_TENANT, criteria));
+    }
+
+    @Before
+    public void cleanActions() throws Exception {
+        ActionsCriteria criteria = new ActionsCriteria();
+        System.out.printf("Deleted [%s] Actions before test.\n", actionsService.deleteActions(TEST_TENANT, criteria));
     }
 
 }

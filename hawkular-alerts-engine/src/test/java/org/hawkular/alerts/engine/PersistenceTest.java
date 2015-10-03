@@ -63,7 +63,7 @@ import org.junit.Test;
  *
  * @author Lucas Ponce
  */
-public abstract class DefinitionsTest {
+public abstract class PersistenceTest {
 
     /*
         TenantId = 28026b36-8fe4-4332-84c8-524e173a68bf
@@ -1078,13 +1078,13 @@ public abstract class DefinitionsTest {
     @Test
     public void test0060BasicActionsHistory() throws Exception {
         for (int i = 0; i < 107; i++) {
-            Alert testAlert = new Alert("my-organization", "test-trigger", Severity.CRITICAL, null);
+            Alert testAlert = new Alert(TEST_TENANT, "test-trigger", Severity.CRITICAL, null);
             Action action = new Action(testAlert.getTenantId(), "testplugin", "send-to-this-groups", testAlert);
             Thread.sleep(2);
             actionsService.send(action);
         }
 
-        List<Action> actions = actionsService.getActions("my-organization", null, null);
+        List<Action> actions = actionsService.getActions(TEST_TENANT, null, null);
         assertEquals(107, actions.size());
     }
 
@@ -1092,7 +1092,7 @@ public abstract class DefinitionsTest {
     public void test0070SearchActionsHistory() throws Exception {
         for (int i = 0; i < 10; i++) {
             Alert testAlert = new Alert();
-            testAlert.setTenantId("my-organization");
+            testAlert.setTenantId(TEST_TENANT);
             testAlert.setTriggerId("test-trigger");
             testAlert.setSeverity(Severity.CRITICAL);
             testAlert.setCtime(i);
@@ -1115,68 +1115,68 @@ public abstract class DefinitionsTest {
             actionsService.send(action4);
         }
 
-        List<Action> actions = actionsService.getActions("my-organization", null, null);
+        List<Action> actions = actionsService.getActions(TEST_TENANT, null, null);
         assertEquals(10 * 4, actions.size());
 
         ActionsCriteria criteria = new ActionsCriteria();
         criteria.setStartTime(2L);
 
-        actions = actionsService.getActions("my-organization", criteria, null);
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
         assertEquals(8 * 4, actions.size());
 
         criteria.setStartTime(2L);
         criteria.setEndTime(3L);
 
-        actions = actionsService.getActions("my-organization", criteria, null);
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
         assertEquals(2 * 4, actions.size());
 
         criteria = new ActionsCriteria();
         criteria.setActionPlugin("plugin1");
 
-        actions = actionsService.getActions("my-organization", criteria, null);
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
         assertEquals(10 * 2, actions.size());
 
         criteria = new ActionsCriteria();
         criteria.setActionPlugins(Arrays.asList("plugin1", "plugin2"));
 
-        actions = actionsService.getActions("my-organization", criteria, null);
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
         assertEquals(10 * 4, actions.size());
 
         criteria = new ActionsCriteria();
         criteria.setActionId("action1");
-        actions = actionsService.getActions("my-organization", criteria, null);
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
         assertEquals(10 * 2, actions.size());
 
         criteria = new ActionsCriteria();
         criteria.setActionIds(Arrays.asList("action1", "action2"));
-        actions = actionsService.getActions("my-organization", criteria, null);
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
         assertEquals(10 * 4, actions.size());
 
         criteria = new ActionsCriteria();
         criteria.setAlertId("test-alert1");
-        actions = actionsService.getActions("my-organization", criteria, null);
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
         assertEquals(1 * 4, actions.size());
 
         criteria = new ActionsCriteria();
         criteria.setAlertIds(Arrays.asList("test-alert1", "test-alert2", "test-alert3"));
-        actions = actionsService.getActions("my-organization", criteria, null);
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
         assertEquals(3 * 4, actions.size());
 
         criteria = new ActionsCriteria();
         criteria.setResult("result1");
-        actions = actionsService.getActions("my-organization", criteria, null);
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
         assertEquals(10 * 1, actions.size());
 
         criteria = new ActionsCriteria();
         criteria.setResults(Arrays.asList("result1", "result2"));
-        actions = actionsService.getActions("my-organization", criteria, null);
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
         assertEquals(10 * 2, actions.size());
 
         criteria = new ActionsCriteria();
         criteria.setStartTime(2L);
         criteria.setActionPlugin("plugin1");
         criteria.setActionId("action1");
-        actions = actionsService.getActions("my-organization", criteria, null);
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
         assertEquals(8 * 1, actions.size());
     }
 
@@ -1184,7 +1184,7 @@ public abstract class DefinitionsTest {
     public void test0080PaginationActionsHistory() throws Exception {
         for (int i = 0; i < 103; i++) {
             Alert testAlert = new Alert();
-            testAlert.setTenantId("my-organization");
+            testAlert.setTenantId(TEST_TENANT);
             testAlert.setTriggerId("test-trigger");
             testAlert.setSeverity(Severity.CRITICAL);
             testAlert.setCtime(i);
@@ -1207,14 +1207,14 @@ public abstract class DefinitionsTest {
             actionsService.send(action4);
         }
 
-        List<Action> actions = actionsService.getActions("my-organization", null, null);
+        List<Action> actions = actionsService.getActions(TEST_TENANT, null, null);
         assertEquals(103 * 4, actions.size());
 
         Pager pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByAscending(ActionComparator.Field.ALERT_ID.getText()).build();
 
         System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
-        Page<Action> page = actionsService.getActions("my-organization", null, pager);
+        Page<Action> page = actionsService.getActions(TEST_TENANT, null, pager);
         System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         Action firstAction = page.get(0);
@@ -1225,7 +1225,7 @@ public abstract class DefinitionsTest {
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
             System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
-            page = actionsService.getActions("my-organization", null, pager);
+            page = actionsService.getActions(TEST_TENANT, null, pager);
             System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
@@ -1239,7 +1239,7 @@ public abstract class DefinitionsTest {
                 .orderByDescending(ActionComparator.Field.RESULT.getText()).build();
 
         System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
-        page = actionsService.getActions("my-organization", null, pager);
+        page = actionsService.getActions(TEST_TENANT, null, pager);
         System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstAction = page.get(0);
@@ -1250,7 +1250,7 @@ public abstract class DefinitionsTest {
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
             System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
-            page = actionsService.getActions("my-organization", null, pager);
+            page = actionsService.getActions(TEST_TENANT, null, pager);
             System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
@@ -1260,5 +1260,4 @@ public abstract class DefinitionsTest {
 
         assertTrue(firstAction.getResult().compareTo(lastAction.getResult()) > 0);
     }
-
 }

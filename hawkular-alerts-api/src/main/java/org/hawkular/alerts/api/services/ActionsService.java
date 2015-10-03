@@ -52,7 +52,6 @@ public interface ActionsService {
     void addListener(ActionListener listener);
 
     /**
-     *
      * @param tenantId Tenant where actions are stored
      * @param criteria If null returns all actions (not recommended)
      * @param pager Paging requirement for fetching actions. Optional. Return all if null.
@@ -60,4 +59,14 @@ public interface ActionsService {
      * @throws Exception
      */
     Page<Action> getActions(String tenantId, ActionsCriteria criteria, Pager pager) throws Exception;
+
+    /**
+     * Delete the requested Actions from the history, as described by the provided criteria.
+     *
+     * @param tenantId
+     * @param criteria
+     * @return
+     * @throws Exception
+     */
+    int deleteActions(String tenantId, ActionsCriteria criteria) throws Exception;
 }
