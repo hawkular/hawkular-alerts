@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * A Trigger definition can be linked with a list of actions.
  *
  * Alert engine only needs to know an action id and message/payload.
- * Action payload can optionally have an alert as payload.
+ * Action payload must have an alert as payload.
  *
  * Action plugins will be responsible to process the action according its own plugin configuration.
  *
