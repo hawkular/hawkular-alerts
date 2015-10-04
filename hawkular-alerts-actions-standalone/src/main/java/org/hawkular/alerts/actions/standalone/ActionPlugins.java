@@ -137,10 +137,10 @@ public class ActionPlugins {
             }
         }
         if (sender != null) {
-            ActionPluginSender busSender = new StandaloneActionPluginSender(actionPlugin);
+            ActionPluginSender standaloneSender = new StandaloneActionPluginSender(actionPlugin);
             sender.setAccessible(true);
-            sender.set(pluginInstance, busSender);
-            senders.put(actionPlugin, busSender);
+            sender.set(pluginInstance, standaloneSender);
+            senders.put(actionPlugin, standaloneSender);
         }
     }
 
