@@ -18,6 +18,9 @@ package org.hawkular.alerts.actions.standalone;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import javax.naming.InitialContext;
 
@@ -35,16 +38,21 @@ import org.jboss.logging.Logger;
  */
 public class StandaloneActionPluginListener implements ActionListener {
     public static final String DEFINITIONS_SERVICE = "java:app/hawkular-alerts-rest/CassDefinitionsServiceImpl";
+    private static final String NUM_THREADS = "hawkular-alerts.standalone-actions-threads";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(StandaloneActionPluginListener.class);
 
     private InitialContext ctx;
     private DefinitionsService definitions;
 
+    ExecutorService executorService;
+
     private Map<String, ActionPluginListener> plugins;
 
     public StandaloneActionPluginListener(Map<String, ActionPluginListener> plugins) {
         this.plugins = plugins;
+        int numThreads = Integer.parseInt(System.getProperty(NUM_THREADS, "10"));
+        executorService = Executors.newFixedThreadPool(numThreads, new StandaloneThreadFactory());
     }
 
     @Override
@@ -75,8 +83,15 @@ public class StandaloneActionPluginListener implements ActionListener {
                 action.setProperties(mixedProps);
 
                 ActionMessage pluginMessage = new StandaloneActionMessage(action);
-
-                plugin.process(pluginMessage);
+                Runnable runnable = () -> {
+                    try {
+                        plugin.process(pluginMessage);
+                    } catch (Exception e) {
+                        log.debug("Error processing action: " + action.getActionPlugin(), e);
+                        msgLog.errorProcessingAction(e.getMessage());
+                    }
+                };
+                executorService.execute(runnable);
             } else {
                 msgLog.warnCannotAccessToDefinitionsService();
             }
@@ -84,7 +99,6 @@ public class StandaloneActionPluginListener implements ActionListener {
             log.debug("Error processing action: " + action.getActionPlugin(), e);
             msgLog.errorProcessingAction(e.getMessage());
         }
-
     }
 
     private void init() throws Exception {
@@ -93,6 +107,12 @@ public class StandaloneActionPluginListener implements ActionListener {
         }
         if (definitions == null) {
             definitions = (DefinitionsService) ctx.lookup(DEFINITIONS_SERVICE);
+        }
+    }
+
+    public void close() {
+        if (executorService != null) {
+            executorService.shutdown();
         }
     }
 
@@ -107,5 +127,15 @@ public class StandaloneActionPluginListener implements ActionListener {
             }
         }
         return mixed;
+    }
+
+    public class StandaloneThreadFactory implements ThreadFactory {
+        private int counter = 0;
+        private static final String PREFIX = "standalone-action-";
+
+        @Override
+        public Thread newThread(Runnable r) {
+            return new Thread(r, PREFIX + counter++);
+        }
     }
 }

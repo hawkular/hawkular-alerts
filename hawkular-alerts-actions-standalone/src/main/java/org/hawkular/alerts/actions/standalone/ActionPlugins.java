@@ -27,10 +27,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.ActionPluginSender;
 import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.actions.api.Sender;
+import org.hawkular.alerts.api.services.ActionsService;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -39,6 +43,10 @@ import org.jboss.vfs.VirtualFile;
  * @author Lucas Ponce
  */
 public class ActionPlugins {
+    public static final String ACTIONS_SERVICE = "java:global/hawkular-alerts-rest/CassActionsServiceImpl";
+
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private ActionsService actions;
     private static ActionPlugins instance;
     private Map<String, ActionPluginListener> plugins;
     private Map<String, ActionPluginSender> senders;
@@ -61,6 +69,7 @@ public class ActionPlugins {
         try {
             plugins = new HashMap<>();
             senders = new HashMap<>();
+            init();
             List<URL> webInfUrls = getWebInfUrls();
             for (URL webInfUrl : webInfUrls) {
                 List<Class> pluginClasses = findAnnotationInClasses(webInfUrl, Plugin.class);
@@ -137,12 +146,23 @@ public class ActionPlugins {
             }
         }
         if (sender != null) {
-            ActionPluginSender standaloneSender = new StandaloneActionPluginSender(actionPlugin);
+            ActionPluginSender standaloneSender = new StandaloneActionPluginSender(actions);
             sender.setAccessible(true);
             sender.set(pluginInstance, standaloneSender);
             senders.put(actionPlugin, standaloneSender);
         }
     }
 
+    private void init() {
+        if (actions == null) {
+            try {
+                InitialContext ctx = new InitialContext();
+                actions = (ActionsService)ctx.lookup(ACTIONS_SERVICE);
+            } catch (NamingException e) {
+                msgLog.error("Cannot access to JNDI context", e);
+            }
+
+        }
+    }
 
 }

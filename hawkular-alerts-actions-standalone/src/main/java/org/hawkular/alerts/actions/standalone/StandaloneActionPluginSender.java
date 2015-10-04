@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.actions.standalone;
 
-import javax.naming.InitialContext;
-
 import org.hawkular.alerts.actions.api.ActionPluginSender;
 import org.hawkular.alerts.actions.api.OperationMessage;
 import org.hawkular.alerts.actions.api.OperationMessage.Operation;
@@ -33,26 +31,13 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class StandaloneActionPluginSender implements ActionPluginSender {
-    public static final String ACTIONS_SERVICE = "java:app/hawkular-alerts-rest/CassActionsServiceImpl";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(StandaloneActionPluginListener.class);
 
-    private InitialContext ctx;
     private ActionsService actions;
 
-    private String actionPlugin;
-
-    public StandaloneActionPluginSender(String actionPlugin) {
-        this.actionPlugin = actionPlugin;
-    }
-
-    private void init() throws Exception {
-        if (ctx == null) {
-            ctx = new InitialContext();
-        }
-        if (actions == null) {
-            actions = (ActionsService) ctx.lookup(ACTIONS_SERVICE);
-        }
+    public StandaloneActionPluginSender(ActionsService actions) {
+        this.actions = actions;
     }
 
     @Override
@@ -65,7 +50,6 @@ public class StandaloneActionPluginSender implements ActionPluginSender {
 
     @Override
     public void send(OperationMessage msg) throws Exception {
-        init();
         log.debugf("Message received: [%s]", msg);
         if (msg != null && msg.getPayload().containsKey("action")) {
             String jsonAction = msg.getPayload().get("action");

@@ -16,10 +16,12 @@
  */
 package org.hawkular.alerts.actions.standalone;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
@@ -31,6 +33,7 @@ import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.jboss.logging.Logger;
 
 /**
  * Main standalone register for plugins implementations
@@ -44,9 +47,12 @@ public class StandaloneActionPluginRegister {
     public static final String DEFINITIONS_SERVICE = "java:global/hawkular-alerts-rest/CassDefinitionsServiceImpl";
     public static final String ACTIONS_SERVICE = "java:global/hawkular-alerts-rest/CassActionsServiceImpl";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final Logger log = Logger.getLogger(StandaloneActionPluginRegister.class);
 
     DefinitionsService definitions;
     ActionsService actions;
+
+    Set<ActionListener> actionListeners = new HashSet<>();
 
     @PostConstruct
     public void init() {
@@ -71,10 +77,24 @@ public class StandaloneActionPluginRegister {
                 }
                 ActionListener actionListener = new StandaloneActionPluginListener(ActionPlugins.getPlugins());
                 actions.addListener(actionListener);
+                actionListeners.add(actionListener);
                 msgLog.infoActionPluginRegistration(actionPlugin);
             } catch (Exception e) {
                 msgLog.errorCannotRegisterPlugin(actionPlugin, e.getMessage());
             }
         }
+    }
+
+    @PreDestroy
+    public void close() {
+        actionListeners.stream().forEach(a -> {
+            try {
+                if (a instanceof StandaloneActionPluginListener) {
+                    ((StandaloneActionPluginListener)a).close();
+                }
+            } catch (Exception e) {
+                log.debugf(e.getMessage(), e);
+            }
+        });
     }
 }
