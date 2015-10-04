@@ -76,16 +76,17 @@ public class JsonTest {
         alert.setEvalSets(list);
 
         incomingAction = new Action(TEST_TENANT, "testPlugin", "testActionId", alert);
+        Map<String, String> props = new HashMap<>();
+        props.put("k1", "v1");
+        props.put("k2", "v2");
+        incomingAction.setProperties(props);
     }
 
 
     @Test
     public void jsonPluginMessage() throws Exception {
 
-        Map<String, String> props = new HashMap<>();
-        props.put("k1", "v1");
-        props.put("k2", "v2");
-        ActionMessage msg = new TestActionMessage(incomingAction, props);
+        ActionMessage msg = new TestActionMessage(incomingAction);
 
         String json = objectMapper.writeValueAsString(msg);
 
@@ -93,31 +94,24 @@ public class JsonTest {
 
         ActionMessage newMsg = objectMapper.readValue(json, TestActionMessage.class);
 
-        assertEquals("v2", newMsg.getProperties().get("k2"));
+        assertEquals("v2", newMsg.getAction().getProperties().get("k2"));
         assertEquals("trigger-test", newMsg.getAction().getAlert().getTriggerId());
     }
 
     public static class TestActionMessage implements ActionMessage {
 
         Action action;
-        Map<String, String> properties;
 
         public TestActionMessage() {
         }
 
-        public TestActionMessage(Action action, Map<String, String> properties) {
+        public TestActionMessage(Action action) {
             this.action = action;
-            this.properties = properties;
         }
 
         @Override
         public Action getAction() {
             return action;
-        }
-
-        @Override
-        public Map<String, String> getProperties() {
-            return properties;
         }
     }
 

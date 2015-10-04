@@ -58,7 +58,8 @@ public class WebRequestsResponseTimeEmailTest extends CommonTest {
 
         Action openAction = new Action(openAlert.getTriggerId(), "email", "email-to-test", openAlert);
 
-        ActionMessage openMessage = new TestActionMessage(openAction, properties);
+        openAction.setProperties(properties);
+        ActionMessage openMessage = new TestActionMessage(openAction);
 
         Message email = plugin.createMimeMessage(openMessage);
         assertNotNull(email);
@@ -72,7 +73,8 @@ public class WebRequestsResponseTimeEmailTest extends CommonTest {
 
         Action ackAction = new Action(ackAlert.getTriggerId(), "email", "email-to-test", ackAlert);
 
-        ActionMessage ackMessage = new TestActionMessage(ackAction, properties);
+        ackAction.setProperties(properties);
+        ActionMessage ackMessage = new TestActionMessage(ackAction);
 
         Message email = plugin.createMimeMessage(ackMessage);
         assertNotNull(email);
@@ -87,7 +89,8 @@ public class WebRequestsResponseTimeEmailTest extends CommonTest {
 
         Action resolvedAction = new Action(resolvedAlert.getTriggerId(), "email", "email-to-test", resolvedAlert);
 
-        ActionMessage resolvedMessage = new TestActionMessage(resolvedAction, properties);
+        resolvedAction.setProperties(properties);
+        ActionMessage resolvedMessage = new TestActionMessage(resolvedAction);
 
         Message email = plugin.createMimeMessage(resolvedMessage);
         assertNotNull(email);

@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.action;
 
+import java.util.Map;
+
 import org.hawkular.alerts.api.model.condition.Alert;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -50,6 +52,9 @@ public class Action {
 
     @JsonInclude
     private long ctime;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private Map<String, String> properties;
 
     @JsonInclude(Include.NON_NULL)
     private String result;
@@ -112,6 +117,14 @@ public class Action {
         this.result = result;
     }
 
+    public Map<String, String> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Map<String, String> properties) {
+        this.properties = properties;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -119,18 +132,21 @@ public class Action {
 
         Action action = (Action) o;
 
-        if (!tenantId.equals(action.tenantId)) return false;
-        if (!actionPlugin.equals(action.actionPlugin)) return false;
-        if (!actionId.equals(action.actionId)) return false;
-        return alert.equals(action.alert);
-
+        if (ctime != action.ctime) return false;
+        if (tenantId != null ? !tenantId.equals(action.tenantId) : action.tenantId != null) return false;
+        if (actionPlugin != null ? !actionPlugin.equals(action.actionPlugin) : action.actionPlugin != null)
+            return false;
+        if (actionId != null ? !actionId.equals(action.actionId) : action.actionId != null) return false;
+        return !(alert != null ? !alert.equals(action.alert) : action.alert != null);
     }
 
     @Override
     public int hashCode() {
-        int result = tenantId.hashCode();
-        result = 31 * result + actionPlugin.hashCode();
-        result = 31 * result + actionId.hashCode();
+        int result = tenantId != null ? tenantId.hashCode() : 0;
+        result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
+        result = 31 * result + (actionId != null ? actionId.hashCode() : 0);
+        result = 31 * result + (alert != null ? alert.hashCode() : 0);
+        result = 31 * result + (int) (ctime ^ (ctime >>> 32));
         return result;
     }
 
@@ -142,6 +158,7 @@ public class Action {
                 ", actionId='" + actionId + '\'' +
                 ", alert=" + alert +
                 ", ctime=" + ctime +
+                ", properties=" + properties +
                 ", result='" + result + '\'' +
                 '}';
     }

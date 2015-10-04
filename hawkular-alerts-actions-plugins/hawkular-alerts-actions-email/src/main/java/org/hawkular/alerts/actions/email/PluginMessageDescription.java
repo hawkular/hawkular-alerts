@@ -200,11 +200,11 @@ public class PluginMessageDescription {
         if (pm.getAction() == null) {
             throw new IllegalArgumentException("Action cannot be null on PluginMessage");
         }
-        if (pm.getProperties() == null) {
+        if (pm.getAction().getProperties() == null) {
             throw new IllegalArgumentException("Properties cannot be null on PluginMessage");
         }
         alert = pm.getAction().getAlert();
-        props = pm.getProperties();
+        props = pm.getAction().getProperties();
         if (alert != null && alert.getStatus() != null) {
             status = alert.getStatus().name().toLowerCase();
             emailSubject = "Alert [" + status + "] message";

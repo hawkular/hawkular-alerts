@@ -72,7 +72,9 @@ public class StandaloneActionPluginListener implements ActionListener {
                 Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
                 Map<String, String> mixedProps = mixProperties(properties, defaultProperties);
 
-                ActionMessage pluginMessage = new StandaloneActionMessage(action, mixedProps);
+                action.setProperties(mixedProps);
+
+                ActionMessage pluginMessage = new StandaloneActionMessage(action);
 
                 plugin.process(pluginMessage);
             } else {

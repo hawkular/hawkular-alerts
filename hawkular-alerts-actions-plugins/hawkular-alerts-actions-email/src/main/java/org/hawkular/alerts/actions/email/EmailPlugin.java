@@ -274,7 +274,7 @@ public class EmailPlugin implements ActionPluginListener {
     protected Message createMimeMessage(ActionMessage msg) throws Exception {
         Message email = new EmailMimeMessage(mailSession);
 
-        Map<String, String> props = msg.getProperties();
+        Map<String, String> props = msg.getAction().getProperties();
         if (null == props || props.isEmpty()) {
             msgLog.warn("Properties empty on plugin " + PLUGIN_NAME);
         }

@@ -73,8 +73,8 @@ public class AerogearPlugin implements ActionPluginListener {
         }
 
         UnifiedMessage.MessageBuilder alert = UnifiedMessage.withMessage().alert(prepareMessage(msg));
-        if (msg.getProperties() != null) {
-            String alias = msg.getProperties().get("alias");
+        if (msg.getAction().getProperties() != null) {
+            String alias = msg.getAction().getProperties().get("alias");
             if (!isBlank(alias)) {
                 alert.config().criteria().aliases(alias);
             }

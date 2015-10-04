@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.actions.standalone;
 
-import java.util.Map;
-
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.api.model.action.Action;
 
@@ -27,20 +25,13 @@ import org.hawkular.alerts.api.model.action.Action;
 public class StandaloneActionMessage implements ActionMessage {
 
     Action action;
-    Map<String, String> properties;
 
-    public StandaloneActionMessage(Action action, Map<String, String> properties) {
+    public StandaloneActionMessage(Action action) {
         this.action = action;
-        this.properties = properties;
     }
 
     @Override
     public Action getAction() {
         return action;
-    }
-
-    @Override
-    public Map<String, String> getProperties() {
-        return properties;
     }
 }

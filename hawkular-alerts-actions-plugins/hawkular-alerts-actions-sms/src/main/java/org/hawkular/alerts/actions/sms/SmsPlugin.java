@@ -80,7 +80,7 @@ public class SmsPlugin implements ActionPluginListener {
             msgLog.errorCannotProcessMessage("sms", "Plugin is not started");
             return;
         }
-        Map<String, String> properties = msg.getProperties();
+        Map<String, String> properties = msg.getAction().getProperties();
         if (properties == null || properties.isEmpty()) {
             msgLog.errorCannotProcessMessage("sms", "Missing message properties");
             return;

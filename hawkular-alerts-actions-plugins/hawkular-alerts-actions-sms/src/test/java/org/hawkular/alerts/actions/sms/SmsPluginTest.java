@@ -64,21 +64,14 @@ public class SmsPluginTest {
 
     public static class TestActionMessage implements ActionMessage {
         Action action;
-        Map<String, String> properties;
 
-        public TestActionMessage(Action action, Map<String, String> properties) {
+        public TestActionMessage(Action action) {
             this.action = action;
-            this.properties = properties;
         }
 
         @Override
         public Action getAction() {
             return action;
-        }
-
-        @Override
-        public Map<String, String> getProperties() {
-            return properties;
         }
     }
 
@@ -122,7 +115,8 @@ public class SmsPluginTest {
 
         Map<String, String> properties = new HashMap<>();
         properties.put("phone", phoneTo);
-        testMessage = new TestActionMessage(incomingAction, properties);
+        incomingAction.setProperties(properties);
+        testMessage = new TestActionMessage(incomingAction);
     }
 
     private MessageFactory messageFactory;

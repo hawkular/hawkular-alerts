@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.bus.api;
 
-import java.util.Map;
-
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.bus.common.BasicMessage;
@@ -34,24 +32,15 @@ public class BusActionMessage extends BasicMessage implements ActionMessage {
     @JsonInclude
     Action action;
 
-    @JsonInclude
-    Map<String, String> properties;
-
     public BusActionMessage() {
     }
 
-    public BusActionMessage(Action action, Map<String, String> properties) {
+    public BusActionMessage(Action action) {
         this.action = action;
-        this.properties = properties;
     }
 
     @Override
     public Action getAction() {
         return action;
-    }
-
-    @Override
-    public Map<String, String> getProperties() {
-        return properties;
     }
 }

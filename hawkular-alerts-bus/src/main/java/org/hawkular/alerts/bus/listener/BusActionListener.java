@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.bus.sender;
+package org.hawkular.alerts.bus.listener;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -77,7 +77,9 @@ public class BusActionListener implements ActionListener {
                 Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
                 Map<String, String> mixedProps = mixProperties(properties, defaultProperties);
 
-                BusActionMessage pluginMessage = new BusActionMessage(action, mixedProps);
+                action.setProperties(mixedProps);
+
+                BusActionMessage pluginMessage = new BusActionMessage(action);
                 MessageId mid = new MessageProcessor().send(pcc, pluginMessage);
                 log.debug("Sent action message [" + mid.getId() + "] to the bus");
             } else {

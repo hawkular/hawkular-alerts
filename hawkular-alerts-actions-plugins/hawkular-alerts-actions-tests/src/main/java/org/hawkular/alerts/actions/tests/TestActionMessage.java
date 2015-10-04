@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.actions.tests;
 
-import java.util.Map;
-
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.api.model.action.Action;
 
@@ -29,20 +27,13 @@ import org.hawkular.alerts.api.model.action.Action;
  */
 public class TestActionMessage implements ActionMessage {
     Action action;
-    Map<String, String> properties;
 
-    public TestActionMessage(Action action, Map<String, String> properties) {
+    public TestActionMessage(Action action) {
         this.action = action;
-        this.properties = properties;
     }
 
     @Override
     public Action getAction() {
         return action;
-    }
-
-    @Override
-    public Map<String, String> getProperties() {
-        return properties;
     }
 }

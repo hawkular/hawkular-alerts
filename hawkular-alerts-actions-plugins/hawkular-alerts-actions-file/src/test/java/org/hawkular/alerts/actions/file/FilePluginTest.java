@@ -62,11 +62,9 @@ public class FilePluginTest {
 
     public static class TestActionMessage implements ActionMessage {
         Action action;
-        Map<String, String> properties;
 
-        public TestActionMessage(Action action, Map<String, String> properties) {
+        public TestActionMessage(Action action) {
             this.action = action;
-            this.properties = properties;
         }
 
         @Override
@@ -74,10 +72,6 @@ public class FilePluginTest {
             return action;
         }
 
-        @Override
-        public Map<String, String> getProperties() {
-            return properties;
-        }
     }
 
     @BeforeClass
@@ -122,7 +116,8 @@ public class FilePluginTest {
 
         Action openThresholdAction = new Action(tenantId, "email", "email-to-test", rtAlertOpen);
 
-        openThresholdMsg = new TestActionMessage(openThresholdAction, props);
+        openThresholdAction.setProperties(props);
+        openThresholdMsg = new TestActionMessage(openThresholdAction);
 
         Alert rtAlertAck = new Alert(rtTrigger.getTenantId(), rtTrigger.getId(), rtTrigger.getSeverity(),
                 getEvalList(rtFiringCondition, rtBadData));
@@ -135,7 +130,8 @@ public class FilePluginTest {
 
         Action ackThresholdAction = new Action(tenantId, "email", "email-to-test", rtAlertAck);
 
-        ackThresholdMsg = new TestActionMessage(ackThresholdAction, props);
+        ackThresholdAction.setProperties(props);
+        ackThresholdMsg = new TestActionMessage(ackThresholdAction);
 
         /*
             Demo good data to resolve a threshold alert
@@ -154,7 +150,8 @@ public class FilePluginTest {
 
         Action resolvedThresholdAction = new Action(tenantId, "email", "email-to-test", rtAlertResolved);
 
-        resolvedThresholdMsg = new TestActionMessage(resolvedThresholdAction, props);
+        resolvedThresholdAction.setProperties(props);
+        resolvedThresholdMsg = new TestActionMessage(resolvedThresholdAction);
 
         /*
             Alert definition for availability
@@ -190,7 +187,8 @@ public class FilePluginTest {
 
         Action openAvailabilityAction = new Action(tenantId, "email", "email-to-test", avAlertOpen);
 
-        openAvailMsg = new TestActionMessage(openAvailabilityAction, props);
+        openAvailabilityAction.setProperties(props);
+        openAvailMsg = new TestActionMessage(openAvailabilityAction);
 
         Alert avAlertAck = new Alert(avTrigger.getTenantId(), avTrigger.getId(), avTrigger.getSeverity(),
                 getEvalList(avFiringCondition, avBadData));
@@ -203,7 +201,8 @@ public class FilePluginTest {
 
         Action ackAvailabilityAction = new Action(tenantId, "email", "email-to-test", avAlertAck);
 
-        ackAvailMsg = new TestActionMessage(ackAvailabilityAction, props);
+        ackAvailabilityAction.setProperties(props);
+        ackAvailMsg = new TestActionMessage(ackAvailabilityAction);
 
         /*
             Demo good data to resolve a availability alert
@@ -223,7 +222,8 @@ public class FilePluginTest {
 
         Action resolvedAvailabilityAction = new Action(tenantId, "email", "email-to-test", avAlertResolved);
 
-        resolvedAvailMsg = new TestActionMessage(resolvedAvailabilityAction, props);
+        resolvedAvailabilityAction.setProperties(props);
+        resolvedAvailMsg = new TestActionMessage(resolvedAvailabilityAction);
 
         /*
             Alert definition for two conditions
@@ -269,7 +269,8 @@ public class FilePluginTest {
 
         Action openTwoCondAction = new Action(tenantId, "email", "email-to-test", mixAlertOpen);
 
-        openTwoCondMsg = new TestActionMessage(openTwoCondAction, props);
+        openTwoCondAction.setProperties(props);
+        openTwoCondMsg = new TestActionMessage(openTwoCondAction);
 
         Alert mixAlertAck = new Alert(mixTrigger.getTenantId(), mixTrigger.getId(), mixTrigger.getSeverity(),
                 getEvalList(mixConditions, mixBadData));
@@ -282,7 +283,8 @@ public class FilePluginTest {
 
         Action ackTwoCondAction = new Action(tenantId, "email", "email-to-test", mixAlertAck);
 
-        ackTwoCondMsg = new TestActionMessage(ackTwoCondAction, props);
+        ackTwoCondAction.setProperties(props);
+        ackTwoCondMsg = new TestActionMessage(ackTwoCondAction);
 
         /*
             Demo good data for two conditions
@@ -310,7 +312,8 @@ public class FilePluginTest {
 
         Action resolvedTwoCondAction = new Action(tenantId, "email", "email-to-test", mixAlertResolved);
 
-        resolvedTwoCondMsg = new TestActionMessage(resolvedTwoCondAction, props);
+        resolvedTwoCondAction.setProperties(props);
+        resolvedTwoCondMsg = new TestActionMessage(resolvedTwoCondAction);
     }
 
     private static List<Set<ConditionEval>> getEvalList(Condition condition, Data data) {

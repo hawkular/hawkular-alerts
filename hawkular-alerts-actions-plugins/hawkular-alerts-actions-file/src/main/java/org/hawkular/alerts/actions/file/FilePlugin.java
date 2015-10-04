@@ -65,7 +65,7 @@ public class FilePlugin implements ActionPluginListener {
             msgLog.warnMessageReceivedWithoutPayload("file");
         }
 
-        String path = msg.getProperties() != null ? msg.getProperties().get("path") : null;
+        String path = msg.getAction().getProperties() != null ? msg.getAction().getProperties().get("path") : null;
         path = path == null ? defaultProperties.get("path") : path;
         path = path == null ? System.getProperty("user.home") : path;
 

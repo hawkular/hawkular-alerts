@@ -57,21 +57,14 @@ public class PagerDutyPluginTest {
 
     public static class TestActionMessage implements ActionMessage {
         Action action;
-        Map<String, String> properties;
 
         public TestActionMessage(Action action, Map<String, String> properties) {
             this.action = action;
-            this.properties = properties;
         }
 
         @Override
         public Action getAction() {
             return action;
-        }
-
-        @Override
-        public Map<String, String> getProperties() {
-            return properties;
         }
     }
 

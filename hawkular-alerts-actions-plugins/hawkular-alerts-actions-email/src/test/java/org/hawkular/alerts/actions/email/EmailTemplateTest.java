@@ -65,7 +65,8 @@ public class EmailTemplateTest {
     public void loadTemplatesFromPropertiesTest() throws Exception {
         Alert openAlert = JvmGarbageCollectionData.getOpenAlert();
         Action openAction = new Action(openAlert.getTriggerId(), "email", "email-to-test", openAlert);
-        ActionMessage openMessage = new TestActionMessage(openAction, properties);
+        openAction.setProperties(properties);
+        ActionMessage openMessage = new TestActionMessage(openAction);
 
         properties.put("template.plain", "Tiny template: ${emailSubject}");
 
@@ -83,7 +84,8 @@ public class EmailTemplateTest {
     public void loadTemplatesFromPropertiesWithLocaleTest() throws Exception {
         Alert openAlert = JvmGarbageCollectionData.getOpenAlert();
         Action openAction = new Action(openAlert.getTriggerId(), "email", "email-to-test", openAlert);
-        ActionMessage openMessage = new TestActionMessage(openAction, properties);
+        openAction.setProperties(properties);
+        ActionMessage openMessage = new TestActionMessage(openAction);
 
         // This template can be defined as default at plugin level
         properties.put("template.plain", "Tiny template: ${emailSubject}");

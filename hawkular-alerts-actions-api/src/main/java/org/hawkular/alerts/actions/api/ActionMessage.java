@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.actions.api;
 
-import java.util.Map;
-
 import org.hawkular.alerts.api.model.action.Action;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -32,7 +30,4 @@ public interface ActionMessage {
 
     @JsonInclude
     Action getAction();
-
-    @JsonInclude
-    Map<String, String> getProperties();
 }

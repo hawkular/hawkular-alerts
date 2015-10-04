@@ -25,7 +25,7 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.services.ActionsService;
-import org.hawkular.alerts.bus.sender.BusActionListener;
+import org.hawkular.alerts.bus.listener.BusActionListener;
 import org.jboss.logging.Logger;
 
 /**

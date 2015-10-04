@@ -61,21 +61,14 @@ public class AerogearPluginTest {
 
     public static class TestActionMessage implements ActionMessage {
         Action action;
-        Map<String, String> properties;
 
-        public TestActionMessage(Action action, Map<String, String> properties) {
+        public TestActionMessage(Action action) {
             this.action = action;
-            this.properties = properties;
         }
 
         @Override
         public Action getAction() {
             return action;
-        }
-
-        @Override
-        public Map<String, String> getProperties() {
-            return properties;
         }
     }
 
@@ -120,9 +113,10 @@ public class AerogearPluginTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("alias", alias);
 
-        testMessage = new TestActionMessage(incomingAction, properties);
+        incomingAction.setProperties(properties);
+        testMessage = new TestActionMessage(incomingAction);
 
-        testBroadcastMessage = new TestActionMessage(incomingAction, Collections.EMPTY_MAP);
+        testBroadcastMessage = new TestActionMessage(incomingAction);
     }
 
     private PushSender pushSender;
@@ -145,6 +139,7 @@ public class AerogearPluginTest {
 
     @Test
     public void testBroadcast() throws Exception {
+        testBroadcastMessage.getAction().setProperties(Collections.EMPTY_MAP);
         aerogearPlugin.process(testBroadcastMessage);
 
         verify(pushSender, times(1)).send(argThat(UnifiedMessageMatcher.matchesUnifiedMessage(null, preparedMessage)));
