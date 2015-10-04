@@ -42,7 +42,7 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class StandaloneActionPluginRegister {
     public static final String DEFINITIONS_SERVICE = "java:global/hawkular-alerts-rest/CassDefinitionsServiceImpl";
-    public static final String ACTIONS_SERVICE = "java:global/hawkular-alerts-rest/MemActionsServiceImpl";
+    public static final String ACTIONS_SERVICE = "java:global/hawkular-alerts-rest/CassActionsServiceImpl";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
 
     DefinitionsService definitions;
