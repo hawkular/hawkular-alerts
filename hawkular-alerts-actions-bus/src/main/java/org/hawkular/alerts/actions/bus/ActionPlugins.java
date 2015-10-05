@@ -17,6 +17,7 @@
 package org.hawkular.alerts.actions.bus;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -26,8 +27,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.hawkular.alerts.actions.api.ActionPlugin;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -38,6 +41,7 @@ import org.jboss.vfs.VirtualFile;
 public class ActionPlugins {
     private static ActionPlugins instance;
     private Map<String, ActionPluginListener> plugins;
+    private Map<String, ActionPluginSender> senders;
 
     public static synchronized Map<String, ActionPluginListener> getPlugins() {
         if (instance == null) {
@@ -46,18 +50,27 @@ public class ActionPlugins {
         return Collections.unmodifiableMap(instance.plugins);
     }
 
+    public static synchronized Map<String, ActionPluginSender> getSenders() {
+        if (instance == null) {
+            instance = new ActionPlugins();
+        }
+        return Collections.unmodifiableMap(instance.senders);
+    }
+
     private ActionPlugins() {
         try {
             plugins = new HashMap<>();
+            senders = new HashMap<>();
             URL webInfUrl = getWebInfUrl();
-            List<Class> pluginClasses = findAnnotationInClasses(webInfUrl, ActionPlugin.class);
+            List<Class> pluginClasses = findAnnotationInClasses(webInfUrl, Plugin.class);
             for (Class pluginClass : pluginClasses) {
-                Annotation actionPlugin = pluginClass.getDeclaredAnnotation(ActionPlugin.class);
-                if (actionPlugin instanceof ActionPlugin) {
-                    String name = ((ActionPlugin) actionPlugin).name();
+                Annotation actionPlugin = pluginClass.getDeclaredAnnotation(Plugin.class);
+                if (actionPlugin instanceof Plugin) {
+                    String name = ((Plugin) actionPlugin).name();
                     Object newInstance = pluginClass.newInstance();
                     if (newInstance instanceof ActionPluginListener) {
                         ActionPluginListener pluginInstance = (ActionPluginListener)newInstance;
+                        injectActionPluginSender(name, pluginInstance);
                         plugins.put(name, pluginInstance);
                     } else {
                         throw new IllegalStateException("Plugin [" + name + "] is not instance of " +
@@ -102,6 +115,30 @@ public class ActionPlugins {
             }
         }
         return plugins;
+    }
+
+    /*
+        Search and inject ActionPluginSender inside ActionPluginListener
+     */
+    private void injectActionPluginSender(String actionPlugin, ActionPluginListener pluginInstance) throws Exception {
+        if (pluginInstance == null) {
+            throw new IllegalArgumentException("pluginInstance must be not null");
+        }
+        Field[] fields = pluginInstance.getClass().getDeclaredFields();
+        Field sender = null;
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(Sender.class) &&
+                    field.getType().isAssignableFrom(ActionPluginSender.class)) {
+                sender = field;
+                break;
+            }
+        }
+        if (sender != null) {
+            ActionPluginSender busSender = new BusActionPluginSender(actionPlugin);
+            sender.setAccessible(true);
+            sender.set(pluginInstance, busSender);
+            senders.put(actionPlugin, busSender);
+        }
     }
 
 }

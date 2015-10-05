@@ -16,42 +16,50 @@
  */
 package org.hawkular.alerts.bus.api;
 
+import java.util.HashMap;
 import java.util.Map;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
-import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.actions.api.OperationMessage;
 import org.hawkular.bus.common.BasicMessage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * Message send from the alerts engine through the bus and received by the action plugins architecture.
+ * Message sent from the actions plugins through the bus and received by the alerts engine
  *
+ * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class BusPluginMessage extends BasicMessage implements PluginMessage {
+public class BusOperationMessage extends BasicMessage implements OperationMessage {
 
     @JsonInclude
-    Action action;
+    Operation operation;
 
     @JsonInclude
-    Map<String, String> properties;
+    Map<String, String> payload;
 
-    public BusPluginMessage() {
+    public BusOperationMessage() {
+        this.operation = Operation.RESULT;
+        this.payload = new HashMap<>();
     }
 
-    public BusPluginMessage(Action action, Map<String, String> properties) {
-        this.action = action;
-        this.properties = properties;
+    public BusOperationMessage(Operation operation) {
+        this.operation = operation;
+        this.payload = new HashMap<>();
+    }
+
+    public BusOperationMessage(Operation operation, Map<String, String> payload) {
+        this.operation = operation;
+        this.payload = new HashMap<>(payload);
     }
 
     @Override
-    public Action getAction() {
-        return action;
+    public Operation getOperation() {
+        return operation;
     }
 
     @Override
-    public Map<String, String> getProperties() {
-        return properties;
+    public Map<String, String> getPayload() {
+        return payload;
     }
 }

@@ -23,10 +23,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.actions.api.ActionPlugin;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.MsgLogger;
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.api.model.condition.Alert;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  * @author Lucas Ponce
  */
-@ActionPlugin(name = "file")
+@Plugin(name = "file")
 public class FilePlugin implements ActionPluginListener {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
 
@@ -60,12 +60,12 @@ public class FilePlugin implements ActionPluginListener {
     }
 
     @Override
-    public void process(PluginMessage msg) throws Exception {
+    public void process(ActionMessage msg) throws Exception {
         if (msg == null || msg.getAction() == null || msg.getAction().getAlert() == null) {
             msgLog.warnMessageReceivedWithoutPayload("file");
         }
 
-        String path = msg.getProperties() != null ? msg.getProperties().get("path") : null;
+        String path = msg.getAction().getProperties() != null ? msg.getAction().getProperties().get("path") : null;
         path = path == null ? defaultProperties.get("path") : path;
         path = path == null ? System.getProperty("user.home") : path;
 

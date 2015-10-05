@@ -14,33 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.actions.standalone;
+package org.hawkular.alerts.actions.api;
 
-import java.util.Map;
-
-import org.hawkular.alerts.actions.api.PluginMessage;
-import org.hawkular.alerts.api.model.action.Action;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
+ * Define an alerts actions plugin implementation
+ * Plugin must have a unique name that will be used at registration phase
+ * Plugin must implement ActionPluginListener interface
+ *
  * @author Lucas Ponce
  */
-public class StandalonePluginMessage implements PluginMessage {
-
-    Action action;
-    Map<String, String> properties;
-
-    public StandalonePluginMessage(Action action, Map<String, String> properties) {
-        this.action = action;
-        this.properties = properties;
-    }
-
-    @Override
-    public Action getAction() {
-        return action;
-    }
-
-    @Override
-    public Map<String, String> getProperties() {
-        return properties;
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Plugin {
+    String name();
 }

@@ -81,6 +81,9 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 220012, value = "AlertsService cannot be initialized. Msg: [%s]")
     void errorCannotInitializeAlertsService(String msg);
 
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 220013, value = "ActionsService cannot be initialized. Msg: [%s]")
+    void errorCannotInitializeActionsService(String msg);
 
 
 }

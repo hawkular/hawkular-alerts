@@ -128,6 +128,63 @@ CREATE TABLE ${keyspace}.actions (
 
 -- #
 
+CREATE TABLE ${keyspace}.actions_history (
+    tenantId text,
+    actionPlugin text,
+    actionId text,
+    alertId text,
+    ctime bigint,
+    payload text,
+    PRIMARY KEY (tenantId, actionPlugin, actionId, alertId, ctime)
+);
+
+-- #
+
+CREATE TABLE ${keyspace}.actions_history_actions (
+    tenantId text,
+    actionPlugin text,
+    actionId text,
+    alertId text,
+    ctime bigint,
+    PRIMARY KEY (tenantId, actionId, actionPlugin, alertId, ctime)
+);
+
+-- #
+
+CREATE TABLE ${keyspace}.actions_history_alerts (
+    tenantId text,
+    actionPlugin text,
+    actionId text,
+    alertId text,
+    ctime bigint,
+    PRIMARY KEY (tenantId, alertId, actionPlugin, actionId, ctime)
+);
+
+-- #
+
+CREATE TABLE ${keyspace}.actions_history_ctimes (
+    tenantId text,
+    actionPlugin text,
+    actionId text,
+    alertId text,
+    ctime bigint,
+    PRIMARY KEY (tenantId, ctime, actionPlugin, actionId, alertId)
+);
+
+-- #
+
+CREATE TABLE ${keyspace}.actions_history_results (
+    tenantId text,
+    actionPlugin text,
+    actionId text,
+    alertId text,
+    ctime bigint,
+    result text,
+    PRIMARY KEY (tenantId, result, actionPlugin, actionId, alertId, ctime)
+);
+
+-- #
+
 CREATE TABLE ${keyspace}.tags (
     tenantId text,
     type text,

@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.action;
 
+import java.util.Map;
+
 import org.hawkular.alerts.api.model.condition.Alert;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -27,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * A Trigger definition can be linked with a list of actions.
  *
  * Alert engine only needs to know an action id and message/payload.
- * Action payload can optionally have an alert as payload.
+ * Action payload must have an alert as payload.
  *
  * Action plugins will be responsible to process the action according its own plugin configuration.
  *
@@ -46,25 +48,25 @@ public class Action {
     private String actionId;
 
     @JsonInclude(Include.NON_NULL)
-    private String message;
-
-    @JsonInclude(Include.NON_NULL)
     private Alert alert;
 
-    public Action() { }
+    @JsonInclude
+    private long ctime;
 
-    public Action(String tenantId, String actionPlugin, String actionId, String message) {
-        this.tenantId = tenantId;
-        this.actionPlugin = actionPlugin;
-        this.actionId = actionId;
-        this.message = message;
-    }
+    @JsonInclude(Include.NON_EMPTY)
+    private Map<String, String> properties;
+
+    @JsonInclude(Include.NON_NULL)
+    private String result;
+
+    public Action() { }
 
     public Action(String tenantId, String actionPlugin, String actionId, Alert alert) {
         this.tenantId = tenantId;
         this.actionPlugin = actionPlugin;
         this.actionId = actionId;
         this.alert = alert;
+        this.ctime = System.currentTimeMillis();
     }
 
     public String getTenantId() {
@@ -73,14 +75,6 @@ public class Action {
 
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
     }
 
     public String getActionId() {
@@ -107,6 +101,30 @@ public class Action {
         this.alert = alert;
     }
 
+    public long getCtime() {
+        return ctime;
+    }
+
+    public void setCtime(long ctime) {
+        this.ctime = ctime;
+    }
+
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
+
+    public Map<String, String> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Map<String, String> properties) {
+        this.properties = properties;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -114,18 +132,21 @@ public class Action {
 
         Action action = (Action) o;
 
-        if (!tenantId.equals(action.tenantId)) return false;
-        if (!actionPlugin.equals(action.actionPlugin)) return false;
-        if (!actionId.equals(action.actionId)) return false;
-        return alert.equals(action.alert);
-
+        if (ctime != action.ctime) return false;
+        if (tenantId != null ? !tenantId.equals(action.tenantId) : action.tenantId != null) return false;
+        if (actionPlugin != null ? !actionPlugin.equals(action.actionPlugin) : action.actionPlugin != null)
+            return false;
+        if (actionId != null ? !actionId.equals(action.actionId) : action.actionId != null) return false;
+        return !(alert != null ? !alert.equals(action.alert) : action.alert != null);
     }
 
     @Override
     public int hashCode() {
-        int result = tenantId.hashCode();
-        result = 31 * result + actionPlugin.hashCode();
-        result = 31 * result + actionId.hashCode();
+        int result = tenantId != null ? tenantId.hashCode() : 0;
+        result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
+        result = 31 * result + (actionId != null ? actionId.hashCode() : 0);
+        result = 31 * result + (alert != null ? alert.hashCode() : 0);
+        result = 31 * result + (int) (ctime ^ (ctime >>> 32));
         return result;
     }
 
@@ -135,8 +156,10 @@ public class Action {
                 "tenantId='" + tenantId + '\'' +
                 ", actionPlugin='" + actionPlugin + '\'' +
                 ", actionId='" + actionId + '\'' +
-                ", message='" + message + '\'' +
                 ", alert=" + alert +
+                ", ctime=" + ctime +
+                ", properties=" + properties +
+                ", result='" + result + '\'' +
                 '}';
     }
 }

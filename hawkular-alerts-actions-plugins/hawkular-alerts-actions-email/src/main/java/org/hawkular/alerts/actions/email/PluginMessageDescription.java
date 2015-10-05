@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
@@ -68,9 +68,6 @@ public class PluginMessageDescription {
 
     /** Context property "description". Supported at Condition.getContext() level with CompareCondition classes */
     public static final String CONTEXT_PROPERTY_DESCRIPTION2 = "description2";
-
-    /** Shortcut for PluginMessage.getAction().message */
-    private String message;
 
     /** Shortcut for PluginMessage.getAction().alert */
     private Alert alert;
@@ -196,19 +193,18 @@ public class PluginMessageDescription {
      *
      * @param pm the PluginMessage
      */
-    public PluginMessageDescription(PluginMessage pm) {
+    public PluginMessageDescription(ActionMessage pm) {
         if (pm == null) {
             throw new IllegalArgumentException("PluginMessage cannot be null");
         }
         if (pm.getAction() == null) {
             throw new IllegalArgumentException("Action cannot be null on PluginMessage");
         }
-        if (pm.getProperties() == null) {
+        if (pm.getAction().getProperties() == null) {
             throw new IllegalArgumentException("Properties cannot be null on PluginMessage");
         }
-        message = pm.getAction().getMessage();
         alert = pm.getAction().getAlert();
-        props = pm.getProperties();
+        props = pm.getAction().getProperties();
         if (alert != null && alert.getStatus() != null) {
             status = alert.getStatus().name().toLowerCase();
             emailSubject = "Alert [" + status + "] message";
@@ -606,14 +602,6 @@ public class PluginMessageDescription {
 
     public void setEmailSubject(String emailSubject) {
         this.emailSubject = emailSubject;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
     }
 
     public Alert getAlert() {

@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.jboss.logging.Logger;
 
 import freemarker.template.Configuration;
@@ -125,7 +125,7 @@ public class EmailTemplate {
      * - "emailBodyHtml": Content for html email
      * @throws Exception on any problem
      */
-    public Map<String, String> processTemplate(PluginMessage msg) throws Exception {
+    public Map<String, String> processTemplate(ActionMessage msg) throws Exception {
         Map<String, String> emailProcessed = new HashMap<>();
 
         PluginMessageDescription pmDesc = new PluginMessageDescription(msg);

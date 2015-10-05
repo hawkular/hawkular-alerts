@@ -14,35 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.actions.tests;
+package org.hawkular.alerts.actions.api;
 
-import java.util.Map;
-
-import org.hawkular.alerts.actions.api.PluginMessage;
 import org.hawkular.alerts.api.model.action.Action;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
- * Test implementation of PluginMessage interface
+ * A message sent to the plugin from the alerts engine
+ * It has the alert payload as well as action properties
  *
- * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class TestPluginMessage implements PluginMessage {
-    Action action;
-    Map<String, String> properties;
+public interface ActionMessage {
 
-    public TestPluginMessage(Action action, Map<String, String> properties) {
-        this.action = action;
-        this.properties = properties;
-    }
-
-    @Override
-    public Action getAction() {
-        return action;
-    }
-
-    @Override
-    public Map<String, String> getProperties() {
-        return properties;
-    }
+    @JsonInclude
+    Action getAction();
 }

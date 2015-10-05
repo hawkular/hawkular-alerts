@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
@@ -76,48 +76,42 @@ public class JsonTest {
         alert.setEvalSets(list);
 
         incomingAction = new Action(TEST_TENANT, "testPlugin", "testActionId", alert);
+        Map<String, String> props = new HashMap<>();
+        props.put("k1", "v1");
+        props.put("k2", "v2");
+        incomingAction.setProperties(props);
     }
 
 
     @Test
     public void jsonPluginMessage() throws Exception {
 
-        Map<String, String> props = new HashMap<>();
-        props.put("k1", "v1");
-        props.put("k2", "v2");
-        PluginMessage msg = new TestPluginMessage(incomingAction, props);
+        ActionMessage msg = new TestActionMessage(incomingAction);
 
         String json = objectMapper.writeValueAsString(msg);
 
         assertTrue(json.contains("v2"));
 
-        PluginMessage newMsg = objectMapper.readValue(json, TestPluginMessage.class);
+        ActionMessage newMsg = objectMapper.readValue(json, TestActionMessage.class);
 
-        assertEquals("v2", newMsg.getProperties().get("k2"));
+        assertEquals("v2", newMsg.getAction().getProperties().get("k2"));
         assertEquals("trigger-test", newMsg.getAction().getAlert().getTriggerId());
     }
 
-    public static class TestPluginMessage implements PluginMessage {
+    public static class TestActionMessage implements ActionMessage {
 
         Action action;
-        Map<String, String> properties;
 
-        public TestPluginMessage() {
+        public TestActionMessage() {
         }
 
-        public TestPluginMessage(Action action, Map<String, String> properties) {
+        public TestActionMessage(Action action) {
             this.action = action;
-            this.properties = properties;
         }
 
         @Override
         public Action getAction() {
             return action;
-        }
-
-        @Override
-        public Map<String, String> getProperties() {
-            return properties;
         }
     }
 

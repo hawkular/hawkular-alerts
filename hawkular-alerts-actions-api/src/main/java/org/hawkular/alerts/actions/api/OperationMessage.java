@@ -16,20 +16,27 @@
  */
 package org.hawkular.alerts.actions.api;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * Define an alerts actions plugin implementation
- * Plugin must have a unique name that will be used at registration phase
- * Plugin must implement ActionPluginListener interface
+ * A message sent to the alerts engine from the plugin
+ * It defines a code of operation and generic payload.
+ *
+ * Payload is represented as a generic map of strings.
  *
  * @author Lucas Ponce
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface ActionPlugin {
-    String name();
+public interface OperationMessage {
+
+    enum Operation {
+        RESULT
+    }
+
+    @JsonInclude
+    Operation getOperation();
+
+    @JsonInclude
+    Map<String, String> getPayload();
 }
