@@ -24,7 +24,6 @@ import java.util.Set;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.model.trigger.TriggerType;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -42,10 +41,19 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.PROPERTY,
-        property = "category")
+        property = "eventType",
+        // set default impl for events injected via REST API
+        defaultImpl = Event.class)
 @JsonSubTypes({
-        @Type(value = Alert.class, name = "ALERT") })
+        @Type(name = "EVENT", value = Event.class),
+        @Type(name = "ALERT", value = Alert.class) })
 public class Event {
+
+    // This field will be controlled vi fasterxml. We need to make this an explicit field because we ship the
+    // serialized json to clients via rest. Since we serialize via fasterxml the field will be added to the json.
+    // Using "visible=false" in JsonTypeInfo only works if we control the deserialization.
+    @JsonInclude
+    protected String eventType;
 
     @JsonInclude
     protected String tenantId;
@@ -101,6 +109,7 @@ public class Event {
             Map<String, String> tags) {
         this.tenantId = tenantId;
         this.id = id;
+        this.category = category;
         this.text = text;
         this.context = context;
         this.tags = tags;
@@ -125,11 +134,27 @@ public class Event {
         this.ctime = System.currentTimeMillis();
 
         this.id = trigger.getId() + "-" + this.ctime;
-        this.category = TriggerType.ALERT == trigger.getType() ?
-                EventCategory.ALERT.name() : EventCategory.TRIGGER.name();
-        this.text = isEmpty(trigger.getDescription()) ? trigger.getName() : trigger.getDescription();
         this.context = trigger.getContext();
+        if (!isEmpty(trigger.getEventCategory())) {
+            this.category = trigger.getEventCategory();
+        } else {
+            this.category = (EventType.ALERT == trigger.getEventType()) ?
+                    EventCategory.ALERT.name() : EventCategory.TRIGGER.name();
+        }
+        if (!isEmpty(trigger.getEventText())) {
+            this.text = trigger.getEventText();
+        } else {
+            this.text = isEmpty(trigger.getDescription()) ? trigger.getName() : trigger.getDescription();
+        }
         this.tags = trigger.getTags();
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
     }
 
     public String getTenantId() {

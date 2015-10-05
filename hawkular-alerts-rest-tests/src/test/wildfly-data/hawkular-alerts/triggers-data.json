@@ -227,7 +227,7 @@
   },
   {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
     "triggerId": "trigger-8",
-    "type": "EVENT",
+    "eventType": "EVENT",
     "enabled": true,
     "name": "NumericData-01-low",
     "description": "Event generating trigger",

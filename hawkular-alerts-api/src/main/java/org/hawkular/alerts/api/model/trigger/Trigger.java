@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.hawkular.alerts.api.model.Severity;
+import org.hawkular.alerts.api.model.event.EventType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -43,9 +44,6 @@ public class Trigger {
     @JsonInclude
     private String id;
 
-    @JsonInclude
-    private TriggerType type;
-
     /** For display */
     @JsonInclude
     private String name;
@@ -53,7 +51,15 @@ public class Trigger {
     @JsonInclude(Include.NON_EMPTY)
     private String description;
 
-    // defaults to non-null trigger description, otherwise trigger name
+    /** The type of event produced by the trigger. Defaults to EventType.ALERT */
+    @JsonInclude
+    private EventType eventType;
+
+    /** Defaults to EventCategory.ALERT if the Trigger EventType is ALERT, otherwise EventType.TRIGGER */
+    @JsonInclude
+    private String eventCategory;
+
+    /** Defaults to the Trigger Description if not null, otherwise the trigger name. */
     @JsonInclude
     private String eventText;
 
@@ -153,7 +159,6 @@ public class Trigger {
         }
         this.tenantId = tenantId;
         this.id = id;
-        this.type = TriggerType.ALERT; // Is this an OK default, or should it be a parameter?
         this.name = name;
         this.context = context;
         this.tags = tags;
@@ -164,6 +169,9 @@ public class Trigger {
         this.autoResolve = false;
         this.autoResolveAlerts = true;
         this.autoResolveMatch = Match.ALL;
+        this.eventCategory = null;
+        this.eventText = null;
+        this.eventType = EventType.ALERT; // Is this an OK default, or should it be a constructor parameter?
         this.memberOf = null;
         this.description = null;
         this.enabled = false;
@@ -196,14 +204,6 @@ public class Trigger {
         this.id = id;
     }
 
-    public TriggerType getType() {
-        return type;
-    }
-
-    public void setType(TriggerType type) {
-        this.type = type;
-    }
-
     public String getName() {
         return name;
     }
@@ -221,6 +221,22 @@ public class Trigger {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public EventType getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(EventType eventType) {
+        this.eventType = eventType;
+    }
+
+    public String getEventCategory() {
+        return eventCategory;
+    }
+
+    public void setEventCategory(String eventCategory) {
+        this.eventCategory = eventCategory;
     }
 
     public String getEventText() {
@@ -475,13 +491,14 @@ public class Trigger {
 
     @Override
     public String toString() {
-        return "Trigger [tenantId=" + tenantId + ", id=" + id + ", type=" + type.name() + ", name=" + name
-                + ", description=" + description
-                + ", eventType=" + type + ", eventText=" + eventText + ", severity=" + severity + ", context="
-                + context + ", actions=" + actions + ", autoDisable=" + autoDisable + ", autoEnable=" + autoEnable
-                + ", autoResolve=" + autoResolve + ", autoResolveAlerts=" + autoResolveAlerts + ", autoResolveMatch="
-                + autoResolveMatch + ", memberOf=" + memberOf + ", enabled=" + enabled + ", firingMatch="
-                + firingMatch + ", orphan=" + orphan + ", group=" + group + ", mode=" + mode + ", tags=" + tags + "]";
+        return "Trigger [tenantId=" + tenantId + ", id=" + id + ", triggerType=" + eventType.name()
+                + ", name=" + name + ", description=" + description + ", eventType=" + eventType
+                + ", eventCategory=" + eventCategory + ", eventText=" + eventText + ", severity=" + severity
+                + ", context=" + context + ", actions=" + actions + ", autoDisable=" + autoDisable
+                + ", autoEnable=" + autoEnable + ", autoResolve=" + autoResolve + ", autoResolveAlerts="
+                + autoResolveAlerts + ", autoResolveMatch=" + autoResolveMatch + ", memberOf=" + memberOf
+                + ", enabled=" + enabled + ", firingMatch=" + firingMatch + ", orphan=" + orphan + ", group=" + group
+                + ", mode=" + mode + ", tags=" + tags + "]";
     }
 
 }

@@ -134,6 +134,7 @@ public class JsonTest {
     public void jsonToAlertTest() throws Exception {
         String jsonAlert = "{\"tenantId\":\"jdoe\"," +
                 "\"id\":\"trigger-test|1436964192878\"," +
+                "\"eventType\":\"ALERT\"," +
                 "\"trigger\":{\"tenantId\":\"jdoe\"," +
                               "\"id\":\"trigger-test\"," +
                               "\"name\":\"trigger-test\"," +
@@ -142,7 +143,6 @@ public class JsonTest {
                              "}," +
                 "\"ctime\":1436964192878," +
                 "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}," +
-                "\"category\":\"ALERT\"," +
                 "\"text\":\"trigger-test\"," +
                 "\"evalSets\":[" +
                     "[{\"evalTimestamp\":1436964294055," +

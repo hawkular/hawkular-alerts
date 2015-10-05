@@ -35,10 +35,10 @@ import org.hawkular.alerts.api.model.dampening.Dampening.Type;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.api.model.event.EventType;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.model.trigger.TriggerType;
 import org.hawkular.alerts.api.services.ActionsService;
 
 import org.jboss.logging.Logger;
@@ -299,7 +299,7 @@ rule AlertOnSatisfiedDampening
         Event newEvent;
 
         // Only some triggers generate an alert
-        if ($t.getType() == TriggerType.ALERT) {
+        if ($t.getEventType() == EventType.ALERT) {
             if (log != null && log.isDebugEnabled()) {
                 log.debug("Alert! Dampening Satisfied! " + $d.log());
             }
@@ -309,7 +309,7 @@ rule AlertOnSatisfiedDampening
             alerts.add((Alert)newEvent);
 
         } else {
-            if (log != null && log.isDebugEnabled() && $t.getType() == TriggerType.EVENT) {
+            if (log != null && log.isDebugEnabled() && $t.getEventType() == EventType.EVENT) {
                 log.debug("Event! Dampening Satisfied! " + $d.log());
             }
 

@@ -113,8 +113,8 @@ public class AlertsHandler {
                     "comma separated list of severity values")
             @QueryParam("severities")
             final String severities,
-            @ApiParam(required = false, value = "filter out alerts for unspecified tags, comma separated list of tags, "
-                    + "each tag of format [category|]name")
+            @ApiParam(required = false, value = "filter out events for unspecified tags, comma separated list of tags, "
+                    + "each tag of format 'name|value'. Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
             @ApiParam(required = false, value = "return only thin alerts, do not include: evalSets, resolvedEvalSets")

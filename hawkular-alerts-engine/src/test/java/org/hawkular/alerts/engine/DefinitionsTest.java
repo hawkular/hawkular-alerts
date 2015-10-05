@@ -45,6 +45,7 @@ import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.api.model.event.EventCategory;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.EventComparator;
 import org.hawkular.alerts.api.model.paging.Page;
@@ -1108,6 +1109,10 @@ public abstract class DefinitionsTest {
         criteria.setTriggerId("trigger-8");
         result = alertsService.getEvents(TEST_TENANT, criteria, null);
         assertTrue(result.toString(), result.size() == 1);
+        Event e = result.get(0);
+        assertEquals(t, e.getTrigger());
+        assertEquals(evals, e.getEvalSets());
+        assertEquals(EventCategory.TRIGGER.name(), e.getCategory());
 
         criteria = new EventsCriteria();
         List<String> triggerIds = new ArrayList<>();
