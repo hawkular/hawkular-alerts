@@ -19,7 +19,7 @@ package org.hawkular.alerts.bus.api;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hawkular.alerts.actions.api.OperationMessage;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.bus.common.AbstractMessage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class BusOperationMessage extends AbstractMessage implements OperationMessage {
+public class BusActionResponseMessage extends AbstractMessage implements ActionResponseMessage {
 
     @JsonInclude
     Operation operation;
@@ -38,17 +38,17 @@ public class BusOperationMessage extends AbstractMessage implements OperationMes
     @JsonInclude
     Map<String, String> payload;
 
-    public BusOperationMessage() {
+    public BusActionResponseMessage() {
         this.operation = Operation.RESULT;
         this.payload = new HashMap<>();
     }
 
-    public BusOperationMessage(Operation operation) {
+    public BusActionResponseMessage(Operation operation) {
         this.operation = operation;
         this.payload = new HashMap<>();
     }
 
-    public BusOperationMessage(Operation operation, Map<String, String> payload) {
+    public BusActionResponseMessage(Operation operation, Map<String, String> payload) {
         this.operation = operation;
         this.payload = new HashMap<>(payload);
     }

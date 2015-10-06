@@ -24,8 +24,13 @@ import java.util.Set;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 
 import com.google.gson.Gson;
@@ -54,6 +59,12 @@ public class PagerDutyPlugin implements ActionPluginListener {
 
     PagerDuty pagerDuty;
 
+    @Sender
+    ActionPluginSender sender;
+
+    private static final String MESSAGE_PROCESSED = "PROCESSED";
+    private static final String MESSAGE_FAILED = "FAILED";
+
     public PagerDutyPlugin() {
         defaultProperties.put("description", "Default PagerDuty plugin description");
         setup();
@@ -75,14 +86,25 @@ public class PagerDutyPlugin implements ActionPluginListener {
             msgLog.errorCannotProcessMessage("pagerduty", "Plugin is not started");
             return;
         }
-
-        Trigger trigger = new Trigger.Builder(prepareMessage(msg)).build();
-        NotifyResult result = pagerDuty.notify(trigger);
-        if (!"success".equals(result.status())) {
-            msgLog.errorCannotProcessMessage("pagerduty", result.message());
+        Trigger trigger;
+        NotifyResult result = null;
+        try {
+            trigger = new Trigger.Builder(prepareMessage(msg)).build();
+            result = pagerDuty.notify(trigger);
+        } catch (Exception e) {
+            msgLog.errorCannotProcessMessage("pagerduty", e.getMessage());
         }
-
-        msgLog.infoActionReceived("pagerduty", msg.toString());
+        if (result != null && !"success".equals(result.status())) {
+            msgLog.errorCannotProcessMessage("pagerduty", result.message());
+            Action failedAction = msg.getAction();
+            failedAction.setResult(MESSAGE_FAILED);
+            sendResult(failedAction);
+        } else {
+            msgLog.infoActionReceived("pagerduty", msg.toString());
+            Action successAction = msg.getAction();
+            successAction.setResult(MESSAGE_PROCESSED);
+            sendResult(successAction);
+        }
     }
 
     void setup() {
@@ -159,4 +181,19 @@ public class PagerDutyPlugin implements ActionPluginListener {
         return preparedMsg;
     }
 
+    private void sendResult(Action action) {
+        if (sender == null) {
+            throw new IllegalStateException("ActionPluginSender is not present in the plugin");
+        }
+        if (action == null) {
+            throw new IllegalStateException("Action to update result must be not null");
+        }
+        ActionResponseMessage newMessage = sender.createMessage(ActionResponseMessage.Operation.RESULT);
+        newMessage.getPayload().put("action", JsonUtil.toJson(action));
+        try {
+            sender.send(newMessage);
+        } catch (Exception e) {
+            msgLog.error("Error sending ActionResponseMessage", e);
+        }
+    }
 }

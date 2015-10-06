@@ -31,6 +31,8 @@ import java.util.Set;
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.hawkular.alerts.actions.api.ActionMessage;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
@@ -126,6 +128,7 @@ public class SmsPluginTest {
     public void setup() {
         messageFactory = mock(MessageFactory.class);
         smsPlugin = new SmsPlugin();
+        smsPlugin.sender = new TestActionSender();
         smsPlugin.messageFactory = messageFactory;
     }
 
@@ -139,5 +142,45 @@ public class SmsPluginTest {
             .add(new BasicNameValuePair("Body", preparedMessage))
             .build();
         verify(messageFactory, times(1)).create(eq(expectedParams));
+    }
+
+    public class TestActionResponseMessage implements ActionResponseMessage {
+
+        ActionResponseMessage.Operation operation;
+
+        Map<String, String> payload;
+
+        public TestActionResponseMessage() {
+            this.operation = ActionResponseMessage.Operation.RESULT;
+            this.payload = new HashMap<>();
+        }
+
+        public TestActionResponseMessage(ActionResponseMessage.Operation operation) {
+            this.operation = operation;
+            this.payload = new HashMap<>();
+        }
+
+        @Override
+        public Operation getOperation() {
+            return operation;
+        }
+
+        @Override
+        public Map<String, String> getPayload() {
+            return payload;
+        }
+    }
+
+    public class TestActionSender implements ActionPluginSender {
+
+        @Override
+        public ActionResponseMessage createMessage(ActionResponseMessage.Operation operation) {
+            return new TestActionResponseMessage(operation);
+        }
+
+        @Override
+        public void send(ActionResponseMessage msg) throws Exception {
+            // Nothing to do
+        }
     }
 }

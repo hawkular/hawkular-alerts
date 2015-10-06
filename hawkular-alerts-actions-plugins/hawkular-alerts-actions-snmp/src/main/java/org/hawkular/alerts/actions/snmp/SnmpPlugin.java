@@ -22,8 +22,13 @@ import java.util.Set;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
 
 /**
  * An example of listener for snmp processing.
@@ -35,6 +40,11 @@ import org.hawkular.alerts.actions.api.Plugin;
 public class SnmpPlugin implements ActionPluginListener {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     Map<String, String> defaultProperties = new HashMap<>();
+
+    @Sender
+    ActionPluginSender sender;
+
+    private static final String MESSAGE_PROCESSED = "PROCESSED";
 
     public SnmpPlugin() {
         defaultProperties.put("host", "localhost");
@@ -56,5 +66,25 @@ public class SnmpPlugin implements ActionPluginListener {
     @Override
     public void process(ActionMessage msg) throws Exception {
         msgLog.infoActionReceived("snmp", msg.toString());
+        Action successAction = msg.getAction();
+        successAction.setResult(MESSAGE_PROCESSED);
+        sendResult(successAction);
     }
+
+    private void sendResult(Action action) {
+        if (sender == null) {
+            throw new IllegalStateException("ActionPluginSender is not present in the plugin");
+        }
+        if (action == null) {
+            throw new IllegalStateException("Action to update result must be not null");
+        }
+        ActionResponseMessage newMessage = sender.createMessage(ActionResponseMessage.Operation.RESULT);
+        newMessage.getPayload().put("action", JsonUtil.toJson(action));
+        try {
+            sender.send(newMessage);
+        } catch (Exception e) {
+            msgLog.error("Error sending ActionResponseMessage", e);
+        }
+    }
+
 }

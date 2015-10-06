@@ -19,29 +19,29 @@ package org.hawkular.alerts.actions.standalone;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hawkular.alerts.actions.api.OperationMessage;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 
 /**
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class StandaloneOperationMessage implements OperationMessage {
+public class StandaloneActionResponseMessage implements ActionResponseMessage {
 
     Operation operation;
 
     Map<String, String> payload;
 
-    public StandaloneOperationMessage() {
+    public StandaloneActionResponseMessage() {
         this.operation = Operation.RESULT;
         this.payload = new HashMap<>();
     }
 
-    public StandaloneOperationMessage(Operation operation) {
+    public StandaloneActionResponseMessage(Operation operation) {
         this.operation = operation;
         this.payload = new HashMap<>();
     }
 
-    public StandaloneOperationMessage(Operation operation, Map<String, String> payload) {
+    public StandaloneActionResponseMessage(Operation operation, Map<String, String> payload) {
         this.operation = operation;
         this.payload = new HashMap<>(payload);
     }

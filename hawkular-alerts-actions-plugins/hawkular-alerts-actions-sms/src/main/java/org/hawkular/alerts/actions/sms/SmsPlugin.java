@@ -27,8 +27,13 @@ import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 
 import com.twilio.sdk.TwilioRestClient;
@@ -57,6 +62,12 @@ public class SmsPlugin implements ActionPluginListener {
     Map<String, String> defaultProperties = new HashMap<>();
 
     MessageFactory messageFactory;
+
+    @Sender
+    ActionPluginSender sender;
+
+    private static final String MESSAGE_PROCESSED = "PROCESSED";
+    private static final String MESSAGE_FAILED = "FAILED";
 
     public SmsPlugin() {
         defaultProperties.put("phone", "+1555123456");
@@ -99,9 +110,15 @@ public class SmsPlugin implements ActionPluginListener {
             messageFactory.create(params);
         } catch (TwilioRestException e) {
             msgLog.errorCannotProcessMessage("sms", e.getLocalizedMessage());
+            Action failedAction = msg.getAction();
+            failedAction.setResult(MESSAGE_FAILED);
+            sendResult(failedAction);
         }
 
         msgLog.infoActionReceived("sms", msg.toString());
+        Action successAction = msg.getAction();
+        successAction.setResult(MESSAGE_PROCESSED);
+        sendResult(successAction);
     }
 
     void setup() {
@@ -132,6 +149,22 @@ public class SmsPlugin implements ActionPluginListener {
             }
         }
         return preparedMsg;
+    }
+
+    private void sendResult(Action action) {
+        if (sender == null) {
+            throw new IllegalStateException("ActionPluginSender is not present in the plugin");
+        }
+        if (action == null) {
+            throw new IllegalStateException("Action to update result must be not null");
+        }
+        ActionResponseMessage newMessage = sender.createMessage(ActionResponseMessage.Operation.RESULT);
+        newMessage.getPayload().put("action", JsonUtil.toJson(action));
+        try {
+            sender.send(newMessage);
+        } catch (Exception e) {
+            msgLog.error("Error sending ActionResponseMessage", e);
+        }
     }
 
 }

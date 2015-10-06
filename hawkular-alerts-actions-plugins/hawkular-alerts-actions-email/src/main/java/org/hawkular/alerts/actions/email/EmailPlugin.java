@@ -36,9 +36,9 @@ import javax.naming.NamingException;
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
+import org.hawkular.alerts.actions.api.ActionResponseMessage.Operation;
 import org.hawkular.alerts.actions.api.MsgLogger;
-import org.hawkular.alerts.actions.api.OperationMessage;
-import org.hawkular.alerts.actions.api.OperationMessage.Operation;
 import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.actions.api.Sender;
 import org.hawkular.alerts.api.json.JsonUtil;
@@ -242,12 +242,12 @@ public class EmailPlugin implements ActionPluginListener {
         if (action == null) {
             throw new IllegalStateException("Action to update result must be not null");
         }
-        OperationMessage newMessage = sender.createMessage(Operation.RESULT);
+        ActionResponseMessage newMessage = sender.createMessage(Operation.RESULT);
         newMessage.getPayload().put("action", JsonUtil.toJson(action));
         try {
             sender.send(newMessage);
         } catch (Exception e) {
-            log.error("Error sending OperationMessage", e);
+            log.error("Error sending ActionResponseMessage", e);
         }
     }
 

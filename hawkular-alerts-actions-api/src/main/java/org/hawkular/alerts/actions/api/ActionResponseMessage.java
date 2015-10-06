@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *
  * @author Lucas Ponce
  */
-public interface OperationMessage {
+public interface ActionResponseMessage {
 
     enum Operation {
         RESULT

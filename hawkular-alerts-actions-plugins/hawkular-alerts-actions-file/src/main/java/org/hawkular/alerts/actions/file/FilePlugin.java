@@ -25,8 +25,13 @@ import java.util.Set;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,6 +47,12 @@ public class FilePlugin implements ActionPluginListener {
 
     private Map<String, String> defaultProperties = new HashMap<>();
     private ObjectMapper objectMapper;
+
+    @Sender
+    ActionPluginSender sender;
+
+    private static final String MESSAGE_PROCESSED = "PROCESSED";
+    private static final String MESSAGE_FAILED = "FAILED";
 
     public FilePlugin() {
         defaultProperties.put("path",
@@ -72,24 +83,50 @@ public class FilePlugin implements ActionPluginListener {
         Alert alert = msg.getAction().getAlert();
         String fileName = alert.getAlertId() + "-timestamp-" + System.currentTimeMillis() + ".txt";
 
-        File pathFile = new File(path);
-        if (!pathFile.exists()) {
-            pathFile.mkdirs();
-        }
-        File alertFile = new File(pathFile, fileName);
-        if (!alertFile.exists()) {
-            alertFile.createNewFile();
-        }
         BufferedWriter writer = null;
         try {
+            File pathFile = new File(path);
+            if (!pathFile.exists()) {
+                pathFile.mkdirs();
+            }
+            File alertFile = new File(pathFile, fileName);
+            if (!alertFile.exists()) {
+                alertFile.createNewFile();
+            }
+
             writer = new BufferedWriter(new FileWriter(alertFile));
             String jsonAlert = objectMapper.writeValueAsString(alert);
             writer.write(jsonAlert);
+            msgLog.infoActionReceived("file", msg.toString());
+            Action successAction = msg.getAction();
+            successAction.setResult(MESSAGE_PROCESSED);
+            sendResult(successAction);
+        } catch (Exception e) {
+            msgLog.errorCannotProcessMessage("file", e.getMessage());
+            Action failedAction = msg.getAction();
+            failedAction.setResult(MESSAGE_FAILED);
+            sendResult(failedAction);
         } finally {
             if (writer != null) {
                 writer.close();
             }
         }
-        msgLog.infoActionReceived("file", msg.toString());
     }
+
+    private void sendResult(Action action) {
+        if (sender == null) {
+            throw new IllegalStateException("ActionPluginSender is not present in the plugin");
+        }
+        if (action == null) {
+            throw new IllegalStateException("Action to update result must be not null");
+        }
+        ActionResponseMessage newMessage = sender.createMessage(ActionResponseMessage.Operation.RESULT);
+        newMessage.getPayload().put("action", JsonUtil.toJson(action));
+        try {
+            sender.send(newMessage);
+        } catch (Exception e) {
+            msgLog.error("Error sending ActionResponseMessage", e);
+        }
+    }
+
 }

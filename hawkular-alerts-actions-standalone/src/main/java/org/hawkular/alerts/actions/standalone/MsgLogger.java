@@ -58,7 +58,7 @@ public interface MsgLogger extends BasicLogger {
     void warnMessageReceivedWithoutPluginInfo();
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 270008, value = "Operation message without payload")
-    void warnOperationMessageWithoutPayload();
+    @Message(id = 270008, value = "ActionResponse message without payload")
+    void warnActionResponseMessageWithoutPayload();
 
 }
