@@ -37,6 +37,11 @@ public class CassStatement {
     private static final Map<String, PreparedStatement> statementMap = new HashMap<>();
 
     public static final String DELETE_ACTION;
+    public static final String DELETE_ACTION_HISTORY;
+    public static final String DELETE_ACTION_HISTORY_ACTION;
+    public static final String DELETE_ACTION_HISTORY_ALERT;
+    public static final String DELETE_ACTION_HISTORY_CTIME;
+    public static final String DELETE_ACTION_HISTORY_RESULT;
     public static final String DELETE_ACTION_PLUGIN;
     public static final String DELETE_ALERT;
     public static final String DELETE_ALERT_CTIME;
@@ -56,6 +61,11 @@ public class CassStatement {
     public static final String DELETE_TRIGGER;
 
     public static final String INSERT_ACTION;
+    public static final String INSERT_ACTION_HISTORY;
+    public static final String INSERT_ACTION_HISTORY_ACTION;
+    public static final String INSERT_ACTION_HISTORY_ALERT;
+    public static final String INSERT_ACTION_HISTORY_CTIME;
+    public static final String INSERT_ACTION_HISTORY_RESULT;
     public static final String INSERT_ACTION_PLUGIN;
     public static final String INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String INSERT_ALERT;
@@ -79,6 +89,15 @@ public class CassStatement {
     public static final String INSERT_TRIGGER_ACTIONS;
 
     public static final String SELECT_ACTION;
+    public static final String SELECT_ACTION_HISTORY;
+    public static final String SELECT_ACTION_HISTORY_ACTION_ID;
+    public static final String SELECT_ACTION_HISTORY_ACTION_PLUGIN;
+    public static final String SELECT_ACTION_HISTORY_ALERT_ID;
+    public static final String SELECT_ACTION_HISTORY_BY_TENANT;
+    public static final String SELECT_ACTION_HISTORY_CTIME_END;
+    public static final String SELECT_ACTION_HISTORY_CTIME_START;
+    public static final String SELECT_ACTION_HISTORY_CTIME_START_END;
+    public static final String SELECT_ACTION_HISTORY_RESULT;
     public static final String SELECT_ACTIONS_ALL;
     public static final String SELECT_ACTIONS_BY_TENANT;
     public static final String SELECT_ACTION_PLUGIN;
@@ -121,6 +140,7 @@ public class CassStatement {
     public static final String SELECT_TRIGGERS_TENANT;
 
     public static final String UPDATE_ACTION;
+    public static final String UPDATE_ACTION_HISTORY;
     public static final String UPDATE_ACTION_PLUGIN;
     public static final String UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String UPDATE_ALERT;
@@ -132,6 +152,21 @@ public class CassStatement {
 
         DELETE_ACTION = "DELETE FROM " + keyspace + ".actions "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
+
+        DELETE_ACTION_HISTORY = "DELETE FROM " + keyspace + ".actions_history " +
+                "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? AND alertId = ? AND ctime = ?";
+
+        DELETE_ACTION_HISTORY_ACTION = "DELETE FROM " + keyspace + ".actions_history_actions " +
+                "WHERE tenantId = ? AND actionId = ? AND actionPlugin = ? AND alertId = ? AND ctime = ?";
+
+        DELETE_ACTION_HISTORY_ALERT = "DELETE FROM " + keyspace + ".actions_history_alerts " +
+                "WHERE tenantId = ? AND alertId = ? AND actionPlugin = ? AND actionId = ? AND ctime = ?";
+
+        DELETE_ACTION_HISTORY_CTIME = "DELETE FROM " + keyspace + ".actions_history_ctimes " +
+                "WHERE tenantId = ? AND ctime = ? AND actionPlugin = ? AND actionId = ? AND alertId = ?";
+
+        DELETE_ACTION_HISTORY_RESULT = "DELETE FROM " + keyspace + ".actions_history_results " +
+                "WHERE tenantId = ? AND result = ? AND actionPlugin = ? AND actionId = ? AND alertId = ? AND ctime = ?";
 
         DELETE_ACTION_PLUGIN = "DELETE FROM " + keyspace + ".action_plugins WHERE actionPlugin = ? ";
 
@@ -180,6 +215,26 @@ public class CassStatement {
 
         INSERT_ACTION = "INSERT INTO " + keyspace + ".actions "
                 + "(tenantId, actionPlugin, actionId, properties) VALUES (?, ?, ?, ?) ";
+
+        INSERT_ACTION_HISTORY = "INSERT INTO " + keyspace + ".actions_history "
+                + "(tenantId, actionPlugin, actionId, alertId, ctime, payload) VALUES (?, ?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
+        INSERT_ACTION_HISTORY_ACTION = "INSERT INTO " + keyspace + ".actions_history_actions "
+                + "(tenantId, actionId, actionPlugin, alertId, ctime) VALUES (?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
+        INSERT_ACTION_HISTORY_ALERT = "INSERT INTO " + keyspace + ".actions_history_alerts "
+                + "(tenantId, alertId, actionPlugin, actionId, ctime) VALUES (?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
+        INSERT_ACTION_HISTORY_CTIME = "INSERT INTO " + keyspace + ".actions_history_ctimes "
+                + "(tenantId, ctime, actionPlugin, actionId, alertId) VALUES (?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
+        INSERT_ACTION_HISTORY_RESULT = "INSERT INTO " + keyspace + ".actions_history_results "
+                + "(tenantId, result, actionPlugin, actionId, alertId, ctime) VALUES (?, ?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
 
         INSERT_ACTION_PLUGIN = "INSERT INTO " + keyspace + ".action_plugins "
                 + "(actionPlugin, properties) VALUES (?, ?) ";
@@ -258,6 +313,33 @@ public class CassStatement {
 
         SELECT_ACTION = "SELECT properties FROM " + keyspace + ".actions "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
+
+        SELECT_ACTION_HISTORY = "SELECT payload FROM " + keyspace + ".actions_history " +
+                "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? AND alertId = ? and ctime = ?";
+
+        SELECT_ACTION_HISTORY_ACTION_ID = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_actions WHERE tenantId = ? AND actionId = ?";
+
+        SELECT_ACTION_HISTORY_ACTION_PLUGIN = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history WHERE tenantId = ? AND actionPlugin = ?";
+
+        SELECT_ACTION_HISTORY_ALERT_ID = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_alerts WHERE tenantId = ? AND alertId = ?";
+
+        SELECT_ACTION_HISTORY_BY_TENANT = "SELECT payload FROM " + keyspace + ".actions_history " +
+                "WHERE tenantId = ?";
+
+        SELECT_ACTION_HISTORY_CTIME_END = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " + keyspace +
+                ".actions_history_ctimes WHERE tenantId = ? AND ctime <= ?";
+
+        SELECT_ACTION_HISTORY_CTIME_START = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " + keyspace +
+                ".actions_history_ctimes WHERE tenantId = ? AND ctime >= ?";
+
+        SELECT_ACTION_HISTORY_CTIME_START_END = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_ctimes WHERE tenantId = ? AND ctime >= ? AND ctime <= ?";
+
+        SELECT_ACTION_HISTORY_RESULT = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_results WHERE tenantId = ? AND result = ?";
 
         SELECT_ACTIONS_ALL = "SELECT tenantId, actionPlugin, actionId " + "FROM " + keyspace + ".actions ";
 
@@ -416,6 +498,10 @@ public class CassStatement {
 
         UPDATE_ACTION = "UPDATE " + keyspace + ".actions SET properties = ? "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
+
+        UPDATE_ACTION_HISTORY = "UPDATE " + keyspace + ".actions_history " +
+                "SET payload = ? " +
+                "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? AND alertId = ? AND ctime = ?";
 
         UPDATE_ACTION_PLUGIN = "UPDATE " + keyspace + ".action_plugins SET properties = ? WHERE actionPlugin = ? ";
 

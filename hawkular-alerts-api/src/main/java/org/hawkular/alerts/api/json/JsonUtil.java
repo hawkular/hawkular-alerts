@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 /**
- * Json serialization/deserialization utility for Alerts using Jackson implementation.
+ * Json serialization/deserialization utility for Alerts (or Events) using Jackson implementation.
  *
  * @author Lucas Ponce
  */

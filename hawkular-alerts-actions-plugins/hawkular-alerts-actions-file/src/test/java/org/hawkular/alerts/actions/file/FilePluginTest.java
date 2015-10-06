@@ -23,7 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.ActionMessage;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
@@ -37,6 +39,7 @@ import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -45,27 +48,25 @@ import org.junit.Test;
  */
 public class FilePluginTest {
 
-    private FilePlugin filePlugin = new FilePlugin();
+    private FilePlugin filePlugin;
 
-    private static PluginMessage openThresholdMsg;
-    private static PluginMessage ackThresholdMsg;
-    private static PluginMessage resolvedThresholdMsg;
+    private static ActionMessage openThresholdMsg;
+    private static ActionMessage ackThresholdMsg;
+    private static ActionMessage resolvedThresholdMsg;
 
-    private static PluginMessage openAvailMsg;
-    private static PluginMessage ackAvailMsg;
-    private static PluginMessage resolvedAvailMsg;
+    private static ActionMessage openAvailMsg;
+    private static ActionMessage ackAvailMsg;
+    private static ActionMessage resolvedAvailMsg;
 
-    private static PluginMessage openTwoCondMsg;
-    private static PluginMessage ackTwoCondMsg;
-    private static PluginMessage resolvedTwoCondMsg;
+    private static ActionMessage openTwoCondMsg;
+    private static ActionMessage ackTwoCondMsg;
+    private static ActionMessage resolvedTwoCondMsg;
 
-    public static class TestPluginMessage implements PluginMessage {
+    public static class TestActionMessage implements ActionMessage {
         Action action;
-        Map<String, String> properties;
 
-        public TestPluginMessage(Action action, Map<String, String> properties) {
+        public TestActionMessage(Action action) {
             this.action = action;
-            this.properties = properties;
         }
 
         @Override
@@ -73,10 +74,12 @@ public class FilePluginTest {
             return action;
         }
 
-        @Override
-        public Map<String, String> getProperties() {
-            return properties;
-        }
+    }
+
+    @Before
+    public void preparePlugin() {
+        filePlugin = new FilePlugin();
+        filePlugin.sender = new TestActionSender();
     }
 
     @BeforeClass
@@ -119,7 +122,8 @@ public class FilePluginTest {
 
         Action openThresholdAction = new Action(tenantId, "email", "email-to-test", rtAlertOpen);
 
-        openThresholdMsg = new TestPluginMessage(openThresholdAction, props);
+        openThresholdAction.setProperties(props);
+        openThresholdMsg = new TestActionMessage(openThresholdAction);
 
         Alert rtAlertAck = new Alert(rtTrigger.getTenantId(), rtTrigger, getEvalList(rtFiringCondition, rtBadData));
         rtAlertAck.setDampening(rtFiringDampening);
@@ -130,7 +134,8 @@ public class FilePluginTest {
 
         Action ackThresholdAction = new Action(tenantId, "email", "email-to-test", rtAlertAck);
 
-        ackThresholdMsg = new TestPluginMessage(ackThresholdAction, props);
+        ackThresholdAction.setProperties(props);
+        ackThresholdMsg = new TestActionMessage(ackThresholdAction);
 
         /*
             Demo good data to resolve a threshold alert
@@ -148,7 +153,8 @@ public class FilePluginTest {
 
         Action resolvedThresholdAction = new Action(tenantId, "email", "email-to-test", rtAlertResolved);
 
-        resolvedThresholdMsg = new TestPluginMessage(resolvedThresholdAction, props);
+        resolvedThresholdAction.setProperties(props);
+        resolvedThresholdMsg = new TestActionMessage(resolvedThresholdAction);
 
         /*
             Alert definition for availability
@@ -181,7 +187,8 @@ public class FilePluginTest {
 
         Action openAvailabilityAction = new Action(tenantId, "email", "email-to-test", avAlertOpen);
 
-        openAvailMsg = new TestPluginMessage(openAvailabilityAction, props);
+        openAvailabilityAction.setProperties(props);
+        openAvailMsg = new TestActionMessage(openAvailabilityAction);
 
         Alert avAlertAck = new Alert(avTrigger.getTenantId(), avTrigger, getEvalList(avFiringCondition, avBadData));
         avAlertAck.setDampening(avFiringDampening);
@@ -192,7 +199,8 @@ public class FilePluginTest {
 
         Action ackAvailabilityAction = new Action(tenantId, "email", "email-to-test", avAlertAck);
 
-        ackAvailMsg = new TestPluginMessage(ackAvailabilityAction, props);
+        ackAvailabilityAction.setProperties(props);
+        ackAvailMsg = new TestActionMessage(ackAvailabilityAction);
 
         /*
             Demo good data to resolve a availability alert
@@ -211,7 +219,8 @@ public class FilePluginTest {
 
         Action resolvedAvailabilityAction = new Action(tenantId, "email", "email-to-test", avAlertResolved);
 
-        resolvedAvailMsg = new TestPluginMessage(resolvedAvailabilityAction, props);
+        resolvedAvailabilityAction.setProperties(props);
+        resolvedAvailMsg = new TestActionMessage(resolvedAvailabilityAction);
 
         /*
             Alert definition for two conditions
@@ -256,7 +265,8 @@ public class FilePluginTest {
 
         Action openTwoCondAction = new Action(tenantId, "email", "email-to-test", mixAlertOpen);
 
-        openTwoCondMsg = new TestPluginMessage(openTwoCondAction, props);
+        openTwoCondAction.setProperties(props);
+        openTwoCondMsg = new TestActionMessage(openTwoCondAction);
 
         Alert mixAlertAck = new Alert(mixTrigger.getTenantId(), mixTrigger,
                 getEvalList(mixConditions, mixBadData));
@@ -268,7 +278,8 @@ public class FilePluginTest {
 
         Action ackTwoCondAction = new Action(tenantId, "email", "email-to-test", mixAlertAck);
 
-        ackTwoCondMsg = new TestPluginMessage(ackTwoCondAction, props);
+        ackTwoCondAction.setProperties(props);
+        ackTwoCondMsg = new TestActionMessage(ackTwoCondAction);
 
         /*
             Demo good data for two conditions
@@ -295,7 +306,8 @@ public class FilePluginTest {
 
         Action resolvedTwoCondAction = new Action(tenantId, "email", "email-to-test", mixAlertResolved);
 
-        resolvedTwoCondMsg = new TestPluginMessage(resolvedTwoCondAction, props);
+        resolvedTwoCondAction.setProperties(props);
+        resolvedTwoCondMsg = new TestActionMessage(resolvedTwoCondAction);
     }
 
     private static List<Set<ConditionEval>> getEvalList(Condition condition, Data data) {
@@ -350,4 +362,45 @@ public class FilePluginTest {
         filePlugin.process(ackTwoCondMsg);
         filePlugin.process(resolvedTwoCondMsg);
     }
+
+    public class TestActionResponseMessage implements ActionResponseMessage {
+
+        ActionResponseMessage.Operation operation;
+
+        Map<String, String> payload;
+
+        public TestActionResponseMessage() {
+            this.operation = ActionResponseMessage.Operation.RESULT;
+            this.payload = new HashMap<>();
+        }
+
+        public TestActionResponseMessage(ActionResponseMessage.Operation operation) {
+            this.operation = operation;
+            this.payload = new HashMap<>();
+        }
+
+        @Override
+        public Operation getOperation() {
+            return operation;
+        }
+
+        @Override
+        public Map<String, String> getPayload() {
+            return payload;
+        }
+    }
+
+    public class TestActionSender implements ActionPluginSender {
+
+        @Override
+        public ActionResponseMessage createMessage(ActionResponseMessage.Operation operation) {
+            return new TestActionResponseMessage(operation);
+        }
+
+        @Override
+        public void send(ActionResponseMessage msg) throws Exception {
+            // Nothing to do
+        }
+    }
+
 }

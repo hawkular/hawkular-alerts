@@ -30,6 +30,6 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface ActionPlugin {
+public @interface Plugin {
     String name();
 }

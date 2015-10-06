@@ -18,7 +18,7 @@ package org.hawkular.alerts.bus.messages;
 
 import java.util.List;
 
-import org.hawkular.bus.common.BasicMessage;
+import org.hawkular.bus.common.AbstractMessage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Lucas Ponce
  */
 
-public class AvailDataMessage extends BasicMessage {
+public class AvailDataMessage extends AbstractMessage {
 
     // the basic message body - it will be exposed to the JSON output
     @JsonInclude

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
@@ -46,12 +48,15 @@ import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.event.EventCategory;
+import org.hawkular.alerts.api.model.paging.ActionComparator;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.EventComparator;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.ActionsCriteria;
+import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
@@ -62,7 +67,7 @@ import org.junit.Test;
  *
  * @author Lucas Ponce
  */
-public abstract class DefinitionsTest {
+public abstract class PersistenceTest {
 
     /*
         TenantId = 28026b36-8fe4-4332-84c8-524e173a68bf
@@ -71,6 +76,7 @@ public abstract class DefinitionsTest {
     public static final String TEST_TENANT = "28026b36-8fe4-4332-84c8-524e173a68bf";
     static DefinitionsService definitionsService;
     static AlertsService alertsService;
+    static ActionsService actionsService;
 
     @Test
     public void test000InitScheme() throws Exception {
@@ -1496,4 +1502,226 @@ public abstract class DefinitionsTest {
 
     }
 
+    public void test0090BasicActionsHistory() throws Exception {
+        for (int i = 0; i < 107; i++) {
+            Event testEvent = new Event(TEST_TENANT, "test-trigger", "test-category", "test-text");
+            Action action = new Action(testEvent.getTenantId(), "testplugin", "send-to-this-groups", testEvent);
+            Thread.sleep(2);
+            actionsService.send(action);
+        }
+
+        List<Action> actions = actionsService.getActions(TEST_TENANT, null, null);
+        assertEquals(107, actions.size());
+    }
+
+    @Test
+    public void test0070SearchActionsHistory() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            Alert testAlert = new Alert();
+            testAlert.setTenantId(TEST_TENANT);
+            testAlert.setId("test-trigger");
+            testAlert.setSeverity(Severity.CRITICAL);
+            testAlert.setCtime(i);
+            testAlert.setAlertId("test-alert" + i);
+            Action action1 = new Action(testAlert.getTenantId(), "plugin1", "action1", testAlert);
+            Action action2 = new Action(testAlert.getTenantId(), "plugin1", "action2", testAlert);
+            Action action3 = new Action(testAlert.getTenantId(), "plugin2", "action1", testAlert);
+            Action action4 = new Action(testAlert.getTenantId(), "plugin2", "action2", testAlert);
+            action1.setCtime(i);
+            action2.setCtime(i);
+            action3.setCtime(i);
+            action4.setCtime(i);
+            action1.setResult("result1");
+            action2.setResult("result2");
+            action3.setResult("result3");
+            action4.setResult("result4");
+            actionsService.send(action1);
+            actionsService.send(action2);
+            actionsService.send(action3);
+            actionsService.send(action4);
+        }
+
+        List<Action> actions = actionsService.getActions(TEST_TENANT, null, null);
+        assertEquals(10 * 4, actions.size());
+
+        ActionsCriteria criteria = new ActionsCriteria();
+        criteria.setStartTime(2L);
+
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(8 * 4, actions.size());
+
+        criteria.setStartTime(2L);
+        criteria.setEndTime(3L);
+
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(2 * 4, actions.size());
+
+        criteria = new ActionsCriteria();
+        criteria.setActionPlugin("plugin1");
+
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(10 * 2, actions.size());
+
+        criteria = new ActionsCriteria();
+        criteria.setActionPlugins(Arrays.asList("plugin1", "plugin2"));
+
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(10 * 4, actions.size());
+
+        criteria = new ActionsCriteria();
+        criteria.setActionId("action1");
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(10 * 2, actions.size());
+
+        criteria = new ActionsCriteria();
+        criteria.setActionIds(Arrays.asList("action1", "action2"));
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(10 * 4, actions.size());
+
+        criteria = new ActionsCriteria();
+        criteria.setAlertId("test-alert1");
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(1 * 4, actions.size());
+
+        criteria = new ActionsCriteria();
+        criteria.setAlertIds(Arrays.asList("test-alert1", "test-alert2", "test-alert3"));
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(3 * 4, actions.size());
+
+        criteria = new ActionsCriteria();
+        criteria.setResult("result1");
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(10 * 1, actions.size());
+
+        criteria = new ActionsCriteria();
+        criteria.setResults(Arrays.asList("result1", "result2"));
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(10 * 2, actions.size());
+
+        criteria = new ActionsCriteria();
+        criteria.setStartTime(2L);
+        criteria.setActionPlugin("plugin1");
+        criteria.setActionId("action1");
+        actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(8 * 1, actions.size());
+    }
+
+    @Test
+    public void test0080PaginationActionsHistory() throws Exception {
+        for (int i = 0; i < 103; i++) {
+            Alert testAlert = new Alert();
+            testAlert.setTenantId(TEST_TENANT);
+            testAlert.setId("test-trigger");
+            testAlert.setSeverity(Severity.CRITICAL);
+            testAlert.setCtime(i);
+            testAlert.setAlertId("test-alert" + i);
+            Action action1 = new Action(testAlert.getTenantId(), "plugin1", "action1", testAlert);
+            Action action2 = new Action(testAlert.getTenantId(), "plugin1", "action2", testAlert);
+            Action action3 = new Action(testAlert.getTenantId(), "plugin2", "action1", testAlert);
+            Action action4 = new Action(testAlert.getTenantId(), "plugin2", "action2", testAlert);
+            action1.setCtime(i);
+            action2.setCtime(i);
+            action3.setCtime(i);
+            action4.setCtime(i);
+            action1.setResult("result1");
+            action2.setResult("result2");
+            action3.setResult("result3");
+            action4.setResult("result4");
+            actionsService.send(action1);
+            actionsService.send(action2);
+            actionsService.send(action3);
+            actionsService.send(action4);
+        }
+
+        List<Action> actions = actionsService.getActions(TEST_TENANT, null, null);
+        assertEquals(103 * 4, actions.size());
+
+        Pager pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByAscending(ActionComparator.Field.ALERT_ID.getText()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        Page<Action> page = actionsService.getActions(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        Action firstAction = page.get(0);
+
+        assertEquals(103 * 4, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = actionsService.getActions(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(2, page.size());
+
+        Action lastAction = page.get(1);
+
+        assertTrue(firstAction.getEvent().getId().compareTo(lastAction.getEvent().getId()) < 0);
+
+        pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByDescending(ActionComparator.Field.RESULT.getText()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = actionsService.getActions(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        firstAction = page.get(0);
+
+        assertEquals(103 * 4, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = actionsService.getActions(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(2, page.size());
+
+        lastAction = page.get(1);
+
+        assertTrue(firstAction.getResult().compareTo(lastAction.getResult()) > 0);
+    }
+
+    @Test
+    public void test0090ThinActionsHistory() throws Exception {
+        for (int i = 0; i < 103; i++) {
+            Alert testAlert = new Alert();
+            testAlert.setTenantId(TEST_TENANT);
+            testAlert.setId("test-trigger");
+            testAlert.setSeverity(Severity.CRITICAL);
+            testAlert.setCtime(i);
+            testAlert.setAlertId("test-alert" + i);
+            Action action1 = new Action(testAlert.getTenantId(), "plugin1", "action1", testAlert);
+            Action action2 = new Action(testAlert.getTenantId(), "plugin1", "action2", testAlert);
+            Action action3 = new Action(testAlert.getTenantId(), "plugin2", "action1", testAlert);
+            Action action4 = new Action(testAlert.getTenantId(), "plugin2", "action2", testAlert);
+            action1.setCtime(i);
+            action2.setCtime(i);
+            action3.setCtime(i);
+            action4.setCtime(i);
+            action1.setResult("result1");
+            action2.setResult("result2");
+            action3.setResult("result3");
+            action4.setResult("result4");
+            actionsService.send(action1);
+            actionsService.send(action2);
+            actionsService.send(action3);
+            actionsService.send(action4);
+        }
+
+        ActionsCriteria criteria = new ActionsCriteria();
+        criteria.setThin(true);
+        List<Action> actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(103 * 4, actions.size());
+
+        for (Action action : actions) {
+            System.out.println(action);
+            assertNull(action.getEvent());
+        }
+    }
 }

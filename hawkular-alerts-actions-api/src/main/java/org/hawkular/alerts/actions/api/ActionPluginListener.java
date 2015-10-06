@@ -50,5 +50,5 @@ public interface ActionPluginListener {
      * @param msg PluginMessage received to be processed by the plugin
      * @throws Exception any problem
      */
-    void process(PluginMessage msg) throws Exception;
+    void process(ActionMessage msg) throws Exception;
 }

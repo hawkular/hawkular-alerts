@@ -33,10 +33,16 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-import org.hawkular.alerts.actions.api.ActionPlugin;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
+import org.hawkular.alerts.actions.api.ActionResponseMessage.Operation;
 import org.hawkular.alerts.actions.api.MsgLogger;
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.hawkular.alerts.api.model.event.Event;
@@ -50,7 +56,7 @@ import org.jboss.logging.Logger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ActionPlugin(name = "email")
+@Plugin(name = "email")
 public class EmailPlugin implements ActionPluginListener {
     public static final String PLUGIN_NAME = "email";
 
@@ -185,6 +191,12 @@ public class EmailPlugin implements ActionPluginListener {
 
     EmailTemplate emailTemplate;
 
+    @Sender
+    ActionPluginSender sender;
+
+    private static final String MESSAGE_PROCESSED = "PROCESSED";
+    private static final String MESSAGE_FAILED = "FAILED";
+
     public EmailPlugin() {
 
         defaultProperties.put(PROP_FROM, DEFAULT_FROM);
@@ -224,18 +236,46 @@ public class EmailPlugin implements ActionPluginListener {
         return defaultProperties;
     }
 
-    @Override
-    public void process(PluginMessage msg) throws Exception {
-        Message message = createMimeMessage(msg);
-        Transport.send(message);
-
-        msgLog.infoActionReceived("email", msg.toString());
+    private void sendResult(Action action) {
+        if (sender == null) {
+            throw new IllegalStateException("ActionPluginSender is not present in the plugin");
+        }
+        if (action == null) {
+            throw new IllegalStateException("Action to update result must be not null");
+        }
+        ActionResponseMessage newMessage = sender.createMessage(Operation.RESULT);
+        newMessage.getPayload().put("action", JsonUtil.toJson(action));
+        try {
+            sender.send(newMessage);
+        } catch (Exception e) {
+            log.error("Error sending ActionResponseMessage", e);
+        }
     }
 
-    protected Message createMimeMessage(PluginMessage msg) throws Exception {
+    @Override
+    public void process(ActionMessage msg) throws Exception {
+        if (msg == null || msg.getAction() == null) {
+            msgLog.warnMessageReceivedWithoutPayload("email");
+        }
+        try {
+            Message message = createMimeMessage(msg);
+            Transport.send(message);
+            msgLog.infoActionReceived("email", msg.toString());
+            Action successAction = msg.getAction();
+            successAction.setResult(MESSAGE_PROCESSED);
+            sendResult(successAction);
+        } catch (Exception e) {
+            msgLog.errorCannotProcessMessage("email", e.getMessage());
+            Action failedAction = msg.getAction();
+            failedAction.setResult(MESSAGE_FAILED);
+            sendResult(failedAction);
+        }
+    }
+
+    protected Message createMimeMessage(ActionMessage msg) throws Exception {
         Message email = new EmailMimeMessage(mailSession);
 
-        Map<String, String> props = msg.getProperties();
+        Map<String, String> props = msg.getAction().getProperties();
         if (null == props || props.isEmpty()) {
             msgLog.warn("Properties empty on plugin " + PLUGIN_NAME);
         }

@@ -77,13 +77,14 @@ public class JsonTest {
     @Test
     public void jsonActionTest() throws Exception {
         String str = "{\"tenantId\":\"tenantTest\",\"actionPlugin\":\"plugin\"," +
-                "\"actionId\":\"test\",\"message\":\"test-msg\"}";
+                "\"actionId\":\"test\",\"eventId\":\"testAlert\",\"ctime\":123}";
         Action action = objectMapper.readValue(str, Action.class);
 
         assertEquals("tenantTest", action.getTenantId());
         assertEquals("plugin", action.getActionPlugin());
         assertEquals("test", action.getActionId());
-        assertEquals("test-msg", action.getMessage());
+        assertEquals("testAlert", action.getEventId());
+        assertEquals(123, action.getCtime());
 
         String output = objectMapper.writeValueAsString(action);
 
@@ -136,41 +137,41 @@ public class JsonTest {
                 "\"id\":\"trigger-test|1436964192878\"," +
                 "\"eventType\":\"ALERT\"," +
                 "\"trigger\":{\"tenantId\":\"jdoe\"," +
-                              "\"id\":\"trigger-test\"," +
-                              "\"name\":\"trigger-test\"," +
-                              "\"description\":\"trigger-test\"," +
-                              "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}" +
-                             "}," +
+                "\"id\":\"trigger-test\"," +
+                "\"name\":\"trigger-test\"," +
+                "\"description\":\"trigger-test\"," +
+                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}" +
+                "}," +
                 "\"ctime\":1436964192878," +
                 "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}," +
                 "\"text\":\"trigger-test\"," +
                 "\"evalSets\":[" +
-                    "[{\"evalTimestamp\":1436964294055," +
-                        "\"dataTimestamp\":2," +
-                        "\"type\":\"THRESHOLD\"," +
-                        "\"condition\":{\"tenantId\":null," +
-                                        "\"triggerId\":\"trigger-test\"," +
-                                        "\"triggerMode\":\"FIRING\"," +
-                                        "\"type\":\"THRESHOLD\"," +
-                                        "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
-                                        "\"dataId\":\"Default\"," +
-                                        "\"operator\":\"LTE\"," +
-                                        "\"threshold\":50.0" +
-                                        "}," +
-                        "\"value\":25.5}," +
-                    "{\"evalTimestamp\":1436964284965," +
-                        "\"dataTimestamp\":1," +
-                        "\"type\":\"AVAILABILITY\"," +
-                        "\"condition\":{\"tenantId\":null," +
-                                        "\"triggerId\":\"trigger-test\"," +
-                                        "\"triggerMode\":\"FIRING\"," +
-                                        "\"type\":\"AVAILABILITY\"," +
-                                        "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
-                                        "\"dataId\":\"Default\"," +
-                                        "\"operator\":\"UP\"" +
-                                        "}," +
-                        "\"value\":\"UP\"}]" +
-                    "]," +
+                "[{\"evalTimestamp\":1436964294055," +
+                "\"dataTimestamp\":2," +
+                "\"type\":\"THRESHOLD\"," +
+                "\"condition\":{\"tenantId\":null," +
+                "\"triggerId\":\"trigger-test\"," +
+                "\"triggerMode\":\"FIRING\"," +
+                "\"type\":\"THRESHOLD\"," +
+                "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
+                "\"dataId\":\"Default\"," +
+                "\"operator\":\"LTE\"," +
+                "\"threshold\":50.0" +
+                "}," +
+                "\"value\":25.5}," +
+                "{\"evalTimestamp\":1436964284965," +
+                "\"dataTimestamp\":1," +
+                "\"type\":\"AVAILABILITY\"," +
+                "\"condition\":{\"tenantId\":null," +
+                "\"triggerId\":\"trigger-test\"," +
+                "\"triggerMode\":\"FIRING\"," +
+                "\"type\":\"AVAILABILITY\"," +
+                "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
+                "\"dataId\":\"Default\"," +
+                "\"operator\":\"UP\"" +
+                "}," +
+                "\"value\":\"UP\"}]" +
+                "]," +
                 "\"severity\":\"MEDIUM\"," +
                 "\"status\":\"OPEN\"," +
                 "\"ackTime\":0," +

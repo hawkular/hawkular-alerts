@@ -25,10 +25,15 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
-import org.hawkular.alerts.actions.api.ActionPlugin;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.actions.api.MsgLogger;
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 
@@ -44,7 +49,7 @@ import com.twilio.sdk.resource.instance.Account;
  * @author Lucas Ponce
  * @author Thomas Segismont
  */
-@ActionPlugin(name = "sms")
+@Plugin(name = "sms")
 public class SmsPlugin implements ActionPluginListener {
     static final String ACCOUNT_SID_PROPERTY = "org.hawkular.actions.sms.sid";
     static final String ACCOUNT_SID = System.getProperty(ACCOUNT_SID_PROPERTY);
@@ -58,6 +63,12 @@ public class SmsPlugin implements ActionPluginListener {
     Map<String, String> defaultProperties = new HashMap<>();
 
     MessageFactory messageFactory;
+
+    @Sender
+    ActionPluginSender sender;
+
+    private static final String MESSAGE_PROCESSED = "PROCESSED";
+    private static final String MESSAGE_FAILED = "FAILED";
 
     public SmsPlugin() {
         defaultProperties.put("phone", "+1555123456");
@@ -76,19 +87,19 @@ public class SmsPlugin implements ActionPluginListener {
     }
 
     @Override
-    public void process(PluginMessage msg) throws Exception {
+    public void process(ActionMessage msg) throws Exception {
         if (messageFactory == null) {
-            msgLog.errorCannotSendMessage("sms", "Plugin is not started");
+            msgLog.errorCannotProcessMessage("sms", "Plugin is not started");
             return;
         }
-        Map<String, String> properties = msg.getProperties();
+        Map<String, String> properties = msg.getAction().getProperties();
         if (properties == null || properties.isEmpty()) {
-            msgLog.errorCannotSendMessage("sms", "Missing message properties");
+            msgLog.errorCannotProcessMessage("sms", "Missing message properties");
             return;
         }
         String to = properties.get("phone");
         if (StringUtils.isBlank(to)) {
-            msgLog.errorCannotSendMessage("sms", "Missing recipient");
+            msgLog.errorCannotProcessMessage("sms", "Missing recipient");
             return;
         }
         List<NameValuePair> params = new ArrayList<>(3);
@@ -99,10 +110,16 @@ public class SmsPlugin implements ActionPluginListener {
         try {
             messageFactory.create(params);
         } catch (TwilioRestException e) {
-            msgLog.errorCannotSendMessage("sms", e.getLocalizedMessage());
+            msgLog.errorCannotProcessMessage("sms", e.getLocalizedMessage());
+            Action failedAction = msg.getAction();
+            failedAction.setResult(MESSAGE_FAILED);
+            sendResult(failedAction);
         }
 
         msgLog.infoActionReceived("sms", msg.toString());
+        Action successAction = msg.getAction();
+        successAction.setResult(MESSAGE_PROCESSED);
+        sendResult(successAction);
     }
 
     void setup() {
@@ -120,7 +137,7 @@ public class SmsPlugin implements ActionPluginListener {
         }
     }
 
-    private String prepareMessage(PluginMessage msg) {
+    private String prepareMessage(ActionMessage msg) {
         String preparedMsg = null;
         Event event = msg.getAction() != null ? msg.getAction().getEvent() : null;
 
@@ -137,6 +154,22 @@ public class SmsPlugin implements ActionPluginListener {
             msgLog.warnMessageReceivedWithoutPayload("sms");
         }
         return preparedMsg;
+    }
+
+    private void sendResult(Action action) {
+        if (sender == null) {
+            throw new IllegalStateException("ActionPluginSender is not present in the plugin");
+        }
+        if (action == null) {
+            throw new IllegalStateException("Action to update result must be not null");
+        }
+        ActionResponseMessage newMessage = sender.createMessage(ActionResponseMessage.Operation.RESULT);
+        newMessage.getPayload().put("action", JsonUtil.toJson(action));
+        try {
+            sender.send(newMessage);
+        } catch (Exception e) {
+            msgLog.error("Error sending ActionResponseMessage", e);
+        }
     }
 
 }

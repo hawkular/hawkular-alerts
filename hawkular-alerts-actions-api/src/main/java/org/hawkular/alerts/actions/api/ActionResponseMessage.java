@@ -14,33 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.actions.standalone;
+package org.hawkular.alerts.actions.api;
 
 import java.util.Map;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
-import org.hawkular.alerts.api.model.action.Action;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
+ * A message sent to the alerts engine from the plugin
+ * It defines a code of operation and generic payload.
+ *
+ * Payload is represented as a generic map of strings.
+ *
  * @author Lucas Ponce
  */
-public class StandalonePluginMessage implements PluginMessage {
+public interface ActionResponseMessage {
 
-    Action action;
-    Map<String, String> properties;
-
-    public StandalonePluginMessage(Action action, Map<String, String> properties) {
-        this.action = action;
-        this.properties = properties;
+    enum Operation {
+        RESULT
     }
 
-    @Override
-    public Action getAction() {
-        return action;
-    }
+    @JsonInclude
+    Operation getOperation();
 
-    @Override
-    public Map<String, String> getProperties() {
-        return properties;
-    }
+    @JsonInclude
+    Map<String, String> getPayload();
 }

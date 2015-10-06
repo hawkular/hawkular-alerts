@@ -188,7 +188,7 @@
               </systemProperties>
               <excludes>
                 <exclude>**/*/PerfRulesEngineTest.java</exclude>
-                <exclude>**/*/CassDefinitionsTest.java</exclude>
+                <exclude>**/*/CassPersistenceTest.java</exclude>
               </excludes>
             </configuration>
           </plugin>
@@ -234,7 +234,7 @@
                 </property>
               </systemProperties>
               <includes>
-                <include>**/*/CassDefinitionsTest.java</include>
+                <include>**/*/CassPersistenceTest.java</include>
               </includes>
             </configuration>
           </plugin>

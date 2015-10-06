@@ -14,36 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.actions.api;
+package org.hawkular.alerts.actions.tests;
 
-import java.util.Map;
-import java.util.Set;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
+import org.hawkular.alerts.actions.api.ActionMessage;
+import org.hawkular.alerts.api.model.action.Action;
 
 /**
- * A message sent to the alerts engine from the plugin
- * It defines a code of operation and payloads
+ * Test implementation of PluginMessage interface
  *
- * It used for plugin registration but additional operations should be supported
- *
+ * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public interface PluginOperationMessage {
+public class TestActionMessage implements ActionMessage {
+    Action action;
 
-    enum Operation {
-        REGISTRATION
+    public TestActionMessage(Action action) {
+        this.action = action;
     }
 
-    @JsonInclude
-    Operation getOperation();
-
-    @JsonInclude
-    String getActionPlugin();
-
-    @JsonInclude
-    Set<String> getPropertyNames();
-
-    @JsonInclude
-    Map<String, String> getDefaultProperties();
+    @Override
+    public Action getAction() {
+        return action;
+    }
 }

@@ -16,9 +16,6 @@
  */
 package org.hawkular.alerts.bus.listener;
 
-import java.util.Map;
-import java.util.Set;
-
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
@@ -26,49 +23,42 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.jms.MessageListener;
 
-import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.bus.api.BusRegistrationMessage;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.services.ActionsService;
+import org.hawkular.alerts.bus.api.BusActionResponseMessage;
 import org.hawkular.alerts.bus.log.MsgLogger;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
 
 /**
- * A component that listens from the bus new action plugins to be registered into the alerts engine.
+ * A component that listens from the bus operation messages coming from plugins.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 @MessageDriven(messageListenerInterface = MessageListener.class, activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
-        @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAlertsPluginsQueue")})
+        @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAlertsActionsResponseQueue")})
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
-public class ActionPluginRegistrationListener extends BasicMessageListener<BusRegistrationMessage>  {
+public class ActionPluginOperationListener extends BasicMessageListener<BusActionResponseMessage>  {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(ActionPluginRegistrationListener.class);
+    private final Logger log = Logger.getLogger(ActionPluginOperationListener.class);
 
     @EJB
-    DefinitionsService definitions;
+    ActionsService actions;
 
     @Override
-    protected void onBasicMessage(BusRegistrationMessage msg) {
+    protected void onBasicMessage(BusActionResponseMessage msg) {
         log.debugf("Message received: [%s]", msg);
-        String actionPlugin = msg.getActionPlugin();
-        try {
-            if (definitions.getActionPlugin(actionPlugin) == null) {
-                Set<String> properties = msg.getPropertyNames();
-                Map<String, String> defaultProperties = msg.getDefaultProperties();
-                if (defaultProperties != null && !defaultProperties.isEmpty()) {
-                    definitions.addActionPlugin(actionPlugin, defaultProperties);
-                } else {
-                    definitions.addActionPlugin(actionPlugin, properties);
-                }
-                msgLog.infoActionPluginRegistration(actionPlugin);
-            } else {
-                msgLog.warnActionPluginAlreadyRegistered(actionPlugin);
-            }
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            msgLog.errorDefinitionsService(e.getMessage());
+        if (msg != null && msg.getPayload().containsKey("action")) {
+            String jsonAction = msg.getPayload().get("action");
+            Action updatedAction = JsonUtil.fromJson(jsonAction, Action.class);
+            actions.updateResult(updatedAction);
+            log.debugf("Operation message received from plugin [%s] with payload [%s]",
+                    updatedAction.getActionPlugin(), updatedAction.getResult());
+        } else {
+            msgLog.warnActionResponseMessageWithoutPayload();
         }
     }
 }
