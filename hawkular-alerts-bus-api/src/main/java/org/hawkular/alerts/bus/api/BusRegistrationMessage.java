@@ -19,14 +19,14 @@ package org.hawkular.alerts.bus.api;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.bus.common.BasicMessage;
+import org.hawkular.bus.common.AbstractMessage;
 
 /**
  * Message sent from the action plugins architect to the alerts engine through the bus
  *
  * @author Lucas Ponce
  */
-public class BusRegistrationMessage extends BasicMessage {
+public class BusRegistrationMessage extends AbstractMessage {
 
     String actionPlugin;
     Set<String> propertyNames;

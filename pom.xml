@@ -92,9 +92,9 @@
     <version.org.freemarker>2.3.17</version.org.freemarker>
     <version.org.hawkular>1.0.0.Alpha5</version.org.hawkular>
     <version.org.hawkular.accounts>1.0.14.Final</version.org.hawkular.accounts>
-    <version.org.hawkular.bus>0.6.0.Final</version.org.hawkular.bus>
+    <version.org.hawkular.bus>0.7.0.Final</version.org.hawkular.bus>
     <version.org.hawkular.commons>0.2.1.Final</version.org.hawkular.commons>
-    <version.org.hawkular.nest>0.6.0.Final</version.org.hawkular.nest>
+    <version.org.hawkular.nest>${version.org.hawkular.bus}</version.org.hawkular.nest>
     <version.org.hawkular.metrics>0.6.0.Final</version.org.hawkular.metrics>
     <version.org.jboss.jboss-vfs>3.2.10.Final</version.org.jboss.jboss-vfs>
     <version.org.slf4j>1.7.2</version.org.slf4j>

@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.hawkular.alerts.actions.api.OperationMessage;
-import org.hawkular.bus.common.BasicMessage;
+import org.hawkular.bus.common.AbstractMessage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class BusOperationMessage extends BasicMessage implements OperationMessage {
+public class BusOperationMessage extends AbstractMessage implements OperationMessage {
 
     @JsonInclude
     Operation operation;

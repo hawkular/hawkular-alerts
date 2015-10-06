@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hawkular.alerts.api.model.data.Data;
-import org.hawkular.bus.common.BasicMessage;
+import org.hawkular.bus.common.AbstractMessage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 /**
@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class AlertDataMessage extends BasicMessage {
+public class AlertDataMessage extends AbstractMessage {
 
     @JsonInclude
     List<AlertData> data;

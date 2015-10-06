@@ -18,7 +18,7 @@ package org.hawkular.alerts.bus.api;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.bus.common.BasicMessage;
+import org.hawkular.bus.common.AbstractMessage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *
  * @author Lucas Ponce
  */
-public class BusActionMessage extends BasicMessage implements ActionMessage {
+public class BusActionMessage extends AbstractMessage implements ActionMessage {
 
     @JsonInclude
     Action action;
