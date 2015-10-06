@@ -16,7 +16,7 @@
  */
 package org.hawkular.alerts.actions.bus;
 
-import static org.hawkular.alerts.actions.api.OperationMessage.Operation;
+import static org.hawkular.alerts.actions.api.ActionResponseMessage.Operation;
 
 import java.io.IOException;
 
@@ -26,8 +26,8 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.hawkular.alerts.actions.api.ActionPluginSender;
-import org.hawkular.alerts.actions.api.OperationMessage;
-import org.hawkular.alerts.bus.api.BusOperationMessage;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
+import org.hawkular.alerts.bus.api.BusActionResponseMessage;
 import org.hawkular.bus.common.ConnectionContextFactory;
 import org.hawkular.bus.common.Endpoint;
 import org.hawkular.bus.common.MessageId;
@@ -115,21 +115,21 @@ public class BusActionPluginSender implements ActionPluginSender {
     }
 
     @Override
-    public OperationMessage createMessage(Operation operation) {
+    public ActionResponseMessage createMessage(Operation operation) {
         if (operation == null) {
-            return new BusOperationMessage();
+            return new BusActionResponseMessage();
         }
-        return new BusOperationMessage(operation);
+        return new BusActionResponseMessage(operation);
     }
 
     @Override
-    public void send(OperationMessage msg) throws Exception {
-        if (!(msg instanceof BusOperationMessage)) {
+    public void send(ActionResponseMessage msg) throws Exception {
+        if (!(msg instanceof BusActionResponseMessage)) {
             throw new IllegalArgumentException("OperationMessage is not a BusOperationMessage instance");
         }
         init();
         try {
-            MessageId mid = new MessageProcessor().send(pcc, (BusOperationMessage)msg);
+            MessageId mid = new MessageProcessor().send(pcc, (BusActionResponseMessage)msg);
             log.debugf("Plugin [%s] has sent an operation message: [%s]", actionPlugin, mid.toString());
         } catch (JMSException e) {
             log.debug(e.getMessage(), e);

@@ -32,7 +32,7 @@ public interface ActionPluginSender {
      * @param operation the type of operation of the message
      * @return a new OperationMessage
      */
-    OperationMessage createMessage(OperationMessage.Operation operation);
+    ActionResponseMessage createMessage(ActionResponseMessage.Operation operation);
 
     /**
      * Send a message to the engine.
@@ -41,5 +41,5 @@ public interface ActionPluginSender {
      * @param msg the operation message to be sent
      * @throws Exception any problem
      */
-    void send(OperationMessage msg) throws Exception;
+    void send(ActionResponseMessage msg) throws Exception;
 }

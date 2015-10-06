@@ -22,8 +22,13 @@ import java.util.Set;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.jboss.aerogear.unifiedpush.DefaultPushSender;
 import org.jboss.aerogear.unifiedpush.PushSender;
@@ -49,6 +54,12 @@ public class AerogearPlugin implements ActionPluginListener {
 
     PushSender pushSender;
 
+    @Sender
+    ActionPluginSender sender;
+
+    private static final String MESSAGE_PROCESSED = "PROCESSED";
+    private static final String MESSAGE_FAILED = "FAILED";
+
     public AerogearPlugin() {
         defaultProperties.put("alias", "Default aerogear alias");
         defaultProperties.put("description", "Default aerogear description");
@@ -72,18 +83,27 @@ public class AerogearPlugin implements ActionPluginListener {
             return;
         }
 
-        UnifiedMessage.MessageBuilder alert = UnifiedMessage.withMessage().alert(prepareMessage(msg));
-        if (msg.getAction().getProperties() != null) {
-            String alias = msg.getAction().getProperties().get("alias");
-            if (!isBlank(alias)) {
-                alert.config().criteria().aliases(alias);
+        try {
+            UnifiedMessage.MessageBuilder alert = UnifiedMessage.withMessage().alert(prepareMessage(msg));
+            if (msg.getAction().getProperties() != null) {
+                String alias = msg.getAction().getProperties().get("alias");
+                if (!isBlank(alias)) {
+                    alert.config().criteria().aliases(alias);
+                }
             }
+
+            UnifiedMessage unifiedMessage = alert.build();
+            pushSender.send(unifiedMessage);
+            msgLog.infoActionReceived("aerogear", msg.toString());
+            Action successAction = msg.getAction();
+            successAction.setResult(MESSAGE_PROCESSED);
+            sendResult(successAction);
+        } catch (Exception e) {
+            msgLog.errorCannotProcessMessage("aerogear", e.getMessage());
+            Action failedAction = msg.getAction();
+            failedAction.setResult(MESSAGE_FAILED);
+            sendResult(failedAction);
         }
-
-        UnifiedMessage unifiedMessage = alert.build();
-        pushSender.send(unifiedMessage);
-
-        msgLog.infoActionReceived("aerogear", msg.toString());
     }
 
     void setup() {
@@ -120,5 +140,20 @@ public class AerogearPlugin implements ActionPluginListener {
         return preparedMsg;
     }
 
+    private void sendResult(Action action) {
+        if (sender == null) {
+            throw new IllegalStateException("ActionPluginSender is not present in the plugin");
+        }
+        if (action == null) {
+            throw new IllegalStateException("Action to update result must be not null");
+        }
+        ActionResponseMessage newMessage = sender.createMessage(ActionResponseMessage.Operation.RESULT);
+        newMessage.getPayload().put("action", JsonUtil.toJson(action));
+        try {
+            sender.send(newMessage);
+        } catch (Exception e) {
+            msgLog.error("Error sending OperationMessage", e);
+        }
+    }
 
 }

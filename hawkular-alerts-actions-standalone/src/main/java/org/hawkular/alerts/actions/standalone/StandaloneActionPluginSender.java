@@ -17,8 +17,8 @@
 package org.hawkular.alerts.actions.standalone;
 
 import org.hawkular.alerts.actions.api.ActionPluginSender;
-import org.hawkular.alerts.actions.api.OperationMessage;
-import org.hawkular.alerts.actions.api.OperationMessage.Operation;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
+import org.hawkular.alerts.actions.api.ActionResponseMessage.Operation;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionsService;
@@ -41,15 +41,15 @@ public class StandaloneActionPluginSender implements ActionPluginSender {
     }
 
     @Override
-    public OperationMessage createMessage(Operation operation) {
+    public ActionResponseMessage createMessage(Operation operation) {
         if (operation == null) {
-            return new StandaloneOperationMessage();
+            return new StandaloneActionResponseMessage();
         }
-        return new StandaloneOperationMessage(operation);
+        return new StandaloneActionResponseMessage(operation);
     }
 
     @Override
-    public void send(OperationMessage msg) throws Exception {
+    public void send(ActionResponseMessage msg) throws Exception {
         log.debugf("Message received: [%s]", msg);
         if (msg != null && msg.getPayload().containsKey("action")) {
             String jsonAction = msg.getPayload().get("action");

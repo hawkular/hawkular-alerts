@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
@@ -38,6 +40,7 @@ import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -46,7 +49,7 @@ import org.junit.Test;
  */
 public class FilePluginTest {
 
-    private FilePlugin filePlugin = new FilePlugin();
+    private FilePlugin filePlugin;
 
     private static ActionMessage openThresholdMsg;
     private static ActionMessage ackThresholdMsg;
@@ -72,6 +75,12 @@ public class FilePluginTest {
             return action;
         }
 
+    }
+
+    @Before
+    public void preparePlugin() {
+        filePlugin = new FilePlugin();
+        filePlugin.sender = new TestActionSender();
     }
 
     @BeforeClass
@@ -373,4 +382,45 @@ public class FilePluginTest {
         filePlugin.process(ackTwoCondMsg);
         filePlugin.process(resolvedTwoCondMsg);
     }
+
+    public class TestActionResponseMessage implements ActionResponseMessage {
+
+        ActionResponseMessage.Operation operation;
+
+        Map<String, String> payload;
+
+        public TestActionResponseMessage() {
+            this.operation = ActionResponseMessage.Operation.RESULT;
+            this.payload = new HashMap<>();
+        }
+
+        public TestActionResponseMessage(ActionResponseMessage.Operation operation) {
+            this.operation = operation;
+            this.payload = new HashMap<>();
+        }
+
+        @Override
+        public Operation getOperation() {
+            return operation;
+        }
+
+        @Override
+        public Map<String, String> getPayload() {
+            return payload;
+        }
+    }
+
+    public class TestActionSender implements ActionPluginSender {
+
+        @Override
+        public ActionResponseMessage createMessage(ActionResponseMessage.Operation operation) {
+            return new TestActionResponseMessage(operation);
+        }
+
+        @Override
+        public void send(ActionResponseMessage msg) throws Exception {
+            // Nothing to do
+        }
+    }
+
 }
