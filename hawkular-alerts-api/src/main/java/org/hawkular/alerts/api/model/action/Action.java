@@ -19,6 +19,7 @@ package org.hawkular.alerts.api.model.action;
 import java.util.Map;
 
 import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.condition.Alert.Thin;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -47,11 +48,15 @@ public class Action {
     @JsonInclude
     private String actionId;
 
-    @JsonInclude(Include.NON_NULL)
-    private Alert alert;
+    @JsonInclude
+    private String alertId;
 
     @JsonInclude
     private long ctime;
+
+    @JsonInclude(Include.NON_NULL)
+    @Thin
+    private Alert alert;
 
     @JsonInclude(Include.NON_EMPTY)
     private Map<String, String> properties;
@@ -66,6 +71,9 @@ public class Action {
         this.actionPlugin = actionPlugin;
         this.actionId = actionId;
         this.alert = alert;
+        if (alert != null) {
+            this.alertId = alert.getAlertId();
+        }
         this.ctime = System.currentTimeMillis();
     }
 
@@ -91,6 +99,14 @@ public class Action {
 
     public void setActionPlugin(String actionPlugin) {
         this.actionPlugin = actionPlugin;
+    }
+
+    public String getAlertId() {
+        return alertId;
+    }
+
+    public void setAlertId(String alertId) {
+        this.alertId = alertId;
     }
 
     public Alert getAlert() {
@@ -137,17 +153,22 @@ public class Action {
         if (actionPlugin != null ? !actionPlugin.equals(action.actionPlugin) : action.actionPlugin != null)
             return false;
         if (actionId != null ? !actionId.equals(action.actionId) : action.actionId != null) return false;
-        return !(alert != null ? !alert.equals(action.alert) : action.alert != null);
+        if (alertId != null ? !alertId.equals(action.alertId) : action.alertId != null) return false;
+        if (properties != null ? !properties.equals(action.properties) : action.properties != null) return false;
+        return !(result != null ? !result.equals(action.result) : action.result != null);
+
     }
 
     @Override
     public int hashCode() {
-        int result = tenantId != null ? tenantId.hashCode() : 0;
-        result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
-        result = 31 * result + (actionId != null ? actionId.hashCode() : 0);
-        result = 31 * result + (alert != null ? alert.hashCode() : 0);
-        result = 31 * result + (int) (ctime ^ (ctime >>> 32));
-        return result;
+        int result1 = tenantId != null ? tenantId.hashCode() : 0;
+        result1 = 31 * result1 + (actionPlugin != null ? actionPlugin.hashCode() : 0);
+        result1 = 31 * result1 + (actionId != null ? actionId.hashCode() : 0);
+        result1 = 31 * result1 + (alertId != null ? alertId.hashCode() : 0);
+        result1 = 31 * result1 + (int) (ctime ^ (ctime >>> 32));
+        result1 = 31 * result1 + (properties != null ? properties.hashCode() : 0);
+        result1 = 31 * result1 + (result != null ? result.hashCode() : 0);
+        return result1;
     }
 
     @Override
@@ -156,8 +177,9 @@ public class Action {
                 "tenantId='" + tenantId + '\'' +
                 ", actionPlugin='" + actionPlugin + '\'' +
                 ", actionId='" + actionId + '\'' +
-                ", alert=" + alert +
+                ", alertId='" + alertId + '\'' +
                 ", ctime=" + ctime +
+                ", alert=" + alert +
                 ", properties=" + properties +
                 ", result='" + result + '\'' +
                 '}';

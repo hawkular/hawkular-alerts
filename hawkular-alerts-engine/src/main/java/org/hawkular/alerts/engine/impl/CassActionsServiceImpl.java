@@ -220,6 +220,7 @@ public class CassActionsServiceImpl implements ActionsService {
             throw new IllegalArgumentException("TenantId must be not null");
         }
         session = CassCluster.getSession();
+        boolean thin = (null != criteria && criteria.isThin());
         boolean filter = (null != criteria && criteria.hasCriteria());
 
         List<Action> actions = new ArrayList<>();
@@ -313,7 +314,7 @@ public class CassActionsServiceImpl implements ActionsService {
             Iterator<Row> itActionHistoryByTenant = rsActionHistoryByTenant.iterator();
             while (itActionHistoryByTenant.hasNext()) {
                 Row row = itActionHistoryByTenant.next();
-                Action actionHistory = JsonUtil.fromJson(row.getString("payload"), Action.class);
+                Action actionHistory = JsonUtil.fromJson(row.getString("payload"), Action.class, thin);
                 actions.add(actionHistory);
             }
         } else {
@@ -325,7 +326,7 @@ public class CassActionsServiceImpl implements ActionsService {
             List<ResultSet> rsActionHistory = Futures.allAsList(futures).get();
             rsActionHistory.stream().forEach(r -> {
                 for (Row row : r) {
-                    Action actionHistory = JsonUtil.fromJson(row.getString("payload"), Action.class);
+                    Action actionHistory = JsonUtil.fromJson(row.getString("payload"), Action.class, thin);
                     actions.add(actionHistory);
                 }
             });

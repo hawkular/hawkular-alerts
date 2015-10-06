@@ -1260,4 +1260,44 @@ public abstract class PersistenceTest {
 
         assertTrue(firstAction.getResult().compareTo(lastAction.getResult()) > 0);
     }
+
+    @Test
+    public void test0090ThinActionsHistory() throws Exception {
+        for (int i = 0; i < 103; i++) {
+            Alert testAlert = new Alert();
+            testAlert.setTenantId(TEST_TENANT);
+            testAlert.setTriggerId("test-trigger");
+            testAlert.setSeverity(Severity.CRITICAL);
+            testAlert.setCtime(i);
+            testAlert.setAlertId("test-alert" + i);
+            Action action1 = new Action(testAlert.getTenantId(), "plugin1", "action1", testAlert);
+            Action action2 = new Action(testAlert.getTenantId(), "plugin1", "action2", testAlert);
+            Action action3 = new Action(testAlert.getTenantId(), "plugin2", "action1", testAlert);
+            Action action4 = new Action(testAlert.getTenantId(), "plugin2", "action2", testAlert);
+            action1.setCtime(i);
+            action2.setCtime(i);
+            action3.setCtime(i);
+            action4.setCtime(i);
+            action1.setResult("result1");
+            action2.setResult("result2");
+            action3.setResult("result3");
+            action4.setResult("result4");
+            actionsService.send(action1);
+            actionsService.send(action2);
+            actionsService.send(action3);
+            actionsService.send(action4);
+        }
+
+        ActionsCriteria criteria = new ActionsCriteria();
+        criteria.setThin(true);
+        List<Action> actions = actionsService.getActions(TEST_TENANT, criteria, null);
+        assertEquals(103 * 4, actions.size());
+
+        for (Action action : actions) {
+            System.out.println(action);
+            assertNull(action.getAlert());
+        }
+    }
+
+
 }

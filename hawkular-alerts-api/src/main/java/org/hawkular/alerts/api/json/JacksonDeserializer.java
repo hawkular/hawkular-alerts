@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
@@ -355,12 +356,17 @@ public class JacksonDeserializer {
                     ignorables.add(field.getName());
                 }
             }
+            for (Field field : Action.class.getDeclaredFields()) {
+                if (field.isAnnotationPresent(Alert.Thin.class)) {
+                    ignorables.add(field.getName());
+                }
+            }
         }
 
         @Override
         public BeanDeserializerBuilder updateBuilder(DeserializationConfig config, BeanDescription beanDesc,
                 BeanDeserializerBuilder builder) {
-            if (!beanDesc.getBeanClass().equals(Alert.class)) {
+            if (!beanDesc.getBeanClass().equals(Alert.class) && !beanDesc.getBeanClass().equals(Action.class)) {
                 return builder;
             }
             for (String ignore : ignorables) {
@@ -372,7 +378,7 @@ public class JacksonDeserializer {
         @Override
         public List<BeanPropertyDefinition> updateProperties(DeserializationConfig config,
                 BeanDescription beanDesc, List<BeanPropertyDefinition> propDefs) {
-            if (!beanDesc.getBeanClass().equals(Alert.class)) {
+            if (!beanDesc.getBeanClass().equals(Alert.class) && !beanDesc.getBeanClass().equals(Action.class)) {
                 return propDefs;
             }
             List<BeanPropertyDefinition> newPropDefs = new ArrayList<>();
