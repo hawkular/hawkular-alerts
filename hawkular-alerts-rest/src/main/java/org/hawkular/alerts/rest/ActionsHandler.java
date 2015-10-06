@@ -280,11 +280,15 @@ public class ActionsHandler {
                     "comma separated list of action results")
             @QueryParam("results")
             final String results,
+            @ApiParam(required = false, value = "return only thin actions, do not include full alert, only alertId")
+            @QueryParam("thin")
+            final Boolean thin,
             @Context
             final UriInfo uri) {
         Pager pager = RequestUtil.extractPaging(uri);
         try {
-            ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results);
+            ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
+                    thin);
             Page<Action> actionPage = actions.getActions(tenantId, criteria, pager);
             log.debugf("Actions: %s ", actionPage);
             if (isEmpty(actionPage)) {
@@ -329,7 +333,8 @@ public class ActionsHandler {
             @QueryParam("results")
             final String results) {
         try {
-            ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results);
+            ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
+                    false);
             int numDeleted = actions.deleteActions(tenantId, criteria);
             log.debugf("Actions deleted: %s ", numDeleted);
             return ResponseUtil.ok(numDeleted);
@@ -340,7 +345,7 @@ public class ActionsHandler {
     }
 
     private ActionsCriteria buildCriteria(Long startTime, Long endTime, String actionPlugins, String actionIds,
-                                          String alertIds, String results) {
+                                          String alertIds, String results, boolean thin) {
         ActionsCriteria criteria = new ActionsCriteria();
         criteria.setStartTime(startTime);
         criteria.setEndTime(endTime);
@@ -356,6 +361,7 @@ public class ActionsHandler {
         if (!isEmpty(results)) {
             criteria.setResults(Arrays.asList(results.split(",")));
         }
+        criteria.setThin(thin);
         return criteria;
     }
 

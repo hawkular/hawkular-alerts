@@ -35,6 +35,7 @@ public class ActionsCriteria {
     Collection<String> alertIds = null;
     String result = null;
     Collection<String> results = null;
+    boolean thin = false;
 
     public Long getStartTime() {
         return startTime;
@@ -114,6 +115,14 @@ public class ActionsCriteria {
 
     public void setResults(Collection<String> results) {
         this.results = results;
+    }
+
+    public boolean isThin() {
+        return thin;
+    }
+
+    public void setThin(boolean thin) {
+        this.thin = thin;
     }
 
     public boolean hasCriteria() {
