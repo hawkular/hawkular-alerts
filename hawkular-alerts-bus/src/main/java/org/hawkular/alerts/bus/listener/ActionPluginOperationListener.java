@@ -39,7 +39,7 @@ import org.jboss.logging.Logger;
  */
 @MessageDriven(messageListenerInterface = MessageListener.class, activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
-        @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAlertsOperationsQueue")})
+        @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAlertsActionsResponseQueue")})
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class ActionPluginOperationListener extends BasicMessageListener<BusActionResponseMessage>  {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
@@ -58,7 +58,7 @@ public class ActionPluginOperationListener extends BasicMessageListener<BusActio
             log.debugf("Operation message received from plugin [%s] with payload [%s]",
                     updatedAction.getActionPlugin(), updatedAction.getResult());
         } else {
-            msgLog.warnOperationMessageWithoutPayload();
+            msgLog.warnActionResponseMessageWithoutPayload();
         }
     }
 }

@@ -247,7 +247,7 @@ public class EmailPlugin implements ActionPluginListener {
         try {
             sender.send(newMessage);
         } catch (Exception e) {
-            log.error("Error sending OperationMessage", e);
+            log.error("Error sending ActionResponseMessage", e);
         }
     }
 

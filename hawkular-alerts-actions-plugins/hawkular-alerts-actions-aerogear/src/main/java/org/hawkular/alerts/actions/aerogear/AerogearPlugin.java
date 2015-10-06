@@ -152,7 +152,7 @@ public class AerogearPlugin implements ActionPluginListener {
         try {
             sender.send(newMessage);
         } catch (Exception e) {
-            msgLog.error("Error sending OperationMessage", e);
+            msgLog.error("Error sending ActionResponseMessage", e);
         }
     }
 

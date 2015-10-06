@@ -58,7 +58,7 @@ public class StandaloneActionPluginSender implements ActionPluginSender {
             log.debugf("Operation message received from plugin [%s] with payload [%s]",
                     updatedAction.getActionPlugin(), updatedAction.getResult());
         } else {
-            msgLog.warnOperationMessageWithoutPayload();
+            msgLog.warnActionResponseMessageWithoutPayload();
         }
     }
 }

@@ -46,7 +46,7 @@ public class BusActionPluginSender implements ActionPluginSender {
     public static final int TIMEOUT = 2000;
 
     private static final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
-    private static final String ACTION_PLUGIN_REGISTER = "HawkularAlertsOperationsQueue";
+    private static final String ACTION_PLUGIN_REGISTER = "HawkularAlertsActionsResponseQueue";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(BusActionPluginRegister.class);
 
@@ -125,12 +125,13 @@ public class BusActionPluginSender implements ActionPluginSender {
     @Override
     public void send(ActionResponseMessage msg) throws Exception {
         if (!(msg instanceof BusActionResponseMessage)) {
-            throw new IllegalArgumentException("OperationMessage is not a BusOperationMessage instance");
+            throw new IllegalArgumentException("ActionResponseMessage is not a BusActionResponseMessage " +
+                    "instance");
         }
         init();
         try {
             MessageId mid = new MessageProcessor().send(pcc, (BusActionResponseMessage)msg);
-            log.debugf("Plugin [%s] has sent an operation message: [%s]", actionPlugin, mid.toString());
+            log.debugf("Plugin [%s] has sent a response message: [%s]", actionPlugin, mid.toString());
         } catch (JMSException e) {
             log.debug(e.getMessage(), e);
             msgLog.errorCannotSendMessage(e.getMessage());

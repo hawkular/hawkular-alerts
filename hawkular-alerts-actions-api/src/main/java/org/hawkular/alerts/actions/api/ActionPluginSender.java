@@ -25,12 +25,12 @@ package org.hawkular.alerts.actions.api;
 public interface ActionPluginSender {
 
     /**
-     * Factory to create new OperationMessage messages.
+     * Factory to create new ActionResponseMessage messages.
      * There could be different implementation of messages depending on the context (bus, standalone) so
-     * new instances of OperationMessage should be created through this factory method.
+     * new instances of ActionResponseMessage should be created through this factory method.
      *
-     * @param operation the type of operation of the message
-     * @return a new OperationMessage
+     * @param operation the type of operation
+     * @return a new ActionResponseMessage
      */
     ActionResponseMessage createMessage(ActionResponseMessage.Operation operation);
 
@@ -38,7 +38,7 @@ public interface ActionPluginSender {
      * Send a message to the engine.
      * Plugin should not have access to the implementation used.
      *
-     * @param msg the operation message to be sent
+     * @param msg the response message to be sent
      * @throws Exception any problem
      */
     void send(ActionResponseMessage msg) throws Exception;
