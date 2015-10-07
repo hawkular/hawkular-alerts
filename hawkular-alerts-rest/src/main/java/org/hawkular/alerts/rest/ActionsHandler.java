@@ -345,7 +345,7 @@ public class ActionsHandler {
     }
 
     private ActionsCriteria buildCriteria(Long startTime, Long endTime, String actionPlugins, String actionIds,
-                                          String alertIds, String results, boolean thin) {
+                                          String alertIds, String results, Boolean thin) {
         ActionsCriteria criteria = new ActionsCriteria();
         criteria.setStartTime(startTime);
         criteria.setEndTime(endTime);
@@ -361,7 +361,11 @@ public class ActionsHandler {
         if (!isEmpty(results)) {
             criteria.setResults(Arrays.asList(results.split(",")));
         }
-        criteria.setThin(thin);
+        if (thin != null) {
+            criteria.setThin(thin);
+        } else {
+            criteria.setThin(false);
+        }
         return criteria;
     }
 
