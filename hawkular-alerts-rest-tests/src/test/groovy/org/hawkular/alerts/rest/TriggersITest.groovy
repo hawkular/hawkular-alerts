@@ -395,15 +395,15 @@ class TriggersITest extends AbstractITestBase {
         Map<String, String> tags = resp.data.tags;
         assertEquals("tvalue", tags.get("tname"));
 
-        resp = client.get(path: "triggers/tag", query: [name:"tname",value:"tvalue"] );
+        resp = client.get(path: "triggers", query: [tags:"tname|tvalue"] );
         assertEquals(200, resp.status)
         assertEquals("test-trigger-1", resp.data.iterator().next().id)
 
-        resp = client.get(path: "triggers/tag", query: [name:"tname",value:"*"] );
+        resp = client.get(path: "triggers", query: [tags:"tname|*"] );
         assertEquals(200, resp.status)
         assertEquals("test-trigger-1", resp.data.iterator().next().id)
 
-        resp = client.get(path: "triggers/tag", query: [name:"funky",value:"funky"] );
+        resp = client.get(path: "triggers", query: [tags:"funky|funky"] );
         assertEquals(200, resp.status)
         assertEquals(false, resp.data.iterator().hasNext())
 
@@ -412,7 +412,7 @@ class TriggersITest extends AbstractITestBase {
         resp = client.put(path: "triggers/test-trigger-1", body: testTrigger )
         assertEquals(200, resp.status)
 
-        resp = client.get(path: "triggers/tag", query: [name:"tname",value:"tvalue"] );
+        resp = client.get(path: "triggers", query: [tags:"tname|tvalue"] );
         assertEquals(200, resp.status)
         assertEquals(0, resp.data.size())
 

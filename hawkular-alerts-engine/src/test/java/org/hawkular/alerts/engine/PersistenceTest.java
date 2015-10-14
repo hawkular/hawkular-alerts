@@ -50,6 +50,7 @@ import org.hawkular.alerts.api.model.paging.ActionComparator;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.model.paging.TriggerComparator;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.ActionsCriteria;
@@ -57,6 +58,7 @@ import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.junit.Test;
 
 /**
@@ -664,14 +666,205 @@ public abstract class PersistenceTest {
         assertEquals("tvalue2", t.getTags().get("tname2"));
         assertEquals("testvalue", t.getTags().get("testname"));
 
-        Collection<Trigger> triggers = definitionsService.getTriggersByTag(TEST_TENANT, "testname", "bogus");
+        TriggersCriteria criteria = new TriggersCriteria();
+        criteria.setTags(tags);
+        tags.clear();
+        tags.put("testname", "bogus");
+        Collection<Trigger> triggers = definitionsService.getTriggers(TEST_TENANT, criteria, null);
         assertEquals(0, triggers.size());
-        triggers = definitionsService.getTriggersByTag(TEST_TENANT, "bogus", "testvalue");
+        tags.clear();
+        tags.put("bogus", "testvalue");
+        triggers = definitionsService.getTriggers(TEST_TENANT, criteria, null);
         assertEquals(0, triggers.size());
-        triggers = definitionsService.getTriggersByTag(TEST_TENANT, "testname", "testvalue");
+        tags.clear();
+        tags.put("testname", "testvalue");
+        triggers = definitionsService.getTriggers(TEST_TENANT, criteria, null);
         assertEquals(1, triggers.size());
-        triggers = definitionsService.getTriggersByTag(TEST_TENANT, "testname", "*");
+        tags.clear();
+        tags.put("testname", "*");
+        triggers = definitionsService.getTriggers(TEST_TENANT, criteria, null);
         assertEquals(1, triggers.size());
+    }
+
+    @Test
+    public void test0035PagingTriggers() throws Exception {
+
+        List<Trigger> result = definitionsService.getTriggers(TEST_TENANT, null, null);
+        assertEquals(7, result.size());
+
+        /*
+            Ordering and paging by Id
+         */
+        Pager pager = Pager.builder().withPageSize(5).withStartPage(0)
+                .orderByAscending(TriggerComparator.Field.ID.getName()).build();
+
+        String first;
+        String last;
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        Page<Trigger> page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        first = page.get(0).getId();
+
+        assertEquals(7, page.getTotalSize());
+        assertEquals(5, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(2, page.size());
+
+        last = page.get(1).getId();
+
+        System.out.println("first trigger: " + first + " last trigger: " + last);
+
+        assertTrue(first.compareTo(last) < 0);
+
+        pager = Pager.builder().withPageSize(5).withStartPage(0)
+                .orderByDescending(TriggerComparator.Field.ID.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        first = page.get(0).getId();
+
+        assertEquals(7, page.getTotalSize());
+        assertEquals(5, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(2, page.size());
+
+        last = page.get(1).getId();
+
+        System.out.println("first alert: " + first + " last alert: " + last);
+
+        assertTrue(first.compareTo(last) > 0);
+
+        /*
+            Ordering and paging by description
+         */
+        pager = Pager.builder().withPageSize(5).withStartPage(0)
+                .orderByAscending(TriggerComparator.Field.DESCRIPTION.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        first = page.get(0).getDescription();
+
+        assertEquals(7, page.getTotalSize());
+        assertEquals(5, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(2, page.size());
+
+        last = page.get(1).getDescription();
+
+        System.out.println("first trigger: " + first + " last trigger: " + last);
+
+        assertTrue(first.compareTo(last) < 0);
+
+        pager = Pager.builder().withPageSize(5).withStartPage(0)
+                .orderByDescending(TriggerComparator.Field.DESCRIPTION.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        first = page.get(0).getDescription();
+
+        assertEquals(7, page.getTotalSize());
+        assertEquals(5, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(2, page.size());
+
+        last = page.get(1).getDescription();
+
+        System.out.println("first alert: " + first + " last alert: " + last);
+
+        assertTrue(first.compareTo(last) > 0);
+
+        /*
+            Ordering and paging by name
+         */
+        pager = Pager.builder().withPageSize(5).withStartPage(0)
+                .orderByAscending(TriggerComparator.Field.NAME.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        first = page.get(0).getName();
+
+        assertEquals(7, page.getTotalSize());
+        assertEquals(5, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(2, page.size());
+
+        last = page.get(1).getName();
+
+        System.out.println("first trigger: " + first + " last trigger: " + last);
+
+        assertTrue(first.compareTo(last) < 0);
+
+        pager = Pager.builder().withPageSize(5).withStartPage(0)
+                .orderByDescending(TriggerComparator.Field.NAME.getName()).build();
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        first = page.get(0).getName();
+
+        assertEquals(7, page.getTotalSize());
+        assertEquals(5, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = definitionsService.getTriggers(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(2, page.size());
+
+        last = page.get(1).getName();
+
+        System.out.println("first alert: " + first + " last alert: " + last);
+
+        assertTrue(first.compareTo(last) > 0);
     }
 
     @Test
@@ -1298,6 +1491,5 @@ public abstract class PersistenceTest {
             assertNull(action.getAlert());
         }
     }
-
 
 }
