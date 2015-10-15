@@ -290,7 +290,7 @@ public class Alert {
      */
     public void addNote(String user, String text) {
         if (user == null || text == null) {
-            throw new IllegalArgumentException("Note mut have non-null user and text");
+            throw new IllegalArgumentException("Note must have non-null user and text");
         }
         getNotes().add(new Note(user, text));
     }
@@ -320,14 +320,13 @@ public class Alert {
         return true;
     }
 
-    @Override
-    public String toString() {
-        return "Alert{" +
+    @Override public
+    String toString() {
+        return "Alert" + '[' +
                 "tenantId='" + tenantId + '\'' +
                 ", alertId='" + alertId + '\'' +
                 ", triggerId='" + triggerId + '\'' +
                 ", ctime=" + ctime +
-                ", evalSets=" + evalSets +
                 ", severity=" + severity +
                 ", status=" + status +
                 ", ackTime=" + ackTime +
@@ -337,9 +336,8 @@ public class Alert {
                 ", notes=" + notes +
                 ", trigger=" + trigger +
                 ", dampening=" + dampening +
-                ", resolvedEvalSets=" + resolvedEvalSets +
                 ", context=" + context +
-                '}';
+                ']';
     }
 
     public static class Note {

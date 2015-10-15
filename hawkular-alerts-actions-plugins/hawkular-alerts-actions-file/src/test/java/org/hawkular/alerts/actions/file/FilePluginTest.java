@@ -226,7 +226,7 @@ public class FilePluginTest {
         avAlertResolved.setStatus(Alert.Status.RESOLVED);
         avAlertResolved.setResolvedBy("Test RESOLVED user");
         avAlertResolved.setResolvedTime(System.currentTimeMillis() + 20000);
-        avAlertResolved.addNote("Test RESOLVED", "Test RESOLVED notes");
+        avAlertResolved.addNote("Test RESOLVED user", "Test RESOLVED notes");
         avAlertResolved.setResolvedEvalSets(getEvalList(avResolveCondition, avGoodData));
 
         Action resolvedAvailabilityAction = new Action(tenantId, "email", "email-to-test", avAlertResolved);
