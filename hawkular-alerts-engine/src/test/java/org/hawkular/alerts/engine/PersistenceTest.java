@@ -25,6 +25,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1490,6 +1491,31 @@ public abstract class PersistenceTest {
             System.out.println(action);
             assertNull(action.getAlert());
         }
+    }
+
+    @Test
+    public void test0100BasicNotesOnAlert() throws Exception {
+
+        Alert testAlert = new Alert(TEST_TENANT, "non-existence-trigger", Severity.MEDIUM, null);
+
+        alertsService.addAlerts(Collections.singletonList(testAlert));
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setTriggerId("non-existence-trigger");
+
+        List<Alert> alerts = alertsService.getAlerts(TEST_TENANT, criteria, null);
+
+        assertTrue(alerts != null && alerts.size() == 1);
+
+        Alert updatedAlert = alerts.get(0);
+
+        alertsService.addNote(TEST_TENANT, updatedAlert.getAlertId(), "user1", "notes1");
+        alertsService.addNote(TEST_TENANT, updatedAlert.getAlertId(), "user2", "notes2");
+        alertsService.addNote(TEST_TENANT, updatedAlert.getAlertId(), "user3", "notes3");
+
+        Alert updatedAlertWithNotes = alertsService.getAlert(TEST_TENANT, updatedAlert.getAlertId(), false);
+
+        assertTrue(updatedAlertWithNotes != null && updatedAlertWithNotes.getNotes().size() == 3);
     }
 
 }

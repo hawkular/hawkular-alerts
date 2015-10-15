@@ -169,10 +169,11 @@ public class JsonTest {
                 "\"status\":\"OPEN\"," +
                 "\"ackTime\":0," +
                 "\"ackBy\":null," +
-                "\"ackNotes\":null," +
                 "\"resolvedTime\":0," +
                 "\"resolvedBy\":null," +
-                "\"resolvedNotes\":null," +
+                "\"notes\":[{\"user\":\"user1\",\"ctime\":1,\"text\":\"The comment 1\"}," +
+                "{\"user\":\"user2\",\"ctime\":2,\"text\":\"The comment 2\"}" +
+                "]," +
                 "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
 
         ObjectMapper mapper = new ObjectMapper();

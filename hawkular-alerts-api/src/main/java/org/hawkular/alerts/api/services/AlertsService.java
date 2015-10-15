@@ -53,6 +53,17 @@ public interface AlertsService {
     void addAlerts(Collection<Alert> alerts) throws Exception;
 
     /**
+     * Add a note on an existing Alert.
+     * If alertId doesn't exist then the note is ignored.
+     * @param tenantId Tenant where alerts are stored
+     * @param alertId Alert to be added a new note
+     * @param user The user adding the note
+     * @param text The content of the note
+     * @throws Exception any problem
+     */
+    void addNote(String tenantId, String alertId, String user, String text) throws Exception;
+
+    /**
      * Delete the requested Alerts, as described by the provided criteria.
      * @param tenantId Tenant where alerts are stored
      * @param criteria specifying the Alerts to be deleted. Not null.

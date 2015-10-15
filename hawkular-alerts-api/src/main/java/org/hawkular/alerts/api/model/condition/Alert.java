@@ -20,6 +20,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,16 +83,13 @@ public class Alert {
     private String ackBy;
 
     @JsonInclude
-    private String ackNotes;
-
-    @JsonInclude
     private long resolvedTime;
 
     @JsonInclude
     private String resolvedBy;
 
-    @JsonInclude
-    private String resolvedNotes;
+    @JsonInclude(Include.NON_EMPTY)
+    private List<Note> notes;
 
     /*
      * If set this should be the trigger as defined when the alert was fired.  A trigger definition can change
@@ -207,14 +205,6 @@ public class Alert {
         this.ackBy = ackBy;
     }
 
-    public String getAckNotes() {
-        return ackNotes;
-    }
-
-    public void setAckNotes(String ackNotes) {
-        this.ackNotes = ackNotes;
-    }
-
     public long getResolvedTime() {
         return resolvedTime;
     }
@@ -229,14 +219,6 @@ public class Alert {
 
     public void setResolvedBy(String resolvedBy) {
         this.resolvedBy = resolvedBy;
-    }
-
-    public String getResolvedNotes() {
-        return resolvedNotes;
-    }
-
-    public void setResolvedNotes(String resolvedNotes) {
-        this.resolvedNotes = resolvedNotes;
     }
 
     public List<Set<ConditionEval>> getResolvedEvalSets() {
@@ -274,6 +256,17 @@ public class Alert {
         this.context = context;
     }
 
+    public List<Note> getNotes() {
+        if (null == notes) {
+            this.notes = new ArrayList<>();
+        }
+        return notes;
+    }
+
+    public void setNotes(List<Note> notes) {
+        this.notes = notes;
+    }
+
     /**
      * Add context information.
      * @param name context key.
@@ -287,6 +280,19 @@ public class Alert {
             context = new HashMap<>();
         }
         context.put(name, value);
+    }
+
+    /**
+     * Add a note on this alert
+     *
+     * @param user author of the comment
+     * @param text content of the note
+     */
+    public void addNote(String user, String text) {
+        if (user == null || text == null) {
+            throw new IllegalArgumentException("Note mut have non-null user and text");
+        }
+        getNotes().add(new Note(user, text));
     }
 
     @Override
@@ -316,9 +322,103 @@ public class Alert {
 
     @Override
     public String toString() {
-        return "Alert [alertId=" + alertId + ", status=" + status + ", ackTime=" + ackTime
-                + ", ackBy=" + ackBy + ", resolvedTime=" + resolvedTime + ", resolvedBy=" + resolvedBy + ", context="
-                + context + "]";
+        return "Alert{" +
+                "tenantId='" + tenantId + '\'' +
+                ", alertId='" + alertId + '\'' +
+                ", triggerId='" + triggerId + '\'' +
+                ", ctime=" + ctime +
+                ", evalSets=" + evalSets +
+                ", severity=" + severity +
+                ", status=" + status +
+                ", ackTime=" + ackTime +
+                ", ackBy='" + ackBy + '\'' +
+                ", resolvedTime=" + resolvedTime +
+                ", resolvedBy='" + resolvedBy + '\'' +
+                ", notes=" + notes +
+                ", trigger=" + trigger +
+                ", dampening=" + dampening +
+                ", resolvedEvalSets=" + resolvedEvalSets +
+                ", context=" + context +
+                '}';
+    }
+
+    public static class Note {
+        @JsonInclude(Include.NON_EMPTY)
+        private String user;
+
+        @JsonInclude(Include.NON_EMPTY)
+        private long ctime;
+
+        @JsonInclude(Include.NON_EMPTY)
+        private String text;
+
+        public Note() {
+            // for json assembly
+        }
+
+        public Note(String user, String text) {
+            this(user, System.currentTimeMillis(), text);
+        }
+
+        public Note(String user, long ctime, String text) {
+            this.user = user;
+            this.ctime = ctime;
+            this.text = text;
+        }
+
+        public String getUser() {
+            return user;
+        }
+
+        public void setUser(String user) {
+            this.user = user;
+        }
+
+        public long getCtime() {
+            return ctime;
+        }
+
+        public void setCtime(long ctime) {
+            this.ctime = ctime;
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public void setText(String text) {
+            this.text = text;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Note note = (Note) o;
+
+            if (ctime != note.ctime) return false;
+            if (user != null ? !user.equals(note.user) : note.user != null) return false;
+            return !(text != null ? !text.equals(note.text) : note.text != null);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = user != null ? user.hashCode() : 0;
+            result = 31 * result + (int) (ctime ^ (ctime >>> 32));
+            result = 31 * result + (text != null ? text.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "Note{" +
+                    "user='" + user + '\'' +
+                    ", ctime=" + ctime +
+                    ", text='" + text + '\'' +
+                    '}';
+        }
     }
 
 }
