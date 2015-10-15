@@ -24,10 +24,6 @@ ${alert.ackTime?number_to_datetime}
 
 by ${alert.ackBy}
 </#if>
-<#if alert.ackNotes?? >
-
-${alert.ackNotes}
-</#if>
 </#if>
 <#if alert?? && alert.status?? && alert.status == 'RESOLVED'>
 
@@ -37,12 +33,16 @@ ${alert.resolvedTime?number_to_datetime}
 
 by ${alert.resolvedBy}
 </#if>
-<#if alert.resolvedNotes?? >
-
-${alert.resolvedNotes}
 </#if>
-</#if>
+<#if alert.notes?has_content>
 
+Notes:
+
+<#list alert.notes as note>
+${note.text} (${note.user}, ${note.ctime?number_to_datetime})
+</#list>
+
+</#if>
 <#if baseUrl??>
 To view metrics of this alert, access your Hawkular account:
 ${baseUrl}

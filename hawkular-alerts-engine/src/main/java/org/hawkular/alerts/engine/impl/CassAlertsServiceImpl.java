@@ -130,6 +130,38 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     @Override
+    public void addNote(String tenantId, String alertId, String user, String text) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(alertId)) {
+            throw new IllegalArgumentException("AlertId must be not null");
+        }
+        if (isEmpty(user) || isEmpty(text)) {
+            throw new IllegalArgumentException("user or text must be not null");
+        }
+
+        Alert alert = getAlert(tenantId, alertId, false);
+        if (alert == null) {
+            return;
+        }
+
+        alert.addNote(user, text);
+
+        session = CassCluster.getSession();
+        PreparedStatement updateAlert = CassStatement.get(session, CassStatement.UPDATE_ALERT);
+        if (updateAlert == null) {
+            throw new RuntimeException("updateAlert PreparedStatement is null");
+        }
+        try {
+            session.execute(updateAlert.bind(JsonUtil.toJson(alert), alert.getTenantId(), alert.getAlertId()));
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public Alert getAlert(String tenantId, String alertId, boolean thin) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
@@ -574,7 +606,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             a.setStatus(Alert.Status.ACKNOWLEDGED);
             a.setAckBy(ackBy);
             a.setAckTime(System.currentTimeMillis());
-            a.setAckNotes(ackNotes);
+            a.addNote(ackBy, ackNotes);
             updateAlertStatus(a);
             sendAction(a);
         }
@@ -641,7 +673,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             a.setStatus(Alert.Status.RESOLVED);
             a.setResolvedBy(resolvedBy);
             a.setResolvedTime(System.currentTimeMillis());
-            a.setResolvedNotes(resolvedNotes);
+            a.addNote(resolvedBy, resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
             updateAlertStatus(a);
             sendAction(a);
@@ -674,7 +706,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             a.setStatus(Alert.Status.RESOLVED);
             a.setResolvedBy(resolvedBy);
             a.setResolvedTime(System.currentTimeMillis());
-            a.setResolvedNotes(resolvedNotes);
+            a.addNote(resolvedBy, resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
             updateAlertStatus(a);
             sendAction(a);
