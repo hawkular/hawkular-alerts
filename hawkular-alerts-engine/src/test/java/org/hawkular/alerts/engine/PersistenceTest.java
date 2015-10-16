@@ -1270,6 +1270,85 @@ public abstract class PersistenceTest {
     }
 
     @Test
+    public void test0051SortOnAlertsContext() throws Exception {
+        Trigger t = definitionsService.getTrigger(TEST_TENANT, "trigger-6");
+        assertNotNull(t);
+
+        Collection<Condition> cs = definitionsService.getTriggerConditions(TEST_TENANT, t.getId(), null);
+        assertTrue(cs.toString(), cs.size() == 1);
+
+        AvailabilityCondition availability = (AvailabilityCondition) cs.iterator().next();
+
+        List<Alert> alerts = new ArrayList<>();
+
+        for (int i = 0; i < 107; i++) {
+            long dataTime = System.currentTimeMillis();
+            Availability data = new Availability("Availability-01", dataTime, Availability.AvailabilityType.DOWN);
+            AvailabilityConditionEval eval = new AvailabilityConditionEval(availability, data);
+            Set<ConditionEval> evalSet = new HashSet<>();
+            evalSet.add(eval);
+            List<Set<ConditionEval>> evals = new ArrayList<>();
+            evals.add(evalSet);
+            Alert alert = new Alert(TEST_TENANT, t.getId(), t.getSeverity(), evals);
+            alert.getContext().put("random", String.valueOf(Math.random()));
+            int iAlert = i % 3;
+            switch (iAlert) {
+                case 2:
+                    alert.setStatus(Alert.Status.OPEN);
+                    alert.setSeverity(Severity.CRITICAL);
+                    break;
+                case 1:
+                    alert.setStatus(Alert.Status.ACKNOWLEDGED);
+                    alert.setSeverity(Severity.LOW);
+                    break;
+                case 0:
+                    alert.setStatus(Alert.Status.RESOLVED);
+                    alert.setSeverity(Severity.MEDIUM);
+            }
+            alerts.add(alert);
+            Thread.sleep(2);
+        }
+
+        alertsService.addAlerts(alerts);
+
+        List<Alert> result = alertsService.getAlerts(TEST_TENANT, null, null);
+        assertEquals(107, result.size());
+
+        /*
+            Ordering and paging by alertId
+         */
+        Pager pager = Pager.builder().withPageSize(10).withStartPage(0)
+                .orderByAscending("context.random").build();
+
+        String firstContext;
+        String lastContext;
+
+        System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        Page<Alert> page = alertsService.getAlerts(TEST_TENANT, null, pager);
+        System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+
+        firstContext = page.get(0).getContext().get("random");
+
+        assertEquals(107, page.getTotalSize());
+        assertEquals(10, page.size());
+
+        while (pager.getEnd() < page.getTotalSize()) {
+            pager = pager.nextPage();
+            System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            page = alertsService.getAlerts(TEST_TENANT, null, pager);
+            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        }
+
+        assertEquals(7, page.size());
+
+        lastContext = page.get(6).getContext().get("random");
+
+        System.out.println("first alert: " + firstContext + " last alert: " + lastContext);
+
+        assertTrue(firstContext.compareTo(lastContext) < 0);
+    }
+
+    @Test
     public void test0060BasicActionsHistory() throws Exception {
         for (int i = 0; i < 107; i++) {
             Alert testAlert = new Alert(TEST_TENANT, "test-trigger", Severity.CRITICAL, null);
