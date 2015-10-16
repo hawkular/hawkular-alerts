@@ -345,8 +345,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             if (pager.getOrder() != null) {
                 pager.getOrder().stream().filter(o -> o.getField() != null && o.getDirection() != null)
                         .forEach(o -> {
-                            AlertComparator comparator = new AlertComparator(Field.getField(o.getField()),
-                                    o.getDirection());
+                            AlertComparator comparator = new AlertComparator(o.getField(), o.getDirection());
                             Collections.sort(ordered, comparator);
                         });
             }
