@@ -39,7 +39,7 @@ by ${alert.resolvedBy}
 Notes:
 
 <#list alert.notes as note>
-${note.text} (${note.user}, ${note.ctime?number_to_datetime})
+<#if note.text?? && note.user??>${note.text} (${note.user}, ${note.ctime?number_to_datetime})</#if>
 </#list>
 
 </#if>

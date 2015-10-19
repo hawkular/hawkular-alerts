@@ -180,12 +180,14 @@
                                             </#if>
                                             <#if alert.notes?has_content >
                                                 <#list alert.notes as note>
+                                                 <#if note.text?? && note.user??>
                                                     <tr>
                                                         <td align="center" style="color:#999999; font-family:Open sans,sans-serif; font-size:13px; line-height:21px; padding-bottom:7px;">
                                                           ${note.text}
                                                           <br>(${note.user}, ${note.ctime?number_to_datetime})
                                                         </td>
                                                     </tr>
+                                                 </#if>
                                                 </#list>
                                             </#if>
                                         </table>
