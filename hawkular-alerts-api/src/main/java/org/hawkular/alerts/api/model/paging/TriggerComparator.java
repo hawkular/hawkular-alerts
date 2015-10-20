@@ -31,7 +31,9 @@ public class TriggerComparator implements Comparator<Trigger> {
     public enum Field {
         ID("id"),
         DESCRIPTION("description"),
-        NAME("name");
+        ENABLED("enabled"),
+        NAME("name"),
+        SEVERITY("severity");
 
         private String name;
 
@@ -94,6 +96,11 @@ public class TriggerComparator implements Comparator<Trigger> {
                     return -1;
                 }
                 return o1.getDescription().compareTo(o2.getDescription()) * iOrder;
+            case ENABLED:
+                if (o1.isEnabled() == o2.isEnabled()) {
+                    return 0;
+                }
+                return (o1.isEnabled() ? 1 : -1) * iOrder;
             case NAME:
                 if (o1.getDescription() == null && o2.getName() == null) {
                     return 0;
@@ -105,6 +112,17 @@ public class TriggerComparator implements Comparator<Trigger> {
                     return -1;
                 }
                 return o1.getName().compareTo(o2.getName()) * iOrder;
+            case SEVERITY:
+                if (o1.getSeverity() == null && o2.getSeverity() == null) {
+                    return 0;
+                }
+                if (o1.getSeverity() == null && o2.getSeverity() != null) {
+                    return 1;
+                }
+                if (o1.getSeverity() != null && o2.getSeverity() == null) {
+                    return -1;
+                }
+                return o1.getSeverity().compareTo(o2.getSeverity()) * iOrder;
         }
         return 0;
     }
