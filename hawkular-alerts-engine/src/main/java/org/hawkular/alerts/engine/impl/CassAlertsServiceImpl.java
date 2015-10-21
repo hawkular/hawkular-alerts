@@ -188,6 +188,38 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     @Override
+    public void addNote(String tenantId, String alertId, String user, String text) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(alertId)) {
+            throw new IllegalArgumentException("AlertId must be not null");
+        }
+        if (isEmpty(user) || isEmpty(text)) {
+            throw new IllegalArgumentException("user or text must be not null");
+        }
+
+        Alert alert = getAlert(tenantId, alertId, false);
+        if (alert == null) {
+            return;
+        }
+
+        alert.addNote(user, text);
+
+        session = CassCluster.getSession();
+        PreparedStatement updateAlert = CassStatement.get(session, CassStatement.UPDATE_ALERT);
+        if (updateAlert == null) {
+            throw new RuntimeException("updateAlert PreparedStatement is null");
+        }
+        try {
+            session.execute(updateAlert.bind(JsonUtil.toJson(alert), alert.getTenantId(), alert.getAlertId()));
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public Alert getAlert(String tenantId, String alertId, boolean thin) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
@@ -422,8 +454,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             if (pager.getOrder() != null) {
                 pager.getOrder().stream().filter(o -> o.getField() != null && o.getDirection() != null)
                         .forEach(o -> {
-                            AlertComparator comparator = new AlertComparator(Field.getField(o.getField()),
-                                    o.getDirection());
+                            AlertComparator comparator = new AlertComparator(o.getField(), o.getDirection());
                             Collections.sort(ordered, comparator);
                         });
             }
@@ -984,6 +1015,13 @@ public class CassAlertsServiceImpl implements AlertsService {
             return;
         }
 
+        if (isEmpty(ackBy)) {
+            ackBy = "unknown";
+        }
+        if (isEmpty(ackNotes)) {
+            ackNotes = "none";
+        }
+
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setAlertIds(alertIds);
         List<Alert> alertsToAck = getAlerts(tenantId, criteria, null);
@@ -992,7 +1030,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             a.setStatus(Alert.Status.ACKNOWLEDGED);
             a.setAckBy(ackBy);
             a.setAckTime(System.currentTimeMillis());
-            a.setAckNotes(ackNotes);
+            a.addNote(ackBy, ackNotes);
             updateAlertStatus(a);
             sendAction(a);
         }
@@ -1091,6 +1129,13 @@ public class CassAlertsServiceImpl implements AlertsService {
             return;
         }
 
+        if (isEmpty(resolvedBy)) {
+            resolvedBy = "unknown";
+        }
+        if (isEmpty(resolvedNotes)) {
+            resolvedNotes = "none";
+        }
+
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setAlertIds(alertIds);
         List<Alert> alertsToResolve = getAlerts(tenantId, criteria, null);
@@ -1100,7 +1145,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             a.setStatus(Alert.Status.RESOLVED);
             a.setResolvedBy(resolvedBy);
             a.setResolvedTime(System.currentTimeMillis());
-            a.setResolvedNotes(resolvedNotes);
+            a.addNote(resolvedBy, resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
             updateAlertStatus(a);
             sendAction(a);
@@ -1124,6 +1169,13 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
 
+        if (isEmpty(resolvedBy)) {
+            resolvedBy = "unknown";
+        }
+        if (isEmpty(resolvedNotes)) {
+            resolvedNotes = "none";
+        }
+
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setTriggerId(triggerId);
         criteria.setStatusSet(EnumSet.complementOf(EnumSet.of(Alert.Status.RESOLVED)));
@@ -1133,7 +1185,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             a.setStatus(Alert.Status.RESOLVED);
             a.setResolvedBy(resolvedBy);
             a.setResolvedTime(System.currentTimeMillis());
-            a.setResolvedNotes(resolvedNotes);
+            a.addNote(resolvedBy, resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
             updateAlertStatus(a);
             sendAction(a);

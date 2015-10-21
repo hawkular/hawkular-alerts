@@ -40,8 +40,8 @@ public interface AlertsService {
      * system time.
      * @param tenantId Tenant where alerts are stored
      * @param alertIds Alerts to be acknowledged.
-     * @param ackBy Optional. Typically the user acknowledging the alerts.
-     * @param ackNotes Optional notes about the acknowledgement.
+     * @param ackBy Optional. Typically the user acknowledging the alerts. "unknown" if not specified.
+     * @param ackNotes Optional notes about the acknowledgement. "none" if not specified.
      * @throws Exception any problem
      */
     void ackAlerts(String tenantId, Collection<String> alertIds, String ackBy, String ackNotes) throws Exception;
@@ -59,6 +59,17 @@ public interface AlertsService {
      * @throws Exception any problem
      */
     void addEvents(Collection<Event> events) throws Exception;
+
+    /**
+     * Add a note on an existing Alert.
+     * If alertId doesn't exist then the note is ignored.
+     * @param tenantId Tenant where alerts are stored
+     * @param alertId Alert to be added a new note
+     * @param user The user adding the note
+     * @param text The content of the note
+     * @throws Exception any problem
+     */
+    void addNote(String tenantId, String alertId, String user, String text) throws Exception;
 
     /**
      * Delete the requested Alerts, as described by the provided criteria.
@@ -121,8 +132,8 @@ public interface AlertsService {
      * - If the trigger has <code>autoResolve=true</code> it will be set to firing mode, as needed.
      * @param tenantId Tenant where alerts are stored
      * @param alertIds Alerts to be acknowledged.
-     * @param resolvedBy Optional. Typically the user resolving the alerts.
-     * @param resolvedNotes Optional notes about the resolution.
+     * @param resolvedBy Optional. Typically the user resolving the alerts. "unknown" if not specified.
+     * @param resolvedNotes Optional notes about the resolution. "none" if not specified.
      * @param resolvedEvalSets Optional. Typically the evalSets leading to an auto-resolved alert.
      * @throws Exception any problem
      */
@@ -136,8 +147,8 @@ public interface AlertsService {
      * - If the trigger has <code>autoResolve=true</code> it will be set to firing mode, as needed.
      * @param tenantId Tenant where alerts are stored
      * @param triggerId Tenant where alerts are stored
-     * @param resolvedBy Optional. Typically the user resolving the alerts.
-     * @param resolvedNotes Optional notes about the resolution.
+     * @param resolvedBy Optional. Typically the user resolving the alerts. "unknown" if not specified.
+     * @param resolvedNotes Optional notes about the resolution. "none" if not specified.
      * @param resolvedEvalSets Optional. Typically the evalSets leading to an auto-resolved alert.
      * @throws Exception any problem
      */

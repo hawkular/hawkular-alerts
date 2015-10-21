@@ -154,7 +154,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals("RESOLVED", resp.data[0].status)
         assertEquals("testUser", resp.data[0].resolvedBy)
-        assertEquals("testNotes", resp.data[0].resolvedNotes)
+        assertEquals("testNotes", resp.data[0].notes[0].text)
         assertNull(resp.data[0].resolvedEvalSets)
         assertNotNull(resp.data[0].trigger.context);
         Map<String,String> alertContext = (Map<String,String>)resp.data[0].trigger.context;
@@ -270,7 +270,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("ACKNOWLEDGED", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
         assertEquals("testUser", resp.data[0].ackBy)
-        assertEquals("testNotes", resp.data[0].ackNotes)
+        assertEquals("testNotes", resp.data[0].notes[0].text)
 
         // FETCH trigger and make sure it's still enabled (note - we can't check the mode as that is runtime
         // info and not supplied in the returned json)
@@ -304,7 +304,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals("RESOLVED", resp.data[0].status)
-        assertEquals("AUTO", resp.data[0].resolvedBy)
+        assertEquals("AutoResolve", resp.data[0].resolvedBy)
     }
 
     @Test
@@ -523,7 +523,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals("RESOLVED", resp.data[0].status)
-        assertEquals("AUTO", resp.data[0].resolvedBy)
+        assertEquals("AutoResolve", resp.data[0].resolvedBy)
         assertNotNull(resp.data[0].evalSets)
         assertNotNull(resp.data[0].resolvedEvalSets)
         assertFalse(resp.data[0].evalSets.isEmpty())
@@ -533,7 +533,7 @@ class LifecycleITest extends AbstractITestBase {
             query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"RESOLVED",thin:true] )
         assertEquals(200, resp.status)
         assertEquals("RESOLVED", resp.data[0].status)
-        assertEquals("AUTO", resp.data[0].resolvedBy)
+        assertEquals("AutoResolve", resp.data[0].resolvedBy)
         assertNull(resp.data[0].evalSets)
         assertNull(resp.data[0].resolvedEvalSets)
     }

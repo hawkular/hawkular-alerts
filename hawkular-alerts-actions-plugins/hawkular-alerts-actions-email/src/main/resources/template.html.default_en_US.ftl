@@ -159,13 +159,6 @@
                                                         </td>
                                                     </tr>
                                                 </#if>
-                                                <#if alert.ackNotes?? >
-                                                    <tr>
-                                                        <td align="center" style="color:#999999; font-family:Open sans,sans-serif; font-size:13px; line-height:21px; padding-bottom:7px;">
-                                                            ${alert.ackNotes}
-                                                        </td>
-                                                    </tr>
-                                                </#if>
                                             </#if>
                                             <#if alert?? && alert.status?? && alert.status == 'RESOLVED'>
                                                 <tr>
@@ -184,13 +177,18 @@
                                                         </td>
                                                     </tr>
                                                 </#if>
-                                                <#if alert.resolvedNotes?? >
+                                            </#if>
+                                            <#if alert.notes?has_content >
+                                                <#list alert.notes as note>
+                                                 <#if note.text?? && note.user??>
                                                     <tr>
                                                         <td align="center" style="color:#999999; font-family:Open sans,sans-serif; font-size:13px; line-height:21px; padding-bottom:7px;">
-                                                            ${alert.resolvedNotes}
+                                                          ${note.text}
+                                                          <br>(${note.user}, ${note.ctime?number_to_datetime})
                                                         </td>
                                                     </tr>
-                                                </#if>
+                                                 </#if>
+                                                </#list>
                                             </#if>
                                         </table>
                                     </td>

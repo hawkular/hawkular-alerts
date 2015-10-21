@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,6 +48,10 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.event.EventType;
+import org.hawkular.alerts.api.model.paging.Order;
+import org.hawkular.alerts.api.model.paging.Page;
+import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.model.paging.TriggerComparator;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
@@ -54,6 +59,7 @@ import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.alerts.engine.exception.NotFoundApplicationException;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
@@ -824,13 +830,124 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return selectTriggers(null);
     }
 
+    // TODO (jshaughn) The DB-Level filtering approach implemented below is a best-practice for dealing
+    // with Cassandra.  It's basically a series of queries, one for each filter, with a progressive
+    // intersection of the resulting ID set.
     @Override
-    public Collection<Trigger> getTriggers(String tenantId) throws Exception {
+    public Page<Trigger> getTriggers(String tenantId, TriggersCriteria criteria, Pager pager) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
+        session = CassCluster.getSession();
+        boolean filter = (null != criteria && criteria.hasCriteria());
+        boolean thin = (null != criteria && criteria.isThin()); // currently ignored, triggers have no thinned data
 
-        return selectTriggers(tenantId);
+        if (filter) {
+            log.debugf("getTriggers criteria: %s", criteria.toString());
+        }
+
+        List<Trigger> triggers = new ArrayList<>();
+        Set<String> triggerIds = new HashSet<>();
+        boolean activeFilter = false;
+
+        try {
+            if (filter) {
+                /*
+                    Get triggerIds explicitly added into the criteria. Start with these as there is no query involved
+                */
+                if (criteria.hasTriggerIdCriteria()) {
+                    Set<String> idsFilteredByTriggers = filterByTriggers(criteria);
+                    if (activeFilter) {
+                        triggerIds.retainAll(idsFilteredByTriggers);
+                        if (triggerIds.isEmpty()) {
+                            return new Page<>(triggers, pager, 0);
+                        }
+                    } else {
+                        triggerIds.addAll(idsFilteredByTriggers);
+                    }
+                    activeFilter = true;
+                }
+
+                /*
+                    Get triggerIds via tags
+                */
+                if (criteria.hasTagCriteria()) {
+                    Set<String> idsFilteredByTags = getIdsByTags(tenantId, TagType.TRIGGER, criteria.getTags());
+                    if (activeFilter) {
+                        triggerIds.retainAll(idsFilteredByTags);
+                        if (triggerIds.isEmpty()) {
+                            return new Page<>(triggers, pager, 0);
+                        }
+                    } else {
+                        triggerIds.addAll(idsFilteredByTags);
+                    }
+                    activeFilter = true;
+                }
+
+                /*
+                    If we have reached this point then we have at least 1 filtered triggerId, so now
+                    get the resulting Triggers...
+                 */
+                PreparedStatement selectTrigger = CassStatement
+                        .get(session, CassStatement.SELECT_TRIGGER);
+                List<ResultSetFuture> futures = triggerIds.stream().map(id ->
+                        session.executeAsync(selectTrigger.bind(tenantId, id)))
+                        .collect(Collectors.toList());
+                List<ResultSet> rsTriggers = Futures.allAsList(futures).get();
+                rsTriggers.stream().forEach(r -> {
+                    for (Row row : r) {
+                        triggers.add(mapTrigger(row));
+                    }
+                });
+
+            } else {
+                triggers.addAll(selectTriggers(tenantId));
+
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+
+        return prepareTriggersPage(triggers, pager);
+    }
+
+    private Set<String> filterByTriggers(TriggersCriteria criteria) {
+        Set<String> result = Collections.EMPTY_SET;
+        if (isEmpty(criteria.getTriggerIds())) {
+            if (!isEmpty(criteria.getTriggerId())) {
+                result = new HashSet<>(1);
+                result.add(criteria.getTriggerId());
+            }
+        } else {
+            result = new HashSet<>();
+            result.addAll(criteria.getTriggerIds());
+        }
+        return result;
+    }
+
+    private Set<String> getIdsByTags(String tenantId, TagType tagType, Map<String, String> tags)
+            throws Exception {
+        Set<String> ids = new HashSet<>();
+        List<ResultSetFuture> futures = new ArrayList<>();
+        PreparedStatement selectTagsByName = CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME);
+        PreparedStatement selectTagsByNameAndValue = CassStatement.get(session,
+                CassStatement.SELECT_TAGS_BY_NAME_AND_VALUE);
+
+        for (Map.Entry<String, String> tag : tags.entrySet()) {
+            boolean nameOnly = "*".equals(tag.getValue());
+            BoundStatement bs = nameOnly ?
+                    selectTagsByName.bind(tenantId, tagType.name(), tag.getKey()) :
+                    selectTagsByNameAndValue.bind(tenantId, tagType.name(), tag.getKey(), tag.getValue());
+            futures.add(session.executeAsync(bs));
+        }
+        List<ResultSet> rsTags = Futures.allAsList(futures).get();
+        rsTags.stream().forEach(r -> {
+            for (Row row : r) {
+                ids.add(row.getString("id"));
+            }
+        });
+        return ids;
     }
 
     private Collection<Trigger> selectTriggers(String tenantId) throws Exception {
@@ -857,6 +974,42 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
         return triggers;
+    }
+
+    private Page<Trigger> prepareTriggersPage(List<Trigger> triggers, Pager pager) {
+        if (pager != null) {
+            if (pager.getOrder() != null
+                    && !pager.getOrder().isEmpty()
+                    && pager.getOrder().get(0).getField() == null) {
+                pager = Pager.builder()
+                        .withPageSize(pager.getPageSize())
+                        .withStartPage(pager.getPageNumber())
+                        .orderBy(TriggerComparator.Field.NAME.getName(), Order.Direction.DESCENDING).build();
+            }
+            List<Trigger> ordered = triggers;
+            if (pager.getOrder() != null) {
+                pager.getOrder()
+                        .stream()
+                        .filter(o -> o.getField() != null && o.getDirection() != null)
+                        .forEach(o -> {
+                            TriggerComparator comparator = new TriggerComparator(TriggerComparator.Field.getName(
+                                    o.getField()), o.getDirection());
+                            Collections.sort(ordered, comparator);
+                        });
+            }
+            if (!pager.isLimited() || ordered.size() < pager.getStart()) {
+                pager = new Pager(0, ordered.size(), pager.getOrder());
+                return new Page(ordered, pager, ordered.size());
+            }
+            if (pager.getEnd() >= ordered.size()) {
+                return new Page(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
+            }
+            return new Page(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
+        } else {
+            pager = Pager.builder().withPageSize(triggers.size()).orderBy(TriggerComparator.Field.ID.getName(),
+                    Order.Direction.ASCENDING).build();
+            return new Page(triggers, pager, triggers.size());
+        }
     }
 
     // TODO: This performs a cross-tenant fetch and may be inefficient at scale
@@ -927,40 +1080,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     }
                 });
             }
-
-            return triggers;
-
-        } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public Collection<Trigger> getTriggersByTag(String tenantId, String name, String value) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("tenantId must be not null");
-        }
-        if (isEmpty(name) && isEmpty(value)) {
-            throw new IllegalArgumentException("Category and Name can not both be null");
-        }
-        session = CassCluster.getSession();
-
-        try {
-            Set<String> triggerIds = getTriggerIdsByTag(tenantId, name, value);
-
-            // Now, generate a result set of Triggers using the triggerIds
-            List<Trigger> triggers = new ArrayList<>(triggerIds.size());
-            PreparedStatement selectTrigger = CassStatement.get(session, CassStatement.SELECT_TRIGGER);
-            List<ResultSetFuture> futures = triggerIds.stream().map(triggerId ->
-                    session.executeAsync(selectTrigger.bind(tenantId, triggerId)))
-                    .collect(Collectors.toList());
-            List<ResultSet> rsTriggers = Futures.allAsList(futures).get();
-            rsTriggers.stream().forEach(r -> {
-                for (Row row : r) {
-                    triggers.add(mapTrigger(row));
-                }
-            });
 
             return triggers;
 
@@ -1971,36 +2090,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         Futures.allAsList(futures).get();
     }
 
-    @SuppressWarnings("unchecked")
-    private Set<String> getTriggerIdsByTag(String tenantId, String name, String value) {
-        if (isEmpty(name)) {
-            throw new IllegalArgumentException("name must be not null");
-        }
-        if (isEmpty(value)) {
-            throw new IllegalArgumentException("value must be not null (use '*' for all");
-        }
-
-        boolean nameOnly = "*".equals(value);
-
-        PreparedStatement selectTags = null;
-        selectTags = nameOnly ?
-                CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME) :
-                CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME_AND_VALUE);
-        if (selectTags == null) {
-            throw new RuntimeException("selectTagsTriggers PreparedStatement is null");
-        }
-
-        BoundStatement bs = nameOnly ?
-                selectTags.bind(tenantId, TagType.TRIGGER.name(), name) :
-                selectTags.bind(tenantId, TagType.TRIGGER.name(), name, value);
-        ResultSet rsTriggersTags = session.execute(bs);
-        Set<String> triggerIds = new HashSet<>();
-        for (Row row : rsTriggersTags) {
-            triggerIds.add(row.getString("id"));
-        }
-        return triggerIds;
-    }
-
     private void removeConditions(String tenantId, String triggerId, Mode triggerMode) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must not be null");
@@ -2634,6 +2723,10 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     public boolean isEmpty(Map<String, String> map) {
         return map == null || map.isEmpty();
+    }
+
+    private boolean isEmpty(Collection collection) {
+        return collection == null || collection.isEmpty();
     }
 
     /*

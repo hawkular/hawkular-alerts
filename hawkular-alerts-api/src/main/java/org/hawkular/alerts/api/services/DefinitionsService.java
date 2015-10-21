@@ -22,6 +22,8 @@ import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.paging.Page;
+import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
@@ -150,20 +152,13 @@ public interface DefinitionsService {
     Trigger getTrigger(String tenantId, String triggerId) throws Exception;
 
     /**
-     * Get all stored Triggers for a specific Tenant.
      * @param tenantId Tenant where triggers are stored
-     * @throws Exception on any problem
+     * @param criteria If null returns all triggers for the tenant (not recommended)
+     * @param pager Paging requirement for fetching triggers. Optional. Return all if null.
+     * @return NotNull, can be empty.
+     * @throws Exception any problem
      */
-    Collection<Trigger> getTriggers(String tenantId) throws Exception;
-
-    /**
-     * Get all stored Triggers with a specific Tag.
-     * @param tenantId Tenant where trigger is stored
-     * @param name The tag name, not null.
-     * @param value The tag value, not null. Set to '*' to match all values for the name.
-     * @throws Exception on any problem
-     */
-    Collection<Trigger> getTriggersByTag(String tenantId, String name, String value) throws Exception;
+    Page<Trigger> getTriggers(String tenantId, TriggersCriteria criteria, Pager pager) throws Exception;
 
     /**
      * Get the member triggers for the specified group trigger.

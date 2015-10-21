@@ -137,50 +137,52 @@ public class JsonTest {
                 "\"id\":\"trigger-test|1436964192878\"," +
                 "\"eventType\":\"ALERT\"," +
                 "\"trigger\":{\"tenantId\":\"jdoe\"," +
-                "\"id\":\"trigger-test\"," +
-                "\"name\":\"trigger-test\"," +
-                "\"description\":\"trigger-test\"," +
-                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}" +
-                "}," +
+                    "\"id\":\"trigger-test\"," +
+                    "\"name\":\"trigger-test\"," +
+                    "\"description\":\"trigger-test\"," +
+                    "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}" +
+                    "}," +
                 "\"ctime\":1436964192878," +
                 "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}," +
                 "\"text\":\"trigger-test\"," +
                 "\"evalSets\":[" +
-                "[{\"evalTimestamp\":1436964294055," +
-                "\"dataTimestamp\":2," +
-                "\"type\":\"THRESHOLD\"," +
-                "\"condition\":{\"tenantId\":null," +
-                "\"triggerId\":\"trigger-test\"," +
-                "\"triggerMode\":\"FIRING\"," +
-                "\"type\":\"THRESHOLD\"," +
-                "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
-                "\"dataId\":\"Default\"," +
-                "\"operator\":\"LTE\"," +
-                "\"threshold\":50.0" +
-                "}," +
-                "\"value\":25.5}," +
-                "{\"evalTimestamp\":1436964284965," +
-                "\"dataTimestamp\":1," +
-                "\"type\":\"AVAILABILITY\"," +
-                "\"condition\":{\"tenantId\":null," +
-                "\"triggerId\":\"trigger-test\"," +
-                "\"triggerMode\":\"FIRING\"," +
-                "\"type\":\"AVAILABILITY\"," +
-                "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
-                "\"dataId\":\"Default\"," +
-                "\"operator\":\"UP\"" +
-                "}," +
-                "\"value\":\"UP\"}]" +
-                "]," +
+                    "[{\"evalTimestamp\":1436964294055," +
+                       "\"dataTimestamp\":2," +
+                       "\"type\":\"THRESHOLD\"," +
+                       "\"condition\":{\"tenantId\":null," +
+                       "\"triggerId\":\"trigger-test\"," +
+                       "\"triggerMode\":\"FIRING\"," +
+                       "\"type\":\"THRESHOLD\"," +
+                       "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
+                       "\"dataId\":\"Default\"," +
+                       "\"operator\":\"LTE\"," +
+                       "\"threshold\":50.0" +
+                     "}," +
+                     "\"value\":25.5}," +
+                     "{\"evalTimestamp\":1436964284965," +
+                       "\"dataTimestamp\":1," +
+                       "\"type\":\"AVAILABILITY\"," +
+                       "\"condition\":{\"tenantId\":null," +
+                       "\"triggerId\":\"trigger-test\"," +
+                       "\"triggerMode\":\"FIRING\"," +
+                       "\"type\":\"AVAILABILITY\"," +
+                       "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
+                       "\"dataId\":\"Default\"," +
+                       "\"operator\":\"UP\"" +
+                     "}," +
+                     "\"value\":\"UP\"}]" +
+                    "]," +
                 "\"severity\":\"MEDIUM\"," +
                 "\"status\":\"OPEN\"," +
                 "\"ackTime\":0," +
                 "\"ackBy\":null," +
-                "\"ackNotes\":null," +
                 "\"resolvedTime\":0," +
                 "\"resolvedBy\":null," +
-                "\"resolvedNotes\":null" +
-                "}";
+                "\"notes\":[{\"user\":\"user1\",\"ctime\":1,\"text\":\"The comment 1\"}," +
+                           "{\"user\":\"user2\",\"ctime\":2,\"text\":\"The comment 2\"}" +
+                          "]," +
+                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
+
         ObjectMapper mapper = new ObjectMapper();
         Alert alert = mapper.readValue(jsonAlert, Alert.class);
         assertNotNull(alert);

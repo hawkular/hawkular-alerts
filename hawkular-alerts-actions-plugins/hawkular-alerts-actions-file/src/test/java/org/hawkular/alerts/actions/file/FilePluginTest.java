@@ -130,7 +130,7 @@ public class FilePluginTest {
         rtAlertAck.setStatus(Alert.Status.ACKNOWLEDGED);
         rtAlertAck.setAckBy("Test ACK user");
         rtAlertAck.setAckTime(System.currentTimeMillis() + 10000);
-        rtAlertAck.setAckNotes("Test ACK notes");
+        rtAlertAck.addNote("Test ACK user", "Test ACK notes");
 
         Action ackThresholdAction = new Action(tenantId, "email", "email-to-test", rtAlertAck);
 
@@ -148,7 +148,7 @@ public class FilePluginTest {
         rtAlertResolved.setStatus(Alert.Status.RESOLVED);
         rtAlertResolved.setResolvedBy("Test RESOLVED user");
         rtAlertResolved.setResolvedTime(System.currentTimeMillis() + 20000);
-        rtAlertResolved.setResolvedNotes("Test RESOLVED notes");
+        rtAlertResolved.addNote("Test RESOLVED user", "Test RESOLVED notes");
         rtAlertResolved.setResolvedEvalSets(getEvalList(rtResolveCondition, rtGoodData));
 
         Action resolvedThresholdAction = new Action(tenantId, "email", "email-to-test", rtAlertResolved);
@@ -195,7 +195,7 @@ public class FilePluginTest {
         avAlertAck.setStatus(Alert.Status.ACKNOWLEDGED);
         avAlertAck.setAckBy("Test ACK user");
         avAlertAck.setAckTime(System.currentTimeMillis() + 10000);
-        avAlertAck.setAckNotes("Test ACK notes");
+        avAlertAck.addNote("Test ACK user", "Test ACK notes");
 
         Action ackAvailabilityAction = new Action(tenantId, "email", "email-to-test", avAlertAck);
 
@@ -214,7 +214,7 @@ public class FilePluginTest {
         avAlertResolved.setStatus(Alert.Status.RESOLVED);
         avAlertResolved.setResolvedBy("Test RESOLVED user");
         avAlertResolved.setResolvedTime(System.currentTimeMillis() + 20000);
-        avAlertResolved.setResolvedNotes("Test RESOLVED notes");
+        avAlertResolved.addNote("Test RESOLVED user", "Test RESOLVED notes");
         avAlertResolved.setResolvedEvalSets(getEvalList(avResolveCondition, avGoodData));
 
         Action resolvedAvailabilityAction = new Action(tenantId, "email", "email-to-test", avAlertResolved);
@@ -274,7 +274,7 @@ public class FilePluginTest {
         mixAlertAck.setStatus(Alert.Status.ACKNOWLEDGED);
         mixAlertAck.setAckBy("Test ACK user");
         mixAlertAck.setAckTime(System.currentTimeMillis() + 10000);
-        mixAlertAck.setAckNotes("Test ACK notes");
+        mixAlertAck.addNote("Test ACK user", "Test ACK notes");
 
         Action ackTwoCondAction = new Action(tenantId, "email", "email-to-test", mixAlertAck);
 
@@ -301,7 +301,7 @@ public class FilePluginTest {
         mixAlertResolved.setStatus(Alert.Status.RESOLVED);
         mixAlertResolved.setResolvedBy("Test RESOLVED user");
         mixAlertResolved.setResolvedTime(System.currentTimeMillis() + 20000);
-        mixAlertResolved.setResolvedNotes("Test RESOLVED notes");
+        mixAlertResolved.addNote("Test RESOLVED user", "Test RESOLVED notes");
         mixAlertResolved.setResolvedEvalSets(getEvalList(mixResolveConditions, mixGoodData));
 
         Action resolvedTwoCondAction = new Action(tenantId, "email", "email-to-test", mixAlertResolved);

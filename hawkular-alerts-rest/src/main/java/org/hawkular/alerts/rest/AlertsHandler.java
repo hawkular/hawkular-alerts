@@ -170,6 +170,37 @@ public class AlertsHandler {
     }
 
     @PUT
+    @Path("/note/{alertId}")
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Add a note into an existing Alert")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Alert Acknowledged invoked successfully"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public Response addAlertNote(@ApiParam(required = true, value = "alertId to add the note")
+                             @PathParam("alertId")
+                             final String alertId,
+                             @ApiParam(required = false, value = "author of the note")
+                             @QueryParam("user")
+                             final String user,
+                             @ApiParam(required = false, value = "text of the note")
+                             @QueryParam("text")
+                             final String text) {
+        try {
+            if (!isEmpty(alertId)) {
+                alertsService.addNote(tenantId, alertId, user, text);
+                log.debugf("AlertId: %s ", alertId);
+                return ResponseUtil.ok();
+            } else {
+                return ResponseUtil.badRequest("AlertId required for adding notes");
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @PUT
     @Path("/ack")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Set one or more alerts Acknowledged")

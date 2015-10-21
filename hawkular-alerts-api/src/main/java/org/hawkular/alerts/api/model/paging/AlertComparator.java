@@ -31,9 +31,11 @@ public class AlertComparator implements Comparator<Alert> {
         TRIGGER_ID("triggerId"),
         CTIME("ctime"),
         SEVERITY("severity"),
-        STATUS("status");
+        STATUS("status"),
+        CONTEXT("context");
 
         private String text;
+        private String contextKey;
 
         Field(String text) {
             this.text = text;
@@ -48,7 +50,11 @@ public class AlertComparator implements Comparator<Alert> {
                 return ALERT_ID;
             }
             for (Field f : values()) {
-                if (f.getText().compareToIgnoreCase(text) == 0) {
+                if (text.startsWith(f.getText())) {
+                    // context.<key>
+                    if (CONTEXT == f && text.length() > 8) {
+                        f.contextKey = text.substring(8);
+                    }
                     return f;
                 }
             }
@@ -60,11 +66,11 @@ public class AlertComparator implements Comparator<Alert> {
     private Order.Direction direction;
 
     public AlertComparator() {
-        this(Field.ALERT_ID, Order.Direction.ASCENDING);
+        this("alertId", Order.Direction.ASCENDING);
     }
 
-    public AlertComparator(Field field, Order.Direction direction) {
-        this.field = field;
+    public AlertComparator(String field, Order.Direction direction) {
+        this.field = Field.getField(field);
         this.direction = direction;
     }
     @Override
@@ -119,6 +125,23 @@ public class AlertComparator implements Comparator<Alert> {
                     return -1;
                 }
                 return o1.getStatus().compareTo(o2.getStatus()) * iOrder;
+            case CONTEXT:
+                if (o1.getContext() == null && o2.getContext() == null) {
+                    return 0;
+                }
+                if (o1.getContext().isEmpty() && o2.getContext().isEmpty()) {
+                    return 0;
+                }
+                if (!o1.getContext().containsKey(field.contextKey) && !o2.getContext().containsKey(field.contextKey)) {
+                    return 0;
+                }
+                if (!o1.getContext().containsKey(field.contextKey) && o2.getContext().containsKey(field.contextKey)) {
+                    return 1;
+                }
+                if (!o1.getContext().containsKey(field.contextKey) && !o2.getContext().containsKey(field.contextKey)) {
+                    return -1;
+                }
+                return o1.getContext().get(field.contextKey).compareTo(o2.getContext().get(field.contextKey)) * iOrder;
         }
         return 0;
     }

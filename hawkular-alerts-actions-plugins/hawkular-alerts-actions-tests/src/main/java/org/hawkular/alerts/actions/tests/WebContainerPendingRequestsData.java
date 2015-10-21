@@ -134,7 +134,7 @@ public class WebContainerPendingRequestsData extends CommonData {
         unresolvedAlert.setResolvedEvalSets(resolvedEvals);
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
-        unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.addNote(RESOLVED_BY, RESOLVED_NOTES);
         unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;
