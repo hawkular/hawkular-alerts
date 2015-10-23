@@ -27,7 +27,7 @@ import javax.ejb.TransactionAttributeType;
 import javax.jms.MessageListener;
 
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.bus.api.BusPluginOperationMessage;
+import org.hawkular.alerts.bus.api.BusRegistrationMessage;
 import org.hawkular.alerts.bus.log.MsgLogger;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
@@ -42,7 +42,7 @@ import org.jboss.logging.Logger;
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAlertsPluginsQueue")})
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
-public class ActionPluginRegistrationListener extends BasicMessageListener<BusPluginOperationMessage>  {
+public class ActionPluginRegistrationListener extends BasicMessageListener<BusRegistrationMessage>  {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(ActionPluginRegistrationListener.class);
 
@@ -50,33 +50,25 @@ public class ActionPluginRegistrationListener extends BasicMessageListener<BusPl
     DefinitionsService definitions;
 
     @Override
-    protected void onBasicMessage(BusPluginOperationMessage msg) {
+    protected void onBasicMessage(BusRegistrationMessage msg) {
         log.debugf("Message received: [%s]", msg);
         String actionPlugin = msg.getActionPlugin();
-        if (msg.getOperation() == null) {
-            msgLog.warnActionPluginRegistrationWithoutOp();
-            return;
-        }
-        switch (msg.getOperation()) {
-            case REGISTRATION:
-                try {
-                    if (definitions.getActionPlugin(actionPlugin) == null) {
-                        Set<String> properties = msg.getPropertyNames();
-                        Map<String, String> defaultProperties = msg.getDefaultProperties();
-                        if (defaultProperties != null && !defaultProperties.isEmpty()) {
-                            definitions.addActionPlugin(actionPlugin, defaultProperties);
-                        } else {
-                            definitions.addActionPlugin(actionPlugin, properties);
-                        }
-                        msgLog.infoActionPluginRegistration(actionPlugin);
-                    } else {
-                        msgLog.warnActionPluginAlreadyRegistered(actionPlugin);
-                    }
-                } catch (Exception e) {
-                    log.debugf(e.getMessage(), e);
-                    msgLog.errorDefinitionsService(e.getMessage());
+        try {
+            if (definitions.getActionPlugin(actionPlugin) == null) {
+                Set<String> properties = msg.getPropertyNames();
+                Map<String, String> defaultProperties = msg.getDefaultProperties();
+                if (defaultProperties != null && !defaultProperties.isEmpty()) {
+                    definitions.addActionPlugin(actionPlugin, defaultProperties);
+                } else {
+                    definitions.addActionPlugin(actionPlugin, properties);
                 }
-                break;
+                msgLog.infoActionPluginRegistration(actionPlugin);
+            } else {
+                msgLog.warnActionPluginAlreadyRegistered(actionPlugin);
+            }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            msgLog.errorDefinitionsService(e.getMessage());
         }
     }
 }

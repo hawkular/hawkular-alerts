@@ -17,6 +17,8 @@
 package org.hawkular.alerts.api.services;
 
 import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.paging.Page;
+import org.hawkular.alerts.api.model.paging.Pager;
 
 /**
  * A interface used to send actions.
@@ -29,17 +31,44 @@ import org.hawkular.alerts.api.model.action.Action;
 public interface ActionsService {
 
     /**
-     * Send a action to an internal queue.
-     * Primary used by the alerts-engine implementation to send a action.
+     * Send an action to be processed by the plugins architecture.
      *
      * @param action Action to send
      */
     void send(Action action);
 
     /**
-     * Register a listener that will process asynchronously.
+     * Update the result of an action.
+     *
+     * @param action Action
+     */
+    void updateResult(Action action);
+
+    /**
+     * @param tenantId Tenant where actions are stored
+     * @param criteria If null returns all actions (not recommended)
+     * @param pager Paging requirement for fetching actions. Optional. Return all if null.
+     * @return NotNull, can be empty.
+     * @throws Exception
+     */
+    Page<Action> getActions(String tenantId, ActionsCriteria criteria, Pager pager) throws Exception;
+
+    /**
+     * Delete the requested Actions from the history, as described by the provided criteria.
+     *
+     * @param tenantId
+     * @param criteria
+     * @return
+     * @throws Exception
+     */
+    int deleteActions(String tenantId, ActionsCriteria criteria) throws Exception;
+
+    /**
+     * Register a listener that will process actions.
+     * ActionListeners are responsible to connect Actions with plugins.
      *
      * @param listener the listener
      */
     void addListener(ActionListener listener);
+
 }

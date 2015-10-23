@@ -423,8 +423,8 @@ public class AlertsEngineImpl implements AlertsEngine {
                 // otherwise, manually reload the trigger back into the engine (in firing mode).
                 if (t.isAutoResolveAlerts()) {
                     try {
-                        alertsService.resolveAlertsForTrigger(t.getTenantId(), t.getId(), "AUTO", null,
-                                entry.getValue());
+                        alertsService.resolveAlertsForTrigger(t.getTenantId(), t.getId(), "AutoResolve",
+                                "Trigger AutoResolve=True", entry.getValue());
                     } catch (Exception e) {
                         manualReload = true;
                         log.errorf("Failed to resolve Alerts. Could not AutoResolve alerts for trigger %s", t);

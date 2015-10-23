@@ -303,7 +303,7 @@ rule AlertOnSatisfiedDampening
             if (log != null && log.isDebugEnabled()) {
                 log.debug("Alert! Dampening Satisfied! " + $d.log());
             }
- 
+
             newEvent = new Alert( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
             // Adding an Alert will implicitly add the related Event
             alerts.add((Alert)newEvent);
@@ -313,7 +313,7 @@ rule AlertOnSatisfiedDampening
                 log.debug("Event! Dampening Satisfied! " + $d.log());
             }
 
-            newEvent = new Event( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals(), null );
+            newEvent = new Event( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
             events.add(newEvent);
         }
 

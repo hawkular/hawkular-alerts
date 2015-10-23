@@ -16,7 +16,10 @@
  */
 package org.hawkular.alerts.api.model.action;
 
+import java.util.Map;
+
 import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.api.model.event.Thin;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -45,19 +48,23 @@ public class Action {
     @JsonInclude
     private String actionId;
 
-    @JsonInclude(Include.NON_NULL)
-    private String message;
+    @JsonInclude
+    private String eventId;
 
+    @JsonInclude
+    private long ctime;
+
+    @Thin
     @JsonInclude(Include.NON_NULL)
     private Event event;
 
-    public Action() { }
+    @JsonInclude(Include.NON_EMPTY)
+    private Map<String, String> properties;
 
-    public Action(String tenantId, String actionPlugin, String actionId, String message) {
-        this.tenantId = tenantId;
-        this.actionPlugin = actionPlugin;
-        this.actionId = actionId;
-        this.message = message;
+    @JsonInclude(Include.NON_NULL)
+    private String result;
+
+    public Action() {
     }
 
     public Action(String tenantId, String actionPlugin, String actionId, Event event) {
@@ -65,6 +72,10 @@ public class Action {
         this.actionPlugin = actionPlugin;
         this.actionId = actionId;
         this.event = event;
+        if (event != null) {
+            this.eventId = event.getId();
+        }
+        this.ctime = System.currentTimeMillis();
     }
 
     public String getTenantId() {
@@ -73,14 +84,6 @@ public class Action {
 
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
     }
 
     public String getActionId() {
@@ -107,26 +110,73 @@ public class Action {
         this.event = event;
     }
 
+    public String getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
+
+    public long getCtime() {
+        return ctime;
+    }
+
+    public void setCtime(long ctime) {
+        this.ctime = ctime;
+    }
+
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
+
+    public Map<String, String> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Map<String, String> properties) {
+        this.properties = properties;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
 
         Action action = (Action) o;
 
-        if (!tenantId.equals(action.tenantId)) return false;
-        if (!actionPlugin.equals(action.actionPlugin)) return false;
-        if (!actionId.equals(action.actionId)) return false;
-        return event.equals(action.event);
+        if (ctime != action.ctime)
+            return false;
+        if (tenantId != null ? !tenantId.equals(action.tenantId) : action.tenantId != null)
+            return false;
+        if (actionPlugin != null ? !actionPlugin.equals(action.actionPlugin) : action.actionPlugin != null)
+            return false;
+        if (actionId != null ? !actionId.equals(action.actionId) : action.actionId != null)
+            return false;
+        if (eventId != null ? !eventId.equals(action.eventId) : action.eventId != null)
+            return false;
+        if (properties != null ? !properties.equals(action.properties) : action.properties != null)
+            return false;
+        return !(result != null ? !result.equals(action.result) : action.result != null);
 
     }
 
     @Override
     public int hashCode() {
-        int result = tenantId.hashCode();
-        result = 31 * result + actionPlugin.hashCode();
-        result = 31 * result + actionId.hashCode();
-        return result;
+        int result1 = tenantId != null ? tenantId.hashCode() : 0;
+        result1 = 31 * result1 + (actionPlugin != null ? actionPlugin.hashCode() : 0);
+        result1 = 31 * result1 + (actionId != null ? actionId.hashCode() : 0);
+        result1 = 31 * result1 + (eventId != null ? eventId.hashCode() : 0);
+        result1 = 31 * result1 + (int) (ctime ^ (ctime >>> 32));
+        result1 = 31 * result1 + (properties != null ? properties.hashCode() : 0);
+        result1 = 31 * result1 + (result != null ? result.hashCode() : 0);
+        return result1;
     }
 
     @Override
@@ -135,8 +185,11 @@ public class Action {
                 "tenantId='" + tenantId + '\'' +
                 ", actionPlugin='" + actionPlugin + '\'' +
                 ", actionId='" + actionId + '\'' +
-                ", message='" + message + '\'' +
+                ", eventId='" + eventId + '\'' +
+                ", ctime=" + ctime +
                 ", event=" + event +
+                ", properties=" + properties +
+                ", result='" + result + '\'' +
                 '}';
     }
 }

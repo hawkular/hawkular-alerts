@@ -27,6 +27,9 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * An Alert is an Event.  For the most part an Event can be thought of as an Alert without life-cycle. Alerts are
@@ -35,7 +38,22 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "eventType",
+        // set default impl for events injected via REST API
+        defaultImpl = Event.class)
+@JsonSubTypes({
+        @Type(name = "EVENT", value = Event.class),
+        @Type(name = "ALERT", value = Alert.class) })
 public class Event {
+
+    // This field will be controlled vi fasterxml. We need to make this an explicit field because we ship the
+    // serialized json to clients via rest. Since we serialize via fasterxml the field will be added to the json.
+    // Using "visible=false" in JsonTypeInfo only works if we control the deserialization.
+    @JsonInclude
+    protected String eventType;
 
     @JsonInclude
     protected String tenantId;
@@ -45,6 +63,10 @@ public class Event {
 
     @JsonInclude
     protected long ctime;
+
+    // category of Event, suitable for display, recommended to be, but not limited to, an EventCategory.name.
+    @JsonInclude
+    private String category;
 
     // A description of the event, suitable for display
     @JsonInclude
@@ -75,22 +97,32 @@ public class Event {
         // for json assembly
     }
 
-    public Event(String tenantId, String id, String text) {
-        this(tenantId, id, text, null, null);
+    public Event(String tenantId, String id, String category, String text) {
+        this(tenantId, id, category, text, null, null);
     }
 
-    public Event(String tenantId, String id, String text, Map<String, String> context) {
-        this(tenantId, id, text, context, null);
+    public Event(String tenantId, String id, String category, String text, Map<String, String> context) {
+        this(tenantId, id, category, text, context, null);
     }
 
-    public Event(String tenantId, String id, String text, Map<String, String> context, Map<String, String> tags) {
+    public Event(String tenantId, String id, String category, String text, Map<String, String> context,
+            Map<String, String> tags) {
         this.tenantId = tenantId;
         this.id = id;
+        this.category = category;
         this.text = text;
         this.context = context;
         this.tags = tags;
 
         this.ctime = System.currentTimeMillis();
+    }
+
+    /**
+     * Convenience constructor for an Alerting Event.
+     * @param alert the Non-Thin Alert, it must be fully defined.
+     */
+    public Event(Alert alert) {
+        this(alert.getTenantId(), alert.getTrigger(), alert.getDampening(), alert.getEvalSets());
     }
 
     public Event(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets) {
@@ -102,9 +134,27 @@ public class Event {
         this.ctime = System.currentTimeMillis();
 
         this.id = trigger.getId() + "-" + this.ctime;
-        this.text = isEmpty(trigger.getDescription()) ? trigger.getName() : trigger.getDescription();
         this.context = trigger.getContext();
+        if (!isEmpty(trigger.getEventCategory())) {
+            this.category = trigger.getEventCategory();
+        } else {
+            this.category = (EventType.ALERT == trigger.getEventType()) ?
+                    EventCategory.ALERT.name() : EventCategory.TRIGGER.name();
+        }
+        if (!isEmpty(trigger.getEventText())) {
+            this.text = trigger.getEventText();
+        } else {
+            this.text = isEmpty(trigger.getDescription()) ? trigger.getName() : trigger.getDescription();
+        }
         this.tags = trigger.getTags();
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
     }
 
     public String getTenantId() {
@@ -121,6 +171,14 @@ public class Event {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public long getCtime() {
@@ -228,6 +286,12 @@ public class Event {
         } else if (!tenantId.equals(other.tenantId))
             return false;
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Event [tenantId=" + tenantId + ", id=" + id + ", ctime=" + ctime + ", category=" + category
+                + ", text=" + text + ", context=" + context + ", tags=" + tags + ", trigger=" + trigger + "]";
     }
 
     private static boolean isEmpty(String s) {

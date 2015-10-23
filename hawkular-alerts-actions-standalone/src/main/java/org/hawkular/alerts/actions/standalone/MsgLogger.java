@@ -56,4 +56,9 @@ public interface MsgLogger extends BasicLogger {
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 270007, value = "Plugin received a message without plugin info.")
     void warnMessageReceivedWithoutPluginInfo();
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 270008, value = "ActionResponse message without payload")
+    void warnActionResponseMessageWithoutPayload();
+
 }

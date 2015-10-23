@@ -43,7 +43,7 @@ public abstract class CommonData {
         if (null == openAlert) return null;
         openAlert.setStatus(Alert.Status.ACKNOWLEDGED);
         openAlert.setAckBy(ACK_BY);
-        openAlert.setAckNotes(ACK_NOTES);
+        openAlert.addNote(ACK_BY, ACK_NOTES);
         openAlert.setAckTime(System.currentTimeMillis());
         return openAlert;
     }

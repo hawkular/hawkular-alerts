@@ -22,11 +22,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.actions.api.ActionPlugin;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.actions.api.MsgLogger;
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -43,7 +49,7 @@ import retrofit.converter.GsonConverter;
  *
  * @author Thomas Segismont
  */
-@ActionPlugin(name = "pagerduty")
+@Plugin(name = "pagerduty")
 public class PagerDutyPlugin implements ActionPluginListener {
     static final String API_KEY_PROPERTY = "org.hawkular.actions.pagerduty.api.key";
     static final String API_KEY = System.getProperty(API_KEY_PROPERTY);
@@ -53,6 +59,12 @@ public class PagerDutyPlugin implements ActionPluginListener {
     Map<String, String> defaultProperties = new HashMap<>();
 
     PagerDuty pagerDuty;
+
+    @Sender
+    ActionPluginSender sender;
+
+    private static final String MESSAGE_PROCESSED = "PROCESSED";
+    private static final String MESSAGE_FAILED = "FAILED";
 
     public PagerDutyPlugin() {
         defaultProperties.put("description", "Default PagerDuty plugin description");
@@ -70,19 +82,30 @@ public class PagerDutyPlugin implements ActionPluginListener {
     }
 
     @Override
-    public void process(PluginMessage msg) throws Exception {
+    public void process(ActionMessage msg) throws Exception {
         if (pagerDuty == null) {
-            msgLog.errorCannotSendMessage("pagerduty", "Plugin is not started");
+            msgLog.errorCannotProcessMessage("pagerduty", "Plugin is not started");
             return;
         }
-
-        Trigger trigger = new Trigger.Builder(prepareMessage(msg)).build();
-        NotifyResult result = pagerDuty.notify(trigger);
-        if (!"success".equals(result.status())) {
-            msgLog.errorCannotSendMessage("pagerduty", result.message());
+        Trigger trigger;
+        NotifyResult result = null;
+        try {
+            trigger = new Trigger.Builder(prepareMessage(msg)).build();
+            result = pagerDuty.notify(trigger);
+        } catch (Exception e) {
+            msgLog.errorCannotProcessMessage("pagerduty", e.getMessage());
         }
-
-        msgLog.infoActionReceived("pagerduty", msg.toString());
+        if (result != null && !"success".equals(result.status())) {
+            msgLog.errorCannotProcessMessage("pagerduty", result.message());
+            Action failedAction = msg.getAction();
+            failedAction.setResult(MESSAGE_FAILED);
+            sendResult(failedAction);
+        } else {
+            msgLog.infoActionReceived("pagerduty", msg.toString());
+            Action successAction = msg.getAction();
+            successAction.setResult(MESSAGE_PROCESSED);
+            sendResult(successAction);
+        }
     }
 
     void setup() {
@@ -144,19 +167,38 @@ public class PagerDutyPlugin implements ActionPluginListener {
         return value == null || value.trim().isEmpty();
     }
 
-    private String prepareMessage(PluginMessage msg) {
+    private String prepareMessage(ActionMessage msg) {
         String preparedMsg = null;
-        if (msg.getAction() != null && msg.getAction().getAlert() != null) {
-            Alert alert = msg.getAction().getAlert();
-            if (alert != null) {
+        Event event = msg.getAction() != null ? msg.getAction().getEvent() : null;
+
+        if (event != null) {
+            if (event instanceof Alert) {
+                Alert alert = (Alert) event;
                 preparedMsg = "Alert : " + alert.getTriggerId() + " at " + alert.getCtime() + " -- Severity: " +
                         alert.getSeverity().toString();
             } else {
-                preparedMsg = "Message received without data at " + System.currentTimeMillis();
-                msgLog.warnMessageReceivedWithoutPayload("pagerduty");
+                preparedMsg = "Event [" + event.getCategory() + "] " + event.getText() + " at " + event.getCtime();
             }
+        } else {
+            preparedMsg = "Message received without data at " + System.currentTimeMillis();
+            msgLog.warnMessageReceivedWithoutPayload("pagerduty");
         }
         return preparedMsg;
     }
 
+    private void sendResult(Action action) {
+        if (sender == null) {
+            throw new IllegalStateException("ActionPluginSender is not present in the plugin");
+        }
+        if (action == null) {
+            throw new IllegalStateException("Action to update result must be not null");
+        }
+        ActionResponseMessage newMessage = sender.createMessage(ActionResponseMessage.Operation.RESULT);
+        newMessage.getPayload().put("action", JsonUtil.toJson(action));
+        try {
+            sender.send(newMessage);
+        } catch (Exception e) {
+            msgLog.error("Error sending ActionResponseMessage", e);
+        }
+    }
 }

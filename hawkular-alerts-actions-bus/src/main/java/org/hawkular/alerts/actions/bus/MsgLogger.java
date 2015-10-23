@@ -33,10 +33,6 @@ import org.jboss.logging.annotations.ValidIdRange;
 public interface MsgLogger extends BasicLogger {
     MsgLogger LOGGER = Logger.getMessageLogger(MsgLogger.class, MsgLogger.class.getPackage().getName());
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 260001, value = "Plugin [%s] has received a action message: [%s]")
-    void infoActionReceived(String actionPlugin, String msg);
-
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 260002, value = "No ActionPluginListener found on plugin deployment")
     void warnNoPluginsFound();

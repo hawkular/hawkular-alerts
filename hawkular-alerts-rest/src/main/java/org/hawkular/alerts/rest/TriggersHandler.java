@@ -21,7 +21,9 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.ejb.EJB;
@@ -35,7 +37,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.json.GroupMemberInfo;
@@ -43,9 +47,12 @@ import org.hawkular.alerts.api.json.JacksonDeserializer;
 import org.hawkular.alerts.api.json.UnorphanMemberInfo;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.paging.Page;
+import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -85,46 +92,61 @@ public class TriggersHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(
-            value = "Find all Trigger definitions",
-            notes = "Pagination is not yet implemented")
+            value = "Get triggers with optional filtering")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
-    public Response findTriggers() {
+    public Response findTriggers(
+            @ApiParam(required = false, value = "filter out triggers for unspecified triggerIds, " +
+                    "comma separated list of trigger IDs")
+            @QueryParam("triggerIds")
+            final String triggerIds,
+            @ApiParam(required = false, value = "filter out triggers for unspecified tags, comma separated list of "
+                    + "tags, each tag of format 'name|value'. Specify '*' for value to match all values.")
+            @QueryParam("tags")
+            final String tags,
+            @ApiParam(required = false, value = "return only thin triggers. Currently Ignored")
+            @QueryParam("thin")
+            final Boolean thin,
+            @Context final UriInfo uri) {
+        Pager pager = RequestUtil.extractPaging(uri);
         try {
-            Collection<Trigger> triggers = definitions.getTriggers(tenantId);
-            log.debugf("Triggers: %s ", triggers);
-            return ResponseUtil.ok(triggers);
+            TriggersCriteria criteria = buildCriteria(triggerIds, tags, thin);
+            Page<Trigger> triggerPage = definitions.getTriggers(tenantId, criteria, pager);
+            log.debugf("Triggers: %s ", triggerPage);
+            if (isEmpty(triggerPage)) {
+                return ResponseUtil.ok(triggerPage);
+            }
+            return ResponseUtil.paginatedOk(triggerPage, uri);
         } catch (Exception e) {
             log.debugf(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
 
-    @GET
-    @Path("/tag")
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Find all Trigger definitions for the specified tag. At least one of category and name is required",
-            notes = "Pagination is not yet implemented")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Triggers list found. Can be empty."),
-            @ApiResponse(code = 500, message = "Internal server error") })
-    public Response findTriggersByTag(
-            @ApiParam(required = true, value = "The tag name.")
-            @QueryParam("name")
-            final String name,
-            @ApiParam(required = true, value = "The tag value. Set to '*' to match all values for the tag name.")
-            @QueryParam("value")
-            final String value) {
-        try {
-            Collection<Trigger> triggers = definitions.getTriggersByTag(tenantId, name, value);
-            log.debugf("Triggers: %s ", triggers);
-            return ResponseUtil.ok(triggers);
-        } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+    private TriggersCriteria buildCriteria(String triggerIds, String tags, Boolean thin) {
+        TriggersCriteria criteria = new TriggersCriteria();
+        if (!isEmpty(triggerIds)) {
+            criteria.setTriggerIds(Arrays.asList(triggerIds.split(",")));
         }
+        if (!isEmpty(tags)) {
+            String[] tagTokens = tags.split(",");
+            Map<String, String> tagsMap = new HashMap<>(tagTokens.length);
+            for (String tagToken : tagTokens) {
+                String[] fields = tagToken.split("\\|");
+                if (fields.length == 2) {
+                    tagsMap.put(fields[0], fields[1]);
+                } else {
+                    log.debugf("Invalid Tag Criteria %s", Arrays.toString(fields));
+                }
+            }
+            criteria.setTags(tagsMap);
+        }
+        if (null != thin) {
+            criteria.setThin(thin.booleanValue());
+        }
+
+        return criteria;
     }
 
     @GET
@@ -1084,6 +1106,10 @@ public class TriggersHandler {
 
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();
+    }
+
+    private boolean isEmpty(Collection collection) {
+        return collection == null || collection.isEmpty();
     }
 
 }

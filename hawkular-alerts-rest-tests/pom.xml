@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts</artifactId>
-    <version>0.5.0-SNAPSHOT</version>
+    <version>0.6.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>hawkular-alerts-rest-tests</artifactId>
@@ -367,6 +367,8 @@
                     <javaOpt>-Xdebug</javaOpt>
                     <javaOpt>-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8787</javaOpt>
                     <javaOpt>-Dkeycloak.import=${hawkular.configuration}/hawkular-realm.json</javaOpt>
+                    <javaOpt>-Dhawkular-alerts.cassandra-retry-attempts=30</javaOpt>
+                    <javaOpt>-Dhawkular-alerts.cassandra-retry-timeout=1000</javaOpt>
                   </javaOpts>
                   <startup-timeout>120</startup-timeout>
                 </configuration>

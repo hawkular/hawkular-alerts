@@ -51,10 +51,15 @@ public class Trigger {
     @JsonInclude(Include.NON_EMPTY)
     private String description;
 
+    /** The type of event produced by the trigger. Defaults to EventType.ALERT */
     @JsonInclude
     private EventType eventType;
 
-    // defaults to non-null trigger description, otherwise trigger name
+    /** Defaults to EventCategory.ALERT if the Trigger EventType is ALERT, otherwise EventType.TRIGGER */
+    @JsonInclude
+    private String eventCategory;
+
+    /** Defaults to the Trigger Description if not null, otherwise the trigger name. */
     @JsonInclude
     private String eventText;
 
@@ -164,6 +169,9 @@ public class Trigger {
         this.autoResolve = false;
         this.autoResolveAlerts = true;
         this.autoResolveMatch = Match.ALL;
+        this.eventCategory = null;
+        this.eventText = null;
+        this.eventType = EventType.ALERT; // Is this an OK default, or should it be a constructor parameter?
         this.memberOf = null;
         this.description = null;
         this.enabled = false;
@@ -221,6 +229,14 @@ public class Trigger {
 
     public void setEventType(EventType eventType) {
         this.eventType = eventType;
+    }
+
+    public String getEventCategory() {
+        return eventCategory;
+    }
+
+    public void setEventCategory(String eventCategory) {
+        this.eventCategory = eventCategory;
     }
 
     public String getEventText() {
@@ -475,12 +491,14 @@ public class Trigger {
 
     @Override
     public String toString() {
-        return "Trigger [tenantId=" + tenantId + ", id=" + id + ", name=" + name + ", description=" + description
-                + ", eventType=" + eventType + ", eventText=" + eventText + ", severity=" + severity + ", context="
-                + context + ", actions=" + actions + ", autoDisable=" + autoDisable + ", autoEnable=" + autoEnable
-                + ", autoResolve=" + autoResolve + ", autoResolveAlerts=" + autoResolveAlerts + ", autoResolveMatch="
-                + autoResolveMatch + ", memberOf=" + memberOf + ", enabled=" + enabled + ", firingMatch="
-                + firingMatch + ", orphan=" + orphan + ", group=" + group + ", mode=" + mode + ", tags=" + tags + "]";
+        return "Trigger [tenantId=" + tenantId + ", id=" + id + ", triggerType=" + eventType.name()
+                + ", name=" + name + ", description=" + description + ", eventType=" + eventType
+                + ", eventCategory=" + eventCategory + ", eventText=" + eventText + ", severity=" + severity
+                + ", context=" + context + ", actions=" + actions + ", autoDisable=" + autoDisable
+                + ", autoEnable=" + autoEnable + ", autoResolve=" + autoResolve + ", autoResolveAlerts="
+                + autoResolveAlerts + ", autoResolveMatch=" + autoResolveMatch + ", memberOf=" + memberOf
+                + ", enabled=" + enabled + ", firingMatch=" + firingMatch + ", orphan=" + orphan + ", group=" + group
+                + ", mode=" + mode + ", tags=" + tags + "]";
     }
 
 }

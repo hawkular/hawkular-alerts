@@ -14,33 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.actions.standalone;
-
-import java.util.Map;
-
-import org.hawkular.alerts.actions.api.PluginMessage;
-import org.hawkular.alerts.api.model.action.Action;
+package org.hawkular.alerts.api.model.event;
 
 /**
- * @author Lucas Ponce
+ * Every Event has a category to help identify what it represents.  It can be one of these, or it can be something
+ * specified by the Event creator.  This just tries to predefine common events.
+ *
+ * @author jay shaughnessy
+ * @author lucas ponce
  */
-public class StandalonePluginMessage implements PluginMessage {
-
-    Action action;
-    Map<String, String> properties;
-
-    public StandalonePluginMessage(Action action, Map<String, String> properties) {
-        this.action = action;
-        this.properties = properties;
-    }
-
-    @Override
-    public Action getAction() {
-        return action;
-    }
-
-    @Override
-    public Map<String, String> getProperties() {
-        return properties;
-    }
+public enum EventCategory {
+    ALERT, DEPLOYMENT, LOG, TRIGGER
 }

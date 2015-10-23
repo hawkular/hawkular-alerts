@@ -136,13 +136,15 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
-        String alertId = resp.data[0].alertId;
+        String alertId = resp.data[0].id;
 
         // FETCH trigger and make sure it's disabled
         resp = client.get(path: "triggers/test-autodisable-trigger");
         assertEquals(200, resp.status)
+        Trigger t = (Trigger)resp.data;
+        System.out.println(t);
         assertEquals("test-autodisable-trigger", resp.data.name)
-        assertFalse(resp.data.enabled)
+        assertFalse(t.toString(), resp.data.enabled)
 
         // RESOLVE manually the alert
         resp = client.put(path: "resolve", query: [alertIds:alertId,resolvedBy:"testUser",resolvedNotes:"testNotes"] )
@@ -152,7 +154,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals("RESOLVED", resp.data[0].status)
         assertEquals("testUser", resp.data[0].resolvedBy)
-        assertEquals("testNotes", resp.data[0].resolvedNotes)
+        assertEquals("testNotes", resp.data[0].notes[0].text)
         assertNull(resp.data[0].resolvedEvalSets)
         assertNotNull(resp.data[0].trigger.context);
         Map<String,String> alertContext = (Map<String,String>)resp.data[0].trigger.context;
@@ -259,7 +261,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("HIGH", resp.data[0].severity)
 
         // ACK the alert
-        resp = client.put(path: "ack", query: [alertIds:resp.data[0].alertId,ackBy:"testUser",ackNotes:"testNotes"] )
+        resp = client.put(path: "ack", query: [alertIds:resp.data[0].id,ackBy:"testUser",ackNotes:"testNotes"] )
         assertEquals(200, resp.status)
 
         resp = client.get(path: "",
@@ -268,7 +270,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("ACKNOWLEDGED", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
         assertEquals("testUser", resp.data[0].ackBy)
-        assertEquals("testNotes", resp.data[0].ackNotes)
+        assertEquals("testNotes", resp.data[0].notes[0].text)
 
         // FETCH trigger and make sure it's still enabled (note - we can't check the mode as that is runtime
         // info and not supplied in the returned json)
@@ -302,7 +304,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals("RESOLVED", resp.data[0].status)
-        assertEquals("AUTO", resp.data[0].resolvedBy)
+        assertEquals("AutoResolve", resp.data[0].resolvedBy)
     }
 
     @Test
@@ -385,7 +387,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("OPEN", resp.data[0].status)
 
         // RESOLVE manually the alert
-        resp = client.put(path: "resolve", query: [alertIds:resp.data[0].alertId,resolvedBy:"testUser",
+        resp = client.put(path: "resolve", query: [alertIds:resp.data[0].id,resolvedBy:"testUser",
                 resolvedNotes:"testNotes"] )
         assertEquals(200, resp.status)
 
@@ -433,23 +435,22 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals("test-autodisable-trigger", resp.data[0].trigger.id)
 
         // FETCH the alert above again, this time by alert id
-        def alertId = resp.data[0].alertId
+        def alertId = resp.data[0].id
         resp = client.get(path: "", query: [startTime:start,alertIds:"XXX,"+alertId] )
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-        assertEquals(alertId, resp.data[0].alertId)
+        assertEquals(alertId, resp.data[0].id)
 
         // FETCH the alert above again, this time by tag
         resp = client.get(path: "", query: [startTime:start,tags:"test-autodisable-tname|test-autodisable-tvalue"] )
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-        assertEquals(alertId, resp.data[0].alertId)
+        assertEquals(alertId, resp.data[0].id)
 
-        // FETCH the alert above again, this time by union of (good) triggerId and (bad) tag
+        // FETCH the alert above again (fail), with a good triggerId but a bad tag
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger",tags:"XXX|*"] )
         assertEquals(200, resp.status)
-        assertEquals(1, resp.data.size())
-        assertEquals(alertId, resp.data[0].alertId)
+        assertEquals(0, resp.data.size())
 
         // FETCH alerts for test-autoresolve-trigger, there should be 1 from the earlier test, with context data
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
@@ -522,7 +523,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals("RESOLVED", resp.data[0].status)
-        assertEquals("AUTO", resp.data[0].resolvedBy)
+        assertEquals("AutoResolve", resp.data[0].resolvedBy)
         assertNotNull(resp.data[0].evalSets)
         assertNotNull(resp.data[0].resolvedEvalSets)
         assertFalse(resp.data[0].evalSets.isEmpty())
@@ -532,7 +533,7 @@ class LifecycleITest extends AbstractITestBase {
             query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"RESOLVED",thin:true] )
         assertEquals(200, resp.status)
         assertEquals("RESOLVED", resp.data[0].status)
-        assertEquals("AUTO", resp.data[0].resolvedBy)
+        assertEquals("AutoResolve", resp.data[0].resolvedBy)
         assertNull(resp.data[0].evalSets)
         assertNull(resp.data[0].resolvedEvalSets)
     }
@@ -637,8 +638,8 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(5, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
 
-        def alertId1 = resp.data[0].alertId;
-        def alertId2 = resp.data[1].alertId;
+        def alertId1 = resp.data[0].id;
+        def alertId2 = resp.data[1].id;
         // RESOLVE manually 1 alert
         resp = client.put(path: "resolve/" + alertId1,
                 query: [resolvedBy:"testUser", resolvedNotes:"testNotes"] )
@@ -940,7 +941,7 @@ class LifecycleITest extends AbstractITestBase {
         assertFalse(resp2.data.enabled)
 
         // RESOLVE manually the alert
-        resp = client.put(path: "resolve", query: [alertIds:resp.data[0].alertId,resolvedBy:"testUser",
+        resp = client.put(path: "resolve", query: [alertIds:resp.data[0].id,resolvedBy:"testUser",
                 resolvedNotes:"testNotes"] )
         assertEquals(200, resp.status)
 
@@ -1054,7 +1055,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
-        String alertId = resp.data[0].alertId;
+        String alertId = resp.data[0].id;
 
         // FETCH trigger and make sure it's still enabled (note - we can't check the mode as that is runtime
         // info and not supplied in the returned json)
@@ -1070,7 +1071,7 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "", query: [triggerIds:"test-manual-autoresolve-trigger",statuses:"OPEN"] )
         assertEquals(200, resp.status)
         for(int i=0; i < resp.data.size(); ++i) {
-            def resp2 = client.put(path: "resolve", query: [alertIds:resp.data[i].alertId,resolvedBy:"testUser",
+            def resp2 = client.put(path: "resolve", query: [alertIds:resp.data[i].id,resolvedBy:"testUser",
                 resolvedNotes:"testNotes"] )
             assertEquals(200, resp2.status)
         }
@@ -1142,17 +1143,17 @@ class LifecycleITest extends AbstractITestBase {
         def resp2;
         for(int i=0; i < resp.data.size(); ++i) {
             // test single alert get
-            resp2 = client.get(path: "alert/" + resp.data[i].alertId )
+            resp2 = client.get(path: "alert/" + resp.data[i].id )
             assertEquals(200, resp2.status)
             // test single alert delete
-            def resp3 = client.delete(path: resp.data[i].alertId )
+            def resp3 = client.delete(path: resp.data[i].id )
             assertEquals(200, resp3.status)
         }
         // test failed single alert get
-        resp = client.get(path: "alert/" + resp2.data.alertId )
+        resp = client.get(path: "alert/" + resp2.data.id )
         assertEquals(404, resp.status)
         // test failed single alert delete
-        resp = client.delete(path: resp2.data.alertId )
+        resp = client.delete(path: resp2.data.id )
         assertEquals(404, resp.status)
 
         // test empty multi-alert delete

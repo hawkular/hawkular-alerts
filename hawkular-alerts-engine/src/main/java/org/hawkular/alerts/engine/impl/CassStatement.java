@@ -37,6 +37,11 @@ public class CassStatement {
     private static final Map<String, PreparedStatement> statementMap = new HashMap<>();
 
     public static final String DELETE_ACTION;
+    public static final String DELETE_ACTION_HISTORY;
+    public static final String DELETE_ACTION_HISTORY_ACTION;
+    public static final String DELETE_ACTION_HISTORY_ALERT;
+    public static final String DELETE_ACTION_HISTORY_CTIME;
+    public static final String DELETE_ACTION_HISTORY_RESULT;
     public static final String DELETE_ACTION_PLUGIN;
     public static final String DELETE_ALERT;
     public static final String DELETE_ALERT_CTIME;
@@ -47,18 +52,27 @@ public class CassStatement {
     public static final String DELETE_CONDITIONS_MODE;
     public static final String DELETE_DAMPENING_ID;
     public static final String DELETE_DAMPENINGS;
+    public static final String DELETE_EVENT;
+    public static final String DELETE_EVENT_CATEGORY;
+    public static final String DELETE_EVENT_CTIME;
+    public static final String DELETE_EVENT_TRIGGER;
     public static final String DELETE_TAG;
     public static final String DELETE_TRIGGER_ACTIONS;
     public static final String DELETE_TRIGGER;
 
     public static final String INSERT_ACTION;
+    public static final String INSERT_ACTION_HISTORY;
+    public static final String INSERT_ACTION_HISTORY_ACTION;
+    public static final String INSERT_ACTION_HISTORY_ALERT;
+    public static final String INSERT_ACTION_HISTORY_CTIME;
+    public static final String INSERT_ACTION_HISTORY_RESULT;
     public static final String INSERT_ACTION_PLUGIN;
     public static final String INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String INSERT_ALERT;
-    public static final String INSERT_ALERT_TRIGGER;
     public static final String INSERT_ALERT_CTIME;
     public static final String INSERT_ALERT_SEVERITY;
     public static final String INSERT_ALERT_STATUS;
+    public static final String INSERT_ALERT_TRIGGER;
     public static final String INSERT_CONDITION_AVAILABILITY;
     public static final String INSERT_CONDITION_COMPARE;
     public static final String INSERT_CONDITION_EXTERNAL;
@@ -66,32 +80,53 @@ public class CassStatement {
     public static final String INSERT_CONDITION_THRESHOLD;
     public static final String INSERT_CONDITION_THRESHOLD_RANGE;
     public static final String INSERT_DAMPENING;
+    public static final String INSERT_EVENT;
+    public static final String INSERT_EVENT_CATEGORY;
+    public static final String INSERT_EVENT_CTIME;
+    public static final String INSERT_EVENT_TRIGGER;
     public static final String INSERT_TAG;
     public static final String INSERT_TRIGGER;
     public static final String INSERT_TRIGGER_ACTIONS;
 
     public static final String SELECT_ACTION;
+    public static final String SELECT_ACTION_HISTORY;
+    public static final String SELECT_ACTION_HISTORY_ACTION_ID;
+    public static final String SELECT_ACTION_HISTORY_ACTION_PLUGIN;
+    public static final String SELECT_ACTION_HISTORY_ALERT_ID;
+    public static final String SELECT_ACTION_HISTORY_BY_TENANT;
+    public static final String SELECT_ACTION_HISTORY_CTIME_END;
+    public static final String SELECT_ACTION_HISTORY_CTIME_START;
+    public static final String SELECT_ACTION_HISTORY_CTIME_START_END;
+    public static final String SELECT_ACTION_HISTORY_RESULT;
     public static final String SELECT_ACTIONS_ALL;
     public static final String SELECT_ACTIONS_BY_TENANT;
     public static final String SELECT_ACTION_PLUGIN;
     public static final String SELECT_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String SELECT_ACTION_PLUGINS;
     public static final String SELECT_ACTIONS_PLUGIN;
+    public static final String SELECT_ALERT;
     public static final String SELECT_ALERT_CTIME_END;
     public static final String SELECT_ALERT_CTIME_START;
     public static final String SELECT_ALERT_CTIME_START_END;
     public static final String SELECT_ALERT_STATUS;
-    public static final String SELECT_ALERT_SEVERITY_BY_TENANT_AND_SEVERITY;
-    public static final String SELECT_ALERT_STATUS_BY_TENANT_AND_STATUS;
+    public static final String SELECT_ALERT_SEVERITY;
+    public static final String SELECT_ALERT_TRIGGER;
     public static final String SELECT_ALERTS_BY_TENANT;
-    public static final String SELECT_ALERT;
-    public static final String SELECT_ALERTS_TRIGGERS;
     public static final String SELECT_CONDITION_ID;
     public static final String SELECT_CONDITIONS_ALL;
     public static final String SELECT_CONDITIONS_BY_TENANT;
     public static final String SELECT_DAMPENING_ID;
     public static final String SELECT_DAMPENINGS_ALL;
     public static final String SELECT_DAMPENINGS_BY_TENANT;
+    public static final String SELECT_EVENT;
+    public static final String SELECT_EVENT_CATEGORY;
+    public static final String SELECT_EVENT_CTIME_END;
+    public static final String SELECT_EVENT_CTIME_START;
+    public static final String SELECT_EVENT_CTIME_START_END;
+    public static final String SELECT_EVENT_TRIGGER;
+    public static final String SELECT_EVENTS_BY_TENANT;
+    //public static final String SELECT_EVENTS_BY_PARTITION;
+    // public static final String SELECT_PARTITIONS_EVENTS;
     public static final String SELECT_PARTITIONS_TRIGGERS;
     public static final String SELECT_TAGS_BY_NAME;
     public static final String SELECT_TAGS_BY_NAME_AND_VALUE;
@@ -105,6 +140,7 @@ public class CassStatement {
     public static final String SELECT_TRIGGERS_TENANT;
 
     public static final String UPDATE_ACTION;
+    public static final String UPDATE_ACTION_HISTORY;
     public static final String UPDATE_ACTION_PLUGIN;
     public static final String UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String UPDATE_ALERT;
@@ -116,6 +152,21 @@ public class CassStatement {
 
         DELETE_ACTION = "DELETE FROM " + keyspace + ".actions "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
+
+        DELETE_ACTION_HISTORY = "DELETE FROM " + keyspace + ".actions_history " +
+                "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? AND alertId = ? AND ctime = ?";
+
+        DELETE_ACTION_HISTORY_ACTION = "DELETE FROM " + keyspace + ".actions_history_actions " +
+                "WHERE tenantId = ? AND actionId = ? AND actionPlugin = ? AND alertId = ? AND ctime = ?";
+
+        DELETE_ACTION_HISTORY_ALERT = "DELETE FROM " + keyspace + ".actions_history_alerts " +
+                "WHERE tenantId = ? AND alertId = ? AND actionPlugin = ? AND actionId = ? AND ctime = ?";
+
+        DELETE_ACTION_HISTORY_CTIME = "DELETE FROM " + keyspace + ".actions_history_ctimes " +
+                "WHERE tenantId = ? AND ctime = ? AND actionPlugin = ? AND actionId = ? AND alertId = ?";
+
+        DELETE_ACTION_HISTORY_RESULT = "DELETE FROM " + keyspace + ".actions_history_results " +
+                "WHERE tenantId = ? AND result = ? AND actionPlugin = ? AND actionId = ? AND alertId = ? AND ctime = ?";
 
         DELETE_ACTION_PLUGIN = "DELETE FROM " + keyspace + ".action_plugins WHERE actionPlugin = ? ";
 
@@ -143,6 +194,17 @@ public class CassStatement {
 
         DELETE_DAMPENINGS = "DELETE FROM " + keyspace + ".dampenings " + "WHERE tenantId = ? AND triggerId = ? ";
 
+        DELETE_EVENT = "DELETE FROM " + keyspace + ".events " + "WHERE tenantId = ? AND id = ? ";
+
+        DELETE_EVENT_CTIME = "DELETE FROM " + keyspace + ".events_ctimes "
+                + "WHERE tenantId = ? AND ctime = ? AND id = ? ";
+
+        DELETE_EVENT_CATEGORY = "DELETE FROM " + keyspace + ".events_categories "
+                + "WHERE tenantId = ? AND category = ? AND id = ? ";
+
+        DELETE_EVENT_TRIGGER = "DELETE FROM " + keyspace + ".events_triggers "
+                + "WHERE tenantId = ? AND triggerId = ? AND id = ? ";
+
         DELETE_TAG = "DELETE FROM " + keyspace + ".tags "
                 + "WHERE tenantId = ? AND type = ? AND name = ? and value = ? AND id = ?";
 
@@ -154,6 +216,26 @@ public class CassStatement {
         INSERT_ACTION = "INSERT INTO " + keyspace + ".actions "
                 + "(tenantId, actionPlugin, actionId, properties) VALUES (?, ?, ?, ?) ";
 
+        INSERT_ACTION_HISTORY = "INSERT INTO " + keyspace + ".actions_history "
+                + "(tenantId, actionPlugin, actionId, alertId, ctime, payload) VALUES (?, ?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
+        INSERT_ACTION_HISTORY_ACTION = "INSERT INTO " + keyspace + ".actions_history_actions "
+                + "(tenantId, actionId, actionPlugin, alertId, ctime) VALUES (?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
+        INSERT_ACTION_HISTORY_ALERT = "INSERT INTO " + keyspace + ".actions_history_alerts "
+                + "(tenantId, alertId, actionPlugin, actionId, ctime) VALUES (?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
+        INSERT_ACTION_HISTORY_CTIME = "INSERT INTO " + keyspace + ".actions_history_ctimes "
+                + "(tenantId, ctime, actionPlugin, actionId, alertId) VALUES (?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
+        INSERT_ACTION_HISTORY_RESULT = "INSERT INTO " + keyspace + ".actions_history_results "
+                + "(tenantId, result, actionPlugin, actionId, alertId, ctime) VALUES (?, ?, ?, ?, ?, ?) " +
+                "IF NOT EXISTS";
+
         INSERT_ACTION_PLUGIN = "INSERT INTO " + keyspace + ".action_plugins "
                 + "(actionPlugin, properties) VALUES (?, ?) ";
 
@@ -161,9 +243,6 @@ public class CassStatement {
                 + "(actionPlugin, properties, defaultProperties) VALUES (?, ?, ?) ";
 
         INSERT_ALERT = "INSERT INTO " + keyspace + ".alerts " + "(tenantId, alertId, payload) VALUES (?, ?, ?) ";
-
-        INSERT_ALERT_TRIGGER = "INSERT INTO " + keyspace + ".alerts_triggers "
-                + "(tenantId, alertId, triggerId) VALUES (?, ?, ?) ";
 
         INSERT_ALERT_CTIME = "INSERT INTO " + keyspace + ".alerts_ctimes "
                 + "(tenantId, alertId, ctime) VALUES (?, ?, ?) ";
@@ -173,6 +252,9 @@ public class CassStatement {
 
         INSERT_ALERT_STATUS = "INSERT INTO " + keyspace + ".alerts_statuses "
                 + "(tenantId, alertId, status) VALUES (?, ?, ?) ";
+
+        INSERT_ALERT_TRIGGER = "INSERT INTO " + keyspace + ".alerts_triggers "
+                + "(tenantId, alertId, triggerId) VALUES (?, ?, ?) ";
 
         INSERT_CONDITION_AVAILABILITY = "INSERT INTO " + keyspace + ".conditions "
                 + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, " +
@@ -205,19 +287,59 @@ public class CassStatement {
                 + "(triggerId, triggerMode, type, evalTrueSetting, evalTotalSetting, evalTimeSetting, "
                 + "dampeningId, tenantId) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ";
 
+        INSERT_EVENT = "INSERT INTO " + keyspace + ".events "
+                + "(tenantId, id, payload) VALUES (?, ?, ?) ";
+
+        INSERT_EVENT_CTIME = "INSERT INTO " + keyspace + ".events_ctimes "
+                + "(tenantId, ctime, id) VALUES (?, ?, ?) ";
+
+        INSERT_EVENT_CATEGORY = "INSERT INTO " + keyspace + ".events_categories "
+                + "(tenantId, category, id) VALUES (?, ?, ?) ";
+
+        INSERT_EVENT_TRIGGER = "INSERT INTO " + keyspace + ".events_triggers "
+                + "(tenantId, triggerId, id) VALUES (?, ?, ?) ";
+
         INSERT_TAG = "INSERT INTO " + keyspace + ".tags "
                 + "(tenantId, type, name, value, id) VALUES (?, ?, ?, ?, ?) ";
 
         INSERT_TRIGGER = "INSERT INTO " + keyspace + ".triggers " +
-                "(tenantId, id, name, context, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
-                + "autoResolveMatch, memberOf, description, enabled, firingMatch, orphan, group, severity, tags) "
-                + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
+                "(tenantId, id, autoDisable, autoEnable, autoResolve, autoResolveAlerts, autoResolveMatch, "
+                + "context, description, enabled, eventCategory, eventText, eventType, firingMatch, group, memberOf, "
+                + "name, orphan, severity, tags) "
+                + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_TRIGGER_ACTIONS = "INSERT INTO " + keyspace + ".triggers_actions "
                 + "(tenantId, triggerId, actionPlugin, actions) VALUES (?, ?, ?, ?) ";
 
         SELECT_ACTION = "SELECT properties FROM " + keyspace + ".actions "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
+
+        SELECT_ACTION_HISTORY = "SELECT payload FROM " + keyspace + ".actions_history " +
+                "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? AND alertId = ? and ctime = ?";
+
+        SELECT_ACTION_HISTORY_ACTION_ID = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_actions WHERE tenantId = ? AND actionId = ?";
+
+        SELECT_ACTION_HISTORY_ACTION_PLUGIN = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history WHERE tenantId = ? AND actionPlugin = ?";
+
+        SELECT_ACTION_HISTORY_ALERT_ID = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_alerts WHERE tenantId = ? AND alertId = ?";
+
+        SELECT_ACTION_HISTORY_BY_TENANT = "SELECT payload FROM " + keyspace + ".actions_history " +
+                "WHERE tenantId = ?";
+
+        SELECT_ACTION_HISTORY_CTIME_END = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " + keyspace +
+                ".actions_history_ctimes WHERE tenantId = ? AND ctime <= ?";
+
+        SELECT_ACTION_HISTORY_CTIME_START = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " + keyspace +
+                ".actions_history_ctimes WHERE tenantId = ? AND ctime >= ?";
+
+        SELECT_ACTION_HISTORY_CTIME_START_END = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_ctimes WHERE tenantId = ? AND ctime >= ? AND ctime <= ?";
+
+        SELECT_ACTION_HISTORY_RESULT = "SELECT tenantId, actionPlugin, actionId, alertId, ctime FROM " +
+                keyspace + ".actions_history_results WHERE tenantId = ? AND result = ?";
 
         SELECT_ACTIONS_ALL = "SELECT tenantId, actionPlugin, actionId " + "FROM " + keyspace + ".actions ";
 
@@ -234,6 +356,9 @@ public class CassStatement {
         SELECT_ACTIONS_PLUGIN = "SELECT actionId FROM " + keyspace + ".actions "
                 + "WHERE tenantId = ? AND actionPlugin = ? ";
 
+        SELECT_ALERT = "SELECT payload FROM " + keyspace + ".alerts "
+                + "WHERE tenantId = ? AND alertId = ? ";
+
         SELECT_ALERT_CTIME_END = "SELECT alertId FROM " + keyspace + ".alerts_ctimes "
                 + "WHERE tenantId = ? AND ctime <= ? ";
 
@@ -243,21 +368,15 @@ public class CassStatement {
         SELECT_ALERT_CTIME_START_END = "SELECT alertId FROM " + keyspace + ".alerts_ctimes "
                 + "WHERE tenantId = ? AND ctime >= ? AND ctime <= ? ";
 
-        SELECT_ALERT_STATUS = "SELECT alertId, status FROM " + keyspace + ".alerts_statuses "
-                + "WHERE tenantId = ? AND status = ? AND alertId = ? ";
-
-        SELECT_ALERT_SEVERITY_BY_TENANT_AND_SEVERITY = "SELECT alertId FROM " + keyspace + ".alerts_severities "
+        SELECT_ALERT_SEVERITY = "SELECT alertId FROM " + keyspace + ".alerts_severities "
                 + "WHERE tenantId = ? AND severity = ? ";
 
-        SELECT_ALERT_STATUS_BY_TENANT_AND_STATUS = "SELECT alertId FROM " + keyspace + ".alerts_statuses "
+        SELECT_ALERT_STATUS = "SELECT alertId FROM " + keyspace + ".alerts_statuses "
                 + "WHERE tenantId = ? AND status = ? ";
 
         SELECT_ALERTS_BY_TENANT = "SELECT payload FROM " + keyspace + ".alerts " + "WHERE tenantId = ? ";
 
-        SELECT_ALERT = "SELECT payload FROM " + keyspace + ".alerts "
-                + "WHERE tenantId = ? AND alertId = ? ";
-
-        SELECT_ALERTS_TRIGGERS = "SELECT alertId FROM " + keyspace + ".alerts_triggers "
+        SELECT_ALERT_TRIGGER = "SELECT alertId FROM " + keyspace + ".alerts_triggers "
                 + "WHERE tenantId = ? AND triggerId = ? ";
 
         SELECT_CONDITION_ID = "SELECT triggerId, triggerMode, type, conditionSetSize, "
@@ -294,6 +413,33 @@ public class CassStatement {
                 + "FROM " + keyspace + ".dampenings "
                 + "WHERE tenantId = ? ";
 
+        SELECT_EVENT = "SELECT payload FROM " + keyspace + ".events "
+                + "WHERE tenantId = ? AND  id = ? ";
+
+        SELECT_EVENT_CATEGORY = "SELECT id FROM " + keyspace + ".events_categories "
+                + "WHERE tenantId = ? AND category = ? ";
+
+        SELECT_EVENT_CTIME_END = "SELECT id FROM " + keyspace + ".events_ctimes "
+                + "WHERE tenantId = ? AND ctime <= ? ";
+
+        SELECT_EVENT_CTIME_START = "SELECT id FROM " + keyspace + ".events_ctimes "
+                + "WHERE tenantId = ? AND ctime >= ? ";
+
+        SELECT_EVENT_CTIME_START_END = "SELECT id FROM " + keyspace + ".events_ctimes "
+                + "WHERE tenantId = ? AND ctime >= ? AND ctime <= ? ";
+
+        SELECT_EVENT_TRIGGER = "SELECT id FROM " + keyspace + ".events_triggers "
+                + "WHERE tenantId = ? AND triggerId = ? ";
+
+        //SELECT_EVENTS_BY_PARTITION = "SELECT payload FROM " + keyspace + ".events "
+        //        + "WHERE tenantId = ? AND category = ? ";
+
+        SELECT_EVENTS_BY_TENANT = "SELECT payload FROM " + keyspace + ".events " + "WHERE tenantId = ? ";
+
+        // This is for use as a pre-query to gather all partitions to be subsequently queried. If the
+        // partition key changes this should also change.
+        // SELECT_PARTITIONS_EVENTS = "SELECT DISTINCT tenantid, category FROM " + keyspace + ".events ";
+
         // This is for use as a pre-query to gather all partitions to be subsequently queried. If the
         // partition key changes this should also change.
         SELECT_PARTITIONS_TRIGGERS = "SELECT DISTINCT tenantid FROM " + keyspace + ".triggers ";
@@ -306,8 +452,9 @@ public class CassStatement {
                 + "FROM " + keyspace + ".tags "
                 + "WHERE tenantId = ? AND type = ? and name = ? AND value = ? ";
 
-        SELECT_TRIGGER = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
-                + "autoResolveMatch, memberOf, description, enabled, firingMatch, orphan, group, severity, tags "
+        SELECT_TRIGGER = "SELECT tenantId, id, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
+                + "autoResolveMatch, context, description, enabled, eventCategory, eventText, eventType, "
+                + "firingMatch, group, memberOf, name, orphan, severity, tags "
                 + "FROM " + keyspace + ".triggers "
                 + "WHERE tenantId = ? AND id = ? ";
 
@@ -339,18 +486,22 @@ public class CassStatement {
                 + "FROM " + keyspace + ".dampenings "
                 + "WHERE tenantId = ? AND triggerId = ? and triggerMode = ? ";
 
-        SELECT_TRIGGERS_ALL = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, "
-                + "autoResolveAlerts, autoResolveMatch, memberOf, description, enabled, firingMatch, orphan, "
-                + "group, severity, tags "
+        SELECT_TRIGGERS_ALL = "SELECT tenantId, id, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
+                + "autoResolveMatch, context, description, enabled, eventCategory, eventText, eventType, "
+                + "firingMatch, group, memberOf, name, orphan, severity, tags "
                 + "FROM " + keyspace + ".triggers ";
 
-        SELECT_TRIGGERS_TENANT = "SELECT tenantId, id, name, context, autoDisable, autoEnable, autoResolve, "
-                + "autoResolveAlerts, autoResolveMatch, memberOf, description, enabled, firingMatch, orphan, "
-                + "group, severity, tags "
+        SELECT_TRIGGERS_TENANT = "SELECT tenantId, id, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
+                + "autoResolveMatch, context, description, enabled, eventCategory, eventText, eventType, "
+                + "firingMatch, group, memberOf, name, orphan, severity, tags "
                 + "FROM " + keyspace + ".triggers WHERE tenantId = ? ";
 
         UPDATE_ACTION = "UPDATE " + keyspace + ".actions SET properties = ? "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
+
+        UPDATE_ACTION_HISTORY = "UPDATE " + keyspace + ".actions_history " +
+                "SET payload = ? " +
+                "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? AND alertId = ? AND ctime = ?";
 
         UPDATE_ACTION_PLUGIN = "UPDATE " + keyspace + ".action_plugins SET properties = ? WHERE actionPlugin = ? ";
 
@@ -365,8 +516,8 @@ public class CassStatement {
 
         UPDATE_TRIGGER = "UPDATE " + keyspace + ".triggers "
                 + "SET autoDisable = ?, autoEnable = ?, autoResolve = ?, autoResolveAlerts = ?, autoResolveMatch = ?, "
-                + "memberOf = ?, context = ?, description = ?,  enabled = ?, firingMatch = ?, name = ?, orphan = ?, "
-                + "group = ?, severity = ?, tags = ? "
+                + "context = ?, description = ?,  enabled = ?, eventCategory = ?, eventText = ?, firingMatch = ?, "
+                + "group = ?, memberOf = ?, name = ?, orphan = ?, severity = ?, tags = ? "
                 + "WHERE tenantId = ? AND id = ? ";
 
     }

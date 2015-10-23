@@ -20,11 +20,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.actions.api.ActionPlugin;
+import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.actions.api.MsgLogger;
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
+import org.hawkular.alerts.api.json.JsonUtil;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.jboss.aerogear.unifiedpush.DefaultPushSender;
 import org.jboss.aerogear.unifiedpush.PushSender;
 import org.jboss.aerogear.unifiedpush.message.UnifiedMessage;
@@ -34,7 +40,7 @@ import org.jboss.aerogear.unifiedpush.message.UnifiedMessage;
  *
  * @author Thomas Segismont
  */
-@ActionPlugin(name = "aerogear")
+@Plugin(name = "aerogear")
 public class AerogearPlugin implements ActionPluginListener {
     static final String ROOT_SERVER_URL_PROPERTY = "org.hawkular.alerts.actions.aerogear.root.server.url";
     static final String ROOT_SERVER_URL = System.getProperty(ROOT_SERVER_URL_PROPERTY);
@@ -48,6 +54,12 @@ public class AerogearPlugin implements ActionPluginListener {
     Map<String, String> defaultProperties = new HashMap<>();
 
     PushSender pushSender;
+
+    @Sender
+    ActionPluginSender sender;
+
+    private static final String MESSAGE_PROCESSED = "PROCESSED";
+    private static final String MESSAGE_FAILED = "FAILED";
 
     public AerogearPlugin() {
         defaultProperties.put("alias", "Default aerogear alias");
@@ -66,24 +78,33 @@ public class AerogearPlugin implements ActionPluginListener {
     }
 
     @Override
-    public void process(PluginMessage msg) throws Exception {
+    public void process(ActionMessage msg) throws Exception {
         if (pushSender == null) {
-            msgLog.errorCannotSendMessage("aerogear", "Plugin is not started");
+            msgLog.errorCannotProcessMessage("aerogear", "Plugin is not started");
             return;
         }
 
-        UnifiedMessage.MessageBuilder alert = UnifiedMessage.withMessage().alert(prepareMessage(msg));
-        if (msg.getProperties() != null) {
-            String alias = msg.getProperties().get("alias");
-            if (!isBlank(alias)) {
-                alert.config().criteria().aliases(alias);
+        try {
+            UnifiedMessage.MessageBuilder alert = UnifiedMessage.withMessage().alert(prepareMessage(msg));
+            if (msg.getAction().getProperties() != null) {
+                String alias = msg.getAction().getProperties().get("alias");
+                if (!isBlank(alias)) {
+                    alert.config().criteria().aliases(alias);
+                }
             }
+
+            UnifiedMessage unifiedMessage = alert.build();
+            pushSender.send(unifiedMessage);
+            msgLog.infoActionReceived("aerogear", msg.toString());
+            Action successAction = msg.getAction();
+            successAction.setResult(MESSAGE_PROCESSED);
+            sendResult(successAction);
+        } catch (Exception e) {
+            msgLog.errorCannotProcessMessage("aerogear", e.getMessage());
+            Action failedAction = msg.getAction();
+            failedAction.setResult(MESSAGE_FAILED);
+            sendResult(failedAction);
         }
-
-        UnifiedMessage unifiedMessage = alert.build();
-        pushSender.send(unifiedMessage);
-
-        msgLog.infoActionReceived("aerogear", msg.toString());
     }
 
     void setup() {
@@ -105,20 +126,38 @@ public class AerogearPlugin implements ActionPluginListener {
         return value == null || value.trim().isEmpty();
     }
 
-    private String prepareMessage(PluginMessage msg) {
+    private String prepareMessage(ActionMessage msg) {
         String preparedMsg = null;
-        if (msg.getAction() != null && msg.getAction().getAlert() != null) {
-            Alert alert = msg.getAction().getAlert();
-            if (alert != null) {
+        Event event = msg.getAction() != null ? msg.getAction().getEvent() : null;
+
+        if (event != null) {
+            if (event instanceof Alert) {
+                Alert alert = (Alert) event;
                 preparedMsg = "Alert : " + alert.getTriggerId() + " at " + alert.getCtime() + " -- Severity: " +
                         alert.getSeverity().toString();
             } else {
-                preparedMsg = "Message received without data at " + System.currentTimeMillis();
-                msgLog.warnMessageReceivedWithoutPayload("aerogear");
+                preparedMsg = "Event [" + event.getCategory() + "] " + event.getText() + " at " + event.getCtime();
             }
+        } else {
+            preparedMsg = "Message received without data at " + System.currentTimeMillis();
+            msgLog.warnMessageReceivedWithoutPayload("aerogear");
         }
         return preparedMsg;
     }
 
-
+    private void sendResult(Action action) {
+        if (sender == null) {
+            throw new IllegalStateException("ActionPluginSender is not present in the plugin");
+        }
+        if (action == null) {
+            throw new IllegalStateException("Action to update result must be not null");
+        }
+        ActionResponseMessage newMessage = sender.createMessage(ActionResponseMessage.Operation.RESULT);
+        newMessage.getPayload().put("action", JsonUtil.toJson(action));
+        try {
+            sender.send(newMessage);
+        } catch (Exception e) {
+            msgLog.error("Error sending ActionResponseMessage", e);
+        }
+    }
 }

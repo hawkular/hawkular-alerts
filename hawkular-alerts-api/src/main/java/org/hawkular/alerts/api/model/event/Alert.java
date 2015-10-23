@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.event;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -53,21 +54,17 @@ public class Alert extends Event {
     private String ackBy;
 
     @JsonInclude
-    private String ackNotes;
-
-    @JsonInclude
     private long resolvedTime;
 
     @JsonInclude
     private String resolvedBy;
 
-    @JsonInclude
-    private String resolvedNotes;
+    @JsonInclude(Include.NON_EMPTY)
+    private List<Note> notes;
 
     @JsonInclude(Include.NON_EMPTY)
     @Thin
     private List<Set<ConditionEval>> resolvedEvalSets;
-
 
     public Alert() {
         // for json assembly
@@ -133,14 +130,6 @@ public class Alert extends Event {
         this.ackBy = ackBy;
     }
 
-    public String getAckNotes() {
-        return ackNotes;
-    }
-
-    public void setAckNotes(String ackNotes) {
-        this.ackNotes = ackNotes;
-    }
-
     public long getResolvedTime() {
         return resolvedTime;
     }
@@ -157,20 +146,36 @@ public class Alert extends Event {
         this.resolvedBy = resolvedBy;
     }
 
-    public String getResolvedNotes() {
-        return resolvedNotes;
-    }
-
-    public void setResolvedNotes(String resolvedNotes) {
-        this.resolvedNotes = resolvedNotes;
-    }
-
     public List<Set<ConditionEval>> getResolvedEvalSets() {
         return resolvedEvalSets;
     }
 
     public void setResolvedEvalSets(List<Set<ConditionEval>> resolvedEvalSets) {
         this.resolvedEvalSets = resolvedEvalSets;
+    }
+
+    public List<Note> getNotes() {
+        if (null == notes) {
+            this.notes = new ArrayList<>();
+        }
+        return notes;
+    }
+
+    public void setNotes(List<Note> notes) {
+        this.notes = notes;
+    }
+
+    /**
+     * Add a note on this alert
+     *
+     * @param user author of the comment
+     * @param text content of the note
+     */
+    public void addNote(String user, String text) {
+        if (user == null || text == null) {
+            throw new IllegalArgumentException("Note must have non-null user and text");
+        }
+        getNotes().add(new Note(user, text));
     }
 
     @Override
@@ -180,4 +185,87 @@ public class Alert extends Event {
                 + getContext() + "]";
     }
 
+
+    public static class Note {
+        @JsonInclude(Include.NON_EMPTY)
+        private String user;
+
+        @JsonInclude(Include.NON_EMPTY)
+        private long ctime;
+
+        @JsonInclude(Include.NON_EMPTY)
+        private String text;
+
+        public Note() {
+            // for json assembly
+        }
+
+        public Note(String user, String text) {
+            this(user, System.currentTimeMillis(), text);
+        }
+
+        public Note(String user, long ctime, String text) {
+            this.user = user;
+            this.ctime = ctime;
+            this.text = text;
+        }
+
+        public String getUser() {
+            return user;
+        }
+
+        public void setUser(String user) {
+            this.user = user;
+        }
+
+        public long getCtime() {
+            return ctime;
+        }
+
+        public void setCtime(long ctime) {
+            this.ctime = ctime;
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public void setText(String text) {
+            this.text = text;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+
+            Note note = (Note) o;
+
+            if (ctime != note.ctime)
+                return false;
+            if (user != null ? !user.equals(note.user) : note.user != null)
+                return false;
+            return !(text != null ? !text.equals(note.text) : note.text != null);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = user != null ? user.hashCode() : 0;
+            result = 31 * result + (int) (ctime ^ (ctime >>> 32));
+            result = 31 * result + (text != null ? text.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "Note{" +
+                    "user='" + user + '\'' +
+                    ", ctime=" + ctime +
+                    ", text='" + text + '\'' +
+                    '}';
+        }
+    }
 }

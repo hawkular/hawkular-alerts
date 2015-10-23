@@ -34,8 +34,8 @@ public interface MsgLogger extends BasicLogger {
     MsgLogger LOGGER = Logger.getMessageLogger(MsgLogger.class, MsgLogger.class.getPackage().getName());
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 210001, value = "Action plugin registration received without op.")
-    void warnActionPluginRegistrationWithoutOp();
+    @Message(id = 210001, value = "ActionResponse message received without payload.")
+    void warnActionResponseMessageWithoutPayload();
 
     @LogMessage(level = Logger.Level.INFO)
     @Message(id = 210002, value = "Action plugin [%s] registered")

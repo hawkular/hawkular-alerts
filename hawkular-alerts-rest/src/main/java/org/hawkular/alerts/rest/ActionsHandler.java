@@ -20,6 +20,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -34,8 +35,15 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
+import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.paging.Page;
+import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
@@ -241,12 +249,136 @@ public class ActionsHandler {
         }
     }
 
+    @GET
+    @Path("/history")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(
+            value = "Get actions from history with optional filtering")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response findActionsHistory(
+            @ApiParam(required = false, value = "filter out actions created before this time, millisecond since epoch")
+            @QueryParam("startTime")
+            final Long startTime,
+            @ApiParam(required = false, value = "filter out action created after this time, millisecond since epoch")
+            @QueryParam("endTime")
+            final Long endTime,
+            @ApiParam(required = false, value = "filter out actions for unspecified actionPlugin, " +
+                    "comma separated list of plugin names")
+            @QueryParam("actionPlugins")
+            final String actionPlugins,
+            @ApiParam(required = false, value = "filter out actions for unspecified actionId, " +
+                    "comma separated list of action IDs")
+            @QueryParam("actionIds")
+            final String actionIds,
+            @ApiParam(required = false, value = "filter out actions for unspecified alertIds, " +
+                    "comma separated list of alert IDs")
+            @QueryParam("alertIds")
+            final String alertIds,
+            @ApiParam(required = false, value = "filter out alerts for unspecified result, " +
+                    "comma separated list of action results")
+            @QueryParam("results")
+            final String results,
+            @ApiParam(required = false, value = "return only thin actions, do not include full alert, only alertId")
+            @QueryParam("thin")
+            final Boolean thin,
+            @Context
+            final UriInfo uri) {
+        Pager pager = RequestUtil.extractPaging(uri);
+        try {
+            ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
+                    thin);
+            Page<Action> actionPage = actions.getActions(tenantId, criteria, pager);
+            log.debugf("Actions: %s ", actionPage);
+            if (isEmpty(actionPage)) {
+                return ResponseUtil.ok(actionPage);
+            }
+            return ResponseUtil.paginatedOk(actionPage, uri);
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @PUT
+    @Path("/history/delete")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(
+            value = "Delete actions from history with optional filtering")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response deleteActionsHistory(
+            @ApiParam(required = false, value = "filter out actions created before this time, millisecond since epoch")
+            @QueryParam("startTime")
+            final Long startTime,
+            @ApiParam(required = false, value = "filter out action created after this time, millisecond since epoch")
+            @QueryParam("endTime")
+            final Long endTime,
+            @ApiParam(required = false, value = "filter out actions for unspecified actionPlugin, " +
+                    "comma separated list of plugin names")
+            @QueryParam("actionPlugins")
+            final String actionPlugins,
+            @ApiParam(required = false, value = "filter out actions for unspecified actionId, " +
+                    "comma separated list of action IDs")
+            @QueryParam("actionIds")
+            final String actionIds,
+            @ApiParam(required = false, value = "filter out actions for unspecified alertIds, " +
+                    "comma separated list of alert IDs")
+            @QueryParam("alertIds")
+            final String alertIds,
+            @ApiParam(required = false, value = "filter out alerts for unspecified result, " +
+                    "comma separated list of action results")
+            @QueryParam("results")
+            final String results) {
+        try {
+            ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
+                    false);
+            int numDeleted = actions.deleteActions(tenantId, criteria);
+            log.debugf("Actions deleted: %s ", numDeleted);
+            return ResponseUtil.ok(numDeleted);
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    private ActionsCriteria buildCriteria(Long startTime, Long endTime, String actionPlugins, String actionIds,
+                                          String alertIds, String results, Boolean thin) {
+        ActionsCriteria criteria = new ActionsCriteria();
+        criteria.setStartTime(startTime);
+        criteria.setEndTime(endTime);
+        if (!isEmpty(actionPlugins)) {
+            criteria.setActionPlugins(Arrays.asList(actionPlugins.split(",")));
+        }
+        if (!isEmpty(actionIds)) {
+            criteria.setActionIds(Arrays.asList(actionPlugins.split(",")));
+        }
+        if (!isEmpty(alertIds)) {
+            criteria.setAlertIds(Arrays.asList(alertIds.split(",")));
+        }
+        if (!isEmpty(results)) {
+            criteria.setResults(Arrays.asList(results.split(",")));
+        }
+        if (thin != null) {
+            criteria.setThin(thin);
+        } else {
+            criteria.setThin(false);
+        }
+        return criteria;
+    }
+
     private boolean isEmpty(Map map) {
         return map == null || map.isEmpty();
     }
 
     private boolean isEmpty(String s) {
         return s == null || s.trim().isEmpty();
+    }
+
+    private boolean isEmpty(Collection collection) {
+        return collection == null || collection.isEmpty();
     }
 
 }

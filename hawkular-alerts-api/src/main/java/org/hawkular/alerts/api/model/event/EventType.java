@@ -17,7 +17,7 @@
 package org.hawkular.alerts.api.model.event;
 
 /**
- * What the trigger produces.
+ * The type of events a trigger can produce.
  *
  * @author jay shaughnessy
  * @author lucas ponce

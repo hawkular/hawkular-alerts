@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
@@ -134,7 +134,7 @@ public class JvmNonHeapUsageData extends CommonData {
         unresolvedAlert.setResolvedEvalSets(resolvedEvals);
         unresolvedAlert.setStatus(Alert.Status.RESOLVED);
         unresolvedAlert.setResolvedBy(RESOLVED_BY);
-        unresolvedAlert.setResolvedNotes(RESOLVED_NOTES);
+        unresolvedAlert.addNote(RESOLVED_BY, RESOLVED_NOTES);
         unresolvedAlert.setResolvedTime(System.currentTimeMillis());
 
         return unresolvedAlert;

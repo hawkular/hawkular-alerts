@@ -34,12 +34,12 @@ public interface MsgLogger extends BasicLogger {
     MsgLogger LOGGER = Logger.getMessageLogger(MsgLogger.class, MsgLogger.class.getPackage().getName());
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 240001, value = "Plugin [%s] has received a action message: [%s]")
+    @Message(id = 240001, value = "Plugin [%s] has received an action message: [%s]")
     void infoActionReceived(String actionPlugin, String msg);
 
     @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 240005, value = "Plugin [%s] cannot send a message to the bus. Error: [%s]")
-    void errorCannotSendMessage(String actionPlugin, String msg);
+    @Message(id = 240005, value = "Plugin [%s] cannot process an action message. Error: [%s]")
+    void errorCannotProcessMessage(String actionPlugin, String msg);
 
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 240006, value = "Plugin [%s] cannot be started. Error: [%s]")

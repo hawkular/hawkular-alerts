@@ -27,9 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.actions.api.PluginMessage;
+import org.hawkular.alerts.actions.api.ActionMessage;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
@@ -37,6 +38,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -52,26 +54,19 @@ import com.squareup.pagerduty.incidents.NotifyResult;
 public class PagerDutyPluginTest {
     private static final String TEST_TENANT = "jdoe";
 
-    public static PluginMessage testMessage;
+    public static ActionMessage testMessage;
     public static String preparedMessage;
 
-    public static class TestPluginMessage implements PluginMessage {
+    public static class TestActionMessage implements ActionMessage {
         Action action;
-        Map<String, String> properties;
 
-        public TestPluginMessage(Action action, Map<String, String> properties) {
+        public TestActionMessage(Action action, Map<String, String> properties) {
             this.action = action;
-            this.properties = properties;
         }
 
         @Override
         public Action getAction() {
             return action;
-        }
-
-        @Override
-        public Map<String, String> getProperties() {
-            return properties;
         }
     }
 
@@ -112,7 +107,7 @@ public class PagerDutyPluginTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("description", "This is my personalized description");
 
-        testMessage = new TestPluginMessage(incomingAction, properties);
+        testMessage = new TestActionMessage(incomingAction, properties);
     }
 
     private FakePagerDuty fakePagerDuty;
@@ -121,9 +116,9 @@ public class PagerDutyPluginTest {
     @Before
     public void setup() {
         pagerDutyPlugin = new PagerDutyPlugin();
+        pagerDutyPlugin.sender = new TestActionSender();
         fakePagerDuty = new FakePagerDuty();
         pagerDutyPlugin.pagerDuty = fakePagerDuty;
-
     }
 
     @Test
@@ -144,5 +139,45 @@ public class PagerDutyPluginTest {
         NotifyResult instance2 = instanceCreator.createInstance(null);
 
         assertNotSame(instance1, instance2);
+    }
+
+    public class TestActionResponseMessage implements ActionResponseMessage {
+
+        ActionResponseMessage.Operation operation;
+
+        Map<String, String> payload;
+
+        public TestActionResponseMessage() {
+            this.operation = ActionResponseMessage.Operation.RESULT;
+            this.payload = new HashMap<>();
+        }
+
+        public TestActionResponseMessage(ActionResponseMessage.Operation operation) {
+            this.operation = operation;
+            this.payload = new HashMap<>();
+        }
+
+        @Override
+        public Operation getOperation() {
+            return operation;
+        }
+
+        @Override
+        public Map<String, String> getPayload() {
+            return payload;
+        }
+    }
+
+    public class TestActionSender implements ActionPluginSender {
+
+        @Override
+        public ActionResponseMessage createMessage(ActionResponseMessage.Operation operation) {
+            return new TestActionResponseMessage(operation);
+        }
+
+        @Override
+        public void send(ActionResponseMessage msg) throws Exception {
+            // Nothing to do
+        }
     }
 }

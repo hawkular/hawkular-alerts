@@ -126,6 +126,10 @@ public class AlertsCriteria {
         return tags;
     }
 
+    /**
+     * @param tags return alerts with *any* of these tags, it does not have to have all of the tags). Specify '*' for
+     * the value if you only want to match the name portion of the tag.
+     */
     public void setTags(Map<String, String> tags) {
         this.tags = tags;
     }
@@ -161,18 +165,41 @@ public class AlertsCriteria {
         this.thin = thin;
     }
 
+    public boolean hasAlertIdCriteria() {
+        return null != alertId
+                || (null != alertIds && !alertIds.isEmpty());
+    }
+
+    public boolean hasSeverityCriteria() {
+        return null != severity
+                || (null != severities && !severities.isEmpty());
+    }
+
+    public boolean hasStatusCriteria() {
+        return null != status
+                || (null != statusSet && !statusSet.isEmpty());
+    }
+
+    public boolean hasTagCriteria() {
+        return (null != tags && !tags.isEmpty());
+    }
+
+    public boolean hasCTimeCriteria() {
+        return (null != startTime || null != endTime);
+    }
+
+    public boolean hasTriggerIdCriteria() {
+        return null != triggerId
+                || (null != triggerIds && !triggerIds.isEmpty());
+    }
+
     public boolean hasCriteria() {
-        return null != startTime //
-                || null != endTime
-                || null != status
-                || null != severity
-                || null != triggerId
-                || null != alertId
-                || (null != statusSet && !statusSet.isEmpty())
-                || (null != severities && !severities.isEmpty())
-                || (null != triggerIds && !triggerIds.isEmpty())
-                || (null != alertIds && !alertIds.isEmpty())
-                || (null != tags && !tags.isEmpty());
+        return hasAlertIdCriteria()
+                || hasStatusCriteria()
+                || hasSeverityCriteria()
+                || hasTagCriteria()
+                || hasCTimeCriteria()
+                || hasTriggerIdCriteria();
     }
 
     @Override
