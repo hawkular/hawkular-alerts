@@ -49,22 +49,8 @@
     <!-- Hawkular Nest dependencies -->
     <dependency>
       <groupId>org.hawkular.bus</groupId>
-      <artifactId>hawkular-bus-mdb</artifactId>
+      <artifactId>hawkular-bus-common</artifactId>
       <version>${version.org.hawkular.bus}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-all</artifactId>
-      <version>${version.org.apache.activemq}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-jaas</artifactId>
-      <version>${version.org.apache.activemq}</version>
       <scope>provided</scope>
     </dependency>
 
