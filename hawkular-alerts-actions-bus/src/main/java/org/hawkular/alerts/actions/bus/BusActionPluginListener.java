@@ -17,6 +17,7 @@
 package org.hawkular.alerts.actions.bus;
 
 import java.util.Collection;
+import java.util.Set;
 
 import javax.annotation.PreDestroy;
 import javax.ejb.ActivationConfigProperty;
@@ -58,14 +59,26 @@ public class BusActionPluginListener extends BasicMessageListener<BusActionMessa
         }
         String actionPlugin = basicMessage.getAction().getActionPlugin();
         ActionPluginListener plugin = ActionPlugins.getPlugins().get(actionPlugin);
-        if (plugin == null) {
+        Set<String> globals = ActionPlugins.getGlobals();
+        if (plugin == null && ActionPlugins.getGlobals().isEmpty()) {
             log.debug("Received action [" + actionPlugin + "] but no ActionPluginListener found on this deployment");
             return;
         }
         try {
-            plugin.process(basicMessage);
-            log.debugf("Plugin [%s] has received a action message: [%s]", actionPlugin,
-                    basicMessage.getMessageId().getId());
+            if (plugin != null) {
+                plugin.process(basicMessage);
+                log.debugf("Plugin [%s] has received a action message: [%s]", actionPlugin,
+                        basicMessage.getMessageId().getId());
+            }
+            // Check if the plugin is executed twice
+            if (!globals.contains(actionPlugin)) {
+                for (String global : globals) {
+                    ActionPluginListener globalPlugin = ActionPlugins.getPlugins().get(global);
+                    globalPlugin.process(basicMessage);
+                    log.debugf("Global plugin [%s] has received a action message: [%s]", global,
+                            basicMessage.getMessageId().getId());
+                }
+            }
         } catch (Exception e) {
             msgLog.error("Plugin [" + actionPlugin + "] processing error", e);
         }
