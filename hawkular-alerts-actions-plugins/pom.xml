@@ -45,6 +45,7 @@
     <module>hawkular-alerts-actions-pagerduty</module>
     <module>hawkular-alerts-actions-file</module>
     <module>hawkular-alerts-actions-tests</module>
+    <module>hawkular-alerts-actions-webhook</module>
   </modules>
 
   <dependencies>
