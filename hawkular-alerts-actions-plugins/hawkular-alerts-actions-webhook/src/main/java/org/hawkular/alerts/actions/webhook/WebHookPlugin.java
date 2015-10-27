@@ -33,6 +33,7 @@ import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.jboss.logging.Logger;
 
 /**
@@ -131,9 +132,13 @@ public class WebHookPlugin implements ActionPluginListener {
      * @return filter result
      */
     public boolean checkFilter(Action action, String filter) {
-        if (action == null || action.getAlert() == null || filter == null || filter.isEmpty()) {
+        if (action == null || action.getEvent() == null || filter == null || filter.isEmpty()) {
             return true;
         }
+        if (!(action.getEvent() instanceof Alert)) {
+            return true;
+        }
+        Alert alert = (Alert)action.getEvent();
         String[] filters = filter.split(",");
         for (String f : filters) {
             String[] filterDetails = f.split("=");
@@ -145,13 +150,13 @@ public class WebHookPlugin implements ActionPluginListener {
             if (!TRIGGER_ID.equals(key) && !ALERT_ID.equals(key) && !SEVERITY.equals(key) && !STATUS.equals(key)) {
                 continue;
             }
-            if (TRIGGER_ID.equals(key) && !action.getAlert().getTriggerId().equals(value)) {
+            if (TRIGGER_ID.equals(key) && !alert.getTriggerId().equals(value)) {
                 return false;
-            } else if (ALERT_ID.equals(key) && !action.getAlert().getAlertId().equals(value)) {
+            } else if (ALERT_ID.equals(key) && !alert.getAlertId().equals(value)) {
                 return false;
-            } else if (STATUS.equals(key) && !action.getAlert().getStatus().name().equals(value)) {
+            } else if (STATUS.equals(key) && !alert.getStatus().name().equals(value)) {
                 return false;
-            } else if (SEVERITY.equals(key) && !action.getAlert().getSeverity().name().equals(value)) {
+            } else if (SEVERITY.equals(key) && !alert.getSeverity().name().equals(value)) {
                 return false;
             }
         }

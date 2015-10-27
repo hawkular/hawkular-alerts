@@ -73,6 +73,9 @@ public class PluginMessageDescription {
     /** Shortcut for PluginMessage.getAction().event */
     private Event event;
 
+    /** Shortcut for PluginMessage.getAction().alert */
+    private Alert alert;
+
     /** Shortcut for PluginMessage.getAction().alert.getStatus().name().toLowercase() */
     private String status;
 
@@ -205,6 +208,9 @@ public class PluginMessageDescription {
             throw new IllegalArgumentException("Properties cannot be null on PluginMessage");
         }
         event = pm.getAction().getEvent();
+        if (event instanceof Alert) {
+            alert = (Alert)event;
+        }
         props = pm.getAction().getProperties();
         if (event != null && event instanceof Alert) {
             Alert alert = (Alert) event;
@@ -623,6 +629,14 @@ public class PluginMessageDescription {
 
     public void setEvent(Event event) {
         this.event = event;
+    }
+
+    public Alert getAlert() {
+        return alert;
+    }
+
+    public void setAlert(Alert alert) {
+        this.alert = alert;
     }
 
     public String getStatus() {
