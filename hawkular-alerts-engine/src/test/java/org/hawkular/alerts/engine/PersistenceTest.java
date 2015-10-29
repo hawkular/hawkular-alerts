@@ -1800,7 +1800,7 @@ public abstract class PersistenceTest {
 
     public void test0080BasicActionsHistory() throws Exception {
         for (int i = 0; i < 107; i++) {
-            Event testEvent = new Event(TEST_TENANT, "test-trigger", "test-category", "test-text");
+            Event testEvent = new Event(TEST_TENANT, "test-trigger", "test-dataid", "test-category", "test-text");
             Action action = new Action(testEvent.getTenantId(), "testplugin", "send-to-this-groups", testEvent);
             Thread.sleep(2);
             actionsService.send(action);

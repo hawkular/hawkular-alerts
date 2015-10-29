@@ -31,48 +31,46 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 public class EventCondition extends Condition {
 
     @JsonInclude
-    private String eventName;
+    private String dataId;
 
     @JsonInclude(Include.NON_NULL)
     private String expression;
 
     public EventCondition() {
-        this("DefaultId", Mode.FIRING, 1, 1, null);
+        this("DefaultId", Mode.FIRING, 1, 1, null, null);
     }
 
-    public EventCondition(String triggerId, String expression) {
-        this(triggerId, Mode.FIRING, 1, 1, expression);
+    public EventCondition(String triggerId, String dataId, String expression) {
+        this(triggerId, Mode.FIRING, 1, 1, dataId, expression);
     }
 
-    public EventCondition(String triggerId, Mode triggerMode, String expression) {
-        this(triggerId, triggerMode, 1, 1, expression);
+    public EventCondition(String triggerId, Mode triggerMode, String dataId, String expression) {
+        this(triggerId, triggerMode, 1, 1, dataId, expression);
     }
 
-    public EventCondition(String triggerId, int conditionSetSize, int conditionSetIndex, String expression) {
-        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, expression);
+    public EventCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
+                          String dataId, String expression) {
+        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, expression);
     }
 
     public EventCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
-                          String expression) {
+                          String dataId, String expression) {
         super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.EVENT);
+        this.dataId = dataId;
         this.expression = expression;
     }
 
-    public String getEventName() {
-        return eventName;
-    }
-
-    public void setEventName(String eventName) {
-        this.eventName = eventName;
+    public void setDataId(String dataId) {
+        this.dataId = dataId;
     }
 
     public String getLog(Event value) {
-        return triggerId + " " + eventName + " : " + value + " " + expression;
+        return triggerId + " " + dataId + " : " + value + " " + expression;
     }
 
     @Override
     public String getDataId() {
-        return null;
+        return dataId;
     }
 
     public String getExpression() {
@@ -100,6 +98,7 @@ public class EventCondition extends Condition {
     private static final String ID = "id";
     private static final String CTIME = "ctime";
     private static final String TEXT = "text";
+    private static final String CATEGORY = "category";
     private static final String CONTEXT = "context.";
     private static final String TAGS = "tags.";
 
@@ -115,7 +114,7 @@ public class EventCondition extends Condition {
     private static final String GTE = ">=";
 
     /**
-     * Expression has awlays following 3 tokens structure:
+     * Expression has always following 3 tokens structure:
      *
      * <event.field> <operator> <constant>
      *
@@ -175,6 +174,8 @@ public class EventCondition extends Condition {
             lEventValue = value.getCtime();
         } else if (TEXT.equals(eventField)) {
             sEventValue = value.getText();
+        } else if (CATEGORY.equals(eventField)) {
+            sEventValue = value.getCategory();
         } else if (eventField.startsWith(CONTEXT)) {
             // We get the key from context.<key> string
             String key = eventField.substring(8);
@@ -291,7 +292,8 @@ public class EventCondition extends Condition {
     @Override
     public String toString() {
         return "EventCondition{" +
-                "expression='" + expression + '\'' +
+                "dataId='" + dataId + '\'' +
+                ",expression='" + expression + '\'' +
                 '}';
     }
 }

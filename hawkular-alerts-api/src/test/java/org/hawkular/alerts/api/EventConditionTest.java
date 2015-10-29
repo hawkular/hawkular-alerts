@@ -32,7 +32,7 @@ public class EventConditionTest {
     @Test
     public void testTenantIdExpression() {
 
-        EventCondition condition = new EventCondition("trigger-1", "tenantId == 'my-organization'");
+        EventCondition condition = new EventCondition("trigger-1", "app.war", "tenantId == 'my-organization'");
         Event event1 = new Event();
         event1.setTenantId("my-organization");
 
@@ -66,7 +66,7 @@ public class EventConditionTest {
 
     @Test
     public void testCtimeExpression() {
-        EventCondition condition = new EventCondition("trigger-1", "ctime > 10");
+        EventCondition condition = new EventCondition("trigger-1", "app.war", "ctime > 10");
 
         Event event1 = new Event();
         event1.setCtime(11);
@@ -92,7 +92,7 @@ public class EventConditionTest {
 
     @Test
     public void testContextExpression() {
-        EventCondition condition = new EventCondition("trigger-1", "context.server == 'MyServer'");
+        EventCondition condition = new EventCondition("trigger-1", "app.war", "context.server == 'MyServer'");
 
         Event event1 = new Event();
         event1.addContext("server", "MyServer");
@@ -126,7 +126,7 @@ public class EventConditionTest {
 
     @Test
     public void testTagExpression() {
-        EventCondition condition = new EventCondition("trigger-1", "tags.server == 'MyServer'");
+        EventCondition condition = new EventCondition("trigger-1", "app.war", "tags.server == 'MyServer'");
 
         Event event1 = new Event();
         event1.addTag("server", "MyServer");

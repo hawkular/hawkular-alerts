@@ -27,6 +27,7 @@ import javax.ejb.TransactionAttributeType;
 import org.drools.core.event.DebugAgendaEventListener;
 import org.drools.core.event.DebugRuleRuntimeEventListener;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.engine.rules.RulesEngine;
 import org.jboss.logging.Logger;
 import org.kie.api.KieServices;
@@ -55,6 +56,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     private KieSession kSession;
 
     TreeSet<Data> pendingData = new TreeSet<>();
+    TreeSet<Event> pendingEvent = new TreeSet<>();
 
     public DroolsRulesEngineImpl() {
         log.debugf("Creating instance.");
@@ -70,10 +72,9 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
     @Override
     public void addFact(Object fact) {
-        if (fact instanceof Data) {
+        if (fact instanceof Data || fact instanceof Event) {
             throw new IllegalArgumentException(fact.toString());
         }
-
         log.debugf("Insert %s ", fact);
         kSession.insert(fact);
     }
@@ -81,7 +82,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     @Override
     public void addFacts(Collection facts) {
         for (Object fact : facts) {
-            if (fact instanceof Data) {
+            if (fact instanceof Data || fact instanceof Event) {
                 throw new IllegalArgumentException(fact.toString());
             }
         }
@@ -99,6 +100,16 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     @Override
     public void addData(Collection<Data> data) {
         pendingData.addAll(data);
+    }
+
+    @Override
+    public void addEvent(Event event) {
+        pendingEvent.add(event);
+    }
+
+    @Override
+    public void addEvent(Collection<Event> events) {
+        pendingEvent.addAll(events);
     }
 
     @Override
@@ -121,9 +132,10 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         // execution of the rules.  So, if we find multiple Data instances for the same Id, defer all but
         // the oldest to a subsequent run. Note that pendingData is already sorted by (id ASC, timestamp ASC) so
         // the iterator will present Data with the same id together, and time-ordered.
-        while (!pendingData.isEmpty()) {
+        while (!pendingData.isEmpty() || !pendingEvent.isEmpty()) {
 
-            log.debugf("Data found. Firing rules on [%1$d] datums.", pendingData.size());
+            log.debugf("Data found. Firing rules on [%1$d] datums and [%1$d] events.", pendingData.size(),
+                    pendingEvent.size());
 
             TreeSet<Data> batchData = new TreeSet<Data>(pendingData);
             Data previousData = null;
@@ -146,6 +158,22 @@ public class DroolsRulesEngineImpl implements RulesEngine {
             }
 
             batchData.clear();
+
+
+            TreeSet<Event> batchEvent = new TreeSet<Event>(pendingEvent);
+            Event previousEvent = null;
+
+            pendingEvent.clear();
+
+            for (Event event : batchEvent) {
+                if (null == previousEvent || !event.getId().equals(previousEvent.getId())) {
+                    kSession.insert(event);
+                    previousEvent = event;
+                } else {
+                    pendingEvent.add(event);
+                    log.debugf("Deferring more recent %1$s until older %2$s is processed", event, previousEvent);
+                }
+            }
 
             if (log.isTraceEnabled()) {
                 log.trace("Drools session dumping before firing: ");
