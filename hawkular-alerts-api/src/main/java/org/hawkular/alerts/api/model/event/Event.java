@@ -102,24 +102,33 @@ public class Event implements Comparable<Event> {
     }
 
     public Event(String tenantId, String id, String dataId, String category, String text) {
-        this(tenantId, id, dataId, category, text, null, null);
+        this(tenantId, id, System.currentTimeMillis(), dataId, category, text, null, null);
     }
 
     public Event(String tenantId, String id, String dataId, String category, String text, Map<String, String> context) {
-        this(tenantId, id, dataId, category, text, context, null);
+        this(tenantId, id, System.currentTimeMillis(), dataId, category, text, context, null);
     }
 
-    public Event(String tenantId, String id, String dataId, String category, String text, Map<String, String> context,
-            Map<String, String> tags) {
+    public Event(String tenantId, String id, long ctime, String dataId, String category, String text) {
+        this(tenantId, id, ctime, dataId, category, text, null, null);
+    }
+
+    public Event(String tenantId, String id, long ctime, String dataId, String category, String text,
+                 Map<String, String> context) {
+        this(tenantId, id, ctime, dataId, category, text, context, null);
+    }
+
+    public Event(String tenantId, String id, long ctime, String dataId, String category, String text,
+                 Map<String, String> context, Map<String, String> tags) {
         this.tenantId = tenantId;
         this.id = id;
+        this.ctime = ctime;
         this.dataId = dataId;
         this.category = category;
         this.text = text;
         this.context = context;
         this.tags = tags;
 
-        this.ctime = System.currentTimeMillis();
     }
 
     /**
@@ -308,17 +317,20 @@ public class Event implements Comparable<Event> {
     }
 
     /* (non-Javadoc)
-     * Natural Ordering provided: Id asc, Timestamp asc. This is important to ensure that the engine
+     * Natural Ordering provided: dataId asc, Timestamp asc, id asc. This is important to ensure that the engine
      * naturally processes events for the same dataId is ascending time order.
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
     public int compareTo(Event o) {
-        int c = this.id.compareTo(o.id);
+        int c = this.dataId.compareTo(o.dataId);
         if (0 != c)
             return c;
-
-        return Long.compare(this.ctime, o.ctime);
+        c = Long.compare(this.ctime, o.ctime);
+        if (0 != c) {
+            return c;
+        }
+        return this.id.compareTo(o.id);
     }
 
     private static boolean isEmpty(String s) {

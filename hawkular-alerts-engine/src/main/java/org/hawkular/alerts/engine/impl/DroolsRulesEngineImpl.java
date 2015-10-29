@@ -132,6 +132,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         // execution of the rules.  So, if we find multiple Data instances for the same Id, defer all but
         // the oldest to a subsequent run. Note that pendingData is already sorted by (id ASC, timestamp ASC) so
         // the iterator will present Data with the same id together, and time-ordered.
+        int fireCycle = 0;
         while (!pendingData.isEmpty() || !pendingEvent.isEmpty()) {
 
             log.debugf("Data found. Firing rules on [%1$d] datums and [%1$d] events.", pendingData.size(),
@@ -166,7 +167,8 @@ public class DroolsRulesEngineImpl implements RulesEngine {
             pendingEvent.clear();
 
             for (Event event : batchEvent) {
-                if (null == previousEvent || !event.getId().equals(previousEvent.getId())) {
+                if (null == previousEvent
+                        || (null != event.getDataId() && !event.getDataId().equals(previousEvent.getDataId()))) {
                     kSession.insert(event);
                     previousEvent = event;
                 } else {
@@ -175,15 +177,16 @@ public class DroolsRulesEngineImpl implements RulesEngine {
                 }
             }
 
-            if (log.isTraceEnabled()) {
-                log.trace("Drools session dumping before firing: ");
+            if (log.isDebugEnabled()) {
+                log.debugf("Firing cycle [%s] - with these facts: ", fireCycle);
                 for (FactHandle fact : kSession.getFactHandles()) {
                     Object o = kSession.getObject(fact);
-                    log.trace("Fact: " + o.toString());
+                    log.debugf("Fact:  %s", o.toString());
                 }
             }
 
             kSession.fireAllRules();
+            fireCycle++;
         }
     }
 

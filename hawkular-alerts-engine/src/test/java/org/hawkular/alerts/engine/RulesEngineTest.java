@@ -971,25 +971,25 @@ public class RulesEngineTest {
         EventCondition t1c3 = new EventCondition("trigger-1", Mode.FIRING, 3, 3, "datacenter2",
                 "text starts 'WARN'");
 
-        Event appDownEvent1 = new Event("tenant", UUID.randomUUID().toString(), "myapp.war",
+        Event appDownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "myapp.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
-        Event logErrorEvent1 = new Event("tenant", UUID.randomUUID().toString(), "datacenter1",
+        Event logErrorEvent1 = new Event("tenant", UUID.randomUUID().toString(), 2, "datacenter1",
                 EventCategory.LOG.name(), "ERROR [Time] This is a sample as app logging");
-        Event logWarnEvent1 = new Event("tenant", UUID.randomUUID().toString(), "datacenter2",
+        Event logWarnEvent1 = new Event("tenant", UUID.randomUUID().toString(), 3, "datacenter2",
                 EventCategory.LOG.name(), "WARN [Time] This is a sample as app logging");
 
-        Event appDownEvent2 = new Event("tenant", UUID.randomUUID().toString(), "myapp.war",
+        Event appDownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 4, "myapp.war",
                 EventCategory.DEPLOYMENT.name(), "UP");
-        Event logErrorEvent2 = new Event("tenant", UUID.randomUUID().toString(), "datacenter1",
+        Event logErrorEvent2 = new Event("tenant", UUID.randomUUID().toString(), 5, "datacenter1",
                 EventCategory.LOG.name(), "ERROR [Time] This is a sample as app logging 2");
-        Event logWarnEvent2 = new Event("tenant", UUID.randomUUID().toString(), "datacenter2",
+        Event logWarnEvent2 = new Event("tenant", UUID.randomUUID().toString(), 6, "datacenter2",
                 EventCategory.LOG.name(), "WARN [Time] This is a sample as app logging 2");
 
-        Event appDownEvent3 = new Event("tenant", UUID.randomUUID().toString(), "myapp.war",
+        Event appDownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 7, "myapp.war",
                 EventCategory.DEPLOYMENT.name(), "UP");
-        Event logErrorEvent3 = new Event("tenant", UUID.randomUUID().toString(), "datacenter1",
+        Event logErrorEvent3 = new Event("tenant", UUID.randomUUID().toString(), 8, "datacenter1",
                 EventCategory.LOG.name(), "ERROR [Time] This is a sample as app logging 3");
-        Event logWarnEvent3 = new Event("tenant", UUID.randomUUID().toString(), "datacenter2",
+        Event logWarnEvent3 = new Event("tenant", UUID.randomUUID().toString(), 9, "datacenter2",
                 EventCategory.LOG.name(), "WARN [Time] This is a sample as app logging 3");
 
         inputEvents.add(appDownEvent1);
@@ -1015,7 +1015,7 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assertEquals(outputEvents.toString(), 1, outputEvents.size());
+        assertEquals(outputEvents.toString(), 3, outputEvents.size());
     }
 
     @Test
