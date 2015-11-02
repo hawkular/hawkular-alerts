@@ -40,17 +40,34 @@ public class EventCondition extends Condition {
         this("DefaultId", Mode.FIRING, 1, 1, null, null);
     }
 
+    public EventCondition(String triggerId, String dataId) {
+        this(triggerId, Mode.FIRING, 1, 1, dataId, null);
+    }
+
     public EventCondition(String triggerId, String dataId, String expression) {
         this(triggerId, Mode.FIRING, 1, 1, dataId, expression);
+    }
+
+    public EventCondition(String triggerId, Mode triggerMode, String dataId) {
+        this(triggerId, triggerMode, 1, 1, dataId, null);
     }
 
     public EventCondition(String triggerId, Mode triggerMode, String dataId, String expression) {
         this(triggerId, triggerMode, 1, 1, dataId, expression);
     }
 
+    public EventCondition(String triggerId, int conditionSetSize, int conditionSetIndex, String dataId) {
+        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, null);
+    }
+
     public EventCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
                           String dataId, String expression) {
         this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, expression);
+    }
+
+    public EventCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+                          String dataId) {
+        this(triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, null);
     }
 
     public EventCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
@@ -82,8 +99,11 @@ public class EventCondition extends Condition {
     }
 
     public boolean match(Event value) {
-        if (null == expression || expression.isEmpty() || null == value) {
+        if (null == value) {
             return false;
+        }
+        if (null == expression || expression.isEmpty()) {
+            return true;
         }
         String[] expressions = expression.split(",");
         for (int i = 0; i < expressions.length; i++) {

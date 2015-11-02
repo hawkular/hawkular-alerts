@@ -148,6 +148,7 @@ public class Event implements Comparable<Event> {
         this.ctime = System.currentTimeMillis();
 
         this.id = trigger.getId() + "-" + this.ctime;
+        this.dataId = trigger.getId();
         this.context = trigger.getContext();
         if (!isEmpty(trigger.getEventCategory())) {
             this.category = trigger.getEventCategory();

@@ -341,6 +341,9 @@ rule AlertOnSatisfiedDampening
             events.add(newEvent);
         }
 
+        // We insert the generated events on the firing cycles to allow chained conditions
+        insert( newEvent );
+
         if (actions != null) {
             for (String actionPlugin : $t.getActions().keySet()) {
                 for (String actionId : $t.getActions().get(actionPlugin)) {

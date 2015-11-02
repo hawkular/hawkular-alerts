@@ -961,7 +961,7 @@ public class RulesEngineTest {
     }
 
     @Test
-    public void MultipleEventConditions() {
+    public void multipleEventConditions() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Events Test");
         t1.setEventType(EventType.EVENT);
         EventCondition t1c1 = new EventCondition("trigger-1", Mode.FIRING, 3, 1, "myapp.war",
@@ -971,6 +971,9 @@ public class RulesEngineTest {
         EventCondition t1c3 = new EventCondition("trigger-1", Mode.FIRING, 3, 3, "datacenter2",
                 "text starts 'WARN'");
 
+        /*
+            On multiple conditions timestamps on input events are important.
+         */
         Event appDownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "myapp.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
         Event logErrorEvent1 = new Event("tenant", UUID.randomUUID().toString(), 2, "datacenter1",
@@ -1016,6 +1019,90 @@ public class RulesEngineTest {
         rulesEngine.fire();
 
         assertEquals(outputEvents.toString(), 3, outputEvents.size());
+    }
+
+    @Test
+    public void chainedEventsRules() {
+        Trigger t1 = new Trigger("tenant", "trigger-1", "A.war");
+        t1.setEventType(EventType.EVENT);
+        EventCondition t1c1 = new EventCondition("trigger-1", Mode.FIRING, "A.war", "text == 'DOWN'");
+
+        Trigger t2 = new Trigger("tenant", "trigger-2", "B.war");
+        t2.setEventType(EventType.EVENT);
+        EventCondition t2c1 = new EventCondition("trigger-2", Mode.FIRING, "B.war", "text == 'DOWN'");
+
+        Trigger t3 = new Trigger("tenant", "trigger-3", "A.war and B.war DOWN");
+        EventCondition t3c1 = new EventCondition("trigger-3", Mode.FIRING, 2, 1, "trigger-1");
+        EventCondition t3c2 = new EventCondition("trigger-3", Mode.FIRING, 2, 2, "trigger-2");
+
+
+        Event appADownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "A.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        Event appBDownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "B.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        Event appADownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 2, "A.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        Event appBDownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 2, "B.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        Event appADownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 3, "A.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        Event appBDownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 3, "B.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        inputEvents.add(appADownEvent1);
+        inputEvents.add(appBDownEvent1);
+        inputEvents.add(appADownEvent2);
+        inputEvents.add(appBDownEvent2);
+        inputEvents.add(appADownEvent3);
+        inputEvents.add(appBDownEvent3);
+
+        t1.setEnabled(true);
+        t2.setEnabled(true);
+        t3.setEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+        rulesEngine.addFact(t2);
+        rulesEngine.addFact(t2c1);
+        rulesEngine.addFact(t3);
+        rulesEngine.addFact(t3c1);
+        rulesEngine.addFact(t3c2);
+
+        rulesEngine.addEvent(inputEvents);
+
+        rulesEngine.fire();
+
+        assertEquals(outputEvents.toString(), 6, outputEvents.size());
+
+        /*
+            Expected inference:
+
+                Alert 1:
+                    id=trigger-1-Event-timestamp-1
+                    id=trigger-2-Event-timestamp-1
+
+                Alert 2:
+                    id=trigger-1-Event-timestamp-2 ==> NEW Event from trigger-1
+                    id=trigger-2-Event-timestamp-1
+
+                Alert 3:
+                    id=trigger-1-Event-timestamp-2
+                    id=trigger-2-Event-timestamp-2 ==> NEW Event from trigger-2
+
+                Alert 4:
+                    id=trigger-1-Event-timestamp-3 ==> NEW Event from trigger-1
+                    id=trigger-2-Event-timestamp-2
+
+                Alert 5:
+                    id=trigger-1-Event-timestamp-3
+                    id=trigger-2-Event-timestamp-3 ==> NEW Event from trigger-2
+         */
+        assertEquals(alerts.toString(), 5, alerts.size());
     }
 
     @Test
