@@ -68,6 +68,7 @@ public class AlertsEngineImpl implements AlertsEngine {
     private int period;
 
     private final List<Data> pendingData;
+    private final List<Event> pendingEvent;
     private final List<Alert> alerts;
     private final List<Event> events;
     private final Set<Dampening> pendingTimeouts;
@@ -91,6 +92,7 @@ public class AlertsEngineImpl implements AlertsEngine {
 
     public AlertsEngineImpl() {
         pendingData = new ArrayList<>();
+        pendingEvent = new ArrayList<>();
         alerts = new ArrayList<>();
         events = new ArrayList<>();
         pendingTimeouts = new HashSet<>();
@@ -309,6 +311,22 @@ public class AlertsEngineImpl implements AlertsEngine {
         addPendingData(data);
     }
 
+    @Override
+    public void sendEvent(Event event) throws Exception {
+        if (event == null) {
+            throw new IllegalArgumentException("Event must be not null");
+        }
+        addPendingEvent(event);
+    }
+
+    @Override
+    public void sendEvent(Collection<Event> event) throws Exception {
+        if (event == null) {
+            throw new IllegalArgumentException("Event must be not null");
+        }
+        addPendingEvent(event);
+    }
+
     private synchronized void addPendingData(Collection<Data> data) {
         pendingData.addAll(data);
     }
@@ -317,9 +335,23 @@ public class AlertsEngineImpl implements AlertsEngine {
         pendingData.add(data);
     }
 
+    private synchronized void addPendingEvent(Collection<Event> event) {
+        pendingEvent.addAll(event);
+    }
+
+    private synchronized void addPendingEvent(Event event) {
+        pendingEvent.add(event);
+    }
+
     private synchronized Collection<Data> getAndClearPendingData() {
         Collection<Data> result = new ArrayList<>(pendingData);
         pendingData.clear();
+        return result;
+    }
+
+    private synchronized Collection<Event> getAndClearPendingEvent() {
+        Collection<Event> result = new ArrayList<>(pendingEvent);
+        pendingEvent.clear();
         return result;
     }
 
@@ -328,19 +360,36 @@ public class AlertsEngineImpl implements AlertsEngine {
         public void run() {
             int numTimeouts = checkPendingTimeouts();
 
-            if (!pendingData.isEmpty() || numTimeouts > 0) {
+            if ((!pendingData.isEmpty() && !pendingEvent.isEmpty()) || numTimeouts > 0) {
                 Collection<Data> newData = getAndClearPendingData();
+                Collection<Event> newEvent = getAndClearPendingEvent();
 
-                log.debugf("Executing rules engine on [%1d] datums and [%2d] dampening timeouts.", newData.size(),
-                        numTimeouts);
+                if (!newEvent.isEmpty()) {
+                    /*
+                        Incoming Events are added to the result events list.
+                        Events are all persisted at the end of the inference.
+                        With this we will have on events list:
+                        - Input events.
+                        - New events generates as result of the inference process.
+                     */
+                    events.addAll(newEvent);
+                }
+
+                log.debugf("Executing rules engine on [%1d] datums, [%2d] events and [%3d] dampening timeouts.",
+                        newData.size(), newEvent.size(), numTimeouts);
 
                 try {
-                    if (newData.isEmpty()) {
+                    if (newData.isEmpty() && newEvent.isEmpty()) {
                         rules.fireNoData();
-
                     } else {
-                        rules.addData(newData);
-                        newData.clear();
+                        if (!newData.isEmpty()) {
+                            rules.addData(newData);
+                            newData.clear();
+                        }
+                        if (!newEvent.isEmpty()) {
+                            rules.addEvent(newEvent);
+                            newEvent.clear();
+                        }
                     }
 
                     rules.fire();

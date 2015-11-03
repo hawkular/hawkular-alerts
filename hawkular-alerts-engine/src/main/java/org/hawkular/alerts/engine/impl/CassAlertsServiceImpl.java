@@ -1293,6 +1293,16 @@ public class CassAlertsServiceImpl implements AlertsService {
         alertsEngine.sendData(data);
     }
 
+    @Override
+    public void sendEvent(Event event) throws Exception {
+        alertsEngine.sendEvent(event);
+    }
+
+    @Override
+    public void sendEvent(Collection<Event> event) throws Exception {
+        alertsEngine.sendEvent(event);
+    }
+
     private void sendAction(Alert a) {
         if (actionsService != null && a != null && a.getTrigger() != null && a.getTrigger().getActions() != null) {
             Map<String, Set<String>> actions = a.getTrigger().getActions();

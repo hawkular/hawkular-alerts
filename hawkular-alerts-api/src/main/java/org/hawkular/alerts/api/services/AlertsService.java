@@ -171,4 +171,24 @@ public interface AlertsService {
      */
     void sendData(Collection<Data> data) throws Exception;
 
+    /**
+     * Send event into the alerting system for evaluation.
+     * Events are persisted after inference.
+     * addEvents() only persist events but not put it on the engine for evaluation.
+     *
+     * @param event Not Null. The events to be avaluated and persisted by the alerting engine.
+     * @throws Exception any problem
+     */
+    void sendEvent(Event event) throws Exception;
+
+    /**
+     * Send event into the alerting system for evaluation.
+     * Events are persisted after inference.
+     * addEvents() only persist events but not put it on the engine for evaluation.
+     *
+     * @param event Not Null. The events to be avaluated and persisted by the alerting engine.
+     * @throws Exception any problem
+     */
+    void sendEvent(Collection<Event> event) throws Exception;
+
 }

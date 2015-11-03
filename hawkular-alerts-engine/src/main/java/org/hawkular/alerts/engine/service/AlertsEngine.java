@@ -19,6 +19,7 @@ package org.hawkular.alerts.engine.service;
 import java.util.Collection;
 
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
@@ -55,6 +56,25 @@ public interface AlertsEngine {
      * @throws Exception any problem.
      */
     void sendData(Collection<Data> data) throws Exception;
+
+    /**
+     * Send event into the alerting system for evaluation.
+     * Events are persisted after inference.
+     *
+     * @param event Not Null. The events to be avaluated and persisted by the alerting engine.
+     * @throws Exception any problem
+     */
+    void sendEvent(Event event) throws Exception;
+
+    /**
+     * Send event into the alerting system for evaluation.
+     * Events are persisted after inference.
+     *
+     * @param event Not Null. The events to be avaluated and persisted by the alerting engine.
+     * @throws Exception any problem
+     */
+    void sendEvent(Collection<Event> event) throws Exception;
+
 
     /**
      * Reload all Triggers.
