@@ -101,16 +101,33 @@ public class Event implements Comparable<Event> {
         // for json assembly
     }
 
+    public Event(String tenantId, String id, String category, String text) {
+        this(tenantId, id, System.currentTimeMillis(), null, category, text, null, null);
+    }
+
     public Event(String tenantId, String id, String dataId, String category, String text) {
         this(tenantId, id, System.currentTimeMillis(), dataId, category, text, null, null);
+    }
+
+    public Event(String tenantId, String id, String category, String text, Map<String, String> context) {
+        this(tenantId, id, System.currentTimeMillis(), null, category, text, context, null);
     }
 
     public Event(String tenantId, String id, String dataId, String category, String text, Map<String, String> context) {
         this(tenantId, id, System.currentTimeMillis(), dataId, category, text, context, null);
     }
 
+    public Event(String tenantId, String id, long ctime, String category, String text) {
+        this(tenantId, id, ctime, null, category, text, null, null);
+    }
+
     public Event(String tenantId, String id, long ctime, String dataId, String category, String text) {
         this(tenantId, id, ctime, dataId, category, text, null, null);
+    }
+
+    public Event(String tenantId, String id, long ctime, String category, String text,
+                 Map<String, String> context) {
+        this(tenantId, id, ctime, null, category, text, context, null);
     }
 
     public Event(String tenantId, String id, long ctime, String dataId, String category, String text,
@@ -324,6 +341,12 @@ public class Event implements Comparable<Event> {
      */
     @Override
     public int compareTo(Event o) {
+        /*
+            Comparition only should be used on events with proper dataId defined.
+         */
+        if (this.dataId == null) {
+            return this.id.compareTo(o.id);
+        }
         int c = this.dataId.compareTo(o.dataId);
         if (0 != c)
             return c;

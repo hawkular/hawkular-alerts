@@ -227,12 +227,14 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
+              <!--
               <systemProperties>
                 <property>
                   <name>testOutput</name>
                   <value>${project.build.testOutputDirectory}</value>
                 </property>
               </systemProperties>
+              -->
               <includes>
                 <include>**/*/CassPersistenceTest.java</include>
               </includes>

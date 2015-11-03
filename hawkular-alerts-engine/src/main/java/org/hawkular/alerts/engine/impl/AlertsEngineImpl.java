@@ -360,7 +360,7 @@ public class AlertsEngineImpl implements AlertsEngine {
         public void run() {
             int numTimeouts = checkPendingTimeouts();
 
-            if ((!pendingData.isEmpty() && !pendingEvent.isEmpty()) || numTimeouts > 0) {
+            if (!pendingData.isEmpty() || !pendingEvent.isEmpty() || numTimeouts > 0) {
                 Collection<Data> newData = getAndClearPendingData();
                 Collection<Event> newEvent = getAndClearPendingEvent();
 

@@ -90,6 +90,9 @@ public class CassAlertsServiceImpl implements AlertsService {
     @EJB
     ActionsService actionsService;
 
+    @EJB
+    EventsCacheManager eventsCacheManager;
+
     public CassAlertsServiceImpl() {
     }
 
@@ -1295,12 +1298,39 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     @Override
     public void sendEvent(Event event) throws Exception {
-        alertsEngine.sendEvent(event);
+        if (null == event) {
+            return;
+        }
+        if (event.getDataId() == null
+                || event.getDataId().isEmpty()
+                || !eventsCacheManager.getActiveDataIds().contains(event.getDataId())) {
+            addEvents(Collections.singletonList(event));
+        } else {
+            alertsEngine.sendEvent(event);
+        }
     }
 
     @Override
     public void sendEvent(Collection<Event> event) throws Exception {
-        alertsEngine.sendEvent(event);
+        if (null == event || event.isEmpty()) {
+            return;
+        }
+        Set<String> activeDataIds = eventsCacheManager.getActiveDataIds();
+        Collection<Event> withoutConditions = new ArrayList<>();
+        Collection<Event> withConditions = new ArrayList<>();
+        for (Event e : event) {
+            if (e.getDataId() == null || e.getDataId().isEmpty() || !activeDataIds.contains(e.getDataId())) {
+                withoutConditions.add(e);
+            } else {
+                withConditions.add(e);
+            }
+        }
+        if (!withoutConditions.isEmpty()) {
+            addEvents(withoutConditions);
+        }
+        if (!withConditions.isEmpty()) {
+            alertsEngine.sendEvent(withConditions);
+        }
     }
 
     private void sendAction(Alert a) {
