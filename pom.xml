@@ -91,7 +91,7 @@
     <version.org.drools>6.1.0.Final</version.org.drools>
     <version.org.freemarker>2.3.17</version.org.freemarker>
     <version.org.hawkular>1.0.0.Alpha5</version.org.hawkular>
-    <version.org.hawkular.accounts>1.0.16.Final</version.org.hawkular.accounts>
+    <version.org.hawkular.accounts>1.1.0.Final-SRC-revision-554664f3c92c9b2e9eba2f36ec6fcf4131ae7437</version.org.hawkular.accounts>
     <version.org.hawkular.bus>0.7.0.Final</version.org.hawkular.bus>
     <version.org.hawkular.commons>0.2.1.Final</version.org.hawkular.commons>
     <version.org.hawkular.nest>${version.org.hawkular.bus}</version.org.hawkular.nest>
