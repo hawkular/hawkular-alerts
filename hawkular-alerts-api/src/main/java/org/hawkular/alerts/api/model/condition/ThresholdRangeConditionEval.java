@@ -17,7 +17,7 @@
 package org.hawkular.alerts.api.model.condition;
 
 import org.hawkular.alerts.api.model.condition.Condition.Type;
-import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.data.Data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -42,10 +42,10 @@ public class ThresholdRangeConditionEval extends ConditionEval {
         this.value = null;
     }
 
-    public ThresholdRangeConditionEval(ThresholdRangeCondition condition, NumericData data) {
-        super(Type.RANGE, condition.match(data.getValue()), data.getTimestamp(), data.getContext());
+    public ThresholdRangeConditionEval(ThresholdRangeCondition condition, Data data) {
+        super(Type.RANGE, condition.match(Double.valueOf(data.getValue())), data.getTimestamp(), data.getContext());
         this.condition = condition;
-        this.value = data.getValue();
+        this.value = Double.valueOf(data.getValue());
     }
 
     public ThresholdRangeCondition getCondition() {
@@ -86,14 +86,19 @@ public class ThresholdRangeConditionEval extends ConditionEval {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         ThresholdRangeConditionEval that = (ThresholdRangeConditionEval) o;
 
-        if (condition != null ? !condition.equals(that.condition) : that.condition != null) return false;
-        if (value != null ? !value.equals(that.value) : that.value != null) return false;
+        if (condition != null ? !condition.equals(that.condition) : that.condition != null)
+            return false;
+        if (value != null ? !value.equals(that.value) : that.value != null)
+            return false;
 
         return true;
     }

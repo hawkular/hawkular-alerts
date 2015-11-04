@@ -32,16 +32,16 @@ import java.util.Set;
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginSender;
 import org.hawkular.alerts.actions.api.ActionResponseMessage;
-import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
-import org.hawkular.alerts.api.model.data.Availability;
-import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
+import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.jboss.aerogear.unifiedpush.PushSender;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -74,26 +74,26 @@ public class AerogearPluginTest {
         }
     }
 
-
     @BeforeClass
     public static void configureListener() {
         System.setProperty(AerogearPlugin.ROOT_SERVER_URL_PROPERTY, "http://localhost:9191/ag-push");
         System.setProperty(AerogearPlugin.APPLICATION_ID_PROPERTY, "4d564d56qs4056-d0sq564065");
         System.setProperty(AerogearPlugin.MASTER_SECRET_PROPERTY, "sddqs--sqd-qs--d-qs000dsq0d");
 
-        Alert alert = new Alert(TEST_TENANT, "trigger-test", Severity.MEDIUM, null);
+        Trigger trigger = new Trigger( TEST_TENANT, "trigger-test", "trigger-test");
+        Alert alert = new Alert(TEST_TENANT, trigger, null);
 
         AvailabilityCondition aCond = new AvailabilityCondition("trigger-test",
                 "Default",
                 AvailabilityCondition.Operator.UP);
-        Availability aData = new Availability("Metric-test", 1, Availability.AvailabilityType.UP);
+        Data aData = Data.forAvailability("Metric-test", 1, AvailabilityType.UP);
         AvailabilityConditionEval aEval = new AvailabilityConditionEval(aCond, aData);
 
         ThresholdCondition tCond = new ThresholdCondition("trigger-test",
                 "Default",
                 ThresholdCondition.Operator.LTE,
                 50.0);
-        NumericData tData = new NumericData("Metric-test2", 2, 25.5);
+        Data tData = Data.forNumeric("Metric-test2", 2, 25.5);
         ThresholdConditionEval tEval = new ThresholdConditionEval(tCond, tData);
 
         Set<ConditionEval> evals = new HashSet<>();

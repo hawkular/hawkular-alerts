@@ -43,8 +43,9 @@ import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.actions.api.Sender;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.condition.Alert;
-import org.hawkular.alerts.api.model.condition.Alert.Status;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Alert.Status;
+import org.hawkular.alerts.api.model.event.Event;
 import org.jboss.logging.Logger;
 
 /**
@@ -278,7 +279,8 @@ public class EmailPlugin implements ActionPluginListener {
         if (null == props || props.isEmpty()) {
             msgLog.warn("Properties empty on plugin " + PLUGIN_NAME);
         }
-        Alert alert = msg.getAction() != null ? msg.getAction().getAlert() : null;
+        Event event = msg.getAction() != null ? (Alert) msg.getAction().getEvent() : null;
+        Alert alert = null != event && (event instanceof Alert) ? (Alert) event : null;
         Status status = alert != null && alert.getStatus() != null ? alert.getStatus() : Status.OPEN;
         String statusStr = status.name().toLowerCase();
 

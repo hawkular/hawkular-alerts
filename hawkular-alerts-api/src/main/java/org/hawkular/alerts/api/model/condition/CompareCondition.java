@@ -18,7 +18,6 @@ package org.hawkular.alerts.api.model.condition;
 
 import static org.hawkular.alerts.api.model.trigger.Mode.FIRING;
 
-import org.hawkular.alerts.api.log.MsgLogger;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -32,7 +31,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Lucas Ponce
  */
 public class CompareCondition extends Condition {
-    private static final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         LT, GT, LTE, GTE
@@ -132,8 +130,7 @@ public class CompareCondition extends Condition {
             case GTE:
                 return dataValue >= threshold;
             default:
-                msgLog.warnUnknowOperatorOnCondition(operator.name(), this.getClass().getName());
-                return false;
+                throw new IllegalStateException("Unknown operator: " + operator.name());
         }
     }
 

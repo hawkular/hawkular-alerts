@@ -16,7 +16,7 @@
  */
 package org.hawkular.alerts.actions.tests;
 
-import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.event.Alert;
 
 /**
  * Common variables for action tests scenarios

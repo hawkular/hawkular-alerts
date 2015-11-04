@@ -32,7 +32,7 @@ import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.actions.api.Sender;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -72,7 +72,7 @@ public class FilePlugin implements ActionPluginListener {
 
     @Override
     public void process(ActionMessage msg) throws Exception {
-        if (msg == null || msg.getAction() == null || msg.getAction().getAlert() == null) {
+        if (msg == null || msg.getAction() == null || msg.getAction().getEvent() == null) {
             msgLog.warnMessageReceivedWithoutPayload("file");
         }
 
@@ -80,8 +80,8 @@ public class FilePlugin implements ActionPluginListener {
         path = path == null ? defaultProperties.get("path") : path;
         path = path == null ? System.getProperty("user.home") : path;
 
-        Alert alert = msg.getAction().getAlert();
-        String fileName = alert.getAlertId() + "-timestamp-" + System.currentTimeMillis() + ".txt";
+        Event event = msg.getAction() != null ? msg.getAction().getEvent() : null;
+        String fileName = event.getId() + "-timestamp-" + System.currentTimeMillis() + ".txt";
 
         BufferedWriter writer = null;
         try {
@@ -95,8 +95,8 @@ public class FilePlugin implements ActionPluginListener {
             }
 
             writer = new BufferedWriter(new FileWriter(alertFile));
-            String jsonAlert = objectMapper.writeValueAsString(alert);
-            writer.write(jsonAlert);
+            String jsonEvent = objectMapper.writeValueAsString(event);
+            writer.write(jsonEvent);
             msgLog.infoActionReceived("file", msg.toString());
             Action successAction = msg.getAction();
             successAction.setResult(MESSAGE_PROCESSED);

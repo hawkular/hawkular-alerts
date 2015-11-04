@@ -27,7 +27,7 @@ import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.tests.TestActionMessage;
 import org.hawkular.alerts.actions.tests.WebRejectedSessionsData;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

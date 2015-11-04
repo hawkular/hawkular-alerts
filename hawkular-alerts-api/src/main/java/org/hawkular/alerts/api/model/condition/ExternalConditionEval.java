@@ -17,7 +17,7 @@
 package org.hawkular.alerts.api.model.condition;
 
 import org.hawkular.alerts.api.model.condition.Condition.Type;
-import org.hawkular.alerts.api.model.data.StringData;
+import org.hawkular.alerts.api.model.data.Data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -43,7 +43,7 @@ public class ExternalConditionEval extends ConditionEval {
         this.value = null;
     }
 
-    public ExternalConditionEval(ExternalCondition condition, StringData data) {
+    public ExternalConditionEval(ExternalCondition condition, Data data) {
         super(Type.EXTERNAL, condition.match(data.getValue()), data.getTimestamp(), data.getContext());
         this.condition = condition;
         this.value = data.getValue();

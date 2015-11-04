@@ -43,8 +43,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.hawkular.alerts.api.model.Severity;
-import org.hawkular.alerts.api.model.condition.Alert;
-import org.hawkular.alerts.api.model.data.MixedData;
+import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.services.AlertsCriteria;
@@ -113,8 +113,8 @@ public class AlertsHandler {
                     "comma separated list of severity values")
             @QueryParam("severities")
             final String severities,
-            @ApiParam(required = false, value = "filter out alerts for unspecified tags, comma separated list of tags, "
-                    + "each tag of format [category|]name")
+            @ApiParam(required = false, value = "filter out events for unspecified tags, comma separated list of tags, "
+                    + "each tag of format 'name|value'. Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
             @ApiParam(required = false, value = "return only thin alerts, do not include: evalSets, resolvedEvalSets")
@@ -456,14 +456,14 @@ public class AlertsHandler {
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public Response sendData(
-            @ApiParam(required = true, name = "mixedData", value = "data to be processed by alerting")
-            final MixedData mixedData) {
+            @ApiParam(required = true, name = "datums", value = "data to be processed by alerting")//
+            final Collection<Data> datums) {
         try {
-            if (isEmpty(mixedData)) {
+            if (isEmpty(datums)) {
                 return ResponseUtil.badRequest("Data is empty");
             } else {
-                alertsEngine.sendData(mixedData.asCollection());
-                log.debugf("MixedData: %s ", mixedData);
+                alertsEngine.sendData(datums);
+                log.debugf("Datums: %s ", datums);
                 return ResponseUtil.ok();
             }
         } catch (Exception e) {
@@ -510,10 +510,6 @@ public class AlertsHandler {
 
     private boolean isEmpty(String s) {
         return s == null || s.trim().isEmpty();
-    }
-
-    private boolean isEmpty(MixedData data) {
-        return data == null || data.isEmpty();
     }
 
     private boolean isEmpty(Collection collection) {

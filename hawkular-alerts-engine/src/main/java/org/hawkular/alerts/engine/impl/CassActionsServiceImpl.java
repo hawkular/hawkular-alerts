@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.engine.impl;
 
-import static org.hawkular.alerts.api.model.paging.ActionComparator.*;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,6 +34,7 @@ import javax.ejb.TransactionAttributeType;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.paging.ActionComparator;
+import org.hawkular.alerts.api.model.paging.ActionComparator.Field;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
@@ -61,7 +60,7 @@ import com.google.common.util.concurrent.Futures;
  */
 @Local(ActionsService.class)
 @Singleton
-@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
+@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class CassActionsServiceImpl implements ActionsService {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassActionsServiceImpl.class);
@@ -85,7 +84,7 @@ public class CassActionsServiceImpl implements ActionsService {
                 || action.getActionId().isEmpty()) {
             throw new IllegalArgumentException("Action must be not null");
         }
-        if (action.getAlert() == null) {
+        if (action.getEvent() == null) {
             throw new IllegalArgumentException("Action must have an alert");
         }
         for (ActionListener listener : listeners) {
@@ -102,7 +101,7 @@ public class CassActionsServiceImpl implements ActionsService {
                 || action.getActionId().isEmpty()) {
             throw new IllegalArgumentException("Action must be not null");
         }
-        if (action.getAlert() == null) {
+        if (action.getEvent() == null) {
             throw new IllegalArgumentException("Action must have an alert");
         }
         updateActionHistory(action);
@@ -128,18 +127,18 @@ public class CassActionsServiceImpl implements ActionsService {
             List<ResultSetFuture> futures = new ArrayList<>();
 
             futures.add(session.executeAsync(insertActionHistory.bind(action.getTenantId(), action.getActionPlugin(),
-                    action.getActionId(), action.getAlert().getAlertId(), action.getCtime(), JsonUtil.toJson(action))));
+                    action.getActionId(), action.getEvent().getId(), action.getCtime(), JsonUtil.toJson(action))));
             futures.add(session.executeAsync(insertActionHistoryAction.bind(action.getTenantId(),
-                    action.getActionId(), action.getActionPlugin(), action.getAlert().getAlertId(),
+                    action.getActionId(), action.getActionPlugin(), action.getEvent().getId(),
                     action.getCtime())));
             futures.add(session.executeAsync(insertActionHistoryAlert.bind(action.getTenantId(),
-                    action.getAlert().getAlertId(), action.getActionPlugin(), action.getActionId(),
+                    action.getEvent().getId(), action.getActionPlugin(), action.getActionId(),
                     action.getCtime())));
             futures.add(session.executeAsync(insertActionHistoryCtime.bind(action.getTenantId(),
                     action.getCtime(), action.getActionPlugin(), action.getActionId(),
-                    action.getAlert().getAlertId())));
+                    action.getEvent().getId())));
             futures.add(session.executeAsync(insertActionHistoryResult.bind(action.getTenantId(),
-                    action.getResult(), action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
+                    action.getResult(), action.getActionPlugin(), action.getActionId(), action.getEvent().getId(),
                     action.getCtime())));
 
             Futures.allAsList(futures).get();
@@ -149,7 +148,7 @@ public class CassActionsServiceImpl implements ActionsService {
     }
 
     private Action selectActionHistory(String tenantId, String actionPlugin, String actionId, String alertId,
-                                       long ctime) {
+            long ctime) {
         Action actionHistory = null;
         try {
             session = CassCluster.getSession();
@@ -173,7 +172,7 @@ public class CassActionsServiceImpl implements ActionsService {
         }
         try {
             Action oldActionHistory = selectActionHistory(action.getTenantId(), action.getActionPlugin(),
-                    action.getActionId(), action.getAlert().getAlertId(), action.getCtime());
+                    action.getActionId(), action.getEvent().getId(), action.getCtime());
             if (oldActionHistory == null) {
                 insertActionHistory(action);
                 return;
@@ -189,14 +188,14 @@ public class CassActionsServiceImpl implements ActionsService {
             List<ResultSetFuture> futures = new ArrayList<>();
 
             futures.add(session.executeAsync(deleteActionHistoryResult.bind(action.getTenantId(), oldResult,
-                    action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
+                    action.getActionPlugin(), action.getActionId(), action.getEvent().getId(),
                     action.getCtime())));
             futures.add(session.executeAsync(insertActionHistoryResult.bind(action.getTenantId(),
-                    action.getResult(), action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
+                    action.getResult(), action.getActionPlugin(), action.getActionId(), action.getEvent().getId(),
                     action.getCtime())));
 
             futures.add(session.executeAsync(updateActionHistory.bind(JsonUtil.toJson(action), action.getTenantId(),
-                    action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
+                    action.getActionPlugin(), action.getActionId(), action.getEvent().getId(),
                     action.getCtime())));
 
             Futures.allAsList(futures).get();
@@ -336,7 +335,7 @@ public class CassActionsServiceImpl implements ActionsService {
     }
 
     private boolean filterByCtime(String tenantId, Set<ActionHistoryPK> actionPks, ActionsCriteria criteria)
-        throws Exception {
+            throws Exception {
         boolean filterByCtime = false;
         if (criteria.getStartTime() != null || criteria.getEndTime() != null) {
             filterByCtime = true;
@@ -581,16 +580,17 @@ public class CassActionsServiceImpl implements ActionsService {
         for (Action action : actionsToDelete) {
             List<ResultSetFuture> futures = new ArrayList<>();
             futures.add(session.executeAsync(deleteActionHistory.bind(action.getTenantId(), action.getActionPlugin(),
-                    action.getActionId(), action.getAlert().getAlertId(), action.getCtime())));
-            futures.add(session.executeAsync(deleteActionHistoryAction.bind(action.getTenantId(), action.getActionId(),
-                    action.getActionPlugin(), action.getAlert().getAlertId(), action.getCtime())));
+                    action.getActionId(), action.getEvent().getId(), action.getCtime())));
+            futures.add(session.executeAsync(deleteActionHistoryAction.bind(action.getTenantId(),
+                    action.getActionId(),
+                    action.getActionPlugin(), action.getEvent().getId(), action.getCtime())));
             futures.add(session.executeAsync(deleteActionHistoryAlert.bind(action.getTenantId(),
-                    action.getAlert().getAlertId(), action.getActionPlugin(), action.getActionId(),
+                    action.getEvent().getId(), action.getActionPlugin(), action.getActionId(),
                     action.getCtime())));
             futures.add(session.executeAsync(deleteActionHistoryCtime.bind(action.getTenantId(), action.getCtime(),
-                    action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId())));
+                    action.getActionPlugin(), action.getActionId(), action.getEvent().getId())));
             futures.add(session.executeAsync(deleteActionHistoryResult.bind(action.getTenantId(),
-                    action.getResult(), action.getActionPlugin(), action.getActionId(), action.getAlert().getAlertId(),
+                    action.getResult(), action.getActionPlugin(), action.getActionId(), action.getEvent().getId(),
                     action.getCtime())));
             Futures.allAsList(futures).get();
         }
@@ -611,16 +611,21 @@ public class CassActionsServiceImpl implements ActionsService {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             ActionHistoryPK that = (ActionHistoryPK) o;
 
-            if (ctime != that.ctime) return false;
-            if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
+            if (ctime != that.ctime)
+                return false;
+            if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null)
+                return false;
             if (actionPlugin != null ? !actionPlugin.equals(that.actionPlugin) : that.actionPlugin != null)
                 return false;
-            if (actionId != null ? !actionId.equals(that.actionId) : that.actionId != null) return false;
+            if (actionId != null ? !actionId.equals(that.actionId) : that.actionId != null)
+                return false;
             return !(alertId != null ? !alertId.equals(that.alertId) : that.alertId != null);
 
         }

@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.function.Predicate;
 
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Event;
 
 /**
  * Interface that defines an abstract API with the rules engine implementation. This is for internal use by the
@@ -98,6 +99,20 @@ public interface RulesEngine {
      * @param data the data
      */
     void addData(Collection<Data> data);
+
+    /**
+     * Add to the accumulated <code>Event</code> to be processed the next time {@link #fire()} is called. After the
+     * rules are fired on the accumulated <code>Event</code> it will be cleared.
+     * @param event the event
+     */
+    void addEvent(Event event);
+
+    /**
+     * Add to the accumulated <code>Event</code> to be processed the next time {@link #fire()} is called. After the
+     * rules are fired on the accumulated <code>Event</code> it will be cleared.
+     * @param events the events
+     */
+    void addEvents(Collection<Event> events);
 
     /**
      * Fire all rules given the current set of added definitions and the currently accumulated <code>Data</code>.
