@@ -1301,35 +1301,28 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (null == event) {
             return;
         }
-        if (event.getDataId() == null
-                || event.getDataId().isEmpty()
-                || !eventsCacheManager.getActiveDataIds().contains(event.getDataId())) {
-            addEvents(Collections.singletonList(event));
-        } else {
+        addEvents(Collections.singletonList(event));
+        if (!isEmpty(event.getDataId())
+                && eventsCacheManager.getActiveDataIds().contains(event.getDataId())) {
             alertsEngine.sendEvent(event);
         }
     }
 
     @Override
-    public void sendEvent(Collection<Event> event) throws Exception {
-        if (null == event || event.isEmpty()) {
+    public void sendEvents(Collection<Event> events) throws Exception {
+        if (null == events || events.isEmpty()) {
             return;
         }
+        addEvents(events);
         Set<String> activeDataIds = eventsCacheManager.getActiveDataIds();
-        Collection<Event> withoutConditions = new ArrayList<>();
         Collection<Event> withConditions = new ArrayList<>();
-        for (Event e : event) {
-            if (e.getDataId() == null || e.getDataId().isEmpty() || !activeDataIds.contains(e.getDataId())) {
-                withoutConditions.add(e);
-            } else {
+        for (Event e : events) {
+            if (!isEmpty(e.getDataId()) && activeDataIds.contains(e.getDataId())) {
                 withConditions.add(e);
             }
         }
-        if (!withoutConditions.isEmpty()) {
-            addEvents(withoutConditions);
-        }
         if (!withConditions.isEmpty()) {
-            alertsEngine.sendEvent(withConditions);
+            alertsEngine.sendEvents(withConditions);
         }
     }
 

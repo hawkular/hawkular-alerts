@@ -68,7 +68,7 @@ public class AlertsEngineImpl implements AlertsEngine {
     private int period;
 
     private final List<Data> pendingData;
-    private final List<Event> pendingEvent;
+    private final List<Event> pendingEvents;
     private final List<Alert> alerts;
     private final List<Event> events;
     private final Set<Dampening> pendingTimeouts;
@@ -92,7 +92,7 @@ public class AlertsEngineImpl implements AlertsEngine {
 
     public AlertsEngineImpl() {
         pendingData = new ArrayList<>();
-        pendingEvent = new ArrayList<>();
+        pendingEvents = new ArrayList<>();
         alerts = new ArrayList<>();
         events = new ArrayList<>();
         pendingTimeouts = new HashSet<>();
@@ -161,6 +161,7 @@ public class AlertsEngineImpl implements AlertsEngine {
         rules.clear();
 
         pendingData.clear();
+        pendingEvents.clear();
         alerts.clear();
         events.clear();
         pendingTimeouts.clear();
@@ -320,11 +321,11 @@ public class AlertsEngineImpl implements AlertsEngine {
     }
 
     @Override
-    public void sendEvent(Collection<Event> event) throws Exception {
-        if (event == null) {
-            throw new IllegalArgumentException("Event must be not null");
+    public void sendEvents(Collection<Event> events) throws Exception {
+        if (events == null) {
+            throw new IllegalArgumentException("Events must be not null");
         }
-        addPendingEvent(event);
+        addPendingEvents(events);
     }
 
     private synchronized void addPendingData(Collection<Data> data) {
@@ -335,12 +336,12 @@ public class AlertsEngineImpl implements AlertsEngine {
         pendingData.add(data);
     }
 
-    private synchronized void addPendingEvent(Collection<Event> event) {
-        pendingEvent.addAll(event);
+    private synchronized void addPendingEvents(Collection<Event> events) {
+        pendingEvents.addAll(events);
     }
 
     private synchronized void addPendingEvent(Event event) {
-        pendingEvent.add(event);
+        pendingEvents.add(event);
     }
 
     private synchronized Collection<Data> getAndClearPendingData() {
@@ -349,9 +350,9 @@ public class AlertsEngineImpl implements AlertsEngine {
         return result;
     }
 
-    private synchronized Collection<Event> getAndClearPendingEvent() {
-        Collection<Event> result = new ArrayList<>(pendingEvent);
-        pendingEvent.clear();
+    private synchronized Collection<Event> getAndClearPendingEvents() {
+        Collection<Event> result = new ArrayList<>(pendingEvents);
+        pendingEvents.clear();
         return result;
     }
 
@@ -360,35 +361,24 @@ public class AlertsEngineImpl implements AlertsEngine {
         public void run() {
             int numTimeouts = checkPendingTimeouts();
 
-            if (!pendingData.isEmpty() || !pendingEvent.isEmpty() || numTimeouts > 0) {
+            if (!pendingData.isEmpty() || !pendingEvents.isEmpty() || numTimeouts > 0) {
                 Collection<Data> newData = getAndClearPendingData();
-                Collection<Event> newEvent = getAndClearPendingEvent();
-
-                if (!newEvent.isEmpty()) {
-                    /*
-                        Incoming Events are added to the result events list.
-                        Events are all persisted at the end of the inference.
-                        With this we will have on events list:
-                        - Input events.
-                        - New events generates as result of the inference process.
-                     */
-                    events.addAll(newEvent);
-                }
+                Collection<Event> newEvents = getAndClearPendingEvents();
 
                 log.debugf("Executing rules engine on [%1d] datums, [%2d] events and [%3d] dampening timeouts.",
-                        newData.size(), newEvent.size(), numTimeouts);
+                        newData.size(), newEvents.size(), numTimeouts);
 
                 try {
-                    if (newData.isEmpty() && newEvent.isEmpty()) {
+                    if (newData.isEmpty() && newEvents.isEmpty()) {
                         rules.fireNoData();
                     } else {
                         if (!newData.isEmpty()) {
                             rules.addData(newData);
                             newData.clear();
                         }
-                        if (!newEvent.isEmpty()) {
-                            rules.addEvent(newEvent);
-                            newEvent.clear();
+                        if (!newEvents.isEmpty()) {
+                            rules.addEvents(newEvents);
+                            newEvents.clear();
                         }
                     }
 

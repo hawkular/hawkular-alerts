@@ -112,7 +112,7 @@ public interface RulesEngine {
      * rules are fired on the accumulated <code>Event</code> it will be cleared.
      * @param events the events
      */
-    void addEvent(Collection<Event> events);
+    void addEvents(Collection<Event> events);
 
     /**
      * Fire all rules given the current set of added definitions and the currently accumulated <code>Data</code>.

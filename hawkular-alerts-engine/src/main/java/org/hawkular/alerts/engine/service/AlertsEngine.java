@@ -70,10 +70,10 @@ public interface AlertsEngine {
      * Send event into the alerting system for evaluation.
      * Events are persisted after inference.
      *
-     * @param event Not Null. The events to be avaluated and persisted by the alerting engine.
+     * @param events Not Null. The events to be avaluated and persisted by the alerting engine.
      * @throws Exception any problem
      */
-    void sendEvent(Collection<Event> event) throws Exception;
+    void sendEvents(Collection<Event> events) throws Exception;
 
 
     /**

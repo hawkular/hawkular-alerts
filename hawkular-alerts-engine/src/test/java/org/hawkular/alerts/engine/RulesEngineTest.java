@@ -953,7 +953,7 @@ public class RulesEngineTest {
         rulesEngine.addFact(t1);
         rulesEngine.addFact(t1c1);
 
-        rulesEngine.addEvent(inputEvents);
+        rulesEngine.addEvents(inputEvents);
 
         rulesEngine.fire();
 
@@ -1014,7 +1014,7 @@ public class RulesEngineTest {
         rulesEngine.addFact(t1c2);
         rulesEngine.addFact(t1c3);
 
-        rulesEngine.addEvent(inputEvents);
+        rulesEngine.addEvents(inputEvents);
 
         rulesEngine.fire();
 
@@ -1073,7 +1073,7 @@ public class RulesEngineTest {
         rulesEngine.addFact(t3c1);
         rulesEngine.addFact(t3c2);
 
-        rulesEngine.addEvent(inputEvents);
+        rulesEngine.addEvents(inputEvents);
 
         rulesEngine.fire();
 

@@ -56,7 +56,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     private KieSession kSession;
 
     TreeSet<Data> pendingData = new TreeSet<>();
-    TreeSet<Event> pendingEvent = new TreeSet<>();
+    TreeSet<Event> pendingEvents = new TreeSet<>();
 
     public DroolsRulesEngineImpl() {
         log.debugf("Creating instance.");
@@ -104,12 +104,12 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
     @Override
     public void addEvent(Event event) {
-        pendingEvent.add(event);
+        pendingEvents.add(event);
     }
 
     @Override
-    public void addEvent(Collection<Event> events) {
-        pendingEvent.addAll(events);
+    public void addEvents(Collection<Event> events) {
+        pendingEvents.addAll(events);
     }
 
     @Override
@@ -133,10 +133,10 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         // the oldest to a subsequent run. Note that pendingData is already sorted by (id ASC, timestamp ASC) so
         // the iterator will present Data with the same id together, and time-ordered.
         int fireCycle = 0;
-        while (!pendingData.isEmpty() || !pendingEvent.isEmpty()) {
+        while (!pendingData.isEmpty() || !pendingEvents.isEmpty()) {
 
             log.debugf("Data found. Firing rules on [%1$d] datums and [%1$d] events.", pendingData.size(),
-                    pendingEvent.size());
+                    pendingEvents.size());
 
             TreeSet<Data> batchData = new TreeSet<Data>(pendingData);
             Data previousData = null;
@@ -161,10 +161,10 @@ public class DroolsRulesEngineImpl implements RulesEngine {
             batchData.clear();
 
 
-            TreeSet<Event> batchEvent = new TreeSet<Event>(pendingEvent);
+            TreeSet<Event> batchEvent = new TreeSet<Event>(pendingEvents);
             Event previousEvent = null;
 
-            pendingEvent.clear();
+            pendingEvents.clear();
 
             for (Event event : batchEvent) {
                 if (null == previousEvent
@@ -172,7 +172,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
                     kSession.insert(event);
                     previousEvent = event;
                 } else {
-                    pendingEvent.add(event);
+                    pendingEvents.add(event);
                     log.debugf("Deferring more recent %1$s until older %2$s is processed", event, previousEvent);
                 }
             }

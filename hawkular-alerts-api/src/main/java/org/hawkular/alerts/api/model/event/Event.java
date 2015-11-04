@@ -64,8 +64,8 @@ public class Event implements Comparable<Event> {
     @JsonInclude
     protected long ctime;
 
-    // Source of Event, used by EventCondition to evaluate events
-    @JsonInclude
+    // Optional source of Event, used by EventCondition to evaluate events
+    @JsonInclude(Include.NON_EMPTY)
     private String dataId;
 
     // category of Event, suitable for display, recommended to be, but not limited to, an EventCategory.name.
@@ -139,13 +139,12 @@ public class Event implements Comparable<Event> {
                  Map<String, String> context, Map<String, String> tags) {
         this.tenantId = tenantId;
         this.id = id;
-        this.ctime = ctime;
+        this.ctime = (ctime <= 0) ? System.currentTimeMillis() : ctime;
         this.dataId = dataId;
         this.category = category;
         this.text = text;
         this.context = context;
         this.tags = tags;
-
     }
 
     /**

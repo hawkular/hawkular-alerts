@@ -186,9 +186,9 @@ public interface AlertsService {
      * Events are persisted after inference.
      * addEvents() only persist events but not put it on the engine for evaluation.
      *
-     * @param event Not Null. The events to be avaluated and persisted by the alerting engine.
+     * @param events Not Null. The events to be avaluated and persisted by the alerting engine.
      * @throws Exception any problem
      */
-    void sendEvent(Collection<Event> event) throws Exception;
+    void sendEvents(Collection<Event> events) throws Exception;
 
 }
