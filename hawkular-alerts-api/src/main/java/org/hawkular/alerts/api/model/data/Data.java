@@ -26,18 +26,11 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * A base class for incoming data into alerts subsystem.  All {@link Data} has an Id and a timestamp. The
  * timestamp is used to ensure that data is time-ordered when being sent into the alerting engine.  If
  * not assigned the timestamp will be assigned to current time.
- * <p>
- * This provides a  default implementation of {@link #compareTo(Data)}.  Subclasses must Override this if
- * they are unhappy with the Natural Ordering provided: Id asc, Timestamp asc, Value asc
- * </p>
+ *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public abstract class Data implements Comparable<Data> {
-
-    public enum Type {
-        AVAILABILITY, NUMERIC, STRING
-    };
+public class Data implements Comparable<Data> {
 
     @JsonInclude
     protected String id;
@@ -45,43 +38,94 @@ public abstract class Data implements Comparable<Data> {
     @JsonInclude
     protected long timestamp;
 
-    @JsonInclude(Include.NON_NULL)
-    protected Object value;
+    /** For single-value condition types. Null otherwise */
+    @JsonInclude(Include.NON_EMPTY)
+    protected String value;
 
-    @JsonInclude
-    protected Type type;
+    /** [FUTURE]
+     * For multi-value condition types. Null otherwise. See the condition type for expected key-value information.
+     * Note: if and when we need this we may want to get rid of the 'value' field and roll the single-value case
+     * into this structure. */
+    //@JsonInclude(Include.NON_EMPTY)
+    //protected Map<String, String> values;
 
+    /** Optional, non-evaluated contextual data to be kept with the datum */
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 
-    // Default constructor is needed for JSON libraries in JAX-RS context.
     public Data() {
-        this.id = null;
+        // json construction
     }
 
     /**
+     * Construct a single-value datum with no context data.
      * @param id not null
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param value the value
-     * @param type the type of data
      */
-    public Data(String id, long timestamp, Object value, Type type) {
-        this(id, timestamp, value, type, null);
+    public Data(String id, long timestamp, String value) {
+        this(id, timestamp, value, null, null);
     }
 
     /**
+     * Construct a single-value datum with no context data.
      * @param id not null
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param value the value
-     * @param type the type of data
      * @param context optional, contextual name-value pairs to be stored with the data.
      */
-    public Data(String id, long timestamp, Object value, Type type, Map<String, String> context) {
+    public Data(String id, long timestamp, String value, Map<String, String> context) {
+        this(id, timestamp, value, null, null);
+    }
+
+    /**
+     * Construct a multi-value datum with no context data.
+     * @param id not null
+     * @param timestamp in millis, if less than 1 assigned currentTime.
+     * @param values the values
+     */
+    public Data(String id, long timestamp, Map<String, String> values) {
+        this(id, timestamp, null, values, null);
+    }
+
+    /**
+     * Construct a multi-value datum with no context data.
+     * @param id not null
+     * @param timestamp in millis, if less than 1 assigned currentTime.
+     * @param values the values
+     * @param context optional, contextual name-value pairs to be stored with the data.
+     */
+    public Data(String id, long timestamp, Map<String, String> values, Map<String, String> context) {
+        this(id, timestamp, null, values, null);
+    }
+
+    /**
+     * @param id not null
+     * @param timestamp in millis, if less than 1 assigned currentTime.
+     * @param value the value, mutually exclusive with values
+     * @param context optional, contextual name-value pairs to be stored with the data.
+     */
+    private Data(String id, long timestamp, String value, Map<String, String> values, Map<String, String> context) {
         this.id = id;
         this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
         this.value = value;
-        this.type = type;
         this.context = context;
+    }
+
+    public static Data forNumeric(String id, long timestamp, Double value) {
+        return new Data(id, timestamp, String.valueOf(value));
+    }
+
+    public static Data forNumeric(String id, long timestamp, Double value, Map<String, String> context) {
+        return new Data(id, timestamp, String.valueOf(value), null, context);
+    }
+
+    public static Data forAvailability(String id, long timestamp, AvailabilityType value) {
+        return new Data(id, timestamp, value.name());
+    }
+
+    public static Data forAvailability(String id, long timestamp, AvailabilityType value, Map<String, String> context) {
+        return new Data(id, timestamp, value.name(), null, context);
     }
 
     public String getId() {
@@ -103,20 +147,12 @@ public abstract class Data implements Comparable<Data> {
         this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
     }
 
-    public Object getValue() {
+    public String getValue() {
         return value;
     }
 
-    public void setValue(Object value) {
+    public void setValue(String value) {
         this.value = value;
-    }
-
-    public Type getType() {
-        return type;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
     }
 
     public Map<String, String> getContext() {
@@ -129,7 +165,7 @@ public abstract class Data implements Comparable<Data> {
 
     public void addProperty(String name, String value) {
         if (null == name || null == value) {
-            throw new IllegalArgumentException("Propety must have non-null name and value");
+            throw new IllegalArgumentException("Property must have non-null name and value");
         }
         if (null == context) {
             context = new HashMap<>();
@@ -138,55 +174,50 @@ public abstract class Data implements Comparable<Data> {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Data data = (Data) o;
-
-        if (timestamp != data.timestamp) return false;
-        if (id != null ? !id.equals(data.id) : data.id != null) return false;
-        if (value != null ? !value.equals(data.value) : data.value != null) return false;
-        if (type != data.type) return false;
-        return !(context != null ? !context.equals(data.context) : data.context != null);
-
-    }
-
-    @Override
     public int hashCode() {
-        int result = id != null ? id.hashCode() : 0;
-        result = 31 * result + (int) (timestamp ^ (timestamp >>> 32));
-        result = 31 * result + (value != null ? value.hashCode() : 0);
-        result = 31 * result + (type != null ? type.hashCode() : 0);
-        result = 31 * result + (context != null ? context.hashCode() : 0);
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
         return result;
     }
 
     @Override
-    public String toString() {
-        return "Data [id=" + id + ", timestamp=" + timestamp + ", value=" + value + ", context=" + context + "]";
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Data other = (Data) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        if (timestamp != other.timestamp)
+            return false;
+        return true;
     }
 
+    /* (non-Javadoc)
+     * Natural Ordering provided: Id asc, Timestamp asc. This is important to ensure that the engine
+     * naturally processes datums for the same dataId is ascending time order.
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     */
     @Override
     public int compareTo(Data o) {
         int c = this.id.compareTo(o.id);
         if (0 != c)
             return c;
 
-        c = Long.compare(this.timestamp, o.timestamp);
-        if (0 != c)
-            return c;
-
-        return compareValue(this.value, o.value);
+        return Long.compare(this.timestamp, o.timestamp);
     }
 
-    /**
-     * Subclasses must provide the natural comparison of their value type. Or, override {@link #compare(Data, Data)}
-     * completely.
-     * @param value1 the value1
-     * @param value2 the value2
-     * @return standard -1, 0, 1 compare value
-     */
-    abstract int compareValue(Object value1, Object value2);
+    @Override
+    public String toString() {
+        return "Data [id=" + id + ", timestamp=" + timestamp + ", value=" + value + ", context=" + context + "]";
+    }
 
 }

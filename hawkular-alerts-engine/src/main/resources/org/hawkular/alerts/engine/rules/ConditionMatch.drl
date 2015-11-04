@@ -16,7 +16,7 @@
  */
 package org.hawkular.alerts.engine.rules
 
-import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
@@ -24,6 +24,8 @@ import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.CompareConditionEval;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
+import org.hawkular.alerts.api.model.condition.EventCondition;
+import org.hawkular.alerts.api.model.condition.EventConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.StringConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -32,11 +34,10 @@ import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.dampening.Dampening.Type;
-import org.hawkular.alerts.api.model.data.Availability;
-import org.hawkular.alerts.api.model.data.Availability.AvailabilityType
-import org.hawkular.alerts.api.model.data.NumericData;
-import org.hawkular.alerts.api.model.data.StringData;
-import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.api.model.event.EventType;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
@@ -46,11 +47,13 @@ import org.jboss.logging.Logger;
 
 import java.util.Set;
 import java.util.List;
-import java.util.Map;
+import java.util.Map
+import org.hawkular.alerts.api.model.event.Alert;
 
 global Logger log;
 global ActionsService actions;
 global List alerts;
+global List events;
 global Set pendingTimeouts;
 global Map autoResolvedTriggers;
 global Set disabledTriggers;
@@ -76,7 +79,7 @@ rule Threshold
     when 
         $t : Trigger( $tid : id, $tmode : mode )
         $c : ThresholdCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d : NumericData( $did == id )
+        $d : Data( $did == id )
     then
         ThresholdConditionEval ce = new ThresholdConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -89,7 +92,7 @@ rule ThresholdRange
     when 
         $t : Trigger( $tid : id, $tmode : mode )
         $c : ThresholdRangeCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d : NumericData( $did == id )
+        $d : Data( $did == id )
     then
         ThresholdRangeConditionEval ce = new ThresholdRangeConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -110,8 +113,8 @@ rule Compare
     when 
         $t  : Trigger( $tid : id, $tmode : mode )
         $c  : CompareCondition ( triggerId == $tid, triggerMode == $tmode, $d1id : dataId, $d2id : data2Id )
-        $d1 : NumericData( $d1id == id )
-        $d2 : NumericData( $d2id == id )
+        $d1 : Data( $d1id == id )
+        $d2 : Data( $d2id == id )
     then
         CompareConditionEval ce = new CompareConditionEval($c, $d1, $d2);
         if (log != null && log.isDebugEnabled()) {
@@ -124,7 +127,7 @@ rule Availability
     when 
         $t : Trigger( $tid : id, $tmode : mode )
         $c : AvailabilityCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d : Availability( $did == id )
+        $d : Data( $did == id )
     then
         AvailabilityConditionEval ce = new AvailabilityConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -137,7 +140,7 @@ rule String
     when 
         $t : Trigger( $tid : id, $tmode : mode )
         $c : StringCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId  )
-        $d : StringData( $did == id )
+        $d : Data( $did == id )
     then
         StringConditionEval ce = new StringConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -150,11 +153,24 @@ rule External
     when 
         $t : Trigger( $tid : id, $tmode : mode )
         $c : ExternalCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId  )
-        $d : StringData( $did == id )
+        $d : Data( $did == id )
     then
         ExternalConditionEval ce = new ExternalConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
             log.debug("External Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+        }
+        insert( ce );
+end
+
+rule Event
+    when
+        $t : Trigger( $tid : id, $tmode : mode )
+        $c : EventCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
+        $d : Event( $did == dataId )
+    then
+        EventConditionEval ce = new EventConditionEval($c, $d);
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Event Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
         }
         insert( ce );
 end
@@ -164,9 +180,9 @@ end
 // in the (above) rules, that generate ConditionEval facts, because one Datum can generate multiple evals, for different
 // Triggers.
 
-rule RetractProcessedNumericData
+rule RetractProcessedData
     when
-        $d : NumericData()
+        $d : Data()
     then
         if (log != null && log.isDebugEnabled()) {
             log.debug( "Retracting " + $d + "..." );
@@ -174,24 +190,14 @@ rule RetractProcessedNumericData
         retract ( $d );
 end
 
-rule RetractProcessedStringData
+rule RetractProcessedEvent
     when
-        $d : StringData()
+        $e : Event()
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debug( "Retracting " + $d + "..." );
+            log.debug( "Retracting " + $e + "..." );
         }
-        retract ( $d );
-end
-
-rule RetractProcessedAvailabilityData
-    when
-        $d : Availability()
-    then
-        if (log != null && log.isDebugEnabled()) {
-            log.debug( "Retracting " + $d + "..." );
-        }
-        retract ( $d );
+        retract ( $e );
 end
 
 ////// DAMPENING
@@ -274,7 +280,7 @@ rule DampenTrigger
         insert( $d );
 
         if (log != null && log.isDebugEnabled()) {
-            log.debugf( "Updated %s using [match=%s] %s", $d, $t.getMatch(), $d.getCurrentEvals().values() );
+            log.debugf( "Updated %s using [match=%s] %s", $d, $t.getMatch(), $d.getCurrentEvals() );
             log.debugf( "Retracted %s", $ce );
         }
 end
@@ -303,7 +309,7 @@ end
 
 
 
-////// ALERT GENERATION / TRIGGER MODE HANDLING
+////// EVENT GENERATION / TRIGGER MODE HANDLING
 
 // If a Trigger's FIRE mode Dampening is satisfied, then the Trigger fires and generates an Alert.  The Trigger's
 // FIRE mode Dampening fact is then reset and updated in working memory, ready to again track evals for the Trigger.
@@ -314,19 +320,34 @@ rule AlertOnSatisfiedDampening
         $t  : Trigger( mode == Mode.FIRING, $tid : id )
         $d  : Dampening( triggerMode == Mode.FIRING, triggerId == $tid, satisfied == true )
     then
-        if (log != null && log.isDebugEnabled()) {
-            log.debug("AlertOnSatisfiedDampening! " + $d.log());
+        Event newEvent;
+
+        // Only some triggers generate an alert
+        if ($t.getEventType() == EventType.ALERT) {
+            if (log != null && log.isDebugEnabled()) {
+                log.debug("Alert! Dampening Satisfied! " + $d.log());
+            }
+
+            newEvent = new Alert( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
+            // Adding an Alert will implicitly add the related Event
+            alerts.add((Alert)newEvent);
+
+        } else {
+            if (log != null && log.isDebugEnabled() && $t.getEventType() == EventType.EVENT) {
+                log.debug("Event! Dampening Satisfied! " + $d.log());
+            }
+
+            newEvent = new Event( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
+            events.add(newEvent);
         }
 
-        Alert newAlert = new Alert( $t.getTenantId(), $tid, $t.getSeverity(), $d.getSatisfyingEvals() );
-        newAlert.setTrigger($t);
-        newAlert.setDampening($d);
-        newAlert.setContext($t.getContext());
-        alerts.add(newAlert);
+        // We insert the generated events on the firing cycles to allow chained conditions
+        insert( newEvent );
+
         if (actions != null) {
             for (String actionPlugin : $t.getActions().keySet()) {
                 for (String actionId : $t.getActions().get(actionPlugin)) {
-                    Action action = new Action($t.getTenantId(), actionPlugin, actionId, newAlert);
+                    Action action = new Action($t.getTenantId(), actionPlugin, actionId, newEvent);
                     actions.send(action);
                 }
             }

@@ -31,19 +31,22 @@ CREATE KEYSPACE ${keyspace} WITH replication = {'class': 'SimpleStrategy', 'repl
 CREATE TABLE ${keyspace}.triggers (
     tenantId text,
     id text,
-    name text,
-    context map<text,text>,
     autoDisable boolean,
     autoEnable boolean,
     autoResolve boolean,
     autoResolveAlerts boolean,
     autoResolveMatch text,
-    memberOf text,
+    context map<text,text>,
     description text,
     enabled boolean,
+    eventCategory text,
+    eventText text,
+    eventType text,
     firingMatch text,
-    orphan boolean,
     group boolean,
+    memberOf text,
+    name text,
+    orphan boolean,
     severity text,
     tags map<text,text>,
     PRIMARY KEY (tenantId, id)
@@ -238,3 +241,40 @@ CREATE TABLE ${keyspace}.alerts_severities (
     severity text,
     PRIMARY KEY (tenantId, severity, alertId)
 );
+
+-- #
+
+CREATE TABLE ${keyspace}.events (
+    tenantId text,
+    id text,
+    payload text,
+    PRIMARY KEY (tenantId, id)
+);
+
+-- #
+
+CREATE TABLE ${keyspace}.events_triggers (
+    tenantId text,
+    id text,
+    triggerId text,
+    PRIMARY KEY (tenantId, triggerId, id)
+);
+
+-- #
+
+CREATE TABLE ${keyspace}.events_ctimes (
+    tenantId text,
+    id text,
+    ctime bigint,
+    PRIMARY KEY (tenantId, ctime, id)
+);
+
+-- #
+
+CREATE TABLE ${keyspace}.events_categories (
+    tenantId text,
+    id text,
+    category text,
+    PRIMARY KEY ((tenantId, category), id)
+);
+

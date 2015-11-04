@@ -18,6 +18,7 @@ package org.hawkular.alerts.engine;
 
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.AlertsCriteria;
+import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.engine.cassandra.EmbeddedCassandra;
 import org.hawkular.alerts.engine.impl.AlertProperties;
 import org.hawkular.alerts.engine.impl.CassCluster;
@@ -80,14 +81,13 @@ public class CassPersistenceTest extends PersistenceTest {
         // try an clean up
         try {
             session.execute("DROP KEYSPACE " + keyspace);
+            if (!externalCassandra) {
+                System.out.print("Stopping embedded Cassandra for unit testing...");
+                CassCluster.shutdown();
+                EmbeddedCassandra.stop();
+            }
         } catch (Throwable t) {
             // never mind, don't prevent further cleanup
-        }
-
-        if (!externalCassandra) {
-            System.out.print("Stopping embedded Cassandra for unit testing...");
-            CassCluster.shutdown();
-            EmbeddedCassandra.stop();
         }
     }
 
@@ -95,6 +95,12 @@ public class CassPersistenceTest extends PersistenceTest {
     public void cleanAlerts() throws Exception {
         AlertsCriteria criteria = new AlertsCriteria();
         System.out.printf("Deleted [%s] Alerts before test.\n", alertsService.deleteAlerts(TEST_TENANT, criteria));
+    }
+
+    @Before
+    public void cleanEvents() throws Exception {
+        EventsCriteria criteria = new EventsCriteria();
+        System.out.printf("Deleted [%s] Events before test.\n", alertsService.deleteEvents(TEST_TENANT, criteria));
     }
 
     @Before

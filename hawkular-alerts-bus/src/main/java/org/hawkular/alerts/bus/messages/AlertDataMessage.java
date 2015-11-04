@@ -17,7 +17,7 @@
 package org.hawkular.alerts.bus.messages;
 
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.hawkular.alerts.api.model.data.Data;
@@ -34,32 +34,20 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class AlertDataMessage extends AbstractMessage {
 
     @JsonInclude
-    List<AlertData> data;
+    List<Data> data;
 
     protected AlertDataMessage() { }
 
-    public AlertDataMessage(List<AlertData> data) {
-        this.data = new ArrayList<AlertData>(data);
+    public AlertDataMessage(List<Data> data) {
+        this.data = data;
     }
 
-    public AlertDataMessage(AlertData... data) {
-        this.data = new ArrayList<AlertData>();
-        if (data != null) {
-            for (AlertData item : data) {
-                this.data.add(item);
-            }
-        }
+    public AlertDataMessage(Data... data) {
+        this.data = Arrays.asList(data);
     }
 
     public List<Data> getData() {
-        if (data == null) {
-            return null;
-        }
-        List<Data> converted = new ArrayList<Data>();
-        for (AlertData item : data) {
-            converted.add(item.convert());
-        }
-        return converted;
+        return data;
     }
 
     @Override

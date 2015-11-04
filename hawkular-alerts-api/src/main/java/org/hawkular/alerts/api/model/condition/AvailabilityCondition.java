@@ -18,8 +18,7 @@ package org.hawkular.alerts.api.model.condition;
 
 import static org.hawkular.alerts.api.model.trigger.Mode.FIRING;
 
-import org.hawkular.alerts.api.log.MsgLogger;
-import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -32,7 +31,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Lucas Ponce
  */
 public class AvailabilityCondition extends Condition {
-    private static final MsgLogger msgLog = MsgLogger.LOGGER;
 
     public enum Operator {
         DOWN, NOT_UP, UP
@@ -52,12 +50,12 @@ public class AvailabilityCondition extends Condition {
     }
 
     public AvailabilityCondition(String triggerId,
-                                 String dataId, Operator operator) {
+            String dataId, Operator operator) {
         this(triggerId, FIRING, 1, 1, dataId, operator);
     }
 
     public AvailabilityCondition(String triggerId, Mode triggerMode,
-                                 String dataId, Operator operator) {
+            String dataId, Operator operator) {
         this(triggerId, triggerMode, 1, 1, dataId, operator);
     }
 
@@ -102,8 +100,7 @@ public class AvailabilityCondition extends Condition {
             case NOT_UP:
                 return value != AvailabilityType.UP;
             default:
-                msgLog.warnUnknowOperatorOnCondition(operator.name(), this.getClass().getName());
-                return false;
+                throw new IllegalStateException("Unknown operator: " + operator.name());
         }
     }
 

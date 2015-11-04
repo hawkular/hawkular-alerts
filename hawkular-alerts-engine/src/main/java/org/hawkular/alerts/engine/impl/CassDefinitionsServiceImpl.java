@@ -47,6 +47,7 @@ import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.event.EventType;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
@@ -55,7 +56,7 @@ import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
-import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
+import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.TriggersCriteria;
@@ -92,7 +93,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private String keyspace;
     private boolean initialized = false;
 
-    private Map<DefinitionsListener, Set<EventType>> listeners = new HashMap<>();
+    private Map<DefinitionsListener, Set<Type>> listeners = new HashMap<>();
 
     @EJB
     AlertsEngine alertsEngine;
@@ -178,6 +179,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 for (Map<String, Object> t : aTriggers) {
                     String tenantId = (String) t.get("tenantId");
                     String triggerId = (String) t.get("triggerId");
+                    String eventTypeName = (String) t.get("eventType");
+                    EventType eventType = (null != eventTypeName) ?
+                            EventType.valueOf(eventTypeName) : EventType.ALERT;
                     boolean enabled = (Boolean) t.get("enabled");
                     String name = (String) t.get("name");
                     String description = (String) t.get("description");
@@ -196,6 +200,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     boolean orphan = (Boolean) t.get("orphan");
 
                     Trigger trigger = new Trigger(tenantId, triggerId, name);
+                    trigger.setEventType(eventType);
                     trigger.setEnabled(enabled);
                     trigger.setAutoDisable(autoDisable);
                     trigger.setAutoEnable(autoEnable);
@@ -479,11 +484,12 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         try {
-            session.execute(insertTrigger.bind(trigger.getTenantId(), trigger.getId(), trigger.getName(),
-                    trigger.getContext(), trigger.isAutoDisable(), trigger.isAutoEnable(), trigger.isAutoResolve(),
-                    trigger.isAutoResolveAlerts(), trigger.getAutoResolveMatch().name(), trigger.getMemberOf(),
-                    trigger.getDescription(), trigger.isEnabled(), trigger.getFiringMatch().name(),
-                    trigger.isOrphan(), trigger.isGroup(), trigger.getSeverity().name(), trigger.getTags()));
+            session.execute(insertTrigger.bind(trigger.getTenantId(), trigger.getId(), trigger.isAutoDisable(),
+                    trigger.isAutoEnable(), trigger.isAutoResolve(), trigger.isAutoResolveAlerts(),
+                    trigger.getAutoResolveMatch().name(), trigger.getContext(), trigger.getDescription(),
+                    trigger.isEnabled(), trigger.getEventCategory(), trigger.getEventText(), trigger.getEventType(),
+                    trigger.getFiringMatch().name(), trigger.isGroup(), trigger.getMemberOf(), trigger.getName(),
+                    trigger.isOrphan(), trigger.getSeverity().name(), trigger.getTags()));
 
             insertTriggerActions(trigger);
             insertTags(trigger.getTenantId(), TagType.TRIGGER, trigger.getId(), trigger.getTags());
@@ -493,7 +499,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        notifyListeners(DefinitionsEvent.EventType.TRIGGER_CREATE);
+        notifyListeners(DefinitionsEvent.Type.TRIGGER_CREATE);
     }
 
     private void insertTriggerActions(Trigger trigger) throws Exception {
@@ -599,7 +605,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        notifyListeners(DefinitionsEvent.EventType.TRIGGER_REMOVE);
+        notifyListeners(DefinitionsEvent.Type.TRIGGER_REMOVE);
     }
 
     @Override
@@ -685,6 +691,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         member.setFiringMatch(group.getFiringMatch());
         member.setSeverity(group.getSeverity());
         member.setTags(group.getTags());
+        member.setEventType(group.getEventType());
 
         return member;
     }
@@ -700,9 +707,10 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(updateTrigger.bind(trigger.isAutoDisable(), trigger.isAutoEnable(),
                     trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger.getAutoResolveMatch().name(),
-                    trigger.getMemberOf(), trigger.getContext(), trigger.getDescription(), trigger.isEnabled(),
-                    trigger.getFiringMatch().name(), trigger.getName(), trigger.isOrphan(), trigger.isGroup(),
-                    trigger.getSeverity().name(), trigger.getTags(), trigger.getTenantId(), trigger.getId()));
+                    trigger.getContext(), trigger.getDescription(), trigger.isEnabled(), trigger.getEventCategory(),
+                    trigger.getEventText(), trigger.getFiringMatch().name(), trigger.isGroup(), trigger.getMemberOf(),
+                    trigger.getName(), trigger.isOrphan(), trigger.getSeverity().name(), trigger.getTags(),
+                    trigger.getTenantId(), trigger.getId()));
             if (!trigger.getActions().equals(existingActions)) {
                 deleteTriggerActions(trigger.getTenantId(), trigger.getId());
                 insertTriggerActions(trigger);
@@ -720,7 +728,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(trigger.getTenantId(), trigger.getId());
         }
 
-        notifyListeners(DefinitionsEvent.EventType.TRIGGER_UPDATE);
+        notifyListeners(DefinitionsEvent.Type.TRIGGER_UPDATE);
 
         return trigger;
     }
@@ -1137,20 +1145,22 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         trigger.setTenantId(row.getString("tenantId"));
         trigger.setId(row.getString("id"));
-        trigger.setName(row.getString("name"));
-        trigger.setContext(row.getMap("context", String.class, String.class));
-
         trigger.setAutoDisable(row.getBool("autoDisable"));
         trigger.setAutoEnable(row.getBool("autoEnable"));
         trigger.setAutoResolve(row.getBool("autoResolve"));
         trigger.setAutoResolveAlerts(row.getBool("autoResolveAlerts"));
         trigger.setAutoResolveMatch(Match.valueOf(row.getString("autoResolveMatch")));
-        trigger.setMemberOf(row.getString("memberOf"));
+        trigger.setContext(row.getMap("context", String.class, String.class));
         trigger.setDescription(row.getString("description"));
         trigger.setEnabled(row.getBool("enabled"));
+        trigger.setEventCategory(row.getString("eventCategory"));
+        trigger.setEventText(row.getString("eventText"));
+        trigger.setEventType(EventType.valueOf(row.getString("eventType")));
         trigger.setFiringMatch(Match.valueOf(row.getString("firingMatch")));
-        trigger.setOrphan(row.getBool("orphan"));
         trigger.setGroup(row.getBool("group"));
+        trigger.setMemberOf(row.getString("memberOf"));
+        trigger.setName(row.getString("name"));
+        trigger.setOrphan(row.getBool("orphan"));
         trigger.setSeverity(Severity.valueOf(row.getString("severity")));
         trigger.setTags(row.getMap("tags", String.class, String.class));
 
@@ -1375,7 +1385,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
-        notifyListeners(DefinitionsEvent.EventType.DAMPENING_CHANGE);
+        notifyListeners(DefinitionsEvent.Type.DAMPENING_CHANGE);
 
         return dampening;
     }
@@ -1468,7 +1478,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
-        notifyListeners(DefinitionsEvent.EventType.DAMPENING_CHANGE);
+        notifyListeners(DefinitionsEvent.Type.DAMPENING_CHANGE);
     }
 
     @Override
@@ -1549,7 +1559,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
-        notifyListeners(DefinitionsEvent.EventType.DAMPENING_CHANGE);
+        notifyListeners(DefinitionsEvent.Type.DAMPENING_CHANGE);
 
         return dampening;
     }
@@ -2057,7 +2067,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(tenantId, triggerId);
         }
 
-        notifyListeners(DefinitionsEvent.EventType.CONDITION_CHANGE);
+        notifyListeners(DefinitionsEvent.Type.CONDITION_CHANGE);
 
         return conditions;
     }
@@ -2069,6 +2079,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
+        if (insertTag == null) {
+            throw new RuntimeException("insertTag PreparedStatement is null");
+        }
 
         List<ResultSetFuture> futures = new ArrayList<>(tags.size());
         for (Map.Entry<String, String> tag : tags.entrySet()) {
@@ -2678,16 +2691,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void registerListener(DefinitionsListener listener, EventType eventType, EventType... eventTypes) {
-        EnumSet<EventType> types = EnumSet.of(eventType, eventTypes);
+    public void registerListener(DefinitionsListener listener, Type eventType, Type... eventTypes) {
+        EnumSet<Type> types = EnumSet.of(eventType, eventTypes);
         log.debugf("Registering listeners %s for event types", listener, types);
         listeners.put(listener, types);
     }
 
-    private void notifyListeners(EventType eventType) {
+    private void notifyListeners(Type eventType) {
         DefinitionsEvent de = new DefinitionsEvent(eventType);
         log.debugf("Notifying applicable listeners %s of event %s", listeners, eventType.name());
-        for (Map.Entry<DefinitionsListener, Set<EventType>> me : listeners.entrySet()) {
+        for (Map.Entry<DefinitionsListener, Set<Type>> me : listeners.entrySet()) {
             if (me.getValue().contains(eventType)) {
                 log.debugf("Notified Listener %s", eventType.name());
                 me.getKey().onChange(de);

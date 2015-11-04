@@ -34,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public abstract class Condition {
 
     public enum Type {
-        AVAILABILITY, COMPARE, STRING, THRESHOLD, RANGE, EXTERNAL
+        AVAILABILITY, COMPARE, STRING, THRESHOLD, RANGE, EXTERNAL, EVENT
     }
 
     @JsonInclude

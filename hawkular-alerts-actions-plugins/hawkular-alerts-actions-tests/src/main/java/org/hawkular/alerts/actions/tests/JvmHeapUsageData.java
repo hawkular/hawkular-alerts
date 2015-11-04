@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
@@ -96,7 +96,7 @@ public class JvmHeapUsageData extends CommonData {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        NumericData rtBadData1 = new NumericData(firingCondition.getDataId(),
+        Data rtBadData1 = Data.forNumeric(firingCondition.getDataId(),
                 System.currentTimeMillis(),
                 315d);
         ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(firingCondition, rtBadData1);
@@ -106,7 +106,7 @@ public class JvmHeapUsageData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        NumericData rtBadData2 = new NumericData(firingCondition.getDataId(),
+        Data rtBadData2 = Data.forNumeric(firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
                 350d);
         ThresholdRangeConditionEval eval2 = new ThresholdRangeConditionEval(firingCondition, rtBadData2);
@@ -115,10 +115,7 @@ public class JvmHeapUsageData extends CommonData {
         evalSet2.add(eval2);
         satisfyingEvals.add(evalSet2);
 
-        Alert openAlert = new Alert(trigger.getTenantId(), trigger.getId(), trigger.getSeverity(), satisfyingEvals);
-        openAlert.setTrigger(trigger);
-        openAlert.setDampening(firingDampening);
-        openAlert.setContext(trigger.getContext());
+        Alert openAlert = new Alert(trigger.getTenantId(), trigger, firingDampening, satisfyingEvals);
 
         return openAlert;
     }
@@ -126,7 +123,7 @@ public class JvmHeapUsageData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        NumericData rtGoodData = new NumericData(autoResolveCondition.getDataId(),
+        Data rtGoodData = Data.forNumeric(autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
                 150d);
         ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(autoResolveCondition, rtGoodData);

@@ -27,7 +27,6 @@ import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginSender;
 import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -35,9 +34,9 @@ import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.Availability;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
-import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.junit.Before;
@@ -106,14 +105,12 @@ public class FilePluginTest {
         /*
             Demo bad data for threshold
          */
-        NumericData rtBadData = new NumericData(rtDataId, System.currentTimeMillis(), 1001d);
+        Data rtBadData = Data.forNumeric(rtDataId, System.currentTimeMillis(), 1001d);
 
         /*
             Manual alert creation for threshold
          */
-        Alert rtAlertOpen = new Alert(rtTrigger.getTenantId(), rtTrigger.getId(), rtTrigger.getSeverity(),
-                getEvalList(rtFiringCondition, rtBadData));
-        rtAlertOpen.setTrigger(rtTrigger);
+        Alert rtAlertOpen = new Alert(rtTrigger.getTenantId(), rtTrigger, getEvalList(rtFiringCondition, rtBadData));
         rtAlertOpen.setDampening(rtFiringDampening);
         rtAlertOpen.setStatus(Alert.Status.OPEN);
 
@@ -128,9 +125,7 @@ public class FilePluginTest {
         openThresholdAction.setProperties(props);
         openThresholdMsg = new TestActionMessage(openThresholdAction);
 
-        Alert rtAlertAck = new Alert(rtTrigger.getTenantId(), rtTrigger.getId(), rtTrigger.getSeverity(),
-                getEvalList(rtFiringCondition, rtBadData));
-        rtAlertAck.setTrigger(rtTrigger);
+        Alert rtAlertAck = new Alert(rtTrigger.getTenantId(), rtTrigger, getEvalList(rtFiringCondition, rtBadData));
         rtAlertAck.setDampening(rtFiringDampening);
         rtAlertAck.setStatus(Alert.Status.ACKNOWLEDGED);
         rtAlertAck.setAckBy("Test ACK user");
@@ -145,11 +140,10 @@ public class FilePluginTest {
         /*
             Demo good data to resolve a threshold alert
          */
-        NumericData rtGoodData = new NumericData(rtDataId, System.currentTimeMillis() + 20000, 998d);
+        Data rtGoodData = Data.forNumeric(rtDataId, System.currentTimeMillis() + 20000, 998d);
 
-        Alert rtAlertResolved = new Alert(rtTrigger.getTenantId(), rtTrigger.getId(), rtTrigger.getSeverity(),
+        Alert rtAlertResolved = new Alert(rtTrigger.getTenantId(), rtTrigger,
                 getEvalList(rtFiringCondition, rtBadData));
-        rtAlertResolved.setTrigger(rtTrigger);
         rtAlertResolved.setDampening(rtFiringDampening);
         rtAlertResolved.setStatus(Alert.Status.RESOLVED);
         rtAlertResolved.setResolvedBy("Test RESOLVED user");
@@ -176,15 +170,12 @@ public class FilePluginTest {
         /*
             Demo bad data for availability
          */
-        Availability avBadData = new Availability(avDataId, System.currentTimeMillis(),
-                Availability.AvailabilityType.DOWN);
+        Data avBadData = Data.forAvailability(avDataId, System.currentTimeMillis(), AvailabilityType.DOWN);
 
         /*
             Manual alert creation for availability
          */
-        Alert avAlertOpen = new Alert(avTrigger.getTenantId(), avTrigger.getId(), avTrigger.getSeverity(),
-                getEvalList(avFiringCondition, avBadData));
-        avAlertOpen.setTrigger(avTrigger);
+        Alert avAlertOpen = new Alert(avTrigger.getTenantId(), avTrigger, getEvalList(avFiringCondition, avBadData));
         avAlertOpen.setDampening(avFiringDampening);
         avAlertOpen.setStatus(Alert.Status.OPEN);
 
@@ -199,9 +190,7 @@ public class FilePluginTest {
         openAvailabilityAction.setProperties(props);
         openAvailMsg = new TestActionMessage(openAvailabilityAction);
 
-        Alert avAlertAck = new Alert(avTrigger.getTenantId(), avTrigger.getId(), avTrigger.getSeverity(),
-                getEvalList(avFiringCondition, avBadData));
-        avAlertAck.setTrigger(avTrigger);
+        Alert avAlertAck = new Alert(avTrigger.getTenantId(), avTrigger, getEvalList(avFiringCondition, avBadData));
         avAlertAck.setDampening(avFiringDampening);
         avAlertAck.setStatus(Alert.Status.ACKNOWLEDGED);
         avAlertAck.setAckBy("Test ACK user");
@@ -216,12 +205,11 @@ public class FilePluginTest {
         /*
             Demo good data to resolve a availability alert
          */
-        Availability avGoodData = new Availability(avDataId, System.currentTimeMillis() + 20000,
-                Availability.AvailabilityType.UP);
+        Data avGoodData = Data.forAvailability(avDataId, System.currentTimeMillis() + 20000,
+                AvailabilityType.UP);
 
-        Alert avAlertResolved = new Alert(avTrigger.getTenantId(), avTrigger.getId(), avTrigger.getSeverity(),
+        Alert avAlertResolved = new Alert(avTrigger.getTenantId(), avTrigger,
                 getEvalList(avFiringCondition, avBadData));
-        avAlertResolved.setTrigger(avTrigger);
         avAlertResolved.setDampening(avFiringDampening);
         avAlertResolved.setStatus(Alert.Status.RESOLVED);
         avAlertResolved.setResolvedBy("Test RESOLVED user");
@@ -252,8 +240,8 @@ public class FilePluginTest {
         /*
             Demo bad data for two conditions
          */
-        rtBadData = new NumericData(rtDataId, System.currentTimeMillis(), 1003d);
-        avBadData = new Availability(avDataId, System.currentTimeMillis(), Availability.AvailabilityType.DOWN);
+        rtBadData = Data.forNumeric(rtDataId, System.currentTimeMillis(), 1003d);
+        avBadData = Data.forAvailability(avDataId, System.currentTimeMillis(), AvailabilityType.DOWN);
 
         /*
             Manual alert creation for two conditions
@@ -264,9 +252,8 @@ public class FilePluginTest {
         List<Data> mixBadData = new ArrayList<>();
         mixBadData.add(rtBadData);
         mixBadData.add(avBadData);
-        Alert mixAlertOpen = new Alert(mixTrigger.getTenantId(), mixTrigger.getId(), mixTrigger.getSeverity(),
-                getEvalList(mixConditions, mixBadData));
-        mixAlertOpen.setTrigger(mixTrigger);
+        Alert mixAlertOpen = new Alert(mixTrigger.getTenantId(), mixTrigger,
+               getEvalList(mixConditions, mixBadData));
         mixAlertOpen.setDampening(mixFiringDampening);
         mixAlertOpen.setStatus(Alert.Status.OPEN);
 
@@ -281,9 +268,8 @@ public class FilePluginTest {
         openTwoCondAction.setProperties(props);
         openTwoCondMsg = new TestActionMessage(openTwoCondAction);
 
-        Alert mixAlertAck = new Alert(mixTrigger.getTenantId(), mixTrigger.getId(), mixTrigger.getSeverity(),
+        Alert mixAlertAck = new Alert(mixTrigger.getTenantId(), mixTrigger,
                 getEvalList(mixConditions, mixBadData));
-        mixAlertAck.setTrigger(mixTrigger);
         mixAlertAck.setDampening(mixFiringDampening);
         mixAlertAck.setStatus(Alert.Status.ACKNOWLEDGED);
         mixAlertAck.setAckBy("Test ACK user");
@@ -298,8 +284,8 @@ public class FilePluginTest {
         /*
             Demo good data for two conditions
          */
-        rtGoodData = new NumericData(rtDataId, System.currentTimeMillis() + 20000, 997d);
-        avGoodData = new Availability(avDataId, System.currentTimeMillis() + 20000, Availability.AvailabilityType.UP);
+        rtGoodData = Data.forNumeric(rtDataId, System.currentTimeMillis() + 20000, 997d);
+        avGoodData = Data.forAvailability(avDataId, System.currentTimeMillis() + 20000, AvailabilityType.UP);
 
         List<Condition> mixResolveConditions = new ArrayList<>();
         mixResolveConditions.add(mixRtResolveCondition);
@@ -308,9 +294,8 @@ public class FilePluginTest {
         mixGoodData.add(rtGoodData);
         mixGoodData.add(avGoodData);
 
-        Alert mixAlertResolved = new Alert(mixTrigger.getTenantId(), mixTrigger.getId(), mixTrigger.getSeverity(),
+        Alert mixAlertResolved = new Alert(mixTrigger.getTenantId(), mixTrigger,
                 getEvalList(mixConditions, mixBadData));
-        mixAlertResolved.setTrigger(mixTrigger);
         mixAlertResolved.setDampening(mixFiringDampening);
         mixAlertResolved.setStatus(Alert.Status.ACKNOWLEDGED);
         mixAlertResolved.setStatus(Alert.Status.RESOLVED);
@@ -327,13 +312,11 @@ public class FilePluginTest {
 
     private static List<Set<ConditionEval>> getEvalList(Condition condition, Data data) {
         ConditionEval eval = null;
-        if (condition instanceof ThresholdCondition &&
-                data instanceof NumericData) {
-            eval = new ThresholdConditionEval((ThresholdCondition)condition, (NumericData)data);
+        if (condition instanceof ThresholdCondition) {
+            eval = new ThresholdConditionEval((ThresholdCondition) condition, data);
         }
-        if (condition instanceof AvailabilityCondition &&
-                data instanceof Availability) {
-            eval = new AvailabilityConditionEval((AvailabilityCondition)condition, (Availability)data);
+        if (condition instanceof AvailabilityCondition) {
+            eval = new AvailabilityConditionEval((AvailabilityCondition) condition, data);
         }
         Set<ConditionEval> tEvalsSet = new HashSet<>();
         tEvalsSet.add(eval);
@@ -346,14 +329,11 @@ public class FilePluginTest {
         ConditionEval eval = null;
         Set<ConditionEval> tEvalsSet = new HashSet<>();
         for (int i = 0; i < condition.size(); i++) {
-            if (condition.get(i) instanceof ThresholdCondition &&
-                    data.get(i) instanceof NumericData) {
-                eval = new ThresholdConditionEval((ThresholdCondition)condition.get(i), (NumericData)data.get(i));
+            if (condition.get(i) instanceof ThresholdCondition) {
+                eval = new ThresholdConditionEval((ThresholdCondition) condition.get(i), data.get(i));
             }
-            if (condition.get(i) instanceof AvailabilityCondition &&
-                    data.get(i) instanceof Availability) {
-                eval = new AvailabilityConditionEval((AvailabilityCondition)condition.get(i),
-                        (Availability)data.get(i));
+            if (condition.get(i) instanceof AvailabilityCondition) {
+                eval = new AvailabilityConditionEval((AvailabilityCondition) condition.get(i), data.get(i));
             }
             tEvalsSet.add(eval);
         }

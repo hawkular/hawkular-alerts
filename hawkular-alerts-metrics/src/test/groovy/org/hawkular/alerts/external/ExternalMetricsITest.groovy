@@ -18,7 +18,7 @@ package org.hawkular.alerts.external
 
 import java.util.List
 
-import org.hawkular.alerts.api.model.data.StringData
+import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ExternalCondition
 import org.hawkular.alerts.api.model.trigger.Trigger
@@ -123,7 +123,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
-        assertEquals("trigger-test-avg", resp.data[0].triggerId)
+        assertEquals("trigger-test-avg", resp.data[0].trigger.id)
         assertEquals("61.0", resp.data[0].evalSets[0].iterator().next().value)
     }
 
@@ -211,7 +211,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
-        assertEquals("trigger-test-avgd", resp.data[0].triggerId)
+        assertEquals("trigger-test-avgd", resp.data[0].trigger.id)
         assertEquals("50.0", resp.data[0].evalSets[0].iterator().next().value)
     }
 
@@ -299,7 +299,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
-        assertEquals("trigger-test-avgw", resp.data[0].triggerId)
+        assertEquals("trigger-test-avgw", resp.data[0].trigger.id)
         assertEquals("100.0", resp.data[0].evalSets[0].iterator().next().value)
     }
 
@@ -383,7 +383,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
-        assertEquals("trigger-test-min", resp.data[0].triggerId)
+        assertEquals("trigger-test-min", resp.data[0].trigger.id)
         assertEquals("9.0", resp.data[0].evalSets[0].iterator().next().value)
     }
 
@@ -467,7 +467,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
-        assertEquals("trigger-test-max", resp.data[0].triggerId)
+        assertEquals("trigger-test-max", resp.data[0].trigger.id)
         assertEquals("20.0", resp.data[0].evalSets[0].iterator().next().value)
     }
 
@@ -551,7 +551,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
-        assertEquals("trigger-test-range", resp.data[0].triggerId)
+        assertEquals("trigger-test-range", resp.data[0].trigger.id)
         assertEquals("10.0", resp.data[0].evalSets[0].iterator().next().value)
     }
 
@@ -635,7 +635,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         assertEquals(1, resp.data.size())
         // println resp.data[0].toString();
 
-        assertEquals("trigger-test-rangep", resp.data[0].triggerId)
+        assertEquals("trigger-test-rangep", resp.data[0].trigger.id)
         assertEquals("0.8", resp.data[0].evalSets[0].iterator().next().value)
     }
 

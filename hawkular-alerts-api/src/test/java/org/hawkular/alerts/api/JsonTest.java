@@ -30,7 +30,6 @@ import java.util.Set;
 import org.hawkular.alerts.api.json.JacksonDeserializer;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
@@ -46,10 +45,9 @@ import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.data.Availability;
-import org.hawkular.alerts.api.model.data.Availability.AvailabilityType;
-import org.hawkular.alerts.api.model.data.NumericData;
-import org.hawkular.alerts.api.model.data.StringData;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
+import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
@@ -79,13 +77,13 @@ public class JsonTest {
     @Test
     public void jsonActionTest() throws Exception {
         String str = "{\"tenantId\":\"tenantTest\",\"actionPlugin\":\"plugin\"," +
-                "\"actionId\":\"test\",\"alertId\":\"testAlert\",\"ctime\":123}";
+                "\"actionId\":\"test\",\"eventId\":\"testAlert\",\"ctime\":123}";
         Action action = objectMapper.readValue(str, Action.class);
 
         assertEquals("tenantTest", action.getTenantId());
         assertEquals("plugin", action.getActionPlugin());
         assertEquals("test", action.getActionId());
-        assertEquals("testAlert", action.getAlertId());
+        assertEquals("testAlert", action.getEventId());
         assertEquals(123, action.getCtime());
 
         String output = objectMapper.writeValueAsString(action);
@@ -101,7 +99,8 @@ public class JsonTest {
 
     @Test
     public void jsonAlertTest() throws Exception {
-        Alert alert = new Alert(TEST_TENANT, "trigger-test", Severity.MEDIUM, null);
+        Trigger trigger = new Trigger(TEST_TENANT, "trigger-test", "trigger-test");
+        Alert alert = new Alert(TEST_TENANT, trigger, null);
 
         String output = objectMapper.writeValueAsString(alert);
 
@@ -109,13 +108,13 @@ public class JsonTest {
 
         AvailabilityCondition aCond = new AvailabilityCondition("trigger-test", "Default",
                 AvailabilityCondition.Operator.UP);
-        Availability aData = new Availability("Metric-test", 1, AvailabilityType.UP);
+        Data aData = Data.forAvailability("Metric-test", 1, AvailabilityType.UP);
         AvailabilityConditionEval aEval = new AvailabilityConditionEval(aCond, aData);
 
         ThresholdCondition tCond = new ThresholdCondition("trigger-test", "Default",
                 ThresholdCondition.Operator.LTE,
                 50.0);
-        NumericData tData = new NumericData("Metric-test2", 2, 25.5);
+        Data tData = Data.forNumeric("Metric-test2", 2, 25.5);
         ThresholdConditionEval tEval = new ThresholdConditionEval(tCond, tData);
 
         Set<ConditionEval> evals = new HashSet<>();
@@ -135,35 +134,43 @@ public class JsonTest {
     @Test
     public void jsonToAlertTest() throws Exception {
         String jsonAlert = "{\"tenantId\":\"jdoe\"," +
-                "\"alertId\":\"trigger-test|1436964192878\"," +
-                "\"triggerId\":\"trigger-test\"," +
+                "\"id\":\"trigger-test|1436964192878\"," +
+                "\"eventType\":\"ALERT\"," +
+                "\"trigger\":{\"tenantId\":\"jdoe\"," +
+                    "\"id\":\"trigger-test\"," +
+                    "\"name\":\"trigger-test\"," +
+                    "\"description\":\"trigger-test\"," +
+                    "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}" +
+                    "}," +
                 "\"ctime\":1436964192878," +
+                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}," +
+                "\"text\":\"trigger-test\"," +
                 "\"evalSets\":[" +
                     "[{\"evalTimestamp\":1436964294055," +
-                        "\"dataTimestamp\":2," +
-                        "\"type\":\"THRESHOLD\"," +
-                        "\"condition\":{\"tenantId\":null," +
-                                        "\"triggerId\":\"trigger-test\"," +
-                                        "\"triggerMode\":\"FIRING\"," +
-                                        "\"type\":\"THRESHOLD\"," +
-                                        "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
-                                        "\"dataId\":\"Default\"," +
-                                        "\"operator\":\"LTE\"," +
-                                        "\"threshold\":50.0" +
-                                        "}," +
-                        "\"value\":25.5}," +
-                    "{\"evalTimestamp\":1436964284965," +
-                        "\"dataTimestamp\":1," +
-                        "\"type\":\"AVAILABILITY\"," +
-                        "\"condition\":{\"tenantId\":null," +
-                                        "\"triggerId\":\"trigger-test\"," +
-                                        "\"triggerMode\":\"FIRING\"," +
-                                        "\"type\":\"AVAILABILITY\"," +
-                                        "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
-                                        "\"dataId\":\"Default\"," +
-                                        "\"operator\":\"UP\"" +
-                                        "}," +
-                        "\"value\":\"UP\"}]" +
+                       "\"dataTimestamp\":2," +
+                       "\"type\":\"THRESHOLD\"," +
+                       "\"condition\":{\"tenantId\":null," +
+                       "\"triggerId\":\"trigger-test\"," +
+                       "\"triggerMode\":\"FIRING\"," +
+                       "\"type\":\"THRESHOLD\"," +
+                       "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
+                       "\"dataId\":\"Default\"," +
+                       "\"operator\":\"LTE\"," +
+                       "\"threshold\":50.0" +
+                     "}," +
+                     "\"value\":25.5}," +
+                     "{\"evalTimestamp\":1436964284965," +
+                       "\"dataTimestamp\":1," +
+                       "\"type\":\"AVAILABILITY\"," +
+                       "\"condition\":{\"tenantId\":null," +
+                       "\"triggerId\":\"trigger-test\"," +
+                       "\"triggerMode\":\"FIRING\"," +
+                       "\"type\":\"AVAILABILITY\"," +
+                       "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
+                       "\"dataId\":\"Default\"," +
+                       "\"operator\":\"UP\"" +
+                     "}," +
+                     "\"value\":\"UP\"}]" +
                     "]," +
                 "\"severity\":\"MEDIUM\"," +
                 "\"status\":\"OPEN\"," +
@@ -172,8 +179,8 @@ public class JsonTest {
                 "\"resolvedTime\":0," +
                 "\"resolvedBy\":null," +
                 "\"notes\":[{\"user\":\"user1\",\"ctime\":1,\"text\":\"The comment 1\"}," +
-                "{\"user\":\"user2\",\"ctime\":2,\"text\":\"The comment 2\"}" +
-                "]," +
+                           "{\"user\":\"user2\",\"ctime\":2,\"text\":\"The comment 2\"}" +
+                          "]," +
                 "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
 
         ObjectMapper mapper = new ObjectMapper();
@@ -186,6 +193,7 @@ public class JsonTest {
         assertTrue(alert.getContext().size() == 2);
         assertTrue(alert.getContext().get("n1").equals("v1"));
         assertTrue(alert.getContext().get("n2").equals("v2"));
+        assertEquals("trigger-test", alert.getText());
 
         /*
             Testing thin deserializer
@@ -821,29 +829,27 @@ public class JsonTest {
     @Test
     public void jsonDataTest() throws Exception {
         String str = "{\"id\":\"test\",\"timestamp\":1,\"value\":\"UP\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
-        Availability aData = objectMapper.readValue(str, Availability.class);
+        Data aData = objectMapper.readValue(str, Data.class);
 
         assertTrue(aData.getId().equals("test"));
         assertTrue(aData.getTimestamp() == 1);
-        assertTrue(aData.getValue().equals(AvailabilityType.UP));
+        assertTrue(AvailabilityType.valueOf(aData.getValue()).equals(AvailabilityType.UP));
         assertTrue(aData.getContext() != null);
         assertTrue(aData.getContext().size() == 2);
         assertTrue(aData.getContext().get("n1").equals("v1"));
         assertTrue(aData.getContext().get("n2").equals("v2"));
 
         String output = objectMapper.writeValueAsString(aData);
-
-        assertTrue(output.contains("type"));
-        assertTrue(output.contains("AVAILABILITY"));
+        assertTrue(output.contains("UP"));
         assertTrue(output.contains("n1"));
         assertTrue(output.contains("v1"));
 
         str = "{\"id\":\"test\",\"timestamp\":1,\"value\":10.45,\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
-        NumericData nData = objectMapper.readValue(str, NumericData.class);
+        Data nData = objectMapper.readValue(str, Data.class);
 
         assertTrue(nData.getId().equals("test"));
         assertTrue(nData.getTimestamp() == 1);
-        assertTrue(nData.getValue() == 10.45);
+        assertTrue(Double.valueOf(nData.getValue()) == 10.45);
         assertTrue(nData.getContext() != null);
         assertTrue(nData.getContext().size() == 2);
         assertTrue(nData.getContext().get("n1").equals("v1"));
@@ -851,13 +857,12 @@ public class JsonTest {
 
         output = objectMapper.writeValueAsString(nData);
 
-        assertTrue(output.contains("type"));
-        assertTrue(output.contains("NUMERIC"));
+        assertTrue(output.contains("10.45"));
         assertTrue(output.contains("n1"));
         assertTrue(output.contains("v1"));
 
         str = "{\"id\":\"test\",\"timestamp\":1,\"value\":\"test-value\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
-        StringData sData = objectMapper.readValue(str, StringData.class);
+        Data sData = objectMapper.readValue(str, Data.class);
 
         assertTrue(sData.getId().equals("test"));
         assertTrue(sData.getTimestamp() == 1);
@@ -869,8 +874,7 @@ public class JsonTest {
 
         output = objectMapper.writeValueAsString(sData);
 
-        assertTrue(output.contains("type"));
-        assertTrue(output.contains("STRING"));
+        assertTrue(output.contains("test-value"));
         assertTrue(output.contains("n1"));
         assertTrue(output.contains("v1"));
     }

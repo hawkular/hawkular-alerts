@@ -14,22 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.api.model.condition;
+package org.hawkular.alerts.api.model.event;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
+import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -39,36 +35,11 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class Alert {
-
-    /**
-     * Used to annotate fields that should be thinned in order to return/deserialize a lightweight Alert
-     */
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.FIELD)
-    public @interface Thin {
-    }
+public class Alert extends Event {
 
     public enum Status {
         OPEN, ACKNOWLEDGED, RESOLVED
     };
-
-    @JsonInclude
-    private String tenantId;
-
-    // This is a generated composite of form: triggerId|ctime
-    @JsonInclude
-    private String alertId;
-
-    @JsonInclude
-    private String triggerId;
-
-    @JsonInclude
-    private long ctime;
-
-    @JsonInclude(Include.NON_EMPTY)
-    @Thin
-    private List<Set<ConditionEval>> evalSets;
 
     @JsonInclude
     private Severity severity;
@@ -91,86 +62,40 @@ public class Alert {
     @JsonInclude(Include.NON_EMPTY)
     private List<Note> notes;
 
-    /*
-     * If set this should be the trigger as defined when the alert was fired.  A trigger definition can change
-     * over time, but an alert should be attached with the relevant instance.
-     */
-    @JsonInclude(Include.NON_EMPTY)
-    private Trigger trigger;
-
-    /*
-     * This is the dampening attached to a trigger when the alert was fired.
-     * As a trigger, the dampening can change during time, but an alert should be attached with a specific instance.
-     */
-    @JsonInclude(Include.NON_EMPTY)
-    @Thin
-    private Dampening dampening;
-
     @JsonInclude(Include.NON_EMPTY)
     @Thin
     private List<Set<ConditionEval>> resolvedEvalSets;
-
-    /*
-     * This should be initialized to the owning trigger's context. It is not set automatically so as to allow
-     * for flexibility.  Note, this is not marked as Thin, whereas the trigger is Thin.
-     */
-    @JsonInclude(Include.NON_EMPTY)
-    private Map<String, String> context;
 
     public Alert() {
         // for json assembly
     }
 
-    public Alert(String tenantId, String triggerId, Severity severity, List<Set<ConditionEval>> evalSets) {
-        this.tenantId = tenantId;
-        this.triggerId = triggerId;
-        this.severity = (null == severity) ? Severity.MEDIUM : severity;
-        this.evalSets = evalSets;
+    /**
+     * Assumes default dampening.
+     */
+    public Alert(String tenantId, Trigger trigger, List<Set<ConditionEval>> evalSets) {
+        this(tenantId, trigger, null, evalSets);
+    }
 
-        this.ctime = System.currentTimeMillis();
+    public Alert(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets) {
+        super(tenantId, trigger, dampening, evalSets);
+
         this.status = Status.OPEN;
-
-        this.alertId = tenantId + "-" + triggerId + "-" + ctime;
+        this.severity = trigger.getSeverity();
     }
 
-    public String getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
-    }
-
+    @JsonIgnore
     public String getAlertId() {
-        return alertId;
+        return id;
     }
 
     public void setAlertId(String alertId) {
-        this.alertId = alertId;
+        this.id = alertId;
     }
 
-    public List<Set<ConditionEval>> getEvalSets() {
-        return evalSets;
-    }
-
-    public void setEvalSets(List<Set<ConditionEval>> evalSets) {
-        this.evalSets = evalSets;
-    }
-
-    public long getCtime() {
-        return ctime;
-    }
-
-    public void setCtime(long ctime) {
-        this.ctime = ctime;
-    }
-
+    @JsonIgnore
     public String getTriggerId() {
-        return triggerId;
-    }
-
-    public void setTriggerId(String triggerId) {
-        this.triggerId = triggerId;
+        return getTrigger().getId();
     }
 
     public Severity getSeverity() {
@@ -229,33 +154,6 @@ public class Alert {
         this.resolvedEvalSets = resolvedEvalSets;
     }
 
-    public Trigger getTrigger() {
-        return trigger;
-    }
-
-    public void setTrigger(Trigger trigger) {
-        this.trigger = trigger;
-    }
-
-    public Dampening getDampening() {
-        return dampening;
-    }
-
-    public void setDampening(Dampening dampening) {
-        this.dampening = dampening;
-    }
-
-    public Map<String, String> getContext() {
-        if ( null == context ) {
-            context = new HashMap<>();
-        }
-        return context;
-    }
-
-    public void setContext(Map<String, String> context) {
-        this.context = context;
-    }
-
     public List<Note> getNotes() {
         if (null == notes) {
             this.notes = new ArrayList<>();
@@ -265,21 +163,6 @@ public class Alert {
 
     public void setNotes(List<Note> notes) {
         this.notes = notes;
-    }
-
-    /**
-     * Add context information.
-     * @param name context key.
-     * @param value context value.
-     */
-    public void addProperty(String name, String value) {
-        if (null == name || null == value) {
-            throw new IllegalArgumentException("Propety must have non-null name and value");
-        }
-        if (null == context) {
-            context = new HashMap<>();
-        }
-        context.put(name, value);
     }
 
     /**
@@ -296,49 +179,12 @@ public class Alert {
     }
 
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((alertId == null) ? 0 : alertId.hashCode());
-        return result;
+    public String toString() {
+        return "Alert [alertId=" + id + ", status=" + status + ", ackTime=" + ackTime
+                + ", ackBy=" + ackBy + ", resolvedTime=" + resolvedTime + ", resolvedBy=" + resolvedBy + ", context="
+                + getContext() + "]";
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        Alert other = (Alert) obj;
-        if (alertId == null) {
-            if (other.alertId != null)
-                return false;
-        } else if (!alertId.equals(other.alertId))
-            return false;
-        return true;
-    }
-
-    @Override public
-    String toString() {
-        return "Alert" + '[' +
-                "tenantId='" + tenantId + '\'' +
-                ", alertId='" + alertId + '\'' +
-                ", triggerId='" + triggerId + '\'' +
-                ", ctime=" + ctime +
-                ", severity=" + severity +
-                ", status=" + status +
-                ", ackTime=" + ackTime +
-                ", ackBy='" + ackBy + '\'' +
-                ", resolvedTime=" + resolvedTime +
-                ", resolvedBy='" + resolvedBy + '\'' +
-                ", notes=" + notes +
-                ", trigger=" + trigger +
-                ", dampening=" + dampening +
-                ", context=" + context +
-                ']';
-    }
 
     public static class Note {
         @JsonInclude(Include.NON_EMPTY)
@@ -390,13 +236,17 @@ public class Alert {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             Note note = (Note) o;
 
-            if (ctime != note.ctime) return false;
-            if (user != null ? !user.equals(note.user) : note.user != null) return false;
+            if (ctime != note.ctime)
+                return false;
+            if (user != null ? !user.equals(note.user) : note.user != null)
+                return false;
             return !(text != null ? !text.equals(note.text) : note.text != null);
 
         }
@@ -418,5 +268,4 @@ public class Alert {
                     '}';
         }
     }
-
 }

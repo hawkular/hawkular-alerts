@@ -72,7 +72,7 @@ public class CacheManager {
             public void onChange(DefinitionsEvent event) {
                 updateActiveIds();
             }
-        }, DefinitionsEvent.EventType.CONDITION_CHANGE);
+        }, DefinitionsEvent.Type.CONDITION_CHANGE);
     }
 
     public Set<String> getActiveDataIds() {

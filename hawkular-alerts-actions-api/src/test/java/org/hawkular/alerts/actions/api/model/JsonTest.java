@@ -27,16 +27,16 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
-import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
-import org.hawkular.alerts.api.model.data.Availability;
-import org.hawkular.alerts.api.model.data.NumericData;
+import org.hawkular.alerts.api.model.data.AvailabilityType;
+import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -53,17 +53,18 @@ public class JsonTest {
 
     @BeforeClass
     public static void initTest() {
-        Alert alert = new Alert(TEST_TENANT, "trigger-test", Severity.MEDIUM, null);
+        Trigger trigger = new Trigger(TEST_TENANT, "trigger-test", "trigger-test");
+        Alert alert = new Alert(TEST_TENANT, trigger, null);
 
         AvailabilityCondition aCond = new AvailabilityCondition("trigger-test", "Default",
                 AvailabilityCondition.Operator.UP);
-        Availability aData = new Availability("Metric-test", 1, Availability.AvailabilityType.UP);
+        Data aData = Data.forAvailability("Metric-test", 1, AvailabilityType.UP);
         AvailabilityConditionEval aEval = new AvailabilityConditionEval(aCond, aData);
 
         ThresholdCondition tCond = new ThresholdCondition("trigger-test", "Default",
                 ThresholdCondition.Operator.LTE,
                 50.0);
-        NumericData tData = new NumericData("Metric-test2", 2, 25.5);
+        Data tData = Data.forNumeric("Metric-test2", 2, 25.5);
         ThresholdConditionEval tEval = new ThresholdConditionEval(tCond, tData);
 
         Set<ConditionEval> evals = new HashSet<>();
@@ -82,7 +83,6 @@ public class JsonTest {
         incomingAction.setProperties(props);
     }
 
-
     @Test
     public void jsonPluginMessage() throws Exception {
 
@@ -95,7 +95,7 @@ public class JsonTest {
         ActionMessage newMsg = objectMapper.readValue(json, TestActionMessage.class);
 
         assertEquals("v2", newMsg.getAction().getProperties().get("k2"));
-        assertEquals("trigger-test", newMsg.getAction().getAlert().getTriggerId());
+        assertEquals("trigger-test", newMsg.getAction().getEvent().getTrigger().getId());
     }
 
     public static class TestActionMessage implements ActionMessage {

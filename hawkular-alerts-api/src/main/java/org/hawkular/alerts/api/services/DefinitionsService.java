@@ -26,7 +26,7 @@ import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.services.DefinitionsEvent.EventType;
+import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
 
 /**
  * A interface used to create new triggers, conditions and init new notifiers.
@@ -599,5 +599,5 @@ public interface DefinitionsService {
 
     Map<String, String> getAction(String tenantId, String actionPlugin, String actionId) throws Exception;
 
-    void registerListener(DefinitionsListener listener, EventType eventType, EventType... eventTypes);
+    void registerListener(DefinitionsListener listener, Type eventType, Type... eventTypes);
 }

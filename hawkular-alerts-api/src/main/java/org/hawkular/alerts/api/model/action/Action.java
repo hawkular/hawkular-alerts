@@ -18,19 +18,19 @@ package org.hawkular.alerts.api.model.action;
 
 import java.util.Map;
 
-import org.hawkular.alerts.api.model.condition.Alert;
-import org.hawkular.alerts.api.model.condition.Alert.Thin;
+import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.api.model.event.Thin;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * A base class for action representation from the perspective of the alerts engine.
- * An action is the abstract concept of a consequence of an alert.
+ * An action is the abstract concept of a consequence of an event.
  * A Trigger definition can be linked with a list of actions.
  *
  * Alert engine only needs to know an action id and message/payload.
- * Action payload must have an alert as payload.
+ * Action payload can optionally have an event as payload.
  *
  * Action plugins will be responsible to process the action according its own plugin configuration.
  *
@@ -49,14 +49,14 @@ public class Action {
     private String actionId;
 
     @JsonInclude
-    private String alertId;
+    private String eventId;
 
     @JsonInclude
     private long ctime;
 
-    @JsonInclude(Include.NON_NULL)
     @Thin
-    private Alert alert;
+    @JsonInclude(Include.NON_NULL)
+    private Event event;
 
     @JsonInclude(Include.NON_EMPTY)
     private Map<String, String> properties;
@@ -64,15 +64,16 @@ public class Action {
     @JsonInclude(Include.NON_NULL)
     private String result;
 
-    public Action() { }
+    public Action() {
+    }
 
-    public Action(String tenantId, String actionPlugin, String actionId, Alert alert) {
+    public Action(String tenantId, String actionPlugin, String actionId, Event event) {
         this.tenantId = tenantId;
         this.actionPlugin = actionPlugin;
         this.actionId = actionId;
-        this.alert = alert;
-        if (alert != null) {
-            this.alertId = alert.getAlertId();
+        this.event = event;
+        if (event != null) {
+            this.eventId = event.getId();
         }
         this.ctime = System.currentTimeMillis();
     }
@@ -101,20 +102,20 @@ public class Action {
         this.actionPlugin = actionPlugin;
     }
 
-    public String getAlertId() {
-        return alertId;
+    public Event getEvent() {
+        return event;
     }
 
-    public void setAlertId(String alertId) {
-        this.alertId = alertId;
+    public void setEvent(Event event) {
+        this.event = event;
     }
 
-    public Alert getAlert() {
-        return alert;
+    public String getEventId() {
+        return eventId;
     }
 
-    public void setAlert(Alert alert) {
-        this.alert = alert;
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
     }
 
     public long getCtime() {
@@ -143,18 +144,25 @@ public class Action {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
 
         Action action = (Action) o;
 
-        if (ctime != action.ctime) return false;
-        if (tenantId != null ? !tenantId.equals(action.tenantId) : action.tenantId != null) return false;
+        if (ctime != action.ctime)
+            return false;
+        if (tenantId != null ? !tenantId.equals(action.tenantId) : action.tenantId != null)
+            return false;
         if (actionPlugin != null ? !actionPlugin.equals(action.actionPlugin) : action.actionPlugin != null)
             return false;
-        if (actionId != null ? !actionId.equals(action.actionId) : action.actionId != null) return false;
-        if (alertId != null ? !alertId.equals(action.alertId) : action.alertId != null) return false;
-        if (properties != null ? !properties.equals(action.properties) : action.properties != null) return false;
+        if (actionId != null ? !actionId.equals(action.actionId) : action.actionId != null)
+            return false;
+        if (eventId != null ? !eventId.equals(action.eventId) : action.eventId != null)
+            return false;
+        if (properties != null ? !properties.equals(action.properties) : action.properties != null)
+            return false;
         return !(result != null ? !result.equals(action.result) : action.result != null);
 
     }
@@ -164,7 +172,7 @@ public class Action {
         int result1 = tenantId != null ? tenantId.hashCode() : 0;
         result1 = 31 * result1 + (actionPlugin != null ? actionPlugin.hashCode() : 0);
         result1 = 31 * result1 + (actionId != null ? actionId.hashCode() : 0);
-        result1 = 31 * result1 + (alertId != null ? alertId.hashCode() : 0);
+        result1 = 31 * result1 + (eventId != null ? eventId.hashCode() : 0);
         result1 = 31 * result1 + (int) (ctime ^ (ctime >>> 32));
         result1 = 31 * result1 + (properties != null ? properties.hashCode() : 0);
         result1 = 31 * result1 + (result != null ? result.hashCode() : 0);
@@ -177,9 +185,9 @@ public class Action {
                 "tenantId='" + tenantId + '\'' +
                 ", actionPlugin='" + actionPlugin + '\'' +
                 ", actionId='" + actionId + '\'' +
-                ", alertId='" + alertId + '\'' +
+                ", eventId='" + eventId + '\'' +
                 ", ctime=" + ctime +
-                ", alert=" + alert +
+                ", event=" + event +
                 ", properties=" + properties +
                 ", result='" + result + '\'' +
                 '}';

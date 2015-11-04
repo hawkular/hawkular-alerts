@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
-import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
@@ -41,6 +40,8 @@ import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
@@ -68,6 +69,9 @@ public class PluginMessageDescription {
 
     /** Context property "description". Supported at Condition.getContext() level with CompareCondition classes */
     public static final String CONTEXT_PROPERTY_DESCRIPTION2 = "description2";
+
+    /** Shortcut for PluginMessage.getAction().event */
+    private Event event;
 
     /** Shortcut for PluginMessage.getAction().alert */
     private Alert alert;
@@ -203,16 +207,24 @@ public class PluginMessageDescription {
         if (pm.getAction().getProperties() == null) {
             throw new IllegalArgumentException("Properties cannot be null on PluginMessage");
         }
-        alert = pm.getAction().getAlert();
-        props = pm.getAction().getProperties();
-        if (alert != null && alert.getStatus() != null) {
-            status = alert.getStatus().name().toLowerCase();
-            emailSubject = "Alert [" + status + "] message";
-        } else {
-            emailSubject = "Alert message";
+        event = pm.getAction().getEvent();
+        if (event instanceof Alert) {
+            alert = (Alert)event;
         }
-        if (alert != null && alert.getTrigger() != null) {
-            trigger = alert.getTrigger();
+        props = pm.getAction().getProperties();
+        if (event != null && event instanceof Alert) {
+            Alert alert = (Alert) event;
+            if (alert.getStatus() != null) {
+                status = alert.getStatus().name().toLowerCase();
+                emailSubject = "Alert [" + status + "] message";
+            } else {
+                emailSubject = "Alert message";
+            }
+        } else {
+            emailSubject = "Event message";
+        }
+        if (event != null && event.getTrigger() != null) {
+            trigger = event.getTrigger();
             if (trigger.getContext() != null &&
                     !trigger.getContext().isEmpty() &&
                     trigger.getContext().containsKey(CONTEXT_PROPERTY_RESOURCE_TYPE) &&
@@ -223,11 +235,11 @@ public class PluginMessageDescription {
                 triggerDescription = trigger.getName();
             }
         }
-        if (alert != null && alert.getDampening() != null) {
-            dampening = alert.getDampening();
+        if (event != null && event.getDampening() != null) {
+            dampening = event.getDampening();
             dampeningDescription = dampeningDescription(dampening);
         }
-        initConditions(alert);
+        initConditions(event);
 
         if (numConditions == 1) {
             emailSubject += ": " + conditions[0].description + " ";
@@ -245,7 +257,8 @@ public class PluginMessageDescription {
     }
 
     private String dampeningDescription(Dampening d) {
-        if (d == null) return null;
+        if (d == null)
+            return null;
         String description = "Alert triggered ";
         switch (d.getType()) {
             case STRICT:
@@ -255,12 +268,13 @@ public class PluginMessageDescription {
                 description += "after " + d.getEvalTrueSetting() + " of " + d.getEvalTotalSetting() + " evaluations";
                 break;
             case RELAXED_TIME:
-                description += "after" + d.getEvalTrueSetting() + " evaluations in " + (d.getEvalTimeSetting()/1000) +
+                description += "after" + d.getEvalTrueSetting() + " evaluations in " + (d.getEvalTimeSetting() / 1000)
+                        +
                         " s";
                 break;
             case STRICT_TIME:
             case STRICT_TIMEOUT:
-                description += "after " + (d.getEvalTimeSetting()/1000) + " s";
+                description += "after " + (d.getEvalTimeSetting() / 1000) + " s";
                 break;
             default:
                 throw new IllegalArgumentException(d.getType().name());
@@ -268,16 +282,18 @@ public class PluginMessageDescription {
         return description;
     }
 
-    private void initConditions(Alert alert) {
+    private void initConditions(Event event) {
         numConditions = 0;
-        if (alert == null) return;
-        if (alert.getEvalSets() == null || alert.getEvalSets().isEmpty()) return;
+        if (event == null)
+            return;
+        if (event.getEvalSets() == null || event.getEvalSets().isEmpty())
+            return;
 
         Map<String, ConditionDescription> mapConditions = new HashMap<>();
 
-        int listEvals = alert.getEvalSets().size();
+        int listEvals = event.getEvalSets().size();
         for (int i = 0; i < listEvals; i++) {
-            Set<ConditionEval> iEvalSet = alert.getEvalSets().get(i);
+            Set<ConditionEval> iEvalSet = event.getEvalSets().get(i);
             for (ConditionEval condEval : iEvalSet) {
                 Condition condition = extractCondition(condEval);
                 if (!mapConditions.containsKey(condition.getConditionId())) {
@@ -297,7 +313,7 @@ public class PluginMessageDescription {
 
         for (int i = 0; i < numConditions; i++) {
             ConditionDescription condDesc = conditions[i];
-            condDesc.average = ( condDesc.data.stream().reduce(0.0, (j,k) -> j+k ) ) / condDesc.data.size();
+            condDesc.average = (condDesc.data.stream().reduce(0.0, (j, k) -> j + k)) / condDesc.data.size();
             if (condDesc.condition.getContext().containsKey(CONTEXT_PROPERTY_UNIT)) {
                 condDesc.averageDescription = decimalFormat.format(condDesc.average) + " " +
                         condDesc.condition.getContext().get(CONTEXT_PROPERTY_UNIT);
@@ -306,7 +322,8 @@ public class PluginMessageDescription {
     }
 
     private Condition extractCondition(ConditionEval conditionEval) {
-        if (conditionEval == null) return null;
+        if (conditionEval == null)
+            return null;
         switch (conditionEval.getType()) {
             case AVAILABILITY:
                 return ((AvailabilityConditionEval) conditionEval).getCondition();
@@ -326,7 +343,8 @@ public class PluginMessageDescription {
     }
 
     private Double extractValue(ConditionEval conditionEval) {
-        if (conditionEval == null) return 0d;
+        if (conditionEval == null)
+            return 0d;
         switch (conditionEval.getType()) {
             case THRESHOLD:
                 return ((ThresholdConditionEval) conditionEval).getValue();
@@ -338,7 +356,8 @@ public class PluginMessageDescription {
     }
 
     private String description(Condition condition) {
-        if (condition == null) return null;
+        if (condition == null)
+            return null;
         switch (condition.getType()) {
             case AVAILABILITY:
                 return availability((AvailabilityCondition) condition);
@@ -602,6 +621,14 @@ public class PluginMessageDescription {
 
     public void setEmailSubject(String emailSubject) {
         this.emailSubject = emailSubject;
+    }
+
+    public Event getEvent() {
+        return event;
+    }
+
+    public void setEvent(Event event) {
+        this.event = event;
     }
 
     public Alert getAlert() {

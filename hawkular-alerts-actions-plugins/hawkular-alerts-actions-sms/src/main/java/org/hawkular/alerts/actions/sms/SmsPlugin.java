@@ -34,7 +34,8 @@ import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.actions.api.Sender;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.condition.Alert;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 
 import com.twilio.sdk.TwilioRestClient;
 import com.twilio.sdk.TwilioRestException;
@@ -138,15 +139,19 @@ public class SmsPlugin implements ActionPluginListener {
 
     private String prepareMessage(ActionMessage msg) {
         String preparedMsg = null;
-        if (msg.getAction() != null && msg.getAction().getAlert() != null) {
-            Alert alert = msg.getAction().getAlert();
-            if (alert != null) {
+        Event event = msg.getAction() != null ? msg.getAction().getEvent() : null;
+
+        if (event != null) {
+            if (event instanceof Alert) {
+                Alert alert = (Alert) event;
                 preparedMsg = "Alert : " + alert.getTriggerId() + " at " + alert.getCtime() + " -- Severity: " +
                         alert.getSeverity().toString();
             } else {
-                preparedMsg = "Message received without data at " + System.currentTimeMillis();
-                msgLog.warnMessageReceivedWithoutPayload("pagerduty");
+                preparedMsg = "Event [" + event.getCategory() + "] " + event.getText() + " at " + event.getCtime();
             }
+        } else {
+            preparedMsg = "Message received without data at " + System.currentTimeMillis();
+            msgLog.warnMessageReceivedWithoutPayload("sms");
         }
         return preparedMsg;
     }

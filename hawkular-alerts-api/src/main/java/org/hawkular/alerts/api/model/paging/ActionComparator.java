@@ -67,6 +67,7 @@ public class ActionComparator implements Comparator<Action> {
         this.field = field;
         this.direction = direction;
     }
+
     @Override
     public int compare(Action o1, Action o2) {
         if (o1 == null && o2 == null) {
@@ -81,25 +82,25 @@ public class ActionComparator implements Comparator<Action> {
         int iOrder = direction == Order.Direction.ASCENDING ? 1 : -1;
         switch (field) {
             case ALERT_ID:
-                if (o1.getAlert() == null && o2.getAlert() == null) {
+                if (o1.getEvent() == null && o2.getEvent() == null) {
                     return 0;
                 }
-                if (o1.getAlert() == null && o2.getAlert() != null) {
+                if (o1.getEvent() == null && o2.getEvent() != null) {
                     return 1;
                 }
-                if (o1.getAlert() != null && o2.getAlert() == null) {
+                if (o1.getEvent() != null && o2.getEvent() == null) {
                     return -1;
                 }
-                if (o1.getAlert().getAlertId() == null && o2.getAlert().getAlertId() == null) {
+                if (o1.getEvent().getId() == null && o2.getEvent().getId() == null) {
                     return 0;
                 }
-                if (o1.getAlert().getAlertId() == null && o2.getAlert().getAlertId() != null) {
+                if (o1.getEvent().getId() == null && o2.getEvent().getId() != null) {
                     return 1;
                 }
-                if (o1.getAlert().getAlertId() != null && o2.getAlert().getAlertId() == null) {
+                if (o1.getEvent().getId() != null && o2.getEvent().getId() == null) {
                     return -1;
                 }
-                return o1.getAlert().getAlertId().compareTo(o2.getAlert().getAlertId()) * iOrder;
+                return o1.getEvent().getId().compareTo(o2.getEvent().getId()) * iOrder;
             case ACTION_PLUGIN:
                 if (o1.getActionPlugin() == null && o2.getActionPlugin() == null) {
                     return 0;
@@ -112,7 +113,7 @@ public class ActionComparator implements Comparator<Action> {
                 }
                 return o1.getActionPlugin().compareTo(o2.getActionPlugin()) * iOrder;
             case CTIME:
-                return (int)((o1.getCtime() - o2.getCtime()) * iOrder);
+                return (int) ((o1.getCtime() - o2.getCtime()) * iOrder);
             case ACTION_ID:
                 if (o1.getActionId() == null && o2.getActionId() == null) {
                     return 0;

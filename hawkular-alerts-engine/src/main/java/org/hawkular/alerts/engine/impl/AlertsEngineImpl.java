@@ -33,11 +33,12 @@ import javax.ejb.Singleton;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
-import org.hawkular.alerts.api.model.condition.Alert;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsService;
@@ -67,7 +68,9 @@ public class AlertsEngineImpl implements AlertsEngine {
     private int period;
 
     private final List<Data> pendingData;
+    private final List<Event> pendingEvents;
     private final List<Alert> alerts;
+    private final List<Event> events;
     private final Set<Dampening> pendingTimeouts;
     private final Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers;
     private final Set<Trigger> disabledTriggers;
@@ -89,7 +92,9 @@ public class AlertsEngineImpl implements AlertsEngine {
 
     public AlertsEngineImpl() {
         pendingData = new ArrayList<>();
+        pendingEvents = new ArrayList<>();
         alerts = new ArrayList<>();
+        events = new ArrayList<>();
         pendingTimeouts = new HashSet<>();
         autoResolvedTriggers = new HashMap<>();
         disabledTriggers = new HashSet<>();
@@ -156,7 +161,9 @@ public class AlertsEngineImpl implements AlertsEngine {
         rules.clear();
 
         pendingData.clear();
+        pendingEvents.clear();
         alerts.clear();
+        events.clear();
         pendingTimeouts.clear();
         autoResolvedTriggers.clear();
         disabledTriggers.clear();
@@ -186,6 +193,7 @@ public class AlertsEngineImpl implements AlertsEngine {
         rules.addGlobal("log", log);
         rules.addGlobal("actions", actions);
         rules.addGlobal("alerts", alerts);
+        rules.addGlobal("events", events);
         rules.addGlobal("pendingTimeouts", pendingTimeouts);
         rules.addGlobal("autoResolvedTriggers", autoResolvedTriggers);
         rules.addGlobal("disabledTriggers", disabledTriggers);
@@ -304,6 +312,22 @@ public class AlertsEngineImpl implements AlertsEngine {
         addPendingData(data);
     }
 
+    @Override
+    public void sendEvent(Event event) throws Exception {
+        if (event == null) {
+            throw new IllegalArgumentException("Event must be not null");
+        }
+        addPendingEvent(event);
+    }
+
+    @Override
+    public void sendEvents(Collection<Event> events) throws Exception {
+        if (events == null) {
+            throw new IllegalArgumentException("Events must be not null");
+        }
+        addPendingEvents(events);
+    }
+
     private synchronized void addPendingData(Collection<Data> data) {
         pendingData.addAll(data);
     }
@@ -312,9 +336,23 @@ public class AlertsEngineImpl implements AlertsEngine {
         pendingData.add(data);
     }
 
+    private synchronized void addPendingEvents(Collection<Event> events) {
+        pendingEvents.addAll(events);
+    }
+
+    private synchronized void addPendingEvent(Event event) {
+        pendingEvents.add(event);
+    }
+
     private synchronized Collection<Data> getAndClearPendingData() {
         Collection<Data> result = new ArrayList<>(pendingData);
         pendingData.clear();
+        return result;
+    }
+
+    private synchronized Collection<Event> getAndClearPendingEvents() {
+        Collection<Event> result = new ArrayList<>(pendingEvents);
+        pendingEvents.clear();
         return result;
     }
 
@@ -323,24 +361,32 @@ public class AlertsEngineImpl implements AlertsEngine {
         public void run() {
             int numTimeouts = checkPendingTimeouts();
 
-            if (!pendingData.isEmpty() || numTimeouts > 0) {
+            if (!pendingData.isEmpty() || !pendingEvents.isEmpty() || numTimeouts > 0) {
                 Collection<Data> newData = getAndClearPendingData();
+                Collection<Event> newEvents = getAndClearPendingEvents();
 
-                log.debugf("Executing rules engine on [%1d] datums and [%2d] dampening timeouts.", newData.size(),
-                        numTimeouts);
+                log.debugf("Executing rules engine on [%1d] datums, [%2d] events and [%3d] dampening timeouts.",
+                        newData.size(), newEvents.size(), numTimeouts);
 
                 try {
-                    if (newData.isEmpty()) {
+                    if (newData.isEmpty() && newEvents.isEmpty()) {
                         rules.fireNoData();
-
                     } else {
-                        rules.addData(newData);
-                        newData.clear();
+                        if (!newData.isEmpty()) {
+                            rules.addData(newData);
+                            newData.clear();
+                        }
+                        if (!newEvents.isEmpty()) {
+                            rules.addEvents(newEvents);
+                            newEvents.clear();
+                        }
                     }
 
                     rules.fire();
                     alertsService.addAlerts(alerts);
                     alerts.clear();
+                    alertsService.persistEvents(events);
+                    events.clear();
                     handleDisabledTriggers();
                     handleAutoResolvedTriggers();
 
@@ -350,6 +396,7 @@ public class AlertsEngineImpl implements AlertsEngine {
                     msgLog.errorProcessingRules(e.getMessage());
                 } finally {
                     alerts.clear();
+                    events.clear();
                 }
             }
         }
@@ -415,8 +462,8 @@ public class AlertsEngineImpl implements AlertsEngine {
                 // otherwise, manually reload the trigger back into the engine (in firing mode).
                 if (t.isAutoResolveAlerts()) {
                     try {
-                        alertsService.resolveAlertsForTrigger(t.getTenantId(), t.getId(), "AUTO", null,
-                                entry.getValue());
+                        alertsService.resolveAlertsForTrigger(t.getTenantId(), t.getId(), "AutoResolve",
+                                "Trigger AutoResolve=True", entry.getValue());
                     } catch (Exception e) {
                         manualReload = true;
                         log.errorf("Failed to resolve Alerts. Could not AutoResolve alerts for trigger %s", t);

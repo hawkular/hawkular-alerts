@@ -28,7 +28,6 @@ import javax.ejb.TransactionAttributeType;
 import javax.jms.MessageListener;
 
 import org.hawkular.alerts.api.model.data.Data;
-import org.hawkular.alerts.api.model.data.NumericData;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.bus.init.CacheManager;
 import org.hawkular.alerts.bus.messages.MetricDataMessage;
@@ -51,7 +50,7 @@ import org.jboss.logging.Logger;
 @MessageDriven(messageListenerInterface = MessageListener.class, activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularMetricData") })
-@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
+@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class MetricDataListener extends BasicMessageListener<MetricDataMessage> {
     private final Logger log = Logger.getLogger(MetricDataListener.class);
 
@@ -81,7 +80,7 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
         Set<String> activeMetricIds = cacheManager.getActiveDataIds();
         for (SingleMetric m : data) {
             if (isNeeded(activeMetricIds, m.getSource())) {
-                alertData.add(new NumericData(m.getSource(), m.getTimestamp(), m.getValue()));
+                alertData.add(new Data(m.getSource(), m.getTimestamp(), String.valueOf(m.getValue())));
             }
         }
         log.debugf("Sending [%s] datums to Alerting, filtered [%s] not used in Triggers.", alertData.size(),
