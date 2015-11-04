@@ -1398,7 +1398,7 @@ public abstract class PersistenceTest {
         List<Event> events = new ArrayList<>();
         events.add(event);
 
-        alertsService.addEvents(events);
+        alertsService.persistEvents(events);
 
         // No filter
         List<Event> result = alertsService.getEvents(TEST_TENANT, null, null);
@@ -1554,7 +1554,7 @@ public abstract class PersistenceTest {
             Thread.sleep(2); // events for the same trigger must not come in at the same exact ms.
         }
 
-        alertsService.addEvents(events);
+        alertsService.persistEvents(events);
 
         List<Event> result = alertsService.getEvents(TEST_TENANT, null, null);
         assertEquals(107, result.size());

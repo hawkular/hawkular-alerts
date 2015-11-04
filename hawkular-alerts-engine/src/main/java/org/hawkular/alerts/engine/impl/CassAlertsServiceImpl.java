@@ -145,11 +145,11 @@ public class CassAlertsServiceImpl implements AlertsService {
         List<Event> events = alerts.stream()
                 .map(Event::new)
                 .collect(Collectors.toList());
-        addEvents(events);
+        persistEvents(events);
     }
 
     @Override
-    public void addEvents(Collection<Event> events) throws Exception {
+    public void persistEvents(Collection<Event> events) throws Exception {
         if (events == null) {
             throw new IllegalArgumentException("Events must be not null");
         }
@@ -1297,23 +1297,11 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     @Override
-    public void sendEvent(Event event) throws Exception {
-        if (null == event) {
-            return;
-        }
-        addEvents(Collections.singletonList(event));
-        if (!isEmpty(event.getDataId())
-                && eventsCacheManager.getActiveDataIds().contains(event.getDataId())) {
-            alertsEngine.sendEvent(event);
-        }
-    }
-
-    @Override
-    public void sendEvents(Collection<Event> events) throws Exception {
+    public void addEvents(Collection<Event> events) throws Exception {
         if (null == events || events.isEmpty()) {
             return;
         }
-        addEvents(events);
+        persistEvents(events);
         Set<String> activeDataIds = eventsCacheManager.getActiveDataIds();
         Collection<Event> withConditions = new ArrayList<>();
         for (Event e : events) {

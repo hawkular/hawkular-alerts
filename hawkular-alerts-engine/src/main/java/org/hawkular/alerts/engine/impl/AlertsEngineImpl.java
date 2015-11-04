@@ -385,7 +385,7 @@ public class AlertsEngineImpl implements AlertsEngine {
                     rules.fire();
                     alertsService.addAlerts(alerts);
                     alerts.clear();
-                    alertsService.addEvents(events);
+                    alertsService.persistEvents(events);
                     events.clear();
                     handleDisabledTriggers();
                     handleAutoResolvedTriggers();
