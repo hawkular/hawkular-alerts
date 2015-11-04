@@ -68,6 +68,7 @@ public class AlertsEngineImpl implements AlertsEngine {
     private int period;
 
     private final List<Data> pendingData;
+    private final List<Event> pendingEvents;
     private final List<Alert> alerts;
     private final List<Event> events;
     private final Set<Dampening> pendingTimeouts;
@@ -91,6 +92,7 @@ public class AlertsEngineImpl implements AlertsEngine {
 
     public AlertsEngineImpl() {
         pendingData = new ArrayList<>();
+        pendingEvents = new ArrayList<>();
         alerts = new ArrayList<>();
         events = new ArrayList<>();
         pendingTimeouts = new HashSet<>();
@@ -159,6 +161,7 @@ public class AlertsEngineImpl implements AlertsEngine {
         rules.clear();
 
         pendingData.clear();
+        pendingEvents.clear();
         alerts.clear();
         events.clear();
         pendingTimeouts.clear();
@@ -309,6 +312,22 @@ public class AlertsEngineImpl implements AlertsEngine {
         addPendingData(data);
     }
 
+    @Override
+    public void sendEvent(Event event) throws Exception {
+        if (event == null) {
+            throw new IllegalArgumentException("Event must be not null");
+        }
+        addPendingEvent(event);
+    }
+
+    @Override
+    public void sendEvents(Collection<Event> events) throws Exception {
+        if (events == null) {
+            throw new IllegalArgumentException("Events must be not null");
+        }
+        addPendingEvents(events);
+    }
+
     private synchronized void addPendingData(Collection<Data> data) {
         pendingData.addAll(data);
     }
@@ -317,9 +336,23 @@ public class AlertsEngineImpl implements AlertsEngine {
         pendingData.add(data);
     }
 
+    private synchronized void addPendingEvents(Collection<Event> events) {
+        pendingEvents.addAll(events);
+    }
+
+    private synchronized void addPendingEvent(Event event) {
+        pendingEvents.add(event);
+    }
+
     private synchronized Collection<Data> getAndClearPendingData() {
         Collection<Data> result = new ArrayList<>(pendingData);
         pendingData.clear();
+        return result;
+    }
+
+    private synchronized Collection<Event> getAndClearPendingEvents() {
+        Collection<Event> result = new ArrayList<>(pendingEvents);
+        pendingEvents.clear();
         return result;
     }
 
@@ -328,25 +361,31 @@ public class AlertsEngineImpl implements AlertsEngine {
         public void run() {
             int numTimeouts = checkPendingTimeouts();
 
-            if (!pendingData.isEmpty() || numTimeouts > 0) {
+            if (!pendingData.isEmpty() || !pendingEvents.isEmpty() || numTimeouts > 0) {
                 Collection<Data> newData = getAndClearPendingData();
+                Collection<Event> newEvents = getAndClearPendingEvents();
 
-                log.debugf("Executing rules engine on [%1d] datums and [%2d] dampening timeouts.", newData.size(),
-                        numTimeouts);
+                log.debugf("Executing rules engine on [%1d] datums, [%2d] events and [%3d] dampening timeouts.",
+                        newData.size(), newEvents.size(), numTimeouts);
 
                 try {
-                    if (newData.isEmpty()) {
+                    if (newData.isEmpty() && newEvents.isEmpty()) {
                         rules.fireNoData();
-
                     } else {
-                        rules.addData(newData);
-                        newData.clear();
+                        if (!newData.isEmpty()) {
+                            rules.addData(newData);
+                            newData.clear();
+                        }
+                        if (!newEvents.isEmpty()) {
+                            rules.addEvents(newEvents);
+                            newEvents.clear();
+                        }
                     }
 
                     rules.fire();
                     alertsService.addAlerts(alerts);
                     alerts.clear();
-                    alertsService.addEvents(events);
+                    alertsService.persistEvents(events);
                     events.clear();
                     handleDisabledTriggers();
                     handleAutoResolvedTriggers();

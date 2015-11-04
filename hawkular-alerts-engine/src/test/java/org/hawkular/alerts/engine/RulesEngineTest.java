@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.hawkular.alerts.api.json.JsonUtil;
@@ -35,6 +36,7 @@ import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.CompareConditionEval;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.condition.EventCondition;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
@@ -47,6 +49,9 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.api.model.event.EventCategory;
+import org.hawkular.alerts.api.model.event.EventType;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
@@ -72,11 +77,14 @@ public class RulesEngineTest {
     Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers = new HashMap<>();
     Set<Trigger> disabledTriggers = new CopyOnWriteArraySet<>();
     Set<Data> datums = new HashSet<Data>();
+    Set<Event> inputEvents = new HashSet<>();
+    List<Event> outputEvents = new ArrayList<>();
 
     @Before
     public void before() {
         rulesEngine.addGlobal("log", log);
         rulesEngine.addGlobal("alerts", alerts);
+        rulesEngine.addGlobal("events", outputEvents);
         rulesEngine.addGlobal("pendingTimeouts", pendingTimeouts);
         rulesEngine.addGlobal("autoResolvedTriggers", autoResolvedTriggers);
         rulesEngine.addGlobal("disabledTriggers", disabledTriggers);
@@ -88,6 +96,8 @@ public class RulesEngineTest {
         alerts.clear();
         pendingTimeouts.clear();
         datums.clear();
+        inputEvents.clear();
+        outputEvents.clear();
     }
 
     @Test
@@ -926,6 +936,173 @@ public class RulesEngineTest {
         String v = e.getValue();
         assertEquals("Ignored", v);
         assertEquals("ExternalData-01", e.getCondition().getDataId());
+    }
+
+    @Test
+    public void EventTest() {
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Events Test");
+        t1.setEventType(EventType.EVENT);
+        EventCondition t1c1 = new EventCondition("trigger-1", "myapp.war", "text == 'DOWN'");
+
+        Event appDownEvent = new Event("tenant", UUID.randomUUID().toString(), "myapp.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+        inputEvents.add(appDownEvent);
+
+        t1.setEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+
+        rulesEngine.addEvents(inputEvents);
+
+        rulesEngine.fire();
+
+        assertEquals(outputEvents.toString(), 1, outputEvents.size());
+    }
+
+    @Test
+    public void multipleEventConditions() {
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Events Test");
+        t1.setEventType(EventType.EVENT);
+        EventCondition t1c1 = new EventCondition("trigger-1", Mode.FIRING, 3, 1, "myapp.war",
+                "text == 'DOWN'");
+        EventCondition t1c2 = new EventCondition("trigger-1", Mode.FIRING, 3, 2, "datacenter1",
+                "text starts 'ERROR'");
+        EventCondition t1c3 = new EventCondition("trigger-1", Mode.FIRING, 3, 3, "datacenter2",
+                "text starts 'WARN'");
+
+        /*
+            On multiple conditions timestamps on input events are important.
+         */
+        Event appDownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "myapp.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+        Event logErrorEvent1 = new Event("tenant", UUID.randomUUID().toString(), 2, "datacenter1",
+                EventCategory.LOG.name(), "ERROR [Time] This is a sample as app logging");
+        Event logWarnEvent1 = new Event("tenant", UUID.randomUUID().toString(), 3, "datacenter2",
+                EventCategory.LOG.name(), "WARN [Time] This is a sample as app logging");
+
+        Event appDownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 4, "myapp.war",
+                EventCategory.DEPLOYMENT.name(), "UP");
+        Event logErrorEvent2 = new Event("tenant", UUID.randomUUID().toString(), 5, "datacenter1",
+                EventCategory.LOG.name(), "ERROR [Time] This is a sample as app logging 2");
+        Event logWarnEvent2 = new Event("tenant", UUID.randomUUID().toString(), 6, "datacenter2",
+                EventCategory.LOG.name(), "WARN [Time] This is a sample as app logging 2");
+
+        Event appDownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 7, "myapp.war",
+                EventCategory.DEPLOYMENT.name(), "UP");
+        Event logErrorEvent3 = new Event("tenant", UUID.randomUUID().toString(), 8, "datacenter1",
+                EventCategory.LOG.name(), "ERROR [Time] This is a sample as app logging 3");
+        Event logWarnEvent3 = new Event("tenant", UUID.randomUUID().toString(), 9, "datacenter2",
+                EventCategory.LOG.name(), "WARN [Time] This is a sample as app logging 3");
+
+        inputEvents.add(appDownEvent1);
+        inputEvents.add(logErrorEvent1);
+        inputEvents.add(logWarnEvent1);
+
+        inputEvents.add(appDownEvent2);
+        inputEvents.add(logErrorEvent2);
+        inputEvents.add(logWarnEvent2);
+
+        inputEvents.add(appDownEvent3);
+        inputEvents.add(logErrorEvent3);
+        inputEvents.add(logWarnEvent3);
+
+        t1.setEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+        rulesEngine.addFact(t1c2);
+        rulesEngine.addFact(t1c3);
+
+        rulesEngine.addEvents(inputEvents);
+
+        rulesEngine.fire();
+
+        assertEquals(outputEvents.toString(), 3, outputEvents.size());
+    }
+
+    @Test
+    public void chainedEventsRules() {
+        Trigger t1 = new Trigger("tenant", "trigger-1", "A.war");
+        t1.setEventType(EventType.EVENT);
+        EventCondition t1c1 = new EventCondition("trigger-1", Mode.FIRING, "A.war", "text == 'DOWN'");
+
+        Trigger t2 = new Trigger("tenant", "trigger-2", "B.war");
+        t2.setEventType(EventType.EVENT);
+        EventCondition t2c1 = new EventCondition("trigger-2", Mode.FIRING, "B.war", "text == 'DOWN'");
+
+        Trigger t3 = new Trigger("tenant", "trigger-3", "A.war and B.war DOWN");
+        EventCondition t3c1 = new EventCondition("trigger-3", Mode.FIRING, 2, 1, "trigger-1");
+        EventCondition t3c2 = new EventCondition("trigger-3", Mode.FIRING, 2, 2, "trigger-2");
+
+
+        Event appADownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "A.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        Event appBDownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "B.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        Event appADownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 2, "A.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        Event appBDownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 2, "B.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        Event appADownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 3, "A.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        Event appBDownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 3, "B.war",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        inputEvents.add(appADownEvent1);
+        inputEvents.add(appBDownEvent1);
+        inputEvents.add(appADownEvent2);
+        inputEvents.add(appBDownEvent2);
+        inputEvents.add(appADownEvent3);
+        inputEvents.add(appBDownEvent3);
+
+        t1.setEnabled(true);
+        t2.setEnabled(true);
+        t3.setEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+        rulesEngine.addFact(t2);
+        rulesEngine.addFact(t2c1);
+        rulesEngine.addFact(t3);
+        rulesEngine.addFact(t3c1);
+        rulesEngine.addFact(t3c2);
+
+        rulesEngine.addEvents(inputEvents);
+
+        rulesEngine.fire();
+
+        assertEquals(outputEvents.toString(), 6, outputEvents.size());
+
+        /*
+            Expected inference:
+
+                Alert 1:
+                    id=trigger-1-Event-timestamp-1
+                    id=trigger-2-Event-timestamp-1
+
+                Alert 2:
+                    id=trigger-1-Event-timestamp-2 ==> NEW Event from trigger-1
+                    id=trigger-2-Event-timestamp-1
+
+                Alert 3:
+                    id=trigger-1-Event-timestamp-2
+                    id=trigger-2-Event-timestamp-2 ==> NEW Event from trigger-2
+
+                Alert 4:
+                    id=trigger-1-Event-timestamp-3 ==> NEW Event from trigger-1
+                    id=trigger-2-Event-timestamp-2
+
+                Alert 5:
+                    id=trigger-1-Event-timestamp-3
+                    id=trigger-2-Event-timestamp-3 ==> NEW Event from trigger-2
+         */
+        assertEquals(alerts.toString(), 5, alerts.size());
     }
 
     @Test

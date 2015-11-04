@@ -18,6 +18,7 @@ package org.hawkular.alerts.actions.standalone;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -69,7 +70,8 @@ public class StandaloneActionPluginListener implements ActionListener {
             }
             String actionPlugin = action.getActionPlugin();
             ActionPluginListener plugin = plugins.get(actionPlugin);
-            if (plugin == null) {
+            Set<String> globals = ActionPlugins.getGlobals();
+            if (plugin == null && ActionPlugins.getGlobals().isEmpty()) {
                 log.debug("Received action [" + actionPlugin +
                         "] but no ActionPluginListener found on this deployment");
                 return;
@@ -92,6 +94,21 @@ public class StandaloneActionPluginListener implements ActionListener {
                     }
                 };
                 executorService.execute(runnable);
+                // Check if the plugin is executed twice
+                if (!globals.contains(actionPlugin)) {
+                    for (String global : globals) {
+                        ActionPluginListener globalPlugin = ActionPlugins.getPlugins().get(global);
+                        runnable = () -> {
+                            try {
+                                globalPlugin.process(pluginMessage);
+                            } catch (Exception e) {
+                                log.debug("Error processing action: " + action.getActionPlugin(), e);
+                                msgLog.errorProcessingAction(e.getMessage());
+                            }
+                        };
+                        executorService.execute(runnable);
+                    }
+                }
             } else {
                 msgLog.warnCannotAccessToDefinitionsService();
             }

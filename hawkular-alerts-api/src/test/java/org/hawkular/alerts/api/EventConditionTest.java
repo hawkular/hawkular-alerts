@@ -32,7 +32,7 @@ public class EventConditionTest {
     @Test
     public void testTenantIdExpression() {
 
-        EventCondition condition = new EventCondition("trigger-1", "tenantId == 'my-organization'");
+        EventCondition condition = new EventCondition("trigger-1", "app.war", "tenantId == 'my-organization'");
         Event event1 = new Event();
         event1.setTenantId("my-organization");
 
@@ -66,7 +66,7 @@ public class EventConditionTest {
 
     @Test
     public void testCtimeExpression() {
-        EventCondition condition = new EventCondition("trigger-1", "ctime > 10");
+        EventCondition condition = new EventCondition("trigger-1", "app.war", "ctime > 10");
 
         Event event1 = new Event();
         event1.setCtime(11);
@@ -91,42 +91,8 @@ public class EventConditionTest {
     }
 
     @Test
-    public void testContextExpression() {
-        EventCondition condition = new EventCondition("trigger-1", "context.server == 'MyServer'");
-
-        Event event1 = new Event();
-        event1.addContext("server", "MyServer");
-
-        assertTrue(condition.match(event1));
-
-        condition.setExpression("context.server != 'MyServer'");
-
-        assertFalse(condition.match(event1));
-
-        condition.setExpression("context.quantity >= 11");
-
-        event1.addContext("quantity", "11");
-
-        assertTrue(condition.match(event1));
-
-        event1.addContext("quantity", "12");
-
-        assertTrue(condition.match(event1));
-
-        event1.addContext("quantity", "10");
-
-        assertFalse(condition.match(event1));
-
-        condition.setExpression("context.log.category starts 'WARN'");
-
-        event1.addContext("log.category", "WARNING");
-
-        assertTrue(condition.match(event1));
-    }
-
-    @Test
     public void testTagExpression() {
-        EventCondition condition = new EventCondition("trigger-1", "tags.server == 'MyServer'");
+        EventCondition condition = new EventCondition("trigger-1", "app.war", "tags.server == 'MyServer'");
 
         Event event1 = new Event();
         event1.addTag("server", "MyServer");
@@ -154,6 +120,18 @@ public class EventConditionTest {
         condition.setExpression("tags.log.category starts 'WARN'");
 
         event1.addTag("log.category", "WARNING");
+
+        assertTrue(condition.match(event1));
+    }
+
+    @Test
+    public void testEscapedExpression() {
+        EventCondition condition = new EventCondition("trigger-1", "app.war",
+                "tags.server == '\\,MyServer', tags.log starts 'LOG\\,'");
+
+        Event event1 = new Event();
+        event1.addTag("server", ",MyServer");
+        event1.addTag("log", "LOG,123-123-123 This is a text log");
 
         assertTrue(condition.match(event1));
     }

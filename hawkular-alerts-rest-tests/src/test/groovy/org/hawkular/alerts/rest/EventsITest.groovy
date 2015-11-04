@@ -94,7 +94,8 @@ class EventsITest extends AbstractITestBase {
         context.put("event-context-name", "event-context-value");
         Map tags = new java.util.HashMap();
         tags.put("event-tag-name", "event-tag-value");
-        Event event = new Event("test-tenant", "test-event-id", "test", "test event", context, tags);
+        Event event = new Event("test-tenant", "test-event-id", System.currentTimeMillis(), "test-event-data-id",
+                "test-category", "test event text", context, tags);
 
         def resp = client.post(path: "events", body: event )
         assertEquals(200, resp.status)
@@ -108,8 +109,8 @@ class EventsITest extends AbstractITestBase {
         assert resp.status == 200 : resp.status
         Event e = resp.data
         assertEquals(event, e)
-        assertEquals("test", e.getCategory())
-        assertEquals("test event", e.getText())
+        assertEquals("test-category", e.getCategory())
+        assertEquals("test event text", e.getText())
         assertEquals(context, e.getContext())
         assertEquals(tags, e.getTags())
 

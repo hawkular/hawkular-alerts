@@ -1398,7 +1398,7 @@ public abstract class PersistenceTest {
         List<Event> events = new ArrayList<>();
         events.add(event);
 
-        alertsService.addEvents(events);
+        alertsService.persistEvents(events);
 
         // No filter
         List<Event> result = alertsService.getEvents(TEST_TENANT, null, null);
@@ -1554,7 +1554,7 @@ public abstract class PersistenceTest {
             Thread.sleep(2); // events for the same trigger must not come in at the same exact ms.
         }
 
-        alertsService.addEvents(events);
+        alertsService.persistEvents(events);
 
         List<Event> result = alertsService.getEvents(TEST_TENANT, null, null);
         assertEquals(107, result.size());
@@ -1800,7 +1800,7 @@ public abstract class PersistenceTest {
 
     public void test0080BasicActionsHistory() throws Exception {
         for (int i = 0; i < 107; i++) {
-            Event testEvent = new Event(TEST_TENANT, "test-trigger", "test-category", "test-text");
+            Event testEvent = new Event(TEST_TENANT, "test-trigger", "test-dataid", "test-category", "test-text");
             Action action = new Action(testEvent.getTenantId(), "testplugin", "send-to-this-groups", testEvent);
             Thread.sleep(2);
             actionsService.send(action);

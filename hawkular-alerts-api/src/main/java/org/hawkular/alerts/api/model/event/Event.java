@@ -47,7 +47,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
         @Type(name = "EVENT", value = Event.class),
         @Type(name = "ALERT", value = Alert.class) })
-public class Event {
+public class Event implements Comparable<Event> {
 
     // This field will be controlled vi fasterxml. We need to make this an explicit field because we ship the
     // serialized json to clients via rest. Since we serialize via fasterxml the field will be added to the json.
@@ -63,6 +63,10 @@ public class Event {
 
     @JsonInclude
     protected long ctime;
+
+    // Optional source of Event, used by EventCondition to evaluate events
+    @JsonInclude(Include.NON_EMPTY)
+    private String dataId;
 
     // category of Event, suitable for display, recommended to be, but not limited to, an EventCategory.name.
     @JsonInclude
@@ -98,23 +102,49 @@ public class Event {
     }
 
     public Event(String tenantId, String id, String category, String text) {
-        this(tenantId, id, category, text, null, null);
+        this(tenantId, id, System.currentTimeMillis(), null, category, text, null, null);
+    }
+
+    public Event(String tenantId, String id, String dataId, String category, String text) {
+        this(tenantId, id, System.currentTimeMillis(), dataId, category, text, null, null);
     }
 
     public Event(String tenantId, String id, String category, String text, Map<String, String> context) {
-        this(tenantId, id, category, text, context, null);
+        this(tenantId, id, System.currentTimeMillis(), null, category, text, context, null);
     }
 
-    public Event(String tenantId, String id, String category, String text, Map<String, String> context,
-            Map<String, String> tags) {
+    public Event(String tenantId, String id, String dataId, String category, String text, Map<String, String> context) {
+        this(tenantId, id, System.currentTimeMillis(), dataId, category, text, context, null);
+    }
+
+    public Event(String tenantId, String id, long ctime, String category, String text) {
+        this(tenantId, id, ctime, null, category, text, null, null);
+    }
+
+    public Event(String tenantId, String id, long ctime, String dataId, String category, String text) {
+        this(tenantId, id, ctime, dataId, category, text, null, null);
+    }
+
+    public Event(String tenantId, String id, long ctime, String category, String text,
+                 Map<String, String> context) {
+        this(tenantId, id, ctime, null, category, text, context, null);
+    }
+
+    public Event(String tenantId, String id, long ctime, String dataId, String category, String text,
+                 Map<String, String> context) {
+        this(tenantId, id, ctime, dataId, category, text, context, null);
+    }
+
+    public Event(String tenantId, String id, long ctime, String dataId, String category, String text,
+                 Map<String, String> context, Map<String, String> tags) {
         this.tenantId = tenantId;
         this.id = id;
+        this.ctime = (ctime <= 0) ? System.currentTimeMillis() : ctime;
+        this.dataId = dataId;
         this.category = category;
         this.text = text;
         this.context = context;
         this.tags = tags;
-
-        this.ctime = System.currentTimeMillis();
     }
 
     /**
@@ -134,6 +164,7 @@ public class Event {
         this.ctime = System.currentTimeMillis();
 
         this.id = trigger.getId() + "-" + this.ctime;
+        this.dataId = trigger.getId();
         this.context = trigger.getContext();
         if (!isEmpty(trigger.getEventCategory())) {
             this.category = trigger.getEventCategory();
@@ -187,6 +218,14 @@ public class Event {
 
     public void setCtime(long ctime) {
         this.ctime = ctime;
+    }
+
+    public String getDataId() {
+        return dataId;
+    }
+
+    public void setDataId(String dataId) {
+        this.dataId = dataId;
     }
 
     public String getText() {
@@ -292,6 +331,29 @@ public class Event {
     public String toString() {
         return "Event [tenantId=" + tenantId + ", id=" + id + ", ctime=" + ctime + ", category=" + category
                 + ", text=" + text + ", context=" + context + ", tags=" + tags + ", trigger=" + trigger + "]";
+    }
+
+    /* (non-Javadoc)
+     * Natural Ordering provided: dataId asc, Timestamp asc, id asc. This is important to ensure that the engine
+     * naturally processes events for the same dataId is ascending time order.
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     */
+    @Override
+    public int compareTo(Event o) {
+        /*
+            Comparition only should be used on events with proper dataId defined.
+         */
+        if (this.dataId == null) {
+            return this.id.compareTo(o.id);
+        }
+        int c = this.dataId.compareTo(o.dataId);
+        if (0 != c)
+            return c;
+        c = Long.compare(this.ctime, o.ctime);
+        if (0 != c) {
+            return c;
+        }
+        return this.id.compareTo(o.id);
     }
 
     private static boolean isEmpty(String s) {

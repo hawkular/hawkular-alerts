@@ -54,11 +54,18 @@ public interface AlertsService {
     void addAlerts(Collection<Alert> alerts) throws Exception;
 
     /**
-     * Persist the provided events.
+     * Persist the provided events and sent to the engine for alerts evaluation.
      * @param events Set of unpersisted Events.
      * @throws Exception any problem
      */
     void addEvents(Collection<Event> events) throws Exception;
+
+    /**
+     * Only persist the provided events.
+     * @param events Set of unpersisted Events.
+     * @throws Exception any problem
+     */
+    void persistEvents(Collection<Event> events) throws Exception;
 
     /**
      * Add a note on an existing Alert.
@@ -170,5 +177,4 @@ public interface AlertsService {
      * @throws Exception any problem.
      */
     void sendData(Collection<Data> data) throws Exception;
-
 }

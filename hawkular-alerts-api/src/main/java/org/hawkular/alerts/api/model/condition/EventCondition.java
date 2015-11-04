@@ -16,6 +16,10 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
@@ -23,7 +27,45 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
- * An <code>EventCondition</code> is used for condition evaluations over Event data.
+ * An <code>EventCondition</code> is used for condition evaluations over Event data using expressions.
+ *
+ * Expression is a comma separated list of the following 3 tokens structure:
+ *
+ * <event.field> <operator> <constant> [,<event.field> <operator> <constant>]*
+ *
+ * - <event.field> represent a fixed field of event structure or a key of tags.
+ *   Supported fields are the following:
+ *      - tenantId
+ *      - id
+ *      - ctime
+ *      - text
+ *      - category
+ *      - tags.<key>
+ *
+ * - <operator> is a string representing a string/numeric operator, supported ones are:
+ *   "==" equals
+ *   "!=" not equals
+ *   "starts" starts with String operator
+ *   "ends" ends with String operator
+ *   "contains" contains String operator
+ *   "match" match String operator
+ *   "<" less than
+ *   "<=" less or equals than
+ *   ">" greater than
+ *   ">=" greater or equals than
+ *   "==" equals
+ *
+ * - <constant> is a string that might be interpreted as a number if is not closed with single quotes or a string
+ * constant if it is closed with single quotes
+ * i.e. 23, 'test'
+ *
+ * A constant string can contain special character comma but escaped with backslash.
+ * i.e. '\,test', 'test\,'
+ *
+ * So, putting everything together, a valid expression might look like:
+ * event.id start 'IDXYZ', event.tag.category == 'Server', event.tag.from end '.com'
+ *
+ * A non valid expression will return false.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -31,48 +73,63 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 public class EventCondition extends Condition {
 
     @JsonInclude
-    private String eventName;
+    private String dataId;
 
     @JsonInclude(Include.NON_NULL)
     private String expression;
 
     public EventCondition() {
-        this("DefaultId", Mode.FIRING, 1, 1, null);
+        this("DefaultId", Mode.FIRING, 1, 1, null, null);
     }
 
-    public EventCondition(String triggerId, String expression) {
-        this(triggerId, Mode.FIRING, 1, 1, expression);
+    public EventCondition(String triggerId, String dataId) {
+        this(triggerId, Mode.FIRING, 1, 1, dataId, null);
     }
 
-    public EventCondition(String triggerId, Mode triggerMode, String expression) {
-        this(triggerId, triggerMode, 1, 1, expression);
+    public EventCondition(String triggerId, String dataId, String expression) {
+        this(triggerId, Mode.FIRING, 1, 1, dataId, expression);
     }
 
-    public EventCondition(String triggerId, int conditionSetSize, int conditionSetIndex, String expression) {
-        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, expression);
+    public EventCondition(String triggerId, Mode triggerMode, String dataId) {
+        this(triggerId, triggerMode, 1, 1, dataId, null);
+    }
+
+    public EventCondition(String triggerId, Mode triggerMode, String dataId, String expression) {
+        this(triggerId, triggerMode, 1, 1, dataId, expression);
+    }
+
+    public EventCondition(String triggerId, int conditionSetSize, int conditionSetIndex, String dataId) {
+        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, null);
+    }
+
+    public EventCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
+                          String dataId, String expression) {
+        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, expression);
     }
 
     public EventCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
-                          String expression) {
+                          String dataId) {
+        this(triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, null);
+    }
+
+    public EventCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+                          String dataId, String expression) {
         super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.EVENT);
+        this.dataId = dataId;
         this.expression = expression;
     }
 
-    public String getEventName() {
-        return eventName;
-    }
-
-    public void setEventName(String eventName) {
-        this.eventName = eventName;
+    public void setDataId(String dataId) {
+        this.dataId = dataId;
     }
 
     public String getLog(Event value) {
-        return triggerId + " " + eventName + " : " + value + " " + expression;
+        return triggerId + " " + dataId + " : " + value + " " + expression;
     }
 
     @Override
     public String getDataId() {
-        return null;
+        return dataId;
     }
 
     public String getExpression() {
@@ -83,13 +140,27 @@ public class EventCondition extends Condition {
         this.expression = expression;
     }
 
+    private static Pattern cleanComma = Pattern.compile("\\\\,");
+
     public boolean match(Event value) {
-        if (null == expression || expression.isEmpty() || null == value) {
+        if (null == value) {
             return false;
         }
-        String[] expressions = expression.split(",");
-        for (int i = 0; i < expressions.length; i++) {
-            if (!processExpression(expressions[i], value)) {
+        if (null == expression || expression.isEmpty()) {
+            return true;
+        }
+        List<String> expressions = new ArrayList<>();
+        int j = 0;
+        for (int i = 0; i < expression.length(); i++) {
+            if (expression.charAt(i) == ','
+                    && (i == 0 || (i > 0 && expression.charAt(i - 1) != '\\'))) {
+                expressions.add(cleanComma.matcher(expression.substring(j, i).trim()).replaceAll(","));
+                j = i + 1;
+            }
+        }
+        expressions.add(cleanComma.matcher(expression.substring(j).trim()).replaceAll(","));
+        for (String expression : expressions) {
+            if (!processExpression(expression, value)) {
                 return false;
             }
         }
@@ -100,7 +171,7 @@ public class EventCondition extends Condition {
     private static final String ID = "id";
     private static final String CTIME = "ctime";
     private static final String TEXT = "text";
-    private static final String CONTEXT = "context.";
+    private static final String CATEGORY = "category";
     private static final String TAGS = "tags.";
 
     private static final String EQ = "==";
@@ -114,40 +185,6 @@ public class EventCondition extends Condition {
     private static final String GT = ">";
     private static final String GTE = ">=";
 
-    /**
-     * Expression has awlays following 3 tokens structure:
-     *
-     * <event.field> <operator> <constant>
-     *
-     * - <event.field> represent a fixed field of event structure or a key of tags/context
-     *   i.e. event.triggerId, event.tenantId, event.context.category, event.tag.server, etc.
-     *
-     * - <operator> is a string representing a string/numeric operator, supported ones are:
-     *   "==" equals
-     *   "!=" not equals
-     *   "starts" starts with String operator
-     *   "ends" ends with String operator
-     *   "contains" contains String operator
-     *   "match" match String operator
-     *   "<" less than
-     *   "<=" less or equals than
-     *   ">" greater than
-     *   ">=" greater or equals than
-     *   "==" equals
-     *
-     * - <constant> is a string that might be interpreted as a number if is not closed with single quotes or a string
-     * constant if it is closed with single quotes
-     * i.e. 23, 'test'
-     *
-     * So, putting everything together, a valid expression might look like:
-     * event.id start 'IDXYZ', event.context.category == 'Server', event.tag.from end '.com'
-     *
-     * A non valid expression will return false.
-     *
-     * @param expression Expression to match with an event
-     * @param value Event to match
-     * @return result of expression match
-     */
     private boolean processExpression(String expression, Event value) {
         if (null == expression || expression.isEmpty() || null == value) {
             return false;
@@ -175,10 +212,8 @@ public class EventCondition extends Condition {
             lEventValue = value.getCtime();
         } else if (TEXT.equals(eventField)) {
             sEventValue = value.getText();
-        } else if (eventField.startsWith(CONTEXT)) {
-            // We get the key from context.<key> string
-            String key = eventField.substring(8);
-            sEventValue = value.getContext().get(key);
+        } else if (CATEGORY.equals(eventField)) {
+            sEventValue = value.getCategory();
         } else if (eventField.startsWith(TAGS)) {
             // We get the key from tags.<key> string
             String key = eventField.substring(5);
@@ -278,7 +313,6 @@ public class EventCondition extends Condition {
         EventCondition that = (EventCondition) o;
 
         return !(expression != null ? !expression.equals(that.expression) : that.expression != null);
-
     }
 
     @Override
@@ -291,7 +325,8 @@ public class EventCondition extends Condition {
     @Override
     public String toString() {
         return "EventCondition{" +
-                "expression='" + expression + '\'' +
+                "dataId='" + dataId + '\'' +
+                ",expression='" + expression + '\'' +
                 '}';
     }
 }

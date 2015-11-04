@@ -81,14 +81,13 @@ public class CassPersistenceTest extends PersistenceTest {
         // try an clean up
         try {
             session.execute("DROP KEYSPACE " + keyspace);
+            if (!externalCassandra) {
+                System.out.print("Stopping embedded Cassandra for unit testing...");
+                CassCluster.shutdown();
+                EmbeddedCassandra.stop();
+            }
         } catch (Throwable t) {
             // never mind, don't prevent further cleanup
-        }
-
-        if (!externalCassandra) {
-            System.out.print("Stopping embedded Cassandra for unit testing...");
-            CassCluster.shutdown();
-            EmbeddedCassandra.stop();
         }
     }
 

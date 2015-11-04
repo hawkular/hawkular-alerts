@@ -24,6 +24,8 @@ import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.CompareConditionEval;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
+import org.hawkular.alerts.api.model.condition.EventCondition;
+import org.hawkular.alerts.api.model.condition.EventConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.StringConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -160,6 +162,19 @@ rule External
         insert( ce );
 end
 
+rule Event
+    when
+        $t : Trigger( $tid : id, $tmode : mode )
+        $c : EventCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
+        $d : Event( $did == dataId )
+    then
+        EventConditionEval ce = new EventConditionEval($c, $d);
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Event Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+        }
+        insert( ce );
+end
+
 // Data retraction rules
 // These rules are expected to fire after any Eval rules, due to their simplicity.  Note that Data is not retracted
 // in the (above) rules, that generate ConditionEval facts, because one Datum can generate multiple evals, for different
@@ -175,6 +190,15 @@ rule RetractProcessedData
         retract ( $d );
 end
 
+rule RetractProcessedEvent
+    when
+        $e : Event()
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debug( "Retracting " + $e + "..." );
+        }
+        retract ( $e );
+end
 
 ////// DAMPENING
 //
@@ -256,7 +280,7 @@ rule DampenTrigger
         insert( $d );
 
         if (log != null && log.isDebugEnabled()) {
-            log.debugf( "Updated %s using [match=%s] %s", $d, $t.getMatch(), $d.getCurrentEvals().values() );
+            log.debugf( "Updated %s using [match=%s] %s", $d, $t.getMatch(), $d.getCurrentEvals() );
             log.debugf( "Retracted %s", $ce );
         }
 end
@@ -316,6 +340,9 @@ rule AlertOnSatisfiedDampening
             newEvent = new Event( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
             events.add(newEvent);
         }
+
+        // We insert the generated events on the firing cycles to allow chained conditions
+        insert( newEvent );
 
         if (actions != null) {
             for (String actionPlugin : $t.getActions().keySet()) {
