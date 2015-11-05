@@ -31,6 +31,8 @@ import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.CompareConditionEval;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.condition.EventCondition;
+import org.hawkular.alerts.api.model.condition.EventConditionEval;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
@@ -41,6 +43,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.event.Thin;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
@@ -148,6 +151,17 @@ public class JacksonDeserializer {
                     }
                     if (node.get("value") != null) {
                         eConditionEval.setValue(node.get("value").textValue());
+                    }
+                    break;
+                }
+                case EVENT: {
+                    conditionEval = new EventConditionEval();
+                    EventConditionEval evConditionEval = (EventConditionEval) conditionEval;
+                    if (condition instanceof EventCondition) {
+                        evConditionEval.setCondition((EventCondition) condition);
+                    }
+                    if (node.get("value") != null) {
+                        evConditionEval.setValue(node.get("value").traverse(objectCodec).readValueAs(Event.class));
                     }
                     break;
                 }
@@ -284,6 +298,17 @@ public class JacksonDeserializer {
                 }
                 if (node.get("expression") != null) {
                     eCondition.setExpression(node.get("expression").textValue());
+                }
+                break;
+            }
+            case EVENT: {
+                condition = new EventCondition();
+                EventCondition evCondition = (EventCondition) condition;
+                if (node.get("dataId") != null) {
+                    evCondition.setDataId(node.get("dataId").textValue());
+                }
+                if (node.get("expression") != null) {
+                    evCondition.setExpression(node.get("expression").textValue());
                 }
                 break;
             }

@@ -132,6 +132,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         // execution of the rules.  So, if we find multiple Data instances for the same Id, defer all but
         // the oldest to a subsequent run. Note that pendingData is already sorted by (id ASC, timestamp ASC) so
         // the iterator will present Data with the same id together, and time-ordered.
+        log.debugf("firing rules...");
         int fireCycle = 0;
         while (!pendingData.isEmpty() || !pendingEvents.isEmpty()) {
 

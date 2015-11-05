@@ -76,6 +76,7 @@ public class CassStatement {
     public static final String INSERT_CONDITION_AVAILABILITY;
     public static final String INSERT_CONDITION_COMPARE;
     public static final String INSERT_CONDITION_EXTERNAL;
+    public static final String INSERT_CONDITION_EVENT;
     public static final String INSERT_CONDITION_STRING;
     public static final String INSERT_CONDITION_THRESHOLD;
     public static final String INSERT_CONDITION_THRESHOLD_RANGE;
@@ -268,6 +269,10 @@ public class CassStatement {
         INSERT_CONDITION_EXTERNAL = "INSERT INTO " + keyspace + ".conditions "
                 + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, " +
                 "conditionId, dataId, operator, pattern) VALUES (?, ?, ?, 'EXTERNAL', ?, ?, ?, ?, ?, ?, ?) ";
+
+        INSERT_CONDITION_EVENT = "INSERT INTO " + keyspace + ".conditions "
+                + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, " +
+                "conditionId, dataId, pattern) VALUES (?, ?, ?, 'EVENT', ?, ?, ?, ?, ?, ?) ";
 
         INSERT_CONDITION_STRING = "INSERT INTO " + keyspace + ".conditions "
                 + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, " +
