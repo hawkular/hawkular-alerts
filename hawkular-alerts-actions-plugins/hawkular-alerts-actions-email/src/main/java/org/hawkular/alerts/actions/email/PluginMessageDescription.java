@@ -31,6 +31,8 @@ import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.CompareConditionEval;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.condition.EventCondition;
+import org.hawkular.alerts.api.model.condition.EventConditionEval;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
@@ -331,6 +333,8 @@ public class PluginMessageDescription {
                 return ((CompareConditionEval) conditionEval).getCondition();
             case EXTERNAL:
                 return ((ExternalConditionEval) conditionEval).getCondition();
+            case EVENT:
+                return ((EventConditionEval) conditionEval).getCondition();
             case STRING:
                 return ((StringConditionEval) conditionEval).getCondition();
             case THRESHOLD:
@@ -365,6 +369,8 @@ public class PluginMessageDescription {
                 return compare((CompareCondition) condition);
             case EXTERNAL:
                 return external((ExternalCondition) condition);
+            case EVENT:
+                return events((EventCondition) condition);
             case STRING:
                 return string((StringCondition) condition);
             case THRESHOLD:
@@ -471,6 +477,18 @@ public class PluginMessageDescription {
     public String external(ExternalCondition condition) {
         String description = "SystemId: " + condition.getSystemId();
         description += " DataId: " + condition.getDataId();
+        description += " Expression: " + condition.getExpression();
+        return description;
+    }
+
+    /**
+     * Create a description for an EventCondition object.
+     *
+     * @param condition the condition
+     * @return a description to be used on email templates
+     */
+    public String events(EventCondition condition) {
+        String description = " DataId: " + condition.getDataId();
         description += " Expression: " + condition.getExpression();
         return description;
     }

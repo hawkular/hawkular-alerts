@@ -99,6 +99,7 @@ public class EventsHandler {
                 if (isEmpty(event.getCategory())) {
                     return ResponseUtil.badRequest("Event with category null.");
                 }
+                event.setEventType("EVENT");
                 event.setTenantId(tenantId);
                 if (null != alertsService.getEvent(tenantId, event.getId(), true)) {
                     return ResponseUtil.badRequest("Event with ID [" + event.getId() + "] exists.");
