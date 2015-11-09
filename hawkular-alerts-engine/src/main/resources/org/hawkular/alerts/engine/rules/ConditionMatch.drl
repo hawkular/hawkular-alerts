@@ -329,6 +329,7 @@ rule AlertOnSatisfiedDampening
             }
 
             newEvent = new Alert( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
+            newEvent.setEventType(EventType.ALERT.name());
             // Adding an Alert will implicitly add the related Event
             alerts.add((Alert)newEvent);
 
@@ -338,6 +339,7 @@ rule AlertOnSatisfiedDampening
             }
 
             newEvent = new Event( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
+            newEvent.setEventType(EventType.EVENT.name());
             events.add(newEvent);
         }
 

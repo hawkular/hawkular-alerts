@@ -488,8 +488,10 @@ public class PluginMessageDescription {
      * @return a description to be used on email templates
      */
     public String events(EventCondition condition) {
-        String description = " DataId: " + condition.getDataId();
-        description += " Expression: " + condition.getExpression();
+        String description = "Event on: " + condition.getDataId();
+        if (condition.getExpression() != null) {
+            description += " [" + condition.getExpression() + "]";
+        }
         return description;
     }
 
