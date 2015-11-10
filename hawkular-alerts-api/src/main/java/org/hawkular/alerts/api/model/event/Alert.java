@@ -68,6 +68,7 @@ public class Alert extends Event {
 
     public Alert() {
         // for json assembly
+        this.eventType = EventType.ALERT.name();
     }
 
     /**
@@ -82,6 +83,7 @@ public class Alert extends Event {
 
         this.status = Status.OPEN;
         this.severity = trigger.getSeverity();
+        this.eventType = EventType.ALERT.name();
     }
 
     @JsonIgnore

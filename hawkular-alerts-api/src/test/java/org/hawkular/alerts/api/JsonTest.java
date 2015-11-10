@@ -986,4 +986,210 @@ public class JsonTest {
         assertTrue(!output.contains("match"));
     }
 
+    @Test
+    public void jsonComplexActionTest() throws Exception {
+        String str = "{" +
+                "\"tenantId\":\"my-organization\"," +
+                "\"actionPlugin\":\"email\"," +
+                "\"actionId\":\"email-to-admin-group\"," +
+                "\"eventId\":\"chained-trigger-1447150834164\"," +
+                "\"ctime\":1447150834164," +
+                "\"event\":{" +
+                    "\"eventType\":\"ALERT\"," +
+                    "\"tenantId\":\"my-organization\"," +
+                    "\"id\":\"chained-trigger-1447150834164\"," +
+                    "\"ctime\":1447150834164," +
+                    "\"dataId\":\"chained-trigger\"," +
+                    "\"category\":\"ALERT\"," +
+                    "\"text\":\"Show how to define a trigger using Events generated from other trigger\"," +
+                    "\"trigger\":{" +
+                        "\"tenantId\":\"my-organization\"," +
+                        "\"id\":\"chained-trigger\"," +
+                        "\"name\":\"Chained trigger\"," +
+                        "\"description\":\"Show how to define a trigger using Events generated from other trigger\"," +
+                        "\"eventType\":\"ALERT\"," +
+                        "\"eventCategory\":null," +
+                        "\"eventText\":null," +
+                        "\"severity\":\"HIGH\"," +
+                        "\"actions\":{\"email\":[\"email-to-admin-group\"]}," +
+                        "\"autoDisable\":false," +
+                        "\"autoEnable\":false," +
+                        "\"autoResolve\":false," +
+                        "\"autoResolveAlerts\":false," +
+                        "\"autoResolveMatch\":\"ALL\"," +
+                        "\"enabled\":true," +
+                        "\"firingMatch\":\"ALL\"," +
+                        "\"orphan\":false," +
+                        "\"group\":false" +
+                    "}," +
+                    "\"dampening\":{" +
+                        "\"tenantId\":null," +
+                        "\"triggerId\":\"chained-trigger\"," +
+                        "\"triggerMode\":\"FIRING\"," +
+                        "\"type\":\"STRICT\"," +
+                        "\"evalTrueSetting\":1," +
+                        "\"evalTotalSetting\":1," +
+                        "\"evalTimeSetting\":0," +
+                        "\"dampeningId\":\"chained-trigger-FIRING\"" +
+                    "}," +
+                    // List<Set<ConditionEval>>
+                    "\"evalSets\":[" +  // Open List
+                        "[" +   // Open Set
+                            "{" +   // ConditionEval
+                                "\"evalTimestamp\":1447150834163," +
+                                "\"dataTimestamp\":1447150834163," +
+                                "\"type\":\"EVENT\"," +
+                                "\"condition\":{" +
+                                    "\"tenantId\":\"my-organization\"," +
+                                    "\"triggerId\":\"chained-trigger\"," +
+                                    "\"triggerMode\":\"FIRING\"," +
+                                    "\"type\":\"EVENT\"," +
+                                    "\"conditionSetSize\":1," +
+                                    "\"conditionSetIndex\":1," +
+                                    "\"conditionId\":\"chained-trigger-FIRING-1-1\"," +
+                                    "\"dataId\":\"detect-undeployment-containerZ-with-errors\"" +
+                                "}," +
+                                "\"value\":{" +
+                                    "\"eventType\":\"ALERT\"," +
+                                    "\"tenantId\":\"my-organization\"," +
+                                    "\"id\":\"detect-undeployment-containerZ-with-errors-1447150834163\"," +
+                                    "\"ctime\":1447150834163," +
+                                    "\"dataId\":\"detect-undeployment-containerZ-with-errors\"," +
+                                    "\"category\":\"ALERT\"," +
+                                    "\"text\":\"Detect undeployments on containerZ with log errors\"," +
+                                    "\"trigger\":{" +
+                                        "\"tenantId\":\"my-organization\"," +
+                                        "\"id\":\"detect-undeployment-containerZ-with-errors\"," +
+                                        "\"name\":\"Undeployments detection with Errors\"," +
+                                        "\"description\":\"Detect undeployments on containerZ with log errors\"," +
+                                        "\"eventType\":\"ALERT\"," +
+                                        "\"eventCategory\":null," +
+                                        "\"eventText\":null," +
+                                        "\"severity\":\"HIGH\"," +
+                                        "\"autoDisable\":false," +
+                                        "\"autoEnable\":false," +
+                                        "\"autoResolve\":false," +
+                                        "\"autoResolveAlerts\":false," +
+                                        "\"autoResolveMatch\":\"ALL\"," +
+                                        "\"enabled\":true," +
+                                        "\"firingMatch\":\"ALL\"," +
+                                        "\"orphan\":false," +
+                                        "\"group\":false" +
+                                    "}," +
+                                    "\"dampening\":{" +
+                                        "\"tenantId\":null," +
+                                        "\"triggerId\":\"detect-undeployment-containerZ-with-errors\"," +
+                                        "\"triggerMode\":\"FIRING\"," +
+                                        "\"type\":\"STRICT\"," +
+                                        "\"evalTrueSetting\":1," +
+                                        "\"evalTotalSetting\":1," +
+                                        "\"evalTimeSetting\":0," +
+                                        "\"dampeningId\":\"detect-undeployment-containerZ-with-errors-FIRING\"" +
+                                    "}," +
+                                    "\"evalSets\":[" +  // Open List
+                                        "[" +   // Open Set
+                                            "{" +   // Open ConditionEval
+                                                "\"evalTimestamp\":1447150834162," +
+                                                "\"dataTimestamp\":1447150832," +
+                                                "\"type\":\"EVENT\"," +
+                                                "\"condition\":{" +
+                                                    "\"tenantId\":\"my-organization\"," +
+                                                    "\"triggerId\":\"detect-undeployment-containerZ-with-errors\"," +
+                                                    "\"triggerMode\":\"FIRING\"," +
+                                                    "\"type\":\"EVENT\"," +
+                                                    "\"conditionSetSize\":2," +
+                                                    "\"conditionSetIndex\":2," +
+                                                    "\"conditionId\":\"detect-undeployment-containerZ-" +
+                                                                        "with-errors-FIRING-2-2\"," +
+                                                    "\"dataId\":\"events-logs-source\"," +
+                                                    "\"expression\":\"text starts 'ERROR'\"}," +
+                                                "\"value\":{" +
+                                                    "\"eventType\":\"EVENT\"," +
+                                                    "\"eventType\":null," +
+                                                    "\"tenantId\":\"my-organization\"," +
+                                                    "\"id\":\"67892015-7ef8-42a3-ae5c-efd9782ec040\"," +
+                                                    "\"ctime\":1447150832," +
+                                                    "\"dataId\":\"events-logs-source\"," +
+                                                    "\"category\":\"LOG\"," +
+                                                    "\"text\":\"ERROR [org.hawkular.alerts.actions.api] " +
+                                                                "(ServerService Thread Pool -- 62) " +
+                                                                "HAWKALERT240006: Plugin [aerogear] " +
+                                                                "cannot be started. " +
+                                                                "Error: " +
+                                                                "[Configure org.hawkular.alerts." +
+                                                                "actions.aerogear.root." +
+                                                                "server.url, org.hawkular.alerts.actions.aerogear." +
+                                                                "application.id and " +
+                                                                "org.hawkular.alerts.actions." +
+                                                                "aerogear.master.secret]\"," +
+                                                    "\"tags\":{\"app\":\"appA\"}" +
+                                                "}" +
+                                            "}," + // Close Condition Eval
+                                            "{" + // Open Condition Eval
+                                                "\"evalTimestamp\":1447150834163," +
+                                                "\"dataTimestamp\":1447150832," +
+                                                "\"type\":\"EVENT\"," +
+                                                "\"condition\":{" +
+                                                    "\"tenantId\":\"my-organization\"," +
+                                                    "\"triggerId\":\"detect-undeployment-containerZ-with-errors\"," +
+                                                    "\"triggerMode\":\"FIRING\"," +
+                                                    "\"type\":\"EVENT\"," +
+                                                    "\"conditionSetSize\":2," +
+                                                    "\"conditionSetIndex\":1," +
+                                                    "\"conditionId\":\"detect-undeployment-containerZ-" +
+                                                                        "with-errors-FIRING-2-1\"," +
+                                                    "\"dataId\":\"events-deployments-source\"," +
+                                                    "\"expression\":\"tags.operation == 'undeployment'," +
+                                                                "tags.container == 'containerZ'\"" +
+                                                "}," + // End condition
+                                                "\"value\":{" +
+                                                    "\"eventType\":\"EVENT\"," +
+                                                    "\"tenantId\":\"my-organization\"," +
+                                                    "\"id\":\"4831ae55-967a-4aac-a1dd-c9dc6f37e51f\"," +
+                                                    "\"ctime\":1447150832," +
+                                                    "\"dataId\":\"events-deployments-source\"," +
+                                                    "\"category\":\"DEPLOYMENT\"," +
+                                                    "\"text\":\"undeployment of appA on containerZ\"," +
+                                                    "\"tags\":{" +
+                                                        "\"operation\":\"undeployment\"," +
+                                                        "\"app\":\"appA\"," +
+                                                        "\"container\":\"containerZ\"}" +
+                                                "}" +
+                                            "}" + // Close Condition Eval
+                                        "]" + // Close Set
+                                    "]," + // Close List
+                                    "\"severity\":\"HIGH\"," +
+                                    "\"status\":\"OPEN\"," +
+                                    "\"ackTime\":0," +
+                                    "\"ackBy\":null," +
+                                    "\"resolvedTime\":0," +
+                                    "\"resolvedBy\":null" +
+                                "}" + // End value
+                            "}" + // End Condition Eval
+                        "]" +   // End Set
+                    "]," +  // End List
+                    "\"severity\":\"HIGH\"," +
+                    "\"status\":\"OPEN\"," +
+                    "\"ackTime\":0," +
+                    "\"ackBy\":null," +
+                    "\"resolvedTime\":0," +
+                    "\"resolvedBy\":null}," +
+                "\"properties\":{" +
+                    "\"cc\":\"cc-group@hawkular.org\"," +
+                    "\"template.html\":\"\"," +
+                    "\"template.plain\":\"\"," +
+                    "\"from-name\":\"Hawkular\"," +
+                    "\"template.hawkular.url\":\"http://www.hawkular.org\"," +
+                    "\"tenantId\":\"my-organization\"," +
+                    "\"actionId\":\"email-to-admin-group\"," +
+                    "\"from\":\"noreply@hawkular.org\"," +
+                    "\"to\":\"admin-group@hawkular.org\"," +
+                    "\"actionPlugin\":\"email\"}," +
+                "\"result\":\"PROCESSED\"" +
+        "}";
+
+        Action action = objectMapper.readValue(str, Action.class);
+        assertTrue(action.getEvent().getEvalSets() != null);
+    }
+
 }

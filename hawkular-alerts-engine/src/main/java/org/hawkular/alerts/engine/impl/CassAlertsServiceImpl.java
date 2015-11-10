@@ -101,6 +101,9 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (alerts == null) {
             throw new IllegalArgumentException("Alerts must be not null");
         }
+        if (alerts.isEmpty()) {
+            return;
+        }
         session = CassCluster.getSession();
         PreparedStatement insertAlert = CassStatement.get(session, CassStatement.INSERT_ALERT);
         PreparedStatement insertAlertTrigger = CassStatement.get(session, CassStatement.INSERT_ALERT_TRIGGER);
@@ -152,6 +155,10 @@ public class CassAlertsServiceImpl implements AlertsService {
     public void persistEvents(Collection<Event> events) throws Exception {
         if (events == null) {
             throw new IllegalArgumentException("Events must be not null");
+        }
+
+        if (events.isEmpty()) {
+            return;
         }
 
         session = CassCluster.getSession();

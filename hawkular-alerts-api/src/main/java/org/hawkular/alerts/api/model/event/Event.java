@@ -40,7 +40,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  */
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
-        include = JsonTypeInfo.As.PROPERTY,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "eventType",
         // set default impl for events injected via REST API
         defaultImpl = Event.class)
@@ -99,6 +99,7 @@ public class Event implements Comparable<Event> {
 
     public Event() {
         // for json assembly
+        this.eventType = EventType.EVENT.name();
     }
 
     public Event(String tenantId, String id, String category, String text) {
@@ -145,6 +146,7 @@ public class Event implements Comparable<Event> {
         this.text = text;
         this.context = context;
         this.tags = tags;
+        this.eventType = EventType.EVENT.name();
     }
 
     /**
@@ -153,6 +155,7 @@ public class Event implements Comparable<Event> {
      */
     public Event(Alert alert) {
         this(alert.getTenantId(), alert.getTrigger(), alert.getDampening(), alert.getEvalSets());
+        this.eventType = alert.getEventType();
     }
 
     public Event(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets) {
