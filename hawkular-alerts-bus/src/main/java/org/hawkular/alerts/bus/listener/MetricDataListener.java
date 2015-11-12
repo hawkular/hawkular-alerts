@@ -73,22 +73,29 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
 
         // TODO: tenants?
         MetricData metricData = msg.getMetricData();
-        log.debugf("Message received with [%s] datums.", metricData.getData().size());
+        log.tracef("Message received with [%s] metrics.", metricData.getData().size());
 
         List<SingleMetric> data = metricData.getData();
-        List<Data> alertData = new ArrayList<>(data.size());
+        List<Data> alertData = null;
         Set<String> activeMetricIds = cacheManager.getActiveDataIds();
         for (SingleMetric m : data) {
             if (isNeeded(activeMetricIds, m.getSource())) {
+                if (null == alertData) {
+                    alertData = new ArrayList<>(data.size());
+                }
                 alertData.add(new Data(m.getSource(), m.getTimestamp(), String.valueOf(m.getValue())));
             }
         }
-        log.debugf("Sending [%s] datums to Alerting, filtered [%s] not used in Triggers.", alertData.size(),
-                (metricData.getData().size() - alertData.size()));
-        try {
-            alerts.sendData(alertData);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (null == alertData) {
+            log.tracef("Forwarding 0 of [%s] metrics to Alerts Engine...", data.size());
+        } else {
+            log.debugf("Forwarding [%s] of [%s] metrics to Alerts Engine (filtered [%s])...", alertData.size(),
+                    data.size(), (data.size() - alertData.size()));
+            try {
+                alerts.sendData(alertData);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

@@ -51,7 +51,7 @@ import org.jboss.logging.Logger;
 @MessageDriven(messageListenerInterface = MessageListener.class, activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAvailData") })
-@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
+@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
     private final Logger log = Logger.getLogger(AvailDataListener.class);
 
@@ -76,22 +76,29 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
     protected void onBasicMessage(AvailDataMessage msg) {
 
         AvailData availData = msg.getAvailData();
-        log.debugf("Message received with [%s] availability.", availData.getData().size());
+        log.tracef("Message received with [%s] avails.", availData.getData().size());
 
         List<SingleAvail> data = availData.getData();
-        List<Data> alertData = new ArrayList<>(data.size());
+        List<Data> alertData = null;
         Set<String> activeAvailabilityIds = cacheManager.getActiveAvailabilityIds();
         for (SingleAvail a : data) {
             if (isNeeded(activeAvailabilityIds, a.getId())) {
+                if (null == alertData) {
+                    alertData = new ArrayList<>(data.size());
+                }
                 alertData.add(new Data(a.getId(), a.getTimestamp(), a.getAvail()));
             }
         }
-
-        log.debugf("Sending [%s] availability to Alerting", alertData.size());
-        try {
-            alerts.sendData(alertData);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (null == alertData) {
+            log.tracef("Forwarding 0 of [%s] avails to Alerts Engine...", data.size());
+        } else {
+            log.debugf("Forwarding [%s] of [%s] avails to Alerts Engine (filtered [%s])...", alertData.size(),
+                    data.size(), (data.size() - alertData.size()));
+            try {
+                alerts.sendData(alertData);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
