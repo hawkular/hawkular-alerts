@@ -26,6 +26,9 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 /**
  * A numeric comparison condition. Examples:
  * <code>"X GT 80% of Y"</code>,  <code>"FreeSpace LT 20% of TotalSpace"</code>
+ * Note that when constructing a <code>CompareCondition</code>, or calling {@link #setData2Multiplier(Double)}
+ * that <code>data2Multiplier</code> is a straight multiplier. So, for <code>"X GT 80% of Y"</code> you would
+ * set <code>data2Multiplier=0.80</code>.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
