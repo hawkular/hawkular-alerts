@@ -31,7 +31,9 @@ public class EventComparator implements Comparator<Event> {
         CATEGORY("category"),
         CTIME("ctime"),
         TEXT("text"),
-        TRIGGER_ID("triggerId");
+        TRIGGER_DESCRIPTION("trigger.description"),
+        TRIGGER_ID("trigger.id"),
+        TRIGGER_NAME("trigger.name");
 
         private String name;
 
@@ -111,6 +113,19 @@ public class EventComparator implements Comparator<Event> {
                 }
                 return o1.getText().compareTo(o2.getText()) * iOrder;
 
+            case TRIGGER_DESCRIPTION:
+                String o1TriggerDesc = null == o1.getTrigger() ? null : o1.getTrigger().getDescription();
+                String o2TriggerDesc = null == o2.getTrigger() ? null : o2.getTrigger().getDescription();
+                if (o1TriggerDesc == null && o2TriggerDesc == null) {
+                    return 0;
+                }
+                if (o1TriggerDesc == null && o2TriggerDesc != null) {
+                    return 1;
+                }
+                if (o1TriggerDesc != null && o2TriggerDesc == null) {
+                    return -1;
+                }
+                return o1TriggerDesc.compareTo(o2TriggerDesc) * iOrder;
             case TRIGGER_ID:
                 String o1TriggerId = null == o1.getTrigger() ? null : o1.getTrigger().getId();
                 String o2TriggerId = null == o2.getTrigger() ? null : o2.getTrigger().getId();
@@ -124,7 +139,19 @@ public class EventComparator implements Comparator<Event> {
                     return -1;
                 }
                 return o1TriggerId.compareTo(o2TriggerId) * iOrder;
-
+            case TRIGGER_NAME:
+                String o1TriggerName = null == o1.getTrigger() ? null : o1.getTrigger().getName();
+                String o2TriggerName = null == o2.getTrigger() ? null : o2.getTrigger().getName();
+                if (o1TriggerName == null && o2TriggerName == null) {
+                    return 0;
+                }
+                if (o1TriggerName == null && o2TriggerName != null) {
+                    return 1;
+                }
+                if (o1TriggerName != null && o2TriggerName == null) {
+                    return -1;
+                }
+                return o1TriggerName.compareTo(o2TriggerName) * iOrder;
         }
         return 0;
     }

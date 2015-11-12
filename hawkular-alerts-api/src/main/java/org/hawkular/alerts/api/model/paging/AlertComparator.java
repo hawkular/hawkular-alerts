@@ -28,7 +28,9 @@ public class AlertComparator implements Comparator<Alert> {
 
     public enum Field {
         ALERT_ID("alertId"),
-        TRIGGER_ID("triggerId"),
+        TRIGGER_DESCRIPTION("trigger.description"),
+        TRIGGER_ID("trigger.id"),
+        TRIGGER_NAME("trigger.name"),
         CTIME("ctime"),
         SEVERITY("severity"),
         STATUS("status"),
@@ -88,19 +90,6 @@ public class AlertComparator implements Comparator<Alert> {
         switch (field) {
             case ALERT_ID:
                 return o1.getAlertId().compareTo(o2.getAlertId()) * iOrder;
-            case TRIGGER_ID:
-                String o1TriggerId = o1.getTriggerId();
-                String o2TriggerId = o2.getTriggerId();
-                if (o1TriggerId == null && o2TriggerId == null) {
-                    return 0;
-                }
-                if (o1TriggerId == null && o2TriggerId != null) {
-                    return 1;
-                }
-                if (o1TriggerId != null && o2TriggerId == null) {
-                    return -1;
-                }
-                return o1TriggerId.compareTo(o2TriggerId) * iOrder;
             case CTIME:
                 return (int)((o1.getCtime() - o2.getCtime()) * iOrder);
             case SEVERITY:
@@ -142,6 +131,45 @@ public class AlertComparator implements Comparator<Alert> {
                     return -1;
                 }
                 return o1.getContext().get(field.contextKey).compareTo(o2.getContext().get(field.contextKey)) * iOrder;
+            case TRIGGER_DESCRIPTION:
+                String o1TriggerDesc = o1.getTrigger().getDescription();
+                String o2TriggerDesc = o2.getTrigger().getDescription();
+                if (o1TriggerDesc == null && o2TriggerDesc == null) {
+                    return 0;
+                }
+                if (o1TriggerDesc == null && o2TriggerDesc != null) {
+                    return 1;
+                }
+                if (o1TriggerDesc != null && o2TriggerDesc == null) {
+                    return -1;
+                }
+                return o1TriggerDesc.compareTo(o2TriggerDesc) * iOrder;
+            case TRIGGER_ID:
+                String o1TriggerId = o1.getTrigger().getId();
+                String o2TriggerId = o2.getTrigger().getId();
+                if (o1TriggerId == null && o2TriggerId == null) {
+                    return 0;
+                }
+                if (o1TriggerId == null && o2TriggerId != null) {
+                    return 1;
+                }
+                if (o1TriggerId != null && o2TriggerId == null) {
+                    return -1;
+                }
+                return o1TriggerId.compareTo(o2TriggerId) * iOrder;
+            case TRIGGER_NAME:
+                String o1TriggerName = o1.getTrigger().getName();
+                String o2TriggerName = o2.getTrigger().getName();
+                if (o1TriggerName == null && o2TriggerName == null) {
+                    return 0;
+                }
+                if (o1TriggerName == null && o2TriggerName != null) {
+                    return 1;
+                }
+                if (o1TriggerName != null && o2TriggerName == null) {
+                    return -1;
+                }
+                return o1TriggerName.compareTo(o2TriggerName) * iOrder;
         }
         return 0;
     }
