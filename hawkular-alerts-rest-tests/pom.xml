@@ -95,6 +95,14 @@
     </dependency>
 
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>hawkular-alerts-actions-irc</artifactId>
+      <version>${project.version}</version>
+      <type>war</type>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging</artifactId>
       <scope>test</scope>
@@ -505,6 +513,14 @@
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts-actions-sms.war</destFileName>
                     </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-irc</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-irc.war</destFileName>
+                    </artifactItem>
                   </artifactItems>
                 </configuration>
               </execution>
@@ -657,6 +673,14 @@
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts-actions-sms.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-irc</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-irc.war</destFileName>
                     </artifactItem>
                   </artifactItems>
                 </configuration>
