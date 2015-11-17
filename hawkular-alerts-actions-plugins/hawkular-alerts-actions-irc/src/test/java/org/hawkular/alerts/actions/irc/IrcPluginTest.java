@@ -18,7 +18,6 @@ package org.hawkular.alerts.actions.irc;
 
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
 import org.schwering.irc.lib.IRCConfig;
 import org.schwering.irc.lib.IRCConfigBuilder;
 import org.schwering.irc.lib.IRCConnection;
@@ -35,7 +34,7 @@ public class IrcPluginTest {
     public static int IRC_PORT = 6667;
     public static String IRC_USER = "hwk-alerts-bot";
     public static String IRC_PASSWORD = "H4wk0l43";
-    
+
     public void testConnection() throws Exception {
 
         IRCConfig config = IRCConfigBuilder.newBuilder()
