@@ -190,14 +190,18 @@ public class EventCondition extends Condition {
             return false;
         }
         String[] tokens = expression.split(" ");
-        if (tokens.length != 3) {
+        if (tokens.length < 3) {
             return false;
         }
         String eventField = tokens[0];
-        String sEventValue = null;
-        Long lEventValue = null;
         String operator = tokens[1];
         String constant = tokens[2];
+        for (int i = 3; i < tokens.length; ++i) {
+            constant += " ";
+            constant += tokens[i];
+        }
+        String sEventValue = null;
+        Long lEventValue = null;
         String sConstantValue = null;
         Double dConstantValue = null;
 

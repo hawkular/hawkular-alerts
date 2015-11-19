@@ -33,6 +33,13 @@
 
   <dependencies>
 
+    <!-- Hawkular Command Gateway dependencies -->
+    <dependency>
+      <groupId>org.hawkular.cmdgw</groupId>
+      <artifactId>hawkular-command-gateway-api</artifactId>
+      <version>${version.org.hawkular.command-gateway}</version>
+    </dependency>
+
     <!-- Hawkular Alerts dependencies -->
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
@@ -50,6 +57,13 @@
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-bus-api</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+    <!-- Hawkular dependencies -->
+    <dependency>
+      <groupId>org.hawkular.inventory</groupId>
+      <artifactId>hawkular-inventory-api</artifactId>
+      <version>${version.org.hawkular.inventory}</version>
     </dependency>
 
     <!-- Hawkular Nest dependencies -->

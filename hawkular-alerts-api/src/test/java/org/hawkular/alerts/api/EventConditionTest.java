@@ -65,6 +65,29 @@ public class EventConditionTest {
     }
 
     @Test
+    public void testCategoryExpressionWithSpaces() {
+
+        EventCondition condition = new EventCondition("trigger-1", "app.war", "category == 'my category'");
+        Event event1 = new Event();
+        event1.setCategory("my category");
+
+        assertTrue(condition.match(event1));
+
+        Event event2 = new Event();
+        event2.setCategory("my category 2");
+
+        assertFalse(condition.match(event2));
+
+        condition.setExpression("category starts 'my category '");
+
+        assertTrue(condition.match(event2));
+
+        condition.setExpression("category ends '2'");
+
+        assertTrue(condition.match(event2));
+    }
+
+    @Test
     public void testCtimeExpression() {
         EventCondition condition = new EventCondition("trigger-1", "app.war", "ctime > 10");
 

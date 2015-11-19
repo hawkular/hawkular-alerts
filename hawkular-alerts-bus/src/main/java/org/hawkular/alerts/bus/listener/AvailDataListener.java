@@ -101,4 +101,18 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
             }
         }
     }
+
+    // Metrics is not currently exposing the class it uses for the message.  So we needed to
+    // implement a compatible class that we can use to deserialize the JSON.  If the class becomes
+    // something we can get as a dependency, then import that and this can be removed.
+    @Override
+    protected String convertReceivedMessageClassNameToDesiredMessageClassName(String className) {
+
+        if (className.equals("org.hawkular.metrics.component.publish.AvailDataMessage")) {
+            return "org.hawkular.alerts.bus.messages.AvailDataMessage";
+        }
+
+        return null;
+    }
+
 }
