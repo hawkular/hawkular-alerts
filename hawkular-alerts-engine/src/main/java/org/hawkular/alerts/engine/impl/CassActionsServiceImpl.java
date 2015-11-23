@@ -73,7 +73,7 @@ public class CassActionsServiceImpl implements ActionsService {
     private Session session;
 
     public CassActionsServiceImpl() {
-        log.debugf("Creating instance.");
+        log.debug("Creating instance.");
     }
 
     @Asynchronous

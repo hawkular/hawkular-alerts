@@ -183,7 +183,7 @@ public class AlertsEngineImpl implements AlertsEngine {
         try {
             triggers = definitions.getAllTriggers();
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             msgLog.errorDefinitionsService("Triggers", e.getMessage());
         }
         if (triggers != null && !triggers.isEmpty()) {
@@ -214,11 +214,11 @@ public class AlertsEngineImpl implements AlertsEngine {
         try {
             trigger = definitions.getTrigger(tenantId, triggerId);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             msgLog.errorDefinitionsService("Trigger", e.getMessage());
         }
         if (null == trigger) {
-            log.debugf("Trigger not found for triggerId [" + triggerId + "], removing from rulebase if it exists");
+            log.debug("Trigger not found for triggerId [" + triggerId + "], removing from rulebase if it exists");
             Trigger doomedTrigger = new Trigger(tenantId, triggerId, "doomed");
             removeTrigger(doomedTrigger);
             return;
@@ -232,7 +232,7 @@ public class AlertsEngineImpl implements AlertsEngine {
             throw new IllegalArgumentException("Trigger must be not null");
         }
         if (trigger.isGroup()) {
-            log.debugf("Skipping reload of group trigger [%s/%s]", trigger.getTenantId(), trigger.getId());
+            log.debug("Skipping reload of group trigger [" + trigger.getTenantId() + "/" + trigger.getId() + "]");
             return;
         }
 
@@ -292,7 +292,7 @@ public class AlertsEngineImpl implements AlertsEngine {
                 return false;
             });
         } else {
-            log.debugf("Trigger not found. Not removed from rulebase %s", trigger);
+            log.debug("Trigger not found. Not removed from rulebase " + trigger.toString());
         }
     }
 
@@ -365,8 +365,9 @@ public class AlertsEngineImpl implements AlertsEngine {
                 Collection<Data> newData = getAndClearPendingData();
                 Collection<Event> newEvents = getAndClearPendingEvents();
 
-                log.debugf("Executing rules engine on [%1d] datums, [%2d] events and [%3d] dampening timeouts.",
-                        newData.size(), newEvents.size(), numTimeouts);
+                log.debug("Executing rules engine on " + newData.size() + " datums, "
+                                + newEvents.size() + " events and "
+                                + numTimeouts +" dampening timeouts.");
 
                 try {
                     if (newData.isEmpty() && newEvents.isEmpty()) {
@@ -392,7 +393,7 @@ public class AlertsEngineImpl implements AlertsEngine {
 
                 } catch (Exception e) {
                     e.printStackTrace();
-                    log.debugf("Error on rules processing: " + e);
+                    log.debug("Error on rules processing: " + e);
                     msgLog.errorProcessingRules(e.getMessage());
                 } finally {
                     alerts.clear();
@@ -415,7 +416,7 @@ public class AlertsEngineImpl implements AlertsEngine {
 
                 d.setSatisfied(true);
                 try {
-                    log.debugf("Dampening Timeout Hit! %s", d.toString());
+                    log.debug("Dampening Timeout Hit! " + d.toString());
                     rules.updateFact(d);
                     if (null == timeouts) {
                         timeouts = new HashSet<>();

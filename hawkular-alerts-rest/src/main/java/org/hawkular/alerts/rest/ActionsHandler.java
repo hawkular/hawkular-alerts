@@ -74,7 +74,7 @@ public class ActionsHandler {
     ActionsService actions;
 
     public ActionsHandler() {
-        log.debugf("Creating instance.");
+        log.debug("Creating instance.");
     }
 
     @GET
@@ -88,10 +88,10 @@ public class ActionsHandler {
     public Response findActions() {
         try {
             Map<String, Set<String>> actions = definitions.getActions(tenantId);
-            log.debugf("Actions: ", actions);
+            log.debug("Actions: " + actions);
             return ResponseUtil.ok(actions);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -110,10 +110,10 @@ public class ActionsHandler {
             final String actionPlugin) {
         try {
             Collection<String> actions = definitions.getActions(tenantId, actionPlugin);
-            log.debugf("Actions: %s ", actions);
+            log.debug("Actions: " + actions);
             return ResponseUtil.ok(actions);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -148,11 +148,11 @@ public class ActionsHandler {
                 return ResponseUtil.badRequest("Existing action:  " + actionId);
             } else {
                 definitions.addAction(tenantId, actionPlugin, actionId, actionProperties);
-                log.debugf("ActionId: %s - Properties: %s ", actionId, actionProperties);
+                log.debug("ActionId: " + actionId + " - Properties: " + actionProperties);
                 return ResponseUtil.ok(actionProperties);
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -176,14 +176,14 @@ public class ActionsHandler {
             final String actionId) {
         try {
             Map<String, String> actionProperties = definitions.getAction(tenantId, actionPlugin, actionId);
-            log.debugf("ActionId: %s - Properties: %s ", actionId, actionProperties);
+            log.debug("ActionId: " + actionId + " - Properties: " + actionProperties);
             if (isEmpty(actionProperties)) {
                 return ResponseUtil.notFound("Not action found for actionPlugin: " + actionPlugin + " and actionId: "
                         + actionId);
             }
             return ResponseUtil.ok(actionProperties);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -211,13 +211,13 @@ public class ActionsHandler {
         try {
             if (definitions.getAction(tenantId, actionPlugin, actionId) != null) {
                 definitions.updateAction(tenantId, actionPlugin, actionId, actionProperties);
-                log.debugf("ActionId: %s - Properties: %s ", actionId, actionProperties);
+                log.debug("ActionId: " + actionId + " - Properties:  " + actionProperties);
                 return ResponseUtil.ok(actionProperties);
             } else {
                 return ResponseUtil.notFound("ActionId: " + actionId + " not found for update");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -238,13 +238,13 @@ public class ActionsHandler {
         try {
             if (definitions.getAction(tenantId, actionPlugin, actionId) != null) {
                 definitions.removeAction(tenantId, actionPlugin, actionId);
-                log.debugf("ActionId: %s ", actionId);
+                log.debug("ActionId: " + actionId);
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.notFound("ActionId: " + actionId + " not found for delete");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -290,13 +290,13 @@ public class ActionsHandler {
             ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
                     thin);
             Page<Action> actionPage = actions.getActions(tenantId, criteria, pager);
-            log.debugf("Actions: %s ", actionPage);
+            log.debug("Actions: " + actionPage);
             if (isEmpty(actionPage)) {
                 return ResponseUtil.ok(actionPage);
             }
             return ResponseUtil.paginatedOk(actionPage, uri);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -336,10 +336,10 @@ public class ActionsHandler {
             ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
                     false);
             int numDeleted = actions.deleteActions(tenantId, criteria);
-            log.debugf("Actions deleted: %s ", numDeleted);
+            log.debug("Actions deleted: " + numDeleted);
             return ResponseUtil.ok(numDeleted);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }

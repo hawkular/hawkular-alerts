@@ -280,8 +280,8 @@ rule DampenTrigger
         insert( $d );
 
         if (log != null && log.isDebugEnabled()) {
-            log.debugf( "Updated %s using [match=%s] %s", $d, $t.getMatch(), $d.getCurrentEvals() );
-            log.debugf( "Retracted %s", $ce );
+            log.debug( "Updated " + $d + " using [match=" + $t.getMatch() + "] " + $d.getCurrentEvals() );
+            log.debug( "Retracted " + $ce );
         }
 end
 
