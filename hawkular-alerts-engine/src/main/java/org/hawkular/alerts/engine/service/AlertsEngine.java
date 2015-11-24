@@ -89,4 +89,7 @@ public interface AlertsEngine {
      */
     void reloadTrigger(String tenantId, String triggerId);
 
+
+    void removeTrigger(Trigger trigger);
+
 }

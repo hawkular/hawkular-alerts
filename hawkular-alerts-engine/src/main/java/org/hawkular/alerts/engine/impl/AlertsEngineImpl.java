@@ -202,6 +202,7 @@ public class AlertsEngineImpl implements AlertsEngine {
         wakeUpTimer.schedule(rulesTask, delay, period);
     }
 
+    @Override
     public void reloadTrigger(final String tenantId, final String triggerId) {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
@@ -274,7 +275,8 @@ public class AlertsEngineImpl implements AlertsEngine {
         return loadedTrigger;
     }
 
-    private void removeTrigger(Trigger trigger) {
+    @Override
+    public void removeTrigger(Trigger trigger) {
         if (null != rules.getFact(trigger)) {
             // First remove the related Trigger facts from the engine
             rules.removeFact(trigger);

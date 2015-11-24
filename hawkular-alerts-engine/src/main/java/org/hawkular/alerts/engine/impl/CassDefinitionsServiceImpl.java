@@ -606,6 +606,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
+        /*
+            Trigger should be removed from the alerts engine.
+         */
+        if (initialized && null != alertsEngine) {
+            alertsEngine.removeTrigger(trigger);
+        }
+
         notifyListeners(DefinitionsEvent.Type.TRIGGER_REMOVE);
     }
 
