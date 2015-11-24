@@ -44,8 +44,8 @@ import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
-import org.hawkular.alerts.engine.rules.RulesEngine;
 import org.hawkular.alerts.engine.service.AlertsEngine;
+import org.hawkular.alerts.engine.service.RulesEngine;
 import org.jboss.logging.Logger;
 
 /**

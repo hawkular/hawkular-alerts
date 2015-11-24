@@ -28,7 +28,7 @@ import org.drools.core.event.DebugAgendaEventListener;
 import org.drools.core.event.DebugRuleRuntimeEventListener;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
-import org.hawkular.alerts.engine.rules.RulesEngine;
+import org.hawkular.alerts.engine.service.RulesEngine;
 import org.jboss.logging.Logger;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieContainer;
