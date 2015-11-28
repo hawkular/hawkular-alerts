@@ -89,7 +89,9 @@ public interface AlertsEngine {
      */
     void reloadTrigger(String tenantId, String triggerId);
 
-
+    /**
+     * Remove the specified Trigger from the engine.
+     * @param trigger the Trigger to be removed
+     */
     void removeTrigger(Trigger trigger);
-
 }

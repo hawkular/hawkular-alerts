@@ -40,6 +40,7 @@
       <xsl:copy-of select="node()|@*"/>
     </xsl:copy>
     <cache-container name="hawkular-alerts" default-cache="triggers" statistics-enabled="true">
+      <local-cache name="partition"/>
       <local-cache name="triggers"/>
       <local-cache name="data"/>
     </cache-container>

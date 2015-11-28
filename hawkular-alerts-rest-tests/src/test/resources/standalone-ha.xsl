@@ -41,14 +41,15 @@
     </xsl:copy>
     <cache-container name="hawkular-alerts" default-cache="triggers" statistics-enabled="true">
       <transport lock-timeout="60000"/>
-      <distributed-cache name="triggers" mode="ASYNC" owners="2" l1-lifespan="0">
-        <locking isolation="REPEATABLE_READ"/>
+      <replicated-cache name="partition" mode="ASYNC">
         <transaction mode="BATCH"/>
-      </distributed-cache>
-      <distributed-cache name="data" mode="ASYNC" owners="2" l1-lifespan="0">
-        <locking isolation="REPEATABLE_READ"/>
+      </replicated-cache>
+      <replicated-cache name="triggers" mode="ASYNC">
         <transaction mode="BATCH"/>
-      </distributed-cache>
+      </replicated-cache>
+      <replicated-cache name="data" mode="ASYNC">
+        <transaction mode="BATCH"/>
+      </replicated-cache>
     </cache-container>
   </xsl:template>
 
