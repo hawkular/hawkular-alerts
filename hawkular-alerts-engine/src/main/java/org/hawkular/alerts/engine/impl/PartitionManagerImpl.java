@@ -161,6 +161,11 @@ public class PartitionManagerImpl implements PartitionManager {
      */
     private PartitionDataListener dataListener;
 
+    @Override
+    public boolean isDistributed() {
+        return distributed;
+    }
+
     @PostConstruct
     public void init() {
         /*
@@ -246,21 +251,21 @@ public class PartitionManagerImpl implements PartitionManager {
                         PartitionManager adds an entry on "data" cache to fire an event that will propagate the
                         across the nodes invoking previously registered PartitionDataListener.
                      */
-                    Object newData = dataCache.get(event.getKey());
+                    NotifyData newData = (NotifyData)dataCache.get(event.getKey());
                     /*
                         Data entry should be consumed from cache
                      */
-                    if (cacheManager.isCoordinator()) {
+                    if (newData.getFromNode() == currentNode) {
                         dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES).removeAsync(event.getKey());
                     }
                     /*
-                        Finally invoke listener
+                        Finally invoke listener on non-sender nodes
                      */
-                    if (dataListener != null) {
-                        if (newData instanceof Data) {
-                            dataListener.onNewData((Data) newData);
-                        } else if (newData instanceof Event) {
-                            dataListener.onNewEvent((Event) newData);
+                    if (dataListener != null && newData.getFromNode() != currentNode) {
+                        if (newData.getData() != null) {
+                            dataListener.onNewData(newData.getData());
+                        } else if (newData.getEvent() != null) {
+                            dataListener.onNewEvent(newData.getEvent());
                         }
                     }
                 }
@@ -292,16 +297,18 @@ public class PartitionManagerImpl implements PartitionManager {
     @Override
     public void notifyData(Data data) {
         if (distributed) {
-            Integer key = data.hashCode();
-            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES).putAsync(key, data);
+            NotifyData nData = new NotifyData(currentNode, data);
+            Integer key = nData.hashCode();
+            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES).putAsync(key, nData);
         }
     }
 
     @Override
     public void notifyEvent(Event event) {
         if (distributed) {
-            Integer key = event.hashCode();
-            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES).putAsync(key, event);
+            NotifyData nEvent = new NotifyData(currentNode, event);
+            Integer key = nEvent.hashCode();
+            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES).putAsync(key, nEvent);
         }
     }
 
@@ -627,6 +634,73 @@ public class PartitionManagerImpl implements PartitionManager {
             result = 31 * result + (operation != null ? operation.hashCode() : 0);
             result = 31 * result + (tenantId != null ? tenantId.hashCode() : 0);
             result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);
+            return result;
+        }
+    }
+
+    /**
+     * Auxiliary class to store in the cache an operation for a Data/Event
+     * Used internally in the context of the PartitionManager services.
+     */
+    public static class NotifyData {
+        private Integer fromNode;
+        private Data data;
+        private Event event;
+
+        public NotifyData(Integer fromNode, Data data) {
+            this.fromNode = fromNode;
+            this.data = data;
+            this.event = null;
+        }
+
+        public NotifyData(Integer fromNode, Event event) {
+            this.fromNode = fromNode;
+            this.event = event;
+            this.data = null;
+        }
+
+        public Integer getFromNode() {
+            return fromNode;
+        }
+
+        public void setFromNode(Integer fromNode) {
+            this.fromNode = fromNode;
+        }
+
+        public Data getData() {
+            return data;
+        }
+
+        public void setData(Data data) {
+            this.data = data;
+        }
+
+        public Event getEvent() {
+            return event;
+        }
+
+        public void setEvent(Event event) {
+            this.event = event;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            NotifyData that = (NotifyData) o;
+
+            if (fromNode != null ? !fromNode.equals(that.fromNode) : that.fromNode != null) return false;
+            if (data != null ? !data.equals(that.data) : that.data != null) return false;
+            return !(event != null ? !event.equals(that.event) : that.event != null);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = fromNode != null ? fromNode.hashCode() : 0;
+            result = 31 * result + (data != null ? data.hashCode() : 0);
+            result = 31 * result + (event != null ? event.hashCode() : 0);
             return result;
         }
     }

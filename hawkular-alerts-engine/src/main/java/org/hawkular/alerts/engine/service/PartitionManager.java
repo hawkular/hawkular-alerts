@@ -58,6 +58,18 @@ public interface PartitionManager {
     }
 
     /**
+     * Detects if PartitionManager is deployed on a distributed scenario.
+     * PartitionManager is always present to the engine, but only active on ha profile like defined on standalone-ha.xml
+     * {@see PartitionTriggerListener} and {@see PartitionDataListener} are ignored on non-distributed scenario.
+     * {@see PartitionManager#notifyTrigger}, {@see PartitionManager#notifyData} and
+     * {@see PartitionManager#notifyEvent} are ignored on non-distributed scenario.
+     *
+     * @return true if PartitionManager is distributed.
+     *         false otherwise
+     */
+    boolean isDistributed();
+
+    /**
      * Notify partition manager when a trigger, dampening or condition has been added,updated or removed.
      * PartitionManager will assign the trigger to a node a will notify all nodes with the change.
      *

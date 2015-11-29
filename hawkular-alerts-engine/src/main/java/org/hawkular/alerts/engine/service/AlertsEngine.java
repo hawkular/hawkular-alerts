@@ -75,11 +75,21 @@ public interface AlertsEngine {
      */
     void sendEvents(Collection<Event> events) throws Exception;
 
-
     /**
      * Reload all Triggers.
      */
     void reload();
+
+    /**
+     * Notify AlertsEngine that a new trigger is going to be loaded.
+     * This method is used for distributed scenarios, where the AlertsEngine can distribute the trigger on a node.
+     * For non-distributed scenarios, this call has not effect as trigger is loaded on local AlertsEngine on new
+     * additions or updates of dampening,conditions or existing triggers.
+     *
+     * @param tenantId Tenant where Trigger is stored
+     * @param triggerId Trigger id to be reloaded
+     */
+    void addTrigger(String tenantId, String triggerId);
 
     /**
      * Reload the specified Trigger.  Removes any existing definition from the engine.  If enabled then loads the firing

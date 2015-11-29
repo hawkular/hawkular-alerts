@@ -500,6 +500,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
+        alertsEngine.addTrigger(trigger.getTenantId(), trigger.getId());
+
         notifyListeners(DefinitionsEvent.Type.TRIGGER_CREATE);
     }
 

@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -45,6 +46,10 @@ import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
+import org.hawkular.alerts.engine.service.PartitionDataListener;
+import org.hawkular.alerts.engine.service.PartitionManager;
+import org.hawkular.alerts.engine.service.PartitionManager.Operation;
+import org.hawkular.alerts.engine.service.PartitionTriggerListener;
 import org.hawkular.alerts.engine.service.RulesEngine;
 import org.jboss.logging.Logger;
 
@@ -57,7 +62,7 @@ import org.jboss.logging.Logger;
  */
 @Singleton
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
-public class AlertsEngineImpl implements AlertsEngine {
+public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener, PartitionDataListener {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(AlertsEngineImpl.class);
 
@@ -89,6 +94,11 @@ public class AlertsEngineImpl implements AlertsEngine {
 
     @EJB
     AlertsService alertsService;
+
+    @EJB
+    PartitionManager partitionManager;
+
+    boolean distributed = false;
 
     public AlertsEngineImpl() {
         pendingData = new ArrayList<>();
@@ -140,6 +150,11 @@ public class AlertsEngineImpl implements AlertsEngine {
     @PostConstruct
     public void initServices() {
         try {
+            distributed = partitionManager.isDistributed();
+            if (distributed) {
+                partitionManager.registerDataListener(this);
+                partitionManager.registerTriggerListener(this);
+            }
             reload();
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
@@ -200,6 +215,19 @@ public class AlertsEngineImpl implements AlertsEngine {
 
         rulesTask = new RulesInvoker();
         wakeUpTimer.schedule(rulesTask, delay, period);
+    }
+
+    @Override
+    public void addTrigger(final String tenantId, final String triggerId) {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (distributed) {
+            partitionManager.notifyTrigger(Operation.ADD, tenantId, triggerId);
+        }
     }
 
     @Override
@@ -315,7 +343,7 @@ public class AlertsEngineImpl implements AlertsEngine {
     }
 
     @Override
-    public void sendEvent(Event event) throws Exception {
+    public void sendEvent(Event event) {
         if (event == null) {
             throw new IllegalArgumentException("Event must be not null");
         }
@@ -323,7 +351,7 @@ public class AlertsEngineImpl implements AlertsEngine {
     }
 
     @Override
-    public void sendEvents(Collection<Event> events) throws Exception {
+    public void sendEvents(Collection<Event> events) {
         if (events == null) {
             throw new IllegalArgumentException("Events must be not null");
         }
@@ -457,7 +485,7 @@ public class AlertsEngineImpl implements AlertsEngine {
 
     private void handleAutoResolvedTriggers() {
         try {
-            for (Map.Entry<Trigger, List<Set<ConditionEval>>> entry : autoResolvedTriggers.entrySet()) {
+            for (Entry<Trigger, List<Set<ConditionEval>>> entry : autoResolvedTriggers.entrySet()) {
                 Trigger t = entry.getKey();
                 boolean manualReload = !t.isAutoResolveAlerts();
 
@@ -483,6 +511,72 @@ public class AlertsEngineImpl implements AlertsEngine {
             }
         } finally {
             autoResolvedTriggers.clear();
+        }
+    }
+
+    /*
+        Invoked when a data is added on a different node and this data should be propagated
+     */
+    @Override
+    public void onNewData(Data data) {
+        sendData(data);
+    }
+
+    /*
+        Invoked when an event is added on a different node and this data should be propagated
+     */
+    @Override
+    public void onNewEvent(Event event) {
+        sendEvent(event);
+    }
+
+    /*
+        This listener method is invoked on distributed scenarios.
+        When a trigger is modified, PartitionManager detects which node holds the trigger and send the event.
+        Local node is responsible to remove/reload the trigger from AlertsEngine memory.
+     */
+    @Override
+    public void onTriggerChange(Operation operation, String tenantId, String triggerId) {
+        switch(operation) {
+            case UPDATE:
+                reloadTrigger(tenantId, triggerId);
+                break;
+            case REMOVE:
+                Trigger removeTrigger = new Trigger(tenantId, triggerId, "to-remove-from-alerts-engine");
+                removeTrigger(removeTrigger);
+                break;
+        }
+    }
+
+    /*
+        This listener method is invoked on distributed scenarios.
+        When topology changes, new nodes added or removed, PartitionManager recalculate global triggers partition.
+        On each node, PartitionManager invokes this method to indicate triggers should hold, and the "delta" of
+        additions/removals.
+        With this delta, the process of remove/reload triggers across cluster is minimized.
+     */
+    @Override
+    public void onPartitionChange(Map<String, List<String>> partition, Map<String, List<String>> removed,
+                                            Map<String, List<String>> added) {
+        /*
+            Removing old triggers for this node
+         */
+        for (Entry<String, List<String>> entry : removed.entrySet()) {
+            String tenantId = entry.getKey();
+            entry.getValue().stream().forEach(triggerId -> {
+                Trigger removeTrigger = new Trigger(tenantId, triggerId, "to-remove-from-alerts-engine");
+                removeTrigger(removeTrigger);
+            });
+        }
+
+        /*
+            Reloading new triggers for this node
+         */
+        for (Entry<String, List<String>> entry : added.entrySet()) {
+            String tenantId = entry.getKey();
+            entry.getValue().stream().forEach(triggerId -> {
+                reloadTrigger(tenantId, triggerId);
+            });
         }
     }
 
