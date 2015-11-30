@@ -182,6 +182,11 @@ public class PartitionManagerImpl implements PartitionManager {
                     /*
                         When a node is joining/leaving the cluster partition needs to be re-calculated and updated
                      */
+                    if (log.isDebugEnabled()) {
+                        log.debug("onTopologyChange(@ViewChange) received.");
+                        log.debug("Old members: " + event.getOldMembers());
+                        log.debug("New members: " + event.getNewMembers());
+                    }
                     processTopologyChange();
                     invokePartitionChangeListener();
                 }
@@ -195,6 +200,10 @@ public class PartitionManagerImpl implements PartitionManager {
                         on the partition and invoke PartitionTriggerListener previously registered to process the event.
                      */
                     NotifyTrigger newTrigger = (NotifyTrigger)triggersCache.get(event.getKey());
+                    if (log.isDebugEnabled()) {
+                        log.debug("onNewTrigger(@CacheEntryCreated) received.");
+                        log.debug("NotifyTrigger: " + newTrigger);
+                    }
                     /*
                         A trigger should be processed on the target node
                      */
@@ -220,6 +229,10 @@ public class PartitionManagerImpl implements PartitionManager {
                                     partitionCache.put(PREVIOUS, current);
                                     partitionCache.put(CURRENT, newPartition);
                                     partitionCache.endBatch(true);
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Previous: " + current);
+                                        log.debug("Current: " + newPartition);
+                                    }
                                 }
                                 break;
                             case REMOVE:
@@ -230,6 +243,10 @@ public class PartitionManagerImpl implements PartitionManager {
                                     partitionCache.put(PREVIOUS, current);
                                     partitionCache.put(CURRENT, newPartition);
                                     partitionCache.endBatch(true);
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Previous: " + current);
+                                        log.debug("Current: " + newPartition);
+                                    }
                                 }
                                 break;
                         }
@@ -252,6 +269,10 @@ public class PartitionManagerImpl implements PartitionManager {
                         across the nodes invoking previously registered PartitionDataListener.
                      */
                     NotifyData newData = (NotifyData)dataCache.get(event.getKey());
+                    if (log.isDebugEnabled()) {
+                        log.debug("onNewData(@CacheEntryCreated) received.");
+                        log.debug("NotifyData: " + newData);
+                    }
                     /*
                         Data entry should be consumed from cache
                      */
@@ -333,6 +354,11 @@ public class PartitionManagerImpl implements PartitionManager {
                 members.add(a.hashCode());
             });
             Map<Integer, Integer> newBuckets = updateBuckets(oldBuckets, members);
+            if (log.isDebugEnabled()) {
+                log.debug("Processing Topology Change");
+                log.debug("Old buckets: " + oldBuckets);
+                log.debug("New buckets: " + newBuckets);
+            }
 
             /*
                 Process partition map
@@ -359,6 +385,10 @@ public class PartitionManagerImpl implements PartitionManager {
             }
 
             newPartition = calculatePartition(entries, newBuckets);
+            if (log.isDebugEnabled()) {
+                log.debug("Old partition: " + oldPartition);
+                log.debug("New partition: " + newPartition);
+            }
 
             partitionCache.startBatch();
             partitionCache.put(BUCKETS, newBuckets);
@@ -545,6 +575,12 @@ public class PartitionManagerImpl implements PartitionManager {
             Map<String, List<String>> partition = getNodePartition(current, currentNode);
             Map<String, Map<String, List<String>>> addedRemoved =
                     getAddedRemovedPartition(previous, current, currentNode);
+            if (log.isDebugEnabled()) {
+                log.debug("Invoke a Change Listener");
+                log.debug("Partition: " + partition);
+                log.debug("Added: " + addedRemoved.get("added"));
+                log.debug("Removed: " + addedRemoved.get("removed"));
+            }
             triggerListener.onPartitionChange(partition, addedRemoved.get("added"), addedRemoved.get("removed"));
         }
     }
@@ -636,6 +672,17 @@ public class PartitionManagerImpl implements PartitionManager {
             result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);
             return result;
         }
+
+        @Override
+        public String toString() {
+            return "NotifyTrigger" + '[' +
+                    "fromNode=" + fromNode +
+                    ", toNode=" + toNode +
+                    ", operation=" + operation +
+                    ", tenantId='" + tenantId + '\'' +
+                    ", triggerId='" + triggerId + '\'' +
+                    ']';
+        }
     }
 
     /**
@@ -702,6 +749,15 @@ public class PartitionManagerImpl implements PartitionManager {
             result = 31 * result + (data != null ? data.hashCode() : 0);
             result = 31 * result + (event != null ? event.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public String toString() {
+            return "NotifyData" + '[' +
+                    "fromNode=" + fromNode +
+                    ", data=" + data +
+                    ", event=" + event +
+                    ']';
         }
     }
 
