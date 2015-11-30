@@ -313,6 +313,7 @@ public class PartitionManagerImpl implements PartitionManager {
                 Initial partition
              */
             processTopologyChange();
+            invokePartitionChangeListener();
             msgLog.infoPartitionManagerEnabled();
         }
     }
