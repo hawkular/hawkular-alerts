@@ -194,6 +194,12 @@ public class PartitionManagerImpl implements PartitionManager {
             triggersCache.addListener(new IspnListener() {
                 @CacheEntryCreated
                 public void onNewTrigger(CacheEntryCreatedEvent event) {
+                    if (event.isPre()) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Discarding pre onNewTrigger(@CacheEntryCreated) event");
+                        }
+                        return;
+                    }
                     /*
                         When a trigger is added, updated or removed it should be notified on the PartitionManager.
                         PartitionManager adds an entry on "triggers" cache to fire an event that will place the trigger
@@ -202,6 +208,7 @@ public class PartitionManagerImpl implements PartitionManager {
                     NotifyTrigger newTrigger = (NotifyTrigger)triggersCache.get(event.getKey());
                     if (log.isDebugEnabled()) {
                         log.debug("onNewTrigger(@CacheEntryCreated) received.");
+                        log.debug("Event: " + event);
                         log.debug("NotifyTrigger: " + newTrigger);
                     }
                     /*
@@ -263,6 +270,12 @@ public class PartitionManagerImpl implements PartitionManager {
             dataCache.addListener(new IspnListener() {
                 @CacheEntryCreated
                 public void onNewData(CacheEntryCreatedEvent event) {
+                    if (event.isPre()) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Discarding pre onNewData(@CacheEntryCreated) event");
+                        }
+                        return;
+                    }
                     /*
                         When a new data/event is added it should be notified on the PartitionManager.
                         PartitionManager adds an entry on "data" cache to fire an event that will propagate the
