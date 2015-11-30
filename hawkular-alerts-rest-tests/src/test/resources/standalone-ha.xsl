@@ -34,7 +34,6 @@
   <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
   <xsl:strip-space elements="*"/>
 
-  <!-- Add a cache for Hawkular Accounts and Keycloak -->
   <xsl:template match="node()[name(.)='cache-container'][1]">
     <xsl:copy>
       <xsl:copy-of select="node()|@*"/>
@@ -51,6 +50,15 @@
         <transaction mode="BATCH"/>
       </replicated-cache>
     </cache-container>
+  </xsl:template>
+
+  <xsl:template match="node()[name(.)='periodic-rotating-file-handler']">
+    <xsl:copy>
+      <xsl:copy-of select="node()|@*"/>
+    </xsl:copy>
+    <logger category="org.hawkular.alerts.engine.impl">
+      <level name="DEBUG"/>
+    </logger>
   </xsl:template>
 
   <!-- copy everything else as-is -->
