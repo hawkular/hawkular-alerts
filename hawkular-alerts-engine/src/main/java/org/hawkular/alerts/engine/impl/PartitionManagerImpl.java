@@ -260,7 +260,7 @@ public class PartitionManagerImpl implements PartitionManager {
                     }
                 }
             });
-            dataCache.addListener(new Object() {
+            dataCache.addListener(new IspnListener() {
                 @CacheEntryCreated
                 public void onNewData(CacheEntryCreatedEvent event) {
                     /*
@@ -392,7 +392,9 @@ public class PartitionManagerImpl implements PartitionManager {
 
             partitionCache.startBatch();
             partitionCache.put(BUCKETS, newBuckets);
-            partitionCache.put(PREVIOUS, oldPartition);
+            if (oldPartition != null) {
+                partitionCache.put(PREVIOUS, oldPartition);
+            }
             partitionCache.put(CURRENT, newPartition);
             partitionCache.endBatch(true);
         }
