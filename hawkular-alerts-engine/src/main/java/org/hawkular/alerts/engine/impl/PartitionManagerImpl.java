@@ -312,8 +312,10 @@ public class PartitionManagerImpl implements PartitionManager {
             /*
                 Initial partition
              */
+            if (log.isDebugEnabled()) {
+                log.debug("Initial partition for node: " + currentNode);
+            }
             processTopologyChange();
-            invokePartitionChangeListener();
             msgLog.infoPartitionManagerEnabled();
         }
     }
@@ -332,6 +334,7 @@ public class PartitionManagerImpl implements PartitionManager {
     @Override
     public void registerTriggerListener(PartitionTriggerListener triggerListener) {
         this.triggerListener = triggerListener;
+        invokePartitionChangeListener();
     }
 
     @Override
