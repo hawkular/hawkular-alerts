@@ -185,8 +185,12 @@ public class PartitionManagerImpl implements PartitionManager {
                      */
                     if (log.isDebugEnabled()) {
                         log.debug("onTopologyChange(@ViewChange) received.");
-                        log.debug("Old members: " + event.getOldMembers());
-                        log.debug("New members: " + event.getNewMembers());
+                        event.getOldMembers().stream().forEach(member -> {
+                            log.debug("Old member: " + member.hashCode());
+                        });
+                        event.getNewMembers().stream().forEach(member -> {
+                            log.debug("New member: " + member.hashCode());
+                        });
                     }
                     processTopologyChange();
                     invokePartitionChangeListener();
