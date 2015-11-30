@@ -824,5 +824,13 @@ public class PartitionManagerImpl implements PartitionManager {
             result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);
             return result;
         }
+
+        @Override
+        public String toString() {
+            return "PartitionEntry" + '[' +
+                    "tenantId='" + tenantId + '\'' +
+                    ", triggerId='" + triggerId + '\'' +
+                    ']';
+        }
     }
 }
