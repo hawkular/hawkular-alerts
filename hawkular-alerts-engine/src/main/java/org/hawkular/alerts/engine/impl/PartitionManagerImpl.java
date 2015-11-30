@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -610,7 +611,7 @@ public class PartitionManagerImpl implements PartitionManager {
      * Auxiliary class to store in the cache an operation for a Trigger.
      * Used internally in the context of the PartitionManager services.
      */
-    public static class NotifyTrigger {
+    public static class NotifyTrigger implements Serializable {
         private Integer fromNode;
         private Integer toNode;
         private Operation operation;
@@ -704,7 +705,7 @@ public class PartitionManagerImpl implements PartitionManager {
      * Auxiliary class to store in the cache an operation for a Data/Event
      * Used internally in the context of the PartitionManager services.
      */
-    public static class NotifyData {
+    public static class NotifyData implements Serializable {
         private Integer fromNode;
         private Data data;
         private Event event;
@@ -780,7 +781,7 @@ public class PartitionManagerImpl implements PartitionManager {
      * Auxiliary class to store in the cache a Trigger entry.
      * Used internally in the context of the PartitionManager services.
      */
-    public static class PartitionEntry {
+    public static class PartitionEntry implements Serializable {
         private String tenantId;
         private String triggerId;
 
