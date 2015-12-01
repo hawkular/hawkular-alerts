@@ -84,6 +84,11 @@ import com.google.common.util.concurrent.Futures;
 @Singleton
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class CassDefinitionsServiceImpl implements DefinitionsService {
+    /**
+     * Used on distributed environments.
+     * If present, the initial data are not loaded on this node.
+     */
+    public static final String SKIP_INIT_DATA = "hawkular-alerts.skip-init-data";
     private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
     private static final String INIT_FOLDER = "hawkular-alerts";
     private static final String CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
@@ -135,13 +140,15 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void initialData() throws IOException {
-        String data = System.getProperty(JBOSS_DATA_DIR);
-        if (data == null || data.isEmpty()) {
-            msgLog.errorFolderNotFound(data);
-            return;
+        if (!System.getProperties().containsKey(SKIP_INIT_DATA)) {
+            String data = System.getProperty(JBOSS_DATA_DIR);
+            if (data == null || data.isEmpty()) {
+                msgLog.errorFolderNotFound(data);
+                return;
+            }
+            String folder = data + "/" + INIT_FOLDER;
+            initFiles(folder);
         }
-        String folder = data + "/" + INIT_FOLDER;
-        initFiles(folder);
         initialized = true;
     }
 
@@ -630,7 +637,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             Trigger should be removed from the alerts engine.
          */
         if (initialized && null != alertsEngine) {
-            alertsEngine.removeTrigger(trigger);
+            alertsEngine.removeTrigger(tenantId, triggerId);
         }
 
         notifyListeners(DefinitionsEvent.Type.TRIGGER_REMOVE);

@@ -101,7 +101,8 @@ public interface AlertsEngine {
 
     /**
      * Remove the specified Trigger from the engine.
-     * @param trigger the Trigger to be removed
+     * @param tenantId Tenant where Trigger is stored
+     * @param triggerId Trigger id to be removed
      */
-    void removeTrigger(Trigger trigger);
+    void removeTrigger(String tenantId, String triggerId);
 }

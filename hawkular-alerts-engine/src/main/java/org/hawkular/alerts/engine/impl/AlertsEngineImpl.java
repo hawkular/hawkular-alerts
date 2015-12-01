@@ -31,6 +31,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
+import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
@@ -61,6 +62,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 @Singleton
+@Startup
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener, PartitionDataListener {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
@@ -152,6 +154,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         try {
             distributed = partitionManager.isDistributed();
             if (distributed) {
+                log.debug("Registering PartitionManager listeners...");
                 partitionManager.registerDataListener(this);
                 partitionManager.registerTriggerListener(this);
             }
@@ -189,6 +192,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
     @Override
     public void reload() {
+        log.debug("Start a full reload of the AlertsEngine");
         rules.reset();
         if (rulesTask != null) {
             rulesTask.cancel();
@@ -203,7 +207,8 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         }
 
         if (triggers != null && !triggers.isEmpty()) {
-            triggers.stream().filter(Trigger::isLoadable).forEach(t -> {
+
+            triggers.stream().forEach(t -> {
                 /*
                     In distributed scenario a reload should delegate into the PartitionManager to load the trigger on
                     the node which belongs
@@ -265,7 +270,16 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             removeTrigger(doomedTrigger);
             return;
         }
-
+        /*
+            Non loadable triggers are filtered at this level.
+            So in this case we can maintain a generic partition of all triggers on all nodes.
+         */
+        if (!trigger.isLoadable()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Skipping reload of trigger [" + trigger.getTenantId() + "/" + trigger.getId() + "]");
+            }
+            return;
+        }
         /*
             In distributed scenario a reload should delegate into the PartitionManager to load the trigger on the node
             which belongs.
@@ -281,17 +295,14 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         if (null == trigger) {
             throw new IllegalArgumentException("Trigger must be not null");
         }
-        if (trigger.isGroup()) {
-            if (log.isDebugEnabled()) {
-                log.debug("Skipping reload of group trigger [" + trigger.getTenantId() + "/" + trigger.getId() + "]");
-            }
-            return;
-        }
-
         // Look for the Trigger in the rules engine, if it is there then remove everything about it
         removeTrigger(trigger);
 
         if (trigger.isEnabled()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Loading Trigger - tenantId: " + trigger.getTenantId() +
+                        " triggerId: " + trigger.getId());
+            }
             try {
                 Collection<Condition> conditionSet = definitions.getTriggerConditions(trigger.getTenantId(),
                         trigger.getId(), null);
@@ -327,7 +338,19 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     }
 
     @Override
-    public void removeTrigger(Trigger trigger) {
+    public void removeTrigger(String tenantId, String triggerId) {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (distributed) {
+            partitionManager.notifyTrigger(Operation.REMOVE, tenantId, triggerId);
+        }
+    }
+
+    private void removeTrigger(Trigger trigger) {
         if (null != rules.getFact(trigger)) {
             // First remove the related Trigger facts from the engine
             rules.removeFact(trigger);
@@ -347,9 +370,6 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Trigger not found. Not removed from rulebase " + trigger.toString());
-            }
-            if (distributed) {
-                partitionManager.notifyTrigger(Operation.REMOVE, trigger.getTenantId(), trigger.getId());
             }
         }
     }
@@ -571,7 +591,14 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
      */
     @Override
     public void onTriggerChange(Operation operation, String tenantId, String triggerId) {
+        if (log.isDebugEnabled()) {
+            log.debug("Executing: " + operation + " tenantId: " + tenantId + " triggerId: " + triggerId);
+        }
         switch(operation) {
+            case ADD:
+                Trigger addTrigger = new Trigger(tenantId, triggerId, "to-update-from-alerts-engine");
+                reloadTrigger(addTrigger);
+                break;
             case UPDATE:
                 Trigger updateTrigger = new Trigger(tenantId, triggerId, "to-update-from-alerts-engine");
                 reloadTrigger(updateTrigger);
@@ -593,6 +620,12 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     @Override
     public void onPartitionChange(Map<String, List<String>> partition, Map<String, List<String>> removed,
                                             Map<String, List<String>> added) {
+        if (log.isDebugEnabled()) {
+            log.debug("Executing a PartitionChange. ");
+            log.debug("Local partition: " + partition);
+            log.debug("Removed: " + removed);
+            log.debug("Added: " + added);
+        }
         /*
             Removing old triggers for this node
          */
