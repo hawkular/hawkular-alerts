@@ -127,7 +127,9 @@ public class AlertsHandler {
             AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
                     tags, thin);
             Page<Alert> alertPage = alertsService.getAlerts(tenantId, criteria, pager);
-            log.debug("Alerts: " + alertPage);
+            if (log.isDebugEnabled()) {
+                log.debug("Alerts: " + alertPage);
+            }
             if (isEmpty(alertPage)) {
                 return ResponseUtil.ok(alertPage);
             }
@@ -158,7 +160,9 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertId)) {
                 alertsService.ackAlerts(tenantId, Arrays.asList(alertId), ackBy, ackNotes);
-                log.debug("AlertId: " + alertId);
+                if (log.isDebugEnabled()) {
+                    log.debug("AlertId: " + alertId);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertId required for ack");
@@ -189,7 +193,9 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertId)) {
                 alertsService.addNote(tenantId, alertId, user, text);
-                log.debug("AlertId: " + alertId);
+                if (log.isDebugEnabled()) {
+                    log.debug("AlertId: " + alertId);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertId required for adding notes");
@@ -221,7 +227,9 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertIds)) {
                 alertsService.ackAlerts(tenantId, Arrays.asList(alertIds.split(",")), ackBy, ackNotes);
-                log.debug("Acked alertIds: " + alertIds);
+                if (log.isDebugEnabled()) {
+                    log.debug("Acked alertIds: " + alertIds);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertIds required for ack");
@@ -248,7 +256,9 @@ public class AlertsHandler {
             criteria.setAlertId(alertId);
             int numDeleted = alertsService.deleteAlerts(tenantId, criteria);
             if (1 == numDeleted) {
-                log.debug("AlertId: " + alertId);
+                if (log.isDebugEnabled()) {
+                    log.debug("AlertId: " + alertId);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.notFound("Alert " + alertId + " doesn't exist for delete");
@@ -299,7 +309,9 @@ public class AlertsHandler {
             AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
                     tags, null);
             int numDeleted = alertsService.deleteAlerts(tenantId, criteria);
-            log.debug("Alerts deleted: " + numDeleted);
+            if (log.isDebugEnabled()) {
+                log.debug("Alerts deleted: " + numDeleted);
+            }
             return ResponseUtil.ok(numDeleted);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
@@ -340,7 +352,9 @@ public class AlertsHandler {
                 if (fields.length == 2) {
                     tagsMap.put(fields[0], fields[1]);
                 } else {
-                    log.debug("Invalid Tag Criteria " + Arrays.toString(fields));
+                    if (log.isDebugEnabled()) {
+                        log.debug("Invalid Tag Criteria " + Arrays.toString(fields));
+                    }
                 }
             }
             criteria.setTags(tagsMap);
@@ -371,7 +385,9 @@ public class AlertsHandler {
         try {
             Alert found = alertsService.getAlert(tenantId, alertId, ((null == thin) ? false : thin.booleanValue()));
             if (found != null) {
-                log.debug("Alert: " + found);
+                if (log.isDebugEnabled()) {
+                    log.debug("Alert: " + found);
+                }
                 return ResponseUtil.ok(found);
             } else {
                 return ResponseUtil.notFound("alertId: " + alertId + " not found");
@@ -403,7 +419,9 @@ public class AlertsHandler {
             if (!isEmpty(alertId)) {
                 alertsService.resolveAlerts(tenantId, Arrays.asList(alertId), resolvedBy,
                         resolvedNotes, null);
-                log.debug("AlertId: " + alertId);
+                if (log.isDebugEnabled()) {
+                    log.debug("AlertId: " + alertId);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertsId required for resolve");
@@ -436,7 +454,9 @@ public class AlertsHandler {
             if (!isEmpty(alertIds)) {
                 alertsService.resolveAlerts(tenantId, Arrays.asList(alertIds.split(",")), resolvedBy,
                         resolvedNotes, null);
-                log.debug("AlertsIds: " + alertIds);
+                if (log.isDebugEnabled()) {
+                    log.debug("AlertsIds: " + alertIds);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertsIds required for resolve");
@@ -463,7 +483,9 @@ public class AlertsHandler {
                 return ResponseUtil.badRequest("Data is empty");
             } else {
                 alertsEngine.sendData(datums);
-                log.debug("Datums: " + datums);
+                if (log.isDebugEnabled()) {
+                    log.debug("Datums: " + datums);
+                }
                 return ResponseUtil.ok();
             }
         } catch (Exception e) {

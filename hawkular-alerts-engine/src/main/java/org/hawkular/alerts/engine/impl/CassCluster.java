@@ -63,7 +63,9 @@ public class CassCluster {
             keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
         }
 
-        log.debug("Checking Schema existence for keyspace: " + keyspace);
+        if (log.isDebugEnabled()) {
+            log.debug("Checking Schema existence for keyspace: " + keyspace);
+        }
 
         ResultSet resultSet = session.execute("SELECT * FROM system.schema_keyspaces WHERE keyspace_name = '" +
                 keyspace + "'");
@@ -84,7 +86,9 @@ public class CassCluster {
             for (String cql : content.split("(?m)^-- #.*$")) {
                 if (!cql.startsWith("--")) {
                     updatedCQL = substituteVars(cql.trim(), schemaVars);
-                    log.debug("Executing CQL:\n" + updatedCQL + "\n");
+                    if (log.isDebugEnabled()) {
+                        log.debug("Executing CQL:\n" + updatedCQL + "\n");
+                    }
                     session.execute(updatedCQL);
                 }
             }

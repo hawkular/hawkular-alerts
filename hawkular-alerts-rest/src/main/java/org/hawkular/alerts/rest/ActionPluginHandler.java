@@ -72,7 +72,9 @@ public class ActionPluginHandler {
     public Response findActionPlugins() {
         try {
             Collection<String> actionPlugins = definitions.getActionPlugins();
-            log.debug("ActionPlugins: " + actionPlugins);
+            if (log.isDebugEnabled()) {
+                log.debug("ActionPlugins: " + actionPlugins);
+            }
             return ResponseUtil.ok(actionPlugins);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
@@ -95,7 +97,9 @@ public class ActionPluginHandler {
                                         final String actionPlugin) {
         try {
             Set<String> actionPluginProps = definitions.getActionPlugin(actionPlugin);
-            log.debug("ActionPlugin: " + actionPlugin + " - Properties: " + actionPluginProps);
+            if (log.isDebugEnabled()) {
+                log.debug("ActionPlugin: " + actionPlugin + " - Properties: " + actionPluginProps);
+            }
             if (isEmpty(actionPluginProps)) {
                 return ResponseUtil.notFound("actionPlugin: " + actionPlugin + " not found");
             }

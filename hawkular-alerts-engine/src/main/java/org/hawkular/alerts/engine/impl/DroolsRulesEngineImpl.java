@@ -75,7 +75,9 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         if (fact instanceof Data || fact instanceof Event) {
             throw new IllegalArgumentException(fact.toString());
         }
-        log.debug("Insert " + fact);
+        if (log.isDebugEnabled()) {
+            log.debug("Insert " + fact);
+        }
         kSession.insert(fact);
     }
 
@@ -87,7 +89,9 @@ public class DroolsRulesEngineImpl implements RulesEngine {
             }
         }
         for (Object fact : facts) {
-            log.debug("Insert " + fact);
+            if (log.isDebugEnabled()) {
+                log.debug("Insert " + fact);
+            }
             kSession.insert(fact);
         }
     }
@@ -114,14 +118,18 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
     @Override
     public void addGlobal(String name, Object global) {
-        log.debug("Add Global " + name + " = " + global);
+        if (log.isDebugEnabled()) {
+            log.debug("Add Global " + name + " = " + global);
+        }
         kSession.setGlobal(name, global);
     }
 
     @Override
     public void clear() {
         for (FactHandle factHandle : kSession.getFactHandles()) {
-            log.debug("Delete " + factHandle);
+            if (log.isDebugEnabled()) {
+                log.debug("Delete " + factHandle);
+            }
             kSession.delete(factHandle);
         }
     }
@@ -136,8 +144,10 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         int fireCycle = 0;
         while (!pendingData.isEmpty() || !pendingEvents.isEmpty()) {
 
-            log.debug("Data found. Firing rules on [" + pendingData.size() + "] datums and [" +
-                    pendingEvents.size() + "] events.");
+            if (log.isDebugEnabled()) {
+                log.debug("Data found. Firing rules on [" + pendingData.size() + "] datums and " +
+                        "[" + pendingEvents.size() + "] events.");
+            }
 
             TreeSet<Data> batchData = new TreeSet<Data>(pendingData);
             Data previousData = null;
@@ -151,11 +161,14 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
                 } else {
                     pendingData.add(data);
-                    log.debug("Deferring more recent " + data + " until older " + previousData + " is processed");
+                    if (log.isDebugEnabled()) {
+                        log.debug("Deferring more recent " + data + " until older " + previousData + " is " +
+                                "processed");
+                    }
                 }
             }
 
-            if (!pendingData.isEmpty()) {
+            if (!pendingData.isEmpty() && log.isDebugEnabled()) {
                 log.debug("Deferring [" + pendingData.size() + "] Datum(s) to next firing !!");
             }
 
@@ -174,7 +187,10 @@ public class DroolsRulesEngineImpl implements RulesEngine {
                     previousEvent = event;
                 } else {
                     pendingEvents.add(event);
-                    log.debug("Deferring more recent " + event + " until older " + previousEvent + " is processed ");
+                    if (log.isDebugEnabled()) {
+                        log.debug("Deferring more recent " + event + " until older " + previousEvent + " is " +
+                                "processed ");
+                    }
                 }
             }
 
@@ -210,7 +226,9 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     public void removeFact(Object fact) {
         FactHandle factHandle = kSession.getFactHandle(fact);
         if (factHandle != null) {
-            log.debug("Delete " + factHandle);
+            if (log.isDebugEnabled()) {
+                log.debug("Delete " + factHandle);
+            }
             kSession.delete(factHandle);
         }
     }
@@ -219,7 +237,9 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     public void updateFact(Object fact) {
         FactHandle factHandle = kSession.getFactHandle(fact);
         if (factHandle != null) {
-            log.debug("Update " + factHandle);
+            if (log.isDebugEnabled()) {
+                log.debug("Update " + factHandle);
+            }
             kSession.update(factHandle, fact);
         }
     }
@@ -245,14 +265,18 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         }
 
         for (FactHandle h : handles) {
-            log.debug("Delete " + h);
+            if (log.isDebugEnabled()) {
+                log.debug("Delete " + h);
+            }
             removeFact(h);
         }
     }
 
     @Override
     public void removeGlobal(String name) {
-        log.debug("Remove Global " + name);
+        if (log.isDebugEnabled()) {
+            log.debug("Remove Global " + name);
+        }
         kSession.setGlobal(name, null);
     }
 

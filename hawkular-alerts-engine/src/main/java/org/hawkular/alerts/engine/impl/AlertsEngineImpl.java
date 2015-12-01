@@ -247,7 +247,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             msgLog.errorDefinitionsService("Trigger", e.getMessage());
         }
         if (null == trigger) {
-            log.debug("Trigger not found for triggerId [" + triggerId + "], removing from rulebase if it exists");
+            if (log.isDebugEnabled()) {
+                log.debug("Trigger not found for triggerId [" + triggerId + "], removing from rulebase if it exists");
+            }
             Trigger doomedTrigger = new Trigger(tenantId, triggerId, "doomed");
             removeTrigger(doomedTrigger);
             return;
@@ -261,7 +263,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             throw new IllegalArgumentException("Trigger must be not null");
         }
         if (trigger.isGroup()) {
-            log.debug("Skipping reload of group trigger [" + trigger.getTenantId() + "/" + trigger.getId() + "]");
+            if (log.isDebugEnabled()) {
+                log.debug("Skipping reload of group trigger [" + trigger.getTenantId() + "/" + trigger.getId() + "]");
+            }
             return;
         }
 
@@ -322,7 +326,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 return false;
             });
         } else {
-            log.debug("Trigger not found. Not removed from rulebase " + trigger.toString());
+            if (log.isDebugEnabled()) {
+                log.debug("Trigger not found. Not removed from rulebase " + trigger.toString());
+            }
         }
     }
 
@@ -395,9 +401,11 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 Collection<Data> newData = getAndClearPendingData();
                 Collection<Event> newEvents = getAndClearPendingEvents();
 
-                log.debug("Executing rules engine on " + newData.size() + " datums, "
-                                + newEvents.size() + " events and "
-                                + numTimeouts +" dampening timeouts.");
+                if (log.isDebugEnabled()) {
+                    log.debug("Executing rules engine on " + newData.size() + " datums, "
+                            + newEvents.size() + " events and "
+                            + numTimeouts +" dampening timeouts.");
+                }
 
                 try {
                     if (newData.isEmpty() && newEvents.isEmpty()) {
@@ -423,7 +431,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
                 } catch (Exception e) {
                     e.printStackTrace();
-                    log.debug("Error on rules processing: " + e);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Error on rules processing: " + e);
+                    }
                     msgLog.errorProcessingRules(e.getMessage());
                 } finally {
                     alerts.clear();
@@ -446,7 +456,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
                 d.setSatisfied(true);
                 try {
-                    log.debug("Dampening Timeout Hit! " + d.toString());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Dampening Timeout Hit! " + d.toString());
+                    }
                     rules.updateFact(d);
                     if (null == timeouts) {
                         timeouts = new HashSet<>();

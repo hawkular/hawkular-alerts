@@ -304,7 +304,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
 
-        if (filter) {
+        if (filter && log.isDebugEnabled()) {
             log.debug("getAlerts criteria: " + criteria.toString());
         }
 
@@ -704,7 +704,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
 
-        if (filter) {
+        if (filter && log.isDebugEnabled()) {
             log.debug("getEvents criteria: " + criteria.toString());
         }
 
@@ -1256,7 +1256,10 @@ public class CassAlertsServiceImpl implements AlertsService {
             if (setFiring) {
                 Trigger loadedTrigger = alertsEngine.getLoadedTrigger(trigger);
                 if (null != loadedTrigger && Mode.FIRING == loadedTrigger.getMode()) {
-                    log.debug("Ignoring setFiring, loaded Trigger already in firing mode " + loadedTrigger.toString());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Ignoring setFiring, loaded Trigger already in firing mode " +
+                                loadedTrigger.toString());
+                    }
                     setFiring = false;
                 }
             }
@@ -1275,8 +1278,10 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
 
             if (!allResolved) {
-                log.debug("Ignoring resolveOptions, not all Alerts for Trigger " + trigger.toString() +
-                        " are resolved");
+                if (log.isDebugEnabled()) {
+                    log.debug("Ignoring resolveOptions, not all Alerts for Trigger " + trigger.toString() +
+                            " are resolved");
+                }
                 return;
             }
 

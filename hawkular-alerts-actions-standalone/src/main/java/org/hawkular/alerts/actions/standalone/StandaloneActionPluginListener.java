@@ -72,8 +72,10 @@ public class StandaloneActionPluginListener implements ActionListener {
             ActionPluginListener plugin = plugins.get(actionPlugin);
             Set<String> globals = ActionPlugins.getGlobals();
             if (plugin == null && ActionPlugins.getGlobals().isEmpty()) {
-                log.debug("Received action [" + actionPlugin +
-                        "] but no ActionPluginListener found on this deployment");
+                if (log.isDebugEnabled()) {
+                    log.debug("Received action [" + actionPlugin +
+                            "] but no ActionPluginListener found on this deployment");
+                }
                 return;
             }
             if (definitions != null) {
@@ -89,7 +91,9 @@ public class StandaloneActionPluginListener implements ActionListener {
                     try {
                         plugin.process(pluginMessage);
                     } catch (Exception e) {
-                        log.debug("Error processing action: " + action.getActionPlugin(), e);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Error processing action: " + action.getActionPlugin(), e);
+                        }
                         msgLog.errorProcessingAction(e.getMessage());
                     }
                 };
@@ -102,7 +106,9 @@ public class StandaloneActionPluginListener implements ActionListener {
                             try {
                                 globalPlugin.process(pluginMessage);
                             } catch (Exception e) {
-                                log.debug("Error processing action: " + action.getActionPlugin(), e);
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Error processing action: " + action.getActionPlugin(), e);
+                                }
                                 msgLog.errorProcessingAction(e.getMessage());
                             }
                         };
@@ -113,7 +119,9 @@ public class StandaloneActionPluginListener implements ActionListener {
                 msgLog.warnCannotAccessToDefinitionsService();
             }
         } catch (Exception e) {
-            log.debug("Error processing action: " + action.getActionPlugin(), e);
+            if (log.isDebugEnabled()) {
+                log.debug("Error processing action: " + action.getActionPlugin(), e);
+            }
             msgLog.errorProcessingAction(e.getMessage());
         }
     }

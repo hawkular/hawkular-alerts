@@ -61,22 +61,29 @@ public class BusActionPluginListener extends BasicMessageListener<BusActionMessa
         ActionPluginListener plugin = ActionPlugins.getPlugins().get(actionPlugin);
         Set<String> globals = ActionPlugins.getGlobals();
         if (plugin == null && ActionPlugins.getGlobals().isEmpty()) {
-            log.debug("Received action [" + actionPlugin + "] but no ActionPluginListener found on this deployment");
+            if (log.isDebugEnabled()) {
+                log.debug("Received action [" + actionPlugin + "] " +
+                        "but no ActionPluginListener found on this deployment");
+            }
             return;
         }
         try {
             if (plugin != null) {
                 plugin.process(basicMessage);
-                log.debugf("Plugin [%s] has received a action message: [%s]", actionPlugin,
-                        basicMessage.getMessageId().getId());
+                if (log.isDebugEnabled()) {
+                    log.debug("Plugin [" + actionPlugin + "] has received a action message: ["
+                            + basicMessage.getMessageId().getId() + "] ");
+                }
             }
             // Check if the plugin is executed twice
             if (!globals.contains(actionPlugin)) {
                 for (String global : globals) {
                     ActionPluginListener globalPlugin = ActionPlugins.getPlugins().get(global);
                     globalPlugin.process(basicMessage);
-                    log.debugf("Global plugin [%s] has received a action message: [%s]", global,
-                            basicMessage.getMessageId().getId());
+                    if (log.isDebugEnabled()) {
+                        log.debugf("Global plugin [" + global + "] has received a action message: [" +
+                                basicMessage.getMessageId().getId() + "]");
+                    }
                 }
             }
         } catch (Exception e) {

@@ -88,7 +88,9 @@ public class ActionsHandler {
     public Response findActions() {
         try {
             Map<String, Set<String>> actions = definitions.getActions(tenantId);
-            log.debug("Actions: " + actions);
+            if (log.isDebugEnabled()) {
+                log.debug("Actions: " + actions);
+            }
             return ResponseUtil.ok(actions);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
@@ -110,7 +112,9 @@ public class ActionsHandler {
             final String actionPlugin) {
         try {
             Collection<String> actions = definitions.getActions(tenantId, actionPlugin);
-            log.debug("Actions: " + actions);
+            if (log.isDebugEnabled()) {
+                log.debug("Actions: " + actions);
+            }
             return ResponseUtil.ok(actions);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
@@ -148,7 +152,9 @@ public class ActionsHandler {
                 return ResponseUtil.badRequest("Existing action:  " + actionId);
             } else {
                 definitions.addAction(tenantId, actionPlugin, actionId, actionProperties);
-                log.debug("ActionId: " + actionId + " - Properties: " + actionProperties);
+                if (log.isDebugEnabled()) {
+                    log.debug("ActionId: " + actionId + " - Properties: " + actionProperties);
+                }
                 return ResponseUtil.ok(actionProperties);
             }
         } catch (Exception e) {
@@ -176,7 +182,9 @@ public class ActionsHandler {
             final String actionId) {
         try {
             Map<String, String> actionProperties = definitions.getAction(tenantId, actionPlugin, actionId);
-            log.debug("ActionId: " + actionId + " - Properties: " + actionProperties);
+            if (log.isDebugEnabled()) {
+                log.debug("ActionId: " + actionId + " - Properties: " + actionProperties);
+            }
             if (isEmpty(actionProperties)) {
                 return ResponseUtil.notFound("Not action found for actionPlugin: " + actionPlugin + " and actionId: "
                         + actionId);
@@ -211,7 +219,9 @@ public class ActionsHandler {
         try {
             if (definitions.getAction(tenantId, actionPlugin, actionId) != null) {
                 definitions.updateAction(tenantId, actionPlugin, actionId, actionProperties);
-                log.debug("ActionId: " + actionId + " - Properties:  " + actionProperties);
+                if (log.isDebugEnabled()) {
+                    log.debug("ActionId: " + actionId + " - Properties:  " + actionProperties);
+                }
                 return ResponseUtil.ok(actionProperties);
             } else {
                 return ResponseUtil.notFound("ActionId: " + actionId + " not found for update");
@@ -238,7 +248,9 @@ public class ActionsHandler {
         try {
             if (definitions.getAction(tenantId, actionPlugin, actionId) != null) {
                 definitions.removeAction(tenantId, actionPlugin, actionId);
-                log.debug("ActionId: " + actionId);
+                if (log.isDebugEnabled()) {
+                    log.debug("ActionId: " + actionId);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.notFound("ActionId: " + actionId + " not found for delete");
@@ -290,7 +302,9 @@ public class ActionsHandler {
             ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
                     thin);
             Page<Action> actionPage = actions.getActions(tenantId, criteria, pager);
-            log.debug("Actions: " + actionPage);
+            if (log.isDebugEnabled()) {
+                log.debug("Actions: " + actionPage);
+            }
             if (isEmpty(actionPage)) {
                 return ResponseUtil.ok(actionPage);
             }
@@ -336,7 +350,9 @@ public class ActionsHandler {
             ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
                     false);
             int numDeleted = actions.deleteActions(tenantId, criteria);
-            log.debug("Actions deleted: " + numDeleted);
+            if (log.isDebugEnabled()) {
+                log.debug("Actions deleted: " + numDeleted);
+            }
             return ResponseUtil.ok(numDeleted);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);

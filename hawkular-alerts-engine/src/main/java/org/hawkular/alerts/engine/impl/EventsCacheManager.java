@@ -90,6 +90,8 @@ public class EventsCacheManager {
 
         activeDataIds = Collections.unmodifiableSet(dataIds);
 
-        log.debug("Updated activeDataIds! " + activeDataIds);
+        if (log.isDebugEnabled()) {
+            log.debug("Updated activeDataIds! " + activeDataIds);
+        }
     }
 }
