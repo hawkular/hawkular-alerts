@@ -19,7 +19,6 @@
 -->
 <jboss umlns="urn:jboss:1.0">
   <jboss-deployment-dependencies xmlns="urn:jboss:deployment-dependencies:1.0">
-    <!-- Ensure metrics is deployed, started and initialized before we try to establish a session -->
     <dependency name="hawkular-metrics-api-jaxrs.war"/>
   </jboss-deployment-dependencies>
 </jboss>
