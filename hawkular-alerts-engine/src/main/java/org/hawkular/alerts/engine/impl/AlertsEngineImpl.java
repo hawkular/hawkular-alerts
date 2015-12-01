@@ -201,8 +201,19 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             log.debug(e.getMessage(), e);
             msgLog.errorDefinitionsService("Triggers", e.getMessage());
         }
+
         if (triggers != null && !triggers.isEmpty()) {
-            triggers.stream().filter(Trigger::isLoadable).forEach(this::reloadTrigger);
+            triggers.stream().filter(Trigger::isLoadable).forEach(t -> {
+                /*
+                    In distributed scenario a reload should delegate into the PartitionManager to load the trigger on
+                    the node which belongs
+                 */
+                if (distributed) {
+                    partitionManager.notifyTrigger(Operation.UPDATE, t.getTenantId(), t.getId());
+                } else {
+                    reloadTrigger(t);
+                }
+            });
         }
 
         rules.addGlobal("log", log);
@@ -255,7 +266,15 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             return;
         }
 
-        reloadTrigger(trigger);
+        /*
+            In distributed scenario a reload should delegate into the PartitionManager to load the trigger on the node
+            which belongs.
+         */
+        if (distributed) {
+            partitionManager.notifyTrigger(Operation.UPDATE, tenantId, triggerId);
+        } else {
+            reloadTrigger(trigger);
+        }
     }
 
     private void reloadTrigger(Trigger trigger) {
@@ -328,6 +347,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Trigger not found. Not removed from rulebase " + trigger.toString());
+            }
+            if (distributed) {
+                partitionManager.notifyTrigger(Operation.REMOVE, trigger.getTenantId(), trigger.getId());
             }
         }
     }
@@ -551,7 +573,8 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     public void onTriggerChange(Operation operation, String tenantId, String triggerId) {
         switch(operation) {
             case UPDATE:
-                reloadTrigger(tenantId, triggerId);
+                Trigger updateTrigger = new Trigger(tenantId, triggerId, "to-update-from-alerts-engine");
+                reloadTrigger(updateTrigger);
                 break;
             case REMOVE:
                 Trigger removeTrigger = new Trigger(tenantId, triggerId, "to-remove-from-alerts-engine");
