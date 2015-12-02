@@ -294,13 +294,6 @@ public class PartitionManagerImpl implements PartitionManager {
                         log.debug("NotifyData: " + newData);
                     }
                     /*
-                        Data entry should be consumed from cache
-                     */
-                    if (newData.getFromNode() == currentNode) {
-                        dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
-                                .removeAsync(cacheEvent.getKey());
-                    }
-                    /*
                         Finally invoke listener on non-sender nodes
                      */
                     if (dataListener != null && newData.getFromNode() != currentNode) {
@@ -345,7 +338,8 @@ public class PartitionManagerImpl implements PartitionManager {
         if (distributed) {
             NotifyData nData = new NotifyData(currentNode, data);
             Integer key = nData.hashCode();
-            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES).putAsync(key, nData);
+            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
+                    .putAsync(key, nData, LIFESPAN, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -354,7 +348,8 @@ public class PartitionManagerImpl implements PartitionManager {
         if (distributed) {
             NotifyData nEvent = new NotifyData(currentNode, event);
             Integer key = nEvent.hashCode();
-            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES).putAsync(key, nEvent);
+            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
+                    .putAsync(key, nEvent, LIFESPAN, TimeUnit.MILLISECONDS);
         }
     }
 
