@@ -100,7 +100,8 @@ public class PartitionManagerImpl implements PartitionManager {
     /**
      * Used to clean triggers and data cache
      */
-    private static final int LIFESPAN = 100;
+    private static final String LIFESPAN_PROPERTY = "hawkular-alerts.partition-lifespan";
+    private static final int LIFESPAN = Integer.parseInt(System.getProperty(LIFESPAN_PROPERTY, "100"));
 
     public static final String BUCKETS = "buckets";
     public static final String PREVIOUS = "previousPartition";
@@ -690,6 +691,7 @@ public class PartitionManagerImpl implements PartitionManager {
             NotifyTrigger that = (NotifyTrigger) o;
 
             if (fromNode != null ? !fromNode.equals(that.fromNode) : that.fromNode != null) return false;
+            if (toNode != null ? !toNode.equals(that.toNode) : that.toNode != null) return false;
             if (operation != that.operation) return false;
             if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
             return !(triggerId != null ? !triggerId.equals(that.triggerId) : that.triggerId != null);
@@ -699,6 +701,7 @@ public class PartitionManagerImpl implements PartitionManager {
         @Override
         public int hashCode() {
             int result = fromNode != null ? fromNode.hashCode() : 0;
+            result = 31 * result + (toNode != null ? toNode.hashCode() : 0);
             result = 31 * result + (operation != null ? operation.hashCode() : 0);
             result = 31 * result + (tenantId != null ? tenantId.hashCode() : 0);
             result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);

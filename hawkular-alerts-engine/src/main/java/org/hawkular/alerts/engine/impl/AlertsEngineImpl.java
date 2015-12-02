@@ -208,7 +208,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
         if (triggers != null && !triggers.isEmpty()) {
 
-            triggers.stream().forEach(t -> {
+            triggers.stream().filter(Trigger::isLoadable).forEach(t -> {
                 /*
                     In distributed scenario a reload should delegate into the PartitionManager to load the trigger on
                     the node which belongs
@@ -242,7 +242,16 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         if (distributed) {
-            partitionManager.notifyTrigger(Operation.ADD, tenantId, triggerId);
+            Trigger trigger = null;
+            try {
+                trigger = definitions.getTrigger(tenantId, triggerId);
+            } catch (Exception e) {
+                log.debug(e.getMessage(), e);
+                msgLog.errorDefinitionsService("Trigger", e.getMessage());
+            }
+            if (trigger != null && trigger.isLoadable()) {
+                partitionManager.notifyTrigger(Operation.ADD, trigger.getTenantId(), trigger.getId());
+            }
         }
     }
 
@@ -285,7 +294,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             which belongs.
          */
         if (distributed) {
-            partitionManager.notifyTrigger(Operation.UPDATE, tenantId, triggerId);
+            partitionManager.notifyTrigger(Operation.UPDATE, trigger.getTenantId(), trigger.getId());
         } else {
             reloadTrigger(trigger);
         }
@@ -295,15 +304,17 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         if (null == trigger) {
             throw new IllegalArgumentException("Trigger must be not null");
         }
+        if (log.isDebugEnabled()) {
+            log.debug("Reloading " + trigger);
+        }
         // Look for the Trigger in the rules engine, if it is there then remove everything about it
         removeTrigger(trigger);
 
-        if (trigger.isEnabled()) {
-            if (log.isDebugEnabled()) {
-                log.debug("Loading Trigger - tenantId: " + trigger.getTenantId() +
-                        " triggerId: " + trigger.getId());
+        try {
+            if (distributed) {
+                trigger = definitions.getTrigger(trigger.getTenantId(), trigger.getId());
             }
-            try {
+            if (trigger != null && trigger.isLoadable()) {
                 Collection<Condition> conditionSet = definitions.getTriggerConditions(trigger.getTenantId(),
                         trigger.getId(), null);
                 Collection<Dampening> dampenings = definitions.getTriggerDampenings(trigger.getTenantId(),
@@ -314,11 +325,12 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 if (!dampenings.isEmpty()) {
                     rules.addFacts(dampenings);
                 }
-            } catch (Exception e) {
-                log.debugf(e.getMessage(), e);
-                msgLog.errorDefinitionsService("Conditions/Dampening", e.getMessage());
             }
+        } catch (Exception e) {
+            log.debugf(e.getMessage(), e);
+            msgLog.errorDefinitionsService("Conditions/Dampening", e.getMessage());
         }
+
     }
 
     @Override
@@ -346,7 +358,8 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         if (distributed) {
-            partitionManager.notifyTrigger(Operation.REMOVE, tenantId, triggerId);
+            Trigger removeTrigger = new Trigger(tenantId, triggerId, "remove-trigger");
+            partitionManager.notifyTrigger(Operation.REMOVE, removeTrigger.getTenantId(), removeTrigger.getId());
         }
     }
 
@@ -596,15 +609,12 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         }
         switch(operation) {
             case ADD:
-                Trigger addTrigger = new Trigger(tenantId, triggerId, "to-update-from-alerts-engine");
-                reloadTrigger(addTrigger);
-                break;
             case UPDATE:
-                Trigger updateTrigger = new Trigger(tenantId, triggerId, "to-update-from-alerts-engine");
-                reloadTrigger(updateTrigger);
+                Trigger reloadTrigger = new Trigger(tenantId, triggerId, "reload-trigger");
+                reloadTrigger(reloadTrigger);
                 break;
             case REMOVE:
-                Trigger removeTrigger = new Trigger(tenantId, triggerId, "to-remove-from-alerts-engine");
+                Trigger removeTrigger = new Trigger(tenantId, triggerId, "remove-trigger");
                 removeTrigger(removeTrigger);
                 break;
         }
@@ -621,7 +631,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     public void onPartitionChange(Map<String, List<String>> partition, Map<String, List<String>> removed,
                                             Map<String, List<String>> added) {
         if (log.isDebugEnabled()) {
-            log.debug("Executing a PartitionChange. ");
+            log.debug("Executing: PartitionChange ");
             log.debug("Local partition: " + partition);
             log.debug("Removed: " + removed);
             log.debug("Added: " + added);

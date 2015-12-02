@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.data;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class Data implements Comparable<Data> {
+public class Data implements Comparable<Data>, Serializable {
 
     @JsonInclude
     protected String id;

@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.event;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
         @Type(name = "EVENT", value = Event.class),
         @Type(name = "ALERT", value = Alert.class) })
-public class Event implements Comparable<Event> {
+public class Event implements Comparable<Event>, Serializable {
 
     // This field will be controlled vi fasterxml. We need to make this an explicit field because we ship the
     // serialized json to clients via rest. Since we serialize via fasterxml the field will be added to the json.

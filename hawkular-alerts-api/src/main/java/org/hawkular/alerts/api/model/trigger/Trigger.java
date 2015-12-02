@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.trigger;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -35,7 +36,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class Trigger {
+public class Trigger implements Serializable {
 
     @JsonInclude
     private String tenantId;

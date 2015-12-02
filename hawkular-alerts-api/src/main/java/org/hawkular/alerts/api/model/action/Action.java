@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.action;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import org.hawkular.alerts.api.model.event.Event;
@@ -37,7 +38,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class Action {
+public class Action implements Serializable {
 
     @JsonInclude
     private String tenantId;

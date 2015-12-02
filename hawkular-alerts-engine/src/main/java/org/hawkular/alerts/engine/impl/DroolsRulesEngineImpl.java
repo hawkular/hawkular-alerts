@@ -75,10 +75,16 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         if (fact instanceof Data || fact instanceof Event) {
             throw new IllegalArgumentException(fact.toString());
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Insert " + fact);
-        }
         kSession.insert(fact);
+        if (log.isDebugEnabled()) {
+            log.debug("addFact(" + fact.toString() + ")");
+            log.debug("==> Begin Dump");
+            for (FactHandle f : kSession.getFactHandles()) {
+                Object sessionObject = kSession.getObject(f);
+                log.debug("Fact:  " + sessionObject.toString());
+            }
+            log.debug("==> End Dump");
+        }
     }
 
     @Override
@@ -93,6 +99,15 @@ public class DroolsRulesEngineImpl implements RulesEngine {
                 log.debug("Insert " + fact);
             }
             kSession.insert(fact);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("addFacts(" + facts.toString() + ")");
+            log.debug("==> Begin Dump");
+            for (FactHandle f : kSession.getFactHandles()) {
+                Object sessionObject = kSession.getObject(f);
+                log.debug("Fact:  " + sessionObject.toString());
+            }
+            log.debug("==> End Dump");
         }
     }
 
@@ -219,6 +234,15 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         if (null != factHandle) {
             result = kSession.getObject(factHandle);
         }
+        if (log.isDebugEnabled()) {
+            log.debug("getFact(" + o.toString() + ")");
+            log.debug("==> Begin Dump");
+            for (FactHandle fact : kSession.getFactHandles()) {
+                Object sessionObject = kSession.getObject(fact);
+                log.debug("Fact:  " + sessionObject.toString());
+            }
+            log.debug("==> End Dump");
+        }
         return result;
     }
 
@@ -231,6 +255,15 @@ public class DroolsRulesEngineImpl implements RulesEngine {
             }
             kSession.delete(factHandle);
         }
+        if (log.isDebugEnabled()) {
+            log.debug("removeFact(" + fact.toString() + ")");
+            log.debug("==> Begin Dump");
+            for (FactHandle f : kSession.getFactHandles()) {
+                Object sessionObject = kSession.getObject(f);
+                log.debug("Fact:  " + sessionObject.toString());
+            }
+            log.debug("==> End Dump");
+        }
     }
 
     @Override
@@ -241,6 +274,15 @@ public class DroolsRulesEngineImpl implements RulesEngine {
                 log.debug("Update " + factHandle);
             }
             kSession.update(factHandle, fact);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("updateFact(" + fact.toString() + ")");
+            log.debug("==> Begin Dump");
+            for (FactHandle f : kSession.getFactHandles()) {
+                Object sessionObject = kSession.getObject(f);
+                log.debug("Fact:  " + sessionObject.toString());
+            }
+            log.debug("==> End Dump");
         }
     }
 
@@ -265,9 +307,6 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         }
 
         for (FactHandle h : handles) {
-            if (log.isDebugEnabled()) {
-                log.debug("Delete " + h);
-            }
             removeFact(h);
         }
     }
