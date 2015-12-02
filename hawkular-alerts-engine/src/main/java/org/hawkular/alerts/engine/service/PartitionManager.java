@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.engine.service;
 
+import java.util.Collection;
+
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
 
@@ -94,11 +96,25 @@ public interface PartitionManager {
     void notifyData(Data data);
 
     /**
+     * Notify partition manager when a new collection of data has been received.
+     *
+     * @param data the new data received by the engine
+     */
+    void notifyData(Collection<Data> data);
+
+    /**
      * Notify partition manager when a new event has been received.
      *
      * @param event the new event received by the engine
      */
     void notifyEvent(Event event);
+
+    /**
+     * Notify partition manager when a new collection of events has been received.
+     *
+     * @param events the new events received by the engine
+     */
+    void notifyEvents(Collection<Event> events);
 
     /**
      * Register a listener to process patition events linked with data or events.

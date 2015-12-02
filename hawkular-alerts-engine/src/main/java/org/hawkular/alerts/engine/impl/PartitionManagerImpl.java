@@ -301,6 +301,10 @@ public class PartitionManagerImpl implements PartitionManager {
                             dataListener.onNewData(newData.getData());
                         } else if (newData.getEvent() != null) {
                             dataListener.onNewEvent(newData.getEvent());
+                        } else if (newData.getDataCollection() != null) {
+                            dataListener.onNewData(newData.getDataCollection());
+                        } else if (newData.getEventCollection() != null) {
+                            dataListener.onNewEvents(newData.getEventCollection());
                         }
                     }
                 }
@@ -344,9 +348,29 @@ public class PartitionManagerImpl implements PartitionManager {
     }
 
     @Override
+    public void notifyData(Collection<Data> data) {
+        if (distributed) {
+            NotifyData nData = new NotifyData(currentNode, data, Data.class);
+            Integer key = nData.hashCode();
+            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
+                    .putAsync(key, nData, LIFESPAN, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    @Override
     public void notifyEvent(Event event) {
         if (distributed) {
             NotifyData nEvent = new NotifyData(currentNode, event);
+            Integer key = nEvent.hashCode();
+            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
+                    .putAsync(key, nEvent, LIFESPAN, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    @Override
+    public void notifyEvents(Collection<Event> events) {
+        if (distributed) {
+            NotifyData nEvent = new NotifyData(currentNode, events, Event.class);
             Integer key = nEvent.hashCode();
             dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                     .putAsync(key, nEvent, LIFESPAN, TimeUnit.MILLISECONDS);
@@ -720,20 +744,29 @@ public class PartitionManagerImpl implements PartitionManager {
      * Used internally in the context of the PartitionManager services.
      */
     public static class NotifyData implements Serializable {
-        private Integer fromNode;
-        private Data data;
-        private Event event;
+        private Integer fromNode = null;
+        private Data data = null;
+        private Event event = null;
+        private Collection<Data> dataCollection = null;
+        private Collection<Event> eventCollection = null;
 
         public NotifyData(Integer fromNode, Data data) {
             this.fromNode = fromNode;
             this.data = data;
-            this.event = null;
         }
 
         public NotifyData(Integer fromNode, Event event) {
             this.fromNode = fromNode;
             this.event = event;
-            this.data = null;
+        }
+
+        public NotifyData(Integer fromNode, Collection collection, Class c) {
+            this.fromNode = fromNode;
+            if (Data.class.equals(c)) {
+                dataCollection = collection;
+            } else if (Event.class.equals(c)) {
+                eventCollection = collection;
+            }
         }
 
         public Integer getFromNode() {
@@ -760,6 +793,22 @@ public class PartitionManagerImpl implements PartitionManager {
             this.event = event;
         }
 
+        public Collection<Data> getDataCollection() {
+            return dataCollection;
+        }
+
+        public void setDataCollection(Collection<Data> dataCollection) {
+            this.dataCollection = dataCollection;
+        }
+
+        public Collection<Event> getEventCollection() {
+            return eventCollection;
+        }
+
+        public void setEventCollection(Collection<Event> eventCollection) {
+            this.eventCollection = eventCollection;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -769,7 +818,11 @@ public class PartitionManagerImpl implements PartitionManager {
 
             if (fromNode != null ? !fromNode.equals(that.fromNode) : that.fromNode != null) return false;
             if (data != null ? !data.equals(that.data) : that.data != null) return false;
-            return !(event != null ? !event.equals(that.event) : that.event != null);
+            if (event != null ? !event.equals(that.event) : that.event != null) return false;
+            if (dataCollection != null ? !dataCollection.equals(that.dataCollection) : that.dataCollection != null)
+                return false;
+            return !(eventCollection != null ? !eventCollection.equals(that.eventCollection) :
+                    that.eventCollection != null);
 
         }
 
@@ -778,6 +831,8 @@ public class PartitionManagerImpl implements PartitionManager {
             int result = fromNode != null ? fromNode.hashCode() : 0;
             result = 31 * result + (data != null ? data.hashCode() : 0);
             result = 31 * result + (event != null ? event.hashCode() : 0);
+            result = 31 * result + (dataCollection != null ? dataCollection.hashCode() : 0);
+            result = 31 * result + (eventCollection != null ? eventCollection.hashCode() : 0);
             return result;
         }
 
@@ -787,6 +842,8 @@ public class PartitionManagerImpl implements PartitionManager {
                     "fromNode=" + fromNode +
                     ", data=" + data +
                     ", event=" + event +
+                    ", dataCollection=" + dataCollection +
+                    ", eventCollection=" + eventCollection +
                     ']';
         }
     }

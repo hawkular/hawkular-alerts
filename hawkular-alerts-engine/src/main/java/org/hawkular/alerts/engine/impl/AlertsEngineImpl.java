@@ -393,6 +393,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             throw new IllegalArgumentException("Data must be not null");
         }
         addPendingData(data);
+        if (distributed) {
+            partitionManager.notifyData(data);
+        }
     }
 
     @Override
@@ -401,6 +404,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             throw new IllegalArgumentException("Data must be not null");
         }
         addPendingData(data);
+        if (distributed) {
+            partitionManager.notifyData(data);
+        }
     }
 
     @Override
@@ -409,6 +415,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             throw new IllegalArgumentException("Event must be not null");
         }
         addPendingEvent(event);
+        if (distributed) {
+            partitionManager.notifyEvent(event);
+        }
     }
 
     @Override
@@ -417,6 +426,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             throw new IllegalArgumentException("Events must be not null");
         }
         addPendingEvents(events);
+        if (distributed) {
+            partitionManager.notifyEvents(events);
+        }
     }
 
     private synchronized void addPendingData(Collection<Data> data) {
@@ -586,7 +598,12 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
      */
     @Override
     public void onNewData(Data data) {
-        sendData(data);
+        addPendingData(data);
+    }
+
+    @Override
+    public void onNewData(Collection<Data> data) {
+        addPendingData(data);
     }
 
     /*
@@ -594,7 +611,12 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
      */
     @Override
     public void onNewEvent(Event event) {
-        sendEvent(event);
+        addPendingEvent(event);
+    }
+
+    @Override
+    public void onNewEvents(Collection<Event> events) {
+        addPendingEvents(events);
     }
 
     /*

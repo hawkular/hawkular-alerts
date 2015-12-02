@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.engine.service;
 
+import java.util.Collection;
+
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
 
@@ -35,9 +37,23 @@ public interface PartitionDataListener {
     void onNewData(Data data);
 
     /**
+     * Invoked when a new collection of Data has been received into the partition.
+     *
+     * @param data the new data received
+     */
+    void onNewData(Collection<Data> data);
+
+    /**
      * Invoked when a new Event has been received into the partition.
      *
      * @param event the new event received
      */
     void onNewEvent(Event event);
+
+    /**
+     * Invoked when a new collection of Events has been received into the partition.
+     *
+     * @param events the new events received
+     */
+    void onNewEvents(Collection<Event> events);
 }
