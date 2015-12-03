@@ -162,6 +162,11 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 partitionManager.registerDataListener(this);
                 partitionManager.registerTriggerListener(this);
             }
+            /*
+                A reload() operation means that all triggers from the backend should be reloaded into the AlertsEngine
+                memory. In a distributed environment, the node that execute the reload() operation loads the triggers
+                assigned to it and notify other nodes to load rest of the triggers.
+             */
             reload();
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
