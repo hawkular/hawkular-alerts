@@ -90,9 +90,6 @@ public class CassAlertsServiceImpl implements AlertsService {
     @EJB
     ActionsService actionsService;
 
-    @EJB
-    EventsCacheManager eventsCacheManager;
-
     public CassAlertsServiceImpl() {
     }
 
@@ -1315,16 +1312,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             return;
         }
         persistEvents(events);
-        Set<String> activeDataIds = eventsCacheManager.getActiveDataIds();
-        Collection<Event> withConditions = new ArrayList<>();
-        for (Event e : events) {
-            if (!isEmpty(e.getDataId()) && activeDataIds.contains(e.getDataId())) {
-                withConditions.add(e);
-            }
-        }
-        if (!withConditions.isEmpty()) {
-            alertsEngine.sendEvents(withConditions);
-        }
+        alertsEngine.sendEvents(events);
     }
 
     private void sendAction(Alert a) {

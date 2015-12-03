@@ -35,6 +35,7 @@ import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
+import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
@@ -45,6 +46,7 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.engine.impl.AlertsEngineCache.DataEntry;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.PartitionDataListener;
@@ -81,6 +83,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     private final Set<Dampening> pendingTimeouts;
     private final Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers;
     private final Set<Trigger> disabledTriggers;
+    private final AlertsEngineCache activeTriggers;
 
     private final Timer wakeUpTimer;
     private TimerTask rulesTask;
@@ -110,6 +113,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         pendingTimeouts = new HashSet<>();
         autoResolvedTriggers = new HashMap<>();
         disabledTriggers = new HashSet<>();
+        activeTriggers = new AlertsEngineCache();
 
         wakeUpTimer = new Timer("CassAlertsServiceImpl-Timer");
 
@@ -194,6 +198,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     public void reload() {
         log.debug("Start a full reload of the AlertsEngine");
         rules.reset();
+        activeTriggers.clear();
         if (rulesTask != null) {
             rulesTask.cancel();
         }
@@ -320,6 +325,21 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 Collection<Dampening> dampenings = definitions.getTriggerDampenings(trigger.getTenantId(),
                         trigger.getId(), null);
 
+                /*
+                    Caching dataId from conditions.
+                 */
+                for (Condition c : conditionSet) {
+                    DataEntry entry = new DataEntry(c.getTenantId(), c.getTriggerId(), c.getConditionId(),
+                            c.getDataId());
+                    activeTriggers.add(entry);
+                    if (c instanceof CompareCondition) {
+                        String data2Id = ((CompareCondition) c).getData2Id();
+                        DataEntry entry2 = new DataEntry(c.getTenantId(), c.getTriggerId(), c.getConditionId(),
+                                data2Id);
+                        activeTriggers.add(entry2);
+                    }
+                }
+
                 rules.addFact(trigger);
                 rules.addFacts(conditionSet);
                 if (!dampenings.isEmpty()) {
@@ -357,9 +377,12 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
+
+        Trigger triggerToRemove = new Trigger(tenantId, triggerId, "trigger-to-remove");
         if (distributed) {
-            Trigger removeTrigger = new Trigger(tenantId, triggerId, "remove-trigger");
-            partitionManager.notifyTrigger(Operation.REMOVE, removeTrigger.getTenantId(), removeTrigger.getId());
+            partitionManager.notifyTrigger(Operation.REMOVE, triggerToRemove.getTenantId(), triggerToRemove.getId());
+        } else {
+            removeTrigger(triggerToRemove);
         }
     }
 
@@ -367,6 +390,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         if (null != rules.getFact(trigger)) {
             // First remove the related Trigger facts from the engine
             rules.removeFact(trigger);
+
+            // Remove dataId associated from cache
+            activeTriggers.remove(trigger.getTenantId(), trigger.getId());
 
             // then remove everything else.
             // We may want to do this with rules, because as is, we need to loop through every Fact in
@@ -432,19 +458,31 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     }
 
     private synchronized void addPendingData(Collection<Data> data) {
-        pendingData.addAll(data);
+        for (Data d : data) {
+            if (d != null && d.getId() != null && activeTriggers.isDataIdActive(d.getId())) {
+                pendingData.add(d);
+            }
+        }
     }
 
     private synchronized void addPendingData(Data data) {
-        pendingData.add(data);
+        if (data != null && data.getId() != null && activeTriggers.isDataIdActive(data.getId())) {
+            pendingData.add(data);
+        }
     }
 
     private synchronized void addPendingEvents(Collection<Event> events) {
-        pendingEvents.addAll(events);
+        for (Event event : events) {
+            if (event != null && event.getDataId() != null && activeTriggers.isDataIdActive(event.getDataId())) {
+                pendingEvents.add(event);
+            }
+        }
     }
 
     private synchronized void addPendingEvent(Event event) {
-        pendingEvents.add(event);
+        if (event != null && event.getDataId() != null && activeTriggers.isDataIdActive(event.getDataId())) {
+            pendingEvents.add(event);
+        }
     }
 
     private synchronized Collection<Data> getAndClearPendingData() {

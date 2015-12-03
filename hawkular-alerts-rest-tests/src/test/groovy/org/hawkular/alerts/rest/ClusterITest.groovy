@@ -52,6 +52,10 @@ class ClusterITest extends AbstractITestBase {
 
             Trigger testTrigger = new Trigger("test-cluster-" + i , "http://www.mydemourl.com");
 
+
+            resp = client.put(path: "delete", query: [triggerIds:"test-cluster-" + i])
+            assert resp.status == 200 : resp.status
+
             // remove if it exists
             resp = client.delete(path: "triggers/test-cluster-" + i)
             assert(200 == resp.status || 404 == resp.status)
