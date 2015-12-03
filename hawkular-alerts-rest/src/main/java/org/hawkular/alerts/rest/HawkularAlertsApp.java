@@ -34,6 +34,6 @@ public class HawkularAlertsApp extends Application {
     public static final String TENANT_HEADER_NAME = "Hawkular-Tenant";
 
     public HawkularAlertsApp() {
-        log.debugf("Hawkular Alerts REST starting...");
+        log.debug("Hawkular Alerts REST starting...");
     }
 }

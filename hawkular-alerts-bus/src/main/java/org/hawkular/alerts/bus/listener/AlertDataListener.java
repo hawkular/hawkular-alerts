@@ -46,7 +46,9 @@ public class AlertDataListener extends BasicMessageListener<AlertDataMessage> {
 
     @Override
     protected void onBasicMessage(AlertDataMessage msg) {
-        log.debugf("Message received: [%s]", msg);
+        if (log.isDebugEnabled()) {
+            log.debug("Message received: " + msg);
+        }
         try {
             alerts.sendData(msg.getData());
         } catch (Exception e) {

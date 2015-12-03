@@ -82,12 +82,12 @@ public class Manager {
 
     @PostConstruct
     public void init() {
-        log.debugf("Initializing Hawkular Alerts-Metrics Manager...");
+        log.debug("Initializing Hawkular Alerts-Metrics Manager...");
         expressionExecutor = new ScheduledThreadPoolExecutor(THREAD_POOL_SIZE);
 
         refresh();
 
-        log.debugf("Registering Trigger UPDATE/REMOVE listener");
+        log.debug("Registering Trigger UPDATE/REMOVE listener");
         definitions.registerListener(new DefinitionsListener() {
             @Override
             public void onChange(DefinitionsEvent event) {
@@ -98,7 +98,7 @@ public class Manager {
 
     @PreDestroy
     public void shutdown() {
-        log.debugf("Shutting down Hawkular Alerts-Metrics Manager...");
+        log.debug("Shutting down Hawkular Alerts-Metrics Manager...");
 
         if (null != expressionFutures) {
             expressionFutures.values().forEach(f -> f.cancel(true));
@@ -109,13 +109,13 @@ public class Manager {
     }
 
     private void refresh() {
-        log.debugf("Refreshing External Metrics Triggers!");
+        log.debug("Refreshing External Metrics Triggers!");
         try {
             Set<ExternalCondition> activeConditions = new HashSet<>();
 
             // get all of the triggers tagged for hawkular metrics
             Collection<Trigger> triggers = definitions.getAllTriggersByTag(TAG_NAME, TAG_VALUE);
-            log.debugf("Found [%s] External Metrics Triggers!", triggers.size());
+            log.debug("Found [" + triggers.size() + "] External Metrics Triggers!");
 
             // for each trigger look for Metrics Conditions and start running them
             Collection<Condition> conditions = null;
@@ -123,8 +123,8 @@ public class Manager {
                 try {
                     if (trigger.isEnabled()) {
                         conditions = definitions.getTriggerConditions(trigger.getTenantId(), trigger.getId(), null);
-                        log.debugf("Checking [%s] Conditions for enabled trigger [%s]!", conditions.size(),
-                                trigger.getName());
+                        log.debug("Checking [" + conditions.size() + "] Conditions for enabled trigger ["
+                                + trigger.getName() + "]!");
                     }
                 } catch (Exception e) {
                     log.error("Failed to fetch Conditions when scheduling metrics conditions for " + trigger, e);
@@ -137,15 +137,21 @@ public class Manager {
                     if (condition instanceof ExternalCondition) {
                         ExternalCondition externalCondition = (ExternalCondition) condition;
                         if (TAG_NAME.equals(externalCondition.getSystemId())) {
-                            log.debugf("Found Metrics ExternalCondition! %s", externalCondition);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Found Metrics ExternalCondition! " + externalCondition);
+                            }
                             activeConditions.add(externalCondition);
                             if (expressionFutures.containsKey(externalCondition)) {
-                                log.debugf("Skipping, already evaluating: %s", externalCondition);
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Skipping, already evaluating: " + externalCondition);
+                                }
 
                             } else {
                                 try {
                                     // start the job. TODO: Do we need a delay for any reason?
-                                    log.debugf("Adding runner for: %s", externalCondition);
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Adding runner for: " + externalCondition);
+                                    }
                                     Expression expression = new Expression(externalCondition.getExpression());
                                     ExpressionRunner runner = new ExpressionRunner(metrics, alerts, trigger,
                                             externalCondition, expression);
@@ -168,7 +174,9 @@ public class Manager {
             for (Map.Entry<ExternalCondition, ScheduledFuture<?>> me : expressionFutures.entrySet()) {
                 ExternalCondition ec = me.getKey();
                 if (!activeConditions.contains(ec)) {
-                    log.debugf("Canceling evaluation of obsolete External Metric Condition %s", ec);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Canceling evaluation of obsolete External Metric Condition " + ec);
+                    }
                     me.getValue().cancel(true);
                     temp.add(ec);
                 }
@@ -210,7 +218,7 @@ public class Manager {
                 long end = System.currentTimeMillis();
                 long start = end - (expression.getPeriod() * 60000);
 
-                log.debugf("Running External Metrics Condition: %s", expression);
+                log.debug("Running External Metrics Condition: " + expression);
 
                 Double value = Double.NaN;
                 switch (func) {
@@ -289,17 +297,21 @@ public class Manager {
                 evaluate(value);
 
             } catch (Throwable t) {
-                log.debugf("Failed data fetch for %s: %s", expression, t.getMessage());
+                log.debug("Failed data fetch for " + expression + " : " + t.getMessage());
             }
         }
 
         public void evaluate(Double value) {
             if (value.isNaN()) {
-                log.debugf("NaN value, Ignoring External Metrics evaluation of %s", expression);
+                if (log.isDebugEnabled()) {
+                    log.debug("NaN value, Ignoring External Metrics evaluation of " + expression);
+                }
                 return;
             }
 
-            log.debugf("Running External Metrics Evaluation: %s : %s", expression, value);
+            if (log.isDebugEnabled()) {
+                log.debug("Running External Metrics Evaluation: " + expression + " : " + value);
+            }
 
             if (!expression.isTrue(value)) {
                 return;
@@ -308,7 +320,9 @@ public class Manager {
             try {
                 Data externalData = new Data(externalCondition.getDataId(), System.currentTimeMillis(),
                         value.toString());
-                log.debugf("Sending External Condition Data to Alerts! %s", externalData);
+                if (log.isDebugEnabled()) {
+                    log.debug("Sending External Condition Data to Alerts! " + externalData);
+                }
                 alerts.sendData(externalData);
 
             } catch (Exception e) {

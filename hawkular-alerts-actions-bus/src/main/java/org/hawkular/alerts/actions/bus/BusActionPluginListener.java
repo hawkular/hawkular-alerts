@@ -81,7 +81,7 @@ public class BusActionPluginListener extends BasicMessageListener<BusActionMessa
                     ActionPluginListener globalPlugin = ActionPlugins.getPlugins().get(global);
                     globalPlugin.process(basicMessage);
                     if (log.isDebugEnabled()) {
-                        log.debugf("Global plugin [" + global + "] has received a action message: [" +
+                        log.debug("Global plugin [" + global + "] has received a action message: [" +
                                 basicMessage.getMessageId().getId() + "]");
                     }
                 }

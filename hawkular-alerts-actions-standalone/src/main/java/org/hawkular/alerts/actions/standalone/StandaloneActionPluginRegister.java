@@ -93,7 +93,7 @@ public class StandaloneActionPluginRegister {
                     ((StandaloneActionPluginListener)a).close();
                 }
             } catch (Exception e) {
-                log.debugf(e.getMessage(), e);
+                log.debug(e.getMessage(), e);
             }
         });
     }

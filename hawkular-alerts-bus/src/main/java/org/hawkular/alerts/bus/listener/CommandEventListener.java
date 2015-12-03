@@ -78,7 +78,9 @@ public class CommandEventListener extends BasicMessageListener<BasicMessage> {
             event.addContext("CanonicalPath", canonicalPathString);
             event.addContext("Message", dar.getMessage());
 
-            log.debugf("EVENT! %s", event.toString());
+            if (log.isDebugEnabled()) {
+                log.debug("EVENT! " + event.toString());
+            }
 
             try {
                 alerts.addEvents(Collections.singleton(event));
@@ -86,7 +88,7 @@ public class CommandEventListener extends BasicMessageListener<BasicMessage> {
                 throw new RuntimeException(e);
             }
         } else {
-            log.errorf("Unexpected Event Message! %s", msg.toJSON());
+            log.error("Unexpected Event Message! " + msg.toJSON());
         }
     }
 }

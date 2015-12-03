@@ -50,13 +50,17 @@ public class ActionPluginOperationListener extends BasicMessageListener<BusActio
 
     @Override
     protected void onBasicMessage(BusActionResponseMessage msg) {
-        log.debugf("Message received: [%s]", msg);
+        if (log.isDebugEnabled()) {
+            log.debug("Message received: " + msg);
+        }
         if (msg != null && msg.getPayload().containsKey("action")) {
             String jsonAction = msg.getPayload().get("action");
             Action updatedAction = JsonUtil.fromJson(jsonAction, Action.class);
             actions.updateResult(updatedAction);
-            log.debugf("Operation message received from plugin [%s] with payload [%s]",
-                    updatedAction.getActionPlugin(), updatedAction.getResult());
+            if (log.isDebugEnabled()) {
+                log.debug("Operation message received from plugin [" + updatedAction.getActionPlugin() + "] with " +
+                    "payload [" + updatedAction.getResult() + "]");
+            }
         } else {
             msgLog.warnActionResponseMessageWithoutPayload();
         }

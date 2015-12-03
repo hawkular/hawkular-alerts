@@ -347,7 +347,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 }
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             msgLog.errorDefinitionsService("Conditions/Dampening", e.getMessage());
         }
 
