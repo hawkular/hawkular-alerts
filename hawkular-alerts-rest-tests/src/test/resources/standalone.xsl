@@ -23,13 +23,10 @@
                 xmlns:ds="urn:jboss:domain:datasources:3.0"
                 xmlns:ra="urn:jboss:domain:resource-adapters:3.0"
                 xmlns:ejb3="urn:jboss:domain:ejb3:3.0"
-                xmlns:logging="urn:jboss:domain:logging:3.0"
                 xmlns:undertow="urn:jboss:domain:undertow:2.0"
                 xmlns:tx="urn:jboss:domain:transactions:3.0"
                 version="2.0"
-                exclude-result-prefixes="xalan ds ra ejb3 logging undertow tx"
-                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                xsi:schemaLocation="urn:jboss:domain:datasources:3.0 ">
+                exclude-result-prefixes="xalan ds ra ejb3 undertow tx">
 
   <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
   <xsl:strip-space elements="*"/>
