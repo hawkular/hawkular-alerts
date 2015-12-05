@@ -118,6 +118,12 @@ public class Trigger implements Serializable {
     @JsonIgnore
     private transient Match match;
 
+    @JsonIgnore
+    private boolean loadable;
+
+    @JsonIgnore
+    private boolean member;
+
     public Trigger() {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
@@ -406,7 +412,8 @@ public class Trigger implements Serializable {
 
     @JsonIgnore
     public boolean isMember() {
-        return !isEmpty(memberOf);
+        member = !isEmpty(memberOf);
+        return member;
     }
 
     private boolean isEmpty(String s) {
@@ -436,7 +443,8 @@ public class Trigger implements Serializable {
 
     @JsonIgnore
     public boolean isLoadable() {
-        return !group && enabled;
+        loadable = !group && enabled;
+        return loadable;
     }
 
     @JsonIgnore

@@ -72,6 +72,7 @@ import com.google.common.hash.Hashing;
  *       </cache-container>
  * [...]
  *
+ * Wildfly
  * standalone-ha.xml:
  * [...]
  *       <cache-container name="hawkular-alerts" default-cache="triggers" statistics-enabled="true">
@@ -184,131 +185,9 @@ public class PartitionManagerImpl implements PartitionManager {
             msgLog.infoPartitionManagerDisabled();
         } else {
             currentNode = cacheManager.getAddress().hashCode();
-            cacheManager.addListener(new IspnListener() {
-                @ViewChanged
-                public void onTopologyChange(ViewChangedEvent cacheEvent) {
-                    /*
-                        When a node is joining/leaving the cluster partition needs to be re-calculated and updated
-                     */
-                    if (log.isDebugEnabled()) {
-                        log.debug("onTopologyChange(@ViewChange) received.");
-                        cacheEvent.getOldMembers().stream().forEach(member -> {
-                            log.debug("Old member: " + member.hashCode());
-                        });
-                        cacheEvent.getNewMembers().stream().forEach(member -> {
-                            log.debug("New member: " + member.hashCode());
-                        });
-                    }
-                    processTopologyChange();
-                    invokePartitionChangeListener();
-                }
-            });
-            triggersCache.addListener(new IspnListener() {
-                @CacheEntryCreated
-                public void onNewTrigger(CacheEntryCreatedEvent cacheEvent) {
-                    if (cacheEvent.isPre()) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("Discarding pre onNewTrigger(@CacheEntryCreated) event");
-                        }
-                        return;
-                    }
-                    /*
-                        When a trigger is added, updated or removed it should be notified on the PartitionManager.
-                        PartitionManager adds an entry on "triggers" cache to fire an event that will place the trigger
-                        on the partition and invoke PartitionTriggerListener previously registered to process the event.
-                     */
-                    NotifyTrigger newTrigger = (NotifyTrigger)triggersCache.get(cacheEvent.getKey());
-                    if (log.isDebugEnabled()) {
-                        log.debug("onNewTrigger(@CacheEntryCreated) received on " + currentNode);
-                        log.debug("CacheEvent: " + cacheEvent);
-                        log.debug("NotifyTrigger: " + newTrigger);
-                    }
-                    /*
-                        A trigger should be processed on the target node
-                     */
-                    if (null != newTrigger.toNode && null != currentNode && newTrigger.toNode.equals(currentNode)) {
-                        /*
-                            Update partition
-                         */
-                        Map<PartitionEntry, Integer> current = (Map) partitionCache.get(CURRENT);
-                        PartitionEntry newEntry = new PartitionEntry(newTrigger.getTenantId(),
-                                newTrigger.getTriggerId());
-                        boolean exist = current.containsKey(newEntry);
-                        switch (newTrigger.getOperation()) {
-                            case ADD:
-                                if (!exist) {
-                                    Map<PartitionEntry, Integer> newPartition= new HashMap<>(current);
-                                    newPartition.put(newEntry, currentNode);
-                                    partitionCache.startBatch();
-                                    partitionCache.put(PREVIOUS, current);
-                                    partitionCache.put(CURRENT, newPartition);
-                                    partitionCache.endBatch(true);
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("Previous: " + current);
-                                        log.debug("Current: " + newPartition);
-                                    }
-                                }
-                                break;
-                            case REMOVE:
-                                if (exist) {
-                                    Map<PartitionEntry, Integer> newPartition= new HashMap<>(current);
-                                    newPartition.remove(newEntry, currentNode);
-                                    partitionCache.startBatch();
-                                    partitionCache.put(PREVIOUS, current);
-                                    partitionCache.put(CURRENT, newPartition);
-                                    partitionCache.endBatch(true);
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("Previous: " + current);
-                                        log.debug("Current: " + newPartition);
-                                    }
-                                }
-                                break;
-                        }
-                        /*
-                            Finally invoke listener
-                         */
-                        if (triggerListener != null) {
-                            triggerListener.onTriggerChange(newTrigger.getOperation(), newTrigger.getTenantId(),
-                                    newTrigger.getTriggerId());
-                        }
-                    }
-                }
-            });
-            dataCache.addListener(new IspnListener() {
-                @CacheEntryCreated
-                public void onNewData(CacheEntryCreatedEvent cacheEvent) {
-                    if (cacheEvent.isPre()) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("Discarding pre onNewData(@CacheEntryCreated) event");
-                        }
-                        return;
-                    }
-                    /*
-                        When a new data/event is added it should be notified on the PartitionManager.
-                        PartitionManager adds an entry on "data" cache to fire an event that will propagate the
-                        across the nodes invoking previously registered PartitionDataListener.
-                     */
-                    NotifyData newData = (NotifyData)dataCache.get(cacheEvent.getKey());
-                    if (log.isDebugEnabled()) {
-                        log.debug("onNewData(@CacheEntryCreated) received.");
-                        log.debug("NotifyData: " + newData);
-                    }
-                    /*
-                        Finally invoke listener on non-sender nodes
-                     */
-                    if (dataListener != null && newData.getFromNode() != currentNode) {
-                        if (newData.getData() != null) {
-                            dataListener.onNewData(newData.getData());
-                        } else if (newData.getEvent() != null) {
-                            dataListener.onNewEvent(newData.getEvent());
-                        } else if (newData.getDataCollection() != null) {
-                            dataListener.onNewData(newData.getDataCollection());
-                        } else if (newData.getEventCollection() != null) {
-                            dataListener.onNewEvents(newData.getEventCollection());
-                        }
-                    }
-                }
-            });
+            cacheManager.addListener(new TopologyChangeListener());
+            triggersCache.addListener(new NewTriggerListener());
+            dataCache.addListener(new NewDataListener());
             /*
                 Initial partition
              */
@@ -641,7 +520,145 @@ public class PartitionManagerImpl implements PartitionManager {
      * Auxiliary interface to add Infinispan listener to the caches
      */
     @Listener
-    public interface IspnListener { }
+    public class TopologyChangeListener {
+        @ViewChanged
+        public void onTopologyChange(ViewChangedEvent cacheEvent) {
+            /*
+                When a node is joining/leaving the cluster partition needs to be re-calculated and updated
+             */
+            if (log.isDebugEnabled()) {
+                log.debug("onTopologyChange(@ViewChange) received.");
+                cacheEvent.getOldMembers().stream().forEach(member -> {
+                    log.debug("Old member: " + member.hashCode());
+                });
+                cacheEvent.getNewMembers().stream().forEach(member -> {
+                    log.debug("New member: " + member.hashCode());
+                });
+            }
+            processTopologyChange();
+            invokePartitionChangeListener();
+        }
+    }
+
+    @Listener
+    public class NewTriggerListener {
+        @CacheEntryCreated
+        public void onNewTrigger(CacheEntryCreatedEvent cacheEvent) {
+            if (cacheEvent.isPre()) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Discarding pre onNewTrigger(@CacheEntryCreated) event");
+                }
+                return;
+            }
+            /*
+                When a trigger is added, updated or removed it should be notified on the PartitionManager.
+                PartitionManager adds an entry on "triggers" cache to fire an event that will place the trigger
+                on the partition and invoke PartitionTriggerListener previously registered to process the event.
+             */
+            NotifyTrigger newTrigger = (NotifyTrigger)triggersCache.get(cacheEvent.getKey());
+            if (log.isDebugEnabled()) {
+                log.debug("onNewTrigger(@CacheEntryCreated) received on " + currentNode);
+                log.debug("CacheEvent: " + cacheEvent);
+                log.debug("NotifyTrigger: " + newTrigger);
+            }
+            /*
+                A trigger should be processed on the target node
+             */
+            if (null != newTrigger.toNode && null != currentNode && newTrigger.toNode.equals(currentNode)) {
+                /*
+                    Update partition
+                 */
+                Map<PartitionEntry, Integer> current = (Map) partitionCache.get(CURRENT);
+                PartitionEntry newEntry = new PartitionEntry(newTrigger.getTenantId(),
+                        newTrigger.getTriggerId());
+                boolean exist = current.containsKey(newEntry);
+                if (exist) {
+                    Integer partitionNode = current.get(newEntry);
+                    switch (newTrigger.getOperation()) {
+                        case ADD:
+                        case UPDATE:
+                            /*
+                                Partition is updated if information is outdated
+                             */
+                            if (!partitionNode.equals(currentNode)) {
+                                modifyPartition(newEntry, current, newTrigger.getOperation());
+                            }
+                            break;
+                        case REMOVE:
+                            modifyPartition(newEntry, current, newTrigger.getOperation());
+                            break;
+                    }
+                } else {
+                    if (!newTrigger.getOperation().equals(Operation.REMOVE)) {
+                        modifyPartition(newEntry, current, newTrigger.getOperation());
+                    }
+                }
+                /*
+                    Finally invoke listener
+                 */
+                if (triggerListener != null) {
+                    triggerListener.onTriggerChange(newTrigger.getOperation(), newTrigger.getTenantId(),
+                            newTrigger.getTriggerId());
+                }
+            }
+        }
+
+        private void modifyPartition(PartitionEntry entry, Map<PartitionEntry, Integer> current, Operation operation) {
+            Map<PartitionEntry, Integer> newPartition= new HashMap<>(current);
+            if (operation.equals(Operation.REMOVE)) {
+                newPartition.remove(entry);
+            } else {
+                newPartition.put(entry, currentNode);
+            }
+            partitionCache.startBatch();
+            partitionCache.put(PREVIOUS, current);
+            partitionCache.put(CURRENT, newPartition);
+            partitionCache.endBatch(true);
+            if (log.isDebugEnabled()) {
+                log.debug("modifyPartition()");
+                log.debug("Previous: " + current);
+                log.debug("Current: " + newPartition);
+            }
+        }
+
+    }
+
+    @Listener
+    public class NewDataListener {
+        @CacheEntryCreated
+        public void onNewData(CacheEntryCreatedEvent cacheEvent) {
+            if (cacheEvent.isPre()) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Discarding pre onNewData(@CacheEntryCreated) event");
+                }
+                return;
+            }
+            /*
+                When a new data/event is added it should be notified on the PartitionManager.
+                PartitionManager adds an entry on "data" cache to fire an event that will propagate the
+                across the nodes invoking previously registered PartitionDataListener.
+             */
+            NotifyData newData = (NotifyData)dataCache.get(cacheEvent.getKey());
+            if (log.isDebugEnabled()) {
+                log.debug("onNewData(@CacheEntryCreated) received.");
+                log.debug("NotifyData: " + newData);
+            }
+            /*
+                Finally invoke listener on non-sender nodes
+             */
+            if (dataListener != null && newData.getFromNode() != currentNode) {
+                if (newData.getData() != null) {
+                    dataListener.onNewData(newData.getData());
+                } else if (newData.getEvent() != null) {
+                    dataListener.onNewEvent(newData.getEvent());
+                } else if (newData.getDataCollection() != null) {
+                    dataListener.onNewData(newData.getDataCollection());
+                } else if (newData.getEventCollection() != null) {
+                    dataListener.onNewEvents(newData.getEventCollection());
+                }
+            }
+        }
+    }
 
     /**
      * Auxiliary class to store in the cache an operation for a Trigger.

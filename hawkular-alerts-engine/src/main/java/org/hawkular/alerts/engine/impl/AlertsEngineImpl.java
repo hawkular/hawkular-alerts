@@ -30,6 +30,7 @@ import java.util.TimerTask;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
+import javax.ejb.Local;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
@@ -65,6 +66,7 @@ import org.jboss.logging.Logger;
  */
 @Singleton
 @Startup
+@Local(AlertsEngine.class)
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener, PartitionDataListener {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
@@ -255,6 +257,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             Trigger trigger = null;
             try {
                 trigger = definitions.getTrigger(tenantId, triggerId);
+                if (log.isDebugEnabled()) {
+                    log.debug("addTrigger(" + trigger + ")");
+                }
             } catch (Exception e) {
                 log.debug(e.getMessage(), e);
                 msgLog.errorDefinitionsService("Trigger", e.getMessage());

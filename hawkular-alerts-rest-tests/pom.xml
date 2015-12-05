@@ -576,7 +576,7 @@
                     <!-- standalone-ha.xml -->
                     <transformationSet>
                       <dir>${hawkular.configuration}</dir>
-                      <stylesheet>src/test/resources/standalone-ha.xsl</stylesheet>
+                      <stylesheet>src/test/resources/standalone-ha-wildfly.xsl</stylesheet>
                       <includes>
                         <include>standalone-ha.xml</include>
                       </includes>

@@ -54,6 +54,7 @@ class ClusterITest extends AbstractITestBase {
 
 
             resp = client.put(path: "delete", query: [triggerIds:"test-cluster-" + i])
+            println "Deleted test-cluster-" + i + " - num: " + resp.data
             assert resp.status == 200 : resp.status
 
             // remove if it exists
@@ -107,7 +108,7 @@ class ClusterITest extends AbstractITestBase {
             // Send in DOWN avail data to fire the trigger
             // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
             for (int j = 0; j < 5; j++) {
-                Data avail = new Data("test-cluster-" + i, j, "DOWN");
+                Data avail = new Data("test-cluster-" + i, j + 1, "DOWN");
                 Collection<Data> datums = new ArrayList<>();
                 datums.add(avail);
                 resp = client.post(path: "data", body: datums);
