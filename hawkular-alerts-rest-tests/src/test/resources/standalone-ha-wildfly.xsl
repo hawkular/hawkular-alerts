@@ -37,7 +37,7 @@
     </xsl:copy>
     <cache-container name="hawkular-alerts" default-cache="triggers" statistics-enabled="true">
       <transport lock-timeout="60000"/>
-      <replicated-cache name="partition" mode="ASYNC">
+      <replicated-cache name="partition" mode="SYNC">
         <transaction mode="BATCH"/>
       </replicated-cache>
       <replicated-cache name="triggers" mode="ASYNC">
@@ -53,7 +53,10 @@
     <xsl:copy>
       <xsl:copy-of select="node()|@*"/>
     </xsl:copy>
-    <logger category="org.hawkular.alerts.engine.impl">
+    <logger category="org.hawkular.alerts.engine.impl.PartitionManagerImpl">
+      <level name="DEBUG"/>
+    </logger>
+    <logger category="org.hawkular.alerts.engine.impl.AlertsEngineImpl">
       <level name="DEBUG"/>
     </logger>
   </xsl:template>

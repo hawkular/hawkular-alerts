@@ -34,4 +34,11 @@ public class StandaloneActionMessage implements ActionMessage {
     public Action getAction() {
         return action;
     }
+
+    @Override
+    public String toString() {
+        return "StandaloneActionMessage" + '[' +
+                "action=" + action +
+                ']';
+    }
 }

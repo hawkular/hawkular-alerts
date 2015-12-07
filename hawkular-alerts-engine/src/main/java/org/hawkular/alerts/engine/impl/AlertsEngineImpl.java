@@ -538,8 +538,21 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
                     rules.fire();
                     alertsService.addAlerts(alerts);
+                    if (distributed) {
+                        /*
+                            Generated alerts on a node should be notified to other nodes for chained triggers
+                         */
+                        List<Event> alertsToNotify = new ArrayList(alerts);
+                        partitionManager.notifyEvents(alertsToNotify);
+                    }
                     alerts.clear();
                     alertsService.persistEvents(events);
+                    if (distributed) {
+                        /*
+                            Generated events on a node should be notified to other nodes for chained triggers
+                         */
+                        partitionManager.notifyEvents(events);
+                    }
                     events.clear();
                     handleDisabledTriggers();
                     handleAutoResolvedTriggers();
@@ -700,6 +713,14 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     @Override
     public void onPartitionChange(Map<String, List<String>> partition, Map<String, List<String>> removed,
                                             Map<String, List<String>> added) {
+        if (!pendingData.isEmpty() || !pendingEvents.isEmpty()) {
+            if (!pendingData.isEmpty()) {
+                log.warn("Pending Data onPartitionChange: " + pendingData);
+            }
+            if (!!pendingEvents.isEmpty()) {
+                log.warn("Pending Events onPartitionChange: " + pendingData);
+            }
+        }
         if (log.isDebugEnabled()) {
             log.debug("Executing: PartitionChange ");
             log.debug("Local partition: " + partition);

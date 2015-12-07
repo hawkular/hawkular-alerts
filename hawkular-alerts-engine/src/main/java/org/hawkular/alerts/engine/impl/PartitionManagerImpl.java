@@ -19,6 +19,7 @@ package org.hawkular.alerts.engine.impl;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +78,7 @@ import com.google.common.hash.Hashing;
  * [...]
  *       <cache-container name="hawkular-alerts" default-cache="triggers" statistics-enabled="true">
  *          <transport lock-timeout="60000"/>
- *          <replicated-cache name="partition" mode="ASYNC">
+ *          <replicated-cache name="partition" mode="SYNC">
  *              <transaction mode="BATCH"/>
  *          </replicated-cache>
  *          <replicated-cache name="triggers" mode="ASYNC">
@@ -107,6 +108,7 @@ public class PartitionManagerImpl implements PartitionManager {
     public static final String BUCKETS = "buckets";
     public static final String PREVIOUS = "previousPartition";
     public static final String CURRENT = "currentPartition";
+    public static final String PARTITION_CHANGE = "partitionChangeFlag";
 
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(PartitionManagerImpl.class);
@@ -186,6 +188,7 @@ public class PartitionManagerImpl implements PartitionManager {
         } else {
             currentNode = cacheManager.getAddress().hashCode();
             cacheManager.addListener(new TopologyChangeListener());
+            partitionCache.addListener(new PartitionChangeListener());
             triggersCache.addListener(new NewTriggerListener());
             dataCache.addListener(new NewDataListener());
             /*
@@ -320,6 +323,7 @@ public class PartitionManagerImpl implements PartitionManager {
             }
             partitionCache.put(CURRENT, newPartition);
             partitionCache.endBatch(true);
+            partitionCache.put(PARTITION_CHANGE, new Date(), LIFESPAN, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -457,7 +461,7 @@ public class PartitionManagerImpl implements PartitionManager {
         Calculated the added and removed entries for a node given a current and a previous partition maps.
         It return a map with two fixed entries under keys "added" and "removed".
      */
-    private Map<String, Map<String, List<String>>> getAddedRemovedPartition(Map<PartitionEntry, Integer> previous,
+    protected Map<String, Map<String, List<String>>> getAddedRemovedPartition(Map<PartitionEntry, Integer> previous,
                                                                             Map<PartitionEntry, Integer> current,
                                                                             Integer node) {
         Map<String, Map<String, List<String>>> output = new HashMap<>();
@@ -508,6 +512,8 @@ public class PartitionManagerImpl implements PartitionManager {
                     getAddedRemovedPartition(previous, current, currentNode);
             if (log.isDebugEnabled()) {
                 log.debug("Invoke a Change Listener");
+                log.debug("Previous: " + previous);
+                log.debug("Current: " + current);
                 log.debug("Partition: " + partition);
                 log.debug("Added: " + addedRemoved.get("added"));
                 log.debug("Removed: " + addedRemoved.get("removed"));
@@ -526,17 +532,26 @@ public class PartitionManagerImpl implements PartitionManager {
             /*
                 When a node is joining/leaving the cluster partition needs to be re-calculated and updated
              */
-            if (log.isDebugEnabled()) {
-                log.debug("onTopologyChange(@ViewChange) received.");
-                cacheEvent.getOldMembers().stream().forEach(member -> {
-                    log.debug("Old member: " + member.hashCode());
-                });
-                cacheEvent.getNewMembers().stream().forEach(member -> {
-                    log.debug("New member: " + member.hashCode());
-                });
-            }
             processTopologyChange();
-            invokePartitionChangeListener();
+        }
+    }
+
+    @Listener
+    public class PartitionChangeListener {
+        @CacheEntryCreated
+        public void onPartitionModified(CacheEntryCreatedEvent cacheEvent) {
+            if (cacheEvent.isPre()) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Discarding pre onPartitionModified(@CacheEntryModified) event");
+                }
+                return;
+            }
+            /*
+                Listener should be invoked once Partition has been modified by a topology change
+             */
+            if (cacheEvent.getKey().equals(PARTITION_CHANGE)) {
+                invokePartitionChangeListener();
+            }
         }
     }
 

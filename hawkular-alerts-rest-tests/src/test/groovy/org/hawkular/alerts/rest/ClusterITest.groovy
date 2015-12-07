@@ -35,14 +35,52 @@ import static org.junit.Assert.assertTrue
  */
 class ClusterITest extends AbstractITestBase {
 
+    long startCall = 0, endCall = 0, timeCall = 0, totalCalls = 0, totalTime = 0, moreThan1Sec = 0;
+
+    void startCall() {
+        startCall = System.currentTimeMillis();
+    }
+
+    void endCall(String callDesc) {
+        endCall = System.currentTimeMillis();
+        timeCall = endCall - startCall;
+        totalTime += timeCall;
+        totalCalls++;
+        if (timeCall > 1000) {
+            moreThan1Sec++;
+            println("!!! > 1 sec : " + callDesc);
+        }
+    }
+
+    void summary() {
+        println("Total calls: " + totalCalls);
+        println("Average: " + ((double)totalTime / (double)totalCalls) + " ms");
+        println("> 1 sec: " + moreThan1Sec);
+    }
+
+    long startWait = 0, endWait = 0, waitCall = 0, totalWait = 0, totalWaitTime = 0;
+
+    void startWaitResult() {
+        startWait = System.currentTimeMillis();
+    }
+
+    void endWaitResult(String msg) {
+        endWait = System.currentTimeMillis();
+        totalWait++;
+        totalWaitTime = endWait - startWait;
+        println(msg + " took " + totalWaitTime + " ms");
+    }
+
     @Test
     void clusterAvailabilityTest() {
-        String start = String.valueOf(System.currentTimeMillis());
+
+        long startTest = System.currentTimeMillis();
+        String start = String.valueOf(startTest);
 
         def resp = client.get(path: "")
         assert resp.status == 200 : resp.status
 
-        int numTriggers = 20;
+        int numTriggers = 40;
 
         /*
             Create several triggers that should be partitioned in a transparent way, so this test should work on
@@ -52,13 +90,16 @@ class ClusterITest extends AbstractITestBase {
 
             Trigger testTrigger = new Trigger("test-cluster-" + i , "http://www.mydemourl.com");
 
-
+            startCall();
             resp = client.put(path: "delete", query: [triggerIds:"test-cluster-" + i])
+            endCall("PUT /delete?triggerIds=test-cluster-" + i);
             println "Deleted test-cluster-" + i + " - num: " + resp.data
             assert resp.status == 200 : resp.status
 
             // remove if it exists
+            startCall();
             resp = client.delete(path: "triggers/test-cluster-" + i)
+            endCall("DELETE /triggers/test-cluster-" + i);
             assert(200 == resp.status || 404 == resp.status)
 
             testTrigger.setAutoDisable(false);
@@ -69,7 +110,9 @@ class ClusterITest extends AbstractITestBase {
              */
             testTrigger.addAction("email", "email-to-admin");
 
+            startCall();
             resp = client.post(path: "triggers", body: testTrigger)
+            endCall("POST /triggers");
             assertEquals(200, resp.status)
 
             // ADD Firing condition
@@ -78,18 +121,24 @@ class ClusterITest extends AbstractITestBase {
 
             Collection<Condition> conditions = new ArrayList<>(1);
             conditions.add( firingCond );
+            startCall();
             resp = client.put(path: "triggers/test-cluster-" + i + "/conditions/firing", body: conditions)
+            endCall("PUT /triggers/test-cluster-" + i + "/conditions/firing");
             assertEquals(200, resp.status)
             assertEquals(1, resp.data.size())
 
             // ENABLE Trigger
             testTrigger.setEnabled(true);
 
+            startCall();
             resp = client.put(path: "triggers/test-cluster-" + i, body: testTrigger)
+            endCall("PUT /triggers/test-cluster-" + i);
             assertEquals(200, resp.status)
 
             // FETCH trigger and make sure it's as expected
+            startCall();
             resp = client.get(path: "triggers/test-cluster-" + i);
+            endCall("GET /triggers/test-cluster-" + i);
             assertEquals(200, resp.status)
             assertEquals("http://www.mydemourl.com", resp.data.name)
             assertEquals(true, resp.data.enabled)
@@ -98,7 +147,9 @@ class ClusterITest extends AbstractITestBase {
             assertEquals(false, resp.data.autoResolveAlerts);
 
             // FETCH recent alerts for trigger, should not be any
+            startCall();
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-cluster-" + i] )
+            endCall("GET /?startTime=" + start + ",triggerIds=test-cluster-" + i);
             assertEquals(200, resp.status)
         }
 
@@ -111,28 +162,42 @@ class ClusterITest extends AbstractITestBase {
                 Data avail = new Data("test-cluster-" + i, j + 1, "DOWN");
                 Collection<Data> datums = new ArrayList<>();
                 datums.add(avail);
+                startCall();
                 resp = client.post(path: "data", body: datums);
+                endCall("POST /data");
                 assertEquals(200, resp.status)
             }
         }
 
+        println("Giving some time to digest the data....");
+        Thread.sleep(2000);
+
         for (int i = 0; i < numTriggers; i++) {
 
             // The alert processing happens async, so give it a little time before failing...
-            for (int j = 0; j < 100; ++j ) {
+            startWaitResult();
+            for (int j = 0; j < 200; ++j ) {
                 // println "SLEEP!" ;
-                Thread.sleep(100);
+                Thread.sleep(200);
 
                 // FETCH recent alerts for trigger, there should be 5
+                startCall();
                 resp = client.get(path: "", query: [startTime:start,triggerIds:"test-cluster-" + i] )
+                endCall("GET /?startTime=" + start + ",triggerIds=test-cluster-" + i);
                 if ( resp.status == 200 && resp.data.size() == 5 ) {
                     break;
                 }
             }
+            endWaitResult("Query test-cluster-" + i);
             assertEquals(200, resp.status)
             assertEquals("test-cluster-" + i, 5, resp.data.size())
             assertEquals("OPEN", resp.data[0].status)
         }
 
+        long endTest = System.currentTimeMillis();
+        long total = endTest - startTest;
+
+        println("Total test: " + total + " ms");
+        summary();
     }
 }

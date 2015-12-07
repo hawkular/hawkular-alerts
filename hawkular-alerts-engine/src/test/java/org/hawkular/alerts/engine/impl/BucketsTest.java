@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.hawkular.alerts.engine.impl.PartitionManagerImpl.PartitionEntry;
 import org.junit.Test;
 
 /**
@@ -192,6 +193,30 @@ public class BucketsTest {
         assertEquals(newBuckets.get(3).intValue(), 2001);
         assertEquals(newBuckets.get(4).intValue(), 2002);
         assertEquals(newBuckets.get(5).intValue(), 2003);
+    }
+
+    @Test
+    public void distributeLocalPartitions() {
+        PartitionManagerImpl pm = new PartitionManagerImpl();
+
+        PartitionEntry[] entries = new PartitionEntry[10];
+        Map<PartitionEntry, Integer> previous = new HashMap<>();
+        Map<PartitionEntry, Integer> current = new HashMap<>();
+        for (int i = 0; i < entries.length; i++) {
+            entries[i] = new PartitionEntry("tenant", "t" + i);
+            previous.put(entries[i], 1);
+            if (i < 4) {
+                current.put(entries[i], 1);
+            } else {
+                current.put(entries[i], 2);
+            }
+        }
+        Map<String, Map<String, List<String>>> node1 = pm.getAddedRemovedPartition(previous, current, 1);
+        Map<String, Map<String, List<String>>> node2 = pm.getAddedRemovedPartition(previous, current, 2);
+        assertEquals(node1.get("added").size(), 0);
+        assertEquals(node1.get("removed").get("tenant").size(), 6);
+        assertEquals(node2.get("removed").size(), 0);
+        assertEquals(node2.get("added").get("tenant").size(), 6);
     }
 
 }
