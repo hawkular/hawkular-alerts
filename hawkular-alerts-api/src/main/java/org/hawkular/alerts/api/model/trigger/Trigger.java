@@ -118,11 +118,13 @@ public class Trigger implements Serializable {
     @JsonIgnore
     private transient Match match;
 
+    // TODO: Remove this variable when EAP64 is no longer a supported deployment platform
     @JsonIgnore
-    private boolean loadable;
+    private transient boolean loadable;
 
+    // TODO: Remove this variable when EAP64 is no longer a supported deployment platform
     @JsonIgnore
-    private boolean member;
+    private transient boolean member;
 
     public Trigger() {
         /*

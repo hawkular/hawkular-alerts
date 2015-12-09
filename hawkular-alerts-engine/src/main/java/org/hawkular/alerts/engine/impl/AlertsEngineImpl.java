@@ -340,13 +340,11 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                     Caching dataId from conditions.
                  */
                 for (Condition c : conditionSet) {
-                    DataEntry entry = new DataEntry(c.getTenantId(), c.getTriggerId(), c.getConditionId(),
-                            c.getDataId());
+                    DataEntry entry = new DataEntry(c.getTenantId(), c.getTriggerId(), c.getDataId());
                     alertsEngineCache.add(entry);
                     if (Condition.Type.COMPARE == c.getType()) {
                         String data2Id = ((CompareCondition) c).getData2Id();
-                        DataEntry entry2 = new DataEntry(c.getTenantId(), c.getTriggerId(), c.getConditionId(),
-                                data2Id);
+                        DataEntry entry2 = new DataEntry(c.getTenantId(), c.getTriggerId(), data2Id);
                         alertsEngineCache.add(entry2);
                     }
                 }

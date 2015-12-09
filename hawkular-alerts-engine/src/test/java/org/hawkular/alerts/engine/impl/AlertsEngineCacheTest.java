@@ -34,10 +34,10 @@ public class AlertsEngineCacheTest {
     public void basicTest() {
         AlertsEngineCache cache = new AlertsEngineCache();
 
-        DataEntry entry1 = new DataEntry("o1", "t1", "c1", "d1");
-        DataEntry entry2 = new DataEntry("o1", "t1", "c2", "d2");
-        DataEntry entry3 = new DataEntry("o1", "t2", "c1", "d3");
-        DataEntry entry4 = new DataEntry("o1", "t4", "c1", "d1");
+        DataEntry entry1 = new DataEntry("o1", "t1", "d1");
+        DataEntry entry2 = new DataEntry("o1", "t1", "d2");
+        DataEntry entry3 = new DataEntry("o1", "t2", "d3");
+        DataEntry entry4 = new DataEntry("o1", "t4", "d1");
 
         cache.add(entry1);
         assertTrue(cache.isDataIdActive("d1"));

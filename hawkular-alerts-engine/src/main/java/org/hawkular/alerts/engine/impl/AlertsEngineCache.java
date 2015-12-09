@@ -122,25 +122,20 @@ public class AlertsEngineCache {
     public static class DataEntry {
         String tenantId;
         String triggerId;
-        String conditionId;
         String dataId;
 
-        public DataEntry(String tenantId, String triggerId, String conditionId, String dataId) {
+        public DataEntry(String tenantId, String triggerId, String dataId) {
             if (tenantId == null) {
                 throw new NullPointerException("triggerId must be not null");
             }
             if (triggerId == null) {
                 throw new NullPointerException("triggerId must be not null");
             }
-            if (conditionId == null) {
-                throw new NullPointerException("conditionId must be not null");
-            }
             if (dataId == null) {
                 throw new NullPointerException("dataId must be not null");
             }
             this.tenantId = tenantId;
             this.triggerId = triggerId;
-            this.conditionId = conditionId;
             this.dataId = dataId;
         }
 
@@ -160,14 +155,6 @@ public class AlertsEngineCache {
             this.triggerId = triggerId;
         }
 
-        public String getConditionId() {
-            return conditionId;
-        }
-
-        public void setConditionId(String conditionId) {
-            this.conditionId = conditionId;
-        }
-
         public String getDataId() {
             return dataId;
         }
@@ -185,8 +172,6 @@ public class AlertsEngineCache {
 
             if (tenantId != null ? !tenantId.equals(dataEntry.tenantId) : dataEntry.tenantId != null) return false;
             if (triggerId != null ? !triggerId.equals(dataEntry.triggerId) : dataEntry.triggerId != null) return false;
-            if (conditionId != null ? !conditionId.equals(dataEntry.conditionId) : dataEntry.conditionId != null)
-                return false;
             return !(dataId != null ? !dataId.equals(dataEntry.dataId) : dataEntry.dataId != null);
 
         }
@@ -195,7 +180,6 @@ public class AlertsEngineCache {
         public int hashCode() {
             int result = tenantId != null ? tenantId.hashCode() : 0;
             result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);
-            result = 31 * result + (conditionId != null ? conditionId.hashCode() : 0);
             result = 31 * result + (dataId != null ? dataId.hashCode() : 0);
             return result;
         }
@@ -205,7 +189,6 @@ public class AlertsEngineCache {
             return "DataEntry" + '[' +
                     "tenantId='" + tenantId + '\'' +
                     ", triggerId='" + triggerId + '\'' +
-                    ", conditionId='" + conditionId + '\'' +
                     ", dataId='" + dataId + '\'' +
                     ']';
         }
