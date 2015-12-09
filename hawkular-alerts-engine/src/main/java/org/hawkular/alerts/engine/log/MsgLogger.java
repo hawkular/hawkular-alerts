@@ -85,5 +85,15 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 220013, value = "ActionsService cannot be initialized. Msg: [%s]")
     void errorCannotInitializeActionsService(String msg);
 
+    @LogMessage(level = Logger.Level.INFO)
+    @Message(id = 220014, value = "Hawkular Alerts deployed in single node mode")
+    void infoPartitionManagerDisabled();
 
+    @LogMessage(level = Logger.Level.INFO)
+    @Message(id = 220015, value = "Hawkular Alerts deployed in distributed mode")
+    void infoPartitionManagerEnabled();
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 220016, value = "PartitionManager cannot be initialized. Msg: [%s]")
+    void errorCannotInitializePartitionManager(String msg);
 }

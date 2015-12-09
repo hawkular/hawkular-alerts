@@ -72,8 +72,10 @@ public class StandaloneActionPluginListener implements ActionListener {
             ActionPluginListener plugin = plugins.get(actionPlugin);
             Set<String> globals = ActionPlugins.getGlobals();
             if (plugin == null && ActionPlugins.getGlobals().isEmpty()) {
-                log.debug("Received action [" + actionPlugin +
-                        "] but no ActionPluginListener found on this deployment");
+                if (log.isDebugEnabled()) {
+                    log.debug("Received action [" + actionPlugin +
+                            "] but no ActionPluginListener found on this deployment");
+                }
                 return;
             }
             if (definitions != null) {

@@ -84,6 +84,11 @@ import com.google.common.util.concurrent.Futures;
 @Singleton
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class CassDefinitionsServiceImpl implements DefinitionsService {
+    /**
+     * Used on distributed environments.
+     * If present, the initial data are not loaded on this node.
+     */
+    public static final String SKIP_INIT_DATA = "hawkular-alerts.skip-init-data";
     private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
     private static final String INIT_FOLDER = "hawkular-alerts";
     private static final String CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
@@ -135,13 +140,15 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void initialData() throws IOException {
-        String data = System.getProperty(JBOSS_DATA_DIR);
-        if (data == null || data.isEmpty()) {
-            msgLog.errorFolderNotFound(data);
-            return;
+        if (!System.getProperties().containsKey(SKIP_INIT_DATA)) {
+            String data = System.getProperty(JBOSS_DATA_DIR);
+            if (data == null || data.isEmpty()) {
+                msgLog.errorFolderNotFound(data);
+                return;
+            }
+            String folder = data + "/" + INIT_FOLDER;
+            initFiles(folder);
         }
-        String folder = data + "/" + INIT_FOLDER;
-        initFiles(folder);
         initialized = true;
     }
 
@@ -153,7 +160,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         File fFolder = new File(folder);
         if (!fFolder.exists()) {
-            log.debugf("Data folder doesn't exits. Skipping initialization.");
+            log.debug("Data folder doesn't exits. Skipping initialization.");
             return;
         }
 
@@ -222,7 +229,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
                     addTrigger(trigger);
 
-                    log.debugf("Init registration - Inserting [%s]", trigger);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Init registration - Inserting [" + trigger + "]");
+                    }
                 }
             }
         } else {
@@ -261,7 +270,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setContext(context);
 
                         initCondition(newCondition);
-                        log.debugf("Init registration - Inserting [%s]", newCondition);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Init registration - Inserting [" + newCondition + "]");
+                        }
                     }
                     if (type != null && !type.isEmpty() && type.equals("range")) {
                         String dataId = (String) c.get("dataId");
@@ -286,7 +297,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setContext(context);
 
                         initCondition(newCondition);
-                        log.debugf("Init registration - Inserting [%s]", newCondition);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Init registration - Inserting [" + newCondition + "]");
+                        }
                     }
                     if (type != null && !type.isEmpty() && type.equals("compare")) {
                         String dataId = (String) c.get("dataId");
@@ -307,7 +320,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setContext(context);
 
                         initCondition(newCondition);
-                        log.debugf("Init registration - Inserting [%s]", newCondition);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Init registration - Inserting [" + newCondition + "]");
+                        }
                     }
                     if (type != null && !type.isEmpty() && type.equals("string")) {
                         String dataId = (String) c.get("dataId");
@@ -328,7 +343,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setContext(context);
 
                         initCondition(newCondition);
-                        log.debugf("Init registration - Inserting [%s]", newCondition);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Init registration - Inserting [" + newCondition + "]");
+                        }
                     }
                     if (type != null && !type.isEmpty() && type.equals("availability")) {
                         String dataId = (String) c.get("dataId");
@@ -345,7 +362,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         newCondition.setContext(context);
 
                         initCondition(newCondition);
-                        log.debugf("Init registration - Inserting [%s]", newCondition);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Init registration - Inserting [" + newCondition + "]");
+                        }
                     }
 
                 }
@@ -382,7 +401,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
                     newDampening.setTenantId(tenantId);
                     addDampening(newDampening);
-                    log.debugf("Init registration - Inserting [%s]", newDampening);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Init registration - Inserting [" + newDampening + "]");
+                    }
                 }
             }
         } else {
@@ -407,7 +428,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     Map<String, String> properties = (Map<String, String>) a.get("properties");
                     newAction.putAll(properties);
                     addAction(tenantId, actionPlugin, actionId, newAction);
-                    log.debugf("Init registration - Inserting [%s]", newAction);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Init registration - Inserting [" + newAction + "]");
+                    }
                 }
             }
         } else {
@@ -498,6 +521,10 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
+        }
+
+        if (initialized && null!=alertsEngine) {
+            alertsEngine.addTrigger(trigger.getTenantId(), trigger.getId());
         }
 
         notifyListeners(DefinitionsEvent.Type.TRIGGER_CREATE);
@@ -604,6 +631,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
+        }
+
+        /*
+            Trigger should be removed from the alerts engine.
+         */
+        if (initialized && null != alertsEngine) {
+            alertsEngine.removeTrigger(tenantId, triggerId);
         }
 
         notifyListeners(DefinitionsEvent.Type.TRIGGER_REMOVE);
@@ -843,8 +877,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin()); // currently ignored, triggers have no thinned data
 
-        if (filter) {
-            log.debugf("getTriggers criteria: %s", criteria.toString());
+        if (filter && log.isDebugEnabled()) {
+            log.debug("getTriggers criteria: " + criteria.toString());
         }
 
         List<Trigger> triggers = new ArrayList<>();
@@ -1402,7 +1436,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         Dampening dampening = getDampening(tenantId, dampeningId);
         if (null == dampening) {
-            log.debugf("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
+            if (log.isDebugEnabled()) {
+                log.debug("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
+            }
             return;
         }
 
@@ -1433,7 +1469,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         Dampening dampening = getDampening(tenantId, dampeningId);
         if (null == dampening) {
-            log.debugf("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
+            if (log.isDebugEnabled()) {
+                log.debug("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
+            }
             return;
         }
 
@@ -1811,7 +1849,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 memberConditions.add(memberCondition);
             }
             Collection memberConditionSet = setConditions(tenantId, member.getId(), triggerMode, memberConditions);
-            log.debugf("Member condition set: %s", memberConditionSet);
+            if (log.isDebugEnabled()) {
+                log.debug("Member condition set: " + memberConditionSet);
+            }
         }
 
         // set conditions on the group trigger
@@ -1846,7 +1886,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         Condition condition = getCondition(tenantId, conditionId);
         if (null == condition) {
-            log.debugf("Ignoring removeCondition [%s], the condition does not exist.", conditionId);
+            if (log.isDebugEnabled()) {
+                log.debug("Ignoring removeCondition [" + conditionId + "], the condition does not exist.");
+            }
             return null;
         }
 
@@ -2357,11 +2399,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     condition = tCondition;
                     break;
                 default:
-                    log.debugf("Unexpected condition type found: " + type);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Unexpected condition type found: " + type);
+                    }
                     break;
             }
         } else {
-            log.debugf("Invalid condition type: null or empty");
+            log.debug("Invalid condition type: null or empty");
         }
         return condition;
     }
@@ -2717,16 +2761,22 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     @Override
     public void registerListener(DefinitionsListener listener, Type eventType, Type... eventTypes) {
         EnumSet<Type> types = EnumSet.of(eventType, eventTypes);
-        log.debugf("Registering listeners %s for event types", listener, types);
+        if (log.isDebugEnabled()) {
+            log.debug("Registering listeners " + listener + " for event types " + types);
+        }
         listeners.put(listener, types);
     }
 
     private void notifyListeners(Type eventType) {
         DefinitionsEvent de = new DefinitionsEvent(eventType);
-        log.debugf("Notifying applicable listeners %s of event %s", listeners, eventType.name());
+        if (log.isDebugEnabled()) {
+            log.debug("Notifying applicable listeners " + listeners + " of event " + eventType.name());
+        }
         for (Map.Entry<DefinitionsListener, Set<Type>> me : listeners.entrySet()) {
             if (me.getValue().contains(eventType)) {
-                log.debugf("Notified Listener %s", eventType.name());
+                if (log.isDebugEnabled()) {
+                    log.debug("Notified Listener " + eventType.name());
+                }
                 me.getKey().onChange(de);
             }
         }

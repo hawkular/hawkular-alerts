@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import org.hawkular.alerts.api.json.JacksonDeserializer;
@@ -33,7 +34,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * @author Lucas Ponce
  */
 @JsonDeserialize(using = JacksonDeserializer.ConditionEvalDeserializer.class)
-public abstract class ConditionEval {
+public abstract class ConditionEval implements Serializable {
 
     // result of the condition evaluation
     @JsonIgnore

@@ -84,7 +84,7 @@ public class TriggersHandler {
     ObjectMapper objectMapper;
 
     public TriggersHandler() {
-        log.debugf("Creating instance.");
+        log.debug("Creating instance.");
         objectMapper = new ObjectMapper();
     }
 
@@ -113,13 +113,15 @@ public class TriggersHandler {
         try {
             TriggersCriteria criteria = buildCriteria(triggerIds, tags, thin);
             Page<Trigger> triggerPage = definitions.getTriggers(tenantId, criteria, pager);
-            log.debugf("Triggers: %s ", triggerPage);
+            if (log.isDebugEnabled()) {
+                log.debug("Triggers: " + triggerPage);
+            }
             if (isEmpty(triggerPage)) {
                 return ResponseUtil.ok(triggerPage);
             }
             return ResponseUtil.paginatedOk(triggerPage, uri);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -137,7 +139,10 @@ public class TriggersHandler {
                 if (fields.length == 2) {
                     tagsMap.put(fields[0], fields[1]);
                 } else {
-                    log.debugf("Invalid Tag Criteria %s", Arrays.toString(fields));
+                    if (log.isDebugEnabled()) {
+                        log.debug("Invalid Tag Criteria " + Arrays.toString(fields));
+                    }
+
                 }
             }
             criteria.setTags(tagsMap);
@@ -167,10 +172,12 @@ public class TriggersHandler {
             final boolean includeOrphans) {
         try {
             Collection<Trigger> members = definitions.getMemberTriggers(tenantId, groupId, includeOrphans);
-            log.debugf("Member Triggers: %s ", members);
+            if (log.isDebugEnabled()) {
+                log.debug("Member Triggers: " + members);
+            }
             return ResponseUtil.ok(members);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -198,13 +205,13 @@ public class TriggersHandler {
                     return ResponseUtil.badRequest("Trigger with ID [" + trigger.getId() + "] exists.");
                 }
                 definitions.addTrigger(tenantId, trigger);
-                log.debugf("Trigger: %s ", trigger.toString());
+                log.debug("Trigger: " + trigger.toString());
                 return ResponseUtil.ok(trigger);
             } else {
                 return ResponseUtil.badRequest("Trigger is null");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -232,13 +239,13 @@ public class TriggersHandler {
                     return ResponseUtil.badRequest("Trigger with ID [" + groupTrigger.getId() + "] exists.");
                 }
                 definitions.addGroupTrigger(tenantId, groupTrigger);
-                log.debugf("Group Trigger: %s ", groupTrigger.toString());
+                log.debug("Group Trigger: " + groupTrigger.toString());
                 return ResponseUtil.ok(groupTrigger);
             } else {
                 return ResponseUtil.badRequest("Trigger is null");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -274,14 +281,16 @@ public class TriggersHandler {
             Trigger child = definitions.addMemberTrigger(tenantId, groupId, groupMember.getMemberId(), memberName,
                     groupMember.getMemberContext(),
                     groupMember.getDataIdMap());
-            log.debugf("Child Trigger: %s ", child.toString());
+            if (log.isDebugEnabled()) {
+                log.debug("Child Trigger: " + child.toString());
+            }
             return ResponseUtil.ok(child);
 
         } catch (NotFoundException e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -302,13 +311,13 @@ public class TriggersHandler {
         try {
             Trigger found = definitions.getTrigger(tenantId, triggerId);
             if (found != null) {
-                log.debugf("Trigger: %s ", found);
+                log.debug("Trigger: " + found);
                 return ResponseUtil.ok(found);
             } else {
                 return ResponseUtil.notFound("triggerId: " + triggerId + " not found");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -332,14 +341,16 @@ public class TriggersHandler {
                 trigger.setId(triggerId);
             }
             definitions.updateTrigger(tenantId, trigger);
-            log.debugf("Trigger: %s ", trigger);
+            if (log.isDebugEnabled()) {
+                log.debug("Trigger: " + trigger);
+            }
             return ResponseUtil.ok();
 
         } catch (NotFoundException e) {
             return ResponseUtil.notFound("Trigger " + triggerId + " doesn't exist for update");
 
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -363,14 +374,16 @@ public class TriggersHandler {
                 groupTrigger.setId(groupId);
             }
             definitions.updateGroupTrigger(tenantId, groupTrigger);
-            log.debugf("Trigger: %s ", groupTrigger);
+            if (log.isDebugEnabled()) {
+                log.debug("Trigger: " + groupTrigger);
+            }
             return ResponseUtil.ok();
 
         } catch (NotFoundException e) {
             return ResponseUtil.notFound("Trigger " + groupId + " doesn't exist for update");
 
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -390,14 +403,16 @@ public class TriggersHandler {
             final String memberId) {
         try {
             Trigger child = definitions.orphanMemberTrigger(tenantId, memberId);
-            log.debugf("Orphan Member Trigger: %s ", child);
+            if (log.isDebugEnabled()) {
+                log.debug("Orphan Member Trigger: " + child);
+            }
             return ResponseUtil.ok();
 
         } catch (NotFoundException e) {
             return ResponseUtil.notFound("Member Trigger " + memberId + " doesn't exist for update");
 
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -423,14 +438,16 @@ public class TriggersHandler {
             }
             Trigger child = definitions.unorphanMemberTrigger(tenantId, memberId, unorphanMemberInfo.getMemberContext(),
                     unorphanMemberInfo.getDataIdMap());
-            log.debugf("Member Trigger: %s ", child);
+            if (log.isDebugEnabled()) {
+                log.debug("Member Trigger: " + child);
+            }
             return ResponseUtil.ok();
 
         } catch (NotFoundException e) {
             return ResponseUtil.notFound("Member Trigger " + memberId + " doesn't exist for update");
 
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -447,14 +464,16 @@ public class TriggersHandler {
             final String triggerId) {
         try {
             definitions.removeTrigger(tenantId, triggerId);
-            log.debugf("TriggerId: %s ", triggerId);
+            if (log.isDebugEnabled()) {
+                log.debug("TriggerId: " + triggerId);
+            }
             return ResponseUtil.ok();
 
         } catch (NotFoundException e) {
             return ResponseUtil.notFound("Trigger " + triggerId + " doesn't exist for delete");
 
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -482,14 +501,16 @@ public class TriggersHandler {
             final boolean keepOrphans) {
         try {
             definitions.removeGroupTrigger(tenantId, groupId, keepNonOrphans, keepOrphans);
-            log.debugf("Remove Group Trigger: %s/%s ", tenantId, groupId);
+            if (log.isDebugEnabled()) {
+                log.debug("Remove Group Trigger: " + tenantId + "/" + groupId);
+            }
             return ResponseUtil.ok();
 
         } catch (NotFoundException e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -508,10 +529,10 @@ public class TriggersHandler {
             final String triggerId) {
         try {
             Collection<Dampening> dampenings = definitions.getTriggerDampenings(tenantId, triggerId, null);
-            log.debugf("Dampenings: %s ", dampenings);
+            log.debug("Dampenings: " + dampenings);
             return ResponseUtil.ok(dampenings);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -533,10 +554,12 @@ public class TriggersHandler {
         try {
             Collection<Dampening> dampenings = definitions.getTriggerDampenings(tenantId, triggerId,
                     triggerMode);
-            log.debugf("Dampenings: %s ", dampenings);
+            if (log.isDebugEnabled()) {
+                log.debug("Dampenings: " + dampenings);
+            }
             return ResponseUtil.ok(dampenings);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -558,14 +581,14 @@ public class TriggersHandler {
             final String dampeningId) {
         try {
             Dampening found = definitions.getDampening(tenantId, dampeningId);
-            log.debugf("Dampening: %s ", found);
+            log.debug("Dampening: " + found);
             if (found == null) {
                 return ResponseUtil.notFound("No dampening found for triggerId: " + triggerId + " and dampeningId:" +
                         dampeningId);
             }
             return ResponseUtil.ok(found);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -592,13 +615,15 @@ public class TriggersHandler {
                 // make sure we have the best chance of clean data..
                 Dampening d = getCleanDampening(dampening);
                 definitions.addDampening(tenantId, d);
-                log.debugf("Dampening: %s ", d);
+                if (log.isDebugEnabled()) {
+                    log.debug("Dampening: " + d);
+                }
                 return ResponseUtil.ok(d);
             } else {
                 return ResponseUtil.badRequest("Existing dampening for dampeningId: " + dampening.getDampeningId());
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -626,13 +651,15 @@ public class TriggersHandler {
                 // make sure we have the best chance of clean data..
                 Dampening d = getCleanDampening(dampening);
                 definitions.addGroupDampening(tenantId, d);
-                log.debugf("Dampening: %s ", d);
+                if (log.isDebugEnabled()) {
+                    log.debug("Dampening: " + d);
+                }
                 return ResponseUtil.ok(d);
             } else {
                 return ResponseUtil.badRequest("Existing dampening for dampeningId: " + dampening.getDampeningId());
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -686,13 +713,15 @@ public class TriggersHandler {
                 // make sure we have the best chance of clean data..
                 Dampening d = getCleanDampening(dampening);
                 definitions.updateDampening(tenantId, d);
-                log.debugf("Dampening: %s ", d);
+                if (log.isDebugEnabled()) {
+                    log.debug("Dampening: " + d);
+                }
                 return ResponseUtil.ok(d);
             } else {
                 return ResponseUtil.notFound("No dampening found for dampeningId: " + dampeningId);
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -720,13 +749,15 @@ public class TriggersHandler {
                 // make sure we have the best chance of clean data..
                 Dampening d = getCleanDampening(dampening);
                 definitions.updateGroupDampening(tenantId, d);
-                log.debugf("Group Dampening: %s ", d);
+                if (log.isDebugEnabled()) {
+                    log.debug("Group Dampening: " + d);
+                }
                 return ResponseUtil.ok(d);
             } else {
                 return ResponseUtil.notFound("No dampening found for dampeningId: " + dampeningId);
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -749,13 +780,13 @@ public class TriggersHandler {
             boolean exists = (definitions.getDampening(tenantId, dampeningId) != null);
             if (exists) {
                 definitions.removeDampening(tenantId, dampeningId);
-                log.debugf("DampeningId: %s ", dampeningId);
+                log.debug("DampeningId: " + dampeningId);
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.notFound("Dampening not found for dampeningId: " + dampeningId);
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -778,13 +809,15 @@ public class TriggersHandler {
             boolean exists = (definitions.getDampening(tenantId, dampeningId) != null);
             if (exists) {
                 definitions.removeGroupDampening(tenantId, dampeningId);
-                log.debugf("Group DampeningId: %s ", dampeningId);
+                if (log.isDebugEnabled()) {
+                    log.debug("Group DampeningId: " + dampeningId);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.notFound("Dampening not found for dampeningId: " + dampeningId);
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -802,10 +835,10 @@ public class TriggersHandler {
             final String triggerId) {
         try {
             Collection<Condition> conditions = definitions.getTriggerConditions(tenantId, triggerId, null);
-            log.debugf("Conditions: %s ", conditions);
+            log.debug("Conditions: " + conditions);
             return ResponseUtil.ok(conditions);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -840,7 +873,7 @@ public class TriggersHandler {
             }
             return ResponseUtil.ok(found);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -886,7 +919,9 @@ public class TriggersHandler {
             }
 
             conditions = definitions.setConditions(tenantId, triggerId, mode, conditions);
-            log.debugf("Conditions: %s ", conditions);
+            if (log.isDebugEnabled()) {
+                log.debug("Conditions: " + conditions);
+            }
             return ResponseUtil.ok(conditions);
 
         } catch (IllegalArgumentException e) {
@@ -894,7 +929,7 @@ public class TriggersHandler {
         } catch (NotFoundException e) {
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -950,7 +985,9 @@ public class TriggersHandler {
 
             conditions = definitions.setGroupConditions(tenantId, groupId, mode, conditions, dataIdMemberMap);
 
-            log.debugf("Conditions: %s ", conditions);
+            if (log.isDebugEnabled()) {
+                log.debug("Conditions: " + conditions);
+            }
             return ResponseUtil.ok(conditions);
 
         } catch (IllegalArgumentException e) {
@@ -958,7 +995,7 @@ public class TriggersHandler {
         } catch (NotFoundException e) {
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -1002,13 +1039,15 @@ public class TriggersHandler {
                         condition.getTriggerId(),
                         condition.getTriggerMode(),
                         condition);
-            log.debugf("Conditions: %s ", conditions);
+            if (log.isDebugEnabled()) {
+                log.debug("Conditions: " + conditions);
+            }
             return ResponseUtil.ok(conditions);
 
         } catch (NotFoundException e) {
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -1056,11 +1095,13 @@ public class TriggersHandler {
                 return ResponseUtil.notFound("Condition not found for conditionId: " + conditionId);
             } else {
                 Collection<Condition> conditions = definitions.updateCondition(tenantId, condition);
-                log.debugf("Conditions: %s ", conditions);
+                if (log.isDebugEnabled()) {
+                    log.debug("Conditions: " + conditions);
+                }
                 return ResponseUtil.ok(conditions);
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -1096,10 +1137,12 @@ public class TriggersHandler {
                         triggerId);
             }
             Collection<Condition> conditions = definitions.removeCondition(tenantId, conditionId);
-            log.debugf("Conditions: %s ", conditions);
+            if (log.isDebugEnabled()) {
+                log.debug("Conditions: " + conditions);
+            }
             return ResponseUtil.ok(conditions);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }

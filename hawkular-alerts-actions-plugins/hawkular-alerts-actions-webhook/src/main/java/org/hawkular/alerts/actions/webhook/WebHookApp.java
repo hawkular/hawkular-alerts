@@ -41,7 +41,7 @@ public class WebHookApp extends Application {
     public static final String TENANT_HEADER_NAME = "Hawkular-Tenant";
 
     public WebHookApp() {
-        log.debugf("Hawkular Alerts WebHook starting...");
+        log.debug("Hawkular Alerts WebHook starting...");
     }
 
     public static Response internalError(String message) {

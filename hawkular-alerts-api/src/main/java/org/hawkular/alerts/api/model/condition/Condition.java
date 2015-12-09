@@ -18,6 +18,7 @@ package org.hawkular.alerts.api.model.condition;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.*;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public abstract class Condition {
+public abstract class Condition implements Serializable {
 
     public enum Type {
         AVAILABILITY, COMPARE, STRING, THRESHOLD, RANGE, EXTERNAL, EVENT

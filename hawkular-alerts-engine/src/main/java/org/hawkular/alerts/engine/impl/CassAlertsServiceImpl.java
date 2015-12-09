@@ -90,9 +90,6 @@ public class CassAlertsServiceImpl implements AlertsService {
     @EJB
     ActionsService actionsService;
 
-    @EJB
-    EventsCacheManager eventsCacheManager;
-
     public CassAlertsServiceImpl() {
     }
 
@@ -304,8 +301,8 @@ public class CassAlertsServiceImpl implements AlertsService {
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
 
-        if (filter) {
-            log.debugf("getAlerts criteria: %s", criteria.toString());
+        if (filter && log.isDebugEnabled()) {
+            log.debug("getAlerts criteria: " + criteria.toString());
         }
 
         List<Alert> alerts = new ArrayList<>();
@@ -704,8 +701,8 @@ public class CassAlertsServiceImpl implements AlertsService {
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
 
-        if (filter) {
-            log.debugf("getEvents criteria: %s", criteria.toString());
+        if (filter && log.isDebugEnabled()) {
+            log.debug("getEvents criteria: " + criteria.toString());
         }
 
         List<Event> events = new ArrayList<>();
@@ -1256,7 +1253,10 @@ public class CassAlertsServiceImpl implements AlertsService {
             if (setFiring) {
                 Trigger loadedTrigger = alertsEngine.getLoadedTrigger(trigger);
                 if (null != loadedTrigger && Mode.FIRING == loadedTrigger.getMode()) {
-                    log.debugf("Ignoring setFiring, loaded Trigger already in firing mode %s", loadedTrigger);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Ignoring setFiring, loaded Trigger already in firing mode " +
+                                loadedTrigger.toString());
+                    }
                     setFiring = false;
                 }
             }
@@ -1275,7 +1275,10 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
 
             if (!allResolved) {
-                log.debugf("Ignoring resolveOptions, not all Alerts for Trigger %s are resolved", trigger);
+                if (log.isDebugEnabled()) {
+                    log.debug("Ignoring resolveOptions, not all Alerts for Trigger " + trigger.toString() +
+                            " are resolved");
+                }
                 return;
             }
 
@@ -1309,16 +1312,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             return;
         }
         persistEvents(events);
-        Set<String> activeDataIds = eventsCacheManager.getActiveDataIds();
-        Collection<Event> withConditions = new ArrayList<>();
-        for (Event e : events) {
-            if (!isEmpty(e.getDataId()) && activeDataIds.contains(e.getDataId())) {
-                withConditions.add(e);
-            }
-        }
-        if (!withConditions.isEmpty()) {
-            alertsEngine.sendEvents(withConditions);
-        }
+        alertsEngine.sendEvents(events);
     }
 
     private void sendAction(Alert a) {

@@ -58,7 +58,7 @@ public class ActionPluginHandler {
     DefinitionsService definitions;
 
     public ActionPluginHandler() {
-        log.debugf("Creating instance.");
+        log.debug("Creating instance.");
     }
 
     @GET
@@ -72,10 +72,12 @@ public class ActionPluginHandler {
     public Response findActionPlugins() {
         try {
             Collection<String> actionPlugins = definitions.getActionPlugins();
-            log.debugf("ActionPlugins: %s ", actionPlugins);
+            if (log.isDebugEnabled()) {
+                log.debug("ActionPlugins: " + actionPlugins);
+            }
             return ResponseUtil.ok(actionPlugins);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -95,13 +97,15 @@ public class ActionPluginHandler {
                                         final String actionPlugin) {
         try {
             Set<String> actionPluginProps = definitions.getActionPlugin(actionPlugin);
-            log.debugf("ActionPlugin: %s - Properties: %s ", actionPlugin, actionPluginProps);
+            if (log.isDebugEnabled()) {
+                log.debug("ActionPlugin: " + actionPlugin + " - Properties: " + actionPluginProps);
+            }
             if (isEmpty(actionPluginProps)) {
                 return ResponseUtil.notFound("actionPlugin: " + actionPlugin + " not found");
             }
             return ResponseUtil.ok(actionPluginProps);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }

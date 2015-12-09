@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.engine.rules;
+package org.hawkular.alerts.engine.service;
 
 import java.util.Collection;
 import java.util.function.Predicate;
@@ -28,9 +28,6 @@ import org.hawkular.alerts.api.model.event.Event;
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
- */
-/**
- * @author jshaughn
  */
 public interface RulesEngine {
 

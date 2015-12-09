@@ -81,7 +81,9 @@ public class BusActionListener implements ActionListener {
 
                 BusActionMessage pluginMessage = new BusActionMessage(action);
                 MessageId mid = new MessageProcessor().send(pcc, pluginMessage);
-                log.debug("Sent action message [" + mid.getId() + "] to the bus");
+                if (log.isDebugEnabled()) {
+                    log.debug("Sent action message [" + mid.getId() + "] to the bus");
+                }
             } else {
                 msgLogger.warnCannotAccessToDefinitionsService();
             }

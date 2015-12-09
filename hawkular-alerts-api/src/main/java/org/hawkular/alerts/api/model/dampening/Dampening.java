@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.dampening;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,7 +38,7 @@ import com.wordnik.swagger.annotations.ApiModelProperty;
  *
  * @author Jay Shaughnessy
  */
-public class Dampening {
+public class Dampening implements Serializable {
 
     public enum Type {
         STRICT, RELAXED_COUNT, RELAXED_TIME, STRICT_TIME, STRICT_TIMEOUT

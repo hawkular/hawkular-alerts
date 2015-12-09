@@ -102,7 +102,7 @@ public class WebHooks {
         Path path = f.toPath();
         StringBuilder fullFile = new StringBuilder();
         Files.lines(path).forEach(s -> fullFile.append(s));
-        log.debugf("Reading webhooks... %s" + fullFile.toString());
+        log.debug("Reading webhooks... " + fullFile.toString());
         instance.webhooks = instance.mapper.readValue(fullFile.toString(), Map.class);
     }
 

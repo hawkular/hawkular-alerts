@@ -79,7 +79,7 @@ public class AlertsHandler {
     AlertsEngine alertsEngine;
 
     public AlertsHandler() {
-        log.debugf("Creating instance.");
+        log.debug("Creating instance.");
     }
 
     @GET
@@ -127,13 +127,15 @@ public class AlertsHandler {
             AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
                     tags, thin);
             Page<Alert> alertPage = alertsService.getAlerts(tenantId, criteria, pager);
-            log.debugf("Alerts: %s ", alertPage);
+            if (log.isDebugEnabled()) {
+                log.debug("Alerts: " + alertPage);
+            }
             if (isEmpty(alertPage)) {
                 return ResponseUtil.ok(alertPage);
             }
             return ResponseUtil.paginatedOk(alertPage, uri);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -158,13 +160,15 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertId)) {
                 alertsService.ackAlerts(tenantId, Arrays.asList(alertId), ackBy, ackNotes);
-                log.debugf("AlertId: %s ", alertId);
+                if (log.isDebugEnabled()) {
+                    log.debug("AlertId: " + alertId);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertId required for ack");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -189,13 +193,15 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertId)) {
                 alertsService.addNote(tenantId, alertId, user, text);
-                log.debugf("AlertId: %s ", alertId);
+                if (log.isDebugEnabled()) {
+                    log.debug("AlertId: " + alertId);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertId required for adding notes");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -221,13 +227,15 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertIds)) {
                 alertsService.ackAlerts(tenantId, Arrays.asList(alertIds.split(",")), ackBy, ackNotes);
-                log.debugf("Acked alertIds: %s ", alertIds);
+                if (log.isDebugEnabled()) {
+                    log.debug("Acked alertIds: " + alertIds);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertIds required for ack");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -248,13 +256,15 @@ public class AlertsHandler {
             criteria.setAlertId(alertId);
             int numDeleted = alertsService.deleteAlerts(tenantId, criteria);
             if (1 == numDeleted) {
-                log.debugf("AlertId: %s ", alertId);
+                if (log.isDebugEnabled()) {
+                    log.debug("AlertId: " + alertId);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.notFound("Alert " + alertId + " doesn't exist for delete");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -299,10 +309,12 @@ public class AlertsHandler {
             AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
                     tags, null);
             int numDeleted = alertsService.deleteAlerts(tenantId, criteria);
-            log.debugf("Alerts deleted: %s ", numDeleted);
+            if (log.isDebugEnabled()) {
+                log.debug("Alerts deleted: " + numDeleted);
+            }
             return ResponseUtil.ok(numDeleted);
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -340,7 +352,9 @@ public class AlertsHandler {
                 if (fields.length == 2) {
                     tagsMap.put(fields[0], fields[1]);
                 } else {
-                    log.debugf("Invalid Tag Criteria %s", Arrays.toString(fields));
+                    if (log.isDebugEnabled()) {
+                        log.debug("Invalid Tag Criteria " + Arrays.toString(fields));
+                    }
                 }
             }
             criteria.setTags(tagsMap);
@@ -371,13 +385,15 @@ public class AlertsHandler {
         try {
             Alert found = alertsService.getAlert(tenantId, alertId, ((null == thin) ? false : thin.booleanValue()));
             if (found != null) {
-                log.debugf("Alert: %s ", found);
+                if (log.isDebugEnabled()) {
+                    log.debug("Alert: " + found);
+                }
                 return ResponseUtil.ok(found);
             } else {
                 return ResponseUtil.notFound("alertId: " + alertId + " not found");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -403,13 +419,15 @@ public class AlertsHandler {
             if (!isEmpty(alertId)) {
                 alertsService.resolveAlerts(tenantId, Arrays.asList(alertId), resolvedBy,
                         resolvedNotes, null);
-                log.debugf("AlertId: %s ", alertId);
+                if (log.isDebugEnabled()) {
+                    log.debug("AlertId: " + alertId);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertsId required for resolve");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -436,13 +454,15 @@ public class AlertsHandler {
             if (!isEmpty(alertIds)) {
                 alertsService.resolveAlerts(tenantId, Arrays.asList(alertIds.split(",")), resolvedBy,
                         resolvedNotes, null);
-                log.debugf("AlertsIds: %s ", alertIds);
+                if (log.isDebugEnabled()) {
+                    log.debug("AlertsIds: " + alertIds);
+                }
                 return ResponseUtil.ok();
             } else {
                 return ResponseUtil.badRequest("AlertsIds required for resolve");
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -463,11 +483,13 @@ public class AlertsHandler {
                 return ResponseUtil.badRequest("Data is empty");
             } else {
                 alertsEngine.sendData(datums);
-                log.debugf("Datums: %s ", datums);
+                if (log.isDebugEnabled()) {
+                    log.debug("Datums: " + datums);
+                }
                 return ResponseUtil.ok();
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -486,7 +508,7 @@ public class AlertsHandler {
             alertsEngine.reload();
             return ResponseUtil.ok();
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }
@@ -503,7 +525,7 @@ public class AlertsHandler {
             alertsEngine.reloadTrigger(tenantId, triggerId);
             return ResponseUtil.ok();
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
         }
     }

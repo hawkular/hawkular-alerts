@@ -73,7 +73,9 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
 
         // TODO: tenants?
         MetricData metricData = msg.getMetricData();
-        log.tracef("Message received with [%s] metrics.", metricData.getData().size());
+        if (log.isTraceEnabled()) {
+            log.trace("Message received with [" + metricData.getData().size() + "] metrics.");
+        }
 
         List<SingleMetric> data = metricData.getData();
         List<Data> alertData = null;
@@ -87,10 +89,14 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
             }
         }
         if (null == alertData) {
-            log.tracef("Forwarding 0 of [%s] metrics to Alerts Engine...", data.size());
+            if (log.isTraceEnabled()) {
+                log.trace("Forwarding 0 of [" + data.size() + "] metrics to Alerts Engine...");
+            }
         } else {
-            log.debugf("Forwarding [%s] of [%s] metrics to Alerts Engine (filtered [%s])...", alertData.size(),
-                    data.size(), (data.size() - alertData.size()));
+            if (log.isDebugEnabled()) {
+                log.debug("Forwarding [" + alertData.size() + "] of [" + data.size() + "] metrics to Alerts Engine " +
+                    "(filtered [" + (data.size() - alertData.size()) + "])...");
+            }
             try {
                 alerts.sendData(alertData);
             } catch (Exception e) {

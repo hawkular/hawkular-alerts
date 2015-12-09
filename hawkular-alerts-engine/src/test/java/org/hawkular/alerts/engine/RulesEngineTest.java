@@ -56,7 +56,7 @@ import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
-import org.hawkular.alerts.engine.rules.RulesEngine;
+import org.hawkular.alerts.engine.service.RulesEngine;
 import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;

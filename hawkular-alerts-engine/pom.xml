@@ -61,6 +61,12 @@
       <artifactId>cassandra-driver-core</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${version.com.google.guava}</version>
+    </dependency>
+
     <!-- Wildfly dependencies -->
     <dependency>
       <groupId>org.jboss.logging</groupId>
@@ -88,8 +94,20 @@
     </dependency>
 
     <dependency>
-      <groupId>org.jboss.resteasy</groupId>
-      <artifactId>resteasy-jackson2-provider</artifactId>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -169,10 +187,69 @@
 
   <profiles>
 
+    <!-- Profiles to compile with specific clustering libraries -->
     <profile>
-      <id>default</id>
+      <id>clustering-wildfly</id>
       <activation>
-        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>!env</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-core</artifactId>
+          <scope>provided</scope>
+          <version>${version.org.infinispan.wildfly}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <profile>
+      <id>clustering-eap64</id>
+      <activation>
+        <property>
+          <name>env</name>
+          <value>eap64</value>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-core</artifactId>
+          <scope>provided</scope>
+          <version>${version.org.infinispan.eap64}</version>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <systemProperties>
+                <property>
+                  <name>testOutput</name>
+                  <value>${project.build.testOutputDirectory}</value>
+                </property>
+              </systemProperties>
+              <excludes>
+                <exclude>**/*/PerfRulesEngineTest.java</exclude>
+                <exclude>**/*/CassPersistenceTest.java</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Profiles to control test scenarios -->
+    <profile>
+      <id>default-tests</id>
+      <activation>
+        <property>
+          <name>!env</name>
+        </property>
       </activation>
       <build>
         <plugins>
@@ -197,7 +274,13 @@
     </profile>
 
     <profile>
-      <id>perf</id>
+      <id>perf-tests</id>
+      <activation>
+        <property>
+          <name>env</name>
+          <value>perf</value>
+        </property>
+      </activation>
       <build>
         <plugins>
           <plugin>
@@ -210,36 +293,11 @@
                   <value>${project.build.testOutputDirectory}</value>
                 </property>
               </systemProperties>
-              <includes>
-                <include>**/*/PerfRulesEngineTest.java</include>
-              </includes>
             </configuration>
           </plugin>
         </plugins>
       </build>
     </profile>
 
-    <profile>
-      <id>rest</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <systemProperties>
-                <property>
-                  <name>testOutput</name>
-                  <value>${project.build.testOutputDirectory}</value>
-                </property>
-              </systemProperties>
-              <includes>
-                <include>**/*/CassPersistenceTest.java</include>
-              </includes>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
   </profiles>
 </project>

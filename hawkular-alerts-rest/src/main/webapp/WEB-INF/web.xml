@@ -21,6 +21,26 @@
       xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
       version="3.0">
 
+  <resource-env-ref>
+    <resource-env-ref-name>container/hawkular-alerts</resource-env-ref-name>
+    <lookup-name>java:jboss/infinispan/container/hawkular-alerts</lookup-name>
+  </resource-env-ref>
+
+  <resource-env-ref>
+    <resource-env-ref-name>cache/partition</resource-env-ref-name>
+    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/partition</lookup-name>
+  </resource-env-ref>
+
+  <resource-env-ref>
+    <resource-env-ref-name>cache/triggers</resource-env-ref-name>
+    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/triggers</lookup-name>
+  </resource-env-ref>
+
+  <resource-env-ref>
+    <resource-env-ref-name>cache/data</resource-env-ref-name>
+    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/data</lookup-name>
+  </resource-env-ref>
+
   <security-constraint>
     <web-resource-collection>
       <web-resource-name>REST endpoints</web-resource-name>

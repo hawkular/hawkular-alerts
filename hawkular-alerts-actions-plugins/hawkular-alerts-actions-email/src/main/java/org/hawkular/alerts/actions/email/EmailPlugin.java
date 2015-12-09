@@ -335,7 +335,9 @@ public class EmailPlugin implements ActionPluginListener {
         if (null != subject && !subject.isEmpty()) {
             email.setSubject(subject);
         } else {
-            log.debugf("Subject not found processing email on message: %s", msg);
+            if (log.isDebugEnabled()) {
+                log.debug("Subject not found processing email on message: " + msg);
+            }
         }
 
         String plain = emailProcessed.get("emailBodyPlain");

@@ -43,4 +43,11 @@ public class BusActionMessage extends AbstractMessage implements ActionMessage {
     public Action getAction() {
         return action;
     }
+
+    @Override
+    public String toString() {
+        return "BusActionMessage" + '[' +
+                "action=" + action +
+                ']';
+    }
 }

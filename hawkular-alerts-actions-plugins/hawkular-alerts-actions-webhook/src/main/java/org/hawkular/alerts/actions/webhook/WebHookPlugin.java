@@ -64,11 +64,11 @@ public class WebHookPlugin implements ActionPluginListener {
             WebHooks.setFile(webHooksFile);
             File f = new File(webHooksFile);
             if (!f.exists()) {
-                log.debugf("WebHooks file %s doesn't exist", webHooksFile);
+                log.debug("WebHooks file " + webHooksFile + " doesn't exist");
             } else {
                 try {
                     WebHooks.loadFile();
-                    log.debugf("WebHooks file loaded.");
+                    log.debug("WebHooks file loaded.");
                 } catch (IOException e) {
                     msgLog.warn(e.toString(), e);
                 }
@@ -99,7 +99,7 @@ public class WebHookPlugin implements ActionPluginListener {
         String tenantId = receivedAction.getTenantId();
         List<Map<String,String>> webhooks = WebHooks.getWebHooks(tenantId);
         if (webhooks == null) {
-            log.debugf("Webhook received a message but there are not webhooks configured");
+            log.debug("Webhook received a message but there are not webhooks configured");
             return;
         }
         for (Map<String, String> webhook : webhooks) {
@@ -175,7 +175,9 @@ public class WebHookPlugin implements ActionPluginListener {
         os.write(jsonAction.getBytes());
         os.flush();
 
-        log.debugf("Webhook for %s . Request code: %s ", url, conn.getResponseCode());
+        if (log.isDebugEnabled()) {
+            log.debug("Webhook for " + url + " . Request code: " + conn.getResponseCode());
+        }
 
         conn.disconnect();
     }

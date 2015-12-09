@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.trigger;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -35,7 +36,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class Trigger {
+public class Trigger implements Serializable {
 
     @JsonInclude
     private String tenantId;
@@ -116,6 +117,14 @@ public class Trigger {
 
     @JsonIgnore
     private transient Match match;
+
+    // TODO: Remove this variable when EAP64 is no longer a supported deployment platform
+    @JsonIgnore
+    private transient boolean loadable;
+
+    // TODO: Remove this variable when EAP64 is no longer a supported deployment platform
+    @JsonIgnore
+    private transient boolean member;
 
     public Trigger() {
         /*
@@ -405,7 +414,8 @@ public class Trigger {
 
     @JsonIgnore
     public boolean isMember() {
-        return !isEmpty(memberOf);
+        member = !isEmpty(memberOf);
+        return member;
     }
 
     private boolean isEmpty(String s) {
@@ -435,7 +445,8 @@ public class Trigger {
 
     @JsonIgnore
     public boolean isLoadable() {
-        return !group && enabled;
+        loadable = !group && enabled;
+        return loadable;
     }
 
     @JsonIgnore

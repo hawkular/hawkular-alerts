@@ -51,7 +51,9 @@ public class ActionPluginRegistrationListener extends BasicMessageListener<BusRe
 
     @Override
     protected void onBasicMessage(BusRegistrationMessage msg) {
-        log.debugf("Message received: [%s]", msg);
+        if (log.isDebugEnabled()) {
+            log.debug("Message received: " + msg);
+        }
         String actionPlugin = msg.getActionPlugin();
         try {
             if (definitions.getActionPlugin(actionPlugin) == null) {
@@ -67,7 +69,7 @@ public class ActionPluginRegistrationListener extends BasicMessageListener<BusRe
                 msgLog.warnActionPluginAlreadyRegistered(actionPlugin);
             }
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             msgLog.errorDefinitionsService(e.getMessage());
         }
     }

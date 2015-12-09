@@ -49,7 +49,7 @@ public class AlertEngineRegister {
     public void init() {
         actionListener = new BusActionListener();
         actions.addListener(actionListener);
-        log.debugf("Registering ActionListener: [%s]", actionListener);
+        log.debug("Registering ActionListener: [" + actionListener + "]");
     }
 
     @PreDestroy
@@ -58,7 +58,7 @@ public class AlertEngineRegister {
             try {
                 actionListener.close();
             } catch (Exception e) {
-                log.debugf(e.getMessage(), e);
+                log.debug(e.getMessage(), e);
             }
         }
     }

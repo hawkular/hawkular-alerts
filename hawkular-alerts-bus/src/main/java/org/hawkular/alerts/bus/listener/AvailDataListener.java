@@ -76,7 +76,9 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
     protected void onBasicMessage(AvailDataMessage msg) {
 
         AvailData availData = msg.getAvailData();
-        log.tracef("Message received with [%s] avails.", availData.getData().size());
+        if (log.isTraceEnabled()) {
+            log.trace("Message received with [" + availData.getData().size() + "] avails.");
+        }
 
         List<SingleAvail> data = availData.getData();
         List<Data> alertData = null;
@@ -90,10 +92,14 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
             }
         }
         if (null == alertData) {
-            log.tracef("Forwarding 0 of [%s] avails to Alerts Engine...", data.size());
+            if (log.isTraceEnabled()) {
+                log.trace("Forwarding 0 of [" + data.size() + "] avails to Alerts Engine...");
+            }
         } else {
-            log.debugf("Forwarding [%s] of [%s] avails to Alerts Engine (filtered [%s])...", alertData.size(),
-                    data.size(), (data.size() - alertData.size()));
+            if (log.isDebugEnabled()) {
+                log.debug("Forwarding [" + alertData.size() + "] of [" + data.size() + "] avails to Alerts Engine " +
+                "(filtered [" + (data.size() - alertData.size()) + "])...");
+            }
             try {
                 alerts.sendData(alertData);
             } catch (Exception e) {

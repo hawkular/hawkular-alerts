@@ -52,7 +52,7 @@ public class CacheManager {
 
     Set<String> activeDataIds;
     //long activeDataIdsTime = 0L;
-    Set<String> activeAvailabiityIds;
+    Set<String> activeAvailabityIds;
 
     //@Resource(lookup = "java:jboss/infinispan/container/hawkular")
     //private CacheContainer container;
@@ -84,7 +84,7 @@ public class CacheManager {
     }
 
     public Set<String> getActiveAvailabilityIds() {
-        return activeAvailabiityIds;
+        return activeAvailabityIds;
     }
 
     public void setActiveAvailabilityIds(Set<String> activeAvailabilityIds) {
@@ -127,15 +127,17 @@ public class CacheManager {
         } catch (Exception e) {
             log.error("FAILED to load conditions to create Id filters. All data being forwarded to alerting!", e);
             activeDataIds = null;
-            activeAvailabiityIds = null;
+            activeAvailabityIds = null;
             return;
         }
 
         activeDataIds = Collections.unmodifiableSet(dataIds);
-        activeAvailabiityIds = Collections.unmodifiableSet(availIds);
+        activeAvailabityIds = Collections.unmodifiableSet(availIds);
 
-        log.debugf("Updated activeDataIds! %s", activeDataIds);
-        log.debugf("Updated activeAvailIds! %s", activeAvailabiityIds);
+        if (log.isDebugEnabled()) {
+            log.debug("Updated activeDataIds! " + activeDataIds);
+            log.debug("Updated activeAvailIds! " + activeAvailabityIds);
+        }
     }
 
 }

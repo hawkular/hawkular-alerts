@@ -69,7 +69,7 @@ public class WebHookHandler {
             WebHooks.addWebHook(tenantId, filter, url);
             return WebHookApp.ok();
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return WebHookApp.internalError(e.getMessage());
         }
     }
@@ -86,7 +86,7 @@ public class WebHookHandler {
             WebHooks.removeWebHook(tenantId, url);
             return WebHookApp.ok();
         } catch (Exception e) {
-            log.debugf(e.getMessage(), e);
+            log.debug(e.getMessage(), e);
             return WebHookApp.internalError(e.getMessage());
         }
     }
