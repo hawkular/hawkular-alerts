@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -85,7 +86,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     private final Set<Dampening> pendingTimeouts;
     private final Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers;
     private final Set<Trigger> disabledTriggers;
-    private final AlertsEngineCache activeTriggers;
+    private final AlertsEngineCache alertsEngineCache;
 
     private final Timer wakeUpTimer;
     private TimerTask rulesTask;
@@ -115,7 +116,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         pendingTimeouts = new HashSet<>();
         autoResolvedTriggers = new HashMap<>();
         disabledTriggers = new HashSet<>();
-        activeTriggers = new AlertsEngineCache();
+        alertsEngineCache = new AlertsEngineCache();
 
         wakeUpTimer = new Timer("CassAlertsServiceImpl-Timer");
 
@@ -205,7 +206,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     public void reload() {
         log.debug("Start a full reload of the AlertsEngine");
         rules.reset();
-        activeTriggers.clear();
+        alertsEngineCache.clear();
         if (rulesTask != null) {
             rulesTask.cancel();
         }
@@ -341,12 +342,12 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 for (Condition c : conditionSet) {
                     DataEntry entry = new DataEntry(c.getTenantId(), c.getTriggerId(), c.getConditionId(),
                             c.getDataId());
-                    activeTriggers.add(entry);
-                    if (c instanceof CompareCondition) {
+                    alertsEngineCache.add(entry);
+                    if (Condition.Type.COMPARE == c.getType()) {
                         String data2Id = ((CompareCondition) c).getData2Id();
                         DataEntry entry2 = new DataEntry(c.getTenantId(), c.getTriggerId(), c.getConditionId(),
                                 data2Id);
-                        activeTriggers.add(entry2);
+                        alertsEngineCache.add(entry2);
                     }
                 }
 
@@ -402,7 +403,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             rules.removeFact(trigger);
 
             // Remove dataId associated from cache
-            activeTriggers.remove(trigger.getTenantId(), trigger.getId());
+            alertsEngineCache.remove(trigger.getTenantId(), trigger.getId());
 
             // then remove everything else.
             // We may want to do this with rules, because as is, we need to loop through every Fact in
@@ -467,31 +468,45 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         }
     }
 
-    private synchronized void addPendingData(Collection<Data> data) {
-        for (Data d : data) {
-            if (d != null && d.getId() != null && activeTriggers.isDataIdActive(d.getId())) {
-                pendingData.add(d);
+    private void addPendingData(Collection<Data> data) {
+        ArrayList<Data> filteredData = new ArrayList<>(data);
+        for (Iterator<Data> i = filteredData.iterator(); i.hasNext(); ) {
+            Data d = i.next();
+            if (!alertsEngineCache.isDataIdActive(d.getId())) {
+                i.remove();
+            }
+        }
+        synchronized (pendingData) {
+            pendingData.addAll(filteredData);
+        }
+    }
+
+    private void addPendingData(Data data) {
+        if (data != null && data.getId() != null && alertsEngineCache.isDataIdActive(data.getId())) {
+            synchronized (pendingData) {
+                pendingData.add(data);
             }
         }
     }
 
-    private synchronized void addPendingData(Data data) {
-        if (data != null && data.getId() != null && activeTriggers.isDataIdActive(data.getId())) {
-            pendingData.add(data);
+    private void addPendingEvents(Collection<Event> events) {
+        ArrayList<Event> filteredEvents = new ArrayList<>(events);
+        for (Iterator<Event> i = filteredEvents.iterator(); i.hasNext(); ) {
+            Event e = i.next();
+            if (!alertsEngineCache.isDataIdActive(e.getDataId())) {
+                i.remove();
+            }
+        }
+        synchronized (pendingEvents) {
+            pendingEvents.addAll(filteredEvents);
         }
     }
 
-    private synchronized void addPendingEvents(Collection<Event> events) {
-        for (Event event : events) {
-            if (event != null && event.getDataId() != null && activeTriggers.isDataIdActive(event.getDataId())) {
+    private void addPendingEvent(Event event) {
+        if (event != null && event.getDataId() != null && alertsEngineCache.isDataIdActive(event.getDataId())) {
+            synchronized (pendingEvents) {
                 pendingEvents.add(event);
             }
-        }
-    }
-
-    private synchronized void addPendingEvent(Event event) {
-        if (event != null && event.getDataId() != null && activeTriggers.isDataIdActive(event.getDataId())) {
-            pendingEvents.add(event);
         }
     }
 
@@ -538,13 +553,6 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
                     rules.fire();
                     alertsService.addAlerts(alerts);
-                    if (distributed) {
-                        /*
-                            Generated alerts on a node should be notified to other nodes for chained triggers
-                         */
-                        List<Event> alertsToNotify = new ArrayList(alerts);
-                        partitionManager.notifyEvents(alertsToNotify);
-                    }
                     alerts.clear();
                     alertsService.persistEvents(events);
                     if (distributed) {

@@ -57,7 +57,7 @@ public class AlertsEngineCache {
      *         false otherwise
      */
     public boolean isDataIdActive(String dataId) {
-        return activeDataIds.contains(dataId);
+        return dataId != null && activeDataIds.contains(dataId);
     }
 
     /**
