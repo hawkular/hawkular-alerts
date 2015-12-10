@@ -21,7 +21,7 @@
 
   <deployment>
     <dependencies>
-      <module name="org.hawkular.nest" />
+      <module name="org.hawkular.bus" />
       <module name="org.infinispan" export="true" />
     </dependencies>
   </deployment>
