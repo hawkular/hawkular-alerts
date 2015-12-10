@@ -116,9 +116,9 @@
   </build>
 
   <profiles>
-    <!-- ITests require a running server with metrics, alerts and the external alerter running -->
+    <!-- This profile requires a running server with metrics, alerts and the external alerter running -->
     <profile>
-      <id>itest</id>
+      <id>itest-tests</id>
       <properties>
         <!-- IMPORTANT: The port must be the port offset + 8080. -->
         <hawkular.host>127.0.0.1</hawkular.host>

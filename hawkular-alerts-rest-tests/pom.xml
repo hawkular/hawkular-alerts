@@ -165,8 +165,9 @@
 
   <profiles>
 
+    <!-- This profile requires a running server of hawkular or hawkular-alerts/standalone -->
     <profile>
-      <id>rest-only</id>
+      <id>itest-tests</id>
       <properties>
         <!-- IMPORTANT: The port must be the port offset + 8080. -->
         <hawkular.host>127.0.0.1</hawkular.host>
@@ -204,6 +205,152 @@
       </build>
     </profile>
 
+    <profile>
+      <id>itest</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.hawkular.accounts</groupId>
+          <artifactId>hawkular-accounts-feature-pack</artifactId>
+          <version>${version.org.hawkular.accounts}</version>
+          <type>pom</type>
+          <scope>provided</scope>
+          <exclusions>
+            <exclusion>
+              <groupId>*</groupId>
+              <artifactId>*</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+        <dependency>
+          <groupId>org.hawkular.accounts</groupId>
+          <artifactId>hawkular-accounts-feature-pack</artifactId>
+          <version>${version.org.hawkular.accounts}</version>
+          <type>zip</type>
+          <exclusions>
+            <exclusion>
+              <groupId>*</groupId>
+              <artifactId>*</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <!-- Build a wildfly + bus + accounts distro from feature packs -->
+          <plugin>
+            <groupId>org.wildfly.build</groupId>
+            <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+            <version>${version.org.wildfly.build}</version>
+            <executions>
+              <execution>
+                <id>server-provisioning</id>
+                <goals>
+                  <goal>build</goal>
+                </goals>
+                <phase>compile</phase>
+                <configuration>
+                  <config-file>server-provisioning.xml</config-file>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Install hawkular-alerts -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>install-hawkular-alerts</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>copy</goal>
+                </goals>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-rest</artifactId>
+                      <version>${project.version}</version>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}/modules/org/hawkular/nest/main/deployments</outputDirectory>
+                      <destFileName>hawkular-alerts-rest.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-email</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}/modules/org/hawkular/nest/main/deployments</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-email.war</destFileName>
+                    </artifactItem>
+                  </artifactItems>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Install hawkular-alerts demo data for itests -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>copy-data-dir</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}/standalone/data</outputDirectory>
+                  <overwrite>true</overwrite>
+                  <resources>
+                    <resource>
+                      <directory>${project.basedir}/src/test/wildfly-data</directory>
+                      <includes>
+                        <include>**/*</include>
+                      </includes>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Configure hawkular-alerts -->
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>xml-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>transform-standalone-xml</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>transform</goal>
+                </goals>
+                <configuration>
+                  <transformationSets>
+                    <!-- standalone.xml -->
+                    <transformationSet>
+                      <dir>${project.build.directory}/${project.artifactId}-${project.version}/standalone/configuration</dir>
+                      <stylesheet>src/test/resources/standalone-hawkular.xsl</stylesheet>
+                      <includes>
+                        <include>standalone.xml</include>
+                      </includes>
+                      <outputDir>${project.build.directory}/${project.artifactId}-${project.version}/standalone/configuration</outputDir>
+                    </transformationSet>
+                  </transformationSets>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Old itest profile -->
     <profile>
       <id>rest</id>
       <properties>
@@ -408,6 +555,7 @@
       </build>
     </profile>
 
+    <!-- This profile prepares a standalone distribution of hawkular-alerts on top of a Wildfly Server -->
     <profile>
       <id>standalone</id>
       <properties>
