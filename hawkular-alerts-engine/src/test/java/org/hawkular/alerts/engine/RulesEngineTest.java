@@ -39,6 +39,8 @@ import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.EventCondition;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
+import org.hawkular.alerts.api.model.condition.RateCondition;
+import org.hawkular.alerts.api.model.condition.RateConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.StringConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -851,7 +853,7 @@ public class RulesEngineTest {
     }
 
     @Test
-    public void AvailabilityTest() {
+    public void availabilityTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.NOT_UP);
@@ -903,7 +905,7 @@ public class RulesEngineTest {
     }
 
     @Test
-    public void ExternalTest() {
+    public void externalTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "External-Metrics");
         ExternalCondition t1c1 = new ExternalCondition("trigger-1", Mode.FIRING, 1, 1,
                 "ExternalData-01", "HawkularMetrics", "metric:5:avg(foo > 100.5)");
@@ -939,7 +941,7 @@ public class RulesEngineTest {
     }
 
     @Test
-    public void EventTest() {
+    public void eventTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Events Test");
         t1.setEventType(EventType.EVENT);
         EventCondition t1c1 = new EventCondition("trigger-1", "myapp.war", "text == 'DOWN'");
@@ -958,6 +960,87 @@ public class RulesEngineTest {
         rulesEngine.fire();
 
         assertEquals(outputEvents.toString(), 1, outputEvents.size());
+    }
+
+    @Test
+    public void rateTest() {
+        // 1 alert
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Rate-Increasing");
+        RateCondition t1c1 = new RateCondition("trigger-1",
+                "CounterUp",
+                RateCondition.Direction.INCREASING,
+                RateCondition.Period.MINUTE,
+                RateCondition.Operator.GT, 20.0);
+        // 1 alert
+        Trigger t2 = new Trigger("tenant", "trigger-2", "Rate-Decreasing");
+        RateCondition t2c1 = new RateCondition("trigger-2",
+                "CounterDown",
+                RateCondition.Direction.DECREASING,
+                RateCondition.Period.HOUR,
+                RateCondition.Operator.GT, 2000.0);
+
+        long t1minute = 60000L * 1;
+        long t3minute = t1minute * 3;
+        long t5minute = t1minute * 5;
+        datums.add(Data.forNumeric("CounterUp", t1minute, 10.0)); // minute 1
+        datums.add(Data.forNumeric("CounterUp", t3minute, 20.0)); // minute 3 (rate = 5 per minute)
+        datums.add(Data.forNumeric("CounterUp", t5minute, 100.0)); // minute 5 (rate = 40 per minute)
+
+        datums.add(Data.forNumeric("CounterDown", t1minute, 100.0)); // minute 1
+        datums.add(Data.forNumeric("CounterDown", t3minute, 90.0)); // minute 3 (rate = 300 per hour)
+        datums.add(Data.forNumeric("CounterDown", t5minute, 10.0)); // minute 5 (rate = 2400 per hour)
+
+
+        // default dampening
+
+        t1.setEnabled(true);
+        t2.setEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+        rulesEngine.addFact(t2);
+        rulesEngine.addFact(t2c1);
+
+        rulesEngine.addData(datums);
+
+        rulesEngine.fire();
+
+        assertEquals(alerts.toString(), 2, alerts.size());
+        Collections.sort(alerts, (Alert a1, Alert a2) -> a1.getTriggerId().compareTo(a2.getTriggerId()));
+
+        Alert a = alerts.get(0);
+        assertEquals(a.getTriggerId(), "trigger-1", a.getTriggerId());
+        assertEquals(a.getEvalSets().toString(), 1, a.getEvalSets().size());
+        Set<ConditionEval> eval = a.getEvalSets().get(0);
+        assertEquals(eval.toString(), 1, eval.size());
+        RateConditionEval e = (RateConditionEval) eval.iterator().next();
+        assertEquals(e.toString(), 1, e.getConditionSetIndex());
+        assertEquals(e.toString(), 1, e.getConditionSetSize());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
+        assertTrue(e.toString(), e.getTime() == t5minute);
+        assertTrue(e.toString(), e.getPreviousTime() == t3minute);
+        assertTrue(e.toString(), e.getValue().equals(100.0));
+        assertTrue(e.toString(), e.getPreviousValue().equals(20.0));
+        assertTrue(e.toString(), e.getRate().equals(40.0));
+        assertEquals(e.getCondition().toString(), "CounterUp", e.getCondition().getDataId());
+
+        a = alerts.get(1);
+        assertEquals(a.getTriggerId(), "trigger-2", a.getTriggerId());
+        assertEquals(a.getEvalSets().toString(), 1, a.getEvalSets().size());
+        eval = a.getEvalSets().get(0);
+        assertEquals(eval.toString(), 1, eval.size());
+        e = (RateConditionEval) eval.iterator().next();
+        assertEquals(e.toString(), 1, e.getConditionSetIndex());
+        assertEquals(e.toString(), 1, e.getConditionSetSize());
+        assertEquals("trigger-2", e.getTriggerId());
+        assertTrue(e.isMatch());
+        assertTrue(e.toString(), e.getTime() == t5minute);
+        assertTrue(e.toString(), e.getPreviousTime() == t3minute);
+        assertTrue(e.toString(), e.getValue().equals(10.0));
+        assertTrue(e.toString(), e.getPreviousValue().equals(90.0));
+        assertTrue(e.toString(), e.getRate().equals(2400.0));
+        assertEquals(e.getCondition().toString(), "CounterDown", e.getCondition().getDataId());
     }
 
     @Test
@@ -1035,7 +1118,6 @@ public class RulesEngineTest {
         EventCondition t3c1 = new EventCondition("trigger-3", Mode.FIRING, 2, 1, "trigger-1");
         EventCondition t3c2 = new EventCondition("trigger-3", Mode.FIRING, 2, 2, "trigger-2");
 
-
         Event appADownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "A.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
 
@@ -1106,7 +1188,7 @@ public class RulesEngineTest {
     }
 
     @Test
-    public void DampeningStrictTest() {
+    public void dampeningStrictTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
@@ -1152,7 +1234,7 @@ public class RulesEngineTest {
     }
 
     @Test
-    public void DampeningRelaxedCountTest() {
+    public void dampeningRelaxedCountTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
@@ -1199,7 +1281,7 @@ public class RulesEngineTest {
     }
 
     @Test
-    public void DampeningRelaxedTimeTest() {
+    public void dampeningRelaxedTimeTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
@@ -1255,7 +1337,7 @@ public class RulesEngineTest {
     }
 
     @Test
-    public void DampeningStrictTimeTest() {
+    public void dampeningStrictTimeTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
@@ -1295,7 +1377,7 @@ public class RulesEngineTest {
     }
 
     @Test
-    public void DampeningStrictTimeoutTest() {
+    public void dampeningStrictTimeoutTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
         AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
@@ -1476,7 +1558,7 @@ public class RulesEngineTest {
                 (ConditionEval c1, ConditionEval c2) -> Integer.compare(c1.getConditionSetIndex(),
                         c2.getConditionSetIndex()));
         Iterator<ConditionEval> i = evalsList.iterator();
-        ThresholdConditionEval e = (ThresholdConditionEval)i.next();
+        ThresholdConditionEval e = (ThresholdConditionEval) i.next();
         assertEquals(2, e.getConditionSetSize());
         assertEquals(1, e.getConditionSetIndex());
         assertEquals("trigger-1", e.getTriggerId());
@@ -1485,7 +1567,7 @@ public class RulesEngineTest {
         assertTrue(v.equals(50.0));
         assertEquals("X", e.getCondition().getDataId());
 
-        ThresholdConditionEval e2 = (ThresholdConditionEval)i.next();
+        ThresholdConditionEval e2 = (ThresholdConditionEval) i.next();
         assertEquals(2, e2.getConditionSetSize());
         assertEquals(2, e2.getConditionSetIndex());
         assertEquals("trigger-1", e2.getTriggerId());
@@ -1502,7 +1584,7 @@ public class RulesEngineTest {
                 (ConditionEval c1, ConditionEval c2) -> Integer.compare(c1.getConditionSetIndex(),
                         c2.getConditionSetIndex()));
         i = evalsList.iterator();
-        e = (ThresholdConditionEval)i.next();
+        e = (ThresholdConditionEval) i.next();
         assertEquals(2, e.getConditionSetSize());
         assertEquals(1, e.getConditionSetIndex());
         assertEquals("trigger-1", e.getTriggerId());
@@ -1511,7 +1593,7 @@ public class RulesEngineTest {
         assertTrue(v.equals(110.0));
         assertEquals("X", e.getCondition().getDataId());
 
-        e2 = (ThresholdConditionEval)i.next();
+        e2 = (ThresholdConditionEval) i.next();
         assertEquals(2, e2.getConditionSetSize());
         assertEquals(2, e2.getConditionSetIndex());
         assertEquals("trigger-1", e2.getTriggerId());

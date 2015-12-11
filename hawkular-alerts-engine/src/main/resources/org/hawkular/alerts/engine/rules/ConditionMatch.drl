@@ -32,6 +32,8 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
+import org.hawkular.alerts.api.model.condition.RateCondition;
+import org.hawkular.alerts.api.model.condition.RateConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.dampening.Dampening.Type;
 import org.hawkular.alerts.api.model.data.Data;
@@ -42,6 +44,7 @@ import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.ActionsService;
+import org.hawkular.alerts.engine.util.RateData;
 
 import org.jboss.logging.Logger;
 
@@ -175,10 +178,52 @@ rule Event
         insert( ce );
 end
 
+rule ProvideInitialRateData
+    when
+        $t  : Trigger( $tid : id, $tmode : mode )
+        $c  : RateCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
+        $d  : Data( $did == id )
+        not   RateData( $did == data.id )
+    then
+        RateData rateData = new RateData( $d );
+
+        insert( rateData );
+end
+
+rule Rate
+    when
+        $t  : Trigger( $tid : id, $tmode : mode )
+        $c  : RateCondition ( triggerId == $tid, triggerMode == $tmode, $did : dataId )
+        $d  : Data( $did == id, $dt : timestamp )
+        $rd : RateData( $did == data.id, $dt > data.timestamp )
+    then
+        RateConditionEval ce = new RateConditionEval($c, $d, $rd.getData());
+        if (log != null && log.isDebugEnabled()) {
+            log.debug("Rate Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+        }
+        insert( ce );
+end
+
+
 // Data retraction rules
 // These rules are expected to fire after any Eval rules, due to their simplicity.  Note that Data is not retracted
 // in the (above) rules, that generate ConditionEval facts, because one Datum can generate multiple evals, for different
 // Triggers.
+
+rule RetractProcessedRateData
+    when
+        $rd : RateData( $did : data.id )
+        $d  : Data( $did == id )
+    then
+        $rd.setData( $d );
+
+        if (log != null && log.isDebugEnabled()) {
+            log.debug( "Updating " + $rd + "..." );
+            log.debug( "Retracting " + $d + "..." );
+        }
+        retract ( $d );
+        update ( $rd );
+end
 
 rule RetractProcessedData
     when
