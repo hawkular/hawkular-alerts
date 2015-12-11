@@ -439,7 +439,6 @@
                   <includes>
                     <include>**/ActionsITest*</include>
                     <include>**/AlertsITest*</include>
-                    <include>**/ClusterITest*</include>
                     <include>**/ConditionsITest*</include>
                     <include>**/DampeningITest*</include>
                     <include>**/EventsITest*</include>
