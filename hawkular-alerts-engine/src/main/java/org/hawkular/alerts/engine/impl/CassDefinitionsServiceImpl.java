@@ -28,13 +28,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.ejb.AccessTimeout;
 import javax.ejb.EJB;
 import javax.ejb.Local;
 import javax.ejb.Singleton;
+import javax.ejb.Timeout;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
@@ -861,7 +864,10 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     // TODO: This fetch perform cross-tenant fetch and may be inefficient at scale
+    //       Added timeout to prevent slow startup on embedded Cassandra scenarios
     @Override
+    @Timeout
+    @AccessTimeout(value = 60, unit = TimeUnit.SECONDS)
     public Collection<Trigger> getAllTriggers() throws Exception {
         return selectTriggers(null);
     }

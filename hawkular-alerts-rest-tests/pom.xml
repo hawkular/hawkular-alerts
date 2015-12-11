@@ -207,6 +207,12 @@
 
     <profile>
       <id>itest</id>
+      <properties>
+        <hawkular.bind.address>127.0.0.1</hawkular.bind.address>
+        <hawkular.port>8080</hawkular.port>
+        <hawkular.port.offset>0</hawkular.port.offset>
+        <hawkular.management.port>9990</hawkular.management.port>
+      </properties>
       <dependencies>
         <dependency>
           <groupId>org.hawkular.accounts</groupId>
@@ -342,6 +348,51 @@
                     </transformationSet>
                   </transformationSets>
                 </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Start wildfly -->
+          <plugin>
+            <groupId>org.wildfly.plugins</groupId>
+            <artifactId>wildfly-maven-plugin</artifactId>
+            <configuration>
+              <jboss-home>${project.build.directory}/${project.artifactId}-${project.version}</jboss-home>
+              <skip>${skipTests}</skip>
+              <startupTimeout>240</startupTimeout>
+              <port>${hawkular.management.port}</port>
+              <javaOpts>
+                <javaOpt>-server</javaOpt>
+                <javaOpt>-Xms64m</javaOpt>
+                <javaOpt>-Xmx512m</javaOpt>
+                <javaOpt>-Djava.net.preferIPv4Stack=true</javaOpt>
+                <javaOpt>-Djboss.modules.system.pkgs=org.jboss.byteman</javaOpt>
+                <javaOpt>-Djava.awt.headless=true</javaOpt>
+                <javaOpt>-Djboss.bind.address=${hawkular.bind.address}</javaOpt>
+                <javaOpt>-Djboss.socket.binding.port-offset=${hawkular.port.offset}</javaOpt>
+                <javaOpt>-Dkeycloak.import=${project.build.directory}/${project.artifactId}-${project.version}/standalone/configuration/hawkular-realm-for-dev.json</javaOpt>
+                <javaOpt>-Dhawkular-alerts.skip-init-data</javaOpt>
+                <!--<javaOpt>-Xdebug</javaOpt>-->
+                <!--<javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt>-->
+              </javaOpts>
+            </configuration>
+            <executions>
+              <execution>
+                <id>start-wildfly</id>
+                <phase>pre-integration-test</phase>
+                <configuration>
+                  <server-config>standalone.xml</server-config>
+                </configuration>
+                <goals>
+                  <goal>start</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>stop-wildfly</id>
+                <phase>post-integration-test</phase>
+                <goals>
+                  <goal>shutdown</goal>
+                </goals>
               </execution>
             </executions>
           </plugin>
