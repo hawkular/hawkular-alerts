@@ -437,15 +437,15 @@
                 </goals>
                 <configuration>
                   <includes>
-                    <include>**/ActionsITest.groovy</include>
-                    <include>**/AlertsITest.groovy</include>
-                    <include>**/ConditionsITest.groovy</include>
-                    <include>**/DampeningITest.groovy</include>
-                    <include>**/EventsITest.groovy</include>
-                    <include>**/EventsLifecycleITest.groovy</include>
-                    <include>**/LifecycleITest.groovy</include>
-                    <include>**/PerfCrudITest.groovy</include>
-                    <include>**/TriggersITest.groovy</include>
+                    <include>**/ActionsITest*</include>
+                    <include>**/AlertsITest*</include>
+                    <include>**/ClusterITest*</include>
+                    <include>**/ConditionsITest*</include>
+                    <include>**/DampeningITest*</include>
+                    <include>**/EventsITest*</include>
+                    <include>**/EventsLifecycleITest*</include>
+                    <include>**/LifecycleITest*</include>
+                    <include>**/TriggersITest*</include>
                   </includes>
                 </configuration>
               </execution>
