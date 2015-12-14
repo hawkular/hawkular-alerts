@@ -178,6 +178,10 @@ rule Event
         insert( ce );
 end
 
+// RateCondition is a bit different in that it calculates rate of change between the previous and most current
+// value of the same dataId and performs an evaluation againts that computed value.  The previous value is
+// stored as a RateData fact. This rule initializes the RateData fact to the current value. It will be used
+// when the next datum for dataId arrives in working memory.
 rule ProvideInitialRateData
     when
         $t  : Trigger( $tid : id, $tmode : mode )
@@ -190,6 +194,7 @@ rule ProvideInitialRateData
         insert( rateData );
 end
 
+// Given previous and current data for a given dataId, perform a RateCondition evaluation.
 rule Rate
     when
         $t  : Trigger( $tid : id, $tmode : mode )
@@ -210,6 +215,7 @@ end
 // in the (above) rules, that generate ConditionEval facts, because one Datum can generate multiple evals, for different
 // Triggers.
 
+// Replace the previous data with the current data and retract the current data fact. 
 rule RetractProcessedRateData
     when
         $rd : RateData( $did : data.id )
