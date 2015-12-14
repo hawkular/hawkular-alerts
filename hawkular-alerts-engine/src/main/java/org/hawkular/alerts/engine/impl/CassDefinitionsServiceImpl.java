@@ -44,6 +44,7 @@ import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.EventCondition;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
+import org.hawkular.alerts.api.model.condition.RateCondition;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
@@ -1230,7 +1231,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         Set<String> dataIdTokens = new HashSet<>();
         Collection<Condition> conditions = getTriggerConditions(tenantId, groupId, null);
         for (Condition c : conditions) {
-            if (c instanceof CompareCondition) {
+            if (Condition.Type.COMPARE == c.getType()) {
                 dataIdTokens.add(c.getDataId());
                 dataIdTokens.add(((CompareCondition) c).getData2Id());
             } else {
@@ -1318,6 +1319,15 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         ((ThresholdRangeCondition) groupCondition).getThresholdLow(),
                         ((ThresholdRangeCondition) groupCondition).getThresholdHigh(),
                         ((ThresholdRangeCondition) groupCondition).isInRange());
+                break;
+            case RATE:
+                newCondition = new RateCondition(member.getId(), groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((RateCondition) groupCondition).getDirection(),
+                        ((RateCondition) groupCondition).getPeriod(),
+                        ((RateCondition) groupCondition).getOperator(),
+                        ((ThresholdCondition) groupCondition).getThreshold());
                 break;
             case STRING:
                 newCondition = new StringCondition(member.getId(), groupCondition.getTriggerMode(),
@@ -2010,10 +2020,12 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         PreparedStatement insertConditionAvailability = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_AVAILABILITY);
         PreparedStatement insertConditionCompare = CassStatement.get(session, CassStatement.INSERT_CONDITION_COMPARE);
-        PreparedStatement insertConditionExternal = CassStatement
-                .get(session, CassStatement.INSERT_CONDITION_EXTERNAL);
         PreparedStatement insertConditionEvent = CassStatement
                 .get(session, CassStatement.INSERT_CONDITION_EVENT);
+        PreparedStatement insertConditionExternal = CassStatement
+                .get(session, CassStatement.INSERT_CONDITION_EXTERNAL);
+        PreparedStatement insertConditionRate = CassStatement
+                .get(session, CassStatement.INSERT_CONDITION_RATE);
         PreparedStatement insertConditionString = CassStatement.get(session, CassStatement.INSERT_CONDITION_STRING);
         PreparedStatement insertConditionThreshold = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_THRESHOLD);
@@ -2021,8 +2033,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 CassStatement.INSERT_CONDITION_THRESHOLD_RANGE);
         if (insertConditionAvailability == null
                 || insertConditionCompare == null
-                || insertConditionExternal == null
                 || insertConditionEvent == null
+                || insertConditionExternal == null
+                || insertConditionRate == null
                 || insertConditionString == null
                 || insertConditionThreshold == null
                 || insertConditionThresholdRange == null) {
@@ -2033,8 +2046,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         // Now add the new condition set
         try {
-            //List<String> dataIds = new ArrayList<>(2);
-
             List<ResultSetFuture> futures = new ArrayList<>();
 
             int i = 0;
@@ -2045,69 +2056,71 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 cond.setConditionSetSize(conditions.size());
                 cond.setConditionSetIndex(++i);
 
-                //dataIds.add(cond.getDataId());
-
-                if (cond instanceof AvailabilityCondition) {
-
-                    AvailabilityCondition aCond = (AvailabilityCondition) cond;
-                    futures.add(session.executeAsync(insertConditionAvailability.bind(aCond.getTenantId(),
-                            aCond.getTriggerId(), aCond.getTriggerMode().name(), aCond.getContext(),
-                            aCond.getConditionSetSize(), aCond.getConditionSetIndex(),
-                            aCond.getConditionId(), aCond.getDataId(), aCond.getOperator().name())));
-
-                } else if (cond instanceof CompareCondition) {
-
-                    CompareCondition cCond = (CompareCondition) cond;
-                    //dataIds.add(cCond.getData2Id());
-                    futures.add(session.executeAsync(insertConditionCompare.bind(cCond.getTenantId(),
-                            cCond.getTriggerId(), cCond.getTriggerMode().name(), cCond.getContext(),
-                            cCond.getConditionSetSize(), cCond.getConditionSetIndex(),
-                            cCond.getConditionId(), cCond.getDataId(), cCond.getOperator().name(), cCond.getData2Id(),
-                            cCond.getData2Multiplier())));
-
-                } else if (cond instanceof ExternalCondition) {
-
-                    ExternalCondition eCond = (ExternalCondition) cond;
-                    futures.add(session.executeAsync(insertConditionExternal.bind(eCond.getTenantId(),
-                            eCond.getTriggerId(), eCond.getTriggerMode().name(), eCond.getContext(),
-                            eCond.getConditionSetSize(), eCond.getConditionSetIndex(), eCond.getConditionId(),
-                            eCond.getDataId(), eCond.getSystemId(), eCond.getExpression())));
-
-                } else if (cond instanceof EventCondition) {
-
-                    EventCondition evCond = (EventCondition) cond;
-                    futures.add(session.executeAsync(insertConditionEvent.bind(evCond.getTenantId(),
-                            evCond.getTriggerId(), evCond.getTriggerMode().name(), evCond.getContext(),
-                            evCond.getConditionSetSize(), evCond.getConditionSetIndex(), evCond.getConditionId(),
-                            evCond.getDataId(), evCond.getExpression())));
-
-                } else if (cond instanceof StringCondition) {
-
-                    StringCondition sCond = (StringCondition) cond;
-                    futures.add(session.executeAsync(insertConditionString.bind(sCond.getTenantId(),
-                            sCond.getTriggerId(), sCond.getTriggerMode().name(), sCond.getContext(),
-                            sCond.getConditionSetSize(), sCond.getConditionSetIndex(), sCond.getConditionId(),
-                            sCond.getDataId(), sCond.getOperator().name(), sCond.getPattern(), sCond.isIgnoreCase())));
-
-                } else if (cond instanceof ThresholdCondition) {
-                    ThresholdCondition tCond = (ThresholdCondition) cond;
-                    futures.add(session.executeAsync(insertConditionThreshold.bind(tCond.getTenantId(),
-                            tCond.getTriggerId(), tCond.getTriggerMode().name(), tCond.getContext(),
-                            tCond.getConditionSetSize(), tCond.getConditionSetIndex(),
-                            tCond.getConditionId(), tCond.getDataId(), tCond.getOperator().name(),
-                            tCond.getThreshold())));
-
-                } else if (cond instanceof ThresholdRangeCondition) {
-
-                    ThresholdRangeCondition rCond = (ThresholdRangeCondition) cond;
-                    futures.add(session.executeAsync(insertConditionThresholdRange.bind(rCond.getTenantId(),
-                            rCond.getTriggerId(), rCond.getTriggerMode().name(), rCond.getContext(),
-                            rCond.getConditionSetSize(), rCond.getConditionSetIndex(), rCond.getConditionId(),
-                            rCond.getDataId(), rCond.getOperatorLow().name(), rCond.getOperatorHigh().name(),
-                            rCond.getThresholdLow(), rCond.getThresholdHigh(), rCond.isInRange())));
-
-                } else {
-                    throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
+                switch (cond.getType()) {
+                    case AVAILABILITY:
+                        AvailabilityCondition aCond = (AvailabilityCondition) cond;
+                        futures.add(session.executeAsync(insertConditionAvailability.bind(aCond.getTenantId(),
+                                aCond.getTriggerId(), aCond.getTriggerMode().name(), aCond.getContext(),
+                                aCond.getConditionSetSize(), aCond.getConditionSetIndex(),
+                                aCond.getConditionId(), aCond.getDataId(), aCond.getOperator().name())));
+                        break;
+                    case COMPARE:
+                        CompareCondition cCond = (CompareCondition) cond;
+                        futures.add(session.executeAsync(insertConditionCompare.bind(cCond.getTenantId(),
+                                cCond.getTriggerId(), cCond.getTriggerMode().name(), cCond.getContext(),
+                                cCond.getConditionSetSize(), cCond.getConditionSetIndex(),
+                                cCond.getConditionId(), cCond.getDataId(), cCond.getOperator().name(),
+                                cCond.getData2Id(),
+                                cCond.getData2Multiplier())));
+                        break;
+                    case EVENT:
+                        EventCondition evCond = (EventCondition) cond;
+                        futures.add(session.executeAsync(insertConditionEvent.bind(evCond.getTenantId(),
+                                evCond.getTriggerId(), evCond.getTriggerMode().name(), evCond.getContext(),
+                                evCond.getConditionSetSize(), evCond.getConditionSetIndex(), evCond.getConditionId(),
+                                evCond.getDataId(), evCond.getExpression())));
+                        break;
+                    case EXTERNAL:
+                        ExternalCondition eCond = (ExternalCondition) cond;
+                        futures.add(session.executeAsync(insertConditionExternal.bind(eCond.getTenantId(),
+                                eCond.getTriggerId(), eCond.getTriggerMode().name(), eCond.getContext(),
+                                eCond.getConditionSetSize(), eCond.getConditionSetIndex(), eCond.getConditionId(),
+                                eCond.getDataId(), eCond.getSystemId(), eCond.getExpression())));
+                        break;
+                    case RANGE:
+                        ThresholdRangeCondition rCond = (ThresholdRangeCondition) cond;
+                        futures.add(session.executeAsync(insertConditionThresholdRange.bind(rCond.getTenantId(),
+                                rCond.getTriggerId(), rCond.getTriggerMode().name(), rCond.getContext(),
+                                rCond.getConditionSetSize(), rCond.getConditionSetIndex(), rCond.getConditionId(),
+                                rCond.getDataId(), rCond.getOperatorLow().name(), rCond.getOperatorHigh().name(),
+                                rCond.getThresholdLow(), rCond.getThresholdHigh(), rCond.isInRange())));
+                        break;
+                    case RATE:
+                        RateCondition rateCond = (RateCondition) cond;
+                        futures.add(session.executeAsync(insertConditionRate.bind(rateCond.getTenantId(),
+                                rateCond.getTriggerId(), rateCond.getTriggerMode().name(), rateCond.getContext(),
+                                rateCond.getConditionSetSize(), rateCond.getConditionSetIndex(),
+                                rateCond.getConditionId(), rateCond.getDataId(), rateCond.getDirection(),
+                                rateCond.getPeriod(), rateCond.getOperator().name(), rateCond.getThreshold())));
+                        break;
+                    case STRING:
+                        StringCondition sCond = (StringCondition) cond;
+                        futures.add(session.executeAsync(insertConditionString.bind(sCond.getTenantId(),
+                                sCond.getTriggerId(), sCond.getTriggerMode().name(), sCond.getContext(),
+                                sCond.getConditionSetSize(), sCond.getConditionSetIndex(), sCond.getConditionId(),
+                                sCond.getDataId(), sCond.getOperator().name(), sCond.getPattern(),
+                                sCond.isIgnoreCase())));
+                        break;
+                    case THRESHOLD:
+                        ThresholdCondition tCond = (ThresholdCondition) cond;
+                        futures.add(session.executeAsync(insertConditionThreshold.bind(tCond.getTenantId(),
+                                tCond.getTriggerId(), tCond.getTriggerMode().name(), tCond.getContext(),
+                                tCond.getConditionSetSize(), tCond.getConditionSetIndex(),
+                                tCond.getConditionId(), tCond.getDataId(), tCond.getOperator().name(),
+                                tCond.getThreshold())));
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
                 }
             }
             Futures.allAsList(futures).get();
@@ -2370,6 +2383,21 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     rCondition.setInRange(row.getBool("inRange"));
                     rCondition.setContext(row.getMap("context", String.class, String.class));
                     condition = rCondition;
+                    break;
+                case RATE:
+                    RateCondition rateCondition = new RateCondition();
+                    rateCondition.setTenantId(row.getString("tenantId"));
+                    rateCondition.setTriggerId(row.getString("triggerId"));
+                    rateCondition.setTriggerMode(Mode.valueOf(row.getString("triggerMode")));
+                    rateCondition.setConditionSetSize(row.getInt("conditionSetSize"));
+                    rateCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
+                    rateCondition.setDataId(row.getString("dataId"));
+                    rateCondition.setDirection(RateCondition.Direction.valueOf(row.getString("direction")));
+                    rateCondition.setPeriod(RateCondition.Period.valueOf(row.getString("period")));
+                    rateCondition.setOperator(RateCondition.Operator.valueOf(row.getString("operator")));
+                    rateCondition.setThreshold(row.getDouble("threshold"));
+                    rateCondition.setContext(row.getMap("context", String.class, String.class));
+                    condition = rateCondition;
                     break;
                 case STRING:
                     StringCondition sCondition = new StringCondition();

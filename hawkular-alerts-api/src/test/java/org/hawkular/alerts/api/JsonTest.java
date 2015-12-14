@@ -38,6 +38,10 @@ import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
+import org.hawkular.alerts.api.model.condition.RateCondition;
+import org.hawkular.alerts.api.model.condition.RateCondition.Direction;
+import org.hawkular.alerts.api.model.condition.RateCondition.Period;
+import org.hawkular.alerts.api.model.condition.RateConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.StringConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -778,6 +782,111 @@ public class JsonTest {
         assertTrue(eval.getContext().size() == 2);
         assertTrue(eval.getContext().get("n1").equals("v1"));
         assertTrue(eval.getContext().get("n2").equals("v2"));
+    }
+
+    @Test
+    public void jsonRateConditionTest() throws Exception {
+        String str = "{" //
+                + "\"tenantId\":\"test\"," //
+                + "\"triggerId\":\"test\"," //
+                + "\"triggerMode\":\"FIRING\"," //
+                + "\"type\":\"RATE\"," //
+                + "\"conditionSetSize\":1," //
+                + "\"conditionSetIndex\":1," //
+                + "\"conditionId\":\"test-FIRING-1-1\"," //
+                + "\"dataId\":\"Default\"," //
+                + "\"direction\":\"DECREASING\"," //
+                + "\"period\":\"HOUR\"," //
+                + "\"operator\":\"GT\"," //
+                + "\"threshold\":10.5}";
+        RateCondition condition = objectMapper.readValue(str, RateCondition.class);
+
+        assertTrue(condition.getTenantId().equals("test"));
+        assertTrue(condition.getTriggerId().equals("test"));
+        assertTrue(condition.getTriggerMode().equals(Mode.FIRING));
+        assertTrue(condition.getDataId().equals("Default"));
+        assertTrue(condition.getDirection().equals(RateCondition.Direction.DECREASING));
+        assertTrue(condition.getPeriod().equals(Period.HOUR));
+        assertTrue(condition.getOperator().equals(RateCondition.Operator.GT));
+        assertTrue(condition.getThreshold() == 10.5d);
+
+        String output = objectMapper.writeValueAsString(condition);
+
+        assertTrue(output, str.equals(output));
+
+        // Check defaults
+        str = "{" //
+                + "\"tenantId\":\"test\"," //
+                + "\"triggerId\":\"test\"," //
+                + "\"triggerMode\":\"FIRING\"," //
+                + "\"type\":\"RATE\"," //
+                + "\"conditionSetSize\":1," //
+                + "\"conditionSetIndex\":1," //
+                + "\"conditionId\":\"test-FIRING-1-1\"," //
+                + "\"dataId\":\"Default\"," //
+                + "\"operator\":\"GT\"," //
+                + "\"threshold\":10.5}";
+        condition = objectMapper.readValue(str, RateCondition.class);
+
+        assertTrue(condition.getDirection().equals(Direction.INCREASING));
+        assertTrue(condition.getPeriod().equals(Period.MINUTE));
+
+        // check bogus value
+        str = "{" //
+                + "\"tenantId\":\"test\"," //
+                + "\"triggerId\":\"test\"," //
+                + "\"triggerMode\":\"FIRING\"," //
+                + "\"type\":\"RATE\"," //
+                + "\"conditionSetSize\":1," //
+                + "\"conditionSetIndex\":1," //
+                + "\"conditionId\":\"test-FIRING-1-1\"," //
+                + "\"dataId\":\"Default\"," //
+                + "\"direction\":\"UP\"," //
+                + "\"operator\":\"GT\"," //
+                + "\"threshold\":10.5}";
+        try {
+            condition = objectMapper.readValue(str, RateCondition.class);
+            throw new Exception("It should throw an InvalidFormatException");
+        } catch (InvalidFormatException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void jsonRateConditionEvalTest() throws Exception {
+        String str = "{" //
+                + "\"evalTimestamp\":1," //
+                + "\"dataTimestamp\":1," //
+                + "\"condition\":{" //
+                + "  \"triggerId\":\"test\"," //
+                + "  \"triggerMode\":\"FIRING\"," //
+                + "  \"type\":\"RATE\"," //
+                + "  \"dataId\":\"Default\"," //
+                + "  \"direction\":\"NA\"," //
+                + "  \"period\":\"DAY\"," //
+                + "  \"operator\":\"GT\"," //
+                + "  \"threshold\":10.5}," //
+                + "\"time\":2,"
+                + "\"value\":15,"
+                + "\"previousTime\":1,"
+                + "\"previousValue\":10"
+                + "}";
+        RateConditionEval eval = objectMapper.readValue(str, RateConditionEval.class);
+
+        assertTrue(eval.getEvalTimestamp() == 1);
+        assertTrue(eval.getDataTimestamp() == 1);
+        assertTrue(eval.getCondition().getType().equals(Condition.Type.RATE));
+        assertTrue(eval.getCondition().getTriggerId().equals("test"));
+        assertTrue(eval.getCondition().getTriggerMode().equals(Mode.FIRING));
+        assertTrue(eval.getCondition().getDataId().equals("Default"));
+        assertTrue(eval.getCondition().getDirection().equals(Direction.NA));
+        assertTrue(eval.getCondition().getPeriod().equals(Period.DAY));
+        assertTrue(eval.getCondition().getOperator().equals(RateCondition.Operator.GT));
+        assertTrue(eval.getCondition().getThreshold() == 10.5);
+        assertTrue(eval.getTime() == 2);
+        assertTrue(eval.getValue() == 15.0);
+        assertTrue(eval.getPreviousValue() == 10.0);
+        assertTrue(eval.getPreviousTime() == 1);
     }
 
     @Test

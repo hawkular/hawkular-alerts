@@ -35,6 +35,8 @@ import org.hawkular.alerts.api.model.condition.EventCondition;
 import org.hawkular.alerts.api.model.condition.EventConditionEval;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
+import org.hawkular.alerts.api.model.condition.RateCondition;
+import org.hawkular.alerts.api.model.condition.RateConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.StringConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -82,23 +84,10 @@ public class JacksonDeserializer {
             JsonNode conditionNode = node.get("condition");
             Condition condition = deserializeCondition(conditionNode);
             switch (condition.getType()) {
-                case THRESHOLD: {
-                    conditionEval = new ThresholdConditionEval();
-                    ThresholdConditionEval tConditionEval = (ThresholdConditionEval) conditionEval;
-                    if (condition instanceof ThresholdCondition) {
-                        tConditionEval.setCondition((ThresholdCondition) condition);
-                    }
-                    if (node.get("value") != null) {
-                        tConditionEval.setValue(node.get("value").doubleValue());
-                    }
-                    break;
-                }
                 case AVAILABILITY: {
                     conditionEval = new AvailabilityConditionEval();
                     AvailabilityConditionEval aConditionEval = (AvailabilityConditionEval) conditionEval;
-                    if (condition instanceof AvailabilityCondition) {
-                        aConditionEval.setCondition((AvailabilityCondition) condition);
-                    }
+                    aConditionEval.setCondition((AvailabilityCondition) condition);
                     if (node.get("value") != null) {
                         aConditionEval.setValue(AvailabilityType.valueOf(node.get("value").textValue()));
                     }
@@ -107,9 +96,7 @@ public class JacksonDeserializer {
                 case COMPARE: {
                     conditionEval = new CompareConditionEval();
                     CompareConditionEval cConditionEval = (CompareConditionEval) conditionEval;
-                    if (condition instanceof CompareCondition) {
-                        cConditionEval.setCondition((CompareCondition) condition);
-                    }
+                    cConditionEval.setCondition((CompareCondition) condition);
                     if (node.get("value1") != null) {
                         cConditionEval.setValue1(node.get("value1").doubleValue());
                     }
@@ -121,12 +108,49 @@ public class JacksonDeserializer {
                     }
                     break;
                 }
+                case EVENT: {
+                    conditionEval = new EventConditionEval();
+                    EventConditionEval evConditionEval = (EventConditionEval) conditionEval;
+                    evConditionEval.setCondition((EventCondition) condition);
+                    if (node.get("value") != null) {
+                        evConditionEval.setValue(node.get("value").traverse(objectCodec).readValueAs(Event.class));
+                    }
+                    break;
+                }
+                case EXTERNAL: {
+                    conditionEval = new ExternalConditionEval();
+                    ExternalConditionEval eConditionEval = (ExternalConditionEval) conditionEval;
+                    eConditionEval.setCondition((ExternalCondition) condition);
+                    if (node.get("value") != null) {
+                        eConditionEval.setValue(node.get("value").textValue());
+                    }
+                    break;
+                }
+                case RATE: {
+                    conditionEval = new RateConditionEval();
+                    RateConditionEval rConditionEval = (RateConditionEval) conditionEval;
+                    rConditionEval.setCondition((RateCondition) condition);
+                    if (node.get("time") != null) {
+                        rConditionEval.setTime(node.get("time").longValue());
+                    }
+                    if (node.get("value") != null) {
+                        rConditionEval.setValue(node.get("value").doubleValue());
+                    }
+                    if (node.get("previousTime") != null) {
+                        rConditionEval.setPreviousTime(node.get("previousTime").longValue());
+                    }
+                    if (node.get("previousValue") != null) {
+                        rConditionEval.setPreviousValue(node.get("previousValue").doubleValue());
+                    }
+                    if (node.get("rate") != null) {
+                        rConditionEval.setRate(node.get("rate").doubleValue());
+                    }
+                    break;
+                }
                 case RANGE: {
                     conditionEval = new ThresholdRangeConditionEval();
                     ThresholdRangeConditionEval rConditionEval = (ThresholdRangeConditionEval) conditionEval;
-                    if (condition instanceof ThresholdRangeCondition) {
-                        rConditionEval.setCondition((ThresholdRangeCondition) condition);
-                    }
+                    rConditionEval.setCondition((ThresholdRangeCondition) condition);
                     if (node.get("value") != null) {
                         rConditionEval.setValue(node.get("value").doubleValue());
                     }
@@ -135,33 +159,18 @@ public class JacksonDeserializer {
                 case STRING: {
                     conditionEval = new StringConditionEval();
                     StringConditionEval sConditionEval = (StringConditionEval) conditionEval;
-                    if (condition instanceof StringCondition) {
-                        sConditionEval.setCondition((StringCondition) condition);
-                    }
+                    sConditionEval.setCondition((StringCondition) condition);
                     if (node.get("value") != null) {
                         sConditionEval.setValue(node.get("value").textValue());
                     }
                     break;
                 }
-                case EXTERNAL: {
-                    conditionEval = new ExternalConditionEval();
-                    ExternalConditionEval eConditionEval = (ExternalConditionEval) conditionEval;
-                    if (condition instanceof ExternalCondition) {
-                        eConditionEval.setCondition((ExternalCondition) condition);
-                    }
+                case THRESHOLD: {
+                    conditionEval = new ThresholdConditionEval();
+                    ThresholdConditionEval tConditionEval = (ThresholdConditionEval) conditionEval;
+                    tConditionEval.setCondition((ThresholdCondition) condition);
                     if (node.get("value") != null) {
-                        eConditionEval.setValue(node.get("value").textValue());
-                    }
-                    break;
-                }
-                case EVENT: {
-                    conditionEval = new EventConditionEval();
-                    EventConditionEval evConditionEval = (EventConditionEval) conditionEval;
-                    if (condition instanceof EventCondition) {
-                        evConditionEval.setCondition((EventCondition) condition);
-                    }
-                    if (node.get("value") != null) {
-                        evConditionEval.setValue(node.get("value").traverse(objectCodec).readValueAs(Event.class));
+                        tConditionEval.setValue(node.get("value").doubleValue());
                     }
                     break;
                 }
@@ -309,6 +318,26 @@ public class JacksonDeserializer {
                 }
                 if (node.get("expression") != null) {
                     evCondition.setExpression(node.get("expression").textValue());
+                }
+                break;
+            }
+            case RATE: {
+                condition = new RateCondition();
+                RateCondition rCondition = (RateCondition) condition;
+                if (node.get("dataId") != null) {
+                    rCondition.setDataId(node.get("dataId").textValue());
+                }
+                if (node.get("direction") != null) {
+                    rCondition.setDirection(RateCondition.Direction.valueOf(node.get("direction").textValue()));
+                }
+                if (node.get("period") != null) {
+                    rCondition.setPeriod(RateCondition.Period.valueOf(node.get("period").textValue()));
+                }
+                if (node.get("operator") != null) {
+                    rCondition.setOperator(RateCondition.Operator.valueOf(node.get("operator").textValue()));
+                }
+                if (node.get("threshold") != null) {
+                    rCondition.setThreshold(node.get("threshold").doubleValue());
                 }
                 break;
             }

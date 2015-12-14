@@ -75,8 +75,9 @@ public class CassStatement {
     public static final String INSERT_ALERT_TRIGGER;
     public static final String INSERT_CONDITION_AVAILABILITY;
     public static final String INSERT_CONDITION_COMPARE;
-    public static final String INSERT_CONDITION_EXTERNAL;
     public static final String INSERT_CONDITION_EVENT;
+    public static final String INSERT_CONDITION_EXTERNAL;
+    public static final String INSERT_CONDITION_RATE;
     public static final String INSERT_CONDITION_STRING;
     public static final String INSERT_CONDITION_THRESHOLD;
     public static final String INSERT_CONDITION_THRESHOLD_RANGE;
@@ -266,13 +267,18 @@ public class CassStatement {
                 "conditionId, dataId, operator, data2Id, data2Multiplier) " +
                 "VALUES (?, ?, ?, 'COMPARE', ?, ?, ?, ?, ?, ?, ?, ?) ";
 
+        INSERT_CONDITION_EVENT = "INSERT INTO " + keyspace + ".conditions "
+                + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, " +
+                "conditionId, dataId, pattern) VALUES (?, ?, ?, 'EVENT', ?, ?, ?, ?, ?, ?) ";
+
         INSERT_CONDITION_EXTERNAL = "INSERT INTO " + keyspace + ".conditions "
                 + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, " +
                 "conditionId, dataId, operator, pattern) VALUES (?, ?, ?, 'EXTERNAL', ?, ?, ?, ?, ?, ?, ?) ";
 
-        INSERT_CONDITION_EVENT = "INSERT INTO " + keyspace + ".conditions "
-                + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, " +
-                "conditionId, dataId, pattern) VALUES (?, ?, ?, 'EVENT', ?, ?, ?, ?, ?, ?) ";
+        INSERT_CONDITION_RATE = "INSERT INTO " + keyspace + ".conditions "
+                + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, "
+                + "conditionId, dataId, direction, period, operator, threshold) "
+                + "VALUES (?, ?, ?, 'RATE', ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_CONDITION_STRING = "INSERT INTO " + keyspace + ".conditions "
                 + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, " +
@@ -284,8 +290,8 @@ public class CassStatement {
                 "conditionId, dataId, operator, threshold) VALUES (?, ?, ?, 'THRESHOLD', ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_CONDITION_THRESHOLD_RANGE = "INSERT INTO " + keyspace + ".conditions "
-                + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, " +
-                "conditionId, dataId, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange) "
+                + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, "
+                + "conditionId, dataId, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange) "
                 + "VALUES (?, ?, ?, 'RANGE', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_DAMPENING = "INSERT INTO " + keyspace + ".dampenings "
@@ -386,21 +392,21 @@ public class CassStatement {
 
         SELECT_CONDITION_ID = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, "
-                + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId, "
-                + "context "
+                + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, "
+                + "direction, period, tenantId, context "
                 + "FROM " + keyspace + ".conditions "
                 + "WHERE tenantId = ? AND conditionId = ? ";
 
         SELECT_CONDITIONS_ALL = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, "
-                + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId, "
-                + "context "
+                + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, "
+                + "direction, period, tenantId, context "
                 + "FROM " + keyspace + ".conditions ";
 
         SELECT_CONDITIONS_BY_TENANT = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, "
-                + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId, "
-                + "context "
+                + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, "
+                + "direction, period, tenantId, context "
                 + "FROM " + keyspace + ".conditions "
                 + "WHERE tenantId = ? ";
 
@@ -469,15 +475,15 @@ public class CassStatement {
 
         SELECT_TRIGGER_CONDITIONS = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, "
-                + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId, "
-                + "context "
+                + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, "
+                + "direction, period, tenantId, context "
                 + "FROM " + keyspace + ".conditions "
                 + "WHERE tenantId = ? AND triggerId = ?";
 
         SELECT_TRIGGER_CONDITIONS_TRIGGER_MODE = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, ignoreCase, "
-                + "threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, tenantId, "
-                + "context "
+                + "threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, "
+                + "direction, period, tenantId, context "
                 + "FROM " + keyspace + ".conditions "
                 + "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? ";
 

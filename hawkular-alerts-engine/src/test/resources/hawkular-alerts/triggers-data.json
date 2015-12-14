@@ -253,5 +253,26 @@
       "trigger8-name1":"value1",
       "trigger8-name2":"value2"
     }
+  },
+  {"tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+    "triggerId": "trigger-9",
+    "enabled": true,
+    "name": "RateConditionTest",
+    "description": "Rate Condition Test",
+    "autoDisable": false,
+    "autoEnable": false,
+    "autoResolve": false,
+    "autoResolveAlerts": true,
+    "severity": "HIGH",
+    "firingMatch": "ALL",
+    "autoResolveMatch": "ALL",
+    "group": false,
+    "memberOf": null,
+    "orphan": false,
+    "actions": [
+      {"actionPlugin": "email",
+       "actionId": "email-to-admin"
+      }
+    ]
   }
 ]}
