@@ -92,8 +92,8 @@
     <version.org.freemarker>2.3.17</version.org.freemarker>
     <version.org.hawkular>1.0.0.Alpha6</version.org.hawkular>
     <version.org.hawkular.accounts>1.1.1.Final</version.org.hawkular.accounts>
-    <version.org.hawkular.bus>0.7.3.Final-SRC-revision-1af5bac4e32e26804b39ed6c6aa8fec66fdd2cf0</version.org.hawkular.bus>
-    <version.org.hawkular.command-gateway>0.10.4.Final-SRC-revision-026a46590f53179096f794657d9c6b813313f297</version.org.hawkular.command-gateway>
+    <version.org.hawkular.bus>0.7.3.Final</version.org.hawkular.bus>
+    <version.org.hawkular.command-gateway>0.10.4.Final</version.org.hawkular.command-gateway>
     <version.org.hawkular.commons>0.2.2.Final</version.org.hawkular.commons>
     <version.org.hawkular.inventory>0.8.0-Final</version.org.hawkular.inventory>
     <version.org.hawkular.metrics>0.6.0.Final</version.org.hawkular.metrics>
