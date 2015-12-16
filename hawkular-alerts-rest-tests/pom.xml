@@ -126,6 +126,20 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.codehaus.gpars</groupId>
+      <artifactId>gpars</artifactId>
+      <scope>test</scope>
+      <version>${version.org.codehaus.gpars}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.jsr166-mirror</groupId>
+      <artifactId>jsr166y</artifactId>
+      <scope>test</scope>
+      <version>${version.org.codehaus.jsr166-mirror}</version>
+    </dependency>
+
   </dependencies>
 
   <build>

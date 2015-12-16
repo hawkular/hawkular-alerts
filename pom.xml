@@ -87,6 +87,8 @@
     <org.hawkular.wildfly.deployments>${org.hawkular.wildfly.home}/modules/system/layers/base/org/hawkular/nest/main/deployments</org.hawkular.wildfly.deployments>
     <version.javaee.spec>7.0</version.javaee.spec>
     <version.maven-patch-plugin>1.2</version.maven-patch-plugin>
+    <version.org.codehaus.jsr166-mirror>1.7.0</version.org.codehaus.jsr166-mirror>
+    <version.org.codehaus.gpars>1.2.0</version.org.codehaus.gpars>
     <version.org.codehaus.groovy.maven>1.0</version.org.codehaus.groovy.maven>
     <version.org.drools>6.3.0.Final</version.org.drools>
     <version.org.freemarker>2.3.17</version.org.freemarker>
