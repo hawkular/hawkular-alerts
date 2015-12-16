@@ -165,9 +165,9 @@
 
   <profiles>
 
-    <!-- This profile requires a running server of hawkular or hawkular-alerts/standalone -->
+    <!-- This profile requires an external running server of hawkular or hawkular-alerts/standalone -->
     <profile>
-      <id>itest-tests</id>
+      <id>itest-external</id>
       <properties>
         <!-- IMPORTANT: The port must be the port offset + 8080. -->
         <hawkular.host>127.0.0.1</hawkular.host>
@@ -437,15 +437,12 @@
                 </goals>
                 <configuration>
                   <includes>
-                    <include>**/ActionsITest*</include>
-                    <include>**/AlertsITest*</include>
-                    <include>**/ConditionsITest*</include>
-                    <include>**/DampeningITest*</include>
-                    <include>**/EventsITest*</include>
-                    <include>**/EventsLifecycleITest*</include>
-                    <include>**/LifecycleITest*</include>
-                    <include>**/TriggersITest*</include>
+                    <include>**/*ITest*</include>
                   </includes>
+                  <excludes>
+                    <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
+                    <excludeFile>org/hawkular/alerts/rest/PerfCrudITest.class</excludeFile>
+                  </excludes>
                 </configuration>
               </execution>
               <execution>
