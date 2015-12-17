@@ -37,7 +37,7 @@
     <dependency>
       <groupId>org.hawkular.cmdgw</groupId>
       <artifactId>hawkular-command-gateway-api</artifactId>
-      <version>${version.org.hawkular.command-gateway}</version>
+      <version>${version.org.hawkular.cmdgw}</version>
     </dependency>
 
     <!-- Hawkular Alerts dependencies -->
