@@ -48,7 +48,7 @@ import org.jboss.logging.Logger;
 public class BusActionListener implements ActionListener {
     private final MsgLogger msgLogger = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(BusActionListener.class);
-    private static final String CONNECTION_FACTORY = "java:/ConnectionFactory";
+    private static final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
     private static final String ACTIONS_TOPIC = "HawkularAlertsActionsTopic";
     private static final String DEFINITIONS_SERVICE =
             "java:app/hawkular-alerts-rest/CassDefinitionsServiceImpl";
