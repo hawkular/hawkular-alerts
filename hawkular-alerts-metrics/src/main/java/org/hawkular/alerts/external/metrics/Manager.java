@@ -223,25 +223,25 @@ public class Manager {
                 Double value = Double.NaN;
                 switch (func) {
                     case avg: {
-                        value = metrics.findGaugeData(metricId, start, end, Aggregate.Average)
+                        value = (Double) metrics.findGaugeData(metricId, start, end, Aggregate.Average)
                                 .toBlocking().last();
                         break;
                     }
                     case avgd: {
-                        Double avgToday = metrics
+                        Double avgToday = (Double) metrics
                                 .findGaugeData(metricId, start, end, Aggregate.Average)
                                 .toBlocking().last();
-                        Double avgYesterday = metrics
+                        Double avgYesterday = (Double) metrics
                                 .findGaugeData(metricId, (start - DAY), (end - DAY),
                                         Aggregate.Average).toBlocking().last();
                         value = ((avgToday - avgYesterday) / avgYesterday) * 100;
                         break;
                     }
                     case avgw: {
-                        Double avgToday = metrics
+                        Double avgToday = (Double) metrics
                                 .findGaugeData(metricId, start, end, Aggregate.Average)
                                 .toBlocking().last();
-                        Double avgLastWeek = metrics
+                        Double avgLastWeek = (Double) metrics
                                 .findGaugeData(metricId, (start - WEEK), (end - WEEK),
                                         Aggregate.Average).toBlocking().last();
                         value = ((avgToday - avgLastWeek) / avgLastWeek) * 100;
@@ -275,12 +275,12 @@ public class Manager {
                         break;
                     }
                     case max: {
-                        value = metrics.findGaugeData(metricId, start, end, Aggregate.Max)
+                        value = (Double) metrics.findGaugeData(metricId, start, end, Aggregate.Max)
                                 .toBlocking().last();
                         break;
                     }
                     case min: {
-                        value = metrics.findGaugeData(metricId, start, end, Aggregate.Min)
+                        value = (Double) metrics.findGaugeData(metricId, start, end, Aggregate.Min)
                                 .toBlocking().last();
                         break;
                     }

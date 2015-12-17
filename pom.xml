@@ -94,7 +94,7 @@
     <version.org.hawkular.command-gateway>0.10.6.Final-SRC-revision-0675a49ad0cdb0befb0f0154ab5ca93d8186d4a7</version.org.hawkular.command-gateway>
     <version.org.hawkular.commons>0.3.0.Final</version.org.hawkular.commons>
     <version.org.hawkular.inventory>0.11.0.Final-SRC-revision-fb69af56e0c52b91d442758e74ad03eb77d12985</version.org.hawkular.inventory>
-    <version.org.hawkular.metrics>0.6.0.Final</version.org.hawkular.metrics>
+    <version.org.hawkular.metrics>0.10.0.Final</version.org.hawkular.metrics>
     <version.org.infinispan.wildfly>7.2.3.Final</version.org.infinispan.wildfly>
     <version.org.infinispan.eap64>5.2.9.Final</version.org.infinispan.eap64>
     <version.org.jboss.jboss-vfs>3.2.10.Final</version.org.jboss.jboss-vfs>

@@ -68,10 +68,11 @@ public class CommandEventListener extends BasicMessageListener<BasicMessage> {
             String canonicalPathString = dar.getResourcePath();
             CanonicalPath canonicalPath = CanonicalPath.fromString(canonicalPathString);
             String tenantId = canonicalPath.ids().getTenantId();
+            String feedId = canonicalPath.ids().getFeedId();
             String resourceId = canonicalPath.ids().getResourcePath().getSegment().getElementId();
             resourceId = resourceId.substring(0, resourceId.length() - 2); // trim trailing '~~'
             String eventId = UUID.randomUUID().toString();
-            String dataId = resourceId + "_DeployApplicationResponse";
+            String dataId = feedId + "/" + resourceId + "_DeployApplicationResponse";
             String category = "Hawkular Deployment";
             String text = dar.getStatus().name();
             Event event = new Event(tenantId, eventId, dataId, category, text);
