@@ -41,9 +41,9 @@ import org.jboss.logging.Logger;
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
         @ActivationConfigProperty(propertyName = "destination", propertyValue = "HawkularAlertsActionsResponseQueue")})
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
-public class ActionPluginOperationListener extends BasicMessageListener<BusActionResponseMessage>  {
+public class ActionPluginResponsesListener extends BasicMessageListener<BusActionResponseMessage>  {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(ActionPluginOperationListener.class);
+    private final Logger log = Logger.getLogger(ActionPluginResponsesListener.class);
 
     @EJB
     ActionsService actions;

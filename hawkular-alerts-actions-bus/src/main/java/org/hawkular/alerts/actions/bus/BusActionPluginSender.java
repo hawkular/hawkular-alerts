@@ -82,13 +82,13 @@ public class BusActionPluginSender implements ActionPluginSender {
                     ccf = new ConnectionContextFactory(conFactory);
                 } catch (JMSException e) {
                     msgLog.warnCannotConnectBroker(i, TIMEOUT, e.getMessage());
+                    try {
+                        Thread.sleep(TIMEOUT);
+                    } catch(InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
                 }
                 i--;
-                try {
-                    Thread.sleep(TIMEOUT);
-                } catch(InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
             }
             if (ccf == null) {
                 throw new IllegalStateException("Cannot connect to the broker.");

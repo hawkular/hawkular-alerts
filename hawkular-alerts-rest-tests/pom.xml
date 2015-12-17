@@ -293,6 +293,14 @@
                       <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}/modules/org/hawkular/nest/main/deployments</outputDirectory>
                       <destFileName>hawkular-alerts-actions-email.war</destFileName>
                     </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-file</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}/modules/org/hawkular/nest/main/deployments</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-file.war</destFileName>
+                    </artifactItem>
                   </artifactItems>
                 </configuration>
               </execution>

@@ -37,7 +37,6 @@ import javax.ejb.AccessTimeout;
 import javax.ejb.EJB;
 import javax.ejb.Local;
 import javax.ejb.Singleton;
-import javax.ejb.Timeout;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
@@ -866,7 +865,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     // TODO: This fetch perform cross-tenant fetch and may be inefficient at scale
     //       Added timeout to prevent slow startup on embedded Cassandra scenarios
     @Override
-    @Timeout
     @AccessTimeout(value = 60, unit = TimeUnit.SECONDS)
     public Collection<Trigger> getAllTriggers() throws Exception {
         return selectTriggers(null);
@@ -2571,6 +2569,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
+    @AccessTimeout(value = 60, unit = TimeUnit.SECONDS)
     public Set<String> getActionPlugin(String actionPlugin) throws Exception {
         if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");

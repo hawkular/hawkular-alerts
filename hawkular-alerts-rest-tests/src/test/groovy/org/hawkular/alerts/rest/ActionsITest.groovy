@@ -120,6 +120,7 @@ class ActionsITest extends AbstractITestBase {
             email-to-admin action is pre-created from demo data
          */
         testTrigger.addAction("email", "email-to-admin");
+        testTrigger.addAction("file", "file-to-admin");
 
         resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
