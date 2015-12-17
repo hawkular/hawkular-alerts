@@ -117,6 +117,11 @@
           <artifactId>hawkular-accounts-api</artifactId>
           <version>${version.org.hawkular.accounts}</version>
         </dependency>
+        <dependency>
+          <groupId>org.keycloak.secretstore</groupId>
+          <artifactId>secret-store-undertow-filter</artifactId>
+          <version>${version.org.keycloak.secretstore}</version>
+        </dependency>
 
       </dependencies>
       <activation>

@@ -98,6 +98,7 @@
     <version.org.infinispan.wildfly>7.2.3.Final</version.org.infinispan.wildfly>
     <version.org.infinispan.eap64>5.2.9.Final</version.org.infinispan.eap64>
     <version.org.jboss.jboss-vfs>3.2.10.Final</version.org.jboss.jboss-vfs>
+    <version.org.keycloak.secretstore>1.0.4.Final</version.org.keycloak.secretstore>
     <version.org.schwering>2.0.0.Alpha3</version.org.schwering>
     <version.org.slf4j>1.7.2</version.org.slf4j>
     <version.org.yaml>1.11</version.org.yaml>
