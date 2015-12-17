@@ -10,11 +10,7 @@ notifications:
 install:
 - mvn -version -B
 script:
-# -Prest profile is disabled until hakwular-dist is stable in nexus and we can integrate keycloak changes
-# Integration tests should be run locally until we fix this.
-#
-# - mvn -s .travis.maven.settings.xml verify -Prest
-- mvn -s .travis.maven.settings.xml verify
+- mvn -s .travis.maven.settings.xml verify -Pitest
 env:
   global:
   - secure: TQJ1pIBM6dGgCQj59OiYxmKI2Nk+0XIT9His/iBt4FGRXHQ4BqWZuMVbtiX0ngGJbyg6Ntq9mJwmioGNl3tyK3jY9eqD/pWg8XjA9YAn+UINSBS3ooPYgAwIjTuJp6o7x9xExLEKCdzyttFjQ0BG+AkNvIEVyjSTZq7ky/ngbP4=
