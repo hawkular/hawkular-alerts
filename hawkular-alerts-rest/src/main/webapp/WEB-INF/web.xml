@@ -21,6 +21,11 @@
       xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
       version="3.0">
 
+  <context-param>
+    <param-name>org.keycloak.secretstore.enabled</param-name>
+    <param-value>true</param-value>
+  </context-param>
+
   <resource-env-ref>
     <resource-env-ref-name>container/hawkular-alerts</resource-env-ref-name>
     <lookup-name>java:jboss/infinispan/container/hawkular-alerts</lookup-name>
