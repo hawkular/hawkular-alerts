@@ -53,8 +53,8 @@ public class BusActionPluginSender implements ActionPluginSender {
     private String actionPlugin;
 
     private QueueConnectionFactory conFactory;
-    private ConnectionContextFactory ccf;
-    private ProducerConnectionContext pcc;
+    private ThreadLocal<ConnectionContextFactory> ccf = new ThreadLocal<>();
+    private ThreadLocal<ProducerConnectionContext> pcc = new ThreadLocal<>();
 
     public BusActionPluginSender(String actionPlugin) {
         this.actionPlugin = actionPlugin;
@@ -75,11 +75,11 @@ public class BusActionPluginSender implements ActionPluginSender {
             }
         }
 
-        if (ccf == null) {
+        if (ccf.get() == null) {
             int i = NUM_ATTEMPTS;
-            while (ccf == null && i >= 0) {
+            while (ccf.get() == null && i >= 0) {
                 try {
-                    ccf = new ConnectionContextFactory(conFactory);
+                    ccf.set(new ConnectionContextFactory(conFactory));
                 } catch (JMSException e) {
                     msgLog.warnCannotConnectBroker(i, TIMEOUT, e.getMessage());
                     try {
@@ -90,26 +90,28 @@ public class BusActionPluginSender implements ActionPluginSender {
                 }
                 i--;
             }
-            if (ccf == null) {
+            if (ccf.get() == null) {
                 throw new IllegalStateException("Cannot connect to the broker.");
             }
         }
 
-        if (pcc == null) {
-            pcc = ccf.createProducerConnectionContext(new Endpoint(Endpoint.Type.QUEUE, ACTION_PLUGIN_REGISTER));
+        if (pcc.get() == null) {
+            pcc.set(ccf.get().createProducerConnectionContext(
+                    new Endpoint(Endpoint.Type.QUEUE,ACTION_PLUGIN_REGISTER)));
         }
     }
 
     public void close() throws Exception {
-        if (pcc != null) {
+        if (pcc.get() != null) {
             try {
-                pcc.close();
-                pcc = null;
+                pcc.get().close();
+                pcc.remove();
             } catch (IOException ignored) { }
         }
         if (ccf != null) {
             try {
-                ccf.close();
+                ccf.get().close();
+                ccf.remove();
             } catch (Exception ignored) { }
         }
     }
@@ -130,7 +132,7 @@ public class BusActionPluginSender implements ActionPluginSender {
         }
         init();
         try {
-            MessageId mid = new MessageProcessor().send(pcc, (BusActionResponseMessage)msg);
+            MessageId mid = new MessageProcessor().send(pcc.get(), (BusActionResponseMessage)msg);
             if (log.isDebugEnabled()) {
                 log.debug("Plugin [" + actionPlugin + "] has sent a response message: [" + mid.toString() + "]");
             }

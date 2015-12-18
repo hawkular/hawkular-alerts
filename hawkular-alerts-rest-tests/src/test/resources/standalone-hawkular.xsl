@@ -71,6 +71,19 @@
     </xsl:copy>
   </xsl:template>
 
+  <xsl:template match="//*[*[local-name()='jms-topic']]">
+    <xsl:copy>
+      <xsl:apply-templates select="@*|node()" />
+      <jms-topic name="HawkularAlertData" entries="java:/topic/HawkularAlertData"/>
+      <jms-topic name="HawkularMetricData" entries="java:/topic/HawkularMetricData"/>
+      <jms-queue name="HawkularAlertsPluginsQueue" entries="java:/queue/HawkularAlertsPluginsQueue"/>
+      <jms-queue name="HawkularAlertsActionsResponseQueue" entries="java:/queue/HawkularAlertsActionsResponseQueue"/>
+      <jms-topic name="HawkularAvailData" entries="java:/topic/HawkularAvailData"/>
+      <jms-topic name="HawkularCommandEvent" entries="java:/topic/HawkularCommandEvent"/>
+      <jms-topic name="HawkularAlertsActionsTopic" entries="java:/topic/HawkularAlertsActionsTopic"/>
+    </xsl:copy>
+  </xsl:template>
+
   <!-- copy everything else as-is -->
   <xsl:template match="node()|@*">
     <xsl:copy>
