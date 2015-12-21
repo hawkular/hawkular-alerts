@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
@@ -167,7 +168,7 @@ public class Event implements Comparable<Event>, Serializable {
 
         this.ctime = System.currentTimeMillis();
 
-        this.id = trigger.getId() + "-" + this.ctime;
+        this.id = trigger.getId() + "-" + this.ctime + "-" + UUID.randomUUID();
         this.dataId = trigger.getId();
         this.context = trigger.getContext();
         if (!isEmpty(trigger.getEventCategory())) {
