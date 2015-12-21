@@ -101,6 +101,9 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (alerts.isEmpty()) {
             return;
         }
+        if (log.isDebugEnabled()) {
+            log.debug("Adding " + alerts.size() + " alerts");
+        }
         session = CassCluster.getSession();
         PreparedStatement insertAlert = CassStatement.get(session, CassStatement.INSERT_ALERT);
         PreparedStatement insertAlertTrigger = CassStatement.get(session, CassStatement.INSERT_ALERT_TRIGGER);
@@ -153,11 +156,12 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (events == null) {
             throw new IllegalArgumentException("Events must be not null");
         }
-
         if (events.isEmpty()) {
             return;
         }
-
+        if (log.isDebugEnabled()) {
+            log.debug("Adding " + events.size() + " events");
+        }
         session = CassCluster.getSession();
         PreparedStatement insertEvent = CassStatement.get(session, CassStatement.INSERT_EVENT);
         PreparedStatement insertEventCategory = CassStatement.get(session, CassStatement.INSERT_EVENT_CATEGORY);
