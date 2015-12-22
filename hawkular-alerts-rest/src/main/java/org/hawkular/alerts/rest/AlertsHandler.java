@@ -355,6 +355,7 @@ public class AlertsHandler {
                     if (log.isDebugEnabled()) {
                         log.debug("Invalid Tag Criteria " + Arrays.toString(fields));
                     }
+                    throw new IllegalArgumentException("Invalid Tag Criteria " + Arrays.toString(fields));
                 }
             }
             criteria.setTags(tagsMap);
