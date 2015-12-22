@@ -85,7 +85,8 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
                 if (null == alertData) {
                     alertData = new ArrayList<>(data.size());
                 }
-                alertData.add(new Data(m.getSource(), m.getTimestamp(), String.valueOf(m.getValue())));
+                alertData.add(new Data(m.getTenantId(), m.getSource(), m.getTimestamp(),
+                        String.valueOf(m.getValue())));
             }
         }
         if (null == alertData) {
@@ -95,7 +96,7 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Forwarding [" + alertData.size() + "] of [" + data.size() + "] metrics to Alerts Engine " +
-                    "(filtered [" + (data.size() - alertData.size()) + "])...");
+                        "(filtered [" + (data.size() - alertData.size()) + "])...");
             }
             try {
                 alerts.sendData(alertData);

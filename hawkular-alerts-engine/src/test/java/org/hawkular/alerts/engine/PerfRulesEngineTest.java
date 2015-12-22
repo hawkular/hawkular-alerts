@@ -82,7 +82,7 @@ public class PerfRulesEngineTest {
         for (int i = 0; i < nDefinitions; i++) {
 
             Trigger tN = new Trigger("tenant", "trigger-" + i, "Threshold-LT");
-            ThresholdCondition tNc1 = new ThresholdCondition("trigger-" + i,
+            ThresholdCondition tNc1 = new ThresholdCondition("tenant", "trigger-" + i,
                     "NumericData-" + i,
                     ThresholdCondition.Operator.LT, 10.0);
             tN.setEnabled(true);
@@ -93,12 +93,12 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(Data.forNumeric("NumericData-" + i, (i * nQueue) + j, 5.0));
+                    datums.add(Data.forNumeric("tenant", "NumericData-" + i, (i * nQueue) + j, 5.0));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(Data.forNumeric("NumericData-" + i, i, 5.0));
+                datums.add(Data.forNumeric("tenant", "NumericData-" + i, i, 5.0));
             }
         }
 
@@ -125,7 +125,7 @@ public class PerfRulesEngineTest {
 
         for (int i = 0; i < nDefinitions; i++) {
             Trigger tN = new Trigger("tenant", "trigger-" + i, "Range");
-            ThresholdRangeCondition tNc1 = new ThresholdRangeCondition("trigger-" + i,
+            ThresholdRangeCondition tNc1 = new ThresholdRangeCondition("tenant", "trigger-" + i,
                                                                        "NumericData-" + i,
                                                                        ThresholdRangeCondition.Operator.INCLUSIVE,
                                                                        ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -139,12 +139,12 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(Data.forNumeric("NumericData-" + i, (i * nQueue) + j, 12.5));
+                    datums.add(Data.forNumeric("tenant", "NumericData-" + i, (i * nQueue) + j, 12.5));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(Data.forNumeric("NumericData-" + i, i, 12.5));
+                datums.add(Data.forNumeric("tenant", "NumericData-" + i, i, 12.5));
             }
         }
 
@@ -171,7 +171,7 @@ public class PerfRulesEngineTest {
 
         for (int i = 0; i < nDefinitions; i++) {
             Trigger tN = new Trigger("tenant", "trigger-" + i, "Compare-D1-LT-Half-D2");
-            CompareCondition tNc1 = new CompareCondition("trigger-" + i,
+            CompareCondition tNc1 = new CompareCondition("tenant", "trigger-" + i,
                                                          "NumericData-a-" + i,
                                                          CompareCondition.Operator.LT, 0.5, "NumericData-b-" + i);
 
@@ -183,14 +183,14 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(Data.forNumeric("NumericData-a-" + i, (i * nQueue) + j, 10d));
-                    datums.add(Data.forNumeric("NumericData-b-" + i, (i * nQueue) + j, 30d));
+                    datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, (i * nQueue) + j, 10d));
+                    datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, (i * nQueue) + j, 30d));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(Data.forNumeric("NumericData-a-" + i, i, 10d));
-                datums.add(Data.forNumeric("NumericData-b-" + i, i, 30d));
+                datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, i, 10d));
+                datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, i, 30d));
             }
         }
 
@@ -217,7 +217,7 @@ public class PerfRulesEngineTest {
 
         for (int i = 0; i < nDefinitions; i++) {
             Trigger tN = new Trigger("tenant", "trigger-" + i, "String-StartsWith");
-            StringCondition tNc1 = new StringCondition("trigger-" + i,
+            StringCondition tNc1 = new StringCondition("tenant", "trigger-" + i,
                                                        "StringData-" + i,
                                                        StringCondition.Operator.STARTS_WITH, "Fred", false);
             tN.setEnabled(true);
@@ -228,12 +228,12 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(new Data("StringData-" + i, (i * nQueue) + j, "Fred And Barney"));
+                    datums.add(new Data("tenant", "StringData-" + i, (i * nQueue) + j, "Fred And Barney"));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(new Data("StringData-" + i, i, "Fred And Barney"));
+                datums.add(new Data("tenant", "StringData-" + i, i, "Fred And Barney"));
             }
         }
 
@@ -260,7 +260,7 @@ public class PerfRulesEngineTest {
 
         for (int i = 0; i < nDefinitions; i++) {
             Trigger tN = new Trigger("tenant", "trigger-" + i, "Avail-DOWN");
-            AvailabilityCondition tNc1 = new AvailabilityCondition("trigger-" + i, "AvailData-" + i,
+            AvailabilityCondition tNc1 = new AvailabilityCondition("tenant", "trigger-" + i, "AvailData-" + i,
                     AvailabilityCondition.Operator.NOT_UP);
             tN.setEnabled(true);
             definitions.add(tN);
@@ -270,13 +270,13 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(Data.forAvailability("AvailData-" + i, (i * nQueue) + j,
+                    datums.add(Data.forAvailability("tenant", "AvailData-" + i, (i * nQueue) + j,
                             AvailabilityType.DOWN));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(Data.forAvailability("AvailData-" + i, i, AvailabilityType.DOWN));
+                datums.add(Data.forAvailability("tenant", "AvailData-" + i, i, AvailabilityType.DOWN));
             }
         }
 
@@ -304,13 +304,13 @@ public class PerfRulesEngineTest {
         for (int i = 0; i < nDefinitions; i++) {
 
             Trigger tN = new Trigger("tenant", "trigger-" + i, "Threshold-LT");
-            ThresholdCondition tNc1 = new ThresholdCondition("trigger-" + i,
+            ThresholdCondition tNc1 = new ThresholdCondition("tenant", "trigger-" + i,
                     2,
                     1,
                     "NumericData-a-" + i,
                     ThresholdCondition.Operator.LT,
                     10.0);
-            ThresholdRangeCondition tNc2 = new ThresholdRangeCondition("trigger-" + i, 2, 2,
+            ThresholdRangeCondition tNc2 = new ThresholdRangeCondition("tenant", "trigger-" + i, 2, 2,
                     "NumericData-b-" + i,
                     ThresholdRangeCondition.Operator.INCLUSIVE,
                     ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -327,14 +327,14 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(Data.forNumeric("NumericData-a-" + i, (i * nQueue) + j, 5.0));
-                    datums.add(Data.forNumeric("NumericData-b-" + i, (i * nQueue) + j, 12.5));
+                    datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, (i * nQueue) + j, 5.0));
+                    datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, (i * nQueue) + j, 12.5));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(Data.forNumeric("NumericData-a-" + i, i, 5.0));
-                datums.add(Data.forNumeric("NumericData-b-" + i, i, 12.5));
+                datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, i, 5.0));
+                datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, i, 12.5));
 
             }
         }

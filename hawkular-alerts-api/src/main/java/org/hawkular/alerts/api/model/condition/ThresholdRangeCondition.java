@@ -28,6 +28,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 public class ThresholdRangeCondition extends Condition {
 
+    private static final long serialVersionUID = 1L;
+
     public enum Operator {
         INCLUSIVE("[", "]"), EXCLUSIVE("(", ")");
 
@@ -69,37 +71,37 @@ public class ThresholdRangeCondition extends Condition {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultId", 1, 1, null, null, null, null, null, false);
+        this("DefaultTenantId", "DefaultId", 1, 1, null, null, null, null, null, false);
     }
 
-    public ThresholdRangeCondition(String triggerId,
-                                   String dataId, Operator operatorLow, Operator operatorHigh,
-                                   Double thresholdLow, Double thresholdHigh, boolean inRange) {
-
-        this(triggerId, Mode.FIRING, 1, 1, dataId, operatorLow, operatorHigh,
-             thresholdLow, thresholdHigh, inRange);
-    }
-
-    public ThresholdRangeCondition(String triggerId, Mode triggerMode,
-                                   String dataId, Operator operatorLow, Operator operatorHigh,
-                                   Double thresholdLow, Double thresholdHigh, boolean inRange) {
-
-        this(triggerId, triggerMode, 1, 1, dataId, operatorLow, operatorHigh,
-             thresholdLow, thresholdHigh, inRange);
-    }
-
-    public ThresholdRangeCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
+    public ThresholdRangeCondition(String tenantId, String triggerId,
             String dataId, Operator operatorLow, Operator operatorHigh,
             Double thresholdLow, Double thresholdHigh, boolean inRange) {
 
-        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, operatorLow, operatorHigh,
+        this(tenantId, triggerId, Mode.FIRING, 1, 1, dataId, operatorLow, operatorHigh,
                 thresholdLow, thresholdHigh, inRange);
     }
 
-    public ThresholdRangeCondition(String triggerId, Mode triggerMode, int conditionSetSize,
-                                   int conditionSetIndex, String dataId, Operator operatorLow, Operator operatorHigh,
-                                   Double thresholdLow, Double thresholdHigh, boolean inRange) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.RANGE);
+    public ThresholdRangeCondition(String tenantId, String triggerId, Mode triggerMode,
+            String dataId, Operator operatorLow, Operator operatorHigh,
+            Double thresholdLow, Double thresholdHigh, boolean inRange) {
+
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, operatorLow, operatorHigh,
+                thresholdLow, thresholdHigh, inRange);
+    }
+
+    public ThresholdRangeCondition(String tenantId, String triggerId, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operatorLow, Operator operatorHigh,
+            Double thresholdLow, Double thresholdHigh, boolean inRange) {
+
+        this(tenantId, triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, operatorLow, operatorHigh,
+                thresholdLow, thresholdHigh, inRange);
+    }
+
+    public ThresholdRangeCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex, String dataId, Operator operatorLow, Operator operatorHigh,
+            Double thresholdLow, Double thresholdHigh, boolean inRange) {
+        super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.RANGE);
         this.dataId = dataId;
         this.operatorLow = operatorLow;
         this.operatorHigh = operatorHigh;

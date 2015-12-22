@@ -84,7 +84,9 @@ public abstract class Condition implements Serializable {
         // for json assembly
     }
 
-    public Condition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex, Type type) {
+    public Condition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+            Type type) {
+        this.tenantId = tenantId;
         this.triggerId = triggerId;
         this.triggerMode = triggerMode;
         this.conditionSetSize = conditionSetSize;
@@ -139,6 +141,7 @@ public abstract class Condition implements Serializable {
 
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
+        updateId();
     }
 
     public Map<String, String> getContext() {
@@ -153,7 +156,8 @@ public abstract class Condition implements Serializable {
     }
 
     private void updateId() {
-        StringBuilder sb = new StringBuilder(triggerId);
+        StringBuilder sb = new StringBuilder(tenantId);
+        sb.append("-").append(triggerId);
         sb.append("-").append(triggerMode.name());
         sb.append("-").append(conditionSetSize);
         sb.append("-").append(conditionSetIndex);
@@ -191,8 +195,8 @@ public abstract class Condition implements Serializable {
 
     @Override
     public String toString() {
-        return "Condition [triggerId=" + triggerId + ", triggerMode=" + triggerMode + ", conditionSetSize="
-                + conditionSetSize + ", conditionSetIndex=" + conditionSetIndex + "]";
+        return "Condition [tenantId=" + tenantId + "triggerId=" + triggerId + ", triggerMode=" + triggerMode
+                + ", conditionSetSize=" + conditionSetSize + ", conditionSetIndex=" + conditionSetIndex + "]";
     }
 
     /**

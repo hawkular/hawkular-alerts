@@ -72,6 +72,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class EventCondition extends Condition {
 
+    private static final long serialVersionUID = 1L;
+
     @JsonInclude
     private String dataId;
 
@@ -79,42 +81,39 @@ public class EventCondition extends Condition {
     private String expression;
 
     public EventCondition() {
-        this("DefaultId", Mode.FIRING, 1, 1, null, null);
+        this("DefaultTenantId", "DefaultId", Mode.FIRING, 1, 1, null, null);
     }
 
-    public EventCondition(String triggerId, String dataId) {
-        this(triggerId, Mode.FIRING, 1, 1, dataId, null);
+    public EventCondition(String tenantId, String triggerId, String dataId, String expression) {
+        this(tenantId, triggerId, Mode.FIRING, 1, 1, dataId, expression);
     }
 
-    public EventCondition(String triggerId, String dataId, String expression) {
-        this(triggerId, Mode.FIRING, 1, 1, dataId, expression);
+    public EventCondition(String tenantId, String triggerId, Mode triggerMode, String dataId) {
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, null);
     }
 
-    public EventCondition(String triggerId, Mode triggerMode, String dataId) {
-        this(triggerId, triggerMode, 1, 1, dataId, null);
+    public EventCondition(String tenantId, String triggerId, Mode triggerMode, String dataId, String expression) {
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, expression);
     }
 
-    public EventCondition(String triggerId, Mode triggerMode, String dataId, String expression) {
-        this(triggerId, triggerMode, 1, 1, dataId, expression);
+    public EventCondition(String tenantId, String triggerId, int conditionSetSize, int conditionSetIndex,
+            String dataId) {
+        this(tenantId, triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, null);
     }
 
-    public EventCondition(String triggerId, int conditionSetSize, int conditionSetIndex, String dataId) {
-        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, null);
+    public EventCondition(String tenantId, String triggerId, int conditionSetSize, int conditionSetIndex,
+            String dataId, String expression) {
+        this(tenantId, triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, expression);
     }
 
-    public EventCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
-                          String dataId, String expression) {
-        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, expression);
+    public EventCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex, String dataId) {
+        this(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, null);
     }
 
-    public EventCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
-                          String dataId) {
-        this(triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, null);
-    }
-
-    public EventCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
-                          String dataId, String expression) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.EVENT);
+    public EventCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex, String dataId, String expression) {
+        super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.EVENT);
         this.dataId = dataId;
         this.expression = expression;
     }
@@ -236,7 +235,7 @@ public class EventCondition extends Condition {
             return false;
         } else if (constant.charAt(0) != '\'' && constant.charAt(constantLength - 1) == '\'') {
             return false;
-        } else  {
+        } else {
             dConstantValue = Double.valueOf(constant);
         }
 
@@ -310,9 +309,12 @@ public class EventCondition extends Condition {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         EventCondition that = (EventCondition) o;
 

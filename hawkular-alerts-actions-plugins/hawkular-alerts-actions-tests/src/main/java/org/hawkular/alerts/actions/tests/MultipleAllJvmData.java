@@ -72,7 +72,7 @@ public class MultipleAllJvmData extends CommonData {
         trigger.setFiringMatch(Match.ALL);
         trigger.setAutoResolveMatch(Match.ALL);
 
-        firingConditions[0] = new ThresholdCondition(trigger.getId(),
+        firingConditions[0] = new ThresholdCondition(TEST_TENANT, trigger.getId(),
                 Mode.FIRING,
                 3,
                 1,
@@ -83,7 +83,7 @@ public class MultipleAllJvmData extends CommonData {
         firingConditions[0].getContext().put("description", "GC Duration");
         firingConditions[0].getContext().put("unit", "ms");
 
-        autoResolveConditions[0] = new ThresholdCondition(trigger.getId(),
+        autoResolveConditions[0] = new ThresholdCondition(TEST_TENANT, trigger.getId(),
                 Mode.AUTORESOLVE,
                 3,
                 1,
@@ -95,7 +95,7 @@ public class MultipleAllJvmData extends CommonData {
         autoResolveConditions[0].getContext().put("unit", "ms");
 
 
-        firingConditions[1] = new ThresholdRangeCondition(trigger.getId(),
+        firingConditions[1] = new ThresholdRangeCondition(TEST_TENANT, trigger.getId(),
                 Mode.FIRING,
                 3,
                 2,
@@ -109,7 +109,7 @@ public class MultipleAllJvmData extends CommonData {
         firingConditions[1].getContext().put("description", "Heap Usage");
         firingConditions[1].getContext().put("unit", "Mb");
 
-        autoResolveConditions[1] = new ThresholdRangeCondition(trigger.getId(),
+        autoResolveConditions[1] = new ThresholdRangeCondition(TEST_TENANT, trigger.getId(),
                 Mode.FIRING,
                 3,
                 2,
@@ -124,7 +124,7 @@ public class MultipleAllJvmData extends CommonData {
         autoResolveConditions[1].getContext().put("unit", "Mb");
 
 
-        firingConditions[2] = new ThresholdRangeCondition(trigger.getId(),
+        firingConditions[2] = new ThresholdRangeCondition(TEST_TENANT, trigger.getId(),
                 Mode.FIRING,
                 3,
                 3,
@@ -138,7 +138,7 @@ public class MultipleAllJvmData extends CommonData {
         firingConditions[2].getContext().put("description", "Non Heap Usage");
         firingConditions[2].getContext().put("unit", "Mb");
 
-        autoResolveConditions[2] = new ThresholdRangeCondition(trigger.getId(),
+        autoResolveConditions[2] = new ThresholdRangeCondition(TEST_TENANT, trigger.getId(),
                 Mode.FIRING,
                 3,
                 3,
@@ -162,7 +162,7 @@ public class MultipleAllJvmData extends CommonData {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Data rtBadData1a = Data.forNumeric(firingConditions[0].getDataId(),
+        Data rtBadData1a = Data.forNumeric(TEST_TENANT, firingConditions[0].getDataId(),
                 System.currentTimeMillis(),
                 1900d);
         ThresholdConditionEval eval1a = new ThresholdConditionEval((ThresholdCondition) firingConditions[0],
@@ -172,7 +172,7 @@ public class MultipleAllJvmData extends CommonData {
 
         evalSet1.add(eval1a);
 
-        Data rtBadData1b = Data.forNumeric(firingConditions[1].getDataId(),
+        Data rtBadData1b = Data.forNumeric(TEST_TENANT, firingConditions[1].getDataId(),
                 System.currentTimeMillis(),
                 315d);
         ThresholdRangeConditionEval eval1b = new ThresholdRangeConditionEval((ThresholdRangeCondition)
@@ -180,7 +180,7 @@ public class MultipleAllJvmData extends CommonData {
 
         evalSet1.add(eval1b);
 
-        Data rtBadData1c = Data.forNumeric(firingConditions[2].getDataId(),
+        Data rtBadData1c = Data.forNumeric(TEST_TENANT, firingConditions[2].getDataId(),
                 System.currentTimeMillis(),
                 215d);
         ThresholdRangeConditionEval eval1c = new ThresholdRangeConditionEval((ThresholdRangeCondition)
@@ -191,7 +191,7 @@ public class MultipleAllJvmData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Data rtBadData2a = Data.forNumeric(firingConditions[0].getDataId(),
+        Data rtBadData2a = Data.forNumeric(TEST_TENANT, firingConditions[0].getDataId(),
                 System.currentTimeMillis() + 5000,
                 1800d);
         ThresholdConditionEval eval2a = new ThresholdConditionEval((ThresholdCondition) firingConditions[0],
@@ -201,7 +201,7 @@ public class MultipleAllJvmData extends CommonData {
 
         evalSet2.add(eval2a);
 
-        Data rtBadData2b = Data.forNumeric(firingConditions[1].getDataId(),
+        Data rtBadData2b = Data.forNumeric(TEST_TENANT, firingConditions[1].getDataId(),
                 System.currentTimeMillis() + 5000,
                 350d);
         ThresholdRangeConditionEval eval2b = new ThresholdRangeConditionEval((ThresholdRangeCondition)
@@ -209,7 +209,7 @@ public class MultipleAllJvmData extends CommonData {
 
         evalSet2.add(eval2b);
 
-        Data rtBadData2c = Data.forNumeric(firingConditions[2].getDataId(),
+        Data rtBadData2c = Data.forNumeric(TEST_TENANT, firingConditions[2].getDataId(),
                 System.currentTimeMillis() + 5000,
                 250d);
         ThresholdRangeConditionEval eval2c = new ThresholdRangeConditionEval((ThresholdRangeCondition)
@@ -227,7 +227,7 @@ public class MultipleAllJvmData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Data rtGoodDataA = Data.forNumeric(autoResolveConditions[0].getDataId(),
+        Data rtGoodDataA = Data.forNumeric(TEST_TENANT, autoResolveConditions[0].getDataId(),
                 System.currentTimeMillis() + 20000,
                 900d);
         ThresholdConditionEval eval1A = new ThresholdConditionEval((ThresholdCondition) autoResolveConditions[0],
@@ -235,7 +235,7 @@ public class MultipleAllJvmData extends CommonData {
         Set<ConditionEval> evalSet1 = new HashSet<>();
         evalSet1.add(eval1A);
 
-        Data rtGoodDataB = Data.forNumeric(autoResolveConditions[1].getDataId(),
+        Data rtGoodDataB = Data.forNumeric(TEST_TENANT, autoResolveConditions[1].getDataId(),
                 System.currentTimeMillis() + 20000,
                 150d);
         ThresholdRangeConditionEval eval1B = new ThresholdRangeConditionEval((ThresholdRangeCondition)
@@ -243,7 +243,7 @@ public class MultipleAllJvmData extends CommonData {
 
         evalSet1.add(eval1B);
 
-        Data rtGoodData = Data.forNumeric(autoResolveConditions[2].getDataId(),
+        Data rtGoodData = Data.forNumeric(TEST_TENANT, autoResolveConditions[2].getDataId(),
                 System.currentTimeMillis() + 20000,
                 125d);
         ThresholdRangeConditionEval eval1C = new ThresholdRangeConditionEval((ThresholdRangeCondition)

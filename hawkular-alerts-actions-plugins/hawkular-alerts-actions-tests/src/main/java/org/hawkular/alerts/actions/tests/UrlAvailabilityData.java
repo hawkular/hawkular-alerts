@@ -61,14 +61,14 @@ public class UrlAvailabilityData extends CommonData {
                 triggerDescription,
                 context);
 
-        firingCondition = new AvailabilityCondition(trigger.getId(),
+        firingCondition = new AvailabilityCondition(TEST_TENANT, trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 AvailabilityCondition.Operator.NOT_UP);
         firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "Availability");
 
-        autoResolveCondition = new AvailabilityCondition(trigger.getId(),
+        autoResolveCondition = new AvailabilityCondition(TEST_TENANT, trigger.getId(),
                 Mode.AUTORESOLVE,
                 dataId,
                 AvailabilityCondition.Operator.UP);
@@ -86,7 +86,7 @@ public class UrlAvailabilityData extends CommonData {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Data avBadData1 = Data.forAvailability(firingCondition.getDataId(),
+        Data avBadData1 = Data.forAvailability(TEST_TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis(),
                 AvailabilityType.DOWN);
         AvailabilityConditionEval eval1 = new AvailabilityConditionEval(firingCondition, avBadData1);
@@ -96,7 +96,7 @@ public class UrlAvailabilityData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Data avBadData2 = Data.forAvailability(firingCondition.getDataId(),
+        Data avBadData2 = Data.forAvailability(TEST_TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
                 AvailabilityType.DOWN);
         AvailabilityConditionEval eval2 = new AvailabilityConditionEval(firingCondition, avBadData2);
@@ -113,7 +113,8 @@ public class UrlAvailabilityData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Data avGoodData = Data.forAvailability(autoResolveCondition.getDataId(), System.currentTimeMillis() + 20000,
+        Data avGoodData = Data.forAvailability(TEST_TENANT, autoResolveCondition.getDataId(),
+                System.currentTimeMillis() + 20000,
                 AvailabilityType.UP);
         AvailabilityConditionEval eval1 = new AvailabilityConditionEval(autoResolveCondition, avGoodData);
         Set<ConditionEval> evalSet1 = new HashSet<>();

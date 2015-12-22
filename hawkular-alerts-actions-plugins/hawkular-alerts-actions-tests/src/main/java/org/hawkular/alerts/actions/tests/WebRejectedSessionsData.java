@@ -61,7 +61,7 @@ public class WebRejectedSessionsData extends CommonData {
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdCondition(trigger.getId(),
+        firingCondition = new ThresholdCondition(TEST_TENANT, trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdCondition.Operator.GT,
@@ -70,7 +70,7 @@ public class WebRejectedSessionsData extends CommonData {
         firingCondition.getContext().put("description", "Rejected Sessions");
         firingCondition.getContext().put("unit", "sessions");
 
-        autoResolveCondition = new ThresholdCondition(trigger.getId(),
+        autoResolveCondition = new ThresholdCondition(TEST_TENANT, trigger.getId(),
                 Mode.AUTORESOLVE,
                 dataId,
                 ThresholdCondition.Operator.LTE,
@@ -90,7 +90,7 @@ public class WebRejectedSessionsData extends CommonData {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Data rtBadData1 = Data.forNumeric(firingCondition.getDataId(),
+        Data rtBadData1 = Data.forNumeric(TEST_TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis(),
                 100d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(firingCondition, rtBadData1);
@@ -100,7 +100,7 @@ public class WebRejectedSessionsData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Data rtBadData2 = Data.forNumeric(firingCondition.getDataId(),
+        Data rtBadData2 = Data.forNumeric(TEST_TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
                 101d);
         ThresholdConditionEval eval2 = new ThresholdConditionEval(firingCondition, rtBadData2);
@@ -117,7 +117,7 @@ public class WebRejectedSessionsData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Data rtGoodData = Data.forNumeric(autoResolveCondition.getDataId(),
+        Data rtGoodData = Data.forNumeric(TEST_TENANT, autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
                 30d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(autoResolveCondition, rtGoodData);

@@ -526,7 +526,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (initialized && null!=alertsEngine) {
+        if (initialized && null != alertsEngine) {
             alertsEngine.addTrigger(trigger.getTenantId(), trigger.getId());
         }
 
@@ -1289,13 +1289,15 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         Condition newCondition = null;
         switch (groupCondition.getType()) {
             case AVAILABILITY:
-                newCondition = new AvailabilityCondition(member.getId(), groupCondition.getTriggerMode(),
+                newCondition = new AvailabilityCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
                         groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
                         dataIdMap.get(groupCondition.getDataId()),
                         ((AvailabilityCondition) groupCondition).getOperator());
                 break;
             case COMPARE:
-                newCondition = new CompareCondition(member.getId(), groupCondition.getTriggerMode(),
+                newCondition = new CompareCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
                         groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
                         dataIdMap.get(groupCondition.getDataId()),
                         ((CompareCondition) groupCondition).getOperator(),
@@ -1308,14 +1310,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 String tokenExpression = ((ExternalCondition) groupCondition).getExpression();
                 String memberExpression = isEmpty(tokenExpression) ? tokenExpression :
                         tokenExpression.replace(tokenDataId, memberDataId);
-                newCondition = new ExternalCondition(member.getId(), groupCondition.getTriggerMode(),
+                newCondition = new ExternalCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
                         groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
                         memberDataId,
                         ((ExternalCondition) groupCondition).getSystemId(),
                         memberExpression);
                 break;
             case RANGE:
-                newCondition = new ThresholdRangeCondition(member.getId(), groupCondition.getTriggerMode(),
+                newCondition = new ThresholdRangeCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
                         groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
                         dataIdMap.get(groupCondition.getDataId()),
                         ((ThresholdRangeCondition) groupCondition).getOperatorLow(),
@@ -1325,7 +1329,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         ((ThresholdRangeCondition) groupCondition).isInRange());
                 break;
             case RATE:
-                newCondition = new RateCondition(member.getId(), groupCondition.getTriggerMode(),
+                newCondition = new RateCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
                         groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
                         dataIdMap.get(groupCondition.getDataId()),
                         ((RateCondition) groupCondition).getDirection(),
@@ -1334,7 +1339,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         ((ThresholdCondition) groupCondition).getThreshold());
                 break;
             case STRING:
-                newCondition = new StringCondition(member.getId(), groupCondition.getTriggerMode(),
+                newCondition = new StringCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
                         groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
                         dataIdMap.get(groupCondition.getDataId()),
                         ((StringCondition) groupCondition).getOperator(),
@@ -1342,7 +1348,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         ((StringCondition) groupCondition).isIgnoreCase());
                 break;
             case THRESHOLD:
-                newCondition = new ThresholdCondition(member.getId(), groupCondition.getTriggerMode(),
+                newCondition = new ThresholdCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
                         groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
                         dataIdMap.get(groupCondition.getDataId()),
                         ((ThresholdCondition) groupCondition).getOperator(),

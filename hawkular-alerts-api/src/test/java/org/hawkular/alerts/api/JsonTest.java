@@ -110,15 +110,15 @@ public class JsonTest {
 
         assertTrue(!output.contains("evalSets"));
 
-        AvailabilityCondition aCond = new AvailabilityCondition("trigger-test", "Default",
+        AvailabilityCondition aCond = new AvailabilityCondition(TEST_TENANT, "trigger-test", "Default",
                 AvailabilityCondition.Operator.UP);
-        Data aData = Data.forAvailability("Metric-test", 1, AvailabilityType.UP);
+        Data aData = Data.forAvailability(TEST_TENANT,"Metric-test", 1, AvailabilityType.UP);
         AvailabilityConditionEval aEval = new AvailabilityConditionEval(aCond, aData);
 
-        ThresholdCondition tCond = new ThresholdCondition("trigger-test", "Default",
+        ThresholdCondition tCond = new ThresholdCondition(TEST_TENANT, "trigger-test", "Default",
                 ThresholdCondition.Operator.LTE,
                 50.0);
-        Data tData = Data.forNumeric("Metric-test2", 2, 25.5);
+        Data tData = Data.forNumeric(TEST_TENANT, "Metric-test2", 2, 25.5);
         ThresholdConditionEval tEval = new ThresholdConditionEval(tCond, tData);
 
         Set<ConditionEval> evals = new HashSet<>();
@@ -153,7 +153,7 @@ public class JsonTest {
                     "[{\"evalTimestamp\":1436964294055," +
                        "\"dataTimestamp\":2," +
                        "\"type\":\"THRESHOLD\"," +
-                       "\"condition\":{\"tenantId\":null," +
+                "\"condition\":{\"tenantId\":\"jdoe\"," +
                        "\"triggerId\":\"trigger-test\"," +
                        "\"triggerMode\":\"FIRING\"," +
                        "\"type\":\"THRESHOLD\"," +
@@ -166,7 +166,7 @@ public class JsonTest {
                      "{\"evalTimestamp\":1436964284965," +
                        "\"dataTimestamp\":1," +
                        "\"type\":\"AVAILABILITY\"," +
-                       "\"condition\":{\"tenantId\":null," +
+                "\"condition\":{\"tenantId\":\"jdoe\"," +
                        "\"triggerId\":\"trigger-test\"," +
                        "\"triggerMode\":\"FIRING\"," +
                        "\"type\":\"AVAILABILITY\"," +

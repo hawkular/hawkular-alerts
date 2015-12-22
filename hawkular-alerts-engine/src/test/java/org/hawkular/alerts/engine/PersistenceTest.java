@@ -430,7 +430,8 @@ public abstract class PersistenceTest {
 
         groupConditions = new ArrayList<>(groupConditions);
 
-        CompareCondition compareCondition = new CompareCondition(t.getId(), Mode.FIRING, "Data1Id-Token", Operator.LT,
+        CompareCondition compareCondition = new CompareCondition(TEST_TENANT, t.getId(), Mode.FIRING, "Data1Id-Token",
+                Operator.LT,
                 50.0D, "Data2Id-Token");
         groupConditions.add(compareCondition);
 
@@ -900,7 +901,7 @@ public abstract class PersistenceTest {
 
         ThresholdCondition threshold = (ThresholdCondition) cs.iterator().next();
         long dataTime = System.currentTimeMillis();
-        Data data = Data.forNumeric("NumericData-01", dataTime, 5.0d);
+        Data data = Data.forNumeric(TEST_TENANT, "NumericData-01", dataTime, 5.0d);
         ThresholdConditionEval eval = new ThresholdConditionEval(threshold, data);
         Set<ConditionEval> evalSet = new HashSet<>();
         evalSet.add(eval);
@@ -1036,7 +1037,7 @@ public abstract class PersistenceTest {
 
         for (int i = 0; i < 107; i++) {
             long dataTime = System.currentTimeMillis();
-            Data data = Data.forAvailability("Availability-01", dataTime, AvailabilityType.DOWN);
+            Data data = Data.forAvailability(TEST_TENANT, "Availability-01", dataTime, AvailabilityType.DOWN);
             AvailabilityConditionEval eval = new AvailabilityConditionEval(availability, data);
             Set<ConditionEval> evalSet = new HashSet<>();
             evalSet.add(eval);
@@ -1311,7 +1312,7 @@ public abstract class PersistenceTest {
 
         for (int i = 0; i < 107; i++) {
             long dataTime = System.currentTimeMillis();
-            Data data = Data.forAvailability("Availability-01", dataTime, AvailabilityType.DOWN);
+            Data data = Data.forAvailability(TEST_TENANT, "Availability-01", dataTime, AvailabilityType.DOWN);
             AvailabilityConditionEval eval = new AvailabilityConditionEval(availability, data);
             Set<ConditionEval> evalSet = new HashSet<>();
             evalSet.add(eval);
@@ -1388,7 +1389,7 @@ public abstract class PersistenceTest {
 
         ThresholdCondition threshold = (ThresholdCondition) cs.iterator().next();
         long dataTime = System.currentTimeMillis();
-        Data data = Data.forNumeric("NumericData-01", dataTime, 5.0d);
+        Data data = Data.forNumeric(TEST_TENANT, "NumericData-01", dataTime, 5.0d);
         ThresholdConditionEval eval = new ThresholdConditionEval(threshold, data);
         Set<ConditionEval> evalSet = new HashSet<>();
         evalSet.add(eval);
@@ -1529,7 +1530,7 @@ public abstract class PersistenceTest {
 
         for (int i = 0; i < 107; i++) {
             long dataTime = System.currentTimeMillis();
-            Data data = Data.forNumeric("NumericData-01", dataTime, 5.0d + i);
+            Data data = Data.forNumeric(TEST_TENANT, "NumericData-01", dataTime, 5.0d + i);
             ThresholdConditionEval eval = new ThresholdConditionEval(threshold, data);
             Set<ConditionEval> evalSet = new HashSet<>();
             evalSet.add(eval);

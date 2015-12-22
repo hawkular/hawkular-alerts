@@ -29,6 +29,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class StringCondition extends Condition {
 
+    private static final long serialVersionUID = 1L;
+
     public enum Operator {
         EQUAL, NOT_EQUAL, STARTS_WITH, ENDS_WITH, CONTAINS, MATCH
     }
@@ -49,28 +51,29 @@ public class StringCondition extends Condition {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultId", 1, 1, null, null, null, false);
+        this("DefaultTenantId", "DefaultId", 1, 1, null, null, null, false);
     }
 
-    public StringCondition(String triggerId,
-                           String dataId, Operator operator, String pattern, boolean ignoreCase) {
-        this(triggerId, Mode.FIRING, 1, 1, dataId, operator, pattern, ignoreCase);
-    }
-
-    public StringCondition(String triggerId, Mode triggerMode,
-                           String dataId, Operator operator, String pattern, boolean ignoreCase) {
-        this(triggerId, triggerMode, 1, 1, dataId, operator, pattern, ignoreCase);
-    }
-
-    public StringCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
+    public StringCondition(String tenantId, String triggerId,
             String dataId, Operator operator, String pattern, boolean ignoreCase) {
-        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, operator, pattern, ignoreCase);
+        this(tenantId, triggerId, Mode.FIRING, 1, 1, dataId, operator, pattern, ignoreCase);
     }
 
-    public StringCondition(String triggerId, Mode triggerMode, int conditionSetSize,
-                           int conditionSetIndex, String dataId, Operator operator, String pattern,
-                           boolean ignoreCase) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.STRING);
+    public StringCondition(String tenantId, String triggerId, Mode triggerMode,
+            String dataId, Operator operator, String pattern, boolean ignoreCase) {
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, operator, pattern, ignoreCase);
+    }
+
+    public StringCondition(String tenantId, String triggerId, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operator, String pattern, boolean ignoreCase) {
+        this(tenantId, triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, operator, pattern,
+                ignoreCase);
+    }
+
+    public StringCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex, String dataId, Operator operator, String pattern,
+            boolean ignoreCase) {
+        super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.STRING);
         this.dataId = dataId;
         this.operator = operator;
         this.pattern = pattern;
@@ -173,7 +176,7 @@ public class StringCondition extends Condition {
 
     @Override
     public String toString() {
-        return  "StringCondition [triggerId='" + triggerId + "', " +
+        return "StringCondition [triggerId='" + triggerId + "', " +
                 "triggerMode=" + triggerMode + ", " +
                 "dataId=" + (dataId == null ? null : '\'' + dataId + '\'') + ", " +
                 "operator=" + (operator == null ? null : '\'' + operator.toString() + '\'') + ", " +
