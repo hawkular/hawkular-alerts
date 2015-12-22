@@ -47,11 +47,11 @@ public class CassCluster {
     private static final String ALERTS_CASSANDRA_RETRY_ATTEMPTS = "hawkular-alerts.cassandra-retry-attempts";
     private static final String ALERTS_CASSANDRA_RETRY_TIMEOUT = "hawkular-alerts.cassandra-retry-timeout";
 
-    private static Cluster cluster = null;
+    private Cluster cluster = null;
 
-    private static Session session = null;
+    private Session session = null;
 
-    private static boolean initialized = false;
+    private boolean initialized = false;
 
     private static CassCluster instance = new CassCluster();
 
@@ -115,7 +115,7 @@ public class CassCluster {
     }
 
     public static synchronized Session getSession() throws Exception {
-        if (cluster == null && session == null) {
+        if (instance.cluster == null && instance.session == null) {
             String cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, ALERTS_CASSANDRA_PORT_ENV, "9042");
             String nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, ALERTS_CASSANDRA_NODES_ENV, "127.0.0.1");
             int attempts = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_ATTEMPTS, "5"));
@@ -124,14 +124,14 @@ public class CassCluster {
                 It might happen that alerts component is faster than embedded cassandra deployed in hawkular.
                 We will provide a simple attempt/retry loop to avoid issues at initialization.
              */
-            while(session == null && !Thread.currentThread().isInterrupted() && attempts >= 0) {
+            while(instance.session == null && !Thread.currentThread().isInterrupted() && attempts >= 0) {
                 try {
-                    cluster = new Cluster.Builder()
+                    instance.cluster = new Cluster.Builder()
                             .addContactPoints(nodes.split(","))
                             .withPort(new Integer(cqlPort))
                             .withProtocolVersion(ProtocolVersion.V3)
                             .build();
-                    session = cluster.connect();
+                    instance.session = instance.cluster.connect();
                 } catch (Exception e) {
                     log.warn("Could not connect to Cassandra cluster - assuming is not up yet. Cause: " +
                             ((e.getCause() == null) ? e : e.getCause()));
@@ -139,7 +139,7 @@ public class CassCluster {
                         throw e;
                     }
                 }
-                if (session == null) {
+                if (instance.session == null) {
                     log.warn("[" + attempts + "] Retrying connecting to Cassandra cluster in [" + timeout + "]ms...");
                     attempts--;
                     try {
@@ -149,20 +149,23 @@ public class CassCluster {
                     }
                 }
             }
-            if (session != null && !initialized) {
+            if (instance.session != null && !instance.initialized) {
                 String keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
-                instance.initScheme(session, keyspace);
+                instance.initScheme(instance.session, keyspace);
             }
         }
-        if (session == null) {
+        if (instance.session == null) {
             throw new RuntimeException("Cassandra session is null");
         }
-        return session;
+        if (instance.session != null && !instance.initialized) {
+            throw new RuntimeException("Cassandra alerts keyspace is not initialized");
+        }
+        return instance.session;
     }
 
     public static void shutdown() {
-        if (session != null && !session.isClosed()) {
-            session.close();
+        if (instance != null && instance.session != null && !instance.session.isClosed()) {
+            instance.session.close();
         }
     }
 }
