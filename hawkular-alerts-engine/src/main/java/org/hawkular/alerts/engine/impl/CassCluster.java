@@ -71,6 +71,7 @@ public class CassCluster {
                 keyspace + "'");
         if (!resultSet.isExhausted()) {
             log.debug("Schema already exist. Skipping schema creation.");
+            initialized = true;
             return;
         }
 
