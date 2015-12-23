@@ -56,12 +56,12 @@ public class JvmHeapUsageData extends CommonData {
         String triggerDescription = "JVM Heap Usage for thevault~Local";
         String dataId = "thevault~local-jvm-heap-usage-data-id";
 
-        trigger = new Trigger(TEST_TENANT,
+        trigger = new Trigger(TENANT,
                 triggerId,
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdRangeCondition(TEST_TENANT, trigger.getId(),
+        firingCondition = new ThresholdRangeCondition(TENANT, trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -69,11 +69,10 @@ public class JvmHeapUsageData extends CommonData {
                 100d,
                 300d,
                 false);
-        firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "Heap Usage");
         firingCondition.getContext().put("unit", "Mb");
 
-        autoResolveCondition = new ThresholdRangeCondition(TEST_TENANT, trigger.getId(),
+        autoResolveCondition = new ThresholdRangeCondition(TENANT, trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
@@ -81,22 +80,18 @@ public class JvmHeapUsageData extends CommonData {
                 100d,
                 300d,
                 true);
-        autoResolveCondition.setTenantId(TEST_TENANT);
         autoResolveCondition.getContext().put("description", "Heap Usage");
         autoResolveCondition.getContext().put("unit", "Mb");
 
-        firingDampening = Dampening.forStrictTimeout(trigger.getId(),
-                Mode.FIRING,
-                10000);
-        firingDampening.setTenantId(TEST_TENANT);
-
+        firingDampening = Dampening.forStrictTimeout(TENANT, trigger.getId(),
+                Mode.FIRING, 10000);
     }
 
     public static Alert getOpenAlert() {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Data rtBadData1 = Data.forNumeric(TEST_TENANT, firingCondition.getDataId(),
+        Data rtBadData1 = Data.forNumeric(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis(),
                 315d);
         ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(firingCondition, rtBadData1);
@@ -106,7 +101,7 @@ public class JvmHeapUsageData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Data rtBadData2 = Data.forNumeric(TEST_TENANT, firingCondition.getDataId(),
+        Data rtBadData2 = Data.forNumeric(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
                 350d);
         ThresholdRangeConditionEval eval2 = new ThresholdRangeConditionEval(firingCondition, rtBadData2);
@@ -123,7 +118,7 @@ public class JvmHeapUsageData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Data rtGoodData = Data.forNumeric(TEST_TENANT, autoResolveCondition.getDataId(),
+        Data rtGoodData = Data.forNumeric(TENANT, autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
                 150d);
         ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(autoResolveCondition, rtGoodData);

@@ -71,7 +71,7 @@ public class ThresholdRangeCondition extends Condition {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultTenantId", "DefaultId", 1, 1, null, null, null, null, null, false);
+        this("", "", 1, 1, null, null, null, null, null, false);
     }
 
     public ThresholdRangeCondition(String tenantId, String triggerId,
@@ -79,6 +79,17 @@ public class ThresholdRangeCondition extends Condition {
             Double thresholdLow, Double thresholdHigh, boolean inRange) {
 
         this(tenantId, triggerId, Mode.FIRING, 1, 1, dataId, operatorLow, operatorHigh,
+                thresholdLow, thresholdHigh, inRange);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public ThresholdRangeCondition(String triggerId, Mode triggerMode, String dataId, Operator operatorLow,
+            Operator operatorHigh, Double thresholdLow, Double thresholdHigh, boolean inRange) {
+
+        this("", triggerId, triggerMode, 1, 1, dataId, operatorLow, operatorHigh,
                 thresholdLow, thresholdHigh, inRange);
     }
 
@@ -95,6 +106,18 @@ public class ThresholdRangeCondition extends Condition {
             Double thresholdLow, Double thresholdHigh, boolean inRange) {
 
         this(tenantId, triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, operatorLow, operatorHigh,
+                thresholdLow, thresholdHigh, inRange);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public ThresholdRangeCondition(String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex, String dataId, Operator operatorLow, Operator operatorHigh,
+            Double thresholdLow, Double thresholdHigh, boolean inRange) {
+
+        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, operatorLow, operatorHigh,
                 thresholdLow, thresholdHigh, inRange);
     }
 

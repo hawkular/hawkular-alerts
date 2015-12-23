@@ -51,12 +51,21 @@ public class StringCondition extends Condition {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultTenantId", "DefaultId", 1, 1, null, null, null, false);
+        this("", "", 1, 1, null, null, null, false);
     }
 
     public StringCondition(String tenantId, String triggerId,
             String dataId, Operator operator, String pattern, boolean ignoreCase) {
         this(tenantId, triggerId, Mode.FIRING, 1, 1, dataId, operator, pattern, ignoreCase);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public StringCondition(String triggerId, Mode triggerMode,
+            String dataId, Operator operator, String pattern, boolean ignoreCase) {
+        this("", triggerId, triggerMode, 1, 1, dataId, operator, pattern, ignoreCase);
     }
 
     public StringCondition(String tenantId, String triggerId, Mode triggerMode,
@@ -67,6 +76,17 @@ public class StringCondition extends Condition {
     public StringCondition(String tenantId, String triggerId, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator, String pattern, boolean ignoreCase) {
         this(tenantId, triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, operator, pattern,
+                ignoreCase);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public StringCondition(String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex, String dataId, Operator operator, String pattern,
+            boolean ignoreCase) {
+        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, operator, pattern,
                 ignoreCase);
     }
 

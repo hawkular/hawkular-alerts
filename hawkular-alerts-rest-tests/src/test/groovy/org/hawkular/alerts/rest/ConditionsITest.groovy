@@ -25,6 +25,7 @@ import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.StringCondition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition
+import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.Test
 
@@ -44,7 +45,7 @@ class ConditionsITest extends AbstractITestBase {
         def resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        AvailabilityCondition testCond = new AvailabilityCondition("test-trigger-1",
+        AvailabilityCondition testCond = new AvailabilityCondition("test-trigger-1", Mode.FIRING,
                 "No-Metric", Operator.NOT_UP);
 
         Collection<Condition> conditions = new ArrayList<>(1);
@@ -77,7 +78,7 @@ class ConditionsITest extends AbstractITestBase {
         def resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        CompareCondition testCond = new CompareCondition("test-trigger-2",
+        CompareCondition testCond = new CompareCondition("test-trigger-2", Mode.FIRING,
                 "No-Metric-1", CompareCondition.Operator.LT, 1.0, "No-Metric-2");
 
         Collection<Condition> conditions = new ArrayList<>(1);
@@ -114,7 +115,7 @@ class ConditionsITest extends AbstractITestBase {
         def resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        StringCondition testCond = new StringCondition("test-trigger-3",
+        StringCondition testCond = new StringCondition("test-trigger-3", Mode.FIRING,
                 "No-Metric", StringCondition.Operator.CONTAINS, "test", false);
 
         Collection<Condition> conditions = new ArrayList<>(1);
@@ -151,10 +152,10 @@ class ConditionsITest extends AbstractITestBase {
         def resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        ThresholdCondition testCond1 = new ThresholdCondition("test-trigger-4",
+        ThresholdCondition testCond1 = new ThresholdCondition("test-trigger-4", Mode.FIRING,
                 "No-Metric", ThresholdCondition.Operator.GT, 10.12);
 
-        ThresholdCondition testCond2 = new ThresholdCondition("test-trigger-4",
+        ThresholdCondition testCond2 = new ThresholdCondition("test-trigger-4", Mode.FIRING,
                 "No-Metric", ThresholdCondition.Operator.LT, 4.10);
 
         Collection<Condition> conditions = new ArrayList<>(2);
@@ -197,9 +198,8 @@ class ConditionsITest extends AbstractITestBase {
         def resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        ThresholdRangeCondition testCond = new ThresholdRangeCondition("test-trigger-5",
-                "No-Metric",
-                ThresholdRangeCondition.Operator.INCLUSIVE, ThresholdRangeCondition.Operator.EXCLUSIVE,
+        ThresholdRangeCondition testCond = new ThresholdRangeCondition("test-trigger-5", Mode.FIRING,
+                "No-Metric", ThresholdRangeCondition.Operator.INCLUSIVE, ThresholdRangeCondition.Operator.EXCLUSIVE,
                 10.51, 10.99, true);
 
         Collection<Condition> conditions = new ArrayList<>(1);

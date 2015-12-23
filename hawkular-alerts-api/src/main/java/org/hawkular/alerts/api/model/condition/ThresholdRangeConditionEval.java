@@ -30,6 +30,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class ThresholdRangeConditionEval extends ConditionEval {
 
+    private static final long serialVersionUID = 1L;
+
     @JsonInclude(Include.NON_NULL)
     private ThresholdRangeCondition condition;
 
@@ -62,6 +64,11 @@ public class ThresholdRangeConditionEval extends ConditionEval {
 
     public void setValue(Double value) {
         this.value = value;
+    }
+
+    @Override
+    public String getTenantId() {
+        return condition.getTenantId();
     }
 
     @Override

@@ -30,6 +30,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class StringConditionEval extends ConditionEval {
 
+    private static final long serialVersionUID = 1L;
+
     @JsonInclude(Include.NON_NULL)
     private StringCondition condition;
 
@@ -62,6 +64,11 @@ public class StringConditionEval extends ConditionEval {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    @Override
+    public String getTenantId() {
+        return condition.getTenantId();
     }
 
     @Override

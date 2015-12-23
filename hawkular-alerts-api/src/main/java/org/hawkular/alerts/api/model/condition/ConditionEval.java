@@ -36,6 +36,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 @JsonDeserialize(using = JacksonDeserializer.ConditionEvalDeserializer.class)
 public abstract class ConditionEval implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     // result of the condition evaluation
     @JsonIgnore
     protected boolean match;
@@ -105,6 +107,9 @@ public abstract class ConditionEval implements Serializable {
     public void setContext(Map<String, String> context) {
         this.context = context;
     }
+
+    @JsonIgnore
+    public abstract String getTenantId();
 
     @JsonIgnore
     public abstract String getTriggerId();

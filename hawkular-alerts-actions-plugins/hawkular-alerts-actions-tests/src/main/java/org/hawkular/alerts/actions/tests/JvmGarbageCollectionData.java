@@ -56,33 +56,29 @@ public class JvmGarbageCollectionData extends CommonData {
         String triggerDescription = "JVM Garbage Collection for thevault~Local";
         String dataId = "thevault~local-jvm-garbage-collection-data-id";
 
-        trigger = new Trigger(TEST_TENANT,
+        trigger = new Trigger(TENANT,
                 triggerId,
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdCondition(TEST_TENANT, trigger.getId(),
+        firingCondition = new ThresholdCondition(TENANT, trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdCondition.Operator.GT,
                 1000d);
-        firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "GC Duration");
         firingCondition.getContext().put("unit", "ms");
 
-        autoResolveCondition = new ThresholdCondition(TEST_TENANT, trigger.getId(),
+        autoResolveCondition = new ThresholdCondition(TENANT, trigger.getId(),
                 Mode.AUTORESOLVE,
                 dataId,
                 ThresholdCondition.Operator.LTE,
                 1000d);
-        autoResolveCondition.setTenantId(TEST_TENANT);
         autoResolveCondition.getContext().put("description", "GC Duration");
         autoResolveCondition.getContext().put("unit", "ms");
 
-        firingDampening = Dampening.forStrictTimeout(trigger.getId(),
-                Mode.FIRING,
-                10000);
-        firingDampening.setTenantId(TEST_TENANT);
+        firingDampening = Dampening.forStrictTimeout(TENANT, trigger.getId(),
+                Mode.FIRING, 10000);
 
     }
 
@@ -90,7 +86,7 @@ public class JvmGarbageCollectionData extends CommonData {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Data rtBadData1 = Data.forNumeric(TEST_TENANT, firingCondition.getDataId(),
+        Data rtBadData1 = Data.forNumeric(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis(),
                 1900d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(firingCondition, rtBadData1);
@@ -100,7 +96,7 @@ public class JvmGarbageCollectionData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Data rtBadData2 = Data.forNumeric(TEST_TENANT, firingCondition.getDataId(),
+        Data rtBadData2 = Data.forNumeric(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
                 1800d);
         ThresholdConditionEval eval2 = new ThresholdConditionEval(firingCondition, rtBadData2);
@@ -117,7 +113,7 @@ public class JvmGarbageCollectionData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Data rtGoodData = Data.forNumeric(TEST_TENANT, autoResolveCondition.getDataId(),
+        Data rtGoodData = Data.forNumeric(TENANT, autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
                 900d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(autoResolveCondition, rtGoodData);

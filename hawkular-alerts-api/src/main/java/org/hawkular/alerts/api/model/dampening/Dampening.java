@@ -40,6 +40,8 @@ import com.wordnik.swagger.annotations.ApiModelProperty;
  */
 public class Dampening implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     public enum Type {
         STRICT, RELAXED_COUNT, RELAXED_TIME, STRICT_TIME, STRICT_TIMEOUT
     };
@@ -75,7 +77,7 @@ public class Dampening implements Serializable {
     private long evalTimeSetting;
 
     /**
-     * A composed key for the dampening
+     * tenantId-UUID
      */
     @JsonInclude
     protected String dampeningId;
@@ -101,102 +103,111 @@ public class Dampening implements Serializable {
     private transient List<Set<ConditionEval>> satisfyingEvals = new ArrayList<Set<ConditionEval>>();
 
     public Dampening() {
-        this("Default", Mode.FIRING, Type.STRICT, 1, 1, 0);
+        this("", "", Mode.FIRING, Type.STRICT, 1, 1, 0);
     }
 
     /**
      * Fire if we have <code>numTrueEvals</code> consecutive true evaluations of the condition set.  There is
      * no time limit for the evaluations.
-     * @param triggerId the triggerId
+     * @param tenantId the tenantId, not null, can be "" for REST client, it will be assigned by the service.
+     * @param triggerId the triggerId, not null
      * @param triggerMode the trigger mode for when this dampening is active
      * @param numConsecutiveTrueEvals the numConsecutiveTrueEvals, >= 1.
      * @return the configured Dampening
      */
-    public static Dampening forStrict(String triggerId, Mode triggerMode, int numConsecutiveTrueEvals) {
+    public static Dampening forStrict(String tenantId, String triggerId, Mode triggerMode,
+            int numConsecutiveTrueEvals) {
         if (numConsecutiveTrueEvals < 1) {
             throw new IllegalArgumentException("NumConsecutiveTrueEvals must be >= 1");
         }
-        return new Dampening(triggerId, triggerMode, Type.STRICT, numConsecutiveTrueEvals,
+        return new Dampening(tenantId, triggerId, triggerMode, Type.STRICT, numConsecutiveTrueEvals,
                 numConsecutiveTrueEvals, 0);
     }
 
     /**
      * Fire if we have <code>numTrueEvals</code> of the condition set out of <code>numTotalEvals</code>. There is
      * no time limit for the evaluations.
-     * @param triggerId the triggerId
+     * @param tenantId the tenantId, not null, can be "" for REST client, it will be assigned by the service.
+     * @param triggerId the triggerId, not null
      * @param triggerMode the trigger mode for when this dampening is active
      * @param numTrueEvals the numTrueEvals, >=1
      * @param numTotalEvals the numTotalEvals, > numTotalEvals
      * @return the configured Dampening
      */
-    public static Dampening forRelaxedCount(String triggerId, Mode triggerMode, int numTrueEvals, int numTotalEvals) {
+    public static Dampening forRelaxedCount(String tenantId, String triggerId, Mode triggerMode, int numTrueEvals,
+            int numTotalEvals) {
         if (numTrueEvals < 1) {
             throw new IllegalArgumentException("NumTrueEvals must be >= 1");
         }
         if (numTotalEvals <= numTrueEvals) {
             throw new IllegalArgumentException("NumTotalEvals must be > NumTrueEvals");
         }
-        return new Dampening(triggerId, triggerMode, Type.RELAXED_COUNT, numTrueEvals, numTotalEvals, 0);
+        return new Dampening(tenantId, triggerId, triggerMode, Type.RELAXED_COUNT, numTrueEvals, numTotalEvals, 0);
     }
 
     /**
      * Fire if we have <code>numTrueEvals</code> of the condition set within <code>evalPeriod</code>. This can only
      * fire if the condition set is evaluated the required number of times in the given <code>evalPeriod</code>, so
      * the requisite data must be supplied in a timely manner.
-     * @param triggerId the triggerId
+     * @param tenantId the tenantId, not null, can be "" for REST client, it will be assigned by the service.
+     * @param triggerId the triggerId, not null
      * @param triggerMode the trigger mode for when this dampening is active
      * @param numTrueEvals the numTrueEvals, >= 1.
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times. >=1ms.
      * @return the configured Dampening
      */
-    public static Dampening forRelaxedTime(String triggerId, Mode triggerMode, int numTrueEvals, long evalPeriod) {
+    public static Dampening forRelaxedTime(String tenantId, String triggerId, Mode triggerMode, int numTrueEvals,
+            long evalPeriod) {
         if (numTrueEvals < 1) {
             throw new IllegalArgumentException("NumTrueEvals must be >= 1");
         }
         if (evalPeriod < 1) {
             throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
         }
-        return new Dampening(triggerId, triggerMode, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
+        return new Dampening(tenantId, triggerId, triggerMode, Type.RELAXED_TIME, numTrueEvals, 0, evalPeriod);
     }
 
     /**
      * Fire if we have only true evaluations of the condition set for at least <code>evalPeriod</code>.  In other
      * words, fire the Trigger after N consecutive true condition set evaluations, such that <code>N GTE 2</code>
      * and <code>delta(evalTime-1,evalTime-N) GTE evalPeriod</code>.  Any false evaluation resets the dampening.
-     * @param triggerId the triggerId
+     * @param tenantId the tenantId, not null, can be "" for REST client, it will be assigned by the service.
+     * @param triggerId the triggerId, not null
      * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.  >=1ms.
      * @return the configured Dampening
      */
-    public static Dampening forStrictTime(String triggerId, Mode triggerMode, long evalPeriod) {
+    public static Dampening forStrictTime(String tenantId, String triggerId, Mode triggerMode, long evalPeriod) {
         if (evalPeriod < 1) {
             throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
         }
-        return new Dampening(triggerId, triggerMode, Type.STRICT_TIME, 0, 0, evalPeriod);
+        return new Dampening(tenantId, triggerId, triggerMode, Type.STRICT_TIME, 0, 0, evalPeriod);
     }
 
     /**
      * Fire if we have only true evaluations of the condition set for <code>evalPeriod</code>.  In other
      * words, fire the Trigger after N consecutive true condition set evaluations, such that <code>N GTE 1</code>
      * and <code>delta(evalTime-1,currentTime) == evalPeriod</code>.  Any false evaluation resets the dampening.
-     * @param triggerId the triggerId
+     * @param tenantId the tenantId, not null, can be "" for REST client, it will be assigned by the service.
+     * @param triggerId the triggerId, not null
      * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
      * collectionTimes (i.e. the timestamp on the data) but rather the clock starts at true-evaluation-time-1. >=1ms.
      * @return the configured Dampening
      */
-    public static Dampening forStrictTimeout(String triggerId, Mode triggerMode, long evalPeriod) {
+    public static Dampening forStrictTimeout(String tenantId, String triggerId, Mode triggerMode, long evalPeriod) {
         if (evalPeriod < 1) {
             throw new IllegalArgumentException("EvalPeriod must be >= 1ms");
         }
-        return new Dampening(triggerId, triggerMode, Type.STRICT_TIMEOUT, 0, 0, evalPeriod);
+        return new Dampening(tenantId, triggerId, triggerMode, Type.STRICT_TIMEOUT, 0, 0, evalPeriod);
     }
 
-    public Dampening(String triggerId, Mode triggerMode, Type type, int evalTrueSetting, int evalTotalSetting,
-                     long evalTimeSetting) {
+    public Dampening(String tenantId, String triggerId, Mode triggerMode, Type type, int evalTrueSetting,
+            int evalTotalSetting, long evalTimeSetting) {
         super();
+        this.tenantId = tenantId;
         this.triggerId = triggerId;
         this.type = type;
         this.evalTrueSetting = evalTrueSetting;
@@ -325,6 +336,7 @@ public class Dampening implements Serializable {
 
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
+        updateId();
     }
 
     public void perform(Match match, ConditionEval conditionEval) {
@@ -462,7 +474,8 @@ public class Dampening implements Serializable {
     }
 
     private void updateId() {
-        StringBuilder sb = new StringBuilder(triggerId);
+        StringBuilder sb = new StringBuilder(tenantId);
+        sb.append("-").append(triggerId);
         sb.append("-").append(triggerMode.name());
         this.dampeningId = sb.toString();
     }
@@ -483,7 +496,7 @@ public class Dampening implements Serializable {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        Dampening other = (Dampening)obj;
+        Dampening other = (Dampening) obj;
         if (dampeningId == null) {
             if (other.dampeningId != null)
                 return false;

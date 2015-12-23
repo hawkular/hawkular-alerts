@@ -56,37 +56,33 @@ public class UrlAvailabilityData extends CommonData {
         String triggerDescription = "Data for http://www.jboss.org";
         String dataId = "jboss-url-availability-data-id";
 
-        trigger = new Trigger(TEST_TENANT,
+        trigger = new Trigger(TENANT,
                 triggerId,
                 triggerDescription,
                 context);
 
-        firingCondition = new AvailabilityCondition(TEST_TENANT, trigger.getId(),
+        firingCondition = new AvailabilityCondition(TENANT, trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 AvailabilityCondition.Operator.NOT_UP);
-        firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "Availability");
 
-        autoResolveCondition = new AvailabilityCondition(TEST_TENANT, trigger.getId(),
+        autoResolveCondition = new AvailabilityCondition(TENANT, trigger.getId(),
                 Mode.AUTORESOLVE,
                 dataId,
                 AvailabilityCondition.Operator.UP);
-        autoResolveCondition.setTenantId(TEST_TENANT);
         autoResolveCondition.getContext().put("description", "Availability");
 
-        firingDampening = Dampening.forStrictTime(trigger.getId(),
+        firingDampening = Dampening.forStrictTime(TENANT, trigger.getId(),
                 Mode.FIRING,
                 10000);
-        firingDampening.setTenantId(TEST_TENANT);
-
     }
 
     public static Alert getOpenAlert() {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Data avBadData1 = Data.forAvailability(TEST_TENANT, firingCondition.getDataId(),
+        Data avBadData1 = Data.forAvailability(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis(),
                 AvailabilityType.DOWN);
         AvailabilityConditionEval eval1 = new AvailabilityConditionEval(firingCondition, avBadData1);
@@ -96,7 +92,7 @@ public class UrlAvailabilityData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Data avBadData2 = Data.forAvailability(TEST_TENANT, firingCondition.getDataId(),
+        Data avBadData2 = Data.forAvailability(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
                 AvailabilityType.DOWN);
         AvailabilityConditionEval eval2 = new AvailabilityConditionEval(firingCondition, avBadData2);
@@ -113,7 +109,7 @@ public class UrlAvailabilityData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Data avGoodData = Data.forAvailability(TEST_TENANT, autoResolveCondition.getDataId(),
+        Data avGoodData = Data.forAvailability(TENANT, autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
                 AvailabilityType.UP);
         AvailabilityConditionEval eval1 = new AvailabilityConditionEval(autoResolveCondition, avGoodData);

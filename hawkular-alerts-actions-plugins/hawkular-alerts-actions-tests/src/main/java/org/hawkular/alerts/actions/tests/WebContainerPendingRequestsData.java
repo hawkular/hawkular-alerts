@@ -56,12 +56,12 @@ public class WebContainerPendingRequestsData extends CommonData {
         String triggerDescription = "Pending Container Requests for thevault~Local";
         String dataId = "thevault~local-container-pending-requests-data-id";
 
-        trigger = new Trigger(TEST_TENANT,
+        trigger = new Trigger(TENANT,
                 triggerId,
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdRangeCondition(TEST_TENANT, trigger.getId(),
+        firingCondition = new ThresholdRangeCondition(TENANT, trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -69,11 +69,10 @@ public class WebContainerPendingRequestsData extends CommonData {
                 200d,
                 5000d,
                 false);
-        firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "Pending Requests");
         firingCondition.getContext().put("unit", "requests");
 
-        autoResolveCondition = new ThresholdRangeCondition(TEST_TENANT, trigger.getId(),
+        autoResolveCondition = new ThresholdRangeCondition(TENANT, trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
@@ -81,22 +80,19 @@ public class WebContainerPendingRequestsData extends CommonData {
                 200d,
                 5000d,
                 true);
-        autoResolveCondition.setTenantId(TEST_TENANT);
         autoResolveCondition.getContext().put("description", "Pending Requests");
         autoResolveCondition.getContext().put("unit", "requests");
 
-        firingDampening = Dampening.forStrictTimeout(trigger.getId(),
+        firingDampening = Dampening.forStrictTimeout(TENANT, trigger.getId(),
                 Mode.FIRING,
                 10000);
-        firingDampening.setTenantId(TEST_TENANT);
-
     }
 
     public static Alert getOpenAlert() {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Data rtBadData1 = Data.forNumeric(TEST_TENANT, firingCondition.getDataId(),
+        Data rtBadData1 = Data.forNumeric(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis(),
                 5010d);
         ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(firingCondition, rtBadData1);
@@ -106,7 +102,7 @@ public class WebContainerPendingRequestsData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Data rtBadData2 = Data.forNumeric(TEST_TENANT, firingCondition.getDataId(),
+        Data rtBadData2 = Data.forNumeric(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
                 5014d);
         ThresholdRangeConditionEval eval2 = new ThresholdRangeConditionEval(firingCondition, rtBadData2);
@@ -123,7 +119,7 @@ public class WebContainerPendingRequestsData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Data rtGoodData = Data.forNumeric(TEST_TENANT, autoResolveCondition.getDataId(),
+        Data rtGoodData = Data.forNumeric(TENANT, autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
                 1000d);
         ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(autoResolveCondition, rtGoodData);

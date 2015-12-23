@@ -399,10 +399,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     int evalTotalSetting = (Integer) d.get("evalTotalSetting");
                     long evalTimeSetting = (Integer) d.get("evalTimeSetting");
 
-                    Dampening newDampening = new Dampening(triggerId, triggerMode, Dampening.Type.valueOf(type),
-                            evalTrueSetting, evalTotalSetting, evalTimeSetting);
-
-                    newDampening.setTenantId(tenantId);
+                    Dampening newDampening = new Dampening(tenantId, triggerId, triggerMode,
+                            Dampening.Type.valueOf(type), evalTrueSetting, evalTotalSetting, evalTimeSetting);
                     addDampening(newDampening);
                     if (log.isDebugEnabled()) {
                         log.debug("Init registration - Inserting [" + newDampening + "]");
@@ -1272,10 +1270,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         Collection<Dampening> dampenings = getTriggerDampenings(tenantId, groupId, null);
 
         for (Dampening d : dampenings) {
-            Dampening newDampening = new Dampening(member.getId(), d.getTriggerMode(), d.getType(),
-                    d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
-            newDampening.setTenantId(member.getTenantId());
-
+            Dampening newDampening = new Dampening(member.getTenantId(), member.getId(), d.getTriggerMode(),
+                    d.getType(), d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
             addDampening(newDampening);
         }
 
@@ -1359,7 +1355,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 throw new IllegalArgumentException("Unexpected Condition type: " + groupCondition.getType().name());
         }
 
-        newCondition.setTenantId(member.getTenantId());
         return newCondition;
     }
 
@@ -1429,9 +1424,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         try {
-            session.execute(insertDampening.bind(dampening.getTriggerId(), dampening.getTriggerMode().name(),
-                    dampening.getType().name(), dampening.getEvalTrueSetting(), dampening.getEvalTotalSetting(),
-                    dampening.getEvalTimeSetting(), dampening.getDampeningId(), dampening.getTenantId()));
+            session.execute(insertDampening.bind(dampening.getTenantId(), dampening.getTriggerId(),
+                    dampening.getTriggerMode().name(), dampening.getType().name(), dampening.getEvalTrueSetting(),
+                    dampening.getEvalTotalSetting(), dampening.getEvalTimeSetting(), dampening.getDampeningId()));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;

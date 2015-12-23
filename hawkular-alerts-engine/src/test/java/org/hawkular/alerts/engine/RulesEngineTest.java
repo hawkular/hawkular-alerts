@@ -1193,7 +1193,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forStrict("trigger-1", Mode.FIRING, 3);
+        Dampening t1d = Dampening.forStrict("tenant", "trigger-1", Mode.FIRING, 3);
 
         datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
         datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.UNAVAILABLE));
@@ -1239,7 +1239,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forRelaxedCount("trigger-1", Mode.FIRING, 3, 5);
+        Dampening t1d = Dampening.forRelaxedCount("tenant", "trigger-1", Mode.FIRING, 3, 5);
 
         datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
         datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.UNAVAILABLE));
@@ -1286,7 +1286,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forRelaxedTime("trigger-1", Mode.FIRING, 2, 500L);
+        Dampening t1d = Dampening.forRelaxedTime("tenant", "trigger-1", Mode.FIRING, 2, 500L);
 
         t1.setEnabled(true);
 
@@ -1342,7 +1342,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forStrictTime("trigger-1", Mode.FIRING, 250L);
+        Dampening t1d = Dampening.forStrictTime("tenant", "trigger-1", Mode.FIRING, 250L);
 
         t1.setEnabled(true);
 
@@ -1382,7 +1382,7 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forStrictTimeout("trigger-1", Mode.FIRING, 200L);
+        Dampening t1d = Dampening.forStrictTimeout("tenant", "trigger-1", Mode.FIRING, 200L);
 
         t1.setEnabled(true);
 
@@ -1513,7 +1513,7 @@ public class RulesEngineTest {
         ThresholdCondition t1c2 = new ThresholdCondition("tenant", "trigger-1", 2, 2, "Y",
                 ThresholdCondition.Operator.GT, 200.0);
 
-        Dampening t1d = Dampening.forStrict("trigger-1", Mode.FIRING, 2);
+        Dampening t1d = Dampening.forStrict("tenant", "trigger-1", Mode.FIRING, 2);
 
         t1.setEnabled(true);
 
@@ -1618,12 +1618,12 @@ public class RulesEngineTest {
         // Firing Mode
         AvailabilityCondition fmt1c1 = new AvailabilityCondition("tenant", "trigger-1", Mode.FIRING, 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
-        Dampening fmt1d = Dampening.forStrict("trigger-1", Mode.FIRING, 2);
+        Dampening fmt1d = Dampening.forStrict("tenant", "trigger-1", Mode.FIRING, 2);
 
         // AutoResolve Mode
         AvailabilityCondition smt1c1 = new AvailabilityCondition("tenant", "trigger-1", Mode.AUTORESOLVE, 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.UP);
-        Dampening smt1d = Dampening.forStrict("trigger-1", Mode.AUTORESOLVE, 2);
+        Dampening smt1d = Dampening.forStrict("tenant", "trigger-1", Mode.AUTORESOLVE, 2);
 
         datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
         datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.UNAVAILABLE));
@@ -1701,7 +1701,7 @@ public class RulesEngineTest {
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
         Data adata = Data.forAvailability("tenant", "AvailData-01", System.currentTimeMillis(), AvailabilityType.UP);
         AvailabilityConditionEval fmt1c1eval = new AvailabilityConditionEval(fmt1c1, adata);
-        Dampening fmt1d = Dampening.forStrict("trigger-1", Mode.FIRING, 2);
+        Dampening fmt1d = Dampening.forStrict("tenant", "trigger-1", Mode.FIRING, 2);
 
         ThresholdCondition fmt1c2 = new ThresholdCondition("tenant", "trigger-1", Mode.FIRING, 1, 1,
                 "ThreData-01", ThresholdCondition.Operator.GT, 10d);

@@ -57,12 +57,21 @@ public class CompareCondition extends Condition {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultTenantId", "DefaultId", 1, 1, null, null, null, null);
+        this("", "", 1, 1, null, null, null, null);
     }
 
     public CompareCondition(String tenantId, String triggerId,
             String dataId, Operator operator, Double data2Multiplier, String data2Id) {
         this(tenantId, triggerId, FIRING, 1, 1, dataId, operator, data2Multiplier, data2Id);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public CompareCondition(String triggerId, Mode triggerMode,
+            String dataId, Operator operator, Double data2Multiplier, String data2Id) {
+        this("", triggerId, triggerMode, 1, 1, dataId, operator, data2Multiplier, data2Id);
     }
 
     public CompareCondition(String tenantId, String triggerId, Mode triggerMode,
@@ -73,6 +82,16 @@ public class CompareCondition extends Condition {
     public CompareCondition(String tenantId, String triggerId, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator, Double data2Multiplier, String data2Id) {
         this(tenantId, triggerId, FIRING, conditionSetSize, conditionSetIndex, dataId, operator, data2Multiplier,
+                data2Id);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public CompareCondition(String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex, String dataId, Operator operator, Double data2Multiplier, String data2Id) {
+        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, operator, data2Multiplier,
                 data2Id);
     }
 

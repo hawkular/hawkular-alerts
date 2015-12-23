@@ -94,19 +94,19 @@ public class CassPersistenceTest extends PersistenceTest {
     @Before
     public void cleanAlerts() throws Exception {
         AlertsCriteria criteria = new AlertsCriteria();
-        System.out.printf("Deleted [%s] Alerts before test.\n", alertsService.deleteAlerts(TEST_TENANT, criteria));
+        System.out.printf("Deleted [%s] Alerts before test.\n", alertsService.deleteAlerts(TENANT, criteria));
     }
 
     @Before
     public void cleanEvents() throws Exception {
         EventsCriteria criteria = new EventsCriteria();
-        System.out.printf("Deleted [%s] Events before test.\n", alertsService.deleteEvents(TEST_TENANT, criteria));
+        System.out.printf("Deleted [%s] Events before test.\n", alertsService.deleteEvents(TENANT, criteria));
     }
 
     @Before
     public void cleanActions() throws Exception {
         ActionsCriteria criteria = new ActionsCriteria();
-        System.out.printf("Deleted [%s] Actions before test.\n", actionsService.deleteActions(TEST_TENANT, criteria));
+        System.out.printf("Deleted [%s] Actions before test.\n", actionsService.deleteActions(TENANT, criteria));
     }
 
 }

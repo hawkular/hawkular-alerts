@@ -81,12 +81,13 @@ class PerfCrudITest extends AbstractITestBase {
 
             // Dampening
 
-            Dampening d = Dampening.forRelaxedCount("test-crud-" + i, Mode.FIRING, 1, 2);
+            Dampening d = Dampening.forRelaxedCount("", "test-crud-" + i, Mode.FIRING, 1, 2);
 
             startCall = System.currentTimeMillis();
             resp = client.post(path: "triggers/test-crud-" + i + "/dampenings", body: d);
             endCall = System.currentTimeMillis();
             assertEquals(200, resp.status)
+            d = resp.data // get the assigned dampeningId
             numCalls++;
             timeCall = (endCall - startCall);
             if (timeCall > 1000) {
@@ -168,9 +169,9 @@ class PerfCrudITest extends AbstractITestBase {
 
             // Conditions
 
-            ThresholdCondition testCond1 = new ThresholdCondition("test-crud-" + i,
+            ThresholdCondition testCond1 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
                     "No-Metric", ThresholdCondition.Operator.GT, 10.12);
-            ThresholdCondition testCond2 = new ThresholdCondition("test-crud-" + i,
+            ThresholdCondition testCond2 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
                     "No-Metric", ThresholdCondition.Operator.LT, 4.10);
             Collection<Condition> conditions = new ArrayList<>(2);
             conditions.add( testCond1 );
@@ -310,7 +311,7 @@ class PerfCrudITest extends AbstractITestBase {
 
             // Dampening
 
-            Dampening d = Dampening.forRelaxedCount("test-crud-" + i, Mode.FIRING, 1, 2);
+            Dampening d = Dampening.forRelaxedCount("", "test-crud-" + i, Mode.FIRING, 1, 2);
 
             startCall = System.currentTimeMillis();
             resp = client.post(path: "triggers/test-crud-" + i + "/dampenings", body: d);
@@ -327,9 +328,9 @@ class PerfCrudITest extends AbstractITestBase {
 
             // Firing Conditions
 
-            ThresholdCondition testCond1 = new ThresholdCondition("test-crud-" + i,
+            ThresholdCondition testCond1 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
                     "No-Metric", ThresholdCondition.Operator.GT, 10.12);
-            ThresholdCondition testCond2 = new ThresholdCondition("test-crud-" + i,
+            ThresholdCondition testCond2 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
                     "No-Metric", ThresholdCondition.Operator.LT, 4.10);
             Collection<Condition> conditions = new ArrayList<>(2);
             conditions.add( testCond1 );
@@ -349,9 +350,9 @@ class PerfCrudITest extends AbstractITestBase {
 
             // Autoresolve Conditions
 
-            ThresholdCondition testAutoCond1 = new ThresholdCondition("test-crud-" + i,
+            ThresholdCondition testAutoCond1 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
                     "No-Metric", ThresholdCondition.Operator.LTE, 10.12);
-            ThresholdCondition testAutoCond2 = new ThresholdCondition("test-crud-" + i,
+            ThresholdCondition testAutoCond2 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
                     "No-Metric", ThresholdCondition.Operator.GTE, 4.10);
             Collection<Condition> autoConditions = new ArrayList<>(2);
             autoConditions.add( testAutoCond1 );
@@ -428,7 +429,7 @@ class PerfCrudITest extends AbstractITestBase {
                 dClient.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
                 dClient.headers.put("Hawkular-Tenant", "28026b36-8fe4-4332-84c8-524e173a68bf")
 
-                Dampening d = Dampening.forRelaxedCount("test-crud-" + i, Mode.FIRING, 1, 2);
+                Dampening d = Dampening.forRelaxedCount("", "test-crud-" + i, Mode.FIRING, 1, 2);
 
                 def dStartCall = System.currentTimeMillis();
                 resp = dClient.post(path: "triggers/test-crud-" + i + "/dampenings", body: d);
@@ -449,9 +450,9 @@ class PerfCrudITest extends AbstractITestBase {
                 cClient.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
                 cClient.headers.put("Hawkular-Tenant", "28026b36-8fe4-4332-84c8-524e173a68bf")
 
-                ThresholdCondition testCond1 = new ThresholdCondition("test-crud-" + i,
+                ThresholdCondition testCond1 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
                         "No-Metric", ThresholdCondition.Operator.GT, 10.12);
-                ThresholdCondition testCond2 = new ThresholdCondition("test-crud-" + i,
+                ThresholdCondition testCond2 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
                         "No-Metric", ThresholdCondition.Operator.LT, 4.10);
                 Collection<Condition> conditions = new ArrayList<>(2);
                 conditions.add( testCond1 );
@@ -476,9 +477,9 @@ class PerfCrudITest extends AbstractITestBase {
                 acClient.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
                 acClient.headers.put("Hawkular-Tenant", "28026b36-8fe4-4332-84c8-524e173a68bf")
 
-                ThresholdCondition testAutoCond1 = new ThresholdCondition("test-crud-" + i,
+                ThresholdCondition testAutoCond1 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
                         "No-Metric", ThresholdCondition.Operator.LTE, 10.12);
-                ThresholdCondition testAutoCond2 = new ThresholdCondition("test-crud-" + i,
+                ThresholdCondition testAutoCond2 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
                         "No-Metric", ThresholdCondition.Operator.GTE, 4.10);
                 Collection<Condition> autoConditions = new ArrayList<>(2);
                 autoConditions.add( testAutoCond1 );

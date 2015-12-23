@@ -31,6 +31,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class ExternalConditionEval extends ConditionEval {
 
+    private static final long serialVersionUID = 1L;
+
     @JsonInclude(Include.NON_NULL)
     private ExternalCondition condition;
 
@@ -63,6 +65,11 @@ public class ExternalConditionEval extends ConditionEval {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    @Override
+    public String getTenantId() {
+        return condition.getTenantId();
     }
 
     @Override

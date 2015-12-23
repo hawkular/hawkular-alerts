@@ -105,6 +105,7 @@ public class Data implements Comparable<Data>, Serializable {
 
     /**
      * Construct a multi-value datum with no context data.
+     * @param tenantId not null
      * @param id not null
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param values the values
@@ -115,6 +116,7 @@ public class Data implements Comparable<Data>, Serializable {
     }
 
     /**
+     * @param tenantId not null
      * @param id not null
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param value the value, mutually exclusive with values

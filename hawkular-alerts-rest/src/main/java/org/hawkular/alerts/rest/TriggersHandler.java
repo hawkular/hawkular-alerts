@@ -609,6 +609,7 @@ public class TriggersHandler {
             @ApiParam(value = "Dampening definition to be created", required = true)
             final Dampening dampening) {
         try {
+            dampening.setTenantId(tenantId);
             dampening.setTriggerId(triggerId);
             boolean exists = (definitions.getDampening(tenantId, dampening.getDampeningId()) != null);
             if (!exists) {
@@ -667,22 +668,27 @@ public class TriggersHandler {
     private Dampening getCleanDampening(Dampening dampening) throws Exception {
         switch (dampening.getType()) {
             case STRICT:
-                return Dampening.forStrict(dampening.getTriggerId(), dampening.getTriggerMode(),
+                return Dampening.forStrict(dampening.getTenantId(), dampening.getTriggerId(),
+                        dampening.getTriggerMode(),
                         dampening.getEvalTrueSetting());
 
             case STRICT_TIME:
-                return Dampening.forStrictTime(dampening.getTriggerId(), dampening.getTriggerMode(),
+                return Dampening.forStrictTime(dampening.getTenantId(), dampening.getTriggerId(),
+                        dampening.getTriggerMode(),
                         dampening.getEvalTimeSetting());
 
             case STRICT_TIMEOUT:
-                return Dampening.forStrictTimeout(dampening.getTriggerId(), dampening.getTriggerMode(),
+                return Dampening.forStrictTimeout(dampening.getTenantId(), dampening.getTriggerId(),
+                        dampening.getTriggerMode(),
                         dampening.getEvalTimeSetting());
             case RELAXED_COUNT:
-                return Dampening.forRelaxedCount(dampening.getTriggerId(), dampening.getTriggerMode(),
+                return Dampening.forRelaxedCount(dampening.getTenantId(), dampening.getTriggerId(),
+                        dampening.getTriggerMode(),
                         dampening.getEvalTrueSetting(),
                         dampening.getEvalTotalSetting());
             case RELAXED_TIME:
-                return Dampening.forRelaxedTime(dampening.getTriggerId(), dampening.getTriggerMode(),
+                return Dampening.forRelaxedTime(dampening.getTenantId(), dampening.getTriggerId(),
+                        dampening.getTriggerMode(),
                         dampening.getEvalTrueSetting(), dampening.getEvalTimeSetting());
 
             default:

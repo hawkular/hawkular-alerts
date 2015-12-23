@@ -100,7 +100,7 @@ public class FilePluginTest {
         ThresholdCondition rtResolveCondition = new ThresholdCondition(tenantId, rtTriggerId, Mode.AUTORESOLVE,
                 rtDataId, ThresholdCondition.Operator.LTE, 1000d);
 
-        Dampening rtFiringDampening = Dampening.forStrictTime(rtTriggerId, Mode.FIRING, 10000);
+        Dampening rtFiringDampening = Dampening.forStrictTime(tenantId, rtTriggerId, Mode.FIRING, 10000);
 
         /*
             Demo bad data for threshold
@@ -165,7 +165,7 @@ public class FilePluginTest {
         AvailabilityCondition avResolveCondition = new AvailabilityCondition(tenantId, avTriggerId, Mode.AUTORESOLVE,
                 avDataId, AvailabilityCondition.Operator.UP);
 
-        Dampening avFiringDampening = Dampening.forStrictTime(avTriggerId, Mode.FIRING, 10000);
+        Dampening avFiringDampening = Dampening.forStrictTime(tenantId, avTriggerId, Mode.FIRING, 10000);
 
         /*
             Demo bad data for availability
@@ -237,7 +237,7 @@ public class FilePluginTest {
                 Mode.AUTORESOLVE,
                 avDataId, AvailabilityCondition.Operator.UP);
 
-        Dampening mixFiringDampening = Dampening.forStrictTime(mixTriggerId, Mode.FIRING, 10000);
+        Dampening mixFiringDampening = Dampening.forStrictTime(tenantId, mixTriggerId, Mode.FIRING, 10000);
 
         /*
             Demo bad data for two conditions

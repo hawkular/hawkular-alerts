@@ -295,8 +295,8 @@ public class CassStatement {
                 + "VALUES (?, ?, ?, 'RANGE', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_DAMPENING = "INSERT INTO " + keyspace + ".dampenings "
-                + "(triggerId, triggerMode, type, evalTrueSetting, evalTotalSetting, evalTimeSetting, "
-                + "dampeningId, tenantId) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ";
+                + "(tenantId, triggerId, triggerMode, type, evalTrueSetting, evalTotalSetting, evalTimeSetting, "
+                + "dampeningId) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_EVENT = "INSERT INTO " + keyspace + ".events "
                 + "(tenantId, id, payload) VALUES (?, ?, ?) ";

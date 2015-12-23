@@ -48,11 +48,19 @@ public class AvailabilityCondition extends Condition {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultTenantId", "DefaultId", 1, 1, null, null);
+        this("", "", 1, 1, null, null);
     }
 
     public AvailabilityCondition(String tenantId, String triggerId, String dataId, Operator operator) {
         this(tenantId, triggerId, FIRING, 1, 1, dataId, operator);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public AvailabilityCondition(String triggerId, Mode triggerMode, String dataId, Operator operator) {
+        this("", triggerId, triggerMode, 1, 1, dataId, operator);
     }
 
     public AvailabilityCondition(String tenantId, String triggerId, Mode triggerMode, String dataId,
@@ -63,6 +71,15 @@ public class AvailabilityCondition extends Condition {
     public AvailabilityCondition(String tenantId, String triggerId, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator) {
         this(tenantId, triggerId, FIRING, conditionSetSize, conditionSetIndex, dataId, operator);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public AvailabilityCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operator) {
+        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, operator);
     }
 
     public AvailabilityCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize, int

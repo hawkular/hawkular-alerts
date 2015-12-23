@@ -40,10 +40,12 @@ class DampeningITest extends AbstractITestBase {
         def resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
 
-        Dampening d = Dampening.forRelaxedCount("test-trigger-6", Mode.FIRING, 1, 2);
+        Dampening d = Dampening.forRelaxedCount("", "test-trigger-6", Mode.FIRING, 1, 2);
 
         resp = client.post(path: "triggers/test-trigger-6/dampenings", body: d)
         assertEquals(200, resp.status)
+
+        d = resp.data
 
         resp = client.get(path: "triggers/test-trigger-6/dampenings/" + d.getDampeningId());
         assertEquals(200, resp.status)

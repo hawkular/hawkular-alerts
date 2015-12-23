@@ -32,6 +32,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class CompareConditionEval extends ConditionEval {
 
+    private static final long serialVersionUID = 1L;
+
     @JsonInclude(Include.NON_NULL)
     private CompareCondition condition;
 
@@ -84,6 +86,11 @@ public class CompareConditionEval extends ConditionEval {
 
     public void setValue2(Double value2) {
         this.value2 = value2;
+    }
+
+    @Override
+    public String getTenantId() {
+        return condition.getTenantId();
     }
 
     @Override

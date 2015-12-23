@@ -81,7 +81,7 @@ public class EventCondition extends Condition {
     private String expression;
 
     public EventCondition() {
-        this("DefaultTenantId", "DefaultId", Mode.FIRING, 1, 1, null, null);
+        this("", "", Mode.FIRING, 1, 1, null, null);
     }
 
     public EventCondition(String tenantId, String triggerId, String dataId, String expression) {
@@ -90,6 +90,14 @@ public class EventCondition extends Condition {
 
     public EventCondition(String tenantId, String triggerId, Mode triggerMode, String dataId) {
         this(tenantId, triggerId, triggerMode, 1, 1, dataId, null);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public EventCondition(String triggerId, Mode triggerMode, String dataId, String expression) {
+        this("", triggerId, triggerMode, 1, 1, dataId, expression);
     }
 
     public EventCondition(String tenantId, String triggerId, Mode triggerMode, String dataId, String expression) {
@@ -109,6 +117,15 @@ public class EventCondition extends Condition {
     public EventCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
             int conditionSetIndex, String dataId) {
         this(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, null);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public EventCondition(String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex, String dataId, String expression) {
+        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, expression);
     }
 
     public EventCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
