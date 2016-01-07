@@ -86,8 +86,6 @@ public class MetricDataMessage extends AbstractMessage {
      */
     public static class SingleMetric {
         @JsonInclude
-        private String tenantId;
-        @JsonInclude
         private String source;
         @JsonInclude
         private long timestamp;
@@ -97,19 +95,10 @@ public class MetricDataMessage extends AbstractMessage {
         public SingleMetric() {
         }
 
-        public SingleMetric(String tenantId, String source, long timestamp, double value) {
-            this.tenantId = tenantId;
+        public SingleMetric(String source, long timestamp, double value) {
             this.source = source;
             this.timestamp = timestamp;
             this.value = value;
-        }
-
-        public String getTenantId() {
-            return tenantId;
-        }
-
-        public void setTenantId(String tenantId) {
-            this.tenantId = tenantId;
         }
 
         public String getSource() {
