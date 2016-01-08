@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,7 +33,8 @@ public class EventComparator implements Comparator<Event> {
         TEXT("text"),
         TRIGGER_DESCRIPTION("trigger.description"),
         TRIGGER_ID("trigger.id"),
-        TRIGGER_NAME("trigger.name");
+        TRIGGER_NAME("trigger.name"),
+        CONTEXT("context");
 
         private String name;
 
@@ -46,27 +47,42 @@ public class EventComparator implements Comparator<Event> {
         }
 
         public static Field getField(String name) {
-            if (name == null || name.isEmpty()) {
+            if (name == null || name.trim().isEmpty()) {
                 return ID;
             }
+
             for (Field f : values()) {
-                if (f.getName().compareToIgnoreCase(name) == 0) {
+                // context.<key>
+                if (CONTEXT == f && name.toLowerCase().startsWith("context.")) {
+                    return f;
+                } else if (f.getName().compareToIgnoreCase(name) == 0) {
                     return f;
                 }
             }
             return ID;
         }
+
+        public static String getContextKey(String context) {
+            if (context == null || context.trim().isEmpty() || !context.toLowerCase().startsWith("context.")) {
+                return "";
+            }
+            return context.substring(8);
+        }
     };
 
     private Field field;
+    private String contextKey;
     private Order.Direction direction;
 
     public EventComparator() {
-        this(Field.ID, Order.Direction.ASCENDING);
+        this(Field.ID.getName(), Order.Direction.ASCENDING);
     }
 
-    public EventComparator(Field field, Order.Direction direction) {
-        this.field = field;
+    public EventComparator(String fieldName, Order.Direction direction) {
+        this.field = Field.getField(fieldName);
+        if (Field.CONTEXT == this.field) {
+            this.contextKey = Field.getContextKey(fieldName);
+        }
         this.direction = direction;
     }
 
@@ -85,6 +101,24 @@ public class EventComparator implements Comparator<Event> {
         switch (field) {
             case ID:
                 return o1.getId().compareTo(o2.getId()) * iOrder;
+
+            case CONTEXT:
+                if (o1.getContext() == null && o2.getContext() == null) {
+                    return 0;
+                }
+                if (o1.getContext().isEmpty() && o2.getContext().isEmpty()) {
+                    return 0;
+                }
+                if (!o1.getContext().containsKey(contextKey) && !o2.getContext().containsKey(contextKey)) {
+                    return 0;
+                }
+                if (!o1.getContext().containsKey(contextKey) && o2.getContext().containsKey(contextKey)) {
+                    return 1;
+                }
+                if (!o1.getContext().containsKey(contextKey) && !o2.getContext().containsKey(contextKey)) {
+                    return -1;
+                }
+                return o1.getContext().get(contextKey).compareTo(o2.getContext().get(contextKey)) * iOrder;
 
             case CATEGORY:
                 if (o1.getCategory() == null && o2.getCategory() == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,7 +33,8 @@ public class TriggerComparator implements Comparator<Trigger> {
         DESCRIPTION("description"),
         ENABLED("enabled"),
         NAME("name"),
-        SEVERITY("severity");
+        SEVERITY("severity"),
+        CONTEXT("context");
 
         private String name;
 
@@ -45,28 +46,44 @@ public class TriggerComparator implements Comparator<Trigger> {
             return this.name;
         }
 
-        public static Field getName(String name) {
-            if (name == null || name.isEmpty()) {
+        public static Field getField(String name) {
+            if (name == null || name.trim().isEmpty()) {
                 return NAME;
             }
+
             for (Field f : values()) {
-                if (f.getName().compareToIgnoreCase(name) == 0) {
+                // context.<key>
+                if (CONTEXT == f && name.toLowerCase().startsWith("context.")) {
+                    return f;
+                } else if (f.getName().compareToIgnoreCase(name) == 0) {
                     return f;
                 }
             }
             return NAME;
         }
+
+        public static String getContextKey(String context) {
+            if (context == null || context.trim().isEmpty() || !context.toLowerCase().startsWith("context.")) {
+                return "";
+            }
+            return context.substring(8);
+        }
+
     };
 
     private Field field;
+    private String contextKey;
     private Order.Direction direction;
 
     public TriggerComparator() {
-        this(Field.NAME, Order.Direction.ASCENDING);
+        this(Field.NAME.getName(), Order.Direction.ASCENDING);
     }
 
-    public TriggerComparator(Field field, Order.Direction direction) {
-        this.field = field;
+    public TriggerComparator(String fieldName, Order.Direction direction) {
+        this.field = Field.getField(fieldName);
+        if (Field.CONTEXT == this.field) {
+            this.contextKey = Field.getContextKey(fieldName);
+        }
         this.direction = direction;
     }
 
@@ -85,6 +102,25 @@ public class TriggerComparator implements Comparator<Trigger> {
         switch (field) {
             case ID:
                 return o1.getId().compareTo(o2.getId()) * iOrder;
+
+            case CONTEXT:
+                if (o1.getContext() == null && o2.getContext() == null) {
+                    return 0;
+                }
+                if (o1.getContext().isEmpty() && o2.getContext().isEmpty()) {
+                    return 0;
+                }
+                if (!o1.getContext().containsKey(contextKey) && !o2.getContext().containsKey(contextKey)) {
+                    return 0;
+                }
+                if (!o1.getContext().containsKey(contextKey) && o2.getContext().containsKey(contextKey)) {
+                    return 1;
+                }
+                if (!o1.getContext().containsKey(contextKey) && !o2.getContext().containsKey(contextKey)) {
+                    return -1;
+                }
+                return o1.getContext().get(contextKey).compareTo(o2.getContext().get(contextKey)) * iOrder;
+
             case DESCRIPTION:
                 if (o1.getDescription() == null && o2.getDescription() == null) {
                     return 0;
@@ -96,11 +132,13 @@ public class TriggerComparator implements Comparator<Trigger> {
                     return -1;
                 }
                 return o1.getDescription().compareTo(o2.getDescription()) * iOrder;
+
             case ENABLED:
                 if (o1.isEnabled() == o2.isEnabled()) {
                     return 0;
                 }
                 return (o1.isEnabled() ? 1 : -1) * iOrder;
+
             case NAME:
                 if (o1.getDescription() == null && o2.getName() == null) {
                     return 0;
@@ -112,6 +150,7 @@ public class TriggerComparator implements Comparator<Trigger> {
                     return -1;
                 }
                 return o1.getName().compareTo(o2.getName()) * iOrder;
+
             case SEVERITY:
                 if (o1.getSeverity() == null && o2.getSeverity() == null) {
                     return 0;
