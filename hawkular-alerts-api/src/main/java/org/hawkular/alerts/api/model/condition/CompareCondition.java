@@ -35,6 +35,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class CompareCondition extends Condition {
 
+    private static final long serialVersionUID = 1L;
+
     public enum Operator {
         LT, GT, LTE, GTE
     }
@@ -55,28 +57,47 @@ public class CompareCondition extends Condition {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultId", 1, 1, null, null, null, null);
+        this("", "", 1, 1, null, null, null, null);
     }
 
-    public CompareCondition(String triggerId,
-                            String dataId, Operator operator, Double data2Multiplier, String data2Id) {
-        this(triggerId, FIRING, 1, 1, dataId, operator, data2Multiplier, data2Id);
-    }
-
-    public CompareCondition(String triggerId, Mode triggerMode,
-                            String dataId, Operator operator, Double data2Multiplier, String data2Id) {
-        this(triggerId, triggerMode, 1, 1, dataId, operator, data2Multiplier, data2Id);
-    }
-
-    public CompareCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
+    public CompareCondition(String tenantId, String triggerId,
             String dataId, Operator operator, Double data2Multiplier, String data2Id) {
-        this(triggerId, FIRING, conditionSetSize, conditionSetIndex, dataId, operator, data2Multiplier, data2Id);
+        this(tenantId, triggerId, FIRING, 1, 1, dataId, operator, data2Multiplier, data2Id);
     }
 
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public CompareCondition(String triggerId, Mode triggerMode,
+            String dataId, Operator operator, Double data2Multiplier, String data2Id) {
+        this("", triggerId, triggerMode, 1, 1, dataId, operator, data2Multiplier, data2Id);
+    }
+
+    public CompareCondition(String tenantId, String triggerId, Mode triggerMode,
+            String dataId, Operator operator, Double data2Multiplier, String data2Id) {
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, operator, data2Multiplier, data2Id);
+    }
+
+    public CompareCondition(String tenantId, String triggerId, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operator, Double data2Multiplier, String data2Id) {
+        this(tenantId, triggerId, FIRING, conditionSetSize, conditionSetIndex, dataId, operator, data2Multiplier,
+                data2Id);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
     public CompareCondition(String triggerId, Mode triggerMode, int conditionSetSize,
-                            int conditionSetIndex, String dataId, Operator operator, Double data2Multiplier,
-                            String data2Id) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.COMPARE);
+            int conditionSetIndex, String dataId, Operator operator, Double data2Multiplier, String data2Id) {
+        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, operator, data2Multiplier,
+                data2Id);
+    }
+
+    public CompareCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex, String dataId, Operator operator, Double data2Multiplier, String data2Id) {
+        super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.COMPARE);
         this.dataId = dataId;
         this.operator = operator;
         this.data2Id = data2Id;

@@ -20,6 +20,7 @@ import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.EventCondition
 import org.hawkular.alerts.api.model.event.EventCategory
 import org.hawkular.alerts.api.model.event.EventType
+import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.FixMethodOrder
 import org.junit.Test
@@ -57,7 +58,7 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // Add a condition over events
-        EventCondition firingCond = new EventCondition("test-events-t01", "test-app.war");
+        EventCondition firingCond = new EventCondition("test-events-t01", Mode.FIRING, "test-app.war", null);
         Collection<Condition> conditions = new ArrayList<>(1);
         conditions.add( firingCond );
 
@@ -124,7 +125,8 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // Add a condition over events
-        EventCondition firingCond1 = new EventCondition("test-events-t02-app1", "app1.war", "text == 'DOWN'");
+        EventCondition firingCond1 = new EventCondition("test-events-t02-app1", Mode.FIRING, "app1.war",
+            "text == 'DOWN'");
         Collection<Condition> conditions1 = new ArrayList<>(1);
         conditions1.add( firingCond1 );
 
@@ -146,7 +148,8 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // Add a condition over events
-        EventCondition firingCond2 = new EventCondition("test-events-t02-app2", "app2.war", "text == 'DOWN'");
+        EventCondition firingCond2 = new EventCondition("test-events-t02-app2", Mode.FIRING, "app2.war",
+            "text == 'DOWN'");
         Collection<Condition> conditions2 = new ArrayList<>(1);
         conditions2.add( firingCond2 );
 
@@ -167,8 +170,10 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // Add a condition over events
-        EventCondition firingCond3 = new EventCondition("test-events-t02-combined", "test-events-t02-app1");
-        EventCondition firingCond4 = new EventCondition("test-events-t02-combined", "test-events-t02-app2");
+        EventCondition firingCond3 = new EventCondition("test-events-t02-combined", Mode.FIRING,
+            "test-events-t02-app1", null);
+        EventCondition firingCond4 = new EventCondition("test-events-t02-combined", Mode.FIRING,
+            "test-events-t02-app2", null);
 
         Collection<Condition> conditions3 = new ArrayList<>(2);
         conditions3.add( firingCond3 );

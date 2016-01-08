@@ -113,7 +113,7 @@ class TriggersITest extends AbstractITestBase {
         groupTrigger = (Trigger)resp.data;
         assertEquals( true, groupTrigger.isGroup() );
 
-        ThresholdCondition cond1 = new ThresholdCondition("group-trigger", "DataId1-Token",
+        ThresholdCondition cond1 = new ThresholdCondition("group-trigger", Mode.FIRING, "DataId1-Token",
             ThresholdCondition.Operator.GT, 10.0);
         Map<String, Map<String, String>> dataIdMemberMap = new HashMap<>();
         GroupConditionsInfo groupConditionsInfo = new GroupConditionsInfo( cond1, dataIdMemberMap );
@@ -140,9 +140,10 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // add dampening to the group
-        Dampening groupDampening = Dampening.forRelaxedCount("group-trigger", Mode.FIRING, 2, 4);
+        Dampening groupDampening = Dampening.forRelaxedCount("", "group-trigger", Mode.FIRING, 2, 4);
         resp = client.post(path: "triggers/groups/group-trigger/dampenings", body: groupDampening);
         assertEquals(200, resp.status)
+        groupDampening = resp.data // get the updated dampeningId for use below
 
         // add tag to the group (via update)
         groupTrigger.addTag( "group-tname", "group-tvalue" );
@@ -150,7 +151,7 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // add another condition to the group (only member1 is relevant, member2 is now an orphan)
-        ThresholdCondition cond2 = new ThresholdCondition("group-trigger", "DataId2-Token",
+        ThresholdCondition cond2 = new ThresholdCondition("group-trigger", Mode.FIRING, "DataId2-Token",
             ThresholdCondition.Operator.LT, 20.0);
         dataId1Map.clear();
         dataId1Map.put("member1", "DataId1-Child1");
@@ -172,7 +173,7 @@ class TriggersITest extends AbstractITestBase {
 
         // update the group dampening to the group
         String did = groupDampening.getDampeningId();
-        groupDampening = Dampening.forRelaxedCount("group-trigger", Mode.FIRING, 2, 6);
+        groupDampening = Dampening.forRelaxedCount("", "group-trigger", Mode.FIRING, 2, 6);
         resp = client.put(path: "triggers/groups/group-trigger/dampenings/" + did, body: groupDampening);
         assertEquals(200, resp.status)
 

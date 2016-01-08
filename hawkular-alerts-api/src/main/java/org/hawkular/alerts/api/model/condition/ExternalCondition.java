@@ -34,6 +34,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class ExternalCondition extends Condition {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * An identifier assigned by the external system to identify this condition as being handled by that
      * external system. It should be unique enough such that externalSystemIds are unique.
@@ -60,16 +62,35 @@ public class ExternalCondition extends Condition {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultId", Mode.FIRING, 1, 1, null, null, null);
+        this("", "", Mode.FIRING, 1, 1, null, null, null);
     }
 
-    public ExternalCondition(String triggerId, Mode triggerMode, String dataId, String systemId, String expression) {
-        this(triggerId, triggerMode, 1, 1, dataId, systemId, expression);
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public ExternalCondition(String triggerId, Mode triggerMode, String dataId, String systemId,
+            String expression) {
+        this("", triggerId, triggerMode, 1, 1, dataId, systemId, expression);
     }
 
+    public ExternalCondition(String tenantId, String triggerId, Mode triggerMode, String dataId, String systemId,
+            String expression) {
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, systemId, expression);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
     public ExternalCondition(String triggerId, Mode triggerMode, int conditionSetSize,
-                             int conditionSetIndex, String dataId, String systemId, String expression) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.EXTERNAL);
+            int conditionSetIndex, String dataId, String systemId, String expression) {
+        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, systemId, expression);
+    }
+
+    public ExternalCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex, String dataId, String systemId, String expression) {
+        super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.EXTERNAL);
         this.systemId = systemId;
         this.dataId = dataId;
         this.expression = expression;

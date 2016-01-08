@@ -32,6 +32,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class AvailabilityCondition extends Condition {
 
+    private static final long serialVersionUID = 1L;
+
     public enum Operator {
         DOWN, NOT_UP, UP
     }
@@ -46,27 +48,43 @@ public class AvailabilityCondition extends Condition {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultId", 1, 1, null, null);
+        this("", "", 1, 1, null, null);
     }
 
-    public AvailabilityCondition(String triggerId,
+    public AvailabilityCondition(String tenantId, String triggerId, String dataId, Operator operator) {
+        this(tenantId, triggerId, FIRING, 1, 1, dataId, operator);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public AvailabilityCondition(String triggerId, Mode triggerMode, String dataId, Operator operator) {
+        this("", triggerId, triggerMode, 1, 1, dataId, operator);
+    }
+
+    public AvailabilityCondition(String tenantId, String triggerId, Mode triggerMode, String dataId,
+            Operator operator) {
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, operator);
+    }
+
+    public AvailabilityCondition(String tenantId, String triggerId, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator) {
-        this(triggerId, FIRING, 1, 1, dataId, operator);
+        this(tenantId, triggerId, FIRING, conditionSetSize, conditionSetIndex, dataId, operator);
     }
 
-    public AvailabilityCondition(String triggerId, Mode triggerMode,
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public AvailabilityCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
             String dataId, Operator operator) {
-        this(triggerId, triggerMode, 1, 1, dataId, operator);
+        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, operator);
     }
 
-    public AvailabilityCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
-            String dataId, Operator operator) {
-        this(triggerId, FIRING, conditionSetSize, conditionSetIndex, dataId, operator);
-    }
-
-    public AvailabilityCondition(String triggerId, Mode triggerMode, int conditionSetSize, int
+    public AvailabilityCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize, int
             conditionSetIndex, String dataId, Operator operator) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.AVAILABILITY);
+        super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.AVAILABILITY);
         this.dataId = dataId;
         this.operator = operator;
     }

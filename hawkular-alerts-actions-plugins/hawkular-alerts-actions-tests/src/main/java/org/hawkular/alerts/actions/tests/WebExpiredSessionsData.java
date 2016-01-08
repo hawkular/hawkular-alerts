@@ -56,41 +56,37 @@ public class WebExpiredSessionsData extends CommonData {
         String triggerDescription = "Expired Web Sessions for thevault~Local";
         String dataId = "thevault~local-web-expired-sessions-data-id";
 
-        trigger = new Trigger(TEST_TENANT,
+        trigger = new Trigger(TENANT,
                 triggerId,
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdCondition(trigger.getId(),
+        firingCondition = new ThresholdCondition(TENANT, trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdCondition.Operator.GT,
                 65d);
-        firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "Expired Sessions");
         firingCondition.getContext().put("unit", "sessions");
 
-        autoResolveCondition = new ThresholdCondition(trigger.getId(),
+        autoResolveCondition = new ThresholdCondition(TENANT, trigger.getId(),
                 Mode.AUTORESOLVE,
                 dataId,
                 ThresholdCondition.Operator.LTE,
                 65d);
-        autoResolveCondition.setTenantId(TEST_TENANT);
         autoResolveCondition.getContext().put("description", "Expired Sessions");
         autoResolveCondition.getContext().put("unit", "sessions");
 
-        firingDampening = Dampening.forStrictTimeout(trigger.getId(),
+        firingDampening = Dampening.forStrictTimeout(TENANT, trigger.getId(),
                 Mode.FIRING,
                 10000);
-        firingDampening.setTenantId(TEST_TENANT);
-
     }
 
     public static Alert getOpenAlert() {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Data rtBadData1 = Data.forNumeric(firingCondition.getDataId(),
+        Data rtBadData1 = Data.forNumeric(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis(),
                 100d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(firingCondition, rtBadData1);
@@ -100,7 +96,7 @@ public class WebExpiredSessionsData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Data rtBadData2 = Data.forNumeric(firingCondition.getDataId(),
+        Data rtBadData2 = Data.forNumeric(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
                 101d);
         ThresholdConditionEval eval2 = new ThresholdConditionEval(firingCondition, rtBadData2);
@@ -117,7 +113,7 @@ public class WebExpiredSessionsData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Data rtGoodData = Data.forNumeric(autoResolveCondition.getDataId(),
+        Data rtGoodData = Data.forNumeric(TENANT, autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
                 30d);
         ThresholdConditionEval eval1 = new ThresholdConditionEval(autoResolveCondition, rtGoodData);

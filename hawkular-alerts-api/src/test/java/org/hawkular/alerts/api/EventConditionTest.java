@@ -29,10 +29,13 @@ import org.junit.Test;
  */
 public class EventConditionTest {
 
+    // TODO: tenant expressions may need to be removed because I think the event and condition will always be in the
+    // same tenant.
     @Test
     public void testTenantIdExpression() {
 
-        EventCondition condition = new EventCondition("trigger-1", "app.war", "tenantId == 'my-organization'");
+        EventCondition condition = new EventCondition("tenant", "trigger-1", "app.war",
+                "tenantId == 'my-organization'");
         Event event1 = new Event();
         event1.setTenantId("my-organization");
 
@@ -67,7 +70,7 @@ public class EventConditionTest {
     @Test
     public void testCategoryExpressionWithSpaces() {
 
-        EventCondition condition = new EventCondition("trigger-1", "app.war", "category == 'my category'");
+        EventCondition condition = new EventCondition("tenant", "trigger-1", "app.war", "category == 'my category'");
         Event event1 = new Event();
         event1.setCategory("my category");
 
@@ -89,7 +92,7 @@ public class EventConditionTest {
 
     @Test
     public void testCtimeExpression() {
-        EventCondition condition = new EventCondition("trigger-1", "app.war", "ctime > 10");
+        EventCondition condition = new EventCondition("tenant", "trigger-1", "app.war", "ctime > 10");
 
         Event event1 = new Event();
         event1.setCtime(11);
@@ -115,7 +118,7 @@ public class EventConditionTest {
 
     @Test
     public void testTagExpression() {
-        EventCondition condition = new EventCondition("trigger-1", "app.war", "tags.server == 'MyServer'");
+        EventCondition condition = new EventCondition("tenant", "trigger-1", "app.war", "tags.server == 'MyServer'");
 
         Event event1 = new Event();
         event1.addTag("server", "MyServer");
@@ -149,7 +152,7 @@ public class EventConditionTest {
 
     @Test
     public void testEscapedExpression() {
-        EventCondition condition = new EventCondition("trigger-1", "app.war",
+        EventCondition condition = new EventCondition("tenant", "trigger-1", "app.war",
                 "tags.server == '\\,MyServer', tags.log starts 'LOG\\,'");
 
         Event event1 = new Event();

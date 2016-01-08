@@ -88,7 +88,7 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
                 if (null == alertData) {
                     alertData = new ArrayList<>(data.size());
                 }
-                alertData.add(new Data(a.getId(), a.getTimestamp(), a.getAvail()));
+                alertData.add(new Data(a.getTenantId(), a.getId(), a.getTimestamp(), a.getAvail()));
             }
         }
         if (null == alertData) {

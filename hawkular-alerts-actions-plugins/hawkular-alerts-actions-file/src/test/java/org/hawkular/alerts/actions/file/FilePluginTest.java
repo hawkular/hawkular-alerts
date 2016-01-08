@@ -95,17 +95,17 @@ public class FilePluginTest {
             Alert definition for threshold
          */
         Trigger rtTrigger = new Trigger(tenantId, rtTriggerId, "http://www.jboss.org");
-        ThresholdCondition rtFiringCondition = new ThresholdCondition(rtTriggerId, Mode.FIRING,
+        ThresholdCondition rtFiringCondition = new ThresholdCondition(tenantId, rtTriggerId, Mode.FIRING,
                 rtDataId, ThresholdCondition.Operator.GT, 1000d);
-        ThresholdCondition rtResolveCondition = new ThresholdCondition(rtTriggerId, Mode.AUTORESOLVE,
+        ThresholdCondition rtResolveCondition = new ThresholdCondition(tenantId, rtTriggerId, Mode.AUTORESOLVE,
                 rtDataId, ThresholdCondition.Operator.LTE, 1000d);
 
-        Dampening rtFiringDampening = Dampening.forStrictTime(rtTriggerId, Mode.FIRING, 10000);
+        Dampening rtFiringDampening = Dampening.forStrictTime(tenantId, rtTriggerId, Mode.FIRING, 10000);
 
         /*
             Demo bad data for threshold
          */
-        Data rtBadData = Data.forNumeric(rtDataId, System.currentTimeMillis(), 1001d);
+        Data rtBadData = Data.forNumeric(tenantId, rtDataId, System.currentTimeMillis(), 1001d);
 
         /*
             Manual alert creation for threshold
@@ -140,7 +140,7 @@ public class FilePluginTest {
         /*
             Demo good data to resolve a threshold alert
          */
-        Data rtGoodData = Data.forNumeric(rtDataId, System.currentTimeMillis() + 20000, 998d);
+        Data rtGoodData = Data.forNumeric(tenantId, rtDataId, System.currentTimeMillis() + 20000, 998d);
 
         Alert rtAlertResolved = new Alert(rtTrigger.getTenantId(), rtTrigger,
                 getEvalList(rtFiringCondition, rtBadData));
@@ -160,17 +160,18 @@ public class FilePluginTest {
             Alert definition for availability
          */
         Trigger avTrigger = new Trigger(tenantId, avTriggerId, "http://www.jboss.org");
-        AvailabilityCondition avFiringCondition = new AvailabilityCondition(avTriggerId, Mode.FIRING,
+        AvailabilityCondition avFiringCondition = new AvailabilityCondition(tenantId, avTriggerId, Mode.FIRING,
                 avDataId, AvailabilityCondition.Operator.NOT_UP);
-        AvailabilityCondition avResolveCondition = new AvailabilityCondition(avTriggerId, Mode.AUTORESOLVE,
+        AvailabilityCondition avResolveCondition = new AvailabilityCondition(tenantId, avTriggerId, Mode.AUTORESOLVE,
                 avDataId, AvailabilityCondition.Operator.UP);
 
-        Dampening avFiringDampening = Dampening.forStrictTime(avTriggerId, Mode.FIRING, 10000);
+        Dampening avFiringDampening = Dampening.forStrictTime(tenantId, avTriggerId, Mode.FIRING, 10000);
 
         /*
             Demo bad data for availability
          */
-        Data avBadData = Data.forAvailability(avDataId, System.currentTimeMillis(), AvailabilityType.DOWN);
+        Data avBadData = Data
+                .forAvailability(tenantId, avDataId, System.currentTimeMillis(), AvailabilityType.DOWN);
 
         /*
             Manual alert creation for availability
@@ -205,7 +206,7 @@ public class FilePluginTest {
         /*
             Demo good data to resolve a availability alert
          */
-        Data avGoodData = Data.forAvailability(avDataId, System.currentTimeMillis() + 20000,
+        Data avGoodData = Data.forAvailability(tenantId, avDataId, System.currentTimeMillis() + 20000,
                 AvailabilityType.UP);
 
         Alert avAlertResolved = new Alert(avTrigger.getTenantId(), avTrigger,
@@ -226,22 +227,23 @@ public class FilePluginTest {
             Alert definition for two conditions
          */
         Trigger mixTrigger = new Trigger(tenantId, mixTriggerId, "http://www.jboss.org");
-        ThresholdCondition mixRtFiringCondition = new ThresholdCondition(mixTriggerId, Mode.FIRING,
+        ThresholdCondition mixRtFiringCondition = new ThresholdCondition(tenantId, mixTriggerId, Mode.FIRING,
                 rtDataId, ThresholdCondition.Operator.GT, 1000d);
-        ThresholdCondition mixRtResolveCondition = new ThresholdCondition(mixTriggerId, Mode.AUTORESOLVE,
+        ThresholdCondition mixRtResolveCondition = new ThresholdCondition(tenantId, mixTriggerId, Mode.AUTORESOLVE,
                 rtDataId, ThresholdCondition.Operator.LTE, 1000d);
-        AvailabilityCondition mixAvFiringCondition = new AvailabilityCondition(mixTriggerId, Mode.FIRING,
+        AvailabilityCondition mixAvFiringCondition = new AvailabilityCondition(tenantId, mixTriggerId, Mode.FIRING,
                 avDataId, AvailabilityCondition.Operator.NOT_UP);
-        AvailabilityCondition mixAvResolveCondition = new AvailabilityCondition(mixTriggerId, Mode.AUTORESOLVE,
+        AvailabilityCondition mixAvResolveCondition = new AvailabilityCondition(tenantId, mixTriggerId,
+                Mode.AUTORESOLVE,
                 avDataId, AvailabilityCondition.Operator.UP);
 
-        Dampening mixFiringDampening = Dampening.forStrictTime(mixTriggerId, Mode.FIRING, 10000);
+        Dampening mixFiringDampening = Dampening.forStrictTime(tenantId, mixTriggerId, Mode.FIRING, 10000);
 
         /*
             Demo bad data for two conditions
          */
-        rtBadData = Data.forNumeric(rtDataId, System.currentTimeMillis(), 1003d);
-        avBadData = Data.forAvailability(avDataId, System.currentTimeMillis(), AvailabilityType.DOWN);
+        rtBadData = Data.forNumeric(tenantId, rtDataId, System.currentTimeMillis(), 1003d);
+        avBadData = Data.forAvailability(tenantId, avDataId, System.currentTimeMillis(), AvailabilityType.DOWN);
 
         /*
             Manual alert creation for two conditions
@@ -284,8 +286,9 @@ public class FilePluginTest {
         /*
             Demo good data for two conditions
          */
-        rtGoodData = Data.forNumeric(rtDataId, System.currentTimeMillis() + 20000, 997d);
-        avGoodData = Data.forAvailability(avDataId, System.currentTimeMillis() + 20000, AvailabilityType.UP);
+        rtGoodData = Data.forNumeric(tenantId, rtDataId, System.currentTimeMillis() + 20000, 997d);
+        avGoodData = Data.forAvailability(tenantId, avDataId, System.currentTimeMillis() + 20000,
+                AvailabilityType.UP);
 
         List<Condition> mixResolveConditions = new ArrayList<>();
         mixResolveConditions.add(mixRtResolveCondition);

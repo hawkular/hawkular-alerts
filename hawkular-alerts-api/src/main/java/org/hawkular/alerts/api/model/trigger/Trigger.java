@@ -38,6 +38,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class Trigger implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     @JsonInclude
     private String tenantId;
 

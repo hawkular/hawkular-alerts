@@ -110,15 +110,15 @@ public class JsonTest {
 
         assertTrue(!output.contains("evalSets"));
 
-        AvailabilityCondition aCond = new AvailabilityCondition("trigger-test", "Default",
+        AvailabilityCondition aCond = new AvailabilityCondition(TEST_TENANT, "trigger-test", "Default",
                 AvailabilityCondition.Operator.UP);
-        Data aData = Data.forAvailability("Metric-test", 1, AvailabilityType.UP);
+        Data aData = Data.forAvailability(TEST_TENANT,"Metric-test", 1, AvailabilityType.UP);
         AvailabilityConditionEval aEval = new AvailabilityConditionEval(aCond, aData);
 
-        ThresholdCondition tCond = new ThresholdCondition("trigger-test", "Default",
+        ThresholdCondition tCond = new ThresholdCondition(TEST_TENANT, "trigger-test", "Default",
                 ThresholdCondition.Operator.LTE,
                 50.0);
-        Data tData = Data.forNumeric("Metric-test2", 2, 25.5);
+        Data tData = Data.forNumeric(TEST_TENANT, "Metric-test2", 2, 25.5);
         ThresholdConditionEval tEval = new ThresholdConditionEval(tCond, tData);
 
         Set<ConditionEval> evals = new HashSet<>();
@@ -153,11 +153,11 @@ public class JsonTest {
                     "[{\"evalTimestamp\":1436964294055," +
                        "\"dataTimestamp\":2," +
                        "\"type\":\"THRESHOLD\"," +
-                       "\"condition\":{\"tenantId\":null," +
+                "\"condition\":{\"tenantId\":\"jdoe\"," +
                        "\"triggerId\":\"trigger-test\"," +
                        "\"triggerMode\":\"FIRING\"," +
                        "\"type\":\"THRESHOLD\"," +
-                       "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
+                "\"conditionId\":\"my-organization-trigger-test-FIRING-1-1\"," +
                        "\"dataId\":\"Default\"," +
                        "\"operator\":\"LTE\"," +
                        "\"threshold\":50.0" +
@@ -166,11 +166,11 @@ public class JsonTest {
                      "{\"evalTimestamp\":1436964284965," +
                        "\"dataTimestamp\":1," +
                        "\"type\":\"AVAILABILITY\"," +
-                       "\"condition\":{\"tenantId\":null," +
+                "\"condition\":{\"tenantId\":\"jdoe\"," +
                        "\"triggerId\":\"trigger-test\"," +
                        "\"triggerMode\":\"FIRING\"," +
                        "\"type\":\"AVAILABILITY\"," +
-                       "\"conditionId\":\"trigger-test-FIRING-1-1\"," +
+                "\"conditionId\":\"my-organization-trigger-test-FIRING-1-1\"," +
                        "\"dataId\":\"Default\"," +
                        "\"operator\":\"UP\"" +
                      "}," +
@@ -214,7 +214,7 @@ public class JsonTest {
     public void jsonAvailabilityConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"type\":\"AVAILABILITY\",\"conditionSetSize\":1,\"conditionSetIndex\":1," +
-                "\"conditionId\":\"test-FIRING-1-1\",\"dataId\":\"Default\",\"operator\":\"UP\"}";
+                "\"conditionId\":\"test-test-FIRING-1-1\",\"dataId\":\"Default\",\"operator\":\"UP\"}";
         AvailabilityCondition condition = objectMapper.readValue(str, AvailabilityCondition.class);
 
         assertTrue(condition.getTenantId().equals("test"));
@@ -290,7 +290,7 @@ public class JsonTest {
     @Test
     public void jsonCompareConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"COMPARE\"," +
-                "\"conditionSetSize\":1,\"conditionSetIndex\":1,\"conditionId\":\"test-FIRING-1-1\"," +
+                "\"conditionSetSize\":1,\"conditionSetIndex\":1,\"conditionId\":\"test-test-FIRING-1-1\"," +
                 "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         CompareCondition condition = objectMapper.readValue(str, CompareCondition.class);
 
@@ -401,7 +401,7 @@ public class JsonTest {
     @Test
     public void jsonStringConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"STRING\"," +
-                "\"conditionSetSize\":1,\"conditionSetIndex\":1,\"conditionId\":\"test-FIRING-1-1\"," +
+                "\"conditionSetSize\":1,\"conditionSetIndex\":1,\"conditionId\":\"test-test-FIRING-1-1\"," +
                 "\"dataId\":\"Default\",\"operator\":\"MATCH\",\"pattern\":\"test-pattern\",\"ignoreCase\":false}";
         StringCondition condition = objectMapper.readValue(str, StringCondition.class);
 
@@ -508,7 +508,7 @@ public class JsonTest {
     public void jsonThresholdConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"type\":\"THRESHOLD\",\"conditionSetSize\":1,\"conditionSetIndex\":1," +
-                "\"conditionId\":\"test-FIRING-1-1\"," +
+                "\"conditionId\":\"test-test-FIRING-1-1\"," +
                 "\"dataId\":\"Default\",\"operator\":\"LT\",\"threshold\":10.5}";
         ThresholdCondition condition = objectMapper.readValue(str, ThresholdCondition.class);
 
@@ -601,7 +601,7 @@ public class JsonTest {
     @Test
     public void jsonThresholdRangeConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"RANGE\"," +
-                "\"conditionSetSize\":1,\"conditionSetIndex\":1,\"conditionId\":\"test-FIRING-1-1\"," +
+                "\"conditionSetSize\":1,\"conditionSetIndex\":1,\"conditionId\":\"test-test-FIRING-1-1\"," +
                 "\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\",\"operatorHigh\":\"INCLUSIVE\"," +
                 "\"thresholdLow\":10.5,\"thresholdHigh\":20.5,\"inRange\":true}";
         ThresholdRangeCondition condition = objectMapper.readValue(str, ThresholdRangeCondition.class);
@@ -744,7 +744,7 @@ public class JsonTest {
     @Test
     public void jsonExternalConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\","
-                + "\"type\":\"EXTERNAL\", \"conditionId\":\"test-FIRING-1-1\",\"conditionSetSize\":1,"
+                + "\"type\":\"EXTERNAL\", \"conditionId\":\"test-test-FIRING-1-1\",\"conditionSetSize\":1,"
                 + "\"conditionSetIndex\":1,\"dataId\":\"Default\",\"systemId\":\"HawkularMetrics\","
                 + "\"expression\":\"metric:5:avg(foo > 100.5)\"}";
         ExternalCondition condition = objectMapper.readValue(str, ExternalCondition.class);
@@ -793,7 +793,7 @@ public class JsonTest {
                 + "\"type\":\"RATE\"," //
                 + "\"conditionSetSize\":1," //
                 + "\"conditionSetIndex\":1," //
-                + "\"conditionId\":\"test-FIRING-1-1\"," //
+                + "\"conditionId\":\"test-test-FIRING-1-1\"," //
                 + "\"dataId\":\"Default\"," //
                 + "\"direction\":\"DECREASING\"," //
                 + "\"period\":\"HOUR\"," //
@@ -822,7 +822,7 @@ public class JsonTest {
                 + "\"type\":\"RATE\"," //
                 + "\"conditionSetSize\":1," //
                 + "\"conditionSetIndex\":1," //
-                + "\"conditionId\":\"test-FIRING-1-1\"," //
+                + "\"conditionId\":\"test-test-FIRING-1-1\"," //
                 + "\"dataId\":\"Default\"," //
                 + "\"operator\":\"GT\"," //
                 + "\"threshold\":10.5}";
@@ -839,7 +839,7 @@ public class JsonTest {
                 + "\"type\":\"RATE\"," //
                 + "\"conditionSetSize\":1," //
                 + "\"conditionSetIndex\":1," //
-                + "\"conditionId\":\"test-FIRING-1-1\"," //
+                + "\"conditionId\":\"test-test-FIRING-1-1\"," //
                 + "\"dataId\":\"Default\"," //
                 + "\"direction\":\"UP\"," //
                 + "\"operator\":\"GT\"," //
@@ -891,11 +891,11 @@ public class JsonTest {
 
     @Test
     public void jsonDampeningTest() throws Exception {
-        String str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"STRICT\"," +
+        String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"STRICT\"," +
                 "\"evalTrueSetting\":1,\"evalTotalSetting\":1,\"evalTimeSetting\":1}";
         Dampening damp = objectMapper.readValue(str, Dampening.class);
 
-        assertTrue(damp.getDampeningId().equals("test-FIRING"));
+        assertTrue(damp.getDampeningId().equals("test-test-FIRING"));
         assertTrue(damp.getTriggerId().equals("test"));
         assertTrue(damp.getTriggerMode().equals(Mode.FIRING));
         assertTrue(damp.getType().equals(Dampening.Type.STRICT));
@@ -916,7 +916,7 @@ public class JsonTest {
 
         // Checking bad fields
 
-        str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRINGX\",\"type\":\"STRICT\"," +
+        str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRINGX\",\"type\":\"STRICT\"," +
                 "\"evalTrueSetting\":1,\"evalTotalSetting\":1,\"evalTimeSetting\":1}";
         try {
             objectMapper.readValue(str, Dampening.class);
@@ -925,7 +925,7 @@ public class JsonTest {
             // Expected
         }
 
-        str = "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"STRICTX\"," +
+        str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"STRICTX\"," +
                 "\"evalTrueSetting\":1,\"evalTotalSetting\":1,\"evalTimeSetting\":1}";
         try {
             objectMapper.readValue(str, Dampening.class);
@@ -1132,14 +1132,14 @@ public class JsonTest {
                         "\"group\":false" +
                     "}," +
                     "\"dampening\":{" +
-                        "\"tenantId\":null," +
+                        "\"tenantId\":\"my-organization\"," +
                         "\"triggerId\":\"chained-trigger\"," +
                         "\"triggerMode\":\"FIRING\"," +
                         "\"type\":\"STRICT\"," +
                         "\"evalTrueSetting\":1," +
                         "\"evalTotalSetting\":1," +
                         "\"evalTimeSetting\":0," +
-                        "\"dampeningId\":\"chained-trigger-FIRING\"" +
+                        "\"dampeningId\":\"my-organization-chained-trigger-FIRING\"" +
                     "}," +
                     // List<Set<ConditionEval>>
                     "\"evalSets\":[" +  // Open List
@@ -1155,7 +1155,7 @@ public class JsonTest {
                                     "\"type\":\"EVENT\"," +
                                     "\"conditionSetSize\":1," +
                                     "\"conditionSetIndex\":1," +
-                                    "\"conditionId\":\"chained-trigger-FIRING-1-1\"," +
+                                    "\"conditionId\":\"my-organization-chained-trigger-FIRING-1-1\"," +
                                     "\"dataId\":\"detect-undeployment-containerZ-with-errors\"" +
                                 "}," +
                                 "\"value\":{" +
@@ -1186,14 +1186,15 @@ public class JsonTest {
                                         "\"group\":false" +
                                     "}," +
                                     "\"dampening\":{" +
-                                        "\"tenantId\":null," +
+                                    "\"tenantId\":\"my-organization\"," +
                                         "\"triggerId\":\"detect-undeployment-containerZ-with-errors\"," +
                                         "\"triggerMode\":\"FIRING\"," +
                                         "\"type\":\"STRICT\"," +
                                         "\"evalTrueSetting\":1," +
                                         "\"evalTotalSetting\":1," +
                                         "\"evalTimeSetting\":0," +
-                                        "\"dampeningId\":\"detect-undeployment-containerZ-with-errors-FIRING\"" +
+                                        "\"dampeningId\":\"my-organization-" +
+                                                          "detect-undeployment-containerZ-with-errors-FIRING\"" +
                                     "}," +
                                     "\"evalSets\":[" +  // Open List
                                         "[" +   // Open Set
@@ -1208,8 +1209,9 @@ public class JsonTest {
                                                     "\"type\":\"EVENT\"," +
                                                     "\"conditionSetSize\":2," +
                                                     "\"conditionSetIndex\":2," +
-                                                    "\"conditionId\":\"detect-undeployment-containerZ-" +
-                                                                        "with-errors-FIRING-2-2\"," +
+                                                    "\"conditionId\":\"my-organization-" +
+                                                                      "detect-undeployment-containerZ-with-errors-" +
+                                                                      "FIRING-2-2\"," +
                                                     "\"dataId\":\"events-logs-source\"," +
                                                     "\"expression\":\"text starts 'ERROR'\"}," +
                                                 "\"value\":{" +
@@ -1245,8 +1247,9 @@ public class JsonTest {
                                                     "\"type\":\"EVENT\"," +
                                                     "\"conditionSetSize\":2," +
                                                     "\"conditionSetIndex\":1," +
-                                                    "\"conditionId\":\"detect-undeployment-containerZ-" +
-                                                                        "with-errors-FIRING-2-1\"," +
+                                                    "\"conditionId\":\"my-organization-" +
+                                                                      "detect-undeployment-containerZ-with-errors-" +
+                                                                      "FIRING-2-1\"," +
                                                     "\"dataId\":\"events-deployments-source\"," +
                                                     "\"expression\":\"tags.operation == 'undeployment'," +
                                                                 "tags.container == 'containerZ'\"" +

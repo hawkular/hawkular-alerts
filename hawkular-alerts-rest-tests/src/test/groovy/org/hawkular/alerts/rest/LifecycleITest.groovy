@@ -235,7 +235,7 @@ class LifecycleITest extends AbstractITestBase {
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         Map<String,String> context = new HashMap<>(1);
         context.put("contextName","contextValue");
-        Data avail = Data.forAvailability("test-autoresolve-avail", System.currentTimeMillis(), DOWN, context);
+        Data avail = Data.forAvailability("", "test-autoresolve-avail", System.currentTimeMillis(), DOWN, context);
         Collection<Data> datums = new ArrayList<Data>();
         datums.add(avail);
         resp = client.post(path: "data", body: datums);
@@ -281,7 +281,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // Send in UP avail data to autoresolve the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
-        avail = Data.forAvailability("test-autoresolve-avail", System.currentTimeMillis(), UP);
+        avail = Data.forAvailability("", "test-autoresolve-avail", System.currentTimeMillis(), UP);
         datums.clear();
         datums.add(avail);
         resp = client.post(path: "data", body: datums);
@@ -361,7 +361,7 @@ class LifecycleITest extends AbstractITestBase {
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<5; i++) {
-            Data avail = Data.forAvailability("test-manual-avail", System.currentTimeMillis(), DOWN);
+            Data avail = Data.forAvailability("", "test-manual-avail", System.currentTimeMillis(), DOWN);
             Collection<Data> datums = new ArrayList<>();
             datums.add(avail);
             resp = client.post(path: "data", body: datums);
@@ -618,7 +618,7 @@ class LifecycleITest extends AbstractITestBase {
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<5; i++) {
-            Data avail = Data.forAvailability("test-manual2-avail", System.currentTimeMillis(), DOWN);
+            Data avail = Data.forAvailability("", "test-manual2-avail", System.currentTimeMillis(), DOWN);
             Collection<Data> datums = new ArrayList<>();
             datums.add(avail);
             resp = client.post(path: "data", body: datums);
@@ -755,7 +755,7 @@ class LifecycleITest extends AbstractITestBase {
             Step 8: Sending "bad" data to fire the trigger
                     Using direct API instead bus messages
          */
-        Data responseTime = Data.forNumeric("test-autoresolve-threshold", System.currentTimeMillis(), 101);
+        Data responseTime = Data.forNumeric("", "test-autoresolve-threshold", System.currentTimeMillis(), 101);
         Collection<Data> datums = new ArrayList<>();
         datums.add(responseTime);
         resp = client.post(path: "data", body: datums);
@@ -787,7 +787,7 @@ class LifecycleITest extends AbstractITestBase {
         /*
             Step 10: Sending "bad" data to fire the trigger, should not fire, trigger now in AutoResolve mode
          */
-        responseTime = Data.forNumeric("test-autoresolve-threshold", System.currentTimeMillis(), 102);
+        responseTime = Data.forNumeric("", "test-autoresolve-threshold", System.currentTimeMillis(), 102);
         datums = new ArrayList<>();
         datums.add(responseTime);
         resp = client.post(path: "data", body: datums);
@@ -807,7 +807,7 @@ class LifecycleITest extends AbstractITestBase {
         /*
             Step 12: Sending "good" data to change trigger from FIRING to AUTORESOLVE
          */
-        responseTime = Data.forNumeric("test-autoresolve-threshold", System.currentTimeMillis(), 95);
+        responseTime = Data.forNumeric("", "test-autoresolve-threshold", System.currentTimeMillis(), 95);
         datums = new ArrayList<>();
         datums.add(responseTime);
         resp = client.post(path: "data", body: datums);
@@ -827,7 +827,7 @@ class LifecycleITest extends AbstractITestBase {
         /*
             Step 14: Sending "bad" data to fire the trigger
          */
-        responseTime = Data.forNumeric("test-autoresolve-threshold", System.currentTimeMillis(), 103);
+        responseTime = Data.forNumeric("", "test-autoresolve-threshold", System.currentTimeMillis(), 103);
         datums = new ArrayList<>();
         datums.add(responseTime);
         resp = client.post(path: "data", body: datums);
@@ -914,7 +914,7 @@ class LifecycleITest extends AbstractITestBase {
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<2; i++) {
-            Data avail = Data.forAvailability("test-autoenable-avail", System.currentTimeMillis(), DOWN);
+            Data avail = Data.forAvailability("", "test-autoenable-avail", System.currentTimeMillis(), DOWN);
             Collection<Data> datums = new ArrayList<>();
             datums.add(avail);
             resp = client.post(path: "data", body: datums);
@@ -1035,7 +1035,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
-        Data avail = Data.forAvailability("test-manual-autoresolve-avail", System.currentTimeMillis(), DOWN);
+        Data avail = Data.forAvailability("", "test-manual-autoresolve-avail", System.currentTimeMillis(), DOWN);
         Collection<Data> datums = new ArrayList<>();
         datums.add(avail);
         resp = client.post(path: "data", body: datums);
@@ -1087,7 +1087,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // Send in another DOWN data and we should get another alert assuming the trigger was reset to Firing mode
-        avail = Data.forAvailability("test-manual-autoresolve-avail", System.currentTimeMillis(), DOWN);
+        avail = Data.forAvailability("", "test-manual-autoresolve-avail", System.currentTimeMillis(), DOWN);
         datums = new ArrayList<>();
         datums.add(avail);
         resp = client.post(path: "data", body: datums);

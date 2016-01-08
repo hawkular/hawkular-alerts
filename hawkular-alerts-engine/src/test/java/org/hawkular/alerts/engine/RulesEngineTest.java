@@ -106,28 +106,28 @@ public class RulesEngineTest {
     public void thresholdTest() {
         // 1 alert
         Trigger t1 = new Trigger("tenant", "trigger-1", "Threshold-LT");
-        ThresholdCondition t1c1 = new ThresholdCondition("trigger-1", 1, 1,
+        ThresholdCondition t1c1 = new ThresholdCondition("tenant", "trigger-1", 1, 1,
                 "NumericData-01",
                 ThresholdCondition.Operator.LT, 10.0);
         // 2 alert3
         Trigger t2 = new Trigger("tenant", "trigger-2", "Threshold-LTE");
-        ThresholdCondition t2c1 = new ThresholdCondition("trigger-2", 1, 1,
+        ThresholdCondition t2c1 = new ThresholdCondition("tenant", "trigger-2", 1, 1,
                 "NumericData-01",
                 ThresholdCondition.Operator.LTE, 10.0);
         // 1 alert
         Trigger t3 = new Trigger("tenant", "trigger-3", "Threshold-GT");
-        ThresholdCondition t3c1 = new ThresholdCondition("trigger-3", 1, 1,
+        ThresholdCondition t3c1 = new ThresholdCondition("tenant", "trigger-3", 1, 1,
                 "NumericData-01",
                 ThresholdCondition.Operator.GT, 10.0);
         // 2 alerts
         Trigger t4 = new Trigger("tenant", "trigger-4", "Threshold-GTE");
-        ThresholdCondition t4c1 = new ThresholdCondition("trigger-4", 1, 1,
+        ThresholdCondition t4c1 = new ThresholdCondition("tenant", "trigger-4", 1, 1,
                 "NumericData-01",
                 ThresholdCondition.Operator.GTE, 10.0);
 
-        datums.add(Data.forNumeric("NumericData-01", 1, 10.0));
-        datums.add(Data.forNumeric("NumericData-01", 2, 5.0));
-        datums.add(Data.forNumeric("NumericData-01", 3, 15.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 2, 5.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 3, 15.0));
 
         // default dampening
 
@@ -245,7 +245,7 @@ public class RulesEngineTest {
     public void thresholdRangeTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "NumericData-01-");
         // should fire 2 alerts
-        ThresholdRangeCondition t1c1 = new ThresholdRangeCondition("trigger-1", 1, 1,
+        ThresholdRangeCondition t1c1 = new ThresholdRangeCondition("tenant", "trigger-1", 1, 1,
                 "NumericData-01",
                 ThresholdRangeCondition.Operator.INCLUSIVE,
                 ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -253,7 +253,7 @@ public class RulesEngineTest {
                 true);
         // should fine 0 alerts
         Trigger t2 = new Trigger("tenant", "trigger-2", "NumericData-01");
-        ThresholdRangeCondition t2c1 = new ThresholdRangeCondition("trigger-2", 1, 1,
+        ThresholdRangeCondition t2c1 = new ThresholdRangeCondition("tenant", "trigger-2", 1, 1,
                 "NumericData-01",
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
@@ -261,16 +261,16 @@ public class RulesEngineTest {
                 true);
         // should fire 1 alert
         Trigger t3 = new Trigger("tenant", "trigger-3", "NumericData-01");
-        ThresholdRangeCondition t3c1 = new ThresholdRangeCondition("trigger-3", 1, 1,
+        ThresholdRangeCondition t3c1 = new ThresholdRangeCondition("tenant", "trigger-3", 1, 1,
                 "NumericData-01",
                 ThresholdRangeCondition.Operator.INCLUSIVE,
                 ThresholdRangeCondition.Operator.INCLUSIVE,
                 10.0, 15.0,
                 false);
 
-        datums.add(Data.forNumeric("NumericData-01", 1, 10.0));
-        datums.add(Data.forNumeric("NumericData-01", 2, 5.0));
-        datums.add(Data.forNumeric("NumericData-01", 3, 15.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 2, 5.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 3, 15.0));
 
         // default dampening
 
@@ -338,19 +338,19 @@ public class RulesEngineTest {
     @Test
     public void compareTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Compare-D1-LT-Half-D2");
-        CompareCondition t1c1 = new CompareCondition("trigger-1", 1, 1,
+        CompareCondition t1c1 = new CompareCondition("tenant", "trigger-1", 1, 1,
                 "NumericData-01",
                 CompareCondition.Operator.LT, 0.5, "NumericData-02");
         Trigger t2 = new Trigger("tenant", "trigger-2", "Compare-D1-LTE-Half-D2");
-        CompareCondition t2c1 = new CompareCondition("trigger-2", 1, 1,
+        CompareCondition t2c1 = new CompareCondition("tenant", "trigger-2", 1, 1,
                 "NumericData-01",
                 CompareCondition.Operator.LTE, 0.5, "NumericData-02");
         Trigger t3 = new Trigger("tenant", "trigger-3", "Compare-D1-GT-Half-D2");
-        CompareCondition t3c1 = new CompareCondition("trigger-3", 1, 1,
+        CompareCondition t3c1 = new CompareCondition("tenant", "trigger-3", 1, 1,
                 "NumericData-01",
                 CompareCondition.Operator.GT, 0.5, "NumericData-02");
         Trigger t4 = new Trigger("tenant", "trigger-4", "Compare-D1-GTE-Half-D2");
-        CompareCondition t4c1 = new CompareCondition("trigger-4", 1, 1,
+        CompareCondition t4c1 = new CompareCondition("tenant", "trigger-4", 1, 1,
                 "NumericData-01",
                 CompareCondition.Operator.GTE, 0.5, "NumericData-02");
 
@@ -375,8 +375,8 @@ public class RulesEngineTest {
         // dataId, we need several rule executions to test all of the above triggers.
 
         // Test LT (also LTE)
-        datums.add(Data.forNumeric("NumericData-01", 1, 10.0));
-        datums.add(Data.forNumeric("NumericData-02", 2, 30.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 2, 30.0));
 
         rulesEngine.addData(datums);
 
@@ -422,8 +422,8 @@ public class RulesEngineTest {
         // Test LTE + GTE
         datums.clear();
         alerts.clear();
-        datums.add(Data.forNumeric("NumericData-01", 1, 10.0));
-        datums.add(Data.forNumeric("NumericData-02", 2, 20.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 2, 20.0));
 
         rulesEngine.addData(datums);
 
@@ -469,8 +469,8 @@ public class RulesEngineTest {
         // Test GT (also GTE)
         datums.clear();
         alerts.clear();
-        datums.add(Data.forNumeric("NumericData-01", 1, 15.0));
-        datums.add(Data.forNumeric("NumericData-02", 2, 20.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 15.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 2, 20.0));
 
         rulesEngine.addData(datums);
 
@@ -519,41 +519,41 @@ public class RulesEngineTest {
         // StringData-01 Triggers
         // 2 alerts
         Trigger t1 = new Trigger("tenant", "trigger-1", "String-StartsWith");
-        StringCondition t1c1 = new StringCondition("trigger-1", 1, 1,
+        StringCondition t1c1 = new StringCondition("tenant", "trigger-1", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.STARTS_WITH, "Fred", false);
         // 1 alert
         Trigger t2 = new Trigger("tenant", "trigger-2", "String-Equal");
-        StringCondition t3c1 = new StringCondition("trigger-2", 1, 1,
+        StringCondition t3c1 = new StringCondition("tenant", "trigger-2", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.EQUAL, "Fred", false);
         // 1 alert
         Trigger t3 = new Trigger("tenant", "trigger-3", "String-Contains");
-        StringCondition t5c1 = new StringCondition("trigger-3", 1, 1,
+        StringCondition t5c1 = new StringCondition("tenant", "trigger-3", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.CONTAINS, "And", false);
         // 1 alert
         Trigger t4 = new Trigger("tenant", "trigger-4", "String-Match");
-        StringCondition t6c1 = new StringCondition("trigger-4", 1, 1,
+        StringCondition t6c1 = new StringCondition("tenant", "trigger-4", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.MATCH, "Fred.*Barney", false);
 
         // StringData-02 Triggers
         // 1 alert
         Trigger t5 = new Trigger("tenant", "trigger-5", "String-EndsWith");
-        StringCondition t2c1 = new StringCondition("trigger-5", 1, 1,
+        StringCondition t2c1 = new StringCondition("tenant", "trigger-5", 1, 1,
                 "StringData-02",
                 StringCondition.Operator.ENDS_WITH, "Fred", false);
         // 1 alert
         Trigger t6 = new Trigger("tenant", "trigger-6", "String-StartsWith");
-        StringCondition t4c1 = new StringCondition("trigger-6", 1, 1,
+        StringCondition t4c1 = new StringCondition("tenant", "trigger-6", 1, 1,
                 "StringData-02", // note
                 StringCondition.Operator.NOT_EQUAL, "Fred", false);
 
-        datums.add(new Data("StringData-01", 1, "Fred"));
-        datums.add(new Data("StringData-01", 2, "Fred And Barney"));
+        datums.add(new Data("tenant", "StringData-01", 1, "Fred"));
+        datums.add(new Data("tenant", "StringData-01", 2, "Fred And Barney"));
 
-        datums.add(new Data("StringData-02", 1, "Barney And Fred"));
+        datums.add(new Data("tenant", "StringData-02", 1, "Barney And Fred"));
 
         // default dampening
 
@@ -688,41 +688,41 @@ public class RulesEngineTest {
         // StringData-01 Triggers
         // 2 alerts
         Trigger t1 = new Trigger("tenant", "trigger-1", "String-StartsWith");
-        StringCondition t1c1 = new StringCondition("trigger-1", 1, 1,
+        StringCondition t1c1 = new StringCondition("tenant", "trigger-1", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.STARTS_WITH, "FRED", true);
         // 1 alert
         Trigger t2 = new Trigger("tenant", "trigger-2", "String-Equal");
-        StringCondition t3c1 = new StringCondition("trigger-2", 1, 1,
+        StringCondition t3c1 = new StringCondition("tenant", "trigger-2", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.EQUAL, "FRED", true);
         // 1 alert
         Trigger t3 = new Trigger("tenant", "trigger-3", "String-Contains");
-        StringCondition t5c1 = new StringCondition("trigger-3", 1, 1,
+        StringCondition t5c1 = new StringCondition("tenant", "trigger-3", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.CONTAINS, "AND", true);
         // 1 alert
         Trigger t4 = new Trigger("tenant", "trigger-4", "String-Match");
-        StringCondition t6c1 = new StringCondition("trigger-4", 1, 1,
+        StringCondition t6c1 = new StringCondition("tenant", "trigger-4", 1, 1,
                 "StringData-01",
                 StringCondition.Operator.MATCH, "FRED.*barney", true);
 
         // StringData-02 Triggers
         // 1 alert
         Trigger t5 = new Trigger("tenant", "trigger-5", "String-EndsWith");
-        StringCondition t2c1 = new StringCondition("trigger-5", 1, 1,
+        StringCondition t2c1 = new StringCondition("tenant", "trigger-5", 1, 1,
                 "StringData-02",
                 StringCondition.Operator.ENDS_WITH, "FRED", true);
         // 1 alert
         Trigger t6 = new Trigger("tenant", "trigger-6", "String-StartsWith");
-        StringCondition t4c1 = new StringCondition("trigger-6", 1, 1,
+        StringCondition t4c1 = new StringCondition("tenant", "trigger-6", 1, 1,
                 "StringData-02", // note
                 StringCondition.Operator.NOT_EQUAL, "FRED", true);
 
-        datums.add(new Data("StringData-01", 1, "Fred"));
-        datums.add(new Data("StringData-01", 2, "Fred And Barney"));
+        datums.add(new Data("tenant", "StringData-01", 1, "Fred"));
+        datums.add(new Data("tenant", "StringData-01", 2, "Fred And Barney"));
 
-        datums.add(new Data("StringData-02", 1, "Barney And Fred"));
+        datums.add(new Data("tenant", "StringData-02", 1, "Barney And Fred"));
 
         // default dampening
 
@@ -855,12 +855,12 @@ public class RulesEngineTest {
     @Test
     public void availabilityTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
-        AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
+        AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.NOT_UP);
 
-        datums.add(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(Data.forAvailability("AvailData-01", 3, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 3, AvailabilityType.UP));
 
         // default dampening
 
@@ -907,10 +907,10 @@ public class RulesEngineTest {
     @Test
     public void externalTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "External-Metrics");
-        ExternalCondition t1c1 = new ExternalCondition("trigger-1", Mode.FIRING, 1, 1,
+        ExternalCondition t1c1 = new ExternalCondition("tenant", "trigger-1", Mode.FIRING, 1, 1,
                 "ExternalData-01", "HawkularMetrics", "metric:5:avg(foo > 100.5)");
 
-        datums.add(new Data("ExternalData-01", 1, "Ignored"));
+        datums.add(new Data("tenant", "ExternalData-01", 1, "Ignored"));
 
         // default dampening
 
@@ -944,7 +944,7 @@ public class RulesEngineTest {
     public void eventTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Events Test");
         t1.setEventType(EventType.EVENT);
-        EventCondition t1c1 = new EventCondition("trigger-1", "myapp.war", "text == 'DOWN'");
+        EventCondition t1c1 = new EventCondition("tenant", "trigger-1", "myapp.war", "text == 'DOWN'");
 
         Event appDownEvent = new Event("tenant", UUID.randomUUID().toString(), "myapp.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
@@ -966,14 +966,14 @@ public class RulesEngineTest {
     public void rateTest() {
         // 1 alert
         Trigger t1 = new Trigger("tenant", "trigger-1", "Rate-Increasing");
-        RateCondition t1c1 = new RateCondition("trigger-1",
+        RateCondition t1c1 = new RateCondition("tenant", "trigger-1",
                 "CounterUp",
                 RateCondition.Direction.INCREASING,
                 RateCondition.Period.MINUTE,
                 RateCondition.Operator.GT, 20.0);
         // 1 alert
         Trigger t2 = new Trigger("tenant", "trigger-2", "Rate-Decreasing");
-        RateCondition t2c1 = new RateCondition("trigger-2",
+        RateCondition t2c1 = new RateCondition("tenant", "trigger-2",
                 "CounterDown",
                 RateCondition.Direction.DECREASING,
                 RateCondition.Period.HOUR,
@@ -982,13 +982,13 @@ public class RulesEngineTest {
         long t1minute = 60000L * 1;
         long t3minute = t1minute * 3;
         long t5minute = t1minute * 5;
-        datums.add(Data.forNumeric("CounterUp", t1minute, 10.0)); // minute 1
-        datums.add(Data.forNumeric("CounterUp", t3minute, 20.0)); // minute 3 (rate = 5 per minute)
-        datums.add(Data.forNumeric("CounterUp", t5minute, 100.0)); // minute 5 (rate = 40 per minute)
+        datums.add(Data.forNumeric("tenant", "CounterUp", t1minute, 10.0)); // minute 1
+        datums.add(Data.forNumeric("tenant", "CounterUp", t3minute, 20.0)); // minute 3 (rate = 5 per minute)
+        datums.add(Data.forNumeric("tenant", "CounterUp", t5minute, 100.0)); // minute 5 (rate = 40 per minute)
 
-        datums.add(Data.forNumeric("CounterDown", t1minute, 100.0)); // minute 1
-        datums.add(Data.forNumeric("CounterDown", t3minute, 90.0)); // minute 3 (rate = 300 per hour)
-        datums.add(Data.forNumeric("CounterDown", t5minute, 10.0)); // minute 5 (rate = 2400 per hour)
+        datums.add(Data.forNumeric("tenant", "CounterDown", t1minute, 100.0)); // minute 1
+        datums.add(Data.forNumeric("tenant", "CounterDown", t3minute, 90.0)); // minute 3 (rate = 300 per hour)
+        datums.add(Data.forNumeric("tenant", "CounterDown", t5minute, 10.0)); // minute 5 (rate = 2400 per hour)
 
 
         // default dampening
@@ -1047,11 +1047,11 @@ public class RulesEngineTest {
     public void multipleEventConditions() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Events Test");
         t1.setEventType(EventType.EVENT);
-        EventCondition t1c1 = new EventCondition("trigger-1", Mode.FIRING, 3, 1, "myapp.war",
+        EventCondition t1c1 = new EventCondition("tenant", "trigger-1", Mode.FIRING, 3, 1, "myapp.war",
                 "text == 'DOWN'");
-        EventCondition t1c2 = new EventCondition("trigger-1", Mode.FIRING, 3, 2, "datacenter1",
+        EventCondition t1c2 = new EventCondition("tenant", "trigger-1", Mode.FIRING, 3, 2, "datacenter1",
                 "text starts 'ERROR'");
-        EventCondition t1c3 = new EventCondition("trigger-1", Mode.FIRING, 3, 3, "datacenter2",
+        EventCondition t1c3 = new EventCondition("tenant", "trigger-1", Mode.FIRING, 3, 3, "datacenter2",
                 "text starts 'WARN'");
 
         /*
@@ -1108,15 +1108,15 @@ public class RulesEngineTest {
     public void chainedEventsRules() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "A.war");
         t1.setEventType(EventType.EVENT);
-        EventCondition t1c1 = new EventCondition("trigger-1", Mode.FIRING, "A.war", "text == 'DOWN'");
+        EventCondition t1c1 = new EventCondition("tenant", "trigger-1", Mode.FIRING, "A.war", "text == 'DOWN'");
 
         Trigger t2 = new Trigger("tenant", "trigger-2", "B.war");
         t2.setEventType(EventType.EVENT);
-        EventCondition t2c1 = new EventCondition("trigger-2", Mode.FIRING, "B.war", "text == 'DOWN'");
+        EventCondition t2c1 = new EventCondition("tenant", "trigger-2", Mode.FIRING, "B.war", "text == 'DOWN'");
 
         Trigger t3 = new Trigger("tenant", "trigger-3", "A.war and B.war DOWN");
-        EventCondition t3c1 = new EventCondition("trigger-3", Mode.FIRING, 2, 1, "trigger-1");
-        EventCondition t3c2 = new EventCondition("trigger-3", Mode.FIRING, 2, 2, "trigger-2");
+        EventCondition t3c1 = new EventCondition("tenant", "trigger-3", Mode.FIRING, 2, 1, "trigger-1");
+        EventCondition t3c2 = new EventCondition("tenant", "trigger-3", Mode.FIRING, 2, 2, "trigger-2");
 
         Event appADownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "A.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
@@ -1190,18 +1190,18 @@ public class RulesEngineTest {
     @Test
     public void dampeningStrictTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
-        AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
+        AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forStrict("trigger-1", Mode.FIRING, 3);
+        Dampening t1d = Dampening.forStrict("tenant", "trigger-1", Mode.FIRING, 3);
 
-        datums.add(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(Data.forAvailability("AvailData-01", 3, AvailabilityType.UP));
-        datums.add(Data.forAvailability("AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 5, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 6, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 7, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 3, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 4, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 5, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 6, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 7, AvailabilityType.UP));
 
         t1.setEnabled(true);
 
@@ -1236,18 +1236,18 @@ public class RulesEngineTest {
     @Test
     public void dampeningRelaxedCountTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
-        AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
+        AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forRelaxedCount("trigger-1", Mode.FIRING, 3, 5);
+        Dampening t1d = Dampening.forRelaxedCount("tenant", "trigger-1", Mode.FIRING, 3, 5);
 
-        datums.add(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(Data.forAvailability("AvailData-01", 3, AvailabilityType.UP));
-        datums.add(Data.forAvailability("AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 5, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 6, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 7, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 3, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 4, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 5, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 6, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 7, AvailabilityType.UP));
 
         t1.setEnabled(true);
 
@@ -1283,10 +1283,10 @@ public class RulesEngineTest {
     @Test
     public void dampeningRelaxedTimeTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
-        AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
+        AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forRelaxedTime("trigger-1", Mode.FIRING, 2, 500L);
+        Dampening t1d = Dampening.forRelaxedTime("tenant", "trigger-1", Mode.FIRING, 2, 500L);
 
         t1.setEnabled(true);
 
@@ -1294,7 +1294,7 @@ public class RulesEngineTest {
         rulesEngine.addFact(t1c1);
         rulesEngine.addFact(t1d);
 
-        datums.add(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1307,10 +1307,10 @@ public class RulesEngineTest {
         }
 
         datums.clear();
-        datums.add(Data.forAvailability("AvailData-01", 2, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 3, AvailabilityType.UP));
-        datums.add(Data.forAvailability("AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 5, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 3, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 4, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 5, AvailabilityType.UP));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1339,10 +1339,10 @@ public class RulesEngineTest {
     @Test
     public void dampeningStrictTimeTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
-        AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
+        AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forStrictTime("trigger-1", Mode.FIRING, 250L);
+        Dampening t1d = Dampening.forStrictTime("tenant", "trigger-1", Mode.FIRING, 250L);
 
         t1.setEnabled(true);
 
@@ -1353,7 +1353,7 @@ public class RulesEngineTest {
         long start = System.currentTimeMillis();
         int i = 0;
         while ((alerts.size() == 0) && ((System.currentTimeMillis() - start) < 500)) {
-            rulesEngine.addData(Data.forAvailability("AvailData-01", ++i, AvailabilityType.DOWN));
+            rulesEngine.addData(Data.forAvailability("tenant", "AvailData-01", ++i, AvailabilityType.DOWN));
             rulesEngine.fire();
         }
 
@@ -1379,10 +1379,10 @@ public class RulesEngineTest {
     @Test
     public void dampeningStrictTimeoutTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
-        AvailabilityCondition t1c1 = new AvailabilityCondition("trigger-1", 1, 1,
+        AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
 
-        Dampening t1d = Dampening.forStrictTimeout("trigger-1", Mode.FIRING, 200L);
+        Dampening t1d = Dampening.forStrictTimeout("tenant", "trigger-1", Mode.FIRING, 200L);
 
         t1.setEnabled(true);
 
@@ -1393,7 +1393,7 @@ public class RulesEngineTest {
         assertTrue(alerts.isEmpty());
         assertTrue(pendingTimeouts.isEmpty());
 
-        rulesEngine.addData(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
+        rulesEngine.addData(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
         rulesEngine.fire();
 
         assertTrue(alerts.isEmpty());
@@ -1425,9 +1425,9 @@ public class RulesEngineTest {
     @Test
     public void multiConditionTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Two-Conditions");
-        ThresholdCondition t1c1 = new ThresholdCondition("trigger-1", 2, 1, "NumericData-01",
+        ThresholdCondition t1c1 = new ThresholdCondition("tenant", "trigger-1", 2, 1, "NumericData-01",
                 ThresholdCondition.Operator.LT, 10.0);
-        ThresholdRangeCondition t1c2 = new ThresholdRangeCondition("trigger-1", 2, 2, "NumericData-02",
+        ThresholdRangeCondition t1c2 = new ThresholdRangeCondition("tenant", "trigger-1", 2, 2, "NumericData-02",
                 ThresholdRangeCondition.Operator.INCLUSIVE, ThresholdRangeCondition.Operator.EXCLUSIVE, 100.0, 200.0,
                 true);
 
@@ -1444,9 +1444,9 @@ public class RulesEngineTest {
         //   1) one datum for a specific dataId will will be processed at a time
         //   2) only the most recent conditionEvals will be used in a condition set tuple for a multi-condition trigger
 
-        datums.add(Data.forNumeric("NumericData-01", 1, 10.0));  // eval(d1,t1) = no match,
-        datums.add(Data.forNumeric("NumericData-01", 2, 5.0));   // eval(d1,t2) =    match, replaces eval(d1,t1)
-        datums.add(Data.forNumeric("NumericData-01", 3, 15.0));  // eval(d1,t3) = no match, replaces eval(d1,t2)
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0)); // eval(d1,t1)=no match,
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 2, 5.0));  // eval(d1,t2)=   match, replaces eval(d1,t1)
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 3, 15.0)); // eval(d1,t3)=no match, replaces eval(d1,t2)
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1455,9 +1455,9 @@ public class RulesEngineTest {
 
         datums.clear();
         // eval(d2,t4) = no match, tuple(eval(d1,t3), eval(d2,t4)) = false
-        datums.add(Data.forNumeric("NumericData-02", 4, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 4, 10.0));
         // eval(d2,t5) =    match, tuple(eval(d1,t3), eval(d2,t5)) = false
-        datums.add(Data.forNumeric("NumericData-02", 5, 150.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 5, 150.0));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1466,7 +1466,7 @@ public class RulesEngineTest {
 
         datums.clear();
         // eval(d1,t6) =    match, tuple(eval(d1,t6), eval(d2,t5)) = true
-        datums.add(Data.forNumeric("NumericData-01", 6, 8.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 6, 8.0));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1508,12 +1508,12 @@ public class RulesEngineTest {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Any-Two-Conditions");
         t1.setFiringMatch(Match.ANY);
 
-        ThresholdCondition t1c1 = new ThresholdCondition("trigger-1", 2, 1, "X",
+        ThresholdCondition t1c1 = new ThresholdCondition("tenant", "trigger-1", 2, 1, "X",
                 ThresholdCondition.Operator.GT, 100.0);
-        ThresholdCondition t1c2 = new ThresholdCondition("trigger-1", 2, 2, "Y",
+        ThresholdCondition t1c2 = new ThresholdCondition("tenant", "trigger-1", 2, 2, "Y",
                 ThresholdCondition.Operator.GT, 200.0);
 
-        Dampening t1d = Dampening.forStrict("trigger-1", Mode.FIRING, 2);
+        Dampening t1d = Dampening.forStrict("tenant", "trigger-1", Mode.FIRING, 2);
 
         t1.setEnabled(true);
 
@@ -1524,25 +1524,25 @@ public class RulesEngineTest {
 
         // for clarity deliver datums independently
 
-        datums.add(Data.forNumeric("X", 1, 125.0));  // match, dampening eval true (X), no alert
+        datums.add(Data.forNumeric("tenant", "X", 1, 125.0));  // match, dampening eval true (X), no alert
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         datums.clear();
-        datums.add(Data.forNumeric("X", 2, 50.0));   // no match, dampening reset
+        datums.add(Data.forNumeric("tenant", "X", 2, 50.0));   // no match, dampening reset
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         datums.clear();
-        datums.add(Data.forNumeric("Y", 3, 300.0));  // match, dampening eval true (Y), no alert
+        datums.add(Data.forNumeric("tenant", "Y", 3, 300.0));  // match, dampening eval true (Y), no alert
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         datums.clear();
-        datums.add(Data.forNumeric("X", 4, 110.0));  // match, dampening eval true (X,Y), alert! dampening reset
+        datums.add(Data.forNumeric("tenant", "X", 4, 110.0));  // match, dampening eval true (X,Y), alert! damp reset
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 1, alerts.size());
@@ -1604,7 +1604,7 @@ public class RulesEngineTest {
 
         alerts.clear();
         datums.clear();
-        datums.add(Data.forNumeric("Y", 5, 150.0));  // match, dampening eval true (X), no alert
+        datums.add(Data.forNumeric("tenant", "Y", 5, 150.0));  // match, dampening eval true (X), no alert
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
@@ -1616,23 +1616,23 @@ public class RulesEngineTest {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
 
         // Firing Mode
-        AvailabilityCondition fmt1c1 = new AvailabilityCondition("trigger-1", Mode.FIRING, 1, 1,
+        AvailabilityCondition fmt1c1 = new AvailabilityCondition("tenant", "trigger-1", Mode.FIRING, 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
-        Dampening fmt1d = Dampening.forStrict("trigger-1", Mode.FIRING, 2);
+        Dampening fmt1d = Dampening.forStrict("tenant", "trigger-1", Mode.FIRING, 2);
 
         // AutoResolve Mode
-        AvailabilityCondition smt1c1 = new AvailabilityCondition("trigger-1", Mode.AUTORESOLVE, 1, 1,
+        AvailabilityCondition smt1c1 = new AvailabilityCondition("tenant", "trigger-1", Mode.AUTORESOLVE, 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.UP);
-        Dampening smt1d = Dampening.forStrict("trigger-1", Mode.AUTORESOLVE, 2);
+        Dampening smt1d = Dampening.forStrict("tenant", "trigger-1", Mode.AUTORESOLVE, 2);
 
-        datums.add(Data.forAvailability("AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(Data.forAvailability("AvailData-01", 3, AvailabilityType.UP));
-        datums.add(Data.forAvailability("AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 5, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 6, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 7, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("AvailData-01", 8, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 3, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 4, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 5, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 6, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 7, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 8, AvailabilityType.UP));
 
         t1.setEnabled(true);
         t1.setAutoDisable(false);
@@ -1678,7 +1678,7 @@ public class RulesEngineTest {
 
         alerts.clear();
         datums.clear();
-        datums.add(Data.forAvailability("AvailData-01", 9, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 9, AvailabilityType.UP));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1697,15 +1697,15 @@ public class RulesEngineTest {
     public void checkEqualityInRulesEngine() throws Exception {
 
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
-        AvailabilityCondition fmt1c1 = new AvailabilityCondition("trigger-1", Mode.FIRING, 1, 1,
+        AvailabilityCondition fmt1c1 = new AvailabilityCondition("tenant", "trigger-1", Mode.FIRING, 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.DOWN);
-        Data adata = Data.forAvailability("AvailData-01", System.currentTimeMillis(), AvailabilityType.UP);
+        Data adata = Data.forAvailability("tenant", "AvailData-01", System.currentTimeMillis(), AvailabilityType.UP);
         AvailabilityConditionEval fmt1c1eval = new AvailabilityConditionEval(fmt1c1, adata);
-        Dampening fmt1d = Dampening.forStrict("trigger-1", Mode.FIRING, 2);
+        Dampening fmt1d = Dampening.forStrict("tenant", "trigger-1", Mode.FIRING, 2);
 
-        ThresholdCondition fmt1c2 = new ThresholdCondition("trigger-1", Mode.FIRING, 1, 1,
+        ThresholdCondition fmt1c2 = new ThresholdCondition("tenant", "trigger-1", Mode.FIRING, 1, 1,
                 "ThreData-01", ThresholdCondition.Operator.GT, 10d);
-        Data ndata = Data.forNumeric("ThreData-01", System.currentTimeMillis(), 20d);
+        Data ndata = Data.forNumeric("tenant", "ThreData-01", System.currentTimeMillis(), 20d);
         ThresholdConditionEval fmt1c2eval = new ThresholdConditionEval(fmt1c2, ndata);
 
         rulesEngine.addFact(t1);

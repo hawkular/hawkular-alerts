@@ -29,6 +29,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 public class ThresholdCondition extends Condition {
 
+    private static final long serialVersionUID = 1L;
+
     public enum Operator {
         LT, GT, LTE, GTE
     }
@@ -46,30 +48,48 @@ public class ThresholdCondition extends Condition {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultId", 1, 1, null, null, null);
+        this("", "", 1, 1, null, null, null);
     }
 
-    public ThresholdCondition(String triggerId,
-                              String dataId, Operator operator, Double threshold) {
-
-        this(triggerId, Mode.FIRING, 1, 1, dataId, operator, threshold);
-    }
-
-    public ThresholdCondition(String triggerId, Mode triggerMode,
-                              String dataId, Operator operator, Double threshold) {
-
-        this(triggerId, triggerMode, 1, 1, dataId, operator, threshold);
-    }
-
-    public ThresholdCondition(String triggerId, int conditionSetSize, int conditionSetIndex,
+    public ThresholdCondition(String tenantId, String triggerId,
             String dataId, Operator operator, Double threshold) {
 
-        this(triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, operator, threshold);
+        this(tenantId, triggerId, Mode.FIRING, 1, 1, dataId, operator, threshold);
     }
 
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public ThresholdCondition(String triggerId, Mode triggerMode, String dataId, Operator operator, Double threshold) {
+
+        this("", triggerId, triggerMode, 1, 1, dataId, operator, threshold);
+    }
+
+    public ThresholdCondition(String tenantId, String triggerId, Mode triggerMode,
+            String dataId, Operator operator, Double threshold) {
+
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, operator, threshold);
+    }
+
+    public ThresholdCondition(String tenantId, String triggerId, int conditionSetSize, int conditionSetIndex,
+            String dataId, Operator operator, Double threshold) {
+
+        this(tenantId, triggerId, Mode.FIRING, conditionSetSize, conditionSetIndex, dataId, operator, threshold);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
     public ThresholdCondition(String triggerId, Mode triggerMode, int conditionSetSize,
-                              int conditionSetIndex, String dataId, Operator operator, Double threshold) {
-        super(triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.THRESHOLD);
+            int conditionSetIndex, String dataId, Operator operator, Double threshold) {
+        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, operator, threshold);
+    }
+
+    public ThresholdCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex, String dataId, Operator operator, Double threshold) {
+        super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.THRESHOLD);
         this.dataId = dataId;
         this.operator = operator;
         this.threshold = threshold;

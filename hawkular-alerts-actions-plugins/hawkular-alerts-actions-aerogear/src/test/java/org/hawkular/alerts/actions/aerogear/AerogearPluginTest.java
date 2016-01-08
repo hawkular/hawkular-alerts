@@ -83,17 +83,17 @@ public class AerogearPluginTest {
         Trigger trigger = new Trigger( TEST_TENANT, "trigger-test", "trigger-test");
         Alert alert = new Alert(TEST_TENANT, trigger, null);
 
-        AvailabilityCondition aCond = new AvailabilityCondition("trigger-test",
+        AvailabilityCondition aCond = new AvailabilityCondition(TEST_TENANT, "trigger-test",
                 "Default",
                 AvailabilityCondition.Operator.UP);
-        Data aData = Data.forAvailability("Metric-test", 1, AvailabilityType.UP);
+        Data aData = Data.forAvailability(TEST_TENANT, "Metric-test", 1, AvailabilityType.UP);
         AvailabilityConditionEval aEval = new AvailabilityConditionEval(aCond, aData);
 
-        ThresholdCondition tCond = new ThresholdCondition("trigger-test",
+        ThresholdCondition tCond = new ThresholdCondition(TEST_TENANT, "trigger-test",
                 "Default",
                 ThresholdCondition.Operator.LTE,
                 50.0);
-        Data tData = Data.forNumeric("Metric-test2", 2, 25.5);
+        Data tData = Data.forNumeric(TEST_TENANT, "Metric-test2", 2, 25.5);
         ThresholdConditionEval tEval = new ThresholdConditionEval(tCond, tData);
 
         Set<ConditionEval> evals = new HashSet<>();

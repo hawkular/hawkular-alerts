@@ -26,7 +26,7 @@ import org.hawkular.alerts.api.model.event.Alert;
  */
 public abstract class CommonData {
 
-    public static final String TEST_TENANT = "test-tenant";
+    public static final String TENANT = "test-tenant";
     public static final String ACK_BY = "ack-user";
     public static final String ACK_NOTES = "These ack notes are automatically generated";
     public static final String RESOLVED_BY = "resolve-user";

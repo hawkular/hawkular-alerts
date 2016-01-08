@@ -24,14 +24,19 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
- * A base class for incoming data into alerts subsystem.  All {@link Data} has an Id and a timestamp. The
- * timestamp is used to ensure that data is time-ordered when being sent into the alerting engine.  If
- * not assigned the timestamp will be assigned to current time.
+ * A base class for incoming data into alerts subsystem.  All {@link Data} has TenantId, Id and a timestamp. An Id
+ * should be unique within the tenant. The timestamp is used to ensure that data is time-ordered when being sent into
+ * the alerting engine.  If not assigned the timestamp will be assigned to current time.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class Data implements Comparable<Data>, Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @JsonInclude
+    protected String tenantId;
 
     @JsonInclude
     protected String id;
@@ -54,79 +59,102 @@ public class Data implements Comparable<Data>, Serializable {
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 
+    /** For JSON Construction ONLY */
     public Data() {
-        // json construction
     }
 
-    /**
-     * Construct a single-value datum with no context data.
-     * @param id not null
-     * @param timestamp in millis, if less than 1 assigned currentTime.
-     * @param value the value
+    /** For REST API USE ONLY, tenantId set automatically via REST Handler.
      */
     public Data(String id, long timestamp, String value) {
-        this(id, timestamp, value, null, null);
+        this(null, id, timestamp, value, null, null);
     }
 
     /**
      * Construct a single-value datum with no context data.
-     * @param id not null
+     * @param tenantId not null
+     * @param id not null, unique within tenant
+     * @param timestamp in millis, if less than 1 assigned currentTime.
+     * @param value the value
+     */
+    public Data(String tenantId, String id, long timestamp, String value) {
+        this(tenantId, id, timestamp, value, null, null);
+    }
+
+    /**
+     * Construct a single-value datum with no context data.
+     * @param tenantId not null
+     * @param id not null, unique within tenant
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param value the value
      * @param context optional, contextual name-value pairs to be stored with the data.
      */
-    public Data(String id, long timestamp, String value, Map<String, String> context) {
-        this(id, timestamp, value, null, null);
+    public Data(String tenantId, String id, long timestamp, String value, Map<String, String> context) {
+        this(tenantId, id, timestamp, value, null, null);
     }
 
     /**
      * Construct a multi-value datum with no context data.
-     * @param id not null
+     * @param tenantId not null
+     * @param id not null, unique within tenant
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param values the values
      */
-    public Data(String id, long timestamp, Map<String, String> values) {
-        this(id, timestamp, null, values, null);
+    public Data(String tenantId, String id, long timestamp, Map<String, String> values) {
+        this(tenantId, id, timestamp, null, values, null);
     }
 
     /**
      * Construct a multi-value datum with no context data.
+     * @param tenantId not null
      * @param id not null
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param values the values
      * @param context optional, contextual name-value pairs to be stored with the data.
      */
-    public Data(String id, long timestamp, Map<String, String> values, Map<String, String> context) {
-        this(id, timestamp, null, values, null);
+    public Data(String tenantId, String id, long timestamp, Map<String, String> values, Map<String, String> context) {
+        this(tenantId, id, timestamp, null, values, null);
     }
 
     /**
+     * @param tenantId not null
      * @param id not null
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param value the value, mutually exclusive with values
      * @param context optional, contextual name-value pairs to be stored with the data.
      */
-    private Data(String id, long timestamp, String value, Map<String, String> values, Map<String, String> context) {
+    private Data(String tenantId, String id, long timestamp, String value, Map<String, String> values,
+            Map<String, String> context) {
+        this.tenantId = tenantId;
         this.id = id;
         this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
         this.value = value;
         this.context = context;
     }
 
-    public static Data forNumeric(String id, long timestamp, Double value) {
-        return new Data(id, timestamp, String.valueOf(value));
+    public static Data forNumeric(String tenantId, String id, long timestamp, Double value) {
+        return new Data(tenantId, id, timestamp, String.valueOf(value));
     }
 
-    public static Data forNumeric(String id, long timestamp, Double value, Map<String, String> context) {
-        return new Data(id, timestamp, String.valueOf(value), null, context);
+    public static Data forNumeric(String tenantId, String id, long timestamp, Double value,
+            Map<String, String> context) {
+        return new Data(tenantId, id, timestamp, String.valueOf(value), null, context);
     }
 
-    public static Data forAvailability(String id, long timestamp, AvailabilityType value) {
-        return new Data(id, timestamp, value.name());
+    public static Data forAvailability(String tenantId, String id, long timestamp, AvailabilityType value) {
+        return new Data(tenantId, id, timestamp, value.name());
     }
 
-    public static Data forAvailability(String id, long timestamp, AvailabilityType value, Map<String, String> context) {
-        return new Data(id, timestamp, value.name(), null, context);
+    public static Data forAvailability(String tenantId, String id, long timestamp, AvailabilityType value,
+            Map<String, String> context) {
+        return new Data(tenantId, id, timestamp, value.name(), null, context);
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 
     public String getId() {
@@ -179,6 +207,7 @@ public class Data implements Comparable<Data>, Serializable {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((tenantId == null) ? 0 : tenantId.hashCode());
         result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
         return result;
     }
@@ -197,19 +226,28 @@ public class Data implements Comparable<Data>, Serializable {
                 return false;
         } else if (!id.equals(other.id))
             return false;
+        if (tenantId == null) {
+            if (other.tenantId != null)
+                return false;
+        } else if (!tenantId.equals(other.tenantId))
+            return false;
         if (timestamp != other.timestamp)
             return false;
         return true;
     }
 
     /* (non-Javadoc)
-     * Natural Ordering provided: Id asc, Timestamp asc. This is important to ensure that the engine
+     * Natural Ordering provided: TenantId asc, Id asc, Timestamp asc. This is important to ensure that the engine
      * naturally processes datums for the same dataId is ascending time order.
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
     public int compareTo(Data o) {
-        int c = this.id.compareTo(o.id);
+        int c = this.tenantId.compareTo(o.tenantId);
+        if (0 != c)
+            return c;
+
+        c = this.id.compareTo(o.id);
         if (0 != c)
             return c;
 
@@ -218,7 +256,8 @@ public class Data implements Comparable<Data>, Serializable {
 
     @Override
     public String toString() {
-        return "Data [id=" + id + ", timestamp=" + timestamp + ", value=" + value + ", context=" + context + "]";
+        return "Data [tenantId=" + tenantId + ", id=" + id + ", timestamp=" + timestamp + ", value=" + value
+                + ", context=" + context + "]";
     }
 
 }

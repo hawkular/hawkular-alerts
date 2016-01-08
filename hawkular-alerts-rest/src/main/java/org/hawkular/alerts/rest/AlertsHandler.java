@@ -483,6 +483,9 @@ public class AlertsHandler {
             if (isEmpty(datums)) {
                 return ResponseUtil.badRequest("Data is empty");
             } else {
+                for (Data d : datums) {
+                    d.setTenantId(tenantId);
+                }
                 alertsEngine.sendData(datums);
                 if (log.isDebugEnabled()) {
                     log.debug("Datums: " + datums);

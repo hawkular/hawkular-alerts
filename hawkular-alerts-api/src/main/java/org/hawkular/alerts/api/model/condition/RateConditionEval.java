@@ -123,6 +123,11 @@ public class RateConditionEval extends ConditionEval {
     }
 
     @Override
+    public String getTenantId() {
+        return condition.getTenantId();
+    }
+
+    @Override
     public String getTriggerId() {
         return condition.getTriggerId();
     }

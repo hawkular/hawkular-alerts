@@ -93,26 +93,48 @@ public class RateCondition extends Condition {
         /*
             Default constructor is needed for JSON libraries in JAX-RS context.
          */
-        this("DefaultId", Mode.FIRING, 1, 1, null, null, null, null, null);
+        this("", "", Mode.FIRING, 1, 1, null, null, null, null, null);
     }
 
-    public RateCondition(String triggerId, String dataId, Direction direction, Period period, Operator operator,
-            Double threshold) {
-
-        this(triggerId, Mode.FIRING, 1, 1, dataId, direction, period, operator, threshold);
-    }
-
-    public RateCondition(String triggerId, Mode triggerMode, String dataId, Direction direction, Period period,
+    public RateCondition(String tenantId, String triggerId, String dataId, Direction direction, Period period,
             Operator operator, Double threshold) {
 
-        this(triggerId, triggerMode, 1, 1, dataId, direction, period, operator, threshold);
+        this(tenantId, triggerId, Mode.FIRING, 1, 1, dataId, direction, period, operator, threshold);
     }
 
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
+    public RateCondition(String triggerId, Mode triggerMode, String dataId, Direction direction,
+            Period period, Operator operator, Double threshold) {
+
+        this("", triggerId, triggerMode, 1, 1, dataId, direction, period, operator, threshold);
+    }
+
+    public RateCondition(String tenantId, String triggerId, Mode triggerMode, String dataId, Direction direction,
+            Period period, Operator operator, Double threshold) {
+
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, direction, period, operator, threshold);
+    }
+
+    /**
+     * This constructor requires the tenantId be assigned prior to persistence. It can be used when
+     * creating triggers via Rest, as the tenant will be assigned automatically.
+     */
     public RateCondition(String triggerId, Mode triggerMode, int conditionSetSize, int conditionSetIndex,
             String dataId, Direction direction, Period period, Operator operator, Double threshold) {
 
-        super(triggerId, (null == triggerMode ? Mode.FIRING : triggerMode), conditionSetSize, conditionSetIndex,
-                Type.RATE);
+        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, direction, period, operator,
+                threshold);
+    }
+
+    public RateCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
+            int conditionSetIndex,
+            String dataId, Direction direction, Period period, Operator operator, Double threshold) {
+
+        super(tenantId, triggerId, (null == triggerMode ? Mode.FIRING : triggerMode), conditionSetSize,
+                conditionSetIndex, Type.RATE);
         this.dataId = dataId;
         this.direction = (null == direction) ? Direction.INCREASING : direction;
         this.period = (null == period) ? Period.MINUTE : period;
@@ -192,7 +214,7 @@ public class RateCondition extends Condition {
     }
 
     public double getRate(long time, double value, long previousTime, double previousValue) {
-        double deltaTime = (double)(time - previousTime);
+        double deltaTime = (double) (time - previousTime);
         double deltaValue = (Direction.INCREASING == direction) ? (value - previousValue) : (previousValue - value);
         double periods = deltaTime / period.milliseconds;
         double rate = deltaValue / periods;

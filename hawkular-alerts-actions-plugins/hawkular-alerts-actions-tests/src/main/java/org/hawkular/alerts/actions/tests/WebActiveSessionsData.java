@@ -56,12 +56,12 @@ public class WebActiveSessionsData extends CommonData {
         String triggerDescription = "Web Active Sessions for thevault~Local";
         String dataId = "thevault~local-web-active-sessions-data-id";
 
-        trigger = new Trigger(TEST_TENANT,
+        trigger = new Trigger(TENANT,
                 triggerId,
                 triggerDescription,
                 context);
 
-        firingCondition = new ThresholdRangeCondition(trigger.getId(),
+        firingCondition = new ThresholdRangeCondition(TENANT, trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdRangeCondition.Operator.INCLUSIVE,
@@ -69,11 +69,10 @@ public class WebActiveSessionsData extends CommonData {
                 200d,
                 5000d,
                 false);
-        firingCondition.setTenantId(TEST_TENANT);
         firingCondition.getContext().put("description", "Active Sessions");
         firingCondition.getContext().put("unit", "sessions");
 
-        autoResolveCondition = new ThresholdRangeCondition(trigger.getId(),
+        autoResolveCondition = new ThresholdRangeCondition(TENANT, trigger.getId(),
                 Mode.FIRING,
                 dataId,
                 ThresholdRangeCondition.Operator.EXCLUSIVE,
@@ -81,22 +80,19 @@ public class WebActiveSessionsData extends CommonData {
                 200d,
                 5000d,
                 true);
-        autoResolveCondition.setTenantId(TEST_TENANT);
         autoResolveCondition.getContext().put("description", "Active Sessions");
         autoResolveCondition.getContext().put("unit", "sessions");
 
-        firingDampening = Dampening.forStrictTimeout(trigger.getId(),
+        firingDampening = Dampening.forStrictTimeout(TENANT, trigger.getId(),
                 Mode.FIRING,
                 10000);
-        firingDampening.setTenantId(TEST_TENANT);
-
     }
 
     public static Alert getOpenAlert() {
 
         List<Set<ConditionEval>> satisfyingEvals = new ArrayList<>();
 
-        Data rtBadData1 = Data.forNumeric(firingCondition.getDataId(),
+        Data rtBadData1 = Data.forNumeric(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis(),
                 5010d);
         ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(firingCondition, rtBadData1);
@@ -106,7 +102,7 @@ public class WebActiveSessionsData extends CommonData {
         satisfyingEvals.add(evalSet1);
 
         // 5 seconds later
-        Data rtBadData2 = Data.forNumeric(firingCondition.getDataId(),
+        Data rtBadData2 = Data.forNumeric(TENANT, firingCondition.getDataId(),
                 System.currentTimeMillis() + 5000,
                 5014d);
         ThresholdRangeConditionEval eval2 = new ThresholdRangeConditionEval(firingCondition, rtBadData2);
@@ -123,7 +119,7 @@ public class WebActiveSessionsData extends CommonData {
     public static Alert resolveAlert(Alert unresolvedAlert) {
         List<Set<ConditionEval>> resolvedEvals = new ArrayList<>();
 
-        Data rtGoodData = Data.forNumeric(autoResolveCondition.getDataId(),
+        Data rtGoodData = Data.forNumeric(TENANT, autoResolveCondition.getDataId(),
                 System.currentTimeMillis() + 20000,
                 1000d);
         ThresholdRangeConditionEval eval1 = new ThresholdRangeConditionEval(autoResolveCondition, rtGoodData);
