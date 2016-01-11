@@ -115,7 +115,7 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
     protected String convertReceivedMessageClassNameToDesiredMessageClassName(String className) {
 
         if (className.equals("org.hawkular.metrics.component.publish.AvailDataMessage")) {
-            return "org.hawkular.alerts.bus.messages.AvailDataMessage";
+            return "org.hawkular.alerts.bus.api.AvailDataMessage";
         }
 
         return null;

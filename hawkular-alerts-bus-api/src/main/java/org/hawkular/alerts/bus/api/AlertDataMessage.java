@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * A bus message used to receive data for the alerts subsystem.
- * One message can store a collection of {@link org.hawkular.alerts.bus.messages.AlertData}.
+ * One message can store a collection of {@link org.hawkular.alerts.api.model.data.Data}.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce

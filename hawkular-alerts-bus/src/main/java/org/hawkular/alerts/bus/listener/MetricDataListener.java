@@ -113,7 +113,7 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
     protected String convertReceivedMessageClassNameToDesiredMessageClassName(String className) {
 
         if (className.equals("org.hawkular.metrics.component.publish.MetricDataMessage")) {
-            return "org.hawkular.alerts.bus.messages.MetricDataMessage";
+            return "org.hawkular.alerts.bus.api.MetricDataMessage";
         }
 
         return null;
