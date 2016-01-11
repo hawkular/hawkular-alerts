@@ -29,10 +29,10 @@ import javax.jms.MessageListener;
 
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.services.AlertsService;
+import org.hawkular.alerts.bus.api.MetricDataMessage;
+import org.hawkular.alerts.bus.api.MetricDataMessage.MetricData;
+import org.hawkular.alerts.bus.api.MetricDataMessage.SingleMetric;
 import org.hawkular.alerts.bus.init.CacheManager;
-import org.hawkular.alerts.bus.messages.MetricDataMessage;
-import org.hawkular.alerts.bus.messages.MetricDataMessage.MetricData;
-import org.hawkular.alerts.bus.messages.MetricDataMessage.SingleMetric;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
 
