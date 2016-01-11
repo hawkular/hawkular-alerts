@@ -932,12 +932,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         session.executeAsync(selectTrigger.bind(tenantId, id)))
                         .collect(Collectors.toList());
                 List<ResultSet> rsTriggers = Futures.allAsList(futures).get();
-                rsTriggers.stream().forEach(r -> {
-                    for (Row row : r) {
-                        triggers.add(mapTrigger(row));
+                for (ResultSet rs : rsTriggers) {
+                    for (Row row : rs) {
+                        Trigger trigger = mapTrigger(row);
+                        selectTriggerActions(trigger);
+                        triggers.add(trigger);
                     }
-                });
-
+                }
             } else {
                 triggers.addAll(selectTriggers(tenantId));
 
@@ -1111,11 +1112,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         session.executeAsync(selectTrigger.bind(tenantId, triggerId)))
                         .collect(Collectors.toList());
                 List<ResultSet> rsTriggers = Futures.allAsList(futures).get();
-                rsTriggers.stream().forEach(r -> {
-                    for (Row row : r) {
-                        triggers.add(mapTrigger(row));
+                for (ResultSet rs : rsTriggers) {
+                    for (Row row : rs) {
+                        Trigger trigger = mapTrigger(row);
+                        selectTriggerActions(trigger);
+                        triggers.add(trigger);
                     }
-                });
+                }
             }
 
             return triggers;
