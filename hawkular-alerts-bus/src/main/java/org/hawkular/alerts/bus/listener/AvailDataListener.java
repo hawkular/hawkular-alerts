@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,10 +30,10 @@ import javax.jms.MessageListener;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.bus.api.AvailDataMessage;
+import org.hawkular.alerts.bus.api.AvailDataMessage.AvailData;
+import org.hawkular.alerts.bus.api.AvailDataMessage.SingleAvail;
 import org.hawkular.alerts.bus.init.CacheManager;
-import org.hawkular.alerts.bus.messages.AvailDataMessage;
-import org.hawkular.alerts.bus.messages.AvailDataMessage.AvailData;
-import org.hawkular.alerts.bus.messages.AvailDataMessage.SingleAvail;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
 
