@@ -28,7 +28,7 @@
 
   <groupId>org.hawkular.alerts</groupId>
   <artifactId>hawkular-alerts</artifactId>
-  <version>0.8.0.Final-SNAPSHOT</version>
+  <version>0.8.0.Final</version>
   <packaging>pom</packaging>
 
   <name>Hawkular Alerts</name>
@@ -74,7 +74,7 @@
     <connection>scm:git:git@github.com:hawkular/hawkular-alerts.git</connection>
     <developerConnection>scm:git:git@github.com:hawkular/hawkular-alerts.git</developerConnection>
     <url>https://github.com/hawkular/hawkular-alerts</url>
-    <tag>head</tag>
+    <tag>0.8.0.Final</tag>
   </scm>
 
   <issueManagement>
