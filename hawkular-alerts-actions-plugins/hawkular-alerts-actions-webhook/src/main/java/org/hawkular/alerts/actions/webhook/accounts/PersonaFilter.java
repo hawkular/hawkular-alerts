@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ package org.hawkular.alerts.actions.webhook.accounts;
 
 import java.io.IOException;
 
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -37,30 +38,26 @@ public class PersonaFilter implements ContainerRequestFilter {
     private final Logger log = Logger.getLogger(PersonaFilter.class);
 
     @Inject
-    Persona persona;
+    Instance<Persona> personaInstance;
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         if (!checkPersona()) {
             requestContext.abortWith(WebHookApp.internalError("No persona found"));
         }
-        requestContext.getHeaders().putSingle(WebHookApp.TENANT_HEADER_NAME, persona.getId());
+        requestContext.getHeaders().putSingle(WebHookApp.TENANT_HEADER_NAME,
+                personaInstance.get().getIdAsUUID().toString());
     }
 
     private boolean checkPersona() {
-        if (persona == null) {
+        if (personaInstance == null || personaInstance.get() == null) {
             log.warn("Persona is null. Possible issue with accounts integration ? ");
             return false;
         }
-        if (isEmpty(persona.getId())) {
+        if (personaInstance.get().getIdAsUUID() == null) {
             log.warn("Persona is empty. Possible issue with accounts integration ? ");
             return false;
         }
         return true;
     }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.trim().isEmpty();
-    }
-
 }
