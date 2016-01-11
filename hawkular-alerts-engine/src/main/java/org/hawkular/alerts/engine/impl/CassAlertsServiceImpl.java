@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -881,8 +881,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         .stream()
                         .filter(o -> o.getField() != null && o.getDirection() != null)
                         .forEach(o -> {
-                            EventComparator comparator = new EventComparator(EventComparator.Field.getField(
-                                    o.getField()), o.getDirection());
+                            EventComparator comparator = new EventComparator(o.getField(), o.getDirection());
                             Collections.sort(ordered, comparator);
                         });
             }

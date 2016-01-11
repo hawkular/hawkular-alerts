@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +37,6 @@ public class AlertComparator implements Comparator<Alert> {
         CONTEXT("context");
 
         private String text;
-        private String contextKey;
 
         Field(String text) {
             this.text = text;
@@ -48,23 +47,31 @@ public class AlertComparator implements Comparator<Alert> {
         }
 
         public static Field getField(String text) {
-            if (text == null || text.isEmpty()) {
+            if (text == null || text.trim().isEmpty()) {
                 return ALERT_ID;
             }
+
             for (Field f : values()) {
-                if (text.startsWith(f.getText())) {
-                    // context.<key>
-                    if (CONTEXT == f && text.length() > 8) {
-                        f.contextKey = text.substring(8);
-                    }
+                // context.<key>
+                if (CONTEXT == f && text.toLowerCase().startsWith("context.")) {
+                    return f;
+                } else if (f.getText().compareToIgnoreCase(text) == 0) {
                     return f;
                 }
             }
             return ALERT_ID;
         }
+
+        public static String getContextKey(String context) {
+            if (context == null || context.trim().isEmpty() || !context.toLowerCase().startsWith("context.")) {
+                return "";
+            }
+            return context.substring(8);
+        }
     };
 
     private Field field;
+    private String contextKey;
     private Order.Direction direction;
 
     public AlertComparator() {
@@ -73,8 +80,12 @@ public class AlertComparator implements Comparator<Alert> {
 
     public AlertComparator(String field, Order.Direction direction) {
         this.field = Field.getField(field);
+        if (Field.CONTEXT == this.field) {
+            this.contextKey = Field.getContextKey(field);
+        }
         this.direction = direction;
     }
+
     @Override
     public int compare(Alert o1, Alert o2) {
         if (o1 == null && o2 == null) {
@@ -91,7 +102,7 @@ public class AlertComparator implements Comparator<Alert> {
             case ALERT_ID:
                 return o1.getAlertId().compareTo(o2.getAlertId()) * iOrder;
             case CTIME:
-                return (int)((o1.getCtime() - o2.getCtime()) * iOrder);
+                return (int) ((o1.getCtime() - o2.getCtime()) * iOrder);
             case SEVERITY:
                 if (o1.getSeverity() == null && o2.getSeverity() == null) {
                     return 0;
@@ -121,16 +132,16 @@ public class AlertComparator implements Comparator<Alert> {
                 if (o1.getContext().isEmpty() && o2.getContext().isEmpty()) {
                     return 0;
                 }
-                if (!o1.getContext().containsKey(field.contextKey) && !o2.getContext().containsKey(field.contextKey)) {
+                if (!o1.getContext().containsKey(contextKey) && !o2.getContext().containsKey(contextKey)) {
                     return 0;
                 }
-                if (!o1.getContext().containsKey(field.contextKey) && o2.getContext().containsKey(field.contextKey)) {
+                if (!o1.getContext().containsKey(contextKey) && o2.getContext().containsKey(contextKey)) {
                     return 1;
                 }
-                if (!o1.getContext().containsKey(field.contextKey) && !o2.getContext().containsKey(field.contextKey)) {
+                if (!o1.getContext().containsKey(contextKey) && !o2.getContext().containsKey(contextKey)) {
                     return -1;
                 }
-                return o1.getContext().get(field.contextKey).compareTo(o2.getContext().get(field.contextKey)) * iOrder;
+                return o1.getContext().get(contextKey).compareTo(o2.getContext().get(contextKey)) * iOrder;
             case TRIGGER_DESCRIPTION:
                 String o1TriggerDesc = o1.getTrigger().getDescription();
                 String o2TriggerDesc = o2.getTrigger().getDescription();

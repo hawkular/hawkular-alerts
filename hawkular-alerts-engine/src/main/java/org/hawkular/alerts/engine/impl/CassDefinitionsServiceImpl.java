@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1030,8 +1030,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         .stream()
                         .filter(o -> o.getField() != null && o.getDirection() != null)
                         .forEach(o -> {
-                            TriggerComparator comparator = new TriggerComparator(TriggerComparator.Field.getName(
-                                    o.getField()), o.getDirection());
+                            TriggerComparator comparator = new TriggerComparator(o.getField(), o.getDirection());
                             Collections.sort(ordered, comparator);
                         });
             }
