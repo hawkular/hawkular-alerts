@@ -56,14 +56,6 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>hawkular-alerts-actions-aerogear</artifactId>
-      <version>${project.version}</version>
-      <type>war</type>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>hawkular-alerts-actions-email</artifactId>
       <version>${project.version}</version>
       <type>war</type>
@@ -80,23 +72,15 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>hawkular-alerts-actions-pagerduty</artifactId>
-      <version>${project.version}</version>
-      <type>war</type>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>hawkular-alerts-actions-sms</artifactId>
-      <version>${project.version}</version>
-      <type>war</type>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>hawkular-alerts-actions-irc</artifactId>
+      <version>${project.version}</version>
+      <type>war</type>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>hawkular-alerts-actions-webhook</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <scope>test</scope>
@@ -554,14 +538,6 @@
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-aerogear</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-alerts-actions-aerogear.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.alerts</groupId>
                       <artifactId>hawkular-alerts-actions-email</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
@@ -578,27 +554,19 @@
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-pagerduty</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-alerts-actions-pagerduty.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-sms</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-alerts-actions-sms.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.alerts</groupId>
                       <artifactId>hawkular-alerts-actions-irc</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts-actions-irc.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-webhook</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-webhook.war</destFileName>
                     </artifactItem>
                   </artifactItems>
                 </configuration>
