@@ -42,16 +42,42 @@
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-bus</artifactId>
+      <artifactId>hawkular-alerts-bus-api</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.hawkular.commons</groupId>
-      <artifactId>hawkular-bus-rest-client</artifactId>
+      <artifactId>hawkular-bus-common</artifactId>
       <version>${version.org.hawkular.commons}</version>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.wildfly</groupId>
+      <artifactId>wildfly-jms-client-bom</artifactId>
+      <version>${version.org.wildfly}</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -301,6 +327,26 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-resources-plugin</artifactId>
             <executions>
+              <execution>
+                <id>copy-users-data</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}/standalone/configuration</outputDirectory>
+                  <overwrite>true</overwrite>
+                  <resources>
+                    <resource>
+                      <directory>${project.basedir}/src/test/resources</directory>
+                      <includes>
+                        <include>application-roles.properties</include>
+                        <include>application-users.properties</include>
+                      </includes>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
               <execution>
                 <id>copy-data-dir</id>
                 <phase>pre-integration-test</phase>
