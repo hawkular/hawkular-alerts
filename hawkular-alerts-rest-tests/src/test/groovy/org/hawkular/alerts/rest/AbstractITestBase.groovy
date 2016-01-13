@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,7 @@ class AbstractITestBase {
 
     static baseURI = System.getProperty('hawkular.base-uri') ?: 'http://127.0.0.1:8080/hawkular/alerts/'
     static RESTClient client
+    static testTenant = "28026b36-8fe4-4332-84c8-524e173a68bf"
 
     @BeforeClass
     static void initClient() {
@@ -50,6 +51,6 @@ class AbstractITestBase {
             This is used for non-bus scenarios.
             In Bus scenarios this property is skipped
          */
-        client.headers.put("Hawkular-Tenant", "28026b36-8fe4-4332-84c8-524e173a68bf")
+        client.headers.put("Hawkular-Tenant", testTenant)
     }
 }

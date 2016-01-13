@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -75,10 +75,10 @@
     <xsl:copy>
       <xsl:apply-templates select="@*|node()" />
       <jms-topic name="HawkularAlertData" entries="java:/topic/HawkularAlertData"/>
-      <jms-topic name="HawkularMetricData" entries="java:/topic/HawkularMetricData"/>
+      <jms-topic name="HawkularMetricData" entries="java:/topic/HawkularMetricData java:jboss/exported/topic/HawkularMetricData"/>
       <jms-queue name="HawkularAlertsPluginsQueue" entries="java:/queue/HawkularAlertsPluginsQueue"/>
       <jms-queue name="HawkularAlertsActionsResponseQueue" entries="java:/queue/HawkularAlertsActionsResponseQueue"/>
-      <jms-topic name="HawkularAvailData" entries="java:/topic/HawkularAvailData"/>
+      <jms-topic name="HawkularAvailData" entries="java:/topic/HawkularAvailData java:jboss/exported/topic/HawkularAvailData"/>
       <jms-topic name="HawkularCommandEvent" entries="java:/topic/HawkularCommandEvent"/>
       <jms-topic name="HawkularAlertsActionsTopic" entries="java:/topic/HawkularAlertsActionsTopic"/>
     </xsl:copy>
