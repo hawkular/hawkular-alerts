@@ -62,6 +62,7 @@ import org.hawkular.alerts.api.model.paging.TriggerComparator;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerType;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
 import org.hawkular.alerts.api.services.DefinitionsListener;
@@ -253,7 +254,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         checkTenantId(tenantId, trigger);
-        trigger.setGroup(false);
+        trigger.setType(TriggerType.STANDARD);
 
         addTrigger(trigger);
     }
@@ -268,7 +269,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         checkTenantId(tenantId, groupTrigger);
-        groupTrigger.setGroup(true);
+        if (!groupTrigger.isGroup()) {
+            groupTrigger.setType(TriggerType.GROUP);
+        }
 
         addTrigger(groupTrigger);
     }
@@ -285,8 +288,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     trigger.isAutoEnable(), trigger.isAutoResolve(), trigger.isAutoResolveAlerts(),
                     trigger.getAutoResolveMatch().name(), trigger.getContext(), trigger.getDescription(),
                     trigger.isEnabled(), trigger.getEventCategory(), trigger.getEventText(), trigger.getEventType(),
-                    trigger.getFiringMatch().name(), trigger.isGroup(), trigger.getMemberOf(), trigger.getName(),
-                    trigger.isOrphan(), trigger.getSeverity().name(), trigger.getTags()));
+                    trigger.getFiringMatch().name(), trigger.getMemberOf(), trigger.getName(),
+                    trigger.getSeverity().name(), trigger.getSource(), trigger.getTags(), trigger.getType().name()));
 
             insertTriggerActions(trigger);
             insertTags(trigger.getTenantId(), TagType.TRIGGER, trigger.getId(), trigger.getTags());
@@ -367,7 +370,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         for (Trigger member : memberTriggers) {
             if ((keepNonOrphans && !member.isOrphan()) || (keepOrphans && member.isOrphan())) {
                 member.setMemberOf(null);
-                member.setOrphan(false);
+                member.setType(TriggerType.STANDARD);
                 updateTrigger(member, member.getActions(), member.getTags());
                 continue;
             }
@@ -471,7 +474,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
         }
 
-        groupTrigger.setGroup(true);
+        // trigger type can not be updated
+        groupTrigger.setType(existingGroupTrigger.getType());
+
         Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
 
         // This works for the existing members as well, because they are all the same as the existing group trigger
@@ -493,14 +498,15 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         member.setAutoResolve(group.isAutoResolve());
         member.setAutoResolveAlerts(group.isAutoResolveAlerts());
         member.setAutoResolveMatch(group.getAutoResolveMatch());
-        member.setMemberOf(group.getId());
         member.setContext(group.getContext());
         member.setDescription(group.getDescription());
         member.setEnabled(group.isEnabled());
+        member.setEventType(group.getEventType());
         member.setFiringMatch(group.getFiringMatch());
+        member.setMemberOf(group.getId());
         member.setSeverity(group.getSeverity());
         member.setTags(group.getTags());
-        member.setEventType(group.getEventType());
+        member.setType(TriggerType.MEMBER);
 
         return member;
     }
@@ -517,8 +523,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             session.execute(updateTrigger.bind(trigger.isAutoDisable(), trigger.isAutoEnable(),
                     trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger.getAutoResolveMatch().name(),
                     trigger.getContext(), trigger.getDescription(), trigger.isEnabled(), trigger.getEventCategory(),
-                    trigger.getEventText(), trigger.getFiringMatch().name(), trigger.isGroup(), trigger.getMemberOf(),
-                    trigger.getName(), trigger.isOrphan(), trigger.getSeverity().name(), trigger.getTags(),
+                    trigger.getEventText(), trigger.getFiringMatch().name(), trigger.getMemberOf(), trigger.getName(),
+                    trigger.getSeverity().name(), trigger.getSource(), trigger.getTags(), trigger.getType().name(),
                     trigger.getTenantId(), trigger.getId()));
             if (!trigger.getActions().equals(existingActions)) {
                 deleteTriggerActions(trigger.getTenantId(), trigger.getId());
@@ -562,7 +568,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Trigger is already an orphan: [" + tenantId + "/" + memberId + "]");
         }
 
-        member.setOrphan(true);
+        member.setType(TriggerType.ORPHAN);
         return updateTrigger(member, member.getActions(), member.getTags());
     }
 
@@ -925,7 +931,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             ResultSet rsTriggers = session.execute(selectTriggersTenant.bind(tenantId));
             for (Row row : rsTriggers) {
-                if (groupId.equals(row.getString("memberOf")) && (includeOrphans || !row.getBool("orphan"))) {
+                if (groupId.equals(row.getString("memberOf")) &&
+                        (includeOrphans || TriggerType.MEMBER == TriggerType.valueOf(row.getString("type")))) {
                     Trigger trigger = mapTrigger(row);
                     selectTriggerActions(trigger);
                     triggers.add(trigger);
@@ -973,11 +980,11 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         trigger.setEventText(row.getString("eventText"));
         trigger.setEventType(EventType.valueOf(row.getString("eventType")));
         trigger.setFiringMatch(Match.valueOf(row.getString("firingMatch")));
-        trigger.setGroup(row.getBool("group"));
         trigger.setMemberOf(row.getString("memberOf"));
         trigger.setName(row.getString("name"));
-        trigger.setOrphan(row.getBool("orphan"));
+        trigger.setSource(row.getString("source"));
         trigger.setSeverity(Severity.valueOf(row.getString("severity")));
+        trigger.setType(TriggerType.valueOf(row.getString("type")));
         trigger.setTags(row.getMap("tags", String.class, String.class));
 
         return trigger;
@@ -1034,7 +1041,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             member.setContext(memberContext);
         }
 
-        addTrigger(tenantId, member);
+        addTrigger(member);
 
         // add any conditions
         for (Condition c : conditions) {

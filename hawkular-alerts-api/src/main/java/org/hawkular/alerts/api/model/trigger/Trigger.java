@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.hawkular.alerts.api.model.Severity;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.EventType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -54,11 +55,14 @@ public class Trigger implements Serializable {
     @JsonInclude(Include.NON_EMPTY)
     private String description;
 
+    /** The type of trigger, standard, group, etc.. Defaults to TriggerType.STANDARD */
+    @JsonInclude
+    private TriggerType type;
+
     /** The type of event produced by the trigger. Defaults to EventType.ALERT */
     @JsonInclude
     private EventType eventType;
 
-    /** Defaults to EventCategory.ALERT if the Trigger EventType is ALERT, otherwise EventType.TRIGGER */
     @JsonInclude
     private String eventCategory;
 
@@ -109,24 +113,13 @@ public class Trigger implements Serializable {
     private Match firingMatch;
 
     @JsonInclude
-    private boolean orphan;
-
-    @JsonInclude
-    private boolean group;
+    String source;
 
     @JsonIgnore
     private Mode mode;
 
     @JsonIgnore
     private transient Match match;
-
-    // TODO: Remove this variable when EAP64 is no longer a supported deployment platform
-    @JsonIgnore
-    private transient boolean loadable;
-
-    // TODO: Remove this variable when EAP64 is no longer a supported deployment platform
-    @JsonIgnore
-    private transient boolean member;
 
     public Trigger() {
         /*
@@ -187,8 +180,8 @@ public class Trigger implements Serializable {
         this.description = null;
         this.enabled = false;
         this.firingMatch = Match.ALL;
-        this.orphan = false;
-        this.group = false;
+        this.type = TriggerType.STANDARD;
+        this.source = Data.SOURCE_NONE;
         this.severity = Severity.MEDIUM;
 
         this.match = Match.ALL;
@@ -401,40 +394,57 @@ public class Trigger implements Serializable {
         this.memberOf = memberOf;
     }
 
+    @JsonIgnore
     public boolean isGroup() {
-        return group;
+        switch (type) {
+            case GROUP:
+            case DATA_DRIVEN_GROUP:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public TriggerType getType() {
+        return type;
+    }
+
+    public void setType(TriggerType type) {
+        if (null == type) {
+            type = TriggerType.STANDARD;
+        }
+        this.type = type;
+    }
+
+    public String getSource() {
+        return source;
     }
 
     /**
-     * If true this is a group trigger: non-firing, used to manage a set of member triggers. A trigger can be one of
-     * group-level, member-level, or neither.
-     * @param group if true this is a group-level trigger.
+     * Typically set for DataDriven group triggers but can be set on any trigger to signify that the
+     * trigger only operates on data from the specified data source.
      */
-    public void setGroup(boolean group) {
-        this.group = group;
+    public void setSource(String source) {
+        if (null == source) {
+            source = Data.SOURCE_NONE;
+        }
+        this.source = source;
     }
 
     @JsonIgnore
     public boolean isMember() {
-        member = !isEmpty(memberOf);
-        return member;
+        switch (type) {
+            case MEMBER:
+            case ORPHAN:
+                return true;
+            default:
+                return false;
+        }
     }
 
-    private boolean isEmpty(String s) {
-        return (null == s || s.trim().isEmpty());
-    }
-
+    @JsonIgnore
     public boolean isOrphan() {
-        return orphan;
-    }
-
-    /**
-     * A member trigger that is not being managed by the group. It maintains it's group trigger reference and
-     * can be un-orphaned.
-     * @param orphan true if this is an orphan member trigger.
-     */
-    public void setOrphan(boolean orphan) {
-        this.orphan = orphan;
+        return type == TriggerType.ORPHAN;
     }
 
     public boolean isEnabled() {
@@ -447,8 +457,7 @@ public class Trigger implements Serializable {
 
     @JsonIgnore
     public boolean isLoadable() {
-        loadable = !group && enabled;
-        return loadable;
+        return !isGroup() && enabled;
     }
 
     @JsonIgnore
@@ -504,14 +513,13 @@ public class Trigger implements Serializable {
 
     @Override
     public String toString() {
-        return "Trigger [tenantId=" + tenantId + ", id=" + id + ", triggerType=" + eventType.name()
-                + ", name=" + name + ", description=" + description + ", eventType=" + eventType
+        return "Trigger [tenantId=" + tenantId + ", id=" + id + ", type=" + type.name()
+                + ", eventType=" + eventType.name() + ", name=" + name + ", description=" + description
                 + ", eventCategory=" + eventCategory + ", eventText=" + eventText + ", severity=" + severity
                 + ", context=" + context + ", actions=" + actions + ", autoDisable=" + autoDisable
                 + ", autoEnable=" + autoEnable + ", autoResolve=" + autoResolve + ", autoResolveAlerts="
                 + autoResolveAlerts + ", autoResolveMatch=" + autoResolveMatch + ", memberOf=" + memberOf
-                + ", enabled=" + enabled + ", firingMatch=" + firingMatch + ", orphan=" + orphan + ", group=" + group
-                + ", mode=" + mode + ", tags=" + tags + "]";
+                + ", enabled=" + enabled + ", firingMatch=" + firingMatch + ", mode=" + mode + ", tags=" + tags + "]";
     }
 
 }

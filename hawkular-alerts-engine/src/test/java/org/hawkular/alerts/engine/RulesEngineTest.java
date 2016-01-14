@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -550,10 +550,10 @@ public class RulesEngineTest {
                 "StringData-02", // note
                 StringCondition.Operator.NOT_EQUAL, "Fred", false);
 
-        datums.add(new Data("tenant", "StringData-01", 1, "Fred"));
-        datums.add(new Data("tenant", "StringData-01", 2, "Fred And Barney"));
+        datums.add(Data.forString("tenant", "StringData-01", 1, "Fred"));
+        datums.add(Data.forString("tenant", "StringData-01", 2, "Fred And Barney"));
 
-        datums.add(new Data("tenant", "StringData-02", 1, "Barney And Fred"));
+        datums.add(Data.forString("tenant", "StringData-02", 1, "Barney And Fred"));
 
         // default dampening
 
@@ -719,10 +719,10 @@ public class RulesEngineTest {
                 "StringData-02", // note
                 StringCondition.Operator.NOT_EQUAL, "FRED", true);
 
-        datums.add(new Data("tenant", "StringData-01", 1, "Fred"));
-        datums.add(new Data("tenant", "StringData-01", 2, "Fred And Barney"));
+        datums.add(Data.forString("tenant", "StringData-01", 1, "Fred"));
+        datums.add(Data.forString("tenant", "StringData-01", 2, "Fred And Barney"));
 
-        datums.add(new Data("tenant", "StringData-02", 1, "Barney And Fred"));
+        datums.add(Data.forString("tenant", "StringData-02", 1, "Barney And Fred"));
 
         // default dampening
 
@@ -910,7 +910,7 @@ public class RulesEngineTest {
         ExternalCondition t1c1 = new ExternalCondition("tenant", "trigger-1", Mode.FIRING, 1, 1,
                 "ExternalData-01", "HawkularMetrics", "metric:5:avg(foo > 100.5)");
 
-        datums.add(new Data("tenant", "ExternalData-01", 1, "Ignored"));
+        datums.add(Data.forString("tenant", "ExternalData-01", 1, "Ignored"));
 
         // default dampening
 

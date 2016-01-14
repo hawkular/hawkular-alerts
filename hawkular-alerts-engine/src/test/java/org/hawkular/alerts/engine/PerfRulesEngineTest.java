@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -228,12 +228,12 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(new Data("tenant", "StringData-" + i, (i * nQueue) + j, "Fred And Barney"));
+                    datums.add(Data.forString("tenant", "StringData-" + i, (i * nQueue) + j, "Fred And Barney"));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(new Data("tenant", "StringData-" + i, i, "Fred And Barney"));
+                datums.add(Data.forString("tenant", "StringData-" + i, i, "Fred And Barney"));
             }
         }
 

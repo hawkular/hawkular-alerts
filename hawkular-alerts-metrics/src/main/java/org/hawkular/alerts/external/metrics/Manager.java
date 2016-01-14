@@ -318,8 +318,8 @@ public class Manager {
             }
 
             try {
-                Data externalData = new Data(externalCondition.getTenantId(), externalCondition.getDataId(),
-                        System.currentTimeMillis(), value.toString());
+                Data externalData = Data.forNumeric(externalCondition.getTenantId(), externalCondition.getDataId(),
+                        System.currentTimeMillis(), value);
                 if (log.isDebugEnabled()) {
                     log.debug("Sending External Condition Data to Alerts! " + externalData);
                 }

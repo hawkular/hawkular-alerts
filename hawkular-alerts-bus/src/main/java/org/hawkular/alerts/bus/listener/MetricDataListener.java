@@ -85,8 +85,8 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
                 if (null == alertData) {
                     alertData = new ArrayList<>(data.size());
                 }
-                alertData.add(new Data(metricData.getTenantId(), m.getSource(), m.getTimestamp(),
-                        String.valueOf(m.getValue())));
+                alertData.add(Data.forNumeric(metricData.getTenantId(), m.getSource(), m.getTimestamp(),
+                        m.getValue()));
             }
         }
         if (null == alertData) {
