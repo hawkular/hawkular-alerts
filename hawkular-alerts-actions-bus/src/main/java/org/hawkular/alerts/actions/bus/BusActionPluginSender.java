@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -102,12 +102,6 @@ public class BusActionPluginSender implements ActionPluginSender {
     }
 
     public void close() throws Exception {
-        if (pcc.get() != null) {
-            try {
-                pcc.get().close();
-                pcc.remove();
-            } catch (IOException ignored) { }
-        }
         if (ccf != null) {
             try {
                 ccf.get().close();
@@ -132,9 +126,19 @@ public class BusActionPluginSender implements ActionPluginSender {
         }
         init();
         try {
+            if (pcc.get() == null) {
+                pcc.set(ccf.get().createProducerConnectionContext(
+                        new Endpoint(Endpoint.Type.QUEUE,ACTION_PLUGIN_REGISTER)));
+            }
             MessageId mid = new MessageProcessor().send(pcc.get(), (BusActionResponseMessage)msg);
             if (log.isDebugEnabled()) {
                 log.debug("Plugin [" + actionPlugin + "] has sent a response message: [" + mid.toString() + "]");
+            }
+            if (pcc.get() != null) {
+                try {
+                    pcc.get().close();
+                    pcc.remove();
+                } catch (IOException ignored) { }
             }
         } catch (JMSException e) {
             log.debug(e.getMessage(), e);
