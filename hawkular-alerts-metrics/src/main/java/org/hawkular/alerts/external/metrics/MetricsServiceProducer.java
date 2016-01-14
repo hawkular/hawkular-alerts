@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +18,9 @@ package org.hawkular.alerts.external.metrics;
 
 import javax.enterprise.inject.Produces;
 
-import org.hawkular.metrics.core.api.MetricsService;
-import org.hawkular.metrics.core.impl.DataAccessImpl;
-import org.hawkular.metrics.core.impl.MetricsServiceImpl;
+import org.hawkular.metrics.core.service.DataAccessImpl;
+import org.hawkular.metrics.core.service.MetricsService;
+import org.hawkular.metrics.core.service.MetricsServiceImpl;
 
 import com.codahale.metrics.MetricRegistry;
 import com.datastax.driver.core.Session;

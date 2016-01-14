@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,10 +43,10 @@ import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.external.metrics.Expression.Func;
-import org.hawkular.metrics.core.api.Aggregate;
-import org.hawkular.metrics.core.api.MetricId;
-import org.hawkular.metrics.core.api.MetricType;
-import org.hawkular.metrics.core.api.MetricsService;
+import org.hawkular.metrics.core.service.Aggregate;
+import org.hawkular.metrics.core.service.MetricsService;
+import org.hawkular.metrics.model.MetricId;
+import org.hawkular.metrics.model.MetricType;
 import org.jboss.logging.Logger;
 
 /**
