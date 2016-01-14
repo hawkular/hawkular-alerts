@@ -282,6 +282,14 @@
           <value>perf</value>
         </property>
       </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-core</artifactId>
+          <scope>provided</scope>
+          <version>${version.org.infinispan.wildfly}</version>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>
