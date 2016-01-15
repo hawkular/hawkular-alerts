@@ -1,6 +1,6 @@
 <!--
 
-    Copyright 2015 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,7 @@
  and modified for docbook
 -->
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="http://docbook.org/ns/docbook"
-    xml:lang="en">
+  xml:lang="en">
 
   <xsl:param name="basePath"/>
   <xsl:output xml:lang="en"/>
@@ -38,13 +38,13 @@
           <xsl:sort select="@path"/>
           <xsl:element name="tocentry">
             <link>
-            <xsl:attribute name="linkend">
-              <xsl:value-of select="generate-id(@path)"/>
-            </xsl:attribute>
-            <xsl:if test="@basePath">
-              <xsl:value-of select="@basePath"/>
-            </xsl:if>
-            <xsl:value-of select="@path"/>
+              <xsl:attribute name="linkend">
+                <xsl:value-of select="generate-id(@path)"/>
+              </xsl:attribute>
+              <xsl:if test="@basePath">
+                <xsl:value-of select="@basePath"/>
+              </xsl:if>
+              <xsl:value-of select="@path"/>
             </link>
           </xsl:element>
         </xsl:for-each>
@@ -62,13 +62,13 @@
   <xsl:template match="class">
     <xsl:element name="section">
       <xsl:attribute name="xml:id">
-          <xsl:value-of select="generate-id(@path)"/>
+        <xsl:value-of select="generate-id(@path)"/>
       </xsl:attribute>
       <title>
         <!--/<xsl:value-of select="@path"/>-->
         <xsl:call-template name="class-level-path"/>
         <xsl:if test="@shortDesc">
-        : <xsl:value-of select="@shortDesc"/>
+          : <xsl:value-of select="@shortDesc"/>
         </xsl:if>
       </title>
       <subtitle><xsl:value-of select="@description"/></subtitle>
@@ -101,7 +101,8 @@
       </simpara>
       <formalpara>
         <title>Description</title>
-        <xsl:value-of select="@description"/></formalpara>
+        <xsl:value-of select="@description"/>
+      </formalpara>
       <xsl:if test="notes">
         <formalpara>
           <title>Notes</title>
@@ -145,14 +146,14 @@
       <simpara>
         Return type:
         <xsl:choose>
-        <xsl:when test="starts-with(@returnTypeId,'...')">
-          <link>
-            <xsl:attribute name="linkend">
+          <xsl:when test="starts-with(@returnTypeId,'...')">
+            <link>
+              <xsl:attribute name="linkend">
                 <xsl:value-of select="@returnTypeId"/>
-            </xsl:attribute>
-            <xsl:value-of select="@returnType"/>
-          </link>
-        </xsl:when>
+              </xsl:attribute>
+              <xsl:value-of select="@returnType"/>
+            </link>
+          </xsl:when>
           <xsl:otherwise>
             <xsl:value-of select="@returnType"/>
           </xsl:otherwise>
@@ -162,9 +163,9 @@
         <table>
           <title>Error codes:</title>
           <tr>
-              <th>Code</th>
-              <th>Reason</th>
-            </tr>
+            <th>Code</th>
+            <th>Reason</th>
+          </tr>
           <xsl:apply-templates select="error"/>
         </table>
       </xsl:if>
@@ -181,9 +182,11 @@
         <td>
           <xsl:choose>
             <xsl:when test="@name">
-            <xsl:value-of select="@name"/>
+              <xsl:value-of select="@name"/>
             </xsl:when>
-            <xsl:otherwise><emphasis>implicit</emphasis></xsl:otherwise>
+            <xsl:otherwise>
+              <emphasis>implicit</emphasis>
+            </xsl:otherwise>
           </xsl:choose>
         </td>
         <td>
@@ -192,9 +195,11 @@
         <td>
           <xsl:choose>
             <xsl:when test="@description">
-            <xsl:value-of select="@description"/>
+              <xsl:value-of select="@description"/>
             </xsl:when>
-            <xsl:otherwise><emphasis>none</emphasis></xsl:otherwise>
+            <xsl:otherwise>
+              <emphasis>none</emphasis>
+            </xsl:otherwise>
           </xsl:choose>
         </td>
         <td>
@@ -202,14 +207,14 @@
         </td>
         <td>
           <xsl:choose>
-          <xsl:when test="starts-with(@typeId,'...')">
-            <link>
-              <xsl:attribute name="linkend">
+            <xsl:when test="starts-with(@typeId,'...')">
+              <link>
+                <xsl:attribute name="linkend">
                   <xsl:value-of select="@typeId"/>
-              </xsl:attribute>
-              <xsl:value-of select="@type"/>
-            </link>
-          </xsl:when>
+                </xsl:attribute>
+                <xsl:value-of select="@type"/>
+              </link>
+            </xsl:when>
             <xsl:otherwise>
               <xsl:value-of select="@type"/>
             </xsl:otherwise>
@@ -220,7 +225,9 @@
             <xsl:when test="@allowableValues">
               <xsl:value-of select="@allowableValues"/>
             </xsl:when>
-            <xsl:otherwise><emphasis>-all-</emphasis></xsl:otherwise>
+            <xsl:otherwise>
+              <emphasis>-all-</emphasis>
+            </xsl:otherwise>
           </xsl:choose>
         </td>
         <td>
@@ -228,7 +235,9 @@
             <xsl:when test="@defaultValue">
               <xsl:value-of select="@defaultValue"/>
             </xsl:when>
-            <xsl:otherwise><emphasis>none</emphasis></xsl:otherwise>
+            <xsl:otherwise>
+              <emphasis>none</emphasis>
+            </xsl:otherwise>
           </xsl:choose>
         </td>
       </tr>
@@ -281,7 +290,7 @@
   <xsl:template match="data">
     <xsl:element name="section">
       <xsl:attribute name="xml:id">
-          <xsl:value-of select="@nameId"/>
+        <xsl:value-of select="@nameId"/>
       </xsl:attribute>
       <title>Data-Class: <xsl:value-of select="@name"/></title>
       <xsl:if test="@abstract">
@@ -293,15 +302,15 @@
         </simpara>
       </xsl:if>
 
-          <table>
-            <title>Properties</title>
-            <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Description</th>
-            </tr>
-            <xsl:apply-templates/>
-          </table>
+      <table>
+        <title>Properties</title>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+        <xsl:apply-templates/>
+      </table>
     </xsl:element>
   </xsl:template>
 

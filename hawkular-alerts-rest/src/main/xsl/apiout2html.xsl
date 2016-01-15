@@ -1,6 +1,6 @@
 <!--
 
-    Copyright 2015 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,16 +29,20 @@
       <head>
         <title>Hawkular Alerts REST-Api documentation</title>
         <style type="text/css">
-          h2 {background-color:#ADD8E6   }
-          h3 {background-color:#C0C0C0   }
-          th {font-weight:bold; font-size:120% }
+          h2 {background-color:#ADD8E6 }
+          h3 {background-color:#C0C0C0 }
+          th {font-weight:bold;
+          font-size:120% }
           em {font-style:italic}
           .exp {background-color:#CC6666 }
         </style>
       </head>
       <body>
         <h1>REST-api documentation</h1>
-        <em>Base path (if not otherwise specified) : <xsl:value-of select="$basePath"/></em>
+        <em>
+          Base path (if not otherwise specified) :
+          <xsl:value-of select="$basePath"/>
+        </em>
         <h2>Table of contents</h2>
         <ul>
           <xsl:for-each select="class">
@@ -66,11 +70,15 @@
     <xsl:choose>
       <xsl:when test="@basePath">
         <xsl:value-of select="@basePath"/>
-        <xsl:if test="not(substring(@basePath,string-length(@basePath)-1)='/')">/</xsl:if>
+        <xsl:if test="not(substring(@basePath,string-length(@basePath)-1)='/')">
+          /
+        </xsl:if>
       </xsl:when>
       <xsl:otherwise>
         <xsl:value-of select="$basePath"/>
-        <xsl:if test="not(substring($basePath,string-length($basePath)-1)='/')">/</xsl:if>
+        <xsl:if test="not(substring($basePath,string-length($basePath)-1)='/')">
+          /
+        </xsl:if>
       </xsl:otherwise>
     </xsl:choose>
     <xsl:value-of select="@path"/>
@@ -82,21 +90,27 @@
       <xsl:if test="contains(@shortDesc,'EXPERIMENT')">
         <xsl:attribute name="class">exp</xsl:attribute>
       </xsl:if>
-      <!--/<xsl:value-of select="@path"/>-->
+      <!--/<xsl:value-of select="@path"/> -->
       <xsl:call-template name="class-level-path"/>
       <xsl:if test="@shortDesc">
-      : <xsl:value-of select="@shortDesc"/>
+        :
+        <xsl:value-of select="@shortDesc"/>
       </xsl:if>
     </xsl:element>
-    <em><xsl:value-of select="@description"/></em>
+    <em>
+      <xsl:value-of select="@description"/>
+    </em>
     <p/>
-    Defining class: <xsl:value-of select="@name"/><br/>
+    Defining class:
+    <xsl:value-of select="@name"/>
+    <br/>
     <br/>
     <xsl:call-template name="print-created-media-types">
       <xsl:with-param name="produces" select="produces"/>
     </xsl:call-template>
     <xsl:if test="method">
-      Methods:<br/>
+      Methods:
+      <br/>
       <xsl:apply-templates>
         <xsl:sort select="@path"/>
       </xsl:apply-templates>
@@ -105,10 +119,18 @@
   </xsl:template>
 
   <xsl:template match="method">
-    <h3><xsl:value-of select="@method"/><xsl:text xml:space="preserve"> /</xsl:text><xsl:value-of select="../@path"/>
-      <xsl:if test="not(@path = '')">/</xsl:if><xsl:value-of select="@path"/>
+    <h3>
+      <xsl:value-of select="@method"/>
+      <xsl:text xml:space="preserve"> /</xsl:text>
+      <xsl:value-of select="../@path"/>
+      <xsl:if test="not(@path = '')">
+        /
+      </xsl:if>
+      <xsl:value-of select="@path"/>
     </h3>
-    <em><xsl:value-of select="@description"/></em>
+    <em>
+      <xsl:value-of select="@description"/>
+    </em>
     <br/>
     <xsl:if test="notes">
       <h4>Notes</h4>
@@ -124,29 +146,42 @@
     </xsl:if>
 
     <xsl:if test="not(@gzip = '')">
-      <p><em>Supports returning a gzip'ed Content-Encoding</em></p>
+      <p>
+        <em>Supports returning a gzip'ed Content-Encoding</em>
+      </p>
     </xsl:if>
     <xsl:choose>
-    <xsl:when test="param">
-    Parameters:
-    <table>
-        <tr><th>Name</th><th>P.Type</th><th>Description</th><th>Required</th><th>Type</th><th>Allowed values</th><th>Default value</th></tr>
-      <xsl:apply-templates select="param"/>
-    </table>
-    </xsl:when>
+      <xsl:when test="param">
+        Parameters:
+        <table>
+          <tr>
+            <th>Name</th>
+            <th>P.Type</th>
+            <th>Description</th>
+            <th>Required</th>
+            <th>Type</th>
+            <th>Allowed values</th>
+            <th>Default value</th>
+          </tr>
+          <xsl:apply-templates select="param"/>
+        </table>
+      </xsl:when>
       <xsl:otherwise>
         This method has no parameters
       </xsl:otherwise>
     </xsl:choose>
     <br/>
-    Return type: <xsl:value-of select="@returnType"/>
+    Return type:
+    <xsl:value-of select="@returnType"/>
     <p/>
     <xsl:if test="error">
-      Error codes:<br/>
+      Error codes:
+      <br/>
       <table>
-          <tr>
-            <th>Code</th><th>Reason</th>
-          </tr>
+        <tr>
+          <th>Code</th>
+          <th>Reason</th>
+        </tr>
         <xsl:apply-templates select="error"/>
       </table>
     </xsl:if>
@@ -159,21 +194,39 @@
     -->
     <xsl:if test="not(@type = 'javax.ws.rs.container.AsyncResponse')">
       <tr>
-        <td><xsl:value-of select="@name"/></td>
-        <td><xsl:value-of select="@paramType"/></td>
-        <td><xsl:value-of select="@description"/></td>
-        <td><xsl:value-of select="@required"/></td>
-        <td><xsl:value-of select="@type"/></td>
-        <td><xsl:value-of select="@allowableValues"/></td>
-        <td><xsl:value-of select="@defaultValue"/></td>
+        <td>
+          <xsl:value-of select="@name"/>
+        </td>
+        <td>
+          <xsl:value-of select="@paramType"/>
+        </td>
+        <td>
+          <xsl:value-of select="@description"/>
+        </td>
+        <td>
+          <xsl:value-of select="@required"/>
+        </td>
+        <td>
+          <xsl:value-of select="@type"/>
+        </td>
+        <td>
+          <xsl:value-of select="@allowableValues"/>
+        </td>
+        <td>
+          <xsl:value-of select="@defaultValue"/>
+        </td>
       </tr>
     </xsl:if>
   </xsl:template>
 
   <xsl:template match="error">
     <tr>
-        <td><xsl:value-of select="@code"/></td>
-        <td><xsl:value-of select="@reason"/></td>
+      <td>
+        <xsl:value-of select="@code"/>
+      </td>
+      <td>
+        <xsl:value-of select="@reason"/>
+      </td>
     </tr>
   </xsl:template>
 
@@ -184,13 +237,13 @@
     <xsl:if test="$produces">
       <b>Produces:</b>
       <ul>
-      <xsl:for-each select="$produces/type">
-        <li>
-        <xsl:value-of select="."/>
-        </li>
-      </xsl:for-each>
+        <xsl:for-each select="$produces/type">
+          <li>
+            <xsl:value-of select="."/>
+          </li>
+        </xsl:for-each>
       </ul>
-  </xsl:if>
+    </xsl:if>
 
   </xsl:template>
 
