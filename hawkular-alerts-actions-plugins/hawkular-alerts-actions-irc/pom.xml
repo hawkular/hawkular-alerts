@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts-actions-plugins</artifactId>
-    <version>0.8.2.Final</version>
+    <version>0.9.0.Final-SNAPSHOT</version>
   </parent>
 
   <artifactId>hawkular-alerts-actions-irc</artifactId>
