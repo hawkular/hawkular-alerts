@@ -111,7 +111,7 @@ class BusITest extends AbstractITestBase {
         for (int i=0; i<5; i++) {
             String strAvailData = "{\"availData\":{\"data\":[{\"tenantId\":\"$testTenant\"," +
                     "\"id\":\"test-bus-email-availability\"," +
-                    "\"timestamp\":" + System.currentTimeMillis() + "," +
+                    "\"timestamp\":" + (System.currentTimeMillis() + i ) + "," +
                     "\"avail\":\"DOWN\"}]}}"
             producer.send(topic, strAvailData)
         }
@@ -119,7 +119,7 @@ class BusITest extends AbstractITestBase {
         context.close()
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
+        for ( int i=0; i < 20; ++i ) {
             // println "SLEEP!" ;
             Thread.sleep(500);
 
@@ -205,7 +205,7 @@ class BusITest extends AbstractITestBase {
         for (int i=0; i<5; i++) {
             String strMetricData = "{\"metricData\":{\"tenantId\":\"$testTenant\"," +
                     "\"data\":[{\"source\":\"test-bus-email-threshold\"," +
-                    "\"timestamp\":" + System.currentTimeMillis() + "," +
+                    "\"timestamp\":" + (System.currentTimeMillis() + i) + "," +
                     "\"value\":" + String.valueOf(305.5 + i) + "}]}}"
             producer.send(topic, strMetricData)
         }
@@ -213,7 +213,7 @@ class BusITest extends AbstractITestBase {
         context.close()
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
+        for ( int i=0; i < 20; ++i ) {
             // println "SLEEP!" ;
             Thread.sleep(500);
 
