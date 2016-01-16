@@ -48,11 +48,20 @@ public class JsonImport {
      * @return a FullTrigger object with the parsed json
      * @throws Exception on any issue
      */
-    public static FullTrigger readFullTrigger(String strFullTrigger) throws Exception {
+    public static FullTrigger readFullTrigger(String tenantId, String strFullTrigger) throws Exception {
+        if (tenantId == null || tenantId.isEmpty()) {
+            throw new IllegalArgumentException("tenantId must be not null");
+        }
         if (strFullTrigger == null || strFullTrigger.isEmpty()) {
             throw new IllegalArgumentException("strFullTrigger must be not null");
         }
         Map<String, Object> rawTrigger = om.readValue(strFullTrigger, Map.class);
+        if (rawTrigger.get("trigger") == null) {
+            throw new IllegalArgumentException("strFullTrigger must contain a trigger");
+        } else {
+            Map<String, Object> trigger = (Map<String, Object>) rawTrigger.get("trigger");
+            trigger.put("tenantId", tenantId);
+        }
         return readFullTrigger(rawTrigger);
     }
 
@@ -75,6 +84,12 @@ public class JsonImport {
         String strTrigger = om.writeValueAsString(mapFullTrigger.get("trigger"));
 
         Trigger trigger = om.readValue(strTrigger, Trigger.class);
+        if (trigger.getTenantId() == null || trigger.getTenantId().isEmpty()) {
+            throw new IllegalArgumentException("tenantId must be nont null");
+        }
+        if (trigger.getId() == null || trigger.getId().isEmpty()) {
+            throw new IllegalArgumentException("trigger id must be nont null");
+        }
         List<Dampening> dampenings = new ArrayList<>();
         List<Map<String, Object>> rawDampenings = (List<Map<String, Object>>) mapFullTrigger.get("dampenings");
         for (Map<String, Object> rawDampening : rawDampenings) {
