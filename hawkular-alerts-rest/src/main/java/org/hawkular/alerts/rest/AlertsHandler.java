@@ -553,7 +553,7 @@ public class AlertsHandler {
                 for (Data d : datums) {
                     d.setTenantId(tenantId);
                 }
-                alertsEngine.sendData(datums);
+                alertsService.sendData(datums);
                 if (log.isDebugEnabled()) {
                     log.debug("Datums: " + datums);
                 }

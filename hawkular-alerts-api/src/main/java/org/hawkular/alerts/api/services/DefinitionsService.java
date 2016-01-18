@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -91,6 +91,16 @@ public interface DefinitionsService {
             Map<String, String> memberContext, Map<String, String> dataIdMap) throws Exception;
 
     /**
+     * Generate a member trigger for the specified data-driven group trigger.
+     * @param tenantId Tenant where trigger is stored
+     * @param groupId Group triggerId from which to spawn the member trigger
+     * @param source the source for this member, no member should exist for this source already
+     * @return the member trigger
+     * @throws Exception on any problem
+     */
+    Trigger addDataDrivenMemberTrigger(String tenantId, String groupId, String source) throws Exception;
+
+    /**
      * The <code>Trigger</code> will be removed from the Alerts engine, as needed, and will no longer be persisted.
      * @param tenantId Tenant where trigger is stored
      * @param triggerId Trigger to be removed
@@ -142,6 +152,19 @@ public interface DefinitionsService {
      * @see {@link #updateTrigger(String, Trigger)} for updating a non-group trigger.
      */
     Trigger updateGroupTrigger(String tenantId, Trigger groupTrigger) throws Exception;
+
+    /**
+     * Update the <code>Trigger</code> enablement state.  The updated <code>Trigger</code> will be persisted.
+     * If enabled the <code>Trigger</code> will be [re-]inserted into the Alerts engine and any prior dampening
+     * will be reset.
+     * @param tenantId Tenant where trigger is updated
+     * @param triggerId Existing triggerId to be updated
+     * @param enabled The desired enablement state
+     * @throws NotFoundException if trigger is not found
+     * @throws Exception on any problem
+     * @see {@link #updateGroupTrigger(String, Trigger)} for updating a group trigger
+     */
+    void updateTriggerEnablement(String tenantId, String triggerId, boolean enabled) throws Exception;
 
     /**
      * Get a stored Trigger for a specific Tenant.

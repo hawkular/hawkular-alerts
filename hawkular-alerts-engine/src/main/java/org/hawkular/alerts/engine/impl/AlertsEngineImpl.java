@@ -18,6 +18,7 @@ package org.hawkular.alerts.engine.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -442,24 +443,12 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
     @Override
     public void sendData(Data data) {
-        if (data == null) {
-            throw new IllegalArgumentException("Data must be not null");
-        }
-        addPendingData(data);
-        if (distributed) {
-            partitionManager.notifyData(data);
-        }
+        sendData(Collections.singleton(data));
     }
 
     @Override
     public void sendEvent(Event event) {
-        if (event == null) {
-            throw new IllegalArgumentException("Event must be not null");
-        }
-        addPendingEvent(event);
-        if (distributed) {
-            partitionManager.notifyEvent(event);
-        }
+        sendEvents(Collections.singleton(event));
     }
 
     @Override
@@ -624,8 +613,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         try {
             for (Trigger t : disabledTriggers) {
                 try {
-                    t.setEnabled(false);
-                    definitions.updateTrigger(t.getTenantId(), t);
+                    definitions.updateTriggerEnablement(t.getTenantId(), t.getId(), false);
 
                 } catch (Exception e) {
                     log.errorf("Failed to persist updated trigger. Could not autoDisable %s", t);

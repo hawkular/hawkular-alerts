@@ -149,6 +149,7 @@ public class CassStatement {
     public static final String UPDATE_DAMPENING_ID;
     public static final String UPDATE_EVENT;
     public static final String UPDATE_TRIGGER;
+    public static final String UPDATE_TRIGGER_ENABLED;
 
     static {
         keyspace = AlertProperties.getProperty(CASSANDRA_KEYSPACE, "hawkular_alerts");
@@ -533,6 +534,10 @@ public class CassStatement {
                 + "context = ?, description = ?,  enabled = ?, eventCategory = ?, eventText = ?, firingMatch = ?, "
                 + "memberOf = ?, name = ?, severity = ?, source = ?, tags = ?, type = ? "
                 + "WHERE tenantId = ? AND id = ? ";
+
+        UPDATE_TRIGGER_ENABLED = "UPDATE " + keyspace + ".triggers "
+                + "SET enabled = ? WHERE tenantId = ? AND id = ? ";
+
     }
 
     public static synchronized PreparedStatement get(Session session, String statement) {

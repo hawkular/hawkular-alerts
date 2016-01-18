@@ -54,6 +54,7 @@ import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.EventType;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
@@ -489,6 +490,46 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         return updateTrigger(groupTrigger, existingActions, existingTags);
+    }
+
+    @Override
+    public void updateTriggerEnablement(String tenantId, String triggerId, boolean enabled) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+
+        Trigger existingTrigger = getTrigger(tenantId, triggerId);
+        if (null == existingTrigger) {
+            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, triggerId);
+        }
+        if (existingTrigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (enabled == existingTrigger.isEnabled()) {
+            log.debugf("Ignoring enable/disable request. Trigger %s is already set enabled=%s", triggerId, enabled);
+            return;
+        }
+
+        session = CassCluster.getSession();
+        PreparedStatement updateTriggerEnabled = CassStatement.get(session, CassStatement.UPDATE_TRIGGER_ENABLED);
+        if (updateTriggerEnabled == null) {
+            throw new RuntimeException("updateTriggerEnabled PreparedStatement is null");
+        }
+        try {
+            session.execute(updateTriggerEnabled.bind(enabled, tenantId, triggerId));
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+
+        if (initialized && null != alertsEngine) {
+            alertsEngine.reloadTrigger(tenantId, triggerId);
+        }
+
+        notifyListeners(DefinitionsEvent.Type.TRIGGER_UPDATE);
     }
 
     private Trigger copyGroupTrigger(Trigger group, Trigger member) {
@@ -1141,6 +1182,73 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         return newCondition;
+    }
+
+    @Override
+    public Trigger addDataDrivenMemberTrigger(String tenantId, String groupId, String source) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (isEmpty(source)) {
+            throw new IllegalArgumentException("source must be not null");
+        }
+        if (Data.SOURCE_NONE.equals(source)) {
+            throw new IllegalArgumentException("source is required (can not be none)");
+        }
+
+        // fetch the group trigger
+        Trigger group = getTrigger(tenantId, groupId);
+        if (group == null) {
+            throw new IllegalArgumentException("Trigger not found for tenantId/triggerId [ " + tenantId + "]/[" +
+                    groupId + "]");
+        }
+
+        // fetch the group conditions and generate a dataIdMap that just uses the same tokens as found in the
+        // group conditions. That is what we want in this use case, the source provides the differentiator
+        Map<String, String> dataIdMap = new HashMap<>();
+        Collection<Condition> conditions = getTriggerConditions(tenantId, groupId, null);
+        for (Condition c : conditions) {
+            dataIdMap.put(c.getDataId(), c.getDataId());
+            if (Condition.Type.COMPARE == c.getType()) {
+                dataIdMap.put(((CompareCondition) c).getData2Id(), ((CompareCondition) c).getData2Id());
+            }
+        }
+
+        // create a member trigger like the group trigger
+        String memberId = group.getId() + "_" + source;
+        Trigger member = new Trigger(tenantId, memberId, group.getName());
+
+        copyGroupTrigger(group, member);
+        member.setSource(source);
+
+        addTrigger(member);
+
+        // add any conditions
+        for (Condition c : conditions) {
+            Condition newCondition = getMemberCondition(member, c, dataIdMap);
+            if (newCondition != null) {
+                addCondition(newCondition);
+            }
+        }
+
+        // add any dampening
+        Collection<Dampening> dampenings = getTriggerDampenings(tenantId, groupId, null);
+
+        for (Dampening d : dampenings) {
+            Dampening newDampening = new Dampening(member.getTenantId(), member.getId(), d.getTriggerMode(),
+                    d.getType(), d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
+            addDampening(newDampening);
+        }
+
+        // add any tags
+        Map<String, String> updatedTags = new HashMap<>(member.getTags());
+        updatedTags.put("source", source); //TODO do we need this? Should we index source instead?
+        insertTags(tenantId, TagType.TRIGGER, member.getId(), member.getTags());
+
+        return member;
     }
 
     @Override
