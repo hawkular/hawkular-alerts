@@ -33,12 +33,14 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
 import javax.ejb.AccessTimeout;
 import javax.ejb.EJB;
 import javax.ejb.Local;
 import javax.ejb.Singleton;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.concurrent.ManagedExecutorService;
 
 import org.hawkular.alerts.api.json.JsonImport.FullAction;
 import org.hawkular.alerts.api.json.JsonImport.FullTrigger;
@@ -109,6 +111,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     @EJB
     AlertsEngine alertsEngine;
 
+    @Resource
+    private ManagedExecutorService executor;
+
     public CassDefinitionsServiceImpl() {
     }
 
@@ -127,10 +132,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 this.keyspace = AlertProperties.getProperty(CASSANDRA_KEYSPACE, "hawkular_alerts");
             }
             session = CassCluster.getSession();
-            /*
-                Initial data works here because we are in a singleton
-             */
-            initialData();
+
+            executor.submit(() -> {
+                try {
+                    initialData();
+                } catch (IOException e) {
+                    msgLog.errorProcessInitialData(e.getMessage());
+                }
+            });
         } catch (Throwable t) {
             msgLog.errorCannotInitializeDefinitionsService(t.getMessage());
             t.printStackTrace();

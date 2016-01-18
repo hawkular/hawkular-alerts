@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,10 +42,6 @@ public interface MsgLogger extends BasicLogger {
     void errorFolderNotFound(String folder);
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 220003, value = "Error reading registration [%s]")
-    void warningReadingFile(String file);
-
-    @LogMessage(level = Logger.Level.WARN)
     @Message(id = 220004, value = "File [%s] not found")
     void warningFileNotFound(String file);
 
@@ -58,8 +54,8 @@ public interface MsgLogger extends BasicLogger {
     void infoActionListenerRegistered(String msg);
 
     @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220007, value = "DataSource cannot be accessed. Msg: [%s]")
-    void errorCannotConnectWithDatasource(String msg);
+    @Message(id = 220007, value = "Initial data cannot be processed. Msg: [%s]")
+    void errorProcessInitialData(String msg);
 
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 220008, value = "Database Exception. Msg: [%s]")
@@ -70,20 +66,12 @@ public interface MsgLogger extends BasicLogger {
     void errorDefinitionsService(String msg, String errorMsg);
 
     @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220010, value = "AlertsService cannot be accessed. Msg: [%s]")
-    void errorCannotWithAlertsService(String msg);
-
-    @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 220011, value = "DefinitionsService cannot be initialized. Msg: [%s]")
     void errorCannotInitializeDefinitionsService(String msg);
 
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 220012, value = "AlertsService cannot be initialized. Msg: [%s]")
     void errorCannotInitializeAlertsService(String msg);
-
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220013, value = "ActionsService cannot be initialized. Msg: [%s]")
-    void errorCannotInitializeActionsService(String msg);
 
     @LogMessage(level = Logger.Level.INFO)
     @Message(id = 220014, value = "Hawkular Alerts deployed in single node mode")
