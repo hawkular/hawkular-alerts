@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -44,6 +46,8 @@ import javax.ws.rs.core.UriInfo;
 import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.json.JacksonDeserializer;
+import org.hawkular.alerts.api.json.JsonImport;
+import org.hawkular.alerts.api.json.JsonImport.FullTrigger;
 import org.hawkular.alerts.api.json.UnorphanMemberInfo;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
@@ -164,11 +168,11 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response findGroupMembers(
-            @ApiParam(value = "Group TriggerId", required = true)//
-            @PathParam("groupId")//
+            @ApiParam(value = "Group TriggerId", required = true)
+            @PathParam("groupId")
             final String groupId,
-            @ApiParam(value = "include Orphan members? No if omitted.", required = false)//
-            @QueryParam("includeOrphans")//
+            @ApiParam(value = "include Orphan members? No if omitted.", required = false)
+            @QueryParam("includeOrphans")
             final boolean includeOrphans) {
         try {
             Collection<Trigger> members = definitions.getMemberTriggers(tenantId, groupId, includeOrphans);
@@ -210,6 +214,76 @@ public class TriggersHandler {
             } else {
                 return ResponseUtil.badRequest("Trigger is null");
             }
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/trigger")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(
+            value = "Create a new full trigger (trigger, dampenings and conditions)",
+            response = FullTrigger.class,
+            notes = "Returns created full Trigger")
+    public Response createFullTrigger(
+            @ApiParam(value = "Full Trigger definition (trigger, dampenings, conditions) to be created",
+                    name = "jsonFullTrigger", required = true)
+            final String jsonFullTrigger) {
+        if (isEmpty(jsonFullTrigger)) {
+            return ResponseUtil.badRequest("Trigger is null");
+        }
+        FullTrigger fullTrigger;
+        try {
+            fullTrigger = JsonImport.readFullTrigger(tenantId, jsonFullTrigger);
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            return ResponseUtil.badRequest("Malformed trigger: " + e.getMessage());
+        }
+        if (fullTrigger == null || fullTrigger.getTrigger() == null) {
+            return ResponseUtil.badRequest("Trigger is empty ");
+        }
+        try {
+            Trigger trigger = fullTrigger.getTrigger();
+            trigger.setTenantId(tenantId);
+            if (isEmpty(trigger.getId())) {
+                trigger.setId(Trigger.generateId());
+            } else if (definitions.getTrigger(tenantId, trigger.getId()) != null) {
+                return ResponseUtil.badRequest("Trigger with ID [" + trigger.getId() + "] exists.");
+            }
+            definitions.addTrigger(tenantId, trigger);
+            log.debug("Trigger: " + trigger.toString());
+            for (Dampening dampening : fullTrigger.getDampenings()) {
+                dampening.setTenantId(tenantId);
+                dampening.setTriggerId(trigger.getId());
+                boolean exist = (definitions.getDampening(tenantId, dampening.getDampeningId()) != null);
+                if (exist) {
+                    definitions.removeDampening(tenantId, dampening.getDampeningId());
+                }
+                definitions.addDampening(tenantId, dampening);
+                log.debug("Dampening: " + dampening.toString());
+            }
+            fullTrigger.getConditions().stream().forEach(c -> {
+                c.setTenantId(tenantId);
+                c.setTriggerId(trigger.getId());
+            });
+            List<Condition> firingConditions = fullTrigger.getConditions().stream()
+                    .filter(c -> c.getTriggerMode() == Mode.FIRING)
+                    .collect(Collectors.toList());
+            if (firingConditions != null && !firingConditions.isEmpty()) {
+                definitions.setConditions(tenantId, trigger.getId(), Mode.FIRING, firingConditions);
+                log.debug("Conditions: " + firingConditions);
+            }
+            List<Condition> autoResolveConditions = fullTrigger.getConditions().stream()
+                    .filter(c -> c.getTriggerMode() == Mode.AUTORESOLVE)
+                    .collect(Collectors.toList());
+            if (autoResolveConditions != null && !autoResolveConditions.isEmpty()) {
+                definitions.setConditions(tenantId, trigger.getId(), Mode.AUTORESOLVE, autoResolveConditions);
+                log.debug("Conditions:" + autoResolveConditions);
+            }
+            return ResponseUtil.ok(fullTrigger);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
@@ -264,7 +338,7 @@ public class TriggersHandler {
             @ApiResponse(code = 404, message = "Group trigger not found."),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public Response createGroupMember(
-            @ApiParam(value = "Group member trigger to be created", name = "groupMember", required = true)//
+            @ApiParam(value = "Group member trigger to be created", name = "groupMember", required = true)
             final GroupMemberInfo groupMember) {
         try {
             if (null == groupMember) {
@@ -316,6 +390,39 @@ public class TriggersHandler {
             } else {
                 return ResponseUtil.notFound("triggerId: " + triggerId + " not found");
             }
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @GET
+    @Path("/trigger/{triggerId}")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get an existing trigger definition",
+            response = Trigger.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Trigger found"),
+            @ApiResponse(code = 404, message = "Trigger not found"),
+            @ApiResponse(code = 500, message = "Internal server error") })
+    public Response getFullTrigger(
+            @ApiParam(value = "Full Trigger definition id to be retrieved", required = true)
+            @PathParam("triggerId")
+            final String triggerId) {
+        try {
+            Trigger found = definitions.getTrigger(tenantId, triggerId);
+            if (found != null) {
+                log.debug("Trigger: " + found);
+                List<Dampening> dampenings = new ArrayList<>(definitions.getTriggerDampenings(tenantId, found.getId(),
+                        null));
+                List<Condition> conditions = new ArrayList<>(definitions.getTriggerConditions(tenantId, found.getId(),
+                        null));
+                FullTrigger fullTrigger = new FullTrigger(found, dampenings, conditions);
+                return ResponseUtil.ok(fullTrigger);
+            } else {
+                return ResponseUtil.notFound("triggerId: " + triggerId + " not found");
+            }
+
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
@@ -398,8 +505,8 @@ public class TriggersHandler {
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters") })
     public Response orphanMemberTrigger(
-            @ApiParam(value = "Member Trigger id to be made an orphan.", required = true)//
-            @PathParam("memberId")//
+            @ApiParam(value = "Member Trigger id to be made an orphan.", required = true)
+            @PathParam("memberId")
             final String memberId) {
         try {
             Trigger child = definitions.orphanMemberTrigger(tenantId, memberId);
@@ -426,11 +533,11 @@ public class TriggersHandler {
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters") })
     public Response unorphanMemberTrigger(
-            @ApiParam(value = "Member Trigger id to be made an orphan.", required = true)//
-            @PathParam("memberId")//
+            @ApiParam(value = "Member Trigger id to be made an orphan.", required = true)
+            @PathParam("memberId")
             final String memberId,
             @ApiParam(required = true, name = "memberTrigger",
-                    value = "Only context and dataIdMap are used when changing back to a non-orphan.")//
+                    value = "Only context and dataIdMap are used when changing back to a non-orphan.")
             final UnorphanMemberInfo unorphanMemberInfo) {
         try {
             if (null == unorphanMemberInfo) {
@@ -460,7 +567,7 @@ public class TriggersHandler {
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 404, message = "Trigger not found") })
     public Response deleteTrigger(
-            @ApiParam(value = "Trigger definition id to be deleted", required = true) @PathParam("triggerId")//
+            @ApiParam(value = "Trigger definition id to be deleted", required = true) @PathParam("triggerId")
             final String triggerId) {
         try {
             definitions.removeTrigger(tenantId, triggerId);
@@ -490,14 +597,14 @@ public class TriggersHandler {
             @ApiResponse(code = 404, message = "Group Trigger not found"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public Response deleteGroupTrigger(
-            @ApiParam(required = true, value = "Group Trigger id")//
-            @PathParam("groupId")//
+            @ApiParam(required = true, value = "Group Trigger id")
+            @PathParam("groupId")
             final String groupId,
-            @ApiParam(required = true, value = "Convert the non-orphan member triggers to standard triggers.")//
-            @QueryParam("keepNonOrphans")//
+            @ApiParam(required = true, value = "Convert the non-orphan member triggers to standard triggers.")
+            @QueryParam("keepNonOrphans")
             final boolean keepNonOrphans,
-            @ApiParam(required = true, value = "Convert the orphan member triggers to standard triggers.")//
-            @QueryParam("keepOrphans")//
+            @ApiParam(required = true, value = "Convert the orphan member triggers to standard triggers.")
+            @QueryParam("keepOrphans")
             final boolean keepOrphans) {
         try {
             definitions.removeGroupTrigger(tenantId, groupId, keepNonOrphans, keepOrphans);
@@ -545,11 +652,11 @@ public class TriggersHandler {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response getTriggerModeDampenings(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)//
-            @PathParam("triggerId")//
+            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @PathParam("triggerId")
             final String triggerId,//
-            @ApiParam(value = "Trigger mode", required = true)//
-            @PathParam("triggerMode")//
+            @ApiParam(value = "Trigger mode", required = true)
+            @PathParam("triggerMode")
             final Mode triggerMode) {
         try {
             Collection<Dampening> dampenings = definitions.getTriggerDampenings(tenantId, triggerId,
@@ -640,10 +747,10 @@ public class TriggersHandler {
             @ApiResponse(code = 500, message = "Internal server error"),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
     public Response createGroupDampening(
-            @ApiParam(value = "Group Trigger definition id attached to dampening", required = true)//
-            @PathParam("groupId")//
+            @ApiParam(value = "Group Trigger definition id attached to dampening", required = true)
+            @PathParam("groupId")
             final String groupId,
-            @ApiParam(value = "Dampening definition to be created", required = true)//
+            @ApiParam(value = "Dampening definition to be created", required = true)
             final Dampening dampening) {
         try {
             dampening.setTriggerId(groupId);
@@ -904,7 +1011,7 @@ public class TriggersHandler {
             final String triggerMode,
             @ApiParam(value = "Json representation of a condition list. For examples of Condition types, See "
                     + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
-                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")//
+                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
             String jsonConditions) {
         try {
             Mode mode = Mode.valueOf(triggerMode.toUpperCase());
@@ -960,7 +1067,7 @@ public class TriggersHandler {
             final String triggerMode,
             @ApiParam(value = "Json representation of GroupConditionsInfo. For examples of Condition types, See "
                     + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
-                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")//
+                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
             String jsonGroupConditionsInfo) {
         try {
             if (isEmpty(jsonGroupConditionsInfo)) {
@@ -1024,7 +1131,7 @@ public class TriggersHandler {
             final String triggerId,
             @ApiParam(value = "Json representation of a condition. For examples of Condition types, See "
                     + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
-                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")//
+                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
             String jsonCondition) {
         try {
             if (isEmpty(jsonCondition) || !jsonCondition.contains("type")) {

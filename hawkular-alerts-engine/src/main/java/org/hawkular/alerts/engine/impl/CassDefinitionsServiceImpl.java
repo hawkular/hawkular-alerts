@@ -40,6 +40,8 @@ import javax.ejb.Singleton;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
+import org.hawkular.alerts.api.json.JsonImport.FullAction;
+import org.hawkular.alerts.api.json.JsonImport.FullTrigger;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
@@ -167,11 +169,33 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             return;
         }
 
+        File fAlerts = new File(fFolder, "alerts-data.json");
+        if (!fAlerts.exists()) {
+            if (log.isDebugEnabled()) {
+                log.debug(fAlerts.getAbsolutePath() + " doesn't exits. Skipping initialization.");
+            }
+            return;
+        }
+
         try {
-            initTriggers(fFolder);
-            initConditions(fFolder);
-            initDampenings(fFolder);
-            initActions(fFolder);
+            AlertsImportManager importManager = new AlertsImportManager(fAlerts);
+            for (FullTrigger fTrigger : importManager.getFullTriggers()) {
+                Trigger trigger = fTrigger.getTrigger();
+                addTrigger(trigger);
+                for (Dampening dampening : fTrigger.getDampenings()) {
+                    addDampening(dampening);
+                }
+                for (Condition condition : fTrigger.getConditions()) {
+                    initCondition(condition);
+                }
+            }
+            for (FullAction fAction : importManager.getFullActions()) {
+                Map<String, String> actionProperties = new HashMap<>(fAction.getProperties());
+                actionProperties.put("tenantId", fAction.getTenantId());
+                actionProperties.put("actionPlugin", fAction.getActionPlugin());
+                actionProperties.put("actionId", fAction.getActionId());
+                addAction(fAction.getTenantId(), fAction.getActionPlugin(), fAction.getActionId(), actionProperties);
+            }
         } catch (Exception e) {
             if (log.isDebugEnabled()) {
                 e.printStackTrace();
@@ -181,262 +205,11 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     }
 
-    private void initTriggers(File fFolder) throws Exception {
-        File triggersFile = new File(fFolder, "triggers-data.json");
-        if (triggersFile.exists() && triggersFile.isFile()) {
-            Map<String, Object> triggers = objectMapper.readValue(triggersFile, Map.class);
-            if (triggers != null && !triggers.isEmpty() && triggers.get("triggers") != null) {
-                List<Map<String, Object>> aTriggers = (List<Map<String, Object>>) triggers.get("triggers");
-                for (Map<String, Object> t : aTriggers) {
-                    String tenantId = (String) t.get("tenantId");
-                    String triggerId = (String) t.get("triggerId");
-                    String eventTypeName = (String) t.get("eventType");
-                    EventType eventType = (null != eventTypeName) ?
-                            EventType.valueOf(eventTypeName) : EventType.ALERT;
-                    boolean enabled = (Boolean) t.get("enabled");
-                    String name = (String) t.get("name");
-                    String description = (String) t.get("description");
-                    boolean autoDisable = (Boolean) t.get("autoDisable");
-                    boolean autoEnable = (Boolean) t.get("autoEnable");
-                    boolean autoResolve = (Boolean) t.get("autoResolve");
-                    boolean autoResolveAlerts = (Boolean) t.get("autoResolveAlerts");
-                    Severity severity = Severity.valueOf((String) t.get("severity"));
-                    Match firingMatch = Match.valueOf((String) t.get("firingMatch"));
-                    Match autoResolveMatch = Match.valueOf((String) t.get("autoResolveMatch"));
-                    List<Map<String, String>> actions = (List<Map<String, String>>) t.get("actions");
-                    Map<String, String> context = (Map<String, String>) t.get("context");
-                    Map<String, String> tags = (Map<String, String>) t.get("tags");
-                    boolean group = (Boolean) t.get("group");
-                    String memberOf = (String) t.get("memberOf");
-                    boolean orphan = (Boolean) t.get("orphan");
-
-                    Trigger trigger = new Trigger(tenantId, triggerId, name);
-                    trigger.setEventType(eventType);
-                    trigger.setEnabled(enabled);
-                    trigger.setAutoDisable(autoDisable);
-                    trigger.setAutoEnable(autoEnable);
-                    trigger.setAutoResolve(autoResolve);
-                    trigger.setAutoResolveAlerts(autoResolveAlerts);
-                    trigger.setSeverity(severity);
-                    trigger.setDescription(description);
-                    trigger.setFiringMatch(firingMatch);
-                    trigger.setAutoResolveMatch(autoResolveMatch);
-                    for (Map<String, String> action : actions) {
-                        trigger.addAction(action.get("actionPlugin"), action.get("actionId"));
-                    }
-                    trigger.setContext(context);
-                    trigger.setTags(tags);
-                    trigger.setGroup(group);
-                    trigger.setMemberOf(memberOf);
-                    trigger.setOrphan(orphan);
-
-                    addTrigger(trigger);
-
-                    if (log.isDebugEnabled()) {
-                        log.debug("Init registration - Inserting [" + trigger + "]");
-                    }
-                }
-            }
-        } else {
-            msgLog.warningFileNotFound("triggers-data.json");
-        }
-    }
-
-    private void initConditions(File initFolder) throws Exception {
-        File conditionsFile = new File(initFolder, "conditions-data.json");
-        if (conditionsFile.exists() && conditionsFile.isFile()) {
-            Map<String, Object> conditions = objectMapper.readValue(conditionsFile, Map.class);
-            if (conditions != null && !conditions.isEmpty() && conditions.get("conditions") != null) {
-                List<Map<String, Object>> aConditions = (List<Map<String, Object>>) conditions.get("conditions");
-                for (Map<String, Object> c : aConditions) {
-                    String tenantId = (String) c.get("tenantId");
-                    String triggerId = (String) c.get("triggerId");
-                    Mode triggerMode = Mode.valueOf((String) c.get("triggerMode"));
-                    int conditionSetSize = (Integer) c.get("conditionSetSize");
-                    int conditionSetIndex = (Integer) c.get("conditionSetIndex");
-                    String type = (String) c.get("type");
-                    Map<String, String> context = (Map<String, String>) c.get("context");
-                    if (type != null && !type.isEmpty() && type.equals("threshold")) {
-                        String dataId = (String) c.get("dataId");
-                        String operator = (String) c.get("operator");
-                        Double threshold = (Double) c.get("threshold");
-
-                        ThresholdCondition newCondition = new ThresholdCondition();
-                        newCondition.setTriggerId(triggerId);
-                        newCondition.setTriggerMode(triggerMode);
-                        newCondition.setConditionSetSize(conditionSetSize);
-                        newCondition.setConditionSetIndex(conditionSetIndex);
-                        newCondition.setDataId(dataId);
-                        newCondition.setOperator(ThresholdCondition.Operator.valueOf(operator));
-                        newCondition.setThreshold(threshold);
-                        newCondition.setTenantId(tenantId);
-                        newCondition.setContext(context);
-
-                        initCondition(newCondition);
-                        if (log.isDebugEnabled()) {
-                            log.debug("Init registration - Inserting [" + newCondition + "]");
-                        }
-                    }
-                    if (type != null && !type.isEmpty() && type.equals("range")) {
-                        String dataId = (String) c.get("dataId");
-                        String operatorLow = (String) c.get("operatorLow");
-                        String operatorHigh = (String) c.get("operatorHigh");
-                        Double thresholdLow = (Double) c.get("thresholdLow");
-                        Double thresholdHigh = (Double) c.get("thresholdHigh");
-                        boolean inRange = (Boolean) c.get("inRange");
-
-                        ThresholdRangeCondition newCondition = new ThresholdRangeCondition();
-                        newCondition.setTriggerId(triggerId);
-                        newCondition.setTriggerMode(triggerMode);
-                        newCondition.setConditionSetSize(conditionSetSize);
-                        newCondition.setConditionSetIndex(conditionSetIndex);
-                        newCondition.setDataId(dataId);
-                        newCondition.setOperatorLow(ThresholdRangeCondition.Operator.valueOf(operatorLow));
-                        newCondition.setOperatorHigh(ThresholdRangeCondition.Operator.valueOf(operatorHigh));
-                        newCondition.setThresholdLow(thresholdLow);
-                        newCondition.setThresholdHigh(thresholdHigh);
-                        newCondition.setInRange(inRange);
-                        newCondition.setTenantId(tenantId);
-                        newCondition.setContext(context);
-
-                        initCondition(newCondition);
-                        if (log.isDebugEnabled()) {
-                            log.debug("Init registration - Inserting [" + newCondition + "]");
-                        }
-                    }
-                    if (type != null && !type.isEmpty() && type.equals("compare")) {
-                        String dataId = (String) c.get("dataId");
-                        String operator = (String) c.get("operator");
-                        Double data2Multiplier = (Double) c.get("data2Multiplier");
-                        String data2Id = (String) c.get("data2Id");
-
-                        CompareCondition newCondition = new CompareCondition();
-                        newCondition.setTriggerId(triggerId);
-                        newCondition.setTriggerMode(triggerMode);
-                        newCondition.setConditionSetSize(conditionSetSize);
-                        newCondition.setConditionSetIndex(conditionSetIndex);
-                        newCondition.setDataId(dataId);
-                        newCondition.setOperator(CompareCondition.Operator.valueOf(operator));
-                        newCondition.setData2Multiplier(data2Multiplier);
-                        newCondition.setData2Id(data2Id);
-                        newCondition.setTenantId(tenantId);
-                        newCondition.setContext(context);
-
-                        initCondition(newCondition);
-                        if (log.isDebugEnabled()) {
-                            log.debug("Init registration - Inserting [" + newCondition + "]");
-                        }
-                    }
-                    if (type != null && !type.isEmpty() && type.equals("string")) {
-                        String dataId = (String) c.get("dataId");
-                        String operator = (String) c.get("operator");
-                        String pattern = (String) c.get("pattern");
-                        boolean ignoreCase = (Boolean) c.get("ignoreCase");
-
-                        StringCondition newCondition = new StringCondition();
-                        newCondition.setTriggerId(triggerId);
-                        newCondition.setTriggerMode(triggerMode);
-                        newCondition.setConditionSetSize(conditionSetSize);
-                        newCondition.setConditionSetIndex(conditionSetIndex);
-                        newCondition.setDataId(dataId);
-                        newCondition.setOperator(StringCondition.Operator.valueOf(operator));
-                        newCondition.setPattern(pattern);
-                        newCondition.setIgnoreCase(ignoreCase);
-                        newCondition.setTenantId(tenantId);
-                        newCondition.setContext(context);
-
-                        initCondition(newCondition);
-                        if (log.isDebugEnabled()) {
-                            log.debug("Init registration - Inserting [" + newCondition + "]");
-                        }
-                    }
-                    if (type != null && !type.isEmpty() && type.equals("availability")) {
-                        String dataId = (String) c.get("dataId");
-                        String operator = (String) c.get("operator");
-
-                        AvailabilityCondition newCondition = new AvailabilityCondition();
-                        newCondition.setTriggerId(triggerId);
-                        newCondition.setTriggerMode(triggerMode);
-                        newCondition.setConditionSetSize(conditionSetSize);
-                        newCondition.setConditionSetIndex(conditionSetIndex);
-                        newCondition.setDataId(dataId);
-                        newCondition.setOperator(AvailabilityCondition.Operator.valueOf(operator));
-                        newCondition.setTenantId(tenantId);
-                        newCondition.setContext(context);
-
-                        initCondition(newCondition);
-                        if (log.isDebugEnabled()) {
-                            log.debug("Init registration - Inserting [" + newCondition + "]");
-                        }
-                    }
-
-                }
-            }
-        } else {
-            msgLog.warningFileNotFound("conditions-data.json");
-        }
-    }
-
     private void initCondition(Condition condition) throws Exception {
         Collection<Condition> conditions = getTriggerConditions(condition.getTenantId(), condition.getTriggerId(),
                 condition.getTriggerMode());
         conditions.add(condition);
         setConditions(condition.getTenantId(), condition.getTriggerId(), condition.getTriggerMode(), conditions);
-    }
-
-    private void initDampenings(File initFolder) throws Exception {
-        File dampeningFile = new File(initFolder, "dampening-data.json");
-        if (dampeningFile.exists() && dampeningFile.isFile()) {
-            Map<String, Object> dampenings = objectMapper.readValue(dampeningFile, Map.class);
-            if (dampenings != null && !dampenings.isEmpty() && dampenings.get("dampenings") != null) {
-                List<Map<String, Object>> aDampenings = (List<Map<String, Object>>) dampenings.get("dampenings");
-                for (Map<String, Object> d : aDampenings) {
-                    String tenantId = (String) d.get("tenantId");
-                    String triggerId = (String) d.get("triggerId");
-                    Mode triggerMode = Mode.valueOf((String) d.get("triggerMode"));
-                    String type = (String) d.get("type");
-                    int evalTrueSetting = (Integer) d.get("evalTrueSetting");
-                    int evalTotalSetting = (Integer) d.get("evalTotalSetting");
-                    long evalTimeSetting = (Integer) d.get("evalTimeSetting");
-
-                    Dampening newDampening = new Dampening(tenantId, triggerId, triggerMode,
-                            Dampening.Type.valueOf(type), evalTrueSetting, evalTotalSetting, evalTimeSetting);
-                    addDampening(newDampening);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Init registration - Inserting [" + newDampening + "]");
-                    }
-                }
-            }
-        } else {
-            msgLog.warningFileNotFound("dampening-data.json");
-        }
-    }
-
-    private void initActions(File initFolder) throws Exception {
-        File actionsFile = new File(initFolder, "actions-data.json");
-        if (actionsFile.exists() && actionsFile.isFile()) {
-            Map<String, Object> actions = objectMapper.readValue(actionsFile, Map.class);
-            if (actions != null && !actions.isEmpty() && actions.get("actions") != null) {
-                List<Map<String, Object>> aActions = (List) actions.get("actions");
-                for (Map<String, Object> a : aActions) {
-                    Map<String, String> newAction = new HashMap<>();
-                    String tenantId = (String) a.get("tenantId");
-                    newAction.put("tenantId", tenantId);
-                    String actionPlugin = (String) a.get("actionPlugin");
-                    newAction.put("actionPlugin", actionPlugin);
-                    String actionId = (String) a.get("actionId");
-                    newAction.put("actionId", actionId);
-                    Map<String, String> properties = (Map<String, String>) a.get("properties");
-                    newAction.putAll(properties);
-                    addAction(tenantId, actionPlugin, actionId, newAction);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Init registration - Inserting [" + newAction + "]");
-                    }
-                }
-            }
-        } else {
-            msgLog.warningFileNotFound("actions-data.json");
-        }
     }
 
     @Override

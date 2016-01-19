@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -420,6 +420,68 @@ class TriggersITest extends AbstractITestBase {
         // delete the trigger
         resp = client.delete(path: "triggers/test-trigger-1")
         assertEquals(200, resp.status)
+    }
+
+    @Test
+    void createFullTrigger() {
+        String jsonTrigger = "{\n" +
+                "      \"trigger\":{\n" +
+                "        \"id\": \"full-test-trigger-1\",\n" +
+                "        \"enabled\": true,\n" +
+                "        \"name\": \"NumericData-01-low\",\n" +
+                "        \"description\": \"description 1\",\n" +
+                "        \"severity\": \"HIGH\",\n" +
+                "        \"actions\": {\n" +
+                "          \"snmp\": [\"SNMP-Trap-1\", \"SNMP-Trap-2\"],\n" +
+                "          \"sms\": [\"sms-to-cio\"],\n" +
+                "          \"email\": [\"email-to-admin\"],\n" +
+                "          \"aerogear\": [\"agpush-to-admin\"]\n" +
+                "        },\n" +
+                "        \"context\": {\n" +
+                "          \"name1\":\"value1\"\n" +
+                "        },\n" +
+                "        \"tags\": {\n" +
+                "          \"tname1\":\"tvalue1\",\n" +
+                "          \"tname2\":\"tvalue2\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      \"dampenings\":[\n" +
+                "        {\n" +
+                "          \"triggerMode\": \"FIRING\",\n" +
+                "          \"type\": \"STRICT\",\n" +
+                "          \"evalTrueSetting\": 2,\n" +
+                "          \"evalTotalSetting\": 2\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"conditions\":[\n" +
+                "        {\n" +
+                "          \"triggerMode\": \"FIRING\",\n" +
+                "          \"type\": \"threshold\",\n" +
+                "          \"dataId\": \"NumericData-01\",\n" +
+                "          \"operator\": \"LT\",\n" +
+                "          \"threshold\": 10.0,\n" +
+                "          \"context\": {\n" +
+                "            \"description\": \"Response Time\",\n" +
+                "            \"unit\": \"ms\"\n" +
+                "          }\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }";
+
+        // remove if it exists
+        def resp = client.delete(path: "triggers/full-test-trigger-1")
+        assert(200 == resp.status || 404 == resp.status)
+
+        // create the test trigger
+        resp = client.post(path: "triggers/trigger", body: jsonTrigger)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/trigger/full-test-trigger-1");
+        assertEquals(200, resp.status)
+        assertEquals("NumericData-01-low", resp.data.trigger.name)
+        assertEquals(testTenant, resp.data.trigger.tenantId)
+        assertEquals(1, resp.data.dampenings.size())
+        assertEquals(1, resp.data.conditions.size())
     }
 
 }
