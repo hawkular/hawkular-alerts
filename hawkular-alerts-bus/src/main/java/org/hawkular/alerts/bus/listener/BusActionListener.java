@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -54,8 +54,8 @@ public class BusActionListener implements ActionListener {
             "java:app/hawkular-alerts-rest/CassDefinitionsServiceImpl";
 
     private TopicConnectionFactory conFactory;
-    private ConnectionContextFactory ccf;
-    private ProducerConnectionContext pcc;
+    private ThreadLocal<ConnectionContextFactory> ccf = new ThreadLocal<>();
+    private ThreadLocal<ProducerConnectionContext> pcc = new ThreadLocal<>();
     InitialContext ctx;
 
     DefinitionsService definitions;
@@ -80,7 +80,7 @@ public class BusActionListener implements ActionListener {
                 action.setProperties(mixedProps);
 
                 BusActionMessage pluginMessage = new BusActionMessage(action);
-                MessageId mid = new MessageProcessor().send(pcc, pluginMessage);
+                MessageId mid = new MessageProcessor().send(pcc.get(), pluginMessage);
                 if (log.isDebugEnabled()) {
                     log.debug("Sent action message [" + mid.getId() + "] to the bus");
                 }
@@ -100,11 +100,11 @@ public class BusActionListener implements ActionListener {
         if (conFactory == null) {
             conFactory = (TopicConnectionFactory) ctx.lookup(CONNECTION_FACTORY);
         }
-        if (ccf == null) {
-            ccf = new ConnectionContextFactory(conFactory);
+        if (ccf.get() == null) {
+            ccf.set(new ConnectionContextFactory(conFactory));
         }
-        if (pcc == null) {
-            pcc = ccf.createProducerConnectionContext(new Endpoint(Endpoint.Type.TOPIC, ACTIONS_TOPIC));
+        if (pcc.get() == null) {
+            pcc.set(ccf.get().createProducerConnectionContext(new Endpoint(Endpoint.Type.TOPIC, ACTIONS_TOPIC)));
         }
         if (definitions == null) {
             definitions = (DefinitionsService) ctx.lookup(DEFINITIONS_SERVICE);
@@ -112,16 +112,16 @@ public class BusActionListener implements ActionListener {
     }
 
     public void close() throws Exception {
-        if (pcc != null) {
+        if (pcc.get() != null) {
             try {
-                pcc.close();
-                pcc = null;
+                pcc.get().close();
+                pcc.remove();
             } catch (IOException ignored) { }
         }
-        if (ccf != null) {
+        if (ccf.get() != null) {
             try {
-                ccf.close();
-                ccf = null;
+                ccf.get().close();
+                ccf.remove();
             } catch (JMSException ignored) { }
         }
     }
