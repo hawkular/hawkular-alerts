@@ -143,6 +143,26 @@ class GroupITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size())
 
+        // VALIDATE member triggers
+        Trigger mt1 = resp.data[0]
+        Trigger mt2 = resp.data[1]
+        if ( mt1.id != "test-ddgroup-trigger_Source-1" ) {
+          mt1 = resp.data[1];
+          mt2 = resp.data[0];
+        }
+        assertEquals("test-ddgroup-trigger_Source-1", mt1.id)
+        assertEquals("test-ddgroup-trigger_Source-2", mt2.id)
+        assertEquals("test-ddgroup-trigger", mt1.name)
+        assertEquals("test-ddgroup-trigger", mt2.name)
+        assertEquals(TriggerType.MEMBER, mt1.type)
+        assertEquals(TriggerType.MEMBER, mt2.type)
+        assertEquals("test-ddgroup-trigger", mt1.memberOf)
+        assertEquals("test-ddgroup-trigger", mt2.memberOf)
+        assertEquals("contextValue", mt1.context.get("contextName"));
+        assertEquals("contextValue2", mt1.context.get("contextName2"));
+        assertEquals("contextValue", mt2.context.get("contextName"));
+        assertEquals("contextValue2", mt2.context.get("contextName2"));
+
         // Send in avail data to create Source-1 alert
         jsonData = "[{\"source\":\"Source-1\",\"id\":\"test-ddgroup-avail\",\"timestamp\":" + System.currentTimeMillis() + ",\"value\":\"DOWN\"}]";
         resp = client.post(path: "data", body: jsonData);

@@ -108,7 +108,7 @@ public class Event implements Comparable<Event>, Serializable {
 
     public Event() {
         // for json assembly
-        this.eventType = EventType.EVENT.name();
+        this(null, (String) null, null, null);
     }
 
     public Event(String tenantId, String id, String category, String text) {
@@ -137,10 +137,6 @@ public class Event implements Comparable<Event>, Serializable {
         this(tenantId, id, System.currentTimeMillis(), dataSource, dataId, category, text, context, null);
     }
 
-    public Event(String tenantId, String id, long ctime, String category, String text) {
-        this(tenantId, id, ctime, null, category, text, null, null);
-    }
-
     public Event(String tenantId, String id, long ctime, String dataId, String category,
             String text) {
         this(tenantId, id, ctime, null, dataId, category, text, null, null);
@@ -160,9 +156,13 @@ public class Event implements Comparable<Event>, Serializable {
         this(tenantId, id, ctime, dataSource, dataId, category, text, context, null);
     }
 
+    public Event(String tenantId, String id, long ctime, String dataId, String category,
+            String text, Map<String, String> context, Map<String, String> tags) {
+        this(tenantId, id, ctime, null, dataId, category, text, context, tags);
+    }
+
     public Event(String tenantId, String id, long ctime, String dataSource, String dataId, String category,
-            String text,
-            Map<String, String> context, Map<String, String> tags) {
+            String text, Map<String, String> context, Map<String, String> tags) {
         this.tenantId = tenantId;
         this.id = id;
         this.ctime = (ctime <= 0) ? System.currentTimeMillis() : ctime;

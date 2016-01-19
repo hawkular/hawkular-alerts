@@ -66,6 +66,7 @@ public class Data implements Comparable<Data>, Serializable {
 
     /** For JSON Construction ONLY */
     public Data() {
+        this(null, 0L, null);
     }
 
     /** For REST API USE ONLY, tenantId set automatically via REST Handler.
@@ -185,8 +186,17 @@ public class Data implements Comparable<Data>, Serializable {
     }
 
     public static Data forAvailability(String tenantId, String source, String id, long timestamp,
-            AvailabilityType value,
-            Map<String, String> context) {
+            AvailabilityType value) {
+        return new Data(tenantId, source, id, timestamp, value.name());
+    }
+
+    public static Data forAvailability(String tenantId, String id, long timestamp,
+            AvailabilityType value, Map<String, String> context) {
+        return new Data(tenantId, null, id, timestamp, value.name(), null, context);
+    }
+
+    public static Data forAvailability(String tenantId, String source, String id, long timestamp,
+            AvailabilityType value, Map<String, String> context) {
         return new Data(tenantId, source, id, timestamp, value.name(), null, context);
     }
 
@@ -254,7 +264,6 @@ public class Data implements Comparable<Data>, Serializable {
         }
         context.put(name, value);
     }
-
 
     @Override
     public int hashCode() {
