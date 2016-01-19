@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -492,42 +492,6 @@ public class AlertsHandler {
                 }
                 return ResponseUtil.ok();
             }
-        } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
-    @GET
-    @Path("/reload")
-    @ApiOperation(
-            value = "Reload all definitions into the alerts service",
-            notes = "This service is temporal for demos/poc, this functionality will be handled internally" +
-                    "between definitions and alerts services")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success. Reload invoked successfully."),
-            @ApiResponse(code = 500, message = "Internal server error") })
-    public Response reloadAlerts() {
-        try {
-            alertsEngine.reload();
-            return ResponseUtil.ok();
-        } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
-    @GET
-    @Path("/reload/{triggerId}")
-    @ApiOperation(value = "Reload a specific trigger into the alerts service")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success. Reload invoked successfully."),
-            @ApiResponse(code = 500, message = "Internal server error") })
-    public Response reloadTrigger(@PathParam("triggerId")
-    final String triggerId) {
-        try {
-            alertsEngine.reloadTrigger(tenantId, triggerId);
-            return ResponseUtil.ok();
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());

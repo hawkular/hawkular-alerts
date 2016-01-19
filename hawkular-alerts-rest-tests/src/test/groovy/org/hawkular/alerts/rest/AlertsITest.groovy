@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 package org.hawkular.alerts.rest
-
-import static org.junit.Assert.assertEquals
 
 import org.junit.Test
 
@@ -73,12 +71,6 @@ class AlertsITest extends AbstractITestBase {
 
         resp = client.put(path: "delete", query: [tags:"dataId|data-01,dataId|data-02"] )
         assert resp.status == 200 : resp.status
-    }
-
-    @Test
-    void reloadTest() {
-        def resp = client.get(path: "reload")
-        assertEquals(200, resp.status)
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,12 +30,14 @@ import java.util.TimerTask;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Local;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.concurrent.ManagedExecutorService;
 
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -106,6 +108,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     @EJB
     PartitionManager partitionManager;
 
+    @Resource
+    private ManagedExecutorService executor;
+
     boolean distributed = false;
 
     public AlertsEngineImpl() {
@@ -165,12 +170,14 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 partitionManager.registerDataListener(this);
                 partitionManager.registerTriggerListener(this);
             }
-            /*
-                A reload() operation means that all triggers from the backend should be reloaded into the AlertsEngine
-                memory. In a distributed environment, the node that execute the reload() operation loads the triggers
-                assigned to it and notify other nodes to load rest of the triggers.
-             */
-            reload();
+            executor.submit(() -> {
+                /*
+                    A reload() operation means that all triggers from the backend should be reloaded into
+                    the AlertsEngine memory. In a distributed environment, the node that execute the reload()
+                    operation loads the triggers assigned to it and notify other nodes to load rest of the triggers.
+                 */
+                reload();
+            });
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
                 t.printStackTrace();
