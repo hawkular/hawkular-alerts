@@ -513,7 +513,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             return;
         }
 
-        session = CassCluster.getSession();
+        Session session = CassCluster.getSession();
         PreparedStatement updateTriggerEnabled = CassStatement.get(session, CassStatement.UPDATE_TRIGGER_ENABLED);
         if (updateTriggerEnabled == null) {
             throw new RuntimeException("updateTriggerEnabled PreparedStatement is null");
@@ -525,7 +525,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (initialized && null != alertsEngine) {
+        if (alertsContext.isInitialized() && null != alertsEngine) {
             alertsEngine.reloadTrigger(tenantId, triggerId);
         }
 

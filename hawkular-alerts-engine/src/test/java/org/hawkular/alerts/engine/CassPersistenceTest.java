@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,7 +41,6 @@ public class CassPersistenceTest extends PersistenceTest {
     private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
     private static final String EXTERNAL_CASSANDRA = "external_cassandra";
 
-    static Session session;
     static boolean externalCassandra;
     static String keyspace;
 
@@ -62,14 +61,15 @@ public class CassPersistenceTest extends PersistenceTest {
 
         keyspace = AlertProperties.getProperty("hawkular-alerts.cassandra-keyspace", "hawkular_alerts_test");
 
-        // try an clean up if this was somehow left around by a prior run
+        Session session = CassCluster.getSession();
+
+        // try and clean up if this was somehow left around by a prior run
         try {
             session.execute("DROP KEYSPACE " + keyspace);
         } catch (Throwable t) {
             // never mind, it may not be there
         }
 
-        session = CassCluster.getSession();
         definitionsService = StandaloneAlerts.getDefinitionsService();
         alertsService = StandaloneAlerts.getAlertsService();
         actionsService = StandaloneAlerts.getActionsService();
@@ -80,6 +80,7 @@ public class CassPersistenceTest extends PersistenceTest {
 
         // try an clean up
         try {
+            Session session = CassCluster.getSession();
             session.execute("DROP KEYSPACE " + keyspace);
             if (!externalCassandra) {
                 System.out.print("Stopping embedded Cassandra for unit testing...");
