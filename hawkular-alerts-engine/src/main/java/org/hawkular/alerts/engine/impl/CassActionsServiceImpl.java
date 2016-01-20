@@ -75,6 +75,10 @@ public class CassActionsServiceImpl implements ActionsService {
         log.debug("Creating instance.");
     }
 
+    public void setAlertsContext(AlertsContext alertsContext) {
+        this.alertsContext = alertsContext;
+    }
+
     @Asynchronous
     @Override
     public void send(Action action) {

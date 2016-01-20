@@ -115,6 +115,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         this.alertsEngine = alertsEngine;
     }
 
+    public void setAlertsContext(AlertsContext alertsContext) {
+        this.alertsContext = alertsContext;
+    }
+
+    public void setExecutor(ManagedExecutorService executor) {
+        this.executor = executor;
+    }
+
     @PostConstruct
     public void init() {
         if (!alertsContext.isInitialized()) {

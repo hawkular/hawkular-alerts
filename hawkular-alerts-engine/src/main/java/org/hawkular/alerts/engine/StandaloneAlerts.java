@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,28 @@
  */
 package org.hawkular.alerts.engine;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import javax.enterprise.concurrent.ManagedExecutorService;
+
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.engine.impl.AlertsContext;
 import org.hawkular.alerts.engine.impl.AlertsEngineImpl;
 import org.hawkular.alerts.engine.impl.CassActionsServiceImpl;
 import org.hawkular.alerts.engine.impl.CassAlertsServiceImpl;
 import org.hawkular.alerts.engine.impl.CassDefinitionsServiceImpl;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
+import org.jboss.logging.Logger;
 
 /**
  * Factory helper for standalone use cases.
@@ -31,9 +45,14 @@ import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
  * @author Lucas Ponce
  */
 public class StandaloneAlerts {
+    private static final int INIT_TIME_COUNT = 10;
+    private static final int INIT_TIME_SLEEP = 500;
+
+    private final Logger log = Logger.getLogger(StandaloneAlerts.class);
 
     private static StandaloneAlerts instance = null;
 
+    private AlertsContext alertsContext = null;
     private CassActionsServiceImpl actions = null;
     private CassAlertsServiceImpl alerts = null;
     private CassDefinitionsServiceImpl definitions = null;
@@ -46,13 +65,29 @@ public class StandaloneAlerts {
         engine = new AlertsEngineImpl();
         definitions = new CassDefinitionsServiceImpl();
         alerts = new CassAlertsServiceImpl();
+        alertsContext = new AlertsContext();
 
         definitions.setAlertsEngine(engine);
+        definitions.setAlertsContext(alertsContext);
+        definitions.setExecutor(new StandaloneExecutorService());
+
+        actions.setAlertsContext(alertsContext);
+
         engine.setDefinitions(definitions);
         engine.setActions(actions);
         engine.setRules(rules);
 
         definitions.init();
+
+        log.debug("Waiting for initialization...");
+        try {
+            for (int i = 0; i < INIT_TIME_COUNT; i++) {
+                log.debug(".");
+                Thread.sleep(INIT_TIME_SLEEP);
+            }
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
+        }
     }
 
     public static synchronized DefinitionsService getDefinitionsService() {
@@ -74,5 +109,83 @@ public class StandaloneAlerts {
             instance = new StandaloneAlerts();
         }
         return instance.actions;
+    }
+
+    public static class StandaloneExecutorService implements ManagedExecutorService {
+
+        private ExecutorService executor;
+
+        public StandaloneExecutorService() {
+            executor = Executors.newSingleThreadExecutor();
+        }
+
+        @Override
+        public void shutdown() {
+            executor.shutdown();
+        }
+
+        @Override
+        public List<Runnable> shutdownNow() {
+            return executor.shutdownNow();
+        }
+
+        @Override
+        public boolean isShutdown() {
+            return executor.isShutdown();
+        }
+
+        @Override
+        public boolean isTerminated() {
+            return executor.isTerminated();
+        }
+
+        @Override
+        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+            return executor.awaitTermination(timeout, unit);
+        }
+
+        @Override
+        public <T> Future<T> submit(Callable<T> task) {
+            return executor.submit(task);
+        }
+
+        @Override
+        public <T> Future<T> submit(Runnable task, T result) {
+            return executor.submit(task, result);
+        }
+
+        @Override
+        public Future<?> submit(Runnable task) {
+            return executor.submit(task);
+        }
+
+        @Override
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
+                throws InterruptedException {
+            return executor.invokeAll(tasks);
+        }
+
+        @Override
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
+                throws InterruptedException {
+            return executor.invokeAll(tasks, timeout, unit);
+        }
+
+        @Override
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
+                throws InterruptedException, ExecutionException {
+            return executor.invokeAny(tasks);
+        }
+
+        @Override
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException, TimeoutException {
+            return executor.invokeAny(tasks, timeout, unit);
+        }
+
+        @Override
+        public void execute(Runnable command) {
+            executor.execute(command);
+        }
     }
 }
