@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ package org.hawkular.alerts.api.services;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
@@ -54,11 +55,29 @@ public interface AlertsService {
     void addAlerts(Collection<Alert> alerts) throws Exception;
 
     /**
-     * Persist the provided events and sent to the engine for alerts evaluation.
+     * Add the provided tags to the specified alerts.
+     * @param tenantId Tenant where alerts are stored
+     * @param alertIds Alerts to be tagged
+     * @param tags the tags to add
+     * @throws Exception any problem
+     */
+    void addAlertTags(String tenantId, Collection<String> alertIds, Map<String, String> tags) throws Exception;
+
+    /**
+     * Persist the provided events and send to the engine for alerts evaluation.
      * @param events Set of unpersisted Events.
      * @throws Exception any problem
      */
     void addEvents(Collection<Event> events) throws Exception;
+
+    /**
+     * Add the provided tags to the specified events.
+     * @param tenantId Tenant where alerts are stored
+     * @param eventIds Events to be tagged.
+     * @param tags the tags to add
+     * @throws Exception any problem
+     */
+    void addEventTags(String tenantId, Collection<String> eventIds, Map<String, String> tags) throws Exception;
 
     /**
      * Only persist the provided events.
@@ -89,7 +108,7 @@ public interface AlertsService {
 
     /**
      * Delete the requested Events, as described by the provided criteria.
-     * @param tenantId Tenant where alerts are stored
+     * @param tenantId Tenant where events are stored
      * @param criteria specifying the Events to be deleted. Not null.
      * @returns the number of events deleted
      * @throws Exception any problem
@@ -131,6 +150,24 @@ public interface AlertsService {
      * @throws Exception any problem
      */
     Page<Event> getEvents(String tenantId, EventsCriteria criteria, Pager pager) throws Exception;
+
+    /**
+     * Remove the provided tags from the specified alerts.
+     * @param tenantId Tenant where alerts are stored
+     * @param alertIds Alerts from which to remove the tags
+     * @param tags the tag names to remove.
+     * @throws Exception any problem
+     */
+    void removeAlertTags(String tenantId, Collection<String> alertIds, Collection<String> tags) throws Exception;
+
+    /**
+     * Remove the provided tags from the specified events.
+     * @param tenantId Tenant where events are stored
+     * @param eventIds Events from which to remove the tags
+     * @param tags the tag names to remove
+     * @throws Exception any problem
+     */
+    void removeEventTags(String tenantId, Collection<String> eventIds, Collection<String> tags) throws Exception;
 
     /**
      * The alerts must already have been added. Set the alerts to RESOLVED status. The resolvedTime will be set to the

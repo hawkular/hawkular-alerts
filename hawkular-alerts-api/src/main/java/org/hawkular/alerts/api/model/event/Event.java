@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,6 +50,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @Type(name = "EVENT", value = Event.class),
         @Type(name = "ALERT", value = Alert.class) })
 public class Event implements Comparable<Event>, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     // This field will be controlled vi fasterxml. We need to make this an explicit field because we ship the
     // serialized json to clients via rest. Since we serialize via fasterxml the field will be added to the json.
@@ -257,6 +259,13 @@ public class Event implements Comparable<Event>, Serializable {
             throw new IllegalArgumentException("Tag must have non-null name and value");
         }
         getTags().put(name, value);
+    }
+
+    public void removeTag(String name) {
+        if (null == name) {
+            throw new IllegalArgumentException("Tag must have non-null name");
+        }
+        getTags().remove(name);
     }
 
     public Map<String, String> getContext() {
