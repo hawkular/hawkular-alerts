@@ -218,7 +218,7 @@ public class AlertsHandler {
             @ApiParam(required = true, value = "comma separated list of alertIds to tag")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = false, value = "comma separated list of tags to add, "
+            @ApiParam(required = true, value = "comma separated list of tags to add, "
                     + "each tag of format 'name|value'.")
             @QueryParam("tags")
             final String tags) {
@@ -252,7 +252,7 @@ public class AlertsHandler {
             @ApiParam(required = true, value = "comma separated list of alertIds to untag")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = false, value = "comma separated list of tag names to remove")
+            @ApiParam(required = true, value = "comma separated list of tag names to remove")
             @QueryParam("tagNames")
             final String tagNames) {
         try {

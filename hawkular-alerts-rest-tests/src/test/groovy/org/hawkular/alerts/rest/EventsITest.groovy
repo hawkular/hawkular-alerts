@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -114,9 +114,30 @@ class EventsITest extends AbstractITestBase {
         assertEquals(context, e.getContext())
         assertEquals(tags, e.getTags())
 
-        resp = client.get(path: "events", query: [tags:"event-tag-name|event-tag-value"] )
+        resp = client.get(path: "events", query: [startTime:now,tags:"event-tag-name|event-tag-value"] )
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size)
+
+        e = resp.data[0]
+
+        resp = client.put(path: "events/tags", query: [eventIds:e.id,tags:"tag1name|tag1value"] )
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "events", query: [startTime:now,tags:"tag1name|tag1value"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        e = resp.data[0]
+        assertEquals(2, e.tags.size())
+        assertEquals("event-tag-value", e.tags.get("event-tag-name"))
+        assertEquals("tag1value", e.tags.get("tag1name"))
+
+        resp = client.delete(path: "events/tags", query: [eventIds:e.id,tagNames:"tag1name"] )
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "events", query: [startTime:now,tags:"tag1name|tag1value"] )
+        assertEquals(200, resp.status)
+        assertEquals(0, resp.data.size())
 
         resp = client.delete(path: "events/test-event-id" )
         assert resp.status == 200 : resp.status

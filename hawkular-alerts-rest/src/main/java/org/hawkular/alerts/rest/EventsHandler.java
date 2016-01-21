@@ -133,7 +133,7 @@ public class EventsHandler {
             @ApiParam(required = true, value = "comma separated list of eventIds to tag")
             @QueryParam("eventIds")
             final String eventIds,
-            @ApiParam(required = false, value = "comma separated list of tags to add, "
+            @ApiParam(required = true, value = "comma separated list of tags to add, "
                     + "each tag of format 'name|value'.")
             @QueryParam("tags")
             final String tags) {
@@ -167,7 +167,7 @@ public class EventsHandler {
             @ApiParam(required = true, value = "comma separated list of eventIds to untag")
             @QueryParam("eventIds")
             final String eventIds,
-            @ApiParam(required = false, value = "comma separated list of tag names to remove")
+            @ApiParam(required = true, value = "comma separated list of tag names to remove")
             @QueryParam("tagNames")
             final String tagNames) {
         try {
