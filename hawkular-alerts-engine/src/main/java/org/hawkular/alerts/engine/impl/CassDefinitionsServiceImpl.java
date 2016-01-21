@@ -1697,6 +1697,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
 
+        // for data-driven groups a change to group conditions invalidates the previously generated members
+        // Note: if the new set of conditions uses the same set of dataIds we probably don't need to invalidate
+        // the current members but the work of maintaining them may not add much, if any, benefit.
+        if (TriggerType.DATA_DRIVEN_GROUP == group.getType()) {
+            for (Trigger member : memberTriggers) {
+                removeTrigger(member);
+            }
+            memberTriggers.clear();
+        }
+
         // allow the dataIdMap to be empty when there are no member triggers
         if (!memberTriggers.isEmpty()) {
             if (dataIdMemberMap == null) {

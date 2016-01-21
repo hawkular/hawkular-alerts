@@ -26,6 +26,7 @@ import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertNull
 import static org.junit.runners.MethodSorters.NAME_ASCENDING
 
+import org.hawkular.alerts.api.json.GroupConditionsInfo
 import org.hawkular.alerts.api.model.Severity
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval
@@ -191,5 +192,20 @@ class GroupITest extends AbstractITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size())
+
+        // an update to the group conditions should invalidate the data-driven members, and they will need to be
+        // regenerated.
+        AvailabilityCondition updatedFiringCond = new AvailabilityCondition("test-ddgroup-trigger",
+                Mode.FIRING, "test-ddgroup-avail", Operator.DOWN);
+        GroupConditionsInfo groupConditionsInfo = new GroupConditionsInfo( updatedFiringCond, null );
+
+        resp = client.put(path: "triggers/groups/test-ddgroup-trigger/conditions/firing", body: groupConditionsInfo)
+        assertEquals(resp.toString(), 200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // FETCH members, should not be any
+        resp = client.get(path: "triggers/groups/test-ddgroup-trigger/members")
+        assertEquals(200, resp.status)
+        assertEquals(0, resp.data.size)
     }
 }
