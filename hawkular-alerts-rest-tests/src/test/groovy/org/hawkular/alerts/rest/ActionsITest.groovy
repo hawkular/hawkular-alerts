@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,18 +16,18 @@
  */
 package org.hawkular.alerts.rest
 
+import org.hawkular.alerts.api.model.action.ActionDefinition
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
-import org.hawkular.alerts.api.model.data.AvailabilityType
 import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
-
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
+
 /**
  * Actions REST tests.
  *
@@ -69,7 +69,6 @@ class ActionsITest extends AbstractITestBase {
 
     @Test
     void createAction() {
-
         String actionPlugin = "email"
         String actionId = "test-action";
 
@@ -80,20 +79,22 @@ class ActionsITest extends AbstractITestBase {
         actionProperties.put("prop2", "value2");
         actionProperties.put("prop3", "value3");
 
-        def resp = client.post(path: "actions", body: actionProperties)
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        def resp = client.post(path: "actions", body: actionDefinition)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "actions/" + actionPlugin + "/" + actionId);
         assertEquals(200, resp.status)
-        assertEquals("value1", resp.data.prop1)
+        assertEquals("value1", resp.data.properties.prop1)
 
-        actionProperties.put("prop3", "value3Modified")
-        resp = client.put(path: "actions/" + actionPlugin + "/" + actionId, body: actionProperties)
+        actionDefinition.getProperties().put("prop3", "value3Modified")
+        resp = client.put(path: "actions/" + actionPlugin + "/" + actionId, body: actionDefinition)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "actions/" + actionPlugin + "/" + actionId)
         assertEquals(200, resp.status)
-        assertEquals("value3Modified", resp.data.prop3)
+        assertEquals("value3Modified", resp.data.properties.prop3)
 
         resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
         assertEquals(200, resp.status)

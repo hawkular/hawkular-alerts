@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,6 +41,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.services.ActionsCriteria;
@@ -87,7 +88,7 @@ public class ActionsHandler {
             @ApiResponse(code = 500, message = "Internal server error") })
     public Response findActions() {
         try {
-            Map<String, Set<String>> actions = definitions.getActions(tenantId);
+            Map<String, Set<String>> actions = definitions.getActionIds(tenantId);
             if (log.isDebugEnabled()) {
                 log.debug("Actions: " + actions);
             }
@@ -111,52 +112,11 @@ public class ActionsHandler {
             @PathParam("actionPlugin")
             final String actionPlugin) {
         try {
-            Collection<String> actions = definitions.getActions(tenantId, actionPlugin);
+            Collection<String> actions = definitions.getActionIds(tenantId, actionPlugin);
             if (log.isDebugEnabled()) {
                 log.debug("Actions: " + actions);
             }
             return ResponseUtil.ok(actions);
-        } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
-        }
-    }
-
-    @POST
-    @Path("/")
-    @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Create a new action",
-            notes = "Action properties are variable and depends on the action plugin. " +
-                    "A user needs to request previously ActionPlugin API to get the list of properties to fill " +
-                    "for a specific type. All actions should have actionId and actionPlugin as mandatory " +
-                    "properties")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Action Created"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Existing action/Invalid Parameters") })
-    public Response createAction(@ApiParam(value = "Action properties. Properties depend of specific ActionPlugin.",
-                    name = "actionProperties",
-                    required = true)
-            final Map<String, String> actionProperties) {
-        String actionPlugin = actionProperties.get("actionPlugin");
-        String actionId = actionProperties.get("actionId");
-        if (isEmpty(actionPlugin)) {
-            return ResponseUtil.badRequest("actionPlugin must be not null");
-        }
-        if (isEmpty(actionId)) {
-            return ResponseUtil.badRequest("actionId must be not null");
-        }
-        try {
-            if (definitions.getAction(tenantId, actionPlugin, actionId) != null) {
-                return ResponseUtil.badRequest("Existing action:  " + actionId);
-            } else {
-                definitions.addAction(tenantId, actionPlugin, actionId, actionProperties);
-                if (log.isDebugEnabled()) {
-                    log.debug("ActionId: " + actionId + " - Properties: " + actionProperties);
-                }
-                return ResponseUtil.ok(actionProperties);
-            }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
@@ -174,22 +134,66 @@ public class ActionsHandler {
             @ApiResponse(code = 200, message = "Success, Action Found"),
             @ApiResponse(code = 404, message = "No Action Found"),
             @ApiResponse(code = 500, message = "Internal server error")})
-    public Response getAction(@ApiParam(value = "Action plugin", required = true)
+    public Response getActionDefinition(@ApiParam(value = "Action plugin", required = true)
             @PathParam("actionPlugin")
             final String actionPlugin,
             @ApiParam(value = "Action id to be retrieved", required = true)
             @PathParam("actionId")
             final String actionId) {
         try {
-            Map<String, String> actionProperties = definitions.getAction(tenantId, actionPlugin, actionId);
+            ActionDefinition actionDefinition = definitions.getActionDefinition(tenantId, actionPlugin, actionId);
             if (log.isDebugEnabled()) {
-                log.debug("ActionId: " + actionId + " - Properties: " + actionProperties);
+                log.debug("ActionDefinition: " + actionDefinition);
             }
-            if (isEmpty(actionProperties)) {
+            if (actionDefinition == null) {
                 return ResponseUtil.notFound("Not action found for actionPlugin: " + actionPlugin + " and actionId: "
                         + actionId);
             }
-            return ResponseUtil.ok(actionProperties);
+            return ResponseUtil.ok(actionDefinition);
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Create a new ActionDefinition",
+            response = ActionDefinition.class,
+            notes = "Returns created ActionDefinition")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, ActionDefinition Created"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Existing ActionDefinition/Invalid Parameters") })
+    public Response createActionDefinition(@ApiParam(value = "ActionDefinition to be created",
+            name = "actionDefinition",
+            required = true)
+           final ActionDefinition actionDefinition) {
+        if (actionDefinition == null) {
+            return ResponseUtil.badRequest("actionDefinition must be not null");
+        }
+        if (isEmpty(actionDefinition.getActionPlugin())) {
+            return ResponseUtil.badRequest("actionPlugin must be not null");
+        }
+        if (isEmpty(actionDefinition.getActionId())) {
+            return ResponseUtil.badRequest("actionId must be not null");
+        }
+        if (isEmpty(actionDefinition.getProperties())) {
+            return ResponseUtil.badRequest("properties must be not null");
+        }
+        try {
+            if (definitions.getActionDefinition(tenantId, actionDefinition.getActionPlugin(),
+                    actionDefinition.getActionId()) != null) {
+                return ResponseUtil.badRequest("Existing ActionDefinition:  " + actionDefinition);
+            } else {
+                definitions.addActionDefinition(tenantId, actionDefinition);
+                if (log.isDebugEnabled()) {
+                    log.debug("ActionDefinition: " + actionDefinition);
+                }
+                return ResponseUtil.ok(actionDefinition);
+            }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());
@@ -199,32 +203,37 @@ public class ActionsHandler {
     @PUT
     @Path("/{actionPlugin}/{actionId}")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing action",
-            notes = "Action properties are variable and depends on the action plugin. " +
-                    "A user needs to request previously ActionPlugin API to get the list of properties to fill " +
-                    "for a specific type. All actions should have actionId and actionPlugin as mandatory " +
-                    "properties")
+    @ApiOperation(value = "Update an existing ActionDefinition",
+            response = ActionDefinition.class,
+            notes = "Returns created ActionDefinition")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Action Updated"),
+            @ApiResponse(code = 200, message = "Success, ActionDefinition Updated"),
             @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "Action not found for update") })
-    public Response updateAction(@ApiParam(value = "Action plugin", required = true)
-            @PathParam("actionPlugin")
-            final String actionPlugin,
-            @ApiParam(value = "action id to be updated", required = true)
-            @PathParam("actionId")
-            final String actionId,
-            @ApiParam(value = "Action properties. Properties depend of specific ActionPlugin.", required = true)
-            final Map<String, String> actionProperties) {
+            @ApiResponse(code = 404, message = "ActionDefinition not found for update") })
+    public Response updateActionDefinition(@ApiParam(value = "ActionDefinition to be updated",
+            name = "actionDefinition",
+            required = true)
+           final ActionDefinition actionDefinition) {
+        if (actionDefinition == null) {
+            return ResponseUtil.badRequest("actionDefinition must be not null");
+        }
+        if (isEmpty(actionDefinition.getActionPlugin())) {
+            return ResponseUtil.badRequest("actionPlugin must be not null");
+        }
+        if (isEmpty(actionDefinition.getActionId())) {
+            return ResponseUtil.badRequest("actionId must be not null");
+        }
         try {
-            if (definitions.getAction(tenantId, actionPlugin, actionId) != null) {
-                definitions.updateAction(tenantId, actionPlugin, actionId, actionProperties);
+            actionDefinition.setTenantId(tenantId);
+            if (definitions.getActionDefinition(tenantId, actionDefinition.getActionPlugin(),
+                    actionDefinition.getActionId()) != null) {
+                definitions.updateActionDefinition(tenantId, actionDefinition);
                 if (log.isDebugEnabled()) {
-                    log.debug("ActionId: " + actionId + " - Properties:  " + actionProperties);
+                    log.debug("ActionDefinition: " + actionDefinition);
                 }
-                return ResponseUtil.ok(actionProperties);
+                return ResponseUtil.ok(actionDefinition);
             } else {
-                return ResponseUtil.notFound("ActionId: " + actionId + " not found for update");
+                return ResponseUtil.notFound("ActionDefinition: " + actionDefinition + " not found for update");
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
@@ -234,26 +243,27 @@ public class ActionsHandler {
 
     @DELETE
     @Path("/{actionPlugin}/{actionId}")
-    @ApiOperation(value = "Delete an existing action")
+    @ApiOperation(value = "Delete an existing ActionDefinition")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Action Deleted"),
+            @ApiResponse(code = 200, message = "Success, ActionDefinition Deleted"),
             @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "ActionId not found for delete") })
-    public Response deleteAction(@ApiParam(value = "Action plugin", required = true)
+            @ApiResponse(code = 404, message = "ActionDefinition not found for delete") })
+    public Response deleteActionDefinition(@ApiParam(value = "Action plugin", required = true)
             @PathParam("actionPlugin")
             final String actionPlugin,
             @ApiParam(value = "Action id to be deleted", required = true)
             @PathParam("actionId")
             final String actionId) {
         try {
-            if (definitions.getAction(tenantId, actionPlugin, actionId) != null) {
-                definitions.removeAction(tenantId, actionPlugin, actionId);
+            if (definitions.getActionDefinition(tenantId, actionPlugin, actionId) != null) {
+                definitions.removeActionDefinition(tenantId, actionPlugin, actionId);
                 if (log.isDebugEnabled()) {
-                    log.debug("ActionId: " + actionId);
+                    log.debug("ActionPlugin: " + actionPlugin + " ActionId: " + actionId);
                 }
                 return ResponseUtil.ok();
             } else {
-                return ResponseUtil.notFound("ActionId: " + actionId + " not found for delete");
+                return ResponseUtil.notFound("ActionPlugin: " + actionPlugin + " ActionId: " + actionId +
+                        " not found for delete");
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);

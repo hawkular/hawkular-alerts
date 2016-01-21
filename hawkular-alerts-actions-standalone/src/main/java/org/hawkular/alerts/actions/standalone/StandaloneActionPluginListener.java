@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +28,7 @@ import javax.naming.InitialContext;
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
@@ -79,10 +80,10 @@ public class StandaloneActionPluginListener implements ActionListener {
                 return;
             }
             if (definitions != null) {
-                Map<String, String> properties = definitions.getAction(action.getTenantId(), action.getActionPlugin(),
-                        action.getActionId());
+                ActionDefinition actionDefinition = definitions.getActionDefinition(action.getTenantId(),
+                        action.getActionPlugin(), action.getActionId());
                 Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
-                Map<String, String> mixedProps = mixProperties(properties, defaultProperties);
+                Map<String, String> mixedProps = mixProperties(actionDefinition.getProperties(), defaultProperties);
 
                 action.setProperties(mixedProps);
 

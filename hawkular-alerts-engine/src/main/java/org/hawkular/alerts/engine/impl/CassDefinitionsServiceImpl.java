@@ -44,6 +44,7 @@ import javax.enterprise.concurrent.ManagedExecutorService;
 import org.hawkular.alerts.api.json.JsonImport.FullAction;
 import org.hawkular.alerts.api.json.JsonImport.FullTrigger;
 import org.hawkular.alerts.api.model.Severity;
+import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -191,11 +192,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 }
             }
             for (FullAction fAction : importManager.getFullActions()) {
-                Map<String, String> actionProperties = new HashMap<>(fAction.getProperties());
-                actionProperties.put("tenantId", fAction.getTenantId());
-                actionProperties.put("actionPlugin", fAction.getActionPlugin());
-                actionProperties.put("actionId", fAction.getActionId());
-                addAction(fAction.getTenantId(), fAction.getActionPlugin(), fAction.getActionId(), actionProperties);
+                ActionDefinition actionDefinition = new ActionDefinition(fAction.getTenantId(),
+                        fAction.getActionPlugin(), fAction.getActionId(), fAction.getProperties());
+                addActionDefinition(actionDefinition.getTenantId(), actionDefinition);
             }
         } catch (Exception e) {
             if (log.isDebugEnabled()) {
@@ -214,23 +213,24 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void addAction(String tenantId, String actionPlugin, String actionId, Map<String, String> properties)
+    public void addActionDefinition(String tenantId, ActionDefinition actionDefinition)
             throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        if (isEmpty(actionPlugin)) {
+        if (actionDefinition == null) {
+            throw new IllegalArgumentException("ActionDefinition must be not null");
+        }
+        actionDefinition.setTenantId(tenantId);
+        if (isEmpty(actionDefinition.getActionPlugin())) {
             throw new IllegalArgumentException("ActionPlugin must be not null");
         }
-        if (isEmpty(actionId)) {
+        if (isEmpty(actionDefinition.getActionId())) {
             throw new IllegalArgumentException("ActionId must be not null");
         }
-        if (properties == null || properties.isEmpty()) {
+        if (isEmpty(actionDefinition.getProperties())) {
             throw new IllegalArgumentException("Properties must be not null");
         }
-        properties.put("actionId", actionId);
-        properties.put("actionPlugin", actionPlugin);
-        properties.put("tenantId", tenantId);
         Session session = CassCluster.getSession();
         PreparedStatement insertAction = CassStatement.get(session, CassStatement.INSERT_ACTION);
         if (insertAction == null) {
@@ -238,7 +238,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         try {
-            session.execute(insertAction.bind(tenantId, actionPlugin, actionId, properties));
+            session.execute(insertAction.bind(tenantId, actionDefinition.getActionPlugin(),
+                    actionDefinition.getActionId(), actionDefinition.getProperties()));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -2549,7 +2550,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void removeAction(String tenantId, String actionPlugin, String actionId) throws Exception {
+    public void removeActionDefinition(String tenantId, String actionPlugin, String actionId) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
@@ -2573,22 +2574,22 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void updateAction(String tenantId, String actionPlugin, String actionId, Map<String, String> properties)
-            throws Exception {
+    public void updateActionDefinition(String tenantId, ActionDefinition actionDefinition) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        if (isEmpty(actionPlugin)) {
+        if (actionDefinition == null) {
+            throw new IllegalArgumentException("actionDefinition must be not null");
+        }
+        if (isEmpty(actionDefinition.getActionPlugin())) {
             throw new IllegalArgumentException("ActionPlugin must be not null");
         }
-        if (isEmpty(actionId)) {
+        if (isEmpty(actionDefinition.getActionId())) {
             throw new IllegalArgumentException("ActionId must be not null");
         }
-        if (properties == null || properties.isEmpty()) {
+        if (isEmpty(actionDefinition.getProperties())) {
             throw new IllegalArgumentException("Properties must be not null");
         }
-        properties.put("actionId", actionId);
-        properties.put("actionPlugin", actionPlugin);
 
         Session session = CassCluster.getSession();
         PreparedStatement updateAction = CassStatement.get(session, CassStatement.UPDATE_ACTION);
@@ -2596,7 +2597,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new RuntimeException("updateAction PreparedStatement is null");
         }
         try {
-            session.execute(updateAction.bind(properties, tenantId, actionPlugin, actionId));
+            session.execute(updateAction.bind(actionDefinition.getProperties(), tenantId,
+                    actionDefinition.getActionPlugin(), actionDefinition.getActionId()));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -2605,7 +2607,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
-    public Map<String, Map<String, Set<String>>> getAllActions() throws Exception {
+    public Map<String, Map<String, Set<String>>> getAllActionIds() throws Exception {
         Session session = CassCluster.getSession();
         PreparedStatement selectActionsAll = CassStatement.get(session, CassStatement.SELECT_ACTIONS_ALL);
         if (selectActionsAll == null) {
@@ -2634,7 +2636,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Map<String, Set<String>> getActions(String tenantId) throws Exception {
+    public Map<String, Set<String>> getActionIds(String tenantId) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
@@ -2663,7 +2665,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<String> getActions(String tenantId, String actionPlugin) throws Exception {
+    public Collection<String> getActionIds(String tenantId, String actionPlugin) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
@@ -2689,7 +2691,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Map<String, String> getAction(String tenantId, String actionPlugin, String actionId) throws Exception {
+    public ActionDefinition getActionDefinition(String tenantId, String actionPlugin, String actionId)
+            throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
@@ -2704,19 +2707,20 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (selectAction == null) {
             throw new RuntimeException("selectAction PreparedStatement is null");
         }
-        Map<String, String> properties = null;
+        ActionDefinition actionDefinition = null;
         try {
             ResultSet rsAction = session.execute(selectAction.bind(tenantId, actionPlugin, actionId));
             Iterator<Row> itAction = rsAction.iterator();
             if (itAction.hasNext()) {
                 Row row = itAction.next();
-                properties = row.getMap("properties", String.class, String.class);
+                actionDefinition = new ActionDefinition(tenantId, actionPlugin, actionId,
+                        row.getMap("properties", String.class, String.class));
             }
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
-        return properties;
+        return actionDefinition;
     }
 
     @Override

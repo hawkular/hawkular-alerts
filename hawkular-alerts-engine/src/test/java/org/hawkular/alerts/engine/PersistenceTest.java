@@ -91,7 +91,7 @@ public abstract class PersistenceTest {
         assertTrue(definitionsService.getAllTriggers().size() > 0);
         assertTrue(definitionsService.getAllConditions().size() > 0);
         assertTrue(definitionsService.getAllDampenings().size() > 0);
-        assertTrue(definitionsService.getAllActions().size() > 0);
+        assertTrue(definitionsService.getAllActionIds().size() > 0);
     }
 
     @Test

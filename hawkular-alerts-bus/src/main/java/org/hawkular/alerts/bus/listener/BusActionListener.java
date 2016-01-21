@@ -25,6 +25,7 @@ import javax.jms.TopicConnectionFactory;
 import javax.naming.InitialContext;
 
 import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.bus.api.BusActionMessage;
@@ -72,11 +73,10 @@ public class BusActionListener implements ActionListener {
                 return;
             }
             if (definitions != null) {
-                Map<String, String> properties = definitions.getAction(action.getTenantId(),
+                ActionDefinition actionDefinition = definitions.getActionDefinition(action.getTenantId(),
                         action.getActionPlugin(), action.getActionId());
                 Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
-                Map<String, String> mixedProps = mixProperties(properties, defaultProperties);
-
+                Map<String, String> mixedProps = mixProperties(actionDefinition.getProperties(), defaultProperties);
                 action.setProperties(mixedProps);
 
                 BusActionMessage pluginMessage = new BusActionMessage(action);
