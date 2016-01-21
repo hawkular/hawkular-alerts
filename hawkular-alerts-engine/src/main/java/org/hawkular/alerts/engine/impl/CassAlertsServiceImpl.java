@@ -229,6 +229,180 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     @Override
+    public void addAlertTags(String tenantId, Collection<String> alertIds, Map<String, String> tags) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(alertIds)) {
+            throw new IllegalArgumentException("AlertIds must be not null");
+        }
+        if (isEmpty(tags)) {
+            throw new IllegalArgumentException("Tags must be not null");
+        }
+
+        // Only tag existing alerts
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setAlertIds(alertIds);
+        Page<Alert> existingAlerts = getAlerts(tenantId, criteria, null);
+
+        Session session = CassCluster.getSession();
+        PreparedStatement updateAlert = CassStatement.get(session, CassStatement.UPDATE_ALERT);
+        PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
+
+        try {
+            List<ResultSetFuture> futures = new ArrayList<>();
+            existingAlerts.stream().forEach(a -> {
+                tags.entrySet().stream().forEach(tag -> {
+                    a.addTag(tag.getKey(), tag.getValue());
+                    futures.add(session.executeAsync(insertTag.bind(tenantId, TagType.ALERT.name(),
+                            tag.getKey(), tag.getValue(), a.getId())));
+                });
+                futures.add(session.executeAsync(updateAlert.bind(JsonUtil.toJson(a), tenantId, a.getAlertId())));
+            });
+            /*
+                main method is synchronous so we need to wait until futures are completed
+             */
+            Futures.allAsList(futures).get();
+
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public void addEventTags(String tenantId, Collection<String> eventIds, Map<String, String> tags) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(eventIds)) {
+            throw new IllegalArgumentException("EventIds must be not null");
+        }
+        if (isEmpty(tags)) {
+            throw new IllegalArgumentException("Tags must be not null");
+        }
+
+        // Only tag existing events
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setEventIds(eventIds);
+        Page<Event> existingEvents = getEvents(tenantId, criteria, null);
+
+        Session session = CassCluster.getSession();
+        PreparedStatement updateEvent = CassStatement.get(session, CassStatement.UPDATE_EVENT);
+        PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
+
+        try {
+            List<ResultSetFuture> futures = new ArrayList<>();
+            existingEvents.stream().forEach(a -> {
+                tags.entrySet().stream().forEach(tag -> {
+                    a.addTag(tag.getKey(), tag.getValue());
+                    futures.add(session.executeAsync(insertTag.bind(tenantId, TagType.EVENT.name(),
+                            tag.getKey(), tag.getValue(), a.getId())));
+                });
+                futures.add(session.executeAsync(updateEvent.bind(JsonUtil.toJson(a), tenantId, a.getId())));
+            });
+            /*
+                main method is synchronous so we need to wait until futures are completed
+             */
+            Futures.allAsList(futures).get();
+
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public void removeAlertTags(String tenantId, Collection<String> alertIds, Collection<String> tags)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(alertIds)) {
+            throw new IllegalArgumentException("AlertIds must be not null");
+        }
+        if (isEmpty(tags)) {
+            throw new IllegalArgumentException("Tags must be not null");
+        }
+
+        // Only untag existing alerts
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setAlertIds(alertIds);
+        Page<Alert> existingAlerts = getAlerts(tenantId, criteria, null);
+
+        Session session = CassCluster.getSession();
+        PreparedStatement updateAlert = CassStatement.get(session, CassStatement.UPDATE_ALERT);
+        PreparedStatement deleteTag = CassStatement.get(session, CassStatement.DELETE_TAG);
+
+        try {
+            List<ResultSetFuture> futures = new ArrayList<>();
+            existingAlerts.stream().forEach(a -> {
+                tags.stream().forEach(tag -> {
+                    if (a.getTags().containsKey(tag)) {
+                        futures.add(session.executeAsync(deleteTag.bind(tenantId, TagType.ALERT.name(),
+                                tag, a.getTags().get(tag), a.getId())));
+                        a.removeTag(tag);
+                    }
+                });
+                futures.add(session.executeAsync(updateAlert.bind(JsonUtil.toJson(a), tenantId, a.getAlertId())));
+            });
+            /*
+                main method is synchronous so we need to wait until futures are completed
+             */
+            Futures.allAsList(futures).get();
+
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public void removeEventTags(String tenantId, Collection<String> eventIds, Collection<String> tags)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(eventIds)) {
+            throw new IllegalArgumentException("EventIds must be not null");
+        }
+        if (isEmpty(tags)) {
+            throw new IllegalArgumentException("Tags must be not null");
+        }
+
+        // Only untag existing events
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setEventIds(eventIds);
+        Page<Event> existingEvents = getEvents(tenantId, criteria, null);
+
+        Session session = CassCluster.getSession();
+        PreparedStatement updateEvent = CassStatement.get(session, CassStatement.UPDATE_EVENT);
+        PreparedStatement deleteTag = CassStatement.get(session, CassStatement.DELETE_TAG);
+
+        try {
+            List<ResultSetFuture> futures = new ArrayList<>();
+            existingEvents.stream().forEach(e -> {
+                tags.stream().forEach(tag -> {
+                    if (e.getTags().containsKey(tag)) {
+                        futures.add(session.executeAsync(deleteTag.bind(tenantId, TagType.EVENT.name(),
+                                tag, e.getTags().get(tag), e.getId())));
+                        e.removeTag(tag);
+                    }
+                });
+                futures.add(session.executeAsync(updateEvent.bind(JsonUtil.toJson(e), tenantId, e.getId())));
+            });
+            /*
+                main method is synchronous so we need to wait until futures are completed
+             */
+            Futures.allAsList(futures).get();
+
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public Alert getAlert(String tenantId, String alertId, boolean thin) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
@@ -1335,6 +1509,10 @@ public class CassAlertsServiceImpl implements AlertsService {
                 }
             }
         }
+    }
+
+    private boolean isEmpty(Map<?, ?> m) {
+        return null == m || m.isEmpty();
     }
 
     private boolean isEmpty(Collection<?> c) {

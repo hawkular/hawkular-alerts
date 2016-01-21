@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,7 @@ import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Data
+import org.hawkular.alerts.api.model.event.Alert
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.FixMethodOrder
@@ -562,6 +563,38 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(2, resp.data.size())
 
         // println(resp.headers)
+    }
+
+    @Test
+    void t055_tagging() {
+        println( "Running t055_tagging")
+        // queries will look for alerts generated in this test tun
+        String start = t01Start;
+
+        // Fetch the 1 RESOLVED alert and play with its tags
+        def resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"RESOLVED"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        Alert alert = resp.data[0]
+
+        resp = client.put(path: "tags", query: [alertIds:alert.id,tags:"tag1name|tag1value"] )
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "", query: [startTime:start,tags:"tag1name|tag1value"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        alert = resp.data[0]
+        assertEquals(1, alert.tags.size())
+        assertEquals("tag1value", alert.tags.get("tag1name"))
+
+        resp = client.delete(path: "tags", query: [alertIds:alert.id,tagNames:"tag1name"] )
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "", query: [startTime:start,tags:"tag1name|tag1value"] )
+        assertEquals(200, resp.status)
+        assertEquals(0, resp.data.size())
     }
 
     @Test

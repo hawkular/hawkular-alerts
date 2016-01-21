@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -147,6 +147,7 @@ public class CassStatement {
     public static final String UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String UPDATE_ALERT;
     public static final String UPDATE_DAMPENING_ID;
+    public static final String UPDATE_EVENT;
     public static final String UPDATE_TRIGGER;
 
     static {
@@ -524,6 +525,8 @@ public class CassStatement {
         UPDATE_DAMPENING_ID = "UPDATE " + keyspace + ".dampenings "
                 + "SET type = ?, evalTrueSetting = ?, evalTotalSetting = ?, evalTimeSetting = ? "
                 + "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? AND dampeningId = ? ";
+
+        UPDATE_EVENT = "UPDATE " + keyspace + ".events SET payload = ? WHERE tenantId = ? AND id = ? ";
 
         UPDATE_TRIGGER = "UPDATE " + keyspace + ".triggers "
                 + "SET autoDisable = ?, autoEnable = ?, autoResolve = ?, autoResolveAlerts = ?, autoResolveMatch = ?, "

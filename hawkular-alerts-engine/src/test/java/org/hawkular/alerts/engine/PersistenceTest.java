@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2053,6 +2053,284 @@ public abstract class PersistenceTest {
         Alert updatedAlertWithNotes = alertsService.getAlert(TENANT, updatedAlert.getAlertId(), false);
 
         assertTrue(updatedAlertWithNotes != null && updatedAlertWithNotes.getNotes().size() == 3);
+    }
+
+    @Test
+    public void test0130AlertTags() throws Exception {
+        System.out.println(" test0130Tags...");
+
+        Trigger t = new Trigger("non-existence-trigger", "non-existence-trigger");
+        t.addTag("TriggerTag1Name", "TriggerTag1Value");
+        t.addTag("TriggerTag2Name", "TriggerTag2Value");
+
+        Alert testAlert = new Alert(TENANT, t, null);
+
+        alertsService.addAlerts(Collections.singletonList(testAlert));
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setThin(true);
+        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+
+        List<Alert> alerts = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(alerts != null);
+        assertEquals(1, alerts.size());
+        Alert alert = alerts.get(0);
+        assertEquals(2, alert.getTags().size());
+        assertEquals("TriggerTag1Value", alert.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", alert.getTags().get("TriggerTag2Name"));
+
+        // make sure second tag also works for fetch
+        criteria.getTags().clear();
+        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+
+        alerts = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(alerts != null);
+        assertEquals(1, alerts.size());
+        alert = alerts.get(0);
+        assertEquals(2, alert.getTags().size());
+        assertEquals("TriggerTag1Value", alert.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", alert.getTags().get("TriggerTag2Name"));
+
+        // add non-trigger tags to the alert
+        ArrayList<String> alertIds = new ArrayList<>(2);
+        alertIds.add(alert.getAlertId());
+        alertIds.add("bogus"); // non-existent alertIds should just get ignored
+
+        Map<String, String> alertTags = new HashMap<>();
+        alertTags.put("TriggerTag1Name", "TriggerTag1Value"); // it should be OK to re-apply an existing tag
+        alertTags.put("AlertTag1Name", "AlertTag1Value");
+        alertTags.put("AlertTag2Name", "AlertTag2Value");
+
+        alertsService.addAlertTags(TENANT, alertIds, alertTags);
+
+        // all four tags should now be searchable
+        criteria.getTags().clear();
+        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+        alerts = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(alerts != null);
+        assertEquals(1, alerts.size());
+        alert = alerts.get(0);
+        assertEquals(4, alert.getTags().size());
+        assertEquals("TriggerTag1Value", alert.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", alert.getTags().get("TriggerTag2Name"));
+        assertEquals("AlertTag1Value", alert.getTags().get("AlertTag1Name"));
+        assertEquals("AlertTag2Value", alert.getTags().get("AlertTag2Name"));
+
+        criteria.getTags().clear();
+        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+        alerts = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(alerts != null);
+        assertEquals(1, alerts.size());
+        alert = alerts.get(0);
+        assertEquals(4, alert.getTags().size());
+        assertEquals("TriggerTag1Value", alert.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", alert.getTags().get("TriggerTag2Name"));
+        assertEquals("AlertTag1Value", alert.getTags().get("AlertTag1Name"));
+        assertEquals("AlertTag2Value", alert.getTags().get("AlertTag2Name"));
+
+        criteria.getTags().clear();
+        criteria.addTag("AlertTag1Name", "AlertTag1Value");
+        alerts = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(alerts != null);
+        assertEquals(1, alerts.size());
+        alert = alerts.get(0);
+        assertEquals(4, alert.getTags().size());
+        assertEquals("TriggerTag1Value", alert.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", alert.getTags().get("TriggerTag2Name"));
+        assertEquals("AlertTag1Value", alert.getTags().get("AlertTag1Name"));
+        assertEquals("AlertTag2Value", alert.getTags().get("AlertTag2Name"));
+
+        criteria.getTags().clear();
+        criteria.addTag("AlertTag2Name", "AlertTag2Value");
+        alerts = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(alerts != null);
+        assertEquals(1, alerts.size());
+        alert = alerts.get(0);
+        assertEquals(4, alert.getTags().size());
+        assertEquals("TriggerTag1Value", alert.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", alert.getTags().get("TriggerTag2Name"));
+        assertEquals("AlertTag1Value", alert.getTags().get("AlertTag1Name"));
+        assertEquals("AlertTag2Value", alert.getTags().get("AlertTag2Name"));
+
+        // Now, remove two tags
+        Collection<String> doomedTags = new ArrayList<>();
+        doomedTags.add("TriggerTag1Name");
+        doomedTags.add("AlertTag1Name");
+        doomedTags.add("Bogus");  // it should be OK to try and remove a non-existing tag
+
+        alertsService.removeAlertTags(TENANT, alertIds, doomedTags);
+
+        // Only two tags should now be searchable
+        criteria.getTags().clear();
+        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+        alerts = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(alerts != null);
+        assertEquals(0, alerts.size());
+
+        criteria.getTags().clear();
+        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+        alerts = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(alerts != null);
+        assertEquals(1, alerts.size());
+        alert = alerts.get(0);
+        assertEquals(2, alert.getTags().size());
+        assertEquals("TriggerTag2Value", alert.getTags().get("TriggerTag2Name"));
+        assertEquals("AlertTag2Value", alert.getTags().get("AlertTag2Name"));
+
+        criteria.getTags().clear();
+        criteria.addTag("AlertTag1Name", "AlertTag1Value");
+        alerts = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(alerts != null);
+        assertEquals(0, alerts.size());
+
+        criteria.getTags().clear();
+        criteria.addTag("AlertTag2Name", "AlertTag2Value");
+        alerts = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(alerts != null);
+        assertEquals(1, alerts.size());
+        alert = alerts.get(0);
+        assertEquals(2, alert.getTags().size());
+        assertEquals("TriggerTag2Value", alert.getTags().get("TriggerTag2Name"));
+        assertEquals("AlertTag2Value", alert.getTags().get("AlertTag2Name"));
+    }
+
+    @Test
+    public void test0140EventTags() throws Exception {
+        System.out.println(" test0130Tags...");
+
+        Trigger t = new Trigger("non-existence-trigger", "non-existence-trigger");
+        t.addTag("TriggerTag1Name", "TriggerTag1Value");
+        t.addTag("TriggerTag2Name", "TriggerTag2Value");
+
+        Event testEvent = new Event(TENANT, t, null, null);
+
+        alertsService.persistEvents(Collections.singletonList(testEvent));
+
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setThin(true);
+        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+
+        List<Event> events = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(events != null);
+        assertEquals(1, events.size());
+        Event event = events.get(0);
+        assertEquals(2, event.getTags().size());
+        assertEquals("TriggerTag1Value", event.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
+
+        // make sure second tag also works for fetch
+        criteria.getTags().clear();
+        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+
+        events = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(events != null);
+        assertEquals(1, events.size());
+        event = events.get(0);
+        assertEquals(2, event.getTags().size());
+        assertEquals("TriggerTag1Value", event.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
+
+        // add non-trigger tags to the event
+        ArrayList<String> eventIds = new ArrayList<>(2);
+        eventIds.add(event.getId());
+        eventIds.add("bogus"); // non-existent eventIds should just get ignored
+
+        Map<String, String> eventTags = new HashMap<>();
+        eventTags.put("TriggerTag1Name", "TriggerTag1Value"); // it should be OK to re-apply an existing tag
+        eventTags.put("EventTag1Name", "EventTag1Value");
+        eventTags.put("EventTag2Name", "EventTag2Value");
+
+        alertsService.addEventTags(TENANT, eventIds, eventTags);
+
+        // all four tags should now be searchable
+        criteria.getTags().clear();
+        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+        events = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(events != null);
+        assertEquals(1, events.size());
+        event = events.get(0);
+        assertEquals(4, event.getTags().size());
+        assertEquals("TriggerTag1Value", event.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
+        assertEquals("EventTag1Value", event.getTags().get("EventTag1Name"));
+        assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
+
+        criteria.getTags().clear();
+        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+        events = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(events != null);
+        assertEquals(1, events.size());
+        event = events.get(0);
+        assertEquals(4, event.getTags().size());
+        assertEquals("TriggerTag1Value", event.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
+        assertEquals("EventTag1Value", event.getTags().get("EventTag1Name"));
+        assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
+
+        criteria.getTags().clear();
+        criteria.addTag("EventTag1Name", "EventTag1Value");
+        events = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(events != null);
+        assertEquals(1, events.size());
+        event = events.get(0);
+        assertEquals(4, event.getTags().size());
+        assertEquals("TriggerTag1Value", event.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
+        assertEquals("EventTag1Value", event.getTags().get("EventTag1Name"));
+        assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
+
+        criteria.getTags().clear();
+        criteria.addTag("EventTag2Name", "EventTag2Value");
+        events = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(events != null);
+        assertEquals(1, events.size());
+        event = events.get(0);
+        assertEquals(4, event.getTags().size());
+        assertEquals("TriggerTag1Value", event.getTags().get("TriggerTag1Name"));
+        assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
+        assertEquals("EventTag1Value", event.getTags().get("EventTag1Name"));
+        assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
+
+        // Now, remove two tags
+        Collection<String> doomedTags = new ArrayList<>();
+        doomedTags.add("TriggerTag1Name");
+        doomedTags.add("EventTag1Name");
+        doomedTags.add("Bogus");  // it should be OK to try and remove a non-existing tag
+
+        alertsService.removeEventTags(TENANT, eventIds, doomedTags);
+
+        // Only two tags should now be searchable
+        criteria.getTags().clear();
+        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+        events = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(events != null);
+        assertEquals(0, events.size());
+
+        criteria.getTags().clear();
+        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+        events = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(events != null);
+        assertEquals(1, events.size());
+        event = events.get(0);
+        assertEquals(2, event.getTags().size());
+        assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
+        assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
+
+        criteria.getTags().clear();
+        criteria.addTag("EventTag1Name", "EventTag1Value");
+        events = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(events != null);
+        assertEquals(0, events.size());
+
+        criteria.getTags().clear();
+        criteria.addTag("EventTag2Name", "EventTag2Value");
+        events = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(events != null);
+        assertEquals(1, events.size());
+        event = events.get(0);
+        assertEquals(2, event.getTags().size());
+        assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
+        assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
     }
 
 }

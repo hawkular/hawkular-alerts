@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -114,6 +114,73 @@ public class EventsHandler {
                 return ResponseUtil.ok(event);
             } else {
                 return ResponseUtil.badRequest("Event is null");
+            }
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @PUT
+    @Path("/tags")
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Add tags to existing Events")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Events tagged successfully"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public Response addTags(
+            @ApiParam(required = true, value = "comma separated list of eventIds to tag")
+            @QueryParam("eventIds")
+            final String eventIds,
+            @ApiParam(required = true, value = "comma separated list of tags to add, "
+                    + "each tag of format 'name|value'.")
+            @QueryParam("tags")
+            final String tags) {
+        try {
+            if (!isEmpty(eventIds) || isEmpty(tags)) {
+                // criteria just used for convenient type translation
+                EventsCriteria c = buildCriteria(null, null, eventIds, null, null, tags, false);
+                alertsService.addEventTags(tenantId, c.getEventIds(), c.getTags());
+                if (log.isDebugEnabled()) {
+                    log.debugf("Tagged alertIds:%s, %s", c.getEventIds(), c.getTags());
+                }
+                return ResponseUtil.ok();
+            } else {
+                return ResponseUtil.badRequest("EventIds and Tags required for adding tags");
+            }
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @DELETE
+    @Path("/tags")
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Remove tags from existing Events")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Events untagged successfully"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public Response deleteTags(
+            @ApiParam(required = true, value = "comma separated list of eventIds to untag")
+            @QueryParam("eventIds")
+            final String eventIds,
+            @ApiParam(required = true, value = "comma separated list of tag names to remove")
+            @QueryParam("tagNames")
+            final String tagNames) {
+        try {
+            if (!isEmpty(eventIds) || isEmpty(tagNames)) {
+                Collection<String> ids = Arrays.asList(eventIds.split(","));
+                Collection<String> tags = Arrays.asList(tagNames.split(","));
+                alertsService.removeEventTags(tenantId, ids, tags);
+                if (log.isDebugEnabled()) {
+                    log.debugf("Untagged eventIds:%s, %s", ids, tags);
+                }
+                return ResponseUtil.ok();
+            } else {
+                return ResponseUtil.badRequest("EventIds and Tags required for removing tags");
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);

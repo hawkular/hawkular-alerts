@@ -207,6 +207,73 @@ public class AlertsHandler {
     }
 
     @PUT
+    @Path("/tags")
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Add tags to existing Alerts")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Alerts tagged successfully"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public Response addTags(
+            @ApiParam(required = true, value = "comma separated list of alertIds to tag")
+            @QueryParam("alertIds")
+            final String alertIds,
+            @ApiParam(required = true, value = "comma separated list of tags to add, "
+                    + "each tag of format 'name|value'.")
+            @QueryParam("tags")
+            final String tags) {
+        try {
+            if (!isEmpty(alertIds) || isEmpty(tags)) {
+                // criteria just used for convenient type translation
+                AlertsCriteria c = buildCriteria(null, null, alertIds, null, null, null, tags, false);
+                alertsService.addAlertTags(tenantId, c.getAlertIds(), c.getTags());
+                if (log.isDebugEnabled()) {
+                    log.debugf("Tagged alertIds:%s, %s", c.getAlertIds(), c.getTags());
+                }
+                return ResponseUtil.ok();
+            } else {
+                return ResponseUtil.badRequest("AlertIds and Tags required for adding tags");
+            }
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @DELETE
+    @Path("/tags")
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Remove tags from existing Alerts")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Alerts untagged successfully"),
+            @ApiResponse(code = 500, message = "Internal server error"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+    public Response deleteTags(
+            @ApiParam(required = true, value = "comma separated list of alertIds to untag")
+            @QueryParam("alertIds")
+            final String alertIds,
+            @ApiParam(required = true, value = "comma separated list of tag names to remove")
+            @QueryParam("tagNames")
+            final String tagNames) {
+        try {
+            if (!isEmpty(alertIds) || isEmpty(tagNames)) {
+                Collection<String> ids = Arrays.asList(alertIds.split(","));
+                Collection<String> tags = Arrays.asList(tagNames.split(","));
+                alertsService.removeAlertTags(tenantId, ids, tags);
+                if (log.isDebugEnabled()) {
+                    log.debugf("Untagged alertIds:%s, %s", ids, tags);
+                }
+                return ResponseUtil.ok();
+            } else {
+                return ResponseUtil.badRequest("AlertIds and Tags required for removing tags");
+            }
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            return ResponseUtil.internalError(e.getMessage());
+        }
+    }
+
+    @PUT
     @Path("/ack")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Set one or more alerts Acknowledged")
