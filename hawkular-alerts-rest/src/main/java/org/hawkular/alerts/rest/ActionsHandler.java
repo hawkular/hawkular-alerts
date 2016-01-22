@@ -86,9 +86,9 @@ public class ActionsHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success."),
             @ApiResponse(code = 500, message = "Internal server error") })
-    public Response findActions() {
+    public Response findActionIds() {
         try {
-            Map<String, Set<String>> actions = definitions.getActionIds(tenantId);
+            Map<String, Set<String>> actions = definitions.getActionDefinitionIds(tenantId);
             if (log.isDebugEnabled()) {
                 log.debug("Actions: " + actions);
             }
@@ -107,12 +107,12 @@ public class ActionsHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success"),
             @ApiResponse(code = 500, message = "Internal server error") })
-    public Response findActionsByPlugin(@ApiParam(value = "Action plugin to filter query for action ids",
+    public Response findActionIdsByPlugin(@ApiParam(value = "Action plugin to filter query for action ids",
             required = true)
             @PathParam("actionPlugin")
             final String actionPlugin) {
         try {
-            Collection<String> actions = definitions.getActionIds(tenantId, actionPlugin);
+            Collection<String> actions = definitions.getActionDefinitionIds(tenantId, actionPlugin);
             if (log.isDebugEnabled()) {
                 log.debug("Actions: " + actions);
             }

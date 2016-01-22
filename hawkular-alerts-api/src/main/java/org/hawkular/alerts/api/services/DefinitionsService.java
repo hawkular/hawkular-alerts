@@ -615,16 +615,16 @@ public interface DefinitionsService {
      * @return Map where key is a tenantId and value is a Map with actionPlugin as key and a set of actionsId as value
      * @throws Exception on any problem
      */
-    Map<String, Map<String, Set<String>>> getAllActionIds() throws Exception;
+    Map<String, Map<String, Set<String>>> getAllActionDefinitionIds() throws Exception;
 
     /**
      * @param tenantId Tenant where actions are stored.
      * @return Map where key represents an actionPlugin and value a Set of actionsId per actionPlugin
      * @throws Exception on any problem
      */
-    Map<String, Set<String>> getActionIds(String tenantId) throws Exception;
+    Map<String, Set<String>> getActionDefinitionIds(String tenantId) throws Exception;
 
-    Collection<String> getActionIds(String tenantId, String actionPlugin) throws Exception;
+    Collection<String> getActionDefinitionIds(String tenantId, String actionPlugin) throws Exception;
 
     ActionDefinition getActionDefinition(String tenantId, String actionPlugin, String actionId) throws Exception;
 

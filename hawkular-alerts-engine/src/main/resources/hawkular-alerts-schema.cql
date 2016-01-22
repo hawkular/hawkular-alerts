@@ -123,7 +123,7 @@ CREATE TABLE ${keyspace}.action_plugins (
 
 -- #
 
-CREATE TABLE ${keyspace}.actions (
+CREATE TABLE ${keyspace}.actions_definitions (
     tenantId text,
     actionId text,
     actionPlugin text,
