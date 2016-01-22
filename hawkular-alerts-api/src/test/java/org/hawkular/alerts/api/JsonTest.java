@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1128,8 +1128,7 @@ public class JsonTest {
                         "\"autoResolveMatch\":\"ALL\"," +
                         "\"enabled\":true," +
                         "\"firingMatch\":\"ALL\"," +
-                        "\"orphan\":false," +
-                        "\"group\":false" +
+                        "\"type\":\"STANDARD\"" +
                     "}," +
                     "\"dampening\":{" +
                         "\"tenantId\":\"my-organization\"," +
@@ -1182,8 +1181,7 @@ public class JsonTest {
                                         "\"autoResolveMatch\":\"ALL\"," +
                                         "\"enabled\":true," +
                                         "\"firingMatch\":\"ALL\"," +
-                                        "\"orphan\":false," +
-                                        "\"group\":false" +
+                                        "\"type\":\"STANDARD\"" +
                                     "}," +
                                     "\"dampening\":{" +
                                     "\"tenantId\":\"my-organization\"," +

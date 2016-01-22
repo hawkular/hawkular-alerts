@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,8 +35,13 @@ public class Data implements Comparable<Data>, Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    public static final String SOURCE_NONE = "_none_";
+
     @JsonInclude
     protected String tenantId;
+
+    @JsonInclude
+    protected String source;
 
     @JsonInclude
     protected String id;
@@ -61,12 +66,19 @@ public class Data implements Comparable<Data>, Serializable {
 
     /** For JSON Construction ONLY */
     public Data() {
+        this(null, 0L, null);
     }
 
     /** For REST API USE ONLY, tenantId set automatically via REST Handler.
      */
     public Data(String id, long timestamp, String value) {
-        this(null, id, timestamp, value, null, null);
+        this(null, null, id, timestamp, value, null, null);
+    }
+
+    /** For REST API USE ONLY, tenantId set automatically via REST Handler.
+     */
+    public Data(String source, String id, long timestamp, String value) {
+        this(null, source, id, timestamp, value, null, null);
     }
 
     /**
@@ -76,20 +88,20 @@ public class Data implements Comparable<Data>, Serializable {
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param value the value
      */
-    public Data(String tenantId, String id, long timestamp, String value) {
-        this(tenantId, id, timestamp, value, null, null);
+    public Data(String tenantId, String source, String id, long timestamp, String value) {
+        this(tenantId, source, id, timestamp, value, null, null);
     }
 
     /**
-     * Construct a single-value datum with no context data.
+     * Construct a single-value datum with context data.
      * @param tenantId not null
      * @param id not null, unique within tenant
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param value the value
      * @param context optional, contextual name-value pairs to be stored with the data.
      */
-    public Data(String tenantId, String id, long timestamp, String value, Map<String, String> context) {
-        this(tenantId, id, timestamp, value, null, null);
+    public Data(String tenantId, String source, String id, long timestamp, String value, Map<String, String> context) {
+        this(tenantId, source, id, timestamp, value, null, null);
     }
 
     /**
@@ -99,20 +111,21 @@ public class Data implements Comparable<Data>, Serializable {
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param values the values
      */
-    public Data(String tenantId, String id, long timestamp, Map<String, String> values) {
-        this(tenantId, id, timestamp, null, values, null);
+    public Data(String tenantId, String source, String id, long timestamp, Map<String, String> values) {
+        this(tenantId, source, id, timestamp, null, values, null);
     }
 
     /**
-     * Construct a multi-value datum with no context data.
+     * Construct a multi-value datum with context data.
      * @param tenantId not null
      * @param id not null
      * @param timestamp in millis, if less than 1 assigned currentTime.
      * @param values the values
      * @param context optional, contextual name-value pairs to be stored with the data.
      */
-    public Data(String tenantId, String id, long timestamp, Map<String, String> values, Map<String, String> context) {
-        this(tenantId, id, timestamp, null, values, null);
+    public Data(String tenantId, String source, String id, long timestamp, Map<String, String> values,
+            Map<String, String> context) {
+        this(tenantId, source, id, timestamp, null, values, null);
     }
 
     /**
@@ -122,9 +135,10 @@ public class Data implements Comparable<Data>, Serializable {
      * @param value the value, mutually exclusive with values
      * @param context optional, contextual name-value pairs to be stored with the data.
      */
-    private Data(String tenantId, String id, long timestamp, String value, Map<String, String> values,
+    private Data(String tenantId, String source, String id, long timestamp, String value, Map<String, String> values,
             Map<String, String> context) {
         this.tenantId = tenantId;
+        this.source = isEmpty(source) ? SOURCE_NONE : source;
         this.id = id;
         this.timestamp = (timestamp <= 0) ? System.currentTimeMillis() : timestamp;
         this.value = value;
@@ -132,21 +146,62 @@ public class Data implements Comparable<Data>, Serializable {
     }
 
     public static Data forNumeric(String tenantId, String id, long timestamp, Double value) {
-        return new Data(tenantId, id, timestamp, String.valueOf(value));
+        return new Data(tenantId, null, id, timestamp, String.valueOf(value));
+    }
+
+    public static Data forNumeric(String tenantId, String source, String id, long timestamp, Double value) {
+        return new Data(tenantId, source, id, timestamp, String.valueOf(value));
     }
 
     public static Data forNumeric(String tenantId, String id, long timestamp, Double value,
             Map<String, String> context) {
-        return new Data(tenantId, id, timestamp, String.valueOf(value), null, context);
+        return new Data(tenantId, null, id, timestamp, String.valueOf(value), null, context);
+    }
+
+    public static Data forNumeric(String tenantId, String source, String id, long timestamp, Double value,
+            Map<String, String> context) {
+        return new Data(tenantId, source, id, timestamp, String.valueOf(value), null, context);
+    }
+
+    public static Data forString(String tenantId, String id, long timestamp, String value) {
+        return new Data(tenantId, null, id, timestamp, value);
+    }
+
+    public static Data forString(String tenantId, String source, String id, long timestamp, String value) {
+        return new Data(tenantId, source, id, timestamp, value);
+    }
+
+    public static Data forString(String tenantId, String id, long timestamp, String value,
+            Map<String, String> context) {
+        return new Data(tenantId, null, id, timestamp, value, null, context);
+    }
+
+    public static Data forString(String tenantId, String source, String id, long timestamp, String value,
+            Map<String, String> context) {
+        return new Data(tenantId, source, id, timestamp, value, null, context);
     }
 
     public static Data forAvailability(String tenantId, String id, long timestamp, AvailabilityType value) {
-        return new Data(tenantId, id, timestamp, value.name());
+        return new Data(tenantId, null, id, timestamp, value.name());
     }
 
-    public static Data forAvailability(String tenantId, String id, long timestamp, AvailabilityType value,
-            Map<String, String> context) {
-        return new Data(tenantId, id, timestamp, value.name(), null, context);
+    public static Data forAvailability(String tenantId, String source, String id, long timestamp,
+            AvailabilityType value) {
+        return new Data(tenantId, source, id, timestamp, value.name());
+    }
+
+    public static Data forAvailability(String tenantId, String id, long timestamp,
+            AvailabilityType value, Map<String, String> context) {
+        return new Data(tenantId, null, id, timestamp, value.name(), null, context);
+    }
+
+    public static Data forAvailability(String tenantId, String source, String id, long timestamp,
+            AvailabilityType value, Map<String, String> context) {
+        return new Data(tenantId, source, id, timestamp, value.name(), null, context);
+    }
+
+    private boolean isEmpty(String s) {
+        return null == s || s.trim().isEmpty();
     }
 
     public String getTenantId() {
@@ -155,6 +210,14 @@ public class Data implements Comparable<Data>, Serializable {
 
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 
     public String getId() {
@@ -207,6 +270,7 @@ public class Data implements Comparable<Data>, Serializable {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((source == null) ? 0 : source.hashCode());
         result = prime * result + ((tenantId == null) ? 0 : tenantId.hashCode());
         result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
         return result;
@@ -226,6 +290,11 @@ public class Data implements Comparable<Data>, Serializable {
                 return false;
         } else if (!id.equals(other.id))
             return false;
+        if (source == null) {
+            if (other.source != null)
+                return false;
+        } else if (!source.equals(other.source))
+            return false;
         if (tenantId == null) {
             if (other.tenantId != null)
                 return false;
@@ -244,6 +313,10 @@ public class Data implements Comparable<Data>, Serializable {
     @Override
     public int compareTo(Data o) {
         int c = this.tenantId.compareTo(o.tenantId);
+        if (0 != c)
+            return c;
+
+        c = this.source.compareTo(o.source);
         if (0 != c)
             return c;
 

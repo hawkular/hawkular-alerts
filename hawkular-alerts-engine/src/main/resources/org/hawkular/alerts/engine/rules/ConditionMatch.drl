@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -80,9 +80,9 @@ global Set disabledTriggers;
 
 rule Threshold
     when 
-        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
         $c : ThresholdCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d : Data( tenantId == $tenantId, id == $did )
+        $d : Data( tenantId == $tenantId, source == $tsource, id == $did )
     then
         ThresholdConditionEval ce = new ThresholdConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -93,9 +93,9 @@ end
 
 rule ThresholdRange
     when 
-        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
         $c : ThresholdRangeCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d : Data( tenantId == $tenantId, id == $did )
+        $d : Data( tenantId == $tenantId, source == $tsource, id == $did )
     then
         ThresholdRangeConditionEval ce = new ThresholdRangeConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -114,11 +114,11 @@ end
 // data when it arrives at different times.
 rule Compare
     when 
-        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
         $c  : CompareCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode,
                                  $d1id : dataId, $d2id : data2Id )
-        $d1 : Data( tenantId == $tenantId, id == $d1id )
-        $d2 : Data( tenantId == $tenantId, id == $d2id )
+        $d1 : Data( tenantId == $tenantId, source == $tsource, id == $d1id )
+        $d2 : Data( tenantId == $tenantId, source == $tsource, id == $d2id )
     then
         CompareConditionEval ce = new CompareConditionEval($c, $d1, $d2);
         if (log != null && log.isDebugEnabled()) {
@@ -129,9 +129,9 @@ end
 
 rule Availability
     when 
-        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
         $c : AvailabilityCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d : Data( tenantId == $tenantId, id == $did )
+        $d : Data( tenantId == $tenantId, source == $tsource, id == $did )
     then
         AvailabilityConditionEval ce = new AvailabilityConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -142,9 +142,9 @@ end
 
 rule String
     when 
-        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
         $c : StringCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId  )
-        $d : Data( tenantId == $tenantId, id == $did )
+        $d : Data( tenantId == $tenantId, source == $tsource, id == $did )
     then
         StringConditionEval ce = new StringConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -155,9 +155,9 @@ end
 
 rule External
     when 
-        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
         $c : ExternalCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId  )
-        $d : Data( tenantId == $tenantId, id == $did )
+        $d : Data( tenantId == $tenantId, source == $tsource, id == $did )
     then
         ExternalConditionEval ce = new ExternalConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -168,9 +168,9 @@ end
 
 rule Event
     when
-        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
         $c : EventCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d : Event( tenantId == $tenantId, dataId == $did )
+        $d : Event( tenantId == $tenantId, dataSource == $tsource, dataId == $did )
     then
         EventConditionEval ce = new EventConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
@@ -185,10 +185,10 @@ end
 // when the next datum for dataId arrives in working memory.
 rule ProvideInitialRateData
     when
-        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
         $c : RateCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d : Data( tenantId == $tenantId, id == $did )
-        not  RateData( data.tenantId == $tenantId, data.id == $did )
+        $d : Data( tenantId == $tenantId, source == $tsource, id == $did )
+        not  RateData( data.tenantId == $tenantId, data.source == $tsource, data.id == $did )
     then
         RateData rateData = new RateData( $d );
 
@@ -198,10 +198,10 @@ end
 // Given previous and current data for a given dataId, perform a RateCondition evaluation.
 rule Rate
     when
-        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
         $c  : RateCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId )
-        $d  : Data( tenantId == $tenantId, id == $did, $dt : timestamp )
-        $rd : RateData( data.tenantId == $tenantId, data.id == $did, data.timestamp < $dt )
+        $d  : Data( tenantId == $tenantId, source == $tsource, id == $did, $dt : timestamp )
+        $rd : RateData( data.tenantId == $tenantId, data.source == $tsource, data.id == $did, data.timestamp < $dt )
     then
         RateConditionEval ce = new RateConditionEval($c, $d, $rd.getData());
         if (log != null && log.isDebugEnabled()) {
@@ -219,8 +219,8 @@ end
 // Replace the previous data with the current data and retract the current data fact. 
 rule RetractProcessedRateData
     when
-        $rd : RateData( $tenantId : data.tenantId, $did : data.id )
-        $d  : Data( tenantId == $tenantId, id == $did )
+        $rd : RateData( $tenantId : data.tenantId, $dsource : data.source, $did : data.id )
+        $d  : Data( tenantId == $tenantId, source == $dsource, id == $did )
     then
         $rd.setData( $d );
 

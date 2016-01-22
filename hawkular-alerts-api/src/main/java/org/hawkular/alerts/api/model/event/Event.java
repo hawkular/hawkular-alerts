@@ -25,6 +25,7 @@ import java.util.UUID;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -68,7 +69,11 @@ public class Event implements Comparable<Event>, Serializable {
     @JsonInclude
     protected long ctime;
 
-    // Optional source of Event, used by EventCondition to evaluate events
+    // Optional dataSource of Event, used by EventCondition to evaluate events
+    @JsonInclude
+    String dataSource;
+
+    // Optional dataId of Event, used by EventCondition to evaluate events
     @JsonInclude(Include.NON_EMPTY)
     private String dataId;
 
@@ -103,48 +108,65 @@ public class Event implements Comparable<Event>, Serializable {
 
     public Event() {
         // for json assembly
-        this.eventType = EventType.EVENT.name();
+        this(null, (String) null, null, null);
     }
 
     public Event(String tenantId, String id, String category, String text) {
-        this(tenantId, id, System.currentTimeMillis(), null, category, text, null, null);
+        this(tenantId, id, System.currentTimeMillis(), null, null, category, text, null, null);
     }
 
     public Event(String tenantId, String id, String dataId, String category, String text) {
-        this(tenantId, id, System.currentTimeMillis(), dataId, category, text, null, null);
+        this(tenantId, id, System.currentTimeMillis(), null, dataId, category, text, null, null);
+    }
+
+    public Event(String tenantId, String id, String dataSource, String dataId, String category, String text) {
+        this(tenantId, id, System.currentTimeMillis(), dataSource, dataId, category, text, null, null);
     }
 
     public Event(String tenantId, String id, String category, String text, Map<String, String> context) {
-        this(tenantId, id, System.currentTimeMillis(), null, category, text, context, null);
+        this(tenantId, id, System.currentTimeMillis(), null, null, category, text, context, null);
     }
 
-    public Event(String tenantId, String id, String dataId, String category, String text, Map<String, String> context) {
-        this(tenantId, id, System.currentTimeMillis(), dataId, category, text, context, null);
+    public Event(String tenantId, String id, String dataId, String category, String text,
+            Map<String, String> context) {
+        this(tenantId, id, System.currentTimeMillis(), null, dataId, category, text, context, null);
     }
 
-    public Event(String tenantId, String id, long ctime, String category, String text) {
-        this(tenantId, id, ctime, null, category, text, null, null);
+    public Event(String tenantId, String id, String dataSource, String dataId, String category, String text,
+            Map<String, String> context) {
+        this(tenantId, id, System.currentTimeMillis(), dataSource, dataId, category, text, context, null);
     }
 
-    public Event(String tenantId, String id, long ctime, String dataId, String category, String text) {
-        this(tenantId, id, ctime, dataId, category, text, null, null);
+    public Event(String tenantId, String id, long ctime, String dataId, String category,
+            String text) {
+        this(tenantId, id, ctime, null, dataId, category, text, null, null);
     }
 
-    public Event(String tenantId, String id, long ctime, String category, String text,
-                 Map<String, String> context) {
-        this(tenantId, id, ctime, null, category, text, context, null);
+    public Event(String tenantId, String id, long ctime, String dataSource, String dataId, String category,
+            String text) {
+        this(tenantId, id, ctime, dataSource, dataId, category, text, null, null);
     }
 
-    public Event(String tenantId, String id, long ctime, String dataId, String category, String text,
-                 Map<String, String> context) {
-        this(tenantId, id, ctime, dataId, category, text, context, null);
+    public Event(String tenantId, String id, long ctime, String category, String text, Map<String, String> context) {
+        this(tenantId, id, ctime, null, null, category, text, context, null);
     }
 
-    public Event(String tenantId, String id, long ctime, String dataId, String category, String text,
-                 Map<String, String> context, Map<String, String> tags) {
+    public Event(String tenantId, String id, long ctime, String dataSource, String dataId, String category,
+            String text, Map<String, String> context) {
+        this(tenantId, id, ctime, dataSource, dataId, category, text, context, null);
+    }
+
+    public Event(String tenantId, String id, long ctime, String dataId, String category,
+            String text, Map<String, String> context, Map<String, String> tags) {
+        this(tenantId, id, ctime, null, dataId, category, text, context, tags);
+    }
+
+    public Event(String tenantId, String id, long ctime, String dataSource, String dataId, String category,
+            String text, Map<String, String> context, Map<String, String> tags) {
         this.tenantId = tenantId;
         this.id = id;
         this.ctime = (ctime <= 0) ? System.currentTimeMillis() : ctime;
+        this.dataSource = isEmpty(dataSource) ? Data.SOURCE_NONE : dataSource;
         this.dataId = dataId;
         this.category = category;
         this.text = text;
@@ -171,6 +193,7 @@ public class Event implements Comparable<Event>, Serializable {
         this.ctime = System.currentTimeMillis();
 
         this.id = trigger.getId() + "-" + this.ctime + "-" + UUID.randomUUID();
+        this.dataSource = trigger.getSource();
         this.dataId = trigger.getId();
         this.context = trigger.getContext();
         if (!isEmpty(trigger.getEventCategory())) {
@@ -225,6 +248,14 @@ public class Event implements Comparable<Event>, Serializable {
 
     public void setCtime(long ctime) {
         this.ctime = ctime;
+    }
+
+    public String getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(String dataSource) {
+        this.dataSource = dataSource;
     }
 
     public String getDataId() {

@@ -88,6 +88,9 @@ public class CassAlertsServiceImpl implements AlertsService {
     @EJB
     ActionsService actionsService;
 
+    @EJB
+    DataDrivenGroupCacheManager dataDrivenGroupCacheManager;
+
     public CassAlertsServiceImpl() {
     }
 
@@ -675,16 +678,11 @@ public class CassAlertsServiceImpl implements AlertsService {
         Set<String> triggerIds = extractTriggerIds(tenantId, criteria);
 
         if (triggerIds.size() > 0) {
-            List<ResultSetFuture> futures = new ArrayList<>();
             Session session = CassCluster.getSession();
             PreparedStatement selectAlertsTriggers = CassStatement.get(session, CassStatement.SELECT_ALERT_TRIGGER);
 
-            for (String triggerId : triggerIds) {
-                if (isEmpty(triggerId)) {
-                    continue;
-                }
-                futures.add(session.executeAsync(selectAlertsTriggers.bind(tenantId, triggerId)));
-            }
+            List<ResultSetFuture> futures = triggerIds.stream().map(triggerId ->
+                    session.executeAsync(selectAlertsTriggers.bind(tenantId, triggerId))).collect(Collectors.toList());
             List<ResultSet> rsAlertIdsByTriggerIds = Futures.allAsList(futures).get();
 
             Set<String> alertIds = new HashSet<>();
@@ -1482,12 +1480,37 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     @Override
     public void sendData(Data data) throws Exception {
-        alertsEngine.sendData(data);
+        sendData(Collections.singleton(data));
     }
 
     @Override
     public void sendData(Collection<Data> data) throws Exception {
+        checkDataDrivenGroupTriggers(data);
         alertsEngine.sendData(data);
+    }
+
+    private void checkDataDrivenGroupTriggers(Collection<Data> data) throws Exception {
+        if (!dataDrivenGroupCacheManager.isCacheActive()) {
+            return;
+        }
+        for (Data d : data) {
+            if (isEmpty(d.getSource())) {
+                continue;
+            }
+
+            String tenantId = d.getTenantId();
+            String dataId = d.getId();
+            String dataSource = d.getSource();
+
+            Set<String> groupTriggerIds = dataDrivenGroupCacheManager.needsSourceMember(tenantId, dataId, dataSource);
+
+            // Add a trigger members for the source
+
+            for (String groupTriggerId : groupTriggerIds) {
+                definitionsService.addDataDrivenMemberTrigger(tenantId, groupTriggerId, dataSource);
+            }
+        }
+
     }
 
     @Override

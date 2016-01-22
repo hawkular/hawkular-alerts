@@ -211,11 +211,11 @@
       "trigger":{
         "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
         "id": "trigger-7",
+        "type": "GROUP",
         "enabled": true,
         "name": "Parent-NumericData-Token-low",
         "description": "description 8",
         "severity": "HIGH",
-        "group": true,
         "actions": {
           "email": ["email-to-admin"]
         }
