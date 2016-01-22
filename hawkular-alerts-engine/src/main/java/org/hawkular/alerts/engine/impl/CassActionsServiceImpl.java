@@ -18,21 +18,25 @@ package org.hawkular.alerts.engine.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.ejb.Asynchronous;
+import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Local;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.concurrent.ManagedExecutorService;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.paging.ActionComparator;
 import org.hawkular.alerts.api.model.paging.ActionComparator.Field;
 import org.hawkular.alerts.api.model.paging.Order;
@@ -41,6 +45,7 @@ import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
+import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.jboss.logging.Logger;
 
@@ -71,6 +76,12 @@ public class CassActionsServiceImpl implements ActionsService {
     @EJB
     AlertsContext alertsContext;
 
+    @EJB
+    DefinitionsService definitions;
+
+    @Resource
+    private ManagedExecutorService executor;
+
     public CassActionsServiceImpl() {
         log.debug("Creating instance.");
     }
@@ -79,7 +90,6 @@ public class CassActionsServiceImpl implements ActionsService {
         this.alertsContext = alertsContext;
     }
 
-    @Asynchronous
     @Override
     public void send(Action action) {
         if (action == null || action.getActionPlugin() == null || action.getActionId() == null
@@ -90,13 +100,24 @@ public class CassActionsServiceImpl implements ActionsService {
         if (action.getEvent() == null) {
             throw new IllegalArgumentException("Action must have an alert");
         }
-        for (ActionListener listener : alertsContext.getActionsListeners()) {
-            listener.process(action);
-        }
-        insertActionHistory(action);
+        executor.submit(() -> {
+            try {
+                ActionDefinition actionDefinition = definitions.getActionDefinition(action.getTenantId(),
+                        action.getActionPlugin(), action.getActionId());
+                Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
+                Map<String, String> mixedProps = mixProperties(actionDefinition.getProperties(), defaultProperties);
+                action.setProperties(mixedProps);
+            } catch (Exception e) {
+                log.debug(e.getMessage(), e);
+                msgLog.errorCannotUpdateAction(e.getMessage());
+            }
+            for (ActionListener listener : alertsContext.getActionsListeners()) {
+                listener.process(action);
+            }
+            insertActionHistory(action);
+        });
     }
 
-    @Asynchronous
     @Override
     public void updateResult(Action action) {
         if (action == null || action.getActionPlugin() == null || action.getActionId() == null
@@ -107,7 +128,9 @@ public class CassActionsServiceImpl implements ActionsService {
         if (action.getEvent() == null) {
             throw new IllegalArgumentException("Action must have an alert");
         }
-        updateActionHistory(action);
+        executor.submit(() -> {
+            updateActionHistory(action);
+        });
     }
 
     private void insertActionHistory(Action action) {
@@ -606,6 +629,19 @@ public class CassActionsServiceImpl implements ActionsService {
 
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();
+    }
+
+    private Map<String, String> mixProperties(Map<String, String> props, Map<String, String> defProps) {
+        Map<String, String> mixed = new HashMap<>();
+        if (props != null) {
+            mixed.putAll(props);
+        }
+        if (defProps != null) {
+            for (String defKey : defProps.keySet()) {
+                mixed.putIfAbsent(defKey, defProps.get(defKey));
+            }
+        }
+        return mixed;
     }
 
     private class ActionHistoryPK {
