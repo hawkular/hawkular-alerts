@@ -31,6 +31,7 @@ import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerType;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
@@ -126,6 +127,10 @@ public class DataDrivenGroupCacheManager {
     }
 
     public Set<String> needsSourceMember(String tenantId, String dataId, String source) {
+        if (isEmpty(source, dataId, tenantId) || Data.SOURCE_NONE.equals(source)) {
+            return Collections.EMPTY_SET;
+        }
+
         CacheKey key = new CacheKey(tenantId, dataId);
 
         // if the dataId is not relevant to any group triggers just return empty set
@@ -141,6 +146,16 @@ public class DataDrivenGroupCacheManager {
 
         // otherwise, return the triggers that need a member for this source
         return triggersMap.get(key);
+    }
+
+    private boolean isEmpty(String... strings) {
+        for (String s : strings) {
+            if (null == s || s.trim().isEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static class CacheKey {
