@@ -1840,6 +1840,12 @@ public abstract class PersistenceTest {
             actionsService.send(action4);
         }
 
+        System.out.print("Actions are asynchronous. Give them some time.");
+        for (int i = 0; i < 30; i++) {
+            System.out.print(".");
+            Thread.sleep(200);
+        }
+
         List<Action> actions = actionsService.getActions(TENANT, null, null);
         assertEquals(10 * 4, actions.size());
 
@@ -1934,6 +1940,12 @@ public abstract class PersistenceTest {
             actionsService.send(action4);
         }
 
+        System.out.print("Actions are asynchronous. Give them some time.");
+        for (int i = 0; i < 30; i++) {
+            System.out.print(".");
+            Thread.sleep(200);
+        }
+
         List<Action> actions = actionsService.getActions(TENANT, null, null);
         assertEquals(103 * 4, actions.size());
 
@@ -2015,6 +2027,12 @@ public abstract class PersistenceTest {
             actionsService.send(action2);
             actionsService.send(action3);
             actionsService.send(action4);
+        }
+
+        System.out.print("Actions are asynchronous. Give them some time.");
+        for (int i = 0; i < 30; i++) {
+            System.out.print(".");
+            Thread.sleep(200);
         }
 
         ActionsCriteria criteria = new ActionsCriteria();

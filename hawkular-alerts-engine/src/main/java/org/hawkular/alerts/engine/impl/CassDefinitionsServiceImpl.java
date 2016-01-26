@@ -43,6 +43,7 @@ import javax.enterprise.concurrent.ManagedExecutorService;
 
 import org.hawkular.alerts.api.json.JsonImport.FullAction;
 import org.hawkular.alerts.api.json.JsonImport.FullTrigger;
+import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
@@ -64,6 +65,7 @@ import org.hawkular.alerts.api.model.paging.TriggerComparator;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.api.model.trigger.TriggerType;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
@@ -315,12 +317,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new RuntimeException("insertTriggerActions PreparedStatement is null");
         }
         if (trigger.getActions() != null) {
-            List<ResultSetFuture> futures = trigger.getActions().keySet().stream()
-                    .filter(actionPlugin -> trigger.getActions().get(actionPlugin) != null &&
-                            !trigger.getActions().get(actionPlugin).isEmpty())
-                    .map(actionPlugin -> session.executeAsync(insertTriggerActions.bind(trigger.getTenantId(),
-                            trigger.getId(), actionPlugin, trigger.getActions().get(actionPlugin))))
-                    .collect(Collectors.toList());
+            trigger.getActions().forEach(triggerAction -> {
+                triggerAction.setTenantId(trigger.getTenantId());
+            });
+            List<ResultSetFuture> futures = trigger.getActions().stream().map(triggerAction -> session.
+            executeAsync(insertTriggerActions.bind(trigger.getTenantId(), trigger.getId(),
+                    triggerAction.getActionPlugin(), triggerAction.getActionId(),
+                    JsonUtil.toJson(triggerAction)))).collect(Collectors.toList());
             Futures.allAsList(futures).get();
         }
     }
@@ -482,7 +485,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
 
         // This works for the existing members as well, because they are all the same as the existing group trigger
-        Map<String, Set<String>> existingActions = existingGroupTrigger.getActions();
+        Set<TriggerAction> existingActions = existingGroupTrigger.getActions();
         Map<String, String> existingTags = existingGroupTrigger.getTags();
 
         for (Trigger member : memberTriggers) {
@@ -553,7 +556,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return member;
     }
 
-    private Trigger updateTrigger(Trigger trigger, Map<String, Set<String>> existingActions,
+    private Trigger updateTrigger(Trigger trigger, Set<TriggerAction> existingActions,
             Map<String, String> existingTags)
             throws Exception {
         Session session = CassCluster.getSession();
@@ -1000,11 +1003,12 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         ResultSet rsTriggerActions = session
                 .execute(selectTriggerActions.bind(trigger.getTenantId(), trigger.getId()));
+        Set<TriggerAction> actions = new HashSet<>();
         for (Row row : rsTriggerActions) {
-            String actionPlugin = row.getString("actionPlugin");
-            Set<String> actions = row.getSet("actions", String.class);
-            trigger.addActions(actionPlugin, actions);
+            TriggerAction action = JsonUtil.fromJson(row.getString("payload"), TriggerAction.class);
+            actions.add(action);
         }
+        trigger.setActions(actions);
     }
 
     private Trigger mapTrigger(Row row) {

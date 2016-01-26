@@ -55,6 +55,7 @@ import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -991,7 +992,11 @@ public class JsonTest {
     @Test
     public void jsonTriggerTest() throws Exception {
         String str = "{\"name\":\"test-name\",\"description\":\"test-description\"," +
-                "\"actions\":{\"plugin1\":[\"uno\",\"dos\",\"tres\"]}," +
+                "\"actions\":[" +
+                    "{\"actionPlugin\":\"plugin1\",\"actionId\":\"uno\"}," +
+                    "{\"actionPlugin\":\"plugin1\",\"actionId\":\"dos\"}," +
+                    "{\"actionPlugin\":\"plugin1\",\"actionId\":\"tres\"}" +
+                "]," +
                 "\"firingMatch\":\"ALL\"," +
                 "\"autoResolveMatch\":\"ALL\"," +
                 "\"id\":\"test\"," +
@@ -1006,8 +1011,7 @@ public class JsonTest {
 
         assertTrue(trigger.getName().equals("test-name"));
         assertTrue(trigger.getDescription().equals("test-description"));
-        assertEquals(1, trigger.getActions().size());
-        assertEquals(3, trigger.getActions().get("plugin1").size());
+        assertEquals(3, trigger.getActions().size());
         assertTrue(trigger.getFiringMatch().equals(Match.ALL));
         assertTrue(trigger.getAutoResolveMatch().equals(Match.ALL));
         assertTrue(trigger.getId().equals("test"));
@@ -1031,7 +1035,11 @@ public class JsonTest {
     @Test
     public void jsonTriggerMatchAnyTest() throws Exception {
         String str = "{\"name\":\"test-name\",\"description\":\"test-description\"," +
-                "\"actions\":{\"plugin1\":[\"uno\",\"dos\",\"tres\"]}," +
+                "\"actions\":[" +
+                    "{\"actionPlugin\":\"plugin1\",\"actionId\":\"uno\"}," +
+                    "{\"actionPlugin\":\"plugin1\",\"actionId\":\"dos\"}," +
+                    "{\"actionPlugin\":\"plugin1\",\"actionId\":\"tres\"}" +
+                "]," +
                 "\"firingMatch\":\"ANY\"," +
                 "\"autoResolveMatch\":\"ALL\"," +
                 "\"id\":\"test\"," +
@@ -1047,8 +1055,7 @@ public class JsonTest {
 
         assertTrue(trigger.getName().equals("test-name"));
         assertTrue(trigger.getDescription().equals("test-description"));
-        assertEquals(1, trigger.getActions().size());
-        assertEquals(3, trigger.getActions().get("plugin1").size());
+        assertEquals(3, trigger.getActions().size());
         assertTrue(trigger.getFiringMatch().equals(Match.ANY));
         assertTrue(trigger.getAutoResolveMatch().equals(Match.ALL));
         assertTrue(trigger.getId().equals("test"));
@@ -1120,7 +1127,7 @@ public class JsonTest {
                         "\"eventCategory\":null," +
                         "\"eventText\":null," +
                         "\"severity\":\"HIGH\"," +
-                        "\"actions\":{\"email\":[\"email-to-admin-group\"]}," +
+                        "\"actions\":[{\"actionPlugin\":\"email\",\"actionId\":\"email-to-admin-group\"}]," +
                         "\"autoDisable\":false," +
                         "\"autoEnable\":false," +
                         "\"autoResolve\":false," +
@@ -1300,6 +1307,20 @@ public class JsonTest {
 
         Action action = objectMapper.readValue(str, Action.class);
         assertTrue(action.getEvent().getEvalSets() != null);
+    }
+
+    @Test
+    public void jsonTriggerAction() throws Exception {
+        String str = "{" +
+                "\"tenantId\":\"tenant\"," +
+                "\"actionPlugin\":\"plugin\"," +
+                "\"actionId\":\"action\"" +
+                "}";
+        TriggerAction triggerAction = objectMapper.readValue(str, TriggerAction.class);
+        assertEquals("tenant", triggerAction.getTenantId());
+        assertEquals("plugin", triggerAction.getActionPlugin());
+        assertEquals("action", triggerAction.getActionId());
+        assertNull(triggerAction.getCalendar());
     }
 
 }

@@ -58,8 +58,9 @@ CREATE TABLE ${keyspace}.triggers_actions (
     tenantId text,
     triggerId text,
     actionPlugin text,
-    actions set<text>,
-    PRIMARY KEY (tenantId, triggerId, actionPlugin)
+    actionId text,
+    payload text,
+    PRIMARY KEY (tenantId, triggerId, actionPlugin, actionId)
 );
 
 -- #

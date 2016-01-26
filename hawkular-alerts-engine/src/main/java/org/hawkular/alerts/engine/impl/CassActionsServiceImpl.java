@@ -90,8 +90,16 @@ public class CassActionsServiceImpl implements ActionsService {
         this.alertsContext = alertsContext;
     }
 
+    public void setDefinitions(DefinitionsService definitions) {
+        this.definitions = definitions;
+    }
+
+    public void setExecutor(ManagedExecutorService executor) {
+        this.executor = executor;
+    }
+
     @Override
-    public void send(Action action) {
+    public void send(final Action action) {
         if (action == null || action.getActionPlugin() == null || action.getActionId() == null
                 || action.getActionPlugin().isEmpty()
                 || action.getActionId().isEmpty()) {
@@ -105,8 +113,14 @@ public class CassActionsServiceImpl implements ActionsService {
                 ActionDefinition actionDefinition = definitions.getActionDefinition(action.getTenantId(),
                         action.getActionPlugin(), action.getActionId());
                 Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
-                Map<String, String> mixedProps = mixProperties(actionDefinition.getProperties(), defaultProperties);
-                action.setProperties(mixedProps);
+                if (actionDefinition != null && defaultProperties != null) {
+                    Map<String, String> mixedProps = mixProperties(actionDefinition.getProperties(), defaultProperties);
+                    action.setProperties(mixedProps);
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Action " + action + " has not an ActionDefinition");
+                    }
+                }
             } catch (Exception e) {
                 log.debug(e.getMessage(), e);
                 msgLog.errorCannotUpdateAction(e.getMessage());

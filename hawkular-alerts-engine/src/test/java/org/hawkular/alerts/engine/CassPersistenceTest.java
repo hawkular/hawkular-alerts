@@ -61,14 +61,7 @@ public class CassPersistenceTest extends PersistenceTest {
 
         keyspace = AlertProperties.getProperty("hawkular-alerts.cassandra-keyspace", "hawkular_alerts_test");
 
-        Session session = CassCluster.getSession();
-
-        // try and clean up if this was somehow left around by a prior run
-        try {
-            session.execute("DROP KEYSPACE " + keyspace);
-        } catch (Throwable t) {
-            // never mind, it may not be there
-        }
+        Session session = CassCluster.getSession(true);
 
         definitionsService = StandaloneAlerts.getDefinitionsService();
         alertsService = StandaloneAlerts.getAlertsService();

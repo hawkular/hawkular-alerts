@@ -72,6 +72,8 @@ public class StandaloneAlerts {
         definitions.setExecutor(new StandaloneExecutorService());
 
         actions.setAlertsContext(alertsContext);
+        actions.setDefinitions(definitions);
+        actions.setExecutor(new StandaloneExecutorService());
 
         engine.setDefinitions(definitions);
         engine.setActions(actions);

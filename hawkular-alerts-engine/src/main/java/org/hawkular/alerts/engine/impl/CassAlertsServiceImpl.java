@@ -55,6 +55,7 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
+import org.hawkular.alerts.engine.util.ActionsValidator;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BoundStatement;
@@ -1524,13 +1525,17 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     private void sendAction(Alert a) {
         if (actionsService != null && a != null && a.getTrigger() != null && a.getTrigger().getActions() != null) {
-            Map<String, Set<String>> actions = a.getTrigger().getActions();
-            for (String actionPlugin : actions.keySet()) {
-                for (String actionId : actions.get(actionPlugin)) {
-                    Action action = new Action(a.getTrigger().getTenantId(), actionPlugin, actionId, a);
+            a.getTrigger().getActions().stream().forEach(triggerAction -> {
+                if (ActionsValidator.validate(triggerAction, a)) {
+                    Action action = new Action(a.getTrigger().getTenantId(), triggerAction.getActionPlugin(),
+                            triggerAction.getActionId(), a);
                     actionsService.send(action);
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Action from " + a + " is filtered out from " + triggerAction);
+                    }
                 }
-            }
+            });
         }
     }
 

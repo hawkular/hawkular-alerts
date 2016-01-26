@@ -322,7 +322,7 @@ public class CassStatement {
                 + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_TRIGGER_ACTIONS = "INSERT INTO " + keyspace + ".triggers_actions "
-                + "(tenantId, triggerId, actionPlugin, actions) VALUES (?, ?, ?, ?) ";
+                + "(tenantId, triggerId, actionPlugin, actionId, payload) VALUES (?, ?, ?, ?, ?) ";
 
         SELECT_ACTION_DEFINITION = "SELECT properties FROM " + keyspace + ".actions_definitions "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
@@ -472,7 +472,7 @@ public class CassStatement {
                 + "FROM " + keyspace + ".triggers "
                 + "WHERE tenantId = ? AND id = ? ";
 
-        SELECT_TRIGGER_ACTIONS = "SELECT tenantId, triggerId, actionPlugin, actions "
+        SELECT_TRIGGER_ACTIONS = "SELECT tenantId, triggerId, actionPlugin, actionId, payload "
                 + "FROM " + keyspace + ".triggers_actions "
                 + "WHERE tenantId = ? AND triggerId = ? ";
 

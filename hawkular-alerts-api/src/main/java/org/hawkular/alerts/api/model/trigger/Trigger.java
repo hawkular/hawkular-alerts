@@ -80,9 +80,9 @@ public class Trigger implements Serializable {
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> tags;
 
-    /** A map with key based on actionPlugin and value a set of action's ids */
+    /** A list of links to actions represented by TriggerAction*/
     @JsonInclude(Include.NON_EMPTY)
-    private Map<String, Set<String>> actions;
+    private Set<TriggerAction> actions;
 
     /** Disable automatically after firing */
     @JsonInclude
@@ -167,7 +167,7 @@ public class Trigger implements Serializable {
         this.context = context;
         this.tags = tags;
 
-        this.actions = new HashMap<>();
+        this.actions = new HashSet<>();
         this.autoDisable = false;
         this.autoEnable = false;
         this.autoResolve = false;
@@ -335,50 +335,19 @@ public class Trigger implements Serializable {
         return autoResolveMatch;
     }
 
-    public Map<String, Set<String>> getActions() {
+    public Set<TriggerAction> getActions() {
+        if (actions == null) {
+            actions = new HashSet<>();
+        }
         return actions;
     }
 
-    public void setActions(Map<String, Set<String>> actions) {
+    public void setActions(Set<TriggerAction> actions) {
         this.actions = actions;
     }
 
-    public void addAction(String actionPlugin, String actionId) {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
-            throw new IllegalArgumentException("ActionPlugin must be non-empty.");
-        }
-        if (actionId == null || actionId.isEmpty()) {
-            throw new IllegalArgumentException("ActionId must be non-empty.");
-        }
-        if (actions.get(actionPlugin) == null) {
-            actions.put(actionPlugin, new HashSet<>());
-        }
-        actions.get(actionPlugin).add(actionId);
-    }
-
-    public void addActions(String actionPlugin, Set<String> actionIds) {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
-            throw new IllegalArgumentException("ActionPlugin must be non-empty.");
-        }
-        if (actionIds == null) {
-            throw new IllegalArgumentException("ActionIds must be non null");
-        }
-        if (actions.get(actionPlugin) == null) {
-            actions.put(actionPlugin, new HashSet<>());
-        }
-        actions.get(actionPlugin).addAll(actionIds);
-    }
-
-    public void removeAction(String actionPlugin, String actionId) {
-        if (actionPlugin == null || actionPlugin.isEmpty()) {
-            throw new IllegalArgumentException("actionPlugin must be non-empty.");
-        }
-        if (actionId == null || actionId.isEmpty()) {
-            throw new IllegalArgumentException("ActionId must be non-empty.");
-        }
-        if (actions.get(actionPlugin) != null) {
-            actions.get(actionPlugin).remove(actionId);
-        }
+    public void addAction(TriggerAction triggerAction) {
+        getActions().add(triggerAction);
     }
 
     public String getMemberOf() {

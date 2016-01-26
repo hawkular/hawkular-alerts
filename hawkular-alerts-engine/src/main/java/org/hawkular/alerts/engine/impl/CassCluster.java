@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,7 +57,7 @@ public class CassCluster {
 
     private CassCluster() { }
 
-    private void initScheme(Session session, String keyspace) throws IOException {
+    private void initScheme(Session session, String keyspace, boolean overwrite) throws IOException {
 
         if (keyspace == null) {
             keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
@@ -70,9 +70,13 @@ public class CassCluster {
         ResultSet resultSet = session.execute("SELECT * FROM system.schema_keyspaces WHERE keyspace_name = '" +
                 keyspace + "'");
         if (!resultSet.isExhausted()) {
-            log.debug("Schema already exist. Skipping schema creation.");
-            initialized = true;
-            return;
+            if (overwrite) {
+                session.execute("DROP KEYSPACE " + keyspace);
+            } else {
+                log.debug("Schema already exist. Skipping schema creation.");
+                initialized = true;
+                return;
+            }
         }
 
         log.infof("Creating Schema for keyspace %s", keyspace);
@@ -115,7 +119,27 @@ public class CassCluster {
         }
     }
 
+    /**
+     * Return a cached cassandra Session.
+     * It generates the scheme keyspace on the first access.
+
+     * @return A cached Session
+     * @throws Exception on any issue
+     */
     public static synchronized Session getSession() throws Exception {
+        return getSession(false);
+    }
+
+    /**
+     * Return a cached cassandra Session.
+     * It generates the scheme keyspace on the first access.
+     *
+     * @param overwrite true will overwrite an existing keyspace
+     *                  false will maintain an existing keyspace
+     * @return A cached Session
+     * @throws Exception on any issue
+     */
+    public static synchronized Session getSession(boolean overwrite) throws Exception {
         if (instance.cluster == null && instance.session == null) {
             String cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, ALERTS_CASSANDRA_PORT_ENV, "9042");
             String nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, ALERTS_CASSANDRA_NODES_ENV, "127.0.0.1");
@@ -152,7 +176,7 @@ public class CassCluster {
             }
             if (instance.session != null && !instance.initialized) {
                 String keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
-                instance.initScheme(instance.session, keyspace);
+                instance.initScheme(instance.session, keyspace, overwrite);
             }
         }
         if (instance.session == null) {

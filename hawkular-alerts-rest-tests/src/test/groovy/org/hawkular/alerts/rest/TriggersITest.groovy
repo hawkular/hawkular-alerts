@@ -432,12 +432,13 @@ class TriggersITest extends AbstractITestBase {
                 "        \"name\": \"NumericData-01-low\",\n" +
                 "        \"description\": \"description 1\",\n" +
                 "        \"severity\": \"HIGH\",\n" +
-                "        \"actions\": {\n" +
-                "          \"snmp\": [\"SNMP-Trap-1\", \"SNMP-Trap-2\"],\n" +
-                "          \"sms\": [\"sms-to-cio\"],\n" +
-                "          \"email\": [\"email-to-admin\"],\n" +
-                "          \"aerogear\": [\"agpush-to-admin\"]\n" +
-                "        },\n" +
+                "        \"actions\": [\n" +
+                "          {\"actionPlugin\":\"snmp\", \"actionId\":\"SNMP-Trap-1\"},\n" +
+                "          {\"actionPlugin\":\"snmp\", \"actionId\":\"SNMP-Trap-2\"},\n" +
+                "          {\"actionPlugin\":\"sms\", \"actionId\":\"sms-to-cio\"},\n" +
+                "          {\"actionPlugin\":\"email\", \"actionId\":\"email-to-admin\"},\n" +
+                "          {\"actionPlugin\":\"aerogear\", \"actionId\":\"agpush-to-admin\"}\n" +
+                "        ],\n" +
                 "        \"context\": {\n" +
                 "          \"name1\":\"value1\"\n" +
                 "        },\n" +
