@@ -21,11 +21,13 @@ import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Data
+import org.hawkular.alerts.api.model.event.Alert
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.trigger.TriggerAction
 import org.junit.Test
 
+import static org.hawkular.alerts.api.model.event.Alert.*
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 
@@ -262,5 +264,157 @@ class ActionsITest extends AbstractITestBase {
         assertEquals("OPEN", resp.data[0].status)
     }
 
+    @Test
+    void actionByStatusTest() {
+        String start = String.valueOf(System.currentTimeMillis());
+
+        // Check endpoint
+        def resp = client.get(path: "")
+        assert resp.status == 200 : resp.status
+
+        // Create an action definition for admins
+        String actionPlugin = "plugin1"
+        String actionId = "notify-to-admins";
+
+        // Remove previous history
+        client.put(path: "actions/history/delete", query: [actionPlugins:"plugin1,plugin2"])
+
+        // Remove a previous action
+        client.delete(path: "actions/" + actionPlugin + "/" + actionId)
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("actionPlugin", actionPlugin);
+        actionProperties.put("actionId", actionId);
+        actionProperties.put("description", "Notify to admins of the platform");
+
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        resp = client.post(path: "actions", body: actionDefinition)
+        assertEquals(200, resp.status)
+
+        // Create an action definition for developers
+        actionPlugin = "plugin2"
+        actionId = "notify-to-developers";
+
+        // Remove a previous action
+        client.delete(path: "actions/" + actionPlugin + "/" + actionId)
+
+        actionProperties = new HashMap<>();
+        actionProperties.put("actionPlugin", actionPlugin);
+        actionProperties.put("actionId", actionId);
+        actionProperties.put("description", "Notify to developers of the application");
+
+        actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        resp = client.post(path: "actions", body: actionDefinition)
+        assertEquals(200, resp.status)
+
+        // Create a trigger
+
+        Trigger testTrigger = new Trigger("test-status-threshold", "http://www.mydemourl.com");
+
+        // remove if it exists
+        resp = client.delete(path: "triggers/test-status-threshold")
+        assert(200 == resp.status || 404 == resp.status)
+
+        testTrigger.setAutoDisable(false);
+        testTrigger.setAutoResolve(false);
+        testTrigger.setAutoResolveAlerts(false);
+
+        TriggerAction notifyAdmins = new TriggerAction("plugin1", "notify-to-admins");
+        notifyAdmins.addState(Status.OPEN.name());
+        TriggerAction notifyDevelopers = new TriggerAction("plugin2", "notify-to-developers");
+        notifyDevelopers.addState(Status.ACKNOWLEDGED.name());
+
+        testTrigger.addAction(notifyAdmins);
+        testTrigger.addAction(notifyDevelopers);
+
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // ADD Firing condition
+        ThresholdCondition firingCond = new ThresholdCondition("test-status-threshold",
+                Mode.FIRING, "test-status-threshold", ThresholdCondition.Operator.GT, 300);
+
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/test-status-threshold/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // ENABLE Trigger
+        testTrigger.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-status-threshold", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // FETCH trigger and make sure it's as expected
+        resp = client.get(path: "triggers/test-status-threshold");
+        assertEquals(200, resp.status)
+        assertEquals("http://www.mydemourl.com", resp.data.name)
+        assertEquals(true, resp.data.enabled)
+        assertEquals(false, resp.data.autoDisable);
+        assertEquals(false, resp.data.autoResolve);
+        assertEquals(false, resp.data.autoResolveAlerts);
+
+        // Send in data to fire the trigger
+        // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
+        for (int i=0; i<5; i++) {
+            Data threshold = new Data("test-status-threshold", System.currentTimeMillis(), String.valueOf(305.5 + i));
+            Collection<Data> datums = new ArrayList<>();
+            datums.add(threshold);
+            resp = client.post(path: "data", body: datums);
+            assertEquals(200, resp.status)
+        }
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 10; ++i ) {
+            // println "SLEEP!" ;
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 5
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-status-threshold"] )
+            if ( resp.status == 200 && resp.data.size() == 5 ) {
+                break;
+            }
+        }
+        assertEquals(200, resp.status)
+        assertEquals(5, resp.data.size())
+        assertEquals("OPEN", resp.data[0].status)
+
+        def alertsToAck = resp.data;
+
+        // Check actions generated
+        resp = client.get(path: "actions/history", query: [startTime:start,actionPlugins:"plugin1,plugin2"])
+        assertEquals(200, resp.status)
+        assertEquals(5, resp.data.size())
+
+        // Ack alerts generated
+        def alertsToAckIds = "";
+        for ( int i=0; i < alertsToAck.size(); i++ ) {
+            alertsToAckIds += alertsToAck[i].id;
+            if (i != 4) {
+                alertsToAckIds += ",";
+            }
+        }
+
+        // ACK Alerts generated
+        client.put(path: "ack", query: [alertIds:alertsToAckIds,ackBy:"testUser",ackNotes:"testNotes"] )
+
+        // Check if we have the actions for ACKNOWLEDGE
+        for ( int i=0; i < 10; ++i ) {
+            // println "SLEEP!" ;
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 5
+            resp = client.get(path: "actions/history", query: [startTime:start,actionPlugins:"plugin1,plugin2"])
+            if ( resp.status == 200 && resp.data.size() == 10 ) {
+                break;
+            }
+        }
+
+        assertEquals(200, resp.status)
+        assertEquals(10, resp.data.size())
+    }
 
 }

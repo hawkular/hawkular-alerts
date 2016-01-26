@@ -137,11 +137,18 @@ public class TriggerAction implements Serializable {
     }
 
     public Set<String> getStates() {
+        if (states == null) {
+            states = new HashSet<>();
+        }
         return states;
     }
 
     public void setStates(Set<String> states) {
         this.states = states;
+    }
+
+    public void addState(String state) {
+        getStates().add(state);
     }
 
     public String getCalendar() {
