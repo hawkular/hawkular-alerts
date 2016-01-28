@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.actions.email;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.HashMap;
@@ -43,6 +44,7 @@ public class WebRequestsResponseTimeEmailTest extends CommonTest {
     @BeforeClass
     public static void prepareMessages() {
         plugin = new EmailPlugin();
+        plugin.setSender(new TestActionPluginSender());
 
         properties= new HashMap<>();
         properties.put("to", "admin@hawkular.org");
@@ -64,6 +66,10 @@ public class WebRequestsResponseTimeEmailTest extends CommonTest {
         Message email = plugin.createMimeMessage(openMessage);
         assertNotNull(email);
         writeEmailFile(email, this.getClass().getSimpleName() + "-1-open.eml");
+
+        plugin.process(openMessage);
+        // Test generates 2 messages on the mail server
+        assertEquals(2, server.getReceivedMessages().length);
     }
 
     @Test
@@ -79,6 +85,10 @@ public class WebRequestsResponseTimeEmailTest extends CommonTest {
         Message email = plugin.createMimeMessage(ackMessage);
         assertNotNull(email);
         writeEmailFile(email, this.getClass().getSimpleName() + "-2-ack.eml");
+
+        plugin.process(ackMessage);
+        // Test generates 2 messages on the mail server
+        assertEquals(2, server.getReceivedMessages().length);
     }
 
     @Test
@@ -95,6 +105,10 @@ public class WebRequestsResponseTimeEmailTest extends CommonTest {
         Message email = plugin.createMimeMessage(resolvedMessage);
         assertNotNull(email);
         writeEmailFile(email, this.getClass().getSimpleName() + "-3-resolved.eml");
+
+        plugin.process(resolvedMessage);
+        // Test generates 2 messages on the mail server
+        assertEquals(2, server.getReceivedMessages().length);
     }
 
 }
