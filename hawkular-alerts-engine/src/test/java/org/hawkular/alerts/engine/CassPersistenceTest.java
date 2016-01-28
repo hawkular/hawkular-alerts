@@ -20,7 +20,6 @@ import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.engine.cassandra.EmbeddedCassandra;
-import org.hawkular.alerts.engine.impl.AlertProperties;
 import org.hawkular.alerts.engine.impl.CassCluster;
 import org.junit.AfterClass;
 import org.junit.Before;
