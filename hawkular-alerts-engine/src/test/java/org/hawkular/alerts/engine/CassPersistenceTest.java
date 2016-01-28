@@ -59,9 +59,10 @@ public class CassPersistenceTest extends PersistenceTest {
             System.out.print("Using External Cassandra for unit testing...");
         }
 
-        keyspace = AlertProperties.getProperty("hawkular-alerts.cassandra-keyspace", "hawkular_alerts_test");
+        keyspace = "hawkular_alerts_test";
+        System.setProperty("hawkular-alerts.cassandra-keyspace", keyspace);
 
-        Session session = CassCluster.getSession(true);
+        CassCluster.getSession(true);
 
         definitionsService = StandaloneAlerts.getDefinitionsService();
         alertsService = StandaloneAlerts.getAlertsService();

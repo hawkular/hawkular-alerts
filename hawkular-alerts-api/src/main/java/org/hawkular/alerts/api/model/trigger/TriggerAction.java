@@ -33,15 +33,15 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  *
  * - A set of Alert.Status (represented by its string value).
  *   The action will be executed if the Alert which is linked is on one of the states defined.
- *   This is not applicable if the action is linked with an Event.
+ *   Unlike Alerts, Events don't have lifecycle, TriggerActions on Events are all executed at Event creation time.
  *
  * - A calendar expression that defines an interval when the action will be executed.
  *   The format of the calendar can be:
  *   - Absolute: <startAbsoluteDate>;<endAbsoluteDate>
  *       With <startAbsoluteDate> and <endAbsoluteDate> format as yyyy-MM-dd.HH:mm
- *   - Relative: <startRelativeDate>;<endRelativeDate>
+ *   - Relative: R<startRelativeDate>;<endRelativeDate>
  *       With <startRelativeDate> and <endRelativeDate> format as
- *       R[[M<Month_of_the_year>.]D<Day_of_the_week>.]HH:mm
+ *       [[M<Month_of_the_year>.]D<Day_of_the_week>.]HH:mm
  *
  *       <Month_of_the_year> uses Calendar.MONTH numeration
  *       <Day_of_the_week> uses Calendar.DAY_OF_WEEK numeration
@@ -175,7 +175,7 @@ public class TriggerAction implements Serializable {
         if (isEmpty(calendarInterval)) {
             return false;
         }
-        return calendarInterval[0].charAt(0) == 'R' && calendarInterval[1].charAt(0) == 'R';
+        return calendarInterval[0].charAt(0) == 'R';
     }
 
     /**
@@ -253,7 +253,7 @@ public class TriggerAction implements Serializable {
         if (isEmpty(calendarInterval[0])) {
             return -1;
         }
-        return extractField(field, calendarInterval[0]);
+        return extractField(field, calendarInterval[0].substring(1));
     }
 
     /**
@@ -288,10 +288,10 @@ public class TriggerAction implements Serializable {
                 iDay = i;
             }
             if (interval.charAt(i) == '.') {
-                if (iMonth > 0 && iDay < 0) {
+                if (iMonth >= 0 && iDay < 0) {
                     endMonth = i;
                 }
-                if (iDay > 0) {
+                if (iDay >= 0) {
                     endDay = i;
                 }
             }
@@ -306,7 +306,7 @@ public class TriggerAction implements Serializable {
             startHour = endMonth + 1;
         }
         if (endMonth < 0 && endDay < 0) {
-            startHour = 1;
+            startHour = 0;
         }
         switch (field) {
             case MONTH:

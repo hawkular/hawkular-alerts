@@ -35,11 +35,11 @@ public class TriggerActionTest {
 
     @Test
     public void relativeCalendarTest() throws Exception {
-        TriggerAction ta = new TriggerAction("tenant", "plugin", "action", "RM0.D0.23:59;RM1.D1.22:49");
+        TriggerAction ta = new TriggerAction("tenant", "plugin", "action", "RM0.D0.23:59;M1.D1.22:49");
 
         assertTrue(ta.isRelativeCalendar());
         assertEquals("RM0.D0.23:59", ta.getStartCalendar());
-        assertEquals("RM1.D1.22:49", ta.getEndCalendar());
+        assertEquals("M1.D1.22:49", ta.getEndCalendar());
 
         assertEquals(0, ta.getStartCalendarRelative(CalendarRelative.MONTH));
         assertEquals(0, ta.getStartCalendarRelative(CalendarRelative.DAY_OF_THE_WEEK));
@@ -51,7 +51,7 @@ public class TriggerActionTest {
         assertEquals(22, ta.getEndCalendarRelative(CalendarRelative.HOUR_OF_THE_DAY));
         assertEquals(49, ta.getEndCalendarRelative(CalendarRelative.MINUTE));
 
-        ta.setCalendar("RD0.23:59;RD1.22:49");
+        ta.setCalendar("RD0.23:59;D1.22:49");
 
         assertEquals(-1, ta.getStartCalendarRelative(CalendarRelative.MONTH));
         assertEquals(0, ta.getStartCalendarRelative(CalendarRelative.DAY_OF_THE_WEEK));
@@ -63,7 +63,7 @@ public class TriggerActionTest {
         assertEquals(22, ta.getEndCalendarRelative(CalendarRelative.HOUR_OF_THE_DAY));
         assertEquals(49, ta.getEndCalendarRelative(CalendarRelative.MINUTE));
 
-        ta.setCalendar("R23:59;R22:49");
+        ta.setCalendar("R23:59;22:49");
 
         assertEquals(-1, ta.getStartCalendarRelative(CalendarRelative.MONTH));
         assertEquals(-1, ta.getStartCalendarRelative(CalendarRelative.DAY_OF_THE_WEEK));

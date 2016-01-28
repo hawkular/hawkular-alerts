@@ -134,7 +134,7 @@ public class CassCluster {
      * Return a cached cassandra Session.
      * It generates the scheme keyspace on the first access.
      *
-     * @param overwrite true will overwrite an existing keyspace
+     * @param overwrite true will overwrite an existing keyspace at initialization
      *                  false will maintain an existing keyspace
      * @return A cached Session
      * @throws Exception on any issue

@@ -1323,4 +1323,64 @@ public class JsonTest {
         assertNull(triggerAction.getCalendar());
     }
 
+    @Test
+    public void jsonTimeConstraints() throws Exception {
+
+        String jsonTrigger1 = "{" +
+                "\"name\":\"calendar-trigger1\"," +
+                "\"description\":\"An email action that sends mail to 'admins' " +
+                                  "but from 00:00-06:00 it sends to 'on-call'.\"," +
+                "\"actions\":[" +
+                        "{" +
+                            "\"actionPlugin\":\"email\"," +
+                            "\"actionId\":\"admins\"" +     // Admins is always generated
+                        "}," +
+                        "{" +
+                            "\"actionPlugin\":\"sms\"," +
+                            "\"actionId\":\"on-call\"," +
+                            "\"calendar\":\"R00:00;06:00\"" +
+                        "}" +
+                    "]" +
+                "}";
+
+        Trigger trigger1 = objectMapper.readValue(jsonTrigger1, Trigger.class);
+        assertEquals(2, trigger1.getActions().size());
+
+        String jsonTrigger2 = "{" +
+                "\"name\":\"calendar-trigger2\"," +
+                "\"description\":\"An email action that sends mail to 'admins' on weekdays" +
+                                  "but on weekends to 'on-call'.\"," +
+                "\"actions\":[" +
+                        "{" +
+                            "\"actionPlugin\":\"email\"," +
+                            "\"actionId\":\"admins\"," +
+                            "\"calendar\":\"RD2.09:00;D5.18:00\"" + // From Monday 09:00 to Friday 18:00
+                        "}," +
+                        "{" +
+                            "\"actionPlugin\":\"sms\"," +
+                            "\"actionId\":\"on-call\"," +
+                            "\"calendar\":\"RD5.18:00;D2.09:00\"" + // From Friday 18:00 to Monday 09:00
+                        "}" +
+                    "]" +
+                "}";
+
+        Trigger trigger2 = objectMapper.readValue(jsonTrigger2, Trigger.class);
+        assertEquals(2, trigger2.getActions().size());
+
+        String jsonTrigger3 = "{" +
+                "\"name\":\"calendar-trigger3\"," +
+                "\"description\":\"A sms action that is active only for alerts created from 22:00-06:00\"," +
+                "\"actions\":[" +
+                        "{" +
+                            "\"actionPlugin\":\"sms\"," +
+                            "\"actionId\":\"on-call\"," +
+                            "\"calendar\":\"R22:00;06:00\"" +
+                        "}" +
+                    "]" +
+                "}";
+
+        Trigger trigger3 = objectMapper.readValue(jsonTrigger3, Trigger.class);
+        assertEquals(2, trigger2.getActions().size());
+    }
+
 }
