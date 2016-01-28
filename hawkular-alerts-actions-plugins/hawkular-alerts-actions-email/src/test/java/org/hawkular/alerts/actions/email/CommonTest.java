@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,10 +18,19 @@ package org.hawkular.alerts.actions.email;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.mail.Message;
 
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
+
+import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.util.ServerSetup;
 
 /**
  * Helper methods for tests
@@ -31,9 +40,28 @@ import org.junit.BeforeClass;
  */
 public class CommonTest {
 
+    protected static final String TEST_SMTP_HOST = "localhost";
+    protected static int TEST_SMTP_PORT = 2525;
+
+    protected GreenMail server;
+
     @BeforeClass
     public static void setUnitTest() {
-        System.setProperty(EmailPlugin.MAIL_SESSION_OFFLINE, "true");
+        System.setProperty("mail.smtp.host", TEST_SMTP_HOST);
+        System.setProperty("mail.smtp.port", String.valueOf(TEST_SMTP_PORT));
+    }
+
+    @Before
+    public void initSmtpServer() {
+        server = new GreenMail(new ServerSetup(TEST_SMTP_PORT, TEST_SMTP_HOST, "smtp"));
+        server.start();
+    }
+
+    @After
+    public void stopSmtpServer() {
+        if (server != null) {
+            server.stop();
+        }
     }
 
     protected void writeEmailFile(Message msg, String fileName) throws Exception {
@@ -45,6 +73,40 @@ public class CommonTest {
         FileOutputStream fos = new FileOutputStream(file);
         msg.writeTo(fos);
         fos.close();
+    }
+
+    public static class TestActionPluginSender implements ActionPluginSender {
+
+        @Override
+        public ActionResponseMessage createMessage(ActionResponseMessage.Operation operation) {
+            return new TestActionPluginMessage(operation, new HashMap<>());
+        }
+
+        @Override
+        public void send(ActionResponseMessage msg) throws Exception {
+            // Nothing to do for testing here
+        }
+    }
+
+    public static class TestActionPluginMessage implements ActionResponseMessage {
+
+        private Operation operation;
+        public Map<String, String> payload;
+
+        public TestActionPluginMessage(Operation operation, Map<String, String> payload) {
+            this.operation = operation;
+            this.payload = payload;
+        }
+
+        @Override
+        public Operation getOperation() {
+            return operation;
+        }
+
+        @Override
+        public Map<String, String> getPayload() {
+            return payload;
+        }
     }
 
 }

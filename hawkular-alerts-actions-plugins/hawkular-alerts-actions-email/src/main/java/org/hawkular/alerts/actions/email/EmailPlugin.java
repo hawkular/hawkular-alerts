@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@ package org.hawkular.alerts.actions.email;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.mail.Address;
@@ -29,9 +30,6 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
@@ -59,8 +57,6 @@ import org.jboss.logging.Logger;
 @Plugin(name = "email")
 public class EmailPlugin implements ActionPluginListener {
     public static final String PLUGIN_NAME = "email";
-
-    public static final String MAIL_SESSION_PROPERTY = "org.hawkular.alerts.actions.email.session";
 
     /**
      * This property is used for testing porpuses.
@@ -180,13 +176,6 @@ public class EmailPlugin implements ActionPluginListener {
 
     Map<String, String> defaultProperties = new HashMap<>();
 
-    /**
-     * Default javax.mail.Session.
-     * It is configurable via "org.hawkular.actions.email.session" system property.
-     *
-     */
-    public static final String MAIL_SESSION = System.getProperty(MAIL_SESSION_PROPERTY, "java:jboss/mail/Default");
-
     Session mailSession;
 
     EmailTemplate emailTemplate;
@@ -208,21 +197,32 @@ public class EmailPlugin implements ActionPluginListener {
         defaultProperties.put(PROP_TEMPLATE_HTML, "");
 
         emailTemplate = new EmailTemplate();
-
-        boolean offLine = System.getProperty(MAIL_SESSION_OFFLINE) != null;
-
-        if (mailSession == null && !offLine) {
-            initMailSession();
-        }
     }
 
-    private void initMailSession() {
-        try {
-            Context ctx = new InitialContext();
-            mailSession = (Session) ctx.lookup(MAIL_SESSION);
-        } catch (NamingException e) {
-            log.debug(e);
-            msgLog.errorCannotBeStarted(PLUGIN_NAME, e.getMessage());
+    public void setSender(ActionPluginSender sender) {
+        this.sender = sender;
+    }
+
+    private void initMailSession(String tenantId) {
+        boolean offLine = System.getProperty(MAIL_SESSION_OFFLINE) != null;
+        if (!offLine) {
+            Properties systemProperties = System.getProperties();
+            Properties emailProperties = new Properties();
+            for (String property : systemProperties.stringPropertyNames()) {
+                if (!isEmpty(tenantId) && property.startsWith(tenantId + ".mail.")) {
+                    emailProperties.put(property.substring(tenantId.length() + 1), System.getProperty(property));
+                } else if (property.startsWith("mail.")) {
+                    emailProperties.put(property, System.getProperty(property));
+                }
+            }
+            if (emailProperties.isEmpty()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No mail.* properties found, setting default mail server to localhost:25");
+                }
+                emailProperties.setProperty("mail.smtp.host", "localhost");
+                emailProperties.setProperty("mail.smtp.port", "25");
+            }
+            mailSession = Session.getInstance(emailProperties);
         }
     }
 
@@ -258,6 +258,11 @@ public class EmailPlugin implements ActionPluginListener {
             msgLog.warnMessageReceivedWithoutPayload("email");
         }
         try {
+            String tenantId = msg.getAction() != null ? msg.getAction().getTenantId() : null;
+            /**
+             * Mail session can change during invocations
+             */
+            initMailSession(tenantId);
             Message message = createMimeMessage(msg);
             Transport.send(message);
             msgLog.infoActionReceived("email", msg.toString());
@@ -355,5 +360,9 @@ public class EmailPlugin implements ActionPluginListener {
             email.setContent(multipart);
         }
         return email;
+    }
+
+    private boolean isEmpty(String s) {
+        return s == null || s.isEmpty();
     }
 }
