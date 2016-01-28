@@ -615,7 +615,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Trigger unorphanMemberTrigger(String tenantId, String memberId, Map<String, String> memberContext,
-            Map<String, String> dataIdMap) throws Exception {
+            Map<String, String> memberTags, Map<String, String> dataIdMap) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
@@ -636,9 +636,11 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         String groupId = orphanMember.getMemberOf();
         String memberName = orphanMember.getName();
+        String memberDescription = orphanMember.getDescription();
 
         removeTrigger(orphanMember);
-        Trigger member = addMemberTrigger(tenantId, groupId, memberId, memberName, memberContext, dataIdMap);
+        Trigger member = addMemberTrigger(tenantId, groupId, memberId, memberName, memberDescription, memberContext,
+                memberTags, dataIdMap);
 
         return member;
     }
@@ -1033,15 +1035,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Trigger addMemberTrigger(String tenantId, String groupId, String memberId, String memberName,
-            Map<String, String> memberContext, Map<String, String> dataIdMap) throws Exception {
+            String memberDescription, Map<String, String> memberContext, Map<String, String> memberTags,
+            Map<String, String> dataIdMap) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
         if (isEmpty(groupId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
-        }
-        if (isEmpty(memberName)) {
-            throw new IllegalArgumentException("MemberName must be not null");
         }
         if (isEmpty(dataIdMap)) {
             throw new IllegalArgumentException("DataIdMap must be not null");
@@ -1073,13 +1073,26 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         // create a member trigger like the group trigger
-        memberId = (null == memberId) ? Trigger.generateId() : memberId;
+        memberId = isEmpty(memberId) ? Trigger.generateId() : memberId;
+        memberName = isEmpty(memberName) ? group.getName() : memberName;
         Trigger member = new Trigger(tenantId, memberId, memberName);
 
         copyGroupTrigger(group, member);
 
+        if (!isEmpty(memberDescription)) {
+            member.setDescription(memberDescription);
+        }
         if (null != memberContext) {
-            member.setContext(memberContext);
+            // add additional or override existing context
+            for( Map.Entry<String,String> entry : member.getContext().entrySet()) {
+                memberContext.putIfAbsent(entry.getKey(), entry.getValue());
+            }
+        }
+        if (null != memberTags) {
+            // add additional or override existing tags
+            for (Map.Entry<String, String> entry : member.getTags().entrySet()) {
+                memberTags.putIfAbsent(entry.getKey(), entry.getValue());
+            }
         }
 
         addTrigger(member);
@@ -1158,7 +1171,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         ((RateCondition) groupCondition).getDirection(),
                         ((RateCondition) groupCondition).getPeriod(),
                         ((RateCondition) groupCondition).getOperator(),
-                        ((ThresholdCondition) groupCondition).getThreshold());
+                        ((RateCondition) groupCondition).getThreshold());
                 break;
             case STRING:
                 newCondition = new StringCondition(member.getTenantId(), member.getId(),

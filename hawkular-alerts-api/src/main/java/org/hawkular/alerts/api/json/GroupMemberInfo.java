@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,20 +35,24 @@ public class GroupMemberInfo {
     private String groupId;
     private String memberId;
     private String memberName;
+    private String memberDescription;
     private Map<String, String> memberContext;
+    private Map<String, String> memberTags;
     private Map<String, String> dataIdMap;
 
     public GroupMemberInfo() {
         // for json construction
     }
 
-    public GroupMemberInfo(String groupId, String memberId, String memberName, Map<String, String> memberContext,
-            Map<String, String> dataIdMap) {
+    public GroupMemberInfo(String groupId, String memberId, String memberName, String memberDescription,
+            Map<String, String> memberContext, Map<String, String> memberTags, Map<String, String> dataIdMap) {
         super();
         this.groupId = groupId;
         this.memberId = memberId;
         this.memberName = memberName;
+        this.memberDescription = memberDescription;
         this.memberContext = memberContext;
+        this.memberTags = memberTags;
         this.dataIdMap = dataIdMap;
     }
 
@@ -74,18 +78,44 @@ public class GroupMemberInfo {
         return memberName;
     }
 
-    /** The member triggerName. Required. */
+    /** The member triggerName. If null defaults to group trigger's name */
     public void setMemberName(String memberName) {
         this.memberName = memberName;
+    }
+
+    public String getMemberDescription() {
+        return memberDescription;
+    }
+
+    /**
+     * @param memberDescription If null defaults to group trigger's description
+     */
+    public void setMemberDescription(String memberDescription) {
+        this.memberDescription = memberDescription;
     }
 
     public Map<String, String> getMemberContext() {
         return memberContext;
     }
 
-    /** The member context. If null will be inherited from the group. */
+    /**
+     * @param memberContext Members inherit the group trigger context. If not null this adds additional, or
+     *                      overrides existing, context entries.
+     */
     public void setMemberContext(Map<String, String> memberContext) {
         this.memberContext = memberContext;
+    }
+
+    public Map<String, String> getMemberTags() {
+        return memberTags;
+    }
+
+    /**
+     * @param memberTags Members inherit the group trigger tags. If not null this adds additional, or
+     *                      overrides existing, tags.
+     */
+    public void setMemberTags(Map<String, String> memberTags) {
+        this.memberTags = memberTags;
     }
 
     public Map<String, String> getDataIdMap() {
@@ -126,6 +156,5 @@ public class GroupMemberInfo {
         return "GroupMemberInfo [groupId=" + groupId + ", memberId=" + memberId + ", memberName=" + memberName
                 + ", memberContext=" + memberContext + ", dataIdMap=" + dataIdMap + "]";
     }
-
 
 }

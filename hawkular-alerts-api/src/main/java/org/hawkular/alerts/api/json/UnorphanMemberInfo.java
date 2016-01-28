@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,15 +32,18 @@ import java.util.Map;
 public class UnorphanMemberInfo {
 
     private Map<String, String> memberContext;
+    private Map<String, String> memberTags;
     private Map<String, String> dataIdMap;
 
     public UnorphanMemberInfo() {
         // for json construction
     }
 
-    public UnorphanMemberInfo(Map<String, String> memberContext, Map<String, String> dataIdMap) {
+    public UnorphanMemberInfo(Map<String, String> memberContext, Map<String, String> memberTags,
+            Map<String, String> dataIdMap) {
         super();
         this.memberContext = memberContext;
+        this.memberTags = memberTags;
         this.dataIdMap = dataIdMap;
     }
 
@@ -48,9 +51,24 @@ public class UnorphanMemberInfo {
         return memberContext;
     }
 
-    /** The member context. If null will be inherited from the group. */
+    /**
+     * @param memberContext Members inherit the group trigger context. If not null this adds additional, or
+     *                      overrides existing, context entries.
+     */
     public void setMemberContext(Map<String, String> memberContext) {
         this.memberContext = memberContext;
+    }
+
+    public Map<String, String> getMemberTags() {
+        return memberTags;
+    }
+
+    /**
+     * @param memberTags Members inherit the group trigger tags. If not null this adds additional, or
+     *                      overrides existing, tags.
+     */
+    public void setMemberTags(Map<String, String> memberTags) {
+        this.memberTags = memberTags;
     }
 
     public Map<String, String> getDataIdMap() {

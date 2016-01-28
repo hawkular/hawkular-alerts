@@ -77,9 +77,13 @@ public interface DefinitionsService {
      * @param tenantId Tenant where trigger is stored
      * @param groupId Group triggerId from which to spawn the member trigger
      * @param memberId The member triggerId, unique id within the tenant, if null an Id will be generated
-     * @param memberName The member triggerName, not null, unique name within the tenant
-     * @param memberContext The member triggerContext. If null the context is inherited from the group trigger
-     * @param dataIdMap Tokens to be replaced in the new trigger
+     * @param memberName The member triggerName, if null defaults to group trigger name
+     * @param memberDescription The member description, if null defaults to group trigger description
+     * @param memberContext Members inherit the group trigger context. If not null this adds additional, or
+     *                      overrides existing, context entries.
+     * @param memberTags Members inherit the group trigger tags. If not null this adds additional, or
+     *                      overrides existing, tags.
+     * @param dataIdMap Tokens to be replaced in the new trigger.
      * @return the member trigger
      * @throws Exception on any problem
      * @see {@link #addTrigger(String, Trigger)} for adding a non-group trigger.
@@ -88,7 +92,9 @@ public interface DefinitionsService {
      * <code>dataIdMap</code> parameter.
      */
     Trigger addMemberTrigger(String tenantId, String groupId, String memberId, String memberName,
-            Map<String, String> memberContext, Map<String, String> dataIdMap) throws Exception;
+            String memberDescription, Map<String, String> memberContext, Map<String, String> memberTags,
+            Map<String, String> dataIdMap)
+            throws Exception;
 
     /**
      * Generate a member trigger for the specified data-driven group trigger.
@@ -221,17 +227,20 @@ public interface DefinitionsService {
 
     /**
      * Un-orphan a member trigger.  The member trigger is again synchronized with the group definition. As an orphan
-     * it may have been altered in various ways. So, as when spawning a new member trigger, the context and dataIdMap
-     * are specified. See {@link org.hawkular.alerts.api.json.MemberTrigger#setDataIdMap(Map)} for an example
+     * it may have been altered in various ways. So, as when spawning a new member trigger, the context, tags and
+     * dataIdMap are specified. See {@link org.hawkular.alerts.api.json.MemberTrigger#setDataIdMap(Map)} for an example
      * of setting the <code>dataIdMap</code>.
      * <p>
      * This is basically a convenience method that first performs a {@link #removeTrigger(String, String)} and
      * then an {@link #addMemberTrigger(String, String, String, String, Map, Map)}. But the member trigger must
-     * already exist for this call to succeed. The trigger will maintain the same group, id, and name.
+     * already exist for this call to succeed. The trigger will maintain the same group, id, name and description.
      * </p>
      * @param tenantId Tenant where trigger is stored
      * @param memberId The member triggerId
-     * @param memberContext The member triggerContext. If null the context is inherited from the member trigger
+     * @param memberContext Context is reset to the group trigger context. If not null this adds additional, or
+     *                      overrides existing, context entries.
+     * @param memberTags Tags are reset to the group trigger tags. If not null this adds additional, or
+     *                      overrides existing, tags.
      * @param dataIdMap Tokens to be replaced in the new trigger
      * @return the member trigger
      * @throws NotFoundException if trigger is not found
@@ -241,7 +250,7 @@ public interface DefinitionsService {
      * of setting the <code>dataIdMap</code>.
      */
     Trigger unorphanMemberTrigger(String tenantId, String memberId, Map<String, String> memberContext,
-            Map<String, String> dataIdMap) throws Exception;
+            Map<String, String> memberTags, Map<String, String> dataIdMap) throws Exception;
 
     /*
         CRUD interface for Dampening
@@ -456,7 +465,7 @@ public interface DefinitionsService {
      * @param groupId Group Trigger adding the condition and whose non-orphan members will also have it added.
      * @param triggerMode Mode where condition is applied
      * @param groupCondition Not null, the condition to add
-     * @param dataIdMemberMap see above for details.
+     * @param dataIdMemberMap see above for details. Null if the group trigger has no members.
      * @return The updated, persisted condition set for the group
      * @throws NotFoundException if trigger is not found
      * @throws Exception on any problem

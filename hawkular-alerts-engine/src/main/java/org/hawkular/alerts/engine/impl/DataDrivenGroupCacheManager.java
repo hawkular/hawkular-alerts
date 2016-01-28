@@ -114,7 +114,7 @@ public class DataDrivenGroupCacheManager {
             }
         } catch (Exception e) {
             log.error("FAILED to updateCache. Unable to generate data-driven member triggers!", e);
-            sourcesMap = null;
+            sourcesMap = new HashMap<>();
         }
 
         if (log.isDebugEnabled()) {
