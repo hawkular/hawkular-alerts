@@ -125,13 +125,14 @@ class TriggersITest extends AbstractITestBase {
         // create member 1
         Map<String,String> dataId1Map = new HashMap<>(2);
         dataId1Map.put("DataId1-Token", "DataId1-Child1");
-        GroupMemberInfo groupMemberInfo = new GroupMemberInfo("group-trigger", "member1", "member1", null, dataId1Map);
+        GroupMemberInfo groupMemberInfo = new GroupMemberInfo("group-trigger", "member1", "member1", null, null, null,
+            dataId1Map);
         resp = client.post(path: "triggers/groups/members", body: groupMemberInfo);
         assertEquals(200, resp.status)
 
         // create member 2
         dataId1Map.put("DataId1-Token", "DataId1-Child2");
-        groupMemberInfo = new GroupMemberInfo("group-trigger", "member2", "member2", null, dataId1Map);
+        groupMemberInfo = new GroupMemberInfo("group-trigger", "member2", "member2", null, null, null, dataId1Map);
         resp = client.post(path: "triggers/groups/members", body: groupMemberInfo);
         assertEquals(200, resp.status)
 
@@ -279,7 +280,7 @@ class TriggersITest extends AbstractITestBase {
         Map<String,String> dataIdMap = new HashMap<>(2);
         dataIdMap.put("DataId1-Token", "DataId1-Child2");
         dataIdMap.put("DataId2-Token", "DataId2-Child2");
-        UnorphanMemberInfo unorphanMemberInfo = new UnorphanMemberInfo(null, dataIdMap);
+        UnorphanMemberInfo unorphanMemberInfo = new UnorphanMemberInfo(null, null, dataIdMap);
         resp = client.post(path: "triggers/groups/members/member2/unorphan", body: unorphanMemberInfo);
         assertEquals(200, resp.status)
 

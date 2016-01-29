@@ -345,15 +345,14 @@ public class TriggersHandler {
                 return ResponseUtil.badRequest("MemberTrigger is null");
             }
             String groupId = groupMember.getGroupId();
-            String memberName = groupMember.getMemberName();
             if (isEmpty(groupId)) {
                 return ResponseUtil.badRequest("MemberTrigger groupId is null");
             }
-            if (isEmpty(memberName)) {
-                return ResponseUtil.badRequest("MemberTrigger memberName is null");
-            }
-            Trigger child = definitions.addMemberTrigger(tenantId, groupId, groupMember.getMemberId(), memberName,
+            Trigger child = definitions.addMemberTrigger(tenantId, groupId, groupMember.getMemberId(),
+                    groupMember.getMemberName(),
+                    groupMember.getMemberDescription(),
                     groupMember.getMemberContext(),
+                    groupMember.getMemberTags(),
                     groupMember.getDataIdMap());
             if (log.isDebugEnabled()) {
                 log.debug("Child Trigger: " + child.toString());
@@ -543,7 +542,9 @@ public class TriggersHandler {
             if (null == unorphanMemberInfo) {
                 return ResponseUtil.badRequest("MemberTrigger is null");
             }
-            Trigger child = definitions.unorphanMemberTrigger(tenantId, memberId, unorphanMemberInfo.getMemberContext(),
+            Trigger child = definitions.unorphanMemberTrigger(tenantId, memberId,
+                    unorphanMemberInfo.getMemberContext(),
+                    unorphanMemberInfo.getMemberTags(),
                     unorphanMemberInfo.getDataIdMap());
             if (log.isDebugEnabled()) {
                 log.debug("Member Trigger: " + child);
