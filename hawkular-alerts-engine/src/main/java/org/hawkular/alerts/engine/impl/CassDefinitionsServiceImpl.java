@@ -1139,6 +1139,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         ((CompareCondition) groupCondition).getData2Multiplier(),
                         dataIdMap.get(((CompareCondition) groupCondition).getData2Id()));
                 break;
+            case EVENT:
+                newCondition = new EventCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((EventCondition) groupCondition).getExpression());
+                break;
             case EXTERNAL:
                 String tokenDataId = groupCondition.getDataId();
                 String memberDataId = dataIdMap.get(tokenDataId);
