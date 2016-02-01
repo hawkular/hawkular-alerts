@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hawkular.alerts.api.model.action.TimeConstraint;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.TriggerAction;
@@ -78,7 +79,7 @@ public class ActionsValidatorTest {
     @Test
     public void calendarAbsoluteTest() {
         TriggerAction ta = new TriggerAction("tenant", "plugin", "action",
-                "2016-01-26.20:30;2016-01-26.20:45");
+                new TimeConstraint("2016.01.26,20:30","2016.01.26,20:45", false));
 
         Calendar eventCal = Calendar.getInstance();
         eventCal.set(2016, Calendar.JANUARY, 26, 20, 31);
@@ -104,8 +105,7 @@ public class ActionsValidatorTest {
     @Test
     public void calendarRelativeTest() {
 
-        TriggerAction ta = new TriggerAction("tenant", "plugin", "action",
-                "R20:30;20:45");
+        TriggerAction ta = new TriggerAction("tenant", "plugin", "action", new TimeConstraint("20:30", "20:45"));
 
         Calendar eventCal = Calendar.getInstance();
         eventCal.set(2016, Calendar.JANUARY, 26, 20, 31);
@@ -131,8 +131,7 @@ public class ActionsValidatorTest {
         alert.setCtime(eventCal.getTimeInMillis());
         assertFalse(ActionsValidator.validate(ta, alert));
 
-        // Remember to use Calendar.DAY_OF_WEEK values for relative calendar expressions
-        ta = new TriggerAction("tenant", "plugin", "action", "RD5.20:30;D1.20:45");
+        ta = new TriggerAction("tenant", "plugin", "action", new TimeConstraint("Thursday,20:30", "Sunday,20:45"));
 
         eventCal.set(2016, Calendar.JANUARY, 28, 20, 31);
         alert.setCtime(eventCal.getTimeInMillis());

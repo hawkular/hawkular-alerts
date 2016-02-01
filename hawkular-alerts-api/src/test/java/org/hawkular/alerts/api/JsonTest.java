@@ -1338,7 +1338,10 @@ public class JsonTest {
                         "{" +
                             "\"actionPlugin\":\"sms\"," +
                             "\"actionId\":\"on-call\"," +
-                            "\"calendar\":\"R00:00;06:00\"" +
+                            "\"calendar\":{" +
+                                "\"startTime\":\"00:00\"," +
+                                "\"endTime\":\"06:00\"" +
+                            "}" +
                         "}" +
                     "]" +
                 "}";
@@ -1354,12 +1357,18 @@ public class JsonTest {
                         "{" +
                             "\"actionPlugin\":\"email\"," +
                             "\"actionId\":\"admins\"," +
-                            "\"calendar\":\"RD2.09:00;D5.18:00\"" + // From Monday 09:00 to Friday 18:00
+                            "\"calendar\":{" +              // From Monday 09:00 to Friday 18:00
+                                "\"startTime\":\"Monday,09:00\"," +
+                                "\"endTime\":\"Friday,18:00\"" +
+                            "}" +
                         "}," +
                         "{" +
                             "\"actionPlugin\":\"sms\"," +
                             "\"actionId\":\"on-call\"," +
-                            "\"calendar\":\"RD5.18:00;D2.09:00\"" + // From Friday 18:00 to Monday 09:00
+                            "\"calendar\":{" +              // From Friday 18:00 to Monday 09:00
+                                "\"startTime\":\"Friday,18:00\"," +
+                                "\"endTime\":\"Monday,09:00\"" +
+                            "}" +
                         "}" +
                     "]" +
                 "}";
@@ -1374,7 +1383,10 @@ public class JsonTest {
                         "{" +
                             "\"actionPlugin\":\"sms\"," +
                             "\"actionId\":\"on-call\"," +
-                            "\"calendar\":\"R22:00;06:00\"" +
+                            "\"calendar\":{" +
+                                "\"startTime\":\"22:00\"," +
+                                "\"endTime\":\"06:00\"" +
+                            "}" +
                         "}" +
                     "]" +
                 "}";

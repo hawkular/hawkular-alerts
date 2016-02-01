@@ -17,12 +17,11 @@
 package org.hawkular.alerts.api.model.trigger;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.hawkular.alerts.api.model.action.TimeConstraint;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -35,16 +34,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  *   The action will be executed if the Alert which is linked is on one of the states defined.
  *   Unlike Alerts, Events don't have lifecycle, TriggerActions on Events are all executed at Event creation time.
  *
- * - A calendar expression that defines an interval when the action will be executed.
- *   The format of the calendar can be:
- *   - Absolute: <startAbsoluteDate>;<endAbsoluteDate>
- *       With <startAbsoluteDate> and <endAbsoluteDate> format as yyyy-MM-dd.HH:mm
- *   - Relative: R<startRelativeDate>;<endRelativeDate>
- *       With <startRelativeDate> and <endRelativeDate> format as
- *       [[M<Month_of_the_year>.]D<Day_of_the_week>.]HH:mm
- *
- *       <Month_of_the_year> uses Calendar.MONTH numeration
- *       <Day_of_the_week> uses Calendar.DAY_OF_WEEK numeration
+ * - A TimeConstraint object that defines a time interval in absolute or relative way.
+ *   The action will be executed if the action creation time is satisfied by the time interval.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -52,11 +43,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 public class TriggerAction implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private static final SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd.HH:mm");
-
-    public enum CalendarRelative {
-        MONTH, DAY_OF_THE_WEEK, HOUR_OF_THE_DAY, MINUTE
-    }
 
     @JsonInclude(Include.NON_NULL)
     private String tenantId;
@@ -71,10 +57,8 @@ public class TriggerAction implements Serializable {
     Set<String> states;
 
     @JsonInclude(Include.NON_NULL)
-    private String calendar;
+    private TimeConstraint calendar;
 
-    @JsonIgnore
-    private transient String[] calendarInterval = null;
 
     public TriggerAction() {
         this(null, null, null);
@@ -92,24 +76,17 @@ public class TriggerAction implements Serializable {
         this(tenantId, actionPlugin, actionId, new HashSet<>(states), null);
     }
 
-    public TriggerAction(String tenantId, String actionPlugin, String actionId, String calendar) {
+    public TriggerAction(String tenantId, String actionPlugin, String actionId, TimeConstraint calendar) {
         this(tenantId, actionPlugin, actionId, new HashSet<>(), calendar);
     }
 
     public TriggerAction(String tenantId, String actionPlugin, String actionId, Set<String> states,
-                         String calendar) {
+                         TimeConstraint calendar) {
         this.tenantId = tenantId;
         this.actionPlugin = actionPlugin;
         this.actionId = actionId;
         this.states = states;
         this.calendar = calendar;
-        if (!isEmpty(this.calendar)) {
-            calendarInterval = calendar.split(";");
-            if (calendarInterval.length != 2) {
-                throw new IllegalArgumentException("calendar must follow pattern <startCalendarExpression>;" +
-                        "<endCalendarExpression>");
-            }
-        }
     }
 
     public String getTenantId() {
@@ -151,201 +128,12 @@ public class TriggerAction implements Serializable {
         getStates().add(state);
     }
 
-    public String getCalendar() {
+    public TimeConstraint getCalendar() {
         return calendar;
     }
 
-    public void setCalendar(String calendar) {
+    public void setCalendar(TimeConstraint calendar) {
         this.calendar = calendar;
-        if (!isEmpty(this.calendar)) {
-            calendarInterval = this.calendar.split(";");
-            if (calendarInterval.length != 2) {
-                throw new IllegalArgumentException("calendar must follow pattern <startCalendarExpression>;" +
-                        "<endCalendarExpression>");
-            }
-        }
-    }
-
-    /**
-     * @return true if TriggerAction.calendar is a relative expression
-     *         false if no calendar or absolute expression defined
-     */
-    @JsonIgnore
-    public boolean isRelativeCalendar() {
-        if (isEmpty(calendarInterval)) {
-            return false;
-        }
-        return calendarInterval[0].charAt(0) == 'R';
-    }
-
-    /**
-     * @return a string with the start date expression defined on TriggerAction.calendar interval
-     *         null if no calendar expression defined
-     */
-    @JsonIgnore
-    public String getStartCalendar() {
-        if (isEmpty(calendarInterval)) {
-            return null;
-        }
-        return calendarInterval[0];
-    }
-
-    /**
-     * @return a string with the end date expression defined on TriggerAction.calendar interval
-     *         null if no calendar expression defined
-     */
-    @JsonIgnore
-    public String getEndCalendar() {
-        if (isEmpty(calendarInterval)) {
-            return null;
-        }
-        return calendarInterval[1];
-    }
-
-    /**
-     * @return a java.util.Date with the absolute start date expression defined on TriggerAction.calendar interval
-     *         null if no calendar defined or no absolute expression defined
-     * @throws Exception if absolute date expression cannot be parsed
-     */
-    @JsonIgnore
-    public Date getStartCalendarDate() throws Exception {
-        if (isEmpty(calendarInterval)) {
-            return null;
-        }
-        if (isRelativeCalendar()) {
-            return null;
-        }
-        return parser.parse(calendarInterval[0]);
-    }
-
-    /**
-     * @return a java.util.Date with the absolute end date expression defined on TriggerAction.calendar interval
-     *         null if no calendar defined or no absolute expression defined
-     * @throws Exception if absolute date expression cannot be parsed
-     */
-    @JsonIgnore
-    public Date getEndCalendarDate() throws Exception {
-        if (isEmpty(calendarInterval)) {
-            return null;
-        }
-        if (isRelativeCalendar()) {
-            return null;
-        }
-        return parser.parse(calendarInterval[1]);
-    }
-
-    /**
-     * Parse the start relative expression defined on TriggerAction.calendar interval.
-     *
-     * @param field CalendarRelative field of the expression to parse
-     * @return the value of the field defined on the relative param
-     *         -1 if value not present or expression is not relative
-     * @throws Exception if specific field cannot be extracted
-     */
-    @JsonIgnore
-    public int getStartCalendarRelative(CalendarRelative field) throws Exception {
-        if (isEmpty(calendarInterval)) {
-            return -1;
-        }
-        if (!isRelativeCalendar()) {
-            return -1;
-        }
-        if (isEmpty(calendarInterval[0])) {
-            return -1;
-        }
-        return extractField(field, calendarInterval[0].substring(1));
-    }
-
-    /**
-     * Parse the end relative expression defined on TriggerAction.calendar interval.
-     *
-     * @param field CalendarRelative field of the expression to parse
-     * @return the value of the field defined on the relative param
-     *         -1 if value not present or expression is not relative
-     * @throws Exception if specific field cannot be extracted
-     */
-    @JsonIgnore
-    public int getEndCalendarRelative(CalendarRelative field) throws Exception {
-        if (isEmpty(calendarInterval)) {
-            return -1;
-        }
-        if (!isRelativeCalendar()) {
-            return -1;
-        }
-        if (isEmpty(calendarInterval[1])) {
-            return -1;
-        }
-        return extractField(field, calendarInterval[1]);
-    }
-
-    private int extractField(CalendarRelative field, String interval) throws Exception {
-        int iMonth = -1, endMonth = -1, iDay = -1, endDay = -1, hourSeparator = -1, startHour = -1;
-        for (int i = 0; i < interval.length(); i++) {
-            if (interval.charAt(i) == 'M') {
-                iMonth = i;
-            }
-            if (interval.charAt(i) == 'D') {
-                iDay = i;
-            }
-            if (interval.charAt(i) == '.') {
-                if (iMonth >= 0 && iDay < 0) {
-                    endMonth = i;
-                }
-                if (iDay >= 0) {
-                    endDay = i;
-                }
-            }
-            if (interval.charAt(i) == ':') {
-                hourSeparator = i;
-            }
-        }
-        if (endDay > 0) {
-            startHour = endDay + 1;
-        }
-        if (endMonth > 0 && endDay < 0) {
-            startHour = endMonth + 1;
-        }
-        if (endMonth < 0 && endDay < 0) {
-            startHour = 0;
-        }
-        switch (field) {
-            case MONTH:
-                if (iMonth < 0) {
-                    return -1;
-                }
-                if (endMonth < -1) {
-                    return -1;
-                }
-                return Integer.valueOf(interval.substring(iMonth + 1, endMonth));
-            case DAY_OF_THE_WEEK:
-                if (iDay < 0) {
-                    return -1;
-                }
-                if (endDay < -1) {
-                    return -1;
-                }
-                return Integer.valueOf(interval.substring(iDay + 1, endDay));
-            case HOUR_OF_THE_DAY:
-                if (hourSeparator < 0) {
-                    return -1;
-                }
-                return Integer.valueOf(interval.substring(startHour, hourSeparator));
-            case MINUTE:
-                if (hourSeparator < 0) {
-                    return -1;
-                }
-                return Integer.valueOf(interval.substring(hourSeparator + 1));
-            default:
-                return -1;
-        }
-    }
-
-    private boolean isEmpty(String s) {
-        return (null == s || s.isEmpty());
-    }
-
-    private boolean isEmpty(String[] a) {
-        return (null == a || a.length == 0);
     }
 
     @Override

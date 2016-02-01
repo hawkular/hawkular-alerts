@@ -16,11 +16,6 @@
  */
 package org.hawkular.alerts.engine.util;
 
-import static org.hawkular.alerts.api.model.trigger.TriggerAction.*;
-
-import java.util.Calendar;
-import java.util.Date;
-
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.TriggerAction;
@@ -64,74 +59,8 @@ public class ActionsValidator {
             return false;
         }
         if (triggerAction.getCalendar() != null) {
-            Calendar eventCal = Calendar.getInstance();
-            eventCal.setTimeInMillis(event.getCtime());
             try {
-                if (triggerAction.isRelativeCalendar()) {
-                    // Validate MONTH
-                    if (triggerAction.getStartCalendarRelative(CalendarRelative.MONTH) > -1
-                            && triggerAction.getEndCalendarRelative(CalendarRelative.MONTH) > -1) {
-                        int startMonth = triggerAction.getStartCalendarRelative(CalendarRelative.MONTH);
-                        int endMonth = triggerAction.getEndCalendarRelative(CalendarRelative.MONTH);
-                        int eventMonth = eventCal.get(Calendar.MONTH);
-                        if (startMonth <= endMonth) {
-                            if (eventMonth < startMonth || eventMonth > endMonth) {
-                                return false;
-                            }
-                        } else {
-                            if (!(eventMonth >= startMonth || eventMonth <= endMonth)) {
-                                return false;
-                            }
-                        }
-                    }
-                    // Validate DAY
-                    if (triggerAction.getStartCalendarRelative(CalendarRelative.DAY_OF_THE_WEEK) > -1
-                            && triggerAction.getEndCalendarRelative(CalendarRelative.DAY_OF_THE_WEEK) > -1) {
-                        int startDay = triggerAction.getStartCalendarRelative(CalendarRelative.DAY_OF_THE_WEEK);
-                        int endDay = triggerAction.getEndCalendarRelative(CalendarRelative.DAY_OF_THE_WEEK);
-                        int eventDay = eventCal.get(Calendar.DAY_OF_WEEK);
-                        if (startDay <= endDay) {
-                            if (eventDay < startDay || eventDay > endDay) {
-                                return false;
-                            }
-                        } else {
-                            if (!(eventDay >= startDay || eventDay <= endDay)) {
-                                return false;
-                            }
-                        }
-                    }
-                    // Validate HOUR
-                    if (triggerAction.getStartCalendarRelative(CalendarRelative.HOUR_OF_THE_DAY) > -1
-                            && triggerAction.getEndCalendarRelative(CalendarRelative.HOUR_OF_THE_DAY) > -1) {
-                        int startDay = triggerAction.getStartCalendarRelative(CalendarRelative.HOUR_OF_THE_DAY);
-                        int endDay = triggerAction.getEndCalendarRelative(CalendarRelative.HOUR_OF_THE_DAY);
-                        int eventDay = eventCal.get(Calendar.HOUR_OF_DAY);
-                        if (eventDay < startDay || eventDay > endDay) {
-                            return false;
-                        }
-                    }
-                    // Validate MINUTE
-                    if (triggerAction.getStartCalendarRelative(CalendarRelative.MINUTE) > -1
-                            && triggerAction.getEndCalendarRelative(CalendarRelative.MINUTE) > -1) {
-                        int startDay = triggerAction.getStartCalendarRelative(CalendarRelative.MINUTE);
-                        int endDay = triggerAction.getEndCalendarRelative(CalendarRelative.MINUTE);
-                        int eventDay = eventCal.get(Calendar.MINUTE);
-                        if (eventDay < startDay || eventDay > endDay) {
-                            return false;
-                        }
-                    }
-                } else {
-                    Date eventDate = eventCal.getTime();
-
-                        Date startInterval = triggerAction.getStartCalendarDate();
-                        Date endInterval = triggerAction.getEndCalendarDate();
-                        if (eventDate != null
-                                && startInterval != null
-                                && endInterval != null
-                                && (eventDate.before(startInterval) || eventDate.after(endInterval)))  {
-                            return false;
-                        }
-                }
+                return triggerAction.getCalendar().isSatisfiedBy(event.getCtime());
             } catch (Exception e) {
                 log.debug(e.getMessage(), e);
                 msgLog.errorCannotValidateAction(e.getMessage());
