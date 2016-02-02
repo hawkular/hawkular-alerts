@@ -218,7 +218,7 @@ public class CassStatement {
         DELETE_TRIGGER = "DELETE FROM " + keyspace + ".triggers " + "WHERE tenantId = ? AND id = ? ";
 
         INSERT_ACTION_DEFINITION = "INSERT INTO " + keyspace + ".actions_definitions "
-                + "(tenantId, actionPlugin, actionId, properties) VALUES (?, ?, ?, ?) ";
+                + "(tenantId, actionPlugin, actionId, payload) VALUES (?, ?, ?, ?) ";
 
         INSERT_ACTION_HISTORY = "INSERT INTO " + keyspace + ".actions_history "
                 + "(tenantId, actionPlugin, actionId, alertId, ctime, payload) VALUES (?, ?, ?, ?, ?, ?) " +
@@ -324,7 +324,7 @@ public class CassStatement {
         INSERT_TRIGGER_ACTIONS = "INSERT INTO " + keyspace + ".triggers_actions "
                 + "(tenantId, triggerId, actionPlugin, actionId, payload) VALUES (?, ?, ?, ?, ?) ";
 
-        SELECT_ACTION_DEFINITION = "SELECT properties FROM " + keyspace + ".actions_definitions "
+        SELECT_ACTION_DEFINITION = "SELECT payload FROM " + keyspace + ".actions_definitions "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
 
         SELECT_ACTION_HISTORY = "SELECT payload FROM " + keyspace + ".actions_history " +
@@ -510,7 +510,7 @@ public class CassStatement {
                 + "firingMatch, memberOf, name, severity, source, tags, type "
                 + "FROM " + keyspace + ".triggers WHERE tenantId = ? ";
 
-        UPDATE_ACTION_DEFINITION = "UPDATE " + keyspace + ".actions_definitions SET properties = ? "
+        UPDATE_ACTION_DEFINITION = "UPDATE " + keyspace + ".actions_definitions SET payload = ? "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
 
         UPDATE_ACTION_HISTORY = "UPDATE " + keyspace + ".actions_history " +

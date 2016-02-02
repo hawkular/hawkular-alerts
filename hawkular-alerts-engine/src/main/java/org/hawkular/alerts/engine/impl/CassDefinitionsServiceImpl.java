@@ -241,7 +241,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         try {
             session.execute(insertAction.bind(tenantId, actionDefinition.getActionPlugin(),
-                    actionDefinition.getActionId(), actionDefinition.getProperties()));
+                    actionDefinition.getActionId(), JsonUtil.toJson(actionDefinition)));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -2601,7 +2601,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new RuntimeException("updateAction PreparedStatement is null");
         }
         try {
-            session.execute(updateAction.bind(actionDefinition.getProperties(), tenantId,
+            session.execute(updateAction.bind(JsonUtil.toJson(actionDefinition), tenantId,
                     actionDefinition.getActionPlugin(), actionDefinition.getActionId()));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -2717,8 +2717,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             Iterator<Row> itAction = rsAction.iterator();
             if (itAction.hasNext()) {
                 Row row = itAction.next();
-                actionDefinition = new ActionDefinition(tenantId, actionPlugin, actionId,
-                        row.getMap("properties", String.class, String.class));
+                actionDefinition = JsonUtil.fromJson(row.getString("payload"), ActionDefinition.class);
             }
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
