@@ -17,9 +17,10 @@
 package org.hawkular.alerts.api.model.action;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -50,19 +51,33 @@ public class ActionDefinition implements Serializable {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, String> properties;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private Set<String> states;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private TimeConstraint calendar;
+
     public ActionDefinition() {
+        this(null, null, null, new HashMap<>(), null, null);
     }
 
     public ActionDefinition(String tenantId, String actionPlugin, String actionId) {
-        this(tenantId, actionPlugin, actionId, Collections.EMPTY_MAP);
+        this(tenantId, actionPlugin, actionId, new HashMap<>(), null, null);
     }
 
     public ActionDefinition(String tenantId, String actionPlugin, String actionId,
                             Map<String, String> properties) {
+        this(tenantId, actionPlugin, actionId, properties, null, null);
+    }
+
+    public ActionDefinition(String tenantId, String actionPlugin, String actionId,
+                            Map<String, String> properties, Set<String> states, TimeConstraint calendar) {
         this.tenantId = tenantId;
         this.actionPlugin = actionPlugin;
         this.actionId = actionId;
-        this.properties = new HashMap<>(properties);
+        this.properties = properties != null ? new HashMap<>(properties) : new HashMap<>();
+        this.states = states != null ? new HashSet<>(states) : new HashSet<>();
+        this.calendar = calendar;
     }
 
     public String getTenantId() {
@@ -97,6 +112,29 @@ public class ActionDefinition implements Serializable {
         this.properties = properties;
     }
 
+    public Set<String> getStates() {
+        if (states == null) {
+            states = new HashSet<>();
+        }
+        return states;
+    }
+
+    public void setStates(Set<String> states) {
+        this.states = states;
+    }
+
+    public void addState(String state) {
+        getStates().add(state);
+    }
+
+    public TimeConstraint getCalendar() {
+        return calendar;
+    }
+
+    public void setCalendar(TimeConstraint calendar) {
+        this.calendar = calendar;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -107,7 +145,9 @@ public class ActionDefinition implements Serializable {
         if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
         if (actionPlugin != null ? !actionPlugin.equals(that.actionPlugin) : that.actionPlugin != null) return false;
         if (actionId != null ? !actionId.equals(that.actionId) : that.actionId != null) return false;
-        return properties != null ? properties.equals(that.properties) : that.properties == null;
+        if (properties != null ? !properties.equals(that.properties) : that.properties != null) return false;
+        if (states != null ? !states.equals(that.states) : that.states != null) return false;
+        return calendar != null ? calendar.equals(that.calendar) : that.calendar == null;
 
     }
 
@@ -117,16 +157,8 @@ public class ActionDefinition implements Serializable {
         result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
         result = 31 * result + (actionId != null ? actionId.hashCode() : 0);
         result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        result = 31 * result + (states != null ? states.hashCode() : 0);
+        result = 31 * result + (calendar != null ? calendar.hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public String toString() {
-        return "ActionDefinition" + '[' +
-                "tenantId='" + tenantId + '\'' +
-                ", actionPlugin='" + actionPlugin + '\'' +
-                ", actionId='" + actionId + '\'' +
-                ", properties=" + properties +
-                ']';
     }
 }

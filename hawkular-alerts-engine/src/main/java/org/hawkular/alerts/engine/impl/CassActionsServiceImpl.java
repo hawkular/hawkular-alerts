@@ -17,6 +17,7 @@
 package org.hawkular.alerts.engine.impl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -127,6 +128,14 @@ public class CassActionsServiceImpl implements ActionsService {
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("Action " + action + " has not an ActionDefinition");
+                    }
+                }
+                //  If no constraints defined at TriggerAction level, ActionDefinition constraints are used.
+                if (isEmpty(triggerAction.getStates()) && triggerAction.getCalendar() == null) {
+                    triggerAction.setStates(actionDefinition.getStates());
+                    triggerAction.setCalendar(actionDefinition.getCalendar());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Using ActionDefinition constraints: " + actionDefinition);
                     }
                 }
                 if (ActionsValidator.validate(triggerAction, event)) {
@@ -653,6 +662,10 @@ public class CassActionsServiceImpl implements ActionsService {
 
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();
+    }
+
+    private boolean isEmpty(Collection c) {
+        return null == c || c.isEmpty();
     }
 
     private Map<String, String> mixProperties(Map<String, String> props, Map<String, String> defProps) {

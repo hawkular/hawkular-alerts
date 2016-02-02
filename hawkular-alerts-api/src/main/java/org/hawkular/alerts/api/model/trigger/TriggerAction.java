@@ -54,7 +54,7 @@ public class TriggerAction implements Serializable {
     private String actionId;
 
     @JsonInclude(Include.NON_EMPTY)
-    Set<String> states;
+    private Set<String> states;
 
     @JsonInclude(Include.NON_NULL)
     private TimeConstraint calendar;
