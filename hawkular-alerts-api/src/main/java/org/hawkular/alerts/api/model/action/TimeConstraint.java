@@ -29,31 +29,75 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * Define a time interval used as a constraint for action execution.
- * Time interval can be defined in a absolute or relative format.
- * An absolute time format uses the pattern:
- *  - yyyy.MM.dd[,HH:mm]
- *    i.e. of valid formats:
- *                              2016.02.01
- *                              2016.02.01,18:00
+ * Define a time interval (startTime, endTime) used as a constraint for action execution.
+ * Time interval can be defined in a absolute or relative expression.
  *
- *    Hour and minutes can be optional in absolute format, by default it takes 00:00 value.
+ * An absolute time interval uses the pattern yyyy.MM.dd[,HH:mm] for startTime and endTime properties.
+ * For example,these representations are valid absolute expressions for time interval:
  *
- * A relative format can define month (long or short), day of the week (long or short) and hour and minutes using
- * the following format:
- *  - [MMM],[WWW],[HH:mm]
- *    i.e. of valid formats:
- *                              July
- *                              Jul
- *                              July,Mon
- *                              July
- *                              Jul,Monday
- *                              Jul,Mon,00:00
- *                              Mon,01:00
- *                              Jul,01:00
- *                              01:00
+ *              {startTime: "2016.02.01", endTime: "2016.03.01", relative: false}
+ *              {startTime: "2016.02.01,09:00", endTime: "2016.03.01,18:00", relative: false}
  *
- *    If not hour and minutes defined, by default it takes 00:00 value.
+ * Absolute time interval are marked with flag relative set to false.
+ * Hour and minutes can be optional in absolute format, by default it takes 00:00 value.
+ * The absolute interval time is based on the default time zone and locale.
+ *
+ * A relative interval is used for repetitive expressions.
+ * It can be defined an interval between months (i.e. December to March), between days of the week (i.e. Sunday to
+ * Friday), between hours and minutes (i.e. 23:00 to 04:30), or a combination of month, day of the week and/or hours
+ * and minutes.
+ * Relative interval uses the pattern [MMM],[WWW],[HH:mm] where months and days of the week can be used in long or
+ * short format.
+ * Same pattern should be applied to both startTime and endTime properties.
+ * For example, these representations are valid relative expressions for time interval:
+ *
+ *          {startTime: "Jul", endTime: "Dec", relative: true}
+ *          {startTime: "July", endTime: "December", relative: true}
+ *
+ *          All dates within July and December months will be valid.
+ *
+ *          {startTime: "Jul,Mon", endTime: "Dec,Fri", relative: true}
+ *          {startTime: "July,Monday", endTime: "December,Friday", relative: true}
+ *
+ *          All dates within July and December months and within Monday and Friday days are valid.
+ *          So, a Sunday day of August will not be valid according previous example.
+ *
+ *          {startTime: "Jul,Mon,09:00", endTime: "Dec,Fri,18:00", relative: true}
+ *          {startTime: "July,Monday", endTime: "December,Friday", relative: true}
+ *
+ *          All dates within July and December months and within Monday and Friday days and time between 09:00 and
+ *          18:00 are valid.
+ *          So, a Monday day of August at 18:01 will not be valid according previous example.
+ *
+ *          {startTime:"Monday,09:00", endTime:"Friday,18:00", relative: true}
+ *          {startTime:"Mon,09:00", endTime:"Fri,18:00", relative: true}
+ *
+ *          All dates within Monday and Friday day and time between 09:00 and 18:00 will be valid.
+ *          So, a Monday at 18:01 will not be valid according previous example.
+ *
+ *          {startTime:"July,09:00", endTime:"August,18:00", relative: true}
+ *          {startTime:"Jul,09:00", endTime:"Aug,18:00", relative: true}
+ *
+ *          All dates within July and December months and time between 09:00 and 18:00 are valid.
+ *          A day of August at 18:01 will not be valid according previous example.
+ *
+ *         {startTime:"09:00", endTime:"18:00", relative: true}
+ *
+ *         All times within 09:00 and 18:00 are valid.
+ *
+ * TimeConstraint object can define if a given date will be satisfied within the interval or outside interval using
+ * the property inRange. A value inRange == true means that a time interval will be satisfied when a given date is
+ * within the interval (taking the limits as inclusive), in case of inRange == false a given date will be satisfied
+ * if it is outside of the interval. By default, inRange == true.
+ * For example,
+ *
+ *         {startTime:"09:00", endTime:"18:00", relative: true, inRange: true}
+ *
+ *         All times within 09:00 and 18:00 are satisfied by the interval.
+ *
+ *         {startTime:"09:00", endTime:"18:00", relative: true, inRange: false}
+ *
+ *         All times from 18:01 to 08:59 are satisfied in the interval.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -482,7 +526,12 @@ public class TimeConstraint implements Serializable {
         if (separator < 0) {
             return -1;
         }
-        return (Integer.valueOf(sTime.substring(0, separator)) * 60) +  Integer.valueOf(sTime.substring(separator +1));
+        try {
+            return (Integer.valueOf(sTime.substring(0, separator)) * 60) +
+                    Integer.valueOf(sTime.substring(separator + 1));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     private boolean checkAbsolute(long timestamp) throws IllegalArgumentException {
