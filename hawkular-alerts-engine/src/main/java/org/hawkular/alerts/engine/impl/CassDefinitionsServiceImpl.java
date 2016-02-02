@@ -1084,15 +1084,17 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         if (null != memberContext) {
             // add additional or override existing context
-            for( Map.Entry<String,String> entry : member.getContext().entrySet()) {
-                memberContext.putIfAbsent(entry.getKey(), entry.getValue());
-            }
+            Map<String, String> combinedContext = new HashMap<>();
+            combinedContext.putAll(member.getContext());
+            combinedContext.putAll(memberContext);
+            member.setContext(combinedContext);
         }
         if (null != memberTags) {
             // add additional or override existing tags
-            for (Map.Entry<String, String> entry : member.getTags().entrySet()) {
-                memberTags.putIfAbsent(entry.getKey(), entry.getValue());
-            }
+            Map<String, String> combinedTags = new HashMap<>();
+            combinedTags.putAll(member.getTags());
+            combinedTags.putAll(memberTags);
+            member.setTags(combinedTags);
         }
 
         addTrigger(member);
