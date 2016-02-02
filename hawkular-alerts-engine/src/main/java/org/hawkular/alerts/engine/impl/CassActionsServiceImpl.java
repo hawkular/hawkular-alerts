@@ -37,16 +37,19 @@ import javax.enterprise.concurrent.ManagedExecutorService;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.ActionComparator;
 import org.hawkular.alerts.api.model.paging.ActionComparator.Field;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
+import org.hawkular.alerts.engine.util.ActionsValidator;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BoundStatement;
@@ -99,20 +102,25 @@ public class CassActionsServiceImpl implements ActionsService {
     }
 
     @Override
-    public void send(final Action action) {
-        if (action == null || action.getActionPlugin() == null || action.getActionId() == null
-                || action.getActionPlugin().isEmpty()
-                || action.getActionId().isEmpty()) {
-            throw new IllegalArgumentException("Action must be not null");
+    public void send(final TriggerAction triggerAction, final Event event) {
+        if (triggerAction == null || isEmpty(triggerAction.getTenantId()) ||
+                isEmpty(triggerAction.getActionPlugin()) || isEmpty(triggerAction.getActionId())) {
+            throw new IllegalArgumentException("TriggerAction must be not null");
         }
-        if (action.getEvent() == null) {
-            throw new IllegalArgumentException("Action must have an alert");
+        if (event == null || isEmpty(event.getTenantId())) {
+            throw new IllegalArgumentException("Event must be not null");
+        }
+        if (!triggerAction.getTenantId().equals(event.getTenantId())) {
+            throw new IllegalArgumentException("TriggerAction and Event must have same tenantId");
         }
         executor.submit(() -> {
+            Action action = new Action(triggerAction.getTenantId(), triggerAction.getActionPlugin(),
+                    triggerAction.getActionId(), event);
             try {
-                ActionDefinition actionDefinition = definitions.getActionDefinition(action.getTenantId(),
-                        action.getActionPlugin(), action.getActionId());
-                Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
+                ActionDefinition actionDefinition = definitions.getActionDefinition(triggerAction.getTenantId(),
+                        triggerAction.getActionPlugin(), triggerAction.getActionId());
+                Map<String, String> defaultProperties =
+                        definitions.getDefaultActionPlugin(triggerAction.getActionPlugin());
                 if (actionDefinition != null && defaultProperties != null) {
                     Map<String, String> mixedProps = mixProperties(actionDefinition.getProperties(), defaultProperties);
                     action.setProperties(mixedProps);
@@ -121,14 +129,16 @@ public class CassActionsServiceImpl implements ActionsService {
                         log.debug("Action " + action + " has not an ActionDefinition");
                     }
                 }
+                if (ActionsValidator.validate(triggerAction, event)) {
+                    for (ActionListener listener : alertsContext.getActionsListeners()) {
+                        listener.process(action);
+                    }
+                    insertActionHistory(action);
+                }
             } catch (Exception e) {
                 log.debug(e.getMessage(), e);
                 msgLog.errorCannotUpdateAction(e.getMessage());
             }
-            for (ActionListener listener : alertsContext.getActionsListeners()) {
-                listener.process(action);
-            }
-            insertActionHistory(action);
         });
     }
 

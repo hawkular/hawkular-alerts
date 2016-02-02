@@ -17,8 +17,10 @@
 package org.hawkular.alerts.api.services;
 
 import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.model.trigger.TriggerAction;
 
 /**
  * A interface used to send actions.
@@ -31,11 +33,12 @@ import org.hawkular.alerts.api.model.paging.Pager;
 public interface ActionsService {
 
     /**
-     * Send an action to be processed by the plugins architecture.
+     * Generate and send an action to be processed by the plugins architecture.
      *
-     * @param action Action to send
+     * @param triggerAction Link between a trigger and an action used to generate the action
+     * @param event Event payload of the action
      */
-    void send(final Action action);
+    void send(final TriggerAction triggerAction, final Event event);
 
     /**
      * Update the result of an action.
@@ -49,17 +52,17 @@ public interface ActionsService {
      * @param criteria If null returns all actions (not recommended)
      * @param pager Paging requirement for fetching actions. Optional. Return all if null.
      * @return NotNull, can be empty.
-     * @throws Exception
+     * @throws Exception on any problem
      */
     Page<Action> getActions(String tenantId, ActionsCriteria criteria, Pager pager) throws Exception;
 
     /**
      * Delete the requested Actions from the history, as described by the provided criteria.
      *
-     * @param tenantId
-     * @param criteria
-     * @return
-     * @throws Exception
+     * @param tenantId Tenant where actions are stored
+     * @param criteria If null deletes all actions (not recommended)
+     * @return number of actions deleted
+     * @throws Exception on any problem
      */
     int deleteActions(String tenantId, ActionsCriteria criteria) throws Exception;
 

@@ -35,7 +35,6 @@ import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
-import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
@@ -55,7 +54,6 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
-import org.hawkular.alerts.engine.util.ActionsValidator;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BoundStatement;
@@ -1526,15 +1524,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     private void sendAction(Alert a) {
         if (actionsService != null && a != null && a.getTrigger() != null && a.getTrigger().getActions() != null) {
             a.getTrigger().getActions().stream().forEach(triggerAction -> {
-                if (ActionsValidator.validate(triggerAction, a)) {
-                    Action action = new Action(a.getTrigger().getTenantId(), triggerAction.getActionPlugin(),
-                            triggerAction.getActionId(), a);
-                    actionsService.send(action);
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Action from " + a + " is filtered out from " + triggerAction);
-                    }
-                }
+                actionsService.send(triggerAction, a);
             });
         }
     }

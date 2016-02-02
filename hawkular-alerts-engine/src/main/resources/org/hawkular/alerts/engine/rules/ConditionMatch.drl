@@ -400,15 +400,7 @@ rule AlertOnSatisfiedDampening
 
         if (actions != null) {
             for (TriggerAction triggerAction : $t.getActions()) {
-                if (ActionsValidator.validate(triggerAction, newEvent)) {
-                    Action action = new Action($t.getTenantId(), triggerAction.getActionPlugin(),
-                        triggerAction.getActionId(), newEvent);
-                    actions.send(action);
-                } else {
-                    if (log != null && log.isDebugEnabled()) {
-                        log.debug("Action from " + newEvent + " is filtered out from " + triggerAction);
-                    }
-                }
+                actions.send(triggerAction, newEvent);
             }
         }
 
