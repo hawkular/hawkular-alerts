@@ -120,12 +120,12 @@ public abstract class PersistenceTest {
         context.put("context", "context-1");
 
         Trigger nt1 = definitionsService.addMemberTrigger(TENANT, t.getId(), "member-1-trigger", "member-1",
-                null, null, context, dataIdMap);
+                null, context, null, dataIdMap);
         assertNotNull(nt1);
         dataIdMap.put("NumericData-Token", "NumericData-02");
         context.put("context", "context-2");
         Trigger nt2 = definitionsService.addMemberTrigger(TENANT, t.getId(), "member-2-trigger", "member-2",
-                null, null, context, dataIdMap);
+                null, context, null, dataIdMap);
         assertNotNull(nt2);
 
         Collection<Trigger> memberren = definitionsService.getMemberTriggers(TENANT, "group-trigger", false);
@@ -233,7 +233,7 @@ public abstract class PersistenceTest {
         assertTrue(nt1.toString(), "member-1-update".equals(nt1.getName())); // name changes are maintained
         assertNotNull(nt1.getContext());
         assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
-        assertTrue(nt1.toString(), nt1.getDescription().equals(t.getDescription()));
+        assertTrue(nt1.toString(), nt1.getDescription().equals("Updated"));
         assertTrue(nt1.toString(), nt1.isEnabled());
         assertTrue(nt1.toString(), nt1.getFiringMatch().equals(t.getFiringMatch()));
         assertTrue(nt1.toString(), nt1.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
@@ -321,12 +321,12 @@ public abstract class PersistenceTest {
         context.put("context", "context-1");
 
         Trigger nt1 = definitionsService.addMemberTrigger(TENANT, t.getId(), "member-1-trigger", "member-1",
-                null, null, context, dataIdMap);
+                null, context, null, dataIdMap);
         assertNotNull(nt1);
         dataIdMap.put("NumericData-Token", "NumericData-02");
         context.put("context", "context-2");
         Trigger nt2 = definitionsService.addMemberTrigger(TENANT, t.getId(), "member-2-trigger", "member-2",
-                null, null, context, dataIdMap);
+                null, context, null, dataIdMap);
         assertNotNull(nt2);
 
         Collection<Trigger> memberren = definitionsService.getMemberTriggers(TENANT, "group-trigger", false);
