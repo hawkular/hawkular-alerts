@@ -150,6 +150,13 @@
       <version>${version.org.codehaus.jsr166-mirror}</version>
     </dependency>
 
+    <dependency>
+      <groupId>com.icegreen</groupId>
+      <artifactId>greenmail</artifactId>
+      <version>${version.com.icegreen}</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -415,6 +422,8 @@
                 <javaOpt>-Djboss.bind.address=${hawkular.host}</javaOpt>
                 <javaOpt>-Djboss.socket.binding.port-offset=${hawkular.port.offset}</javaOpt>
                 <javaOpt>-Dkeycloak.import=${project.build.directory}/${project.artifactId}-${project.version}/standalone/configuration/hawkular-realm-for-dev.json</javaOpt>
+                <javaOpt>-Dmail.smtp.host=localhost</javaOpt>
+                <javaOpt>-Dmail.smtp.port=2525</javaOpt>
                 <!--<javaOpt>-Xdebug</javaOpt>-->
                 <!--<javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt>-->
               </javaOpts>
