@@ -35,7 +35,6 @@ import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
-import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
@@ -1524,13 +1523,9 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     private void sendAction(Alert a) {
         if (actionsService != null && a != null && a.getTrigger() != null && a.getTrigger().getActions() != null) {
-            Map<String, Set<String>> actions = a.getTrigger().getActions();
-            for (String actionPlugin : actions.keySet()) {
-                for (String actionId : actions.get(actionPlugin)) {
-                    Action action = new Action(a.getTrigger().getTenantId(), actionPlugin, actionId, a);
-                    actionsService.send(action);
-                }
-            }
+            a.getTrigger().getActions().stream().forEach(triggerAction -> {
+                actionsService.send(triggerAction, a);
+            });
         }
     }
 

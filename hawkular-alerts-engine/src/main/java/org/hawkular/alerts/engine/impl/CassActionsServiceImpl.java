@@ -17,31 +17,40 @@
 package org.hawkular.alerts.engine.impl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.ejb.Asynchronous;
+import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Local;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.concurrent.ManagedExecutorService;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
+import org.hawkular.alerts.api.model.action.ActionDefinition;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.ActionComparator;
 import org.hawkular.alerts.api.model.paging.ActionComparator.Field;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
+import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.log.MsgLogger;
+import org.hawkular.alerts.engine.util.ActionsValidator;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BoundStatement;
@@ -71,6 +80,12 @@ public class CassActionsServiceImpl implements ActionsService {
     @EJB
     AlertsContext alertsContext;
 
+    @EJB
+    DefinitionsService definitions;
+
+    @Resource
+    private ManagedExecutorService executor;
+
     public CassActionsServiceImpl() {
         log.debug("Creating instance.");
     }
@@ -79,24 +94,63 @@ public class CassActionsServiceImpl implements ActionsService {
         this.alertsContext = alertsContext;
     }
 
-    @Asynchronous
-    @Override
-    public void send(Action action) {
-        if (action == null || action.getActionPlugin() == null || action.getActionId() == null
-                || action.getActionPlugin().isEmpty()
-                || action.getActionId().isEmpty()) {
-            throw new IllegalArgumentException("Action must be not null");
-        }
-        if (action.getEvent() == null) {
-            throw new IllegalArgumentException("Action must have an alert");
-        }
-        for (ActionListener listener : alertsContext.getActionsListeners()) {
-            listener.process(action);
-        }
-        insertActionHistory(action);
+    public void setDefinitions(DefinitionsService definitions) {
+        this.definitions = definitions;
     }
 
-    @Asynchronous
+    public void setExecutor(ManagedExecutorService executor) {
+        this.executor = executor;
+    }
+
+    @Override
+    public void send(final TriggerAction triggerAction, final Event event) {
+        if (triggerAction == null || isEmpty(triggerAction.getTenantId()) ||
+                isEmpty(triggerAction.getActionPlugin()) || isEmpty(triggerAction.getActionId())) {
+            throw new IllegalArgumentException("TriggerAction must be not null");
+        }
+        if (event == null || isEmpty(event.getTenantId())) {
+            throw new IllegalArgumentException("Event must be not null");
+        }
+        if (!triggerAction.getTenantId().equals(event.getTenantId())) {
+            throw new IllegalArgumentException("TriggerAction and Event must have same tenantId");
+        }
+        executor.submit(() -> {
+            Action action = new Action(triggerAction.getTenantId(), triggerAction.getActionPlugin(),
+                    triggerAction.getActionId(), event);
+            try {
+                ActionDefinition actionDefinition = definitions.getActionDefinition(triggerAction.getTenantId(),
+                        triggerAction.getActionPlugin(), triggerAction.getActionId());
+                Map<String, String> defaultProperties =
+                        definitions.getDefaultActionPlugin(triggerAction.getActionPlugin());
+                if (actionDefinition != null && defaultProperties != null) {
+                    Map<String, String> mixedProps = mixProperties(actionDefinition.getProperties(), defaultProperties);
+                    action.setProperties(mixedProps);
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Action " + action + " has not an ActionDefinition");
+                    }
+                }
+                //  If no constraints defined at TriggerAction level, ActionDefinition constraints are used.
+                if (isEmpty(triggerAction.getStates()) && triggerAction.getCalendar() == null) {
+                    triggerAction.setStates(actionDefinition.getStates());
+                    triggerAction.setCalendar(actionDefinition.getCalendar());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Using ActionDefinition constraints: " + actionDefinition);
+                    }
+                }
+                if (ActionsValidator.validate(triggerAction, event)) {
+                    for (ActionListener listener : alertsContext.getActionsListeners()) {
+                        listener.process(action);
+                    }
+                    insertActionHistory(action);
+                }
+            } catch (Exception e) {
+                log.debug(e.getMessage(), e);
+                msgLog.errorCannotUpdateAction(e.getMessage());
+            }
+        });
+    }
+
     @Override
     public void updateResult(Action action) {
         if (action == null || action.getActionPlugin() == null || action.getActionId() == null
@@ -107,7 +161,9 @@ public class CassActionsServiceImpl implements ActionsService {
         if (action.getEvent() == null) {
             throw new IllegalArgumentException("Action must have an alert");
         }
-        updateActionHistory(action);
+        executor.submit(() -> {
+            updateActionHistory(action);
+        });
     }
 
     private void insertActionHistory(Action action) {
@@ -606,6 +662,23 @@ public class CassActionsServiceImpl implements ActionsService {
 
     private boolean isEmpty(String s) {
         return null == s || s.trim().isEmpty();
+    }
+
+    private boolean isEmpty(Collection c) {
+        return null == c || c.isEmpty();
+    }
+
+    private Map<String, String> mixProperties(Map<String, String> props, Map<String, String> defProps) {
+        Map<String, String> mixed = new HashMap<>();
+        if (props != null) {
+            mixed.putAll(props);
+        }
+        if (defProps != null) {
+            for (String defKey : defProps.keySet()) {
+                mixed.putIfAbsent(defKey, defProps.get(defKey));
+            }
+        }
+        return mixed;
     }
 
     private class ActionHistoryPK {

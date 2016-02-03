@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,6 @@
  */
 package org.hawkular.alerts.actions.standalone;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -78,42 +77,31 @@ public class StandaloneActionPluginListener implements ActionListener {
                 }
                 return;
             }
-            if (definitions != null) {
-                Map<String, String> properties = definitions.getAction(action.getTenantId(), action.getActionPlugin(),
-                        action.getActionId());
-                Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
-                Map<String, String> mixedProps = mixProperties(properties, defaultProperties);
 
-                action.setProperties(mixedProps);
-
-                ActionMessage pluginMessage = new StandaloneActionMessage(action);
-                Runnable runnable = () -> {
-                    try {
-                        plugin.process(pluginMessage);
-                    } catch (Exception e) {
-                        log.debug("Error processing action: " + action.getActionPlugin(), e);
-                        msgLog.errorProcessingAction(e.getMessage());
-                    }
-                };
-                executorService.execute(runnable);
-                // Check if the plugin is executed twice
-                if (!globals.contains(actionPlugin)) {
-                    for (String global : globals) {
-                        ActionPluginListener globalPlugin = ActionPlugins.getPlugins().get(global);
-                        runnable = () -> {
-                            try {
-                                globalPlugin.process(pluginMessage);
-                            } catch (Exception e) {
-                                log.debug("Error processing action: " + action.getActionPlugin(), e);
-                                msgLog.errorProcessingAction(e.getMessage());
-                            }
-                        };
-                        executorService.execute(runnable);
-                    }
+            ActionMessage pluginMessage = new StandaloneActionMessage(action);
+            executorService.execute(() -> {
+                try {
+                    plugin.process(pluginMessage);
+                } catch (Exception e) {
+                    log.debug("Error processing action: " + action.getActionPlugin(), e);
+                    msgLog.errorProcessingAction(e.getMessage());
                 }
-            } else {
-                msgLog.warnCannotAccessToDefinitionsService();
+            });
+            // Check if the plugin is executed twice
+            if (!globals.contains(actionPlugin)) {
+                for (String global : globals) {
+                    ActionPluginListener globalPlugin = ActionPlugins.getPlugins().get(global);
+                    executorService.execute(() -> {
+                        try {
+                            globalPlugin.process(pluginMessage);
+                        } catch (Exception e) {
+                            log.debug("Error processing action: " + action.getActionPlugin(), e);
+                            msgLog.errorProcessingAction(e.getMessage());
+                        }
+                    });
+                }
             }
+
         } catch (Exception e) {
             log.debug("Error processing action: " + action.getActionPlugin(), e);
             msgLog.errorProcessingAction(e.getMessage());
@@ -133,19 +121,6 @@ public class StandaloneActionPluginListener implements ActionListener {
         if (executorService != null) {
             executorService.shutdown();
         }
-    }
-
-    private Map<String, String> mixProperties(Map<String, String> props, Map<String, String> defProps) {
-        Map<String, String> mixed = new HashMap<>();
-        if (props != null) {
-            mixed.putAll(props);
-        }
-        if (defProps != null) {
-            for (String defKey : defProps.keySet()) {
-                mixed.putIfAbsent(defKey, defProps.get(defKey));
-            }
-        }
-        return mixed;
     }
 
     public class StandaloneThreadFactory implements ThreadFactory {

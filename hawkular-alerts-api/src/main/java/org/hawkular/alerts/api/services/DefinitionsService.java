@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.paging.Page;
@@ -598,38 +599,34 @@ public interface DefinitionsService {
      */
 
     /**
-     * Create a new Action
+     * Create a new ActionDefinition
      *
      * @param tenantId Tenant where actions are stored
-     * @param actionPlugin Action plugin where this action is stored
-     * @param actionId Id of new action
-     * @param properties the properties of the action
+     * @param actionDefinition the ActionDefinition object to add
      * @throws Exception on any problem
      */
-    void addAction(String tenantId, String actionPlugin, String actionId, Map<String, String> properties)
-            throws Exception;
+    void addActionDefinition(String tenantId, ActionDefinition actionDefinition) throws Exception;
 
-    void removeAction(String tenantId, String actionPlugin, String actionId) throws Exception;
+    void removeActionDefinition(String tenantId, String actionPlugin, String actionId) throws Exception;
 
-    void updateAction(String tenantId, String actionPlugin, String actionId, Map<String, String> properties)
-            throws Exception;
+    void updateActionDefinition(String tenantId, ActionDefinition actionDefinition) throws Exception;
 
     /**
      * @return Map where key is a tenantId and value is a Map with actionPlugin as key and a set of actionsId as value
      * @throws Exception on any problem
      */
-    Map<String, Map<String, Set<String>>> getAllActions() throws Exception;
+    Map<String, Map<String, Set<String>>> getAllActionDefinitionIds() throws Exception;
 
     /**
      * @param tenantId Tenant where actions are stored.
      * @return Map where key represents an actionPlugin and value a Set of actionsId per actionPlugin
      * @throws Exception on any problem
      */
-    Map<String, Set<String>> getActions(String tenantId) throws Exception;
+    Map<String, Set<String>> getActionDefinitionIds(String tenantId) throws Exception;
 
-    Collection<String> getActions(String tenantId, String actionPlugin) throws Exception;
+    Collection<String> getActionDefinitionIds(String tenantId, String actionPlugin) throws Exception;
 
-    Map<String, String> getAction(String tenantId, String actionPlugin, String actionId) throws Exception;
+    ActionDefinition getActionDefinition(String tenantId, String actionPlugin, String actionId) throws Exception;
 
     void registerListener(DefinitionsListener listener, Type eventType, Type... eventTypes);
 }

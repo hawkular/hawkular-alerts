@@ -17,8 +17,6 @@
 package org.hawkular.alerts.bus.listener;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.jms.JMSException;
 import javax.jms.TopicConnectionFactory;
@@ -26,7 +24,6 @@ import javax.naming.InitialContext;
 
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionListener;
-import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.bus.api.BusActionMessage;
 import org.hawkular.alerts.bus.log.MsgLogger;
 import org.hawkular.bus.common.ConnectionContextFactory;
@@ -50,15 +47,11 @@ public class BusActionListener implements ActionListener {
     private final Logger log = Logger.getLogger(BusActionListener.class);
     private static final String CONNECTION_FACTORY = "java:/HawkularBusConnectionFactory";
     private static final String ACTIONS_TOPIC = "HawkularAlertsActionsTopic";
-    private static final String DEFINITIONS_SERVICE =
-            "java:app/hawkular-alerts-rest/CassDefinitionsServiceImpl";
 
     private TopicConnectionFactory conFactory;
     private ThreadLocal<ConnectionContextFactory> ccf = new ThreadLocal<>();
     private ThreadLocal<ProducerConnectionContext> pcc = new ThreadLocal<>();
     InitialContext ctx;
-
-    DefinitionsService definitions;
 
     public BusActionListener() {
     }
@@ -71,21 +64,10 @@ public class BusActionListener implements ActionListener {
                 msgLogger.warnCannotConnectToBus();
                 return;
             }
-            if (definitions != null) {
-                Map<String, String> properties = definitions.getAction(action.getTenantId(),
-                        action.getActionPlugin(), action.getActionId());
-                Map<String, String> defaultProperties = definitions.getDefaultActionPlugin(action.getActionPlugin());
-                Map<String, String> mixedProps = mixProperties(properties, defaultProperties);
-
-                action.setProperties(mixedProps);
-
-                BusActionMessage pluginMessage = new BusActionMessage(action);
-                MessageId mid = new MessageProcessor().send(pcc.get(), pluginMessage);
-                if (log.isDebugEnabled()) {
-                    log.debug("Sent action message [" + mid.getId() + "] to the bus");
-                }
-            } else {
-                msgLogger.warnCannotAccessToDefinitionsService();
+            BusActionMessage pluginMessage = new BusActionMessage(action);
+            MessageId mid = new MessageProcessor().send(pcc.get(), pluginMessage);
+            if (log.isDebugEnabled()) {
+                log.debug("Sent action message [" + mid.getId() + "] to the bus");
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
@@ -106,9 +88,6 @@ public class BusActionListener implements ActionListener {
         if (pcc.get() == null) {
             pcc.set(ccf.get().createProducerConnectionContext(new Endpoint(Endpoint.Type.TOPIC, ACTIONS_TOPIC)));
         }
-        if (definitions == null) {
-            definitions = (DefinitionsService) ctx.lookup(DEFINITIONS_SERVICE);
-        }
     }
 
     public void close() throws Exception {
@@ -126,16 +105,4 @@ public class BusActionListener implements ActionListener {
         }
     }
 
-    private Map<String, String> mixProperties(Map<String, String> props, Map<String, String> defProps) {
-        Map<String, String> mixed = new HashMap<>();
-        if (props != null) {
-            mixed.putAll(props);
-        }
-        if (defProps != null) {
-            for (String defKey : defProps.keySet()) {
-                mixed.putIfAbsent(defKey, defProps.get(defKey));
-            }
-        }
-        return mixed;
-    }
 }

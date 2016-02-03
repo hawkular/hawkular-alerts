@@ -57,6 +57,7 @@ import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.paging.TriggerComparator;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsCriteria;
@@ -91,7 +92,7 @@ public abstract class PersistenceTest {
         assertTrue(definitionsService.getAllTriggers().size() > 0);
         assertTrue(definitionsService.getAllConditions().size() > 0);
         assertTrue(definitionsService.getAllDampenings().size() > 0);
-        assertTrue(definitionsService.getAllActions().size() > 0);
+        assertTrue(definitionsService.getAllActionDefinitionIds().size() > 0);
     }
 
     @Test
@@ -119,12 +120,12 @@ public abstract class PersistenceTest {
         context.put("context", "context-1");
 
         Trigger nt1 = definitionsService.addMemberTrigger(TENANT, t.getId(), "member-1-trigger", "member-1",
-                null, null, context, dataIdMap);
+                null, context, null, dataIdMap);
         assertNotNull(nt1);
         dataIdMap.put("NumericData-Token", "NumericData-02");
         context.put("context", "context-2");
         Trigger nt2 = definitionsService.addMemberTrigger(TENANT, t.getId(), "member-2-trigger", "member-2",
-                null, null, context, dataIdMap);
+                null, context, null, dataIdMap);
         assertNotNull(nt2);
 
         Collection<Trigger> memberren = definitionsService.getMemberTriggers(TENANT, "group-trigger", false);
@@ -232,7 +233,7 @@ public abstract class PersistenceTest {
         assertTrue(nt1.toString(), "member-1-update".equals(nt1.getName())); // name changes are maintained
         assertNotNull(nt1.getContext());
         assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
-        assertTrue(nt1.toString(), nt1.getDescription().equals(t.getDescription()));
+        assertTrue(nt1.toString(), nt1.getDescription().equals("Updated"));
         assertTrue(nt1.toString(), nt1.isEnabled());
         assertTrue(nt1.toString(), nt1.getFiringMatch().equals(t.getFiringMatch()));
         assertTrue(nt1.toString(), nt1.getAutoResolveMatch().equals(t.getAutoResolveMatch()));
@@ -320,12 +321,12 @@ public abstract class PersistenceTest {
         context.put("context", "context-1");
 
         Trigger nt1 = definitionsService.addMemberTrigger(TENANT, t.getId(), "member-1-trigger", "member-1",
-                null, null, context, dataIdMap);
+                null, context, null, dataIdMap);
         assertNotNull(nt1);
         dataIdMap.put("NumericData-Token", "NumericData-02");
         context.put("context", "context-2");
         Trigger nt2 = definitionsService.addMemberTrigger(TENANT, t.getId(), "member-2-trigger", "member-2",
-                null, null, context, dataIdMap);
+                null, context, null, dataIdMap);
         assertNotNull(nt2);
 
         Collection<Trigger> memberren = definitionsService.getMemberTriggers(TENANT, "group-trigger", false);
@@ -1802,9 +1803,9 @@ public abstract class PersistenceTest {
     public void test0080BasicActionsHistory() throws Exception {
         for (int i = 0; i < 107; i++) {
             Event testEvent = new Event(TENANT, "test-trigger", "test-dataid", "test-category", "test-text");
-            Action action = new Action(testEvent.getTenantId(), "testplugin", "send-to-this-groups", testEvent);
+            TriggerAction triggerAction = new TriggerAction(TENANT, "testplugin", "send-to-this-group");
             Thread.sleep(2);
-            actionsService.send(action);
+            actionsService.send(triggerAction, testEvent);
         }
 
         List<Action> actions = actionsService.getActions(TENANT, null, null);
@@ -1834,10 +1835,20 @@ public abstract class PersistenceTest {
             action2.setResult("result2");
             action3.setResult("result3");
             action4.setResult("result4");
-            actionsService.send(action1);
-            actionsService.send(action2);
-            actionsService.send(action3);
-            actionsService.send(action4);
+            /*
+                ActionsService.updateResult() insert an action but don't send them to the plugins architecture.
+                Used for testing the persistence flow.
+             */
+            actionsService.updateResult(action1);
+            actionsService.updateResult(action2);
+            actionsService.updateResult(action3);
+            actionsService.updateResult(action4);
+        }
+
+        System.out.print("Actions are asynchronous. Give them some time.");
+        for (int i = 0; i < 30; i++) {
+            System.out.print(".");
+            Thread.sleep(200);
         }
 
         List<Action> actions = actionsService.getActions(TENANT, null, null);
@@ -1928,10 +1939,16 @@ public abstract class PersistenceTest {
             action2.setResult("result2");
             action3.setResult("result3");
             action4.setResult("result4");
-            actionsService.send(action1);
-            actionsService.send(action2);
-            actionsService.send(action3);
-            actionsService.send(action4);
+            actionsService.updateResult(action1);
+            actionsService.updateResult(action2);
+            actionsService.updateResult(action3);
+            actionsService.updateResult(action4);
+        }
+
+        System.out.print("Actions are asynchronous. Give them some time.");
+        for (int i = 0; i < 30; i++) {
+            System.out.print(".");
+            Thread.sleep(200);
         }
 
         List<Action> actions = actionsService.getActions(TENANT, null, null);
@@ -2011,10 +2028,16 @@ public abstract class PersistenceTest {
             action2.setResult("result2");
             action3.setResult("result3");
             action4.setResult("result4");
-            actionsService.send(action1);
-            actionsService.send(action2);
-            actionsService.send(action3);
-            actionsService.send(action4);
+            actionsService.updateResult(action1);
+            actionsService.updateResult(action2);
+            actionsService.updateResult(action3);
+            actionsService.updateResult(action4);
+        }
+
+        System.out.print("Actions are asynchronous. Give them some time.");
+        for (int i = 0; i < 30; i++) {
+            System.out.print(".");
+            Thread.sleep(200);
         }
 
         ActionsCriteria criteria = new ActionsCriteria();

@@ -8,12 +8,13 @@
         "name": "NumericData-01-low",
         "description": "description 1",
         "severity": "HIGH",
-        "actions": {
-          "snmp": ["SNMP-Trap-1", "SNMP-Trap-2"],
-          "sms": ["sms-to-cio"],
-          "email": ["email-to-admin"],
-          "aerogear": ["agpush-to-admin"]
-        },
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ],
         "context": {
           "name1":"value1"
         },
@@ -52,12 +53,13 @@
         "name": "NumericData-01-02-high",
         "description": "description 2",
         "severity": "HIGH",
-        "actions": {
-          "snmp": ["SNMP-Trap-1", "SNMP-Trap-2"],
-          "sms": ["sms-to-cio"],
-          "email": ["email-to-admin"],
-          "aerogear": ["agpush-to-admin"]
-        }
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ]
       },
       "dampenings":[],
       "conditions":[
@@ -93,12 +95,13 @@
         "name": "NumericData-03-range",
         "description": "description 3",
         "severity": "HIGH",
-        "actions": {
-          "snmp": ["SNMP-Trap-1", "SNMP-Trap-2"],
-          "sms": ["sms-to-cio"],
-          "email": ["email-to-admin"],
-          "aerogear": ["agpush-to-admin"]
-        }
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ]
       },
       "dampenings":[],
       "conditions":[
@@ -126,12 +129,13 @@
         "name": "CompareData-01-d1-lthalf-d2",
         "description": "description 4",
         "severity": "HIGH",
-        "actions": {
-          "snmp": ["SNMP-Trap-1", "SNMP-Trap-2"],
-          "sms": ["sms-to-cio"],
-          "email": ["email-to-admin"],
-          "aerogear": ["agpush-to-admin"]
-        }
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ]
       },
       "dampenings":[],
       "conditions":[
@@ -157,12 +161,13 @@
         "name": "StringData-01-starts",
         "description": "description 5",
         "severity": "HIGH",
-        "actions": {
-          "snmp": ["SNMP-Trap-1", "SNMP-Trap-2"],
-          "sms": ["sms-to-cio"],
-          "email": ["email-to-admin"],
-          "aerogear": ["agpush-to-admin"]
-        }
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ]
       },
       "dampenings":[],
       "conditions":[
@@ -187,12 +192,13 @@
         "name": "Availability-01-NOT-UP",
         "description": "description 6",
         "severity": "HIGH",
-        "actions": {
-          "snmp": ["SNMP-Trap-1", "SNMP-Trap-2"],
-          "sms": ["sms-to-cio"],
-          "email": ["email-to-admin"],
-          "aerogear": ["agpush-to-admin"]
-        }
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ]
       },
       "dampenings":[],
       "conditions":[
@@ -216,9 +222,9 @@
         "name": "Parent-NumericData-Token-low",
         "description": "description 8",
         "severity": "HIGH",
-        "actions": {
-          "email": ["email-to-admin"]
-        }
+        "actions": [
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
+        ]
       },
       "dampenings":[
         {
@@ -251,9 +257,9 @@
         "name": "NumericData-01-low",
         "description": "Event generating trigger",
         "severity": "HIGH",
-        "actions": {
-          "email": ["email-to-admin"]
-        },
+        "actions": [
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
+        ],
         "context": {
           "trigger-8-name":"value"
         },
@@ -285,9 +291,9 @@
         "name": "RateConditionTest",
         "description": "Rate Condition Test",
         "severity": "HIGH",
-        "actions": {
-          "email": ["email-to-admin"]
-        }
+        "actions": [
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
+        ]
       },
       "dampenings":[],
       "conditions":[
@@ -361,7 +367,9 @@
       "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
       "actionPlugin": "file",
       "actionId": "file-to-admin",
-      "properties": {}
+      "properties": {
+        "description": "This is an example of File Plugin"
+      }
     }
   ]
 }

@@ -20,7 +20,6 @@ import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.engine.cassandra.EmbeddedCassandra;
-import org.hawkular.alerts.engine.impl.AlertProperties;
 import org.hawkular.alerts.engine.impl.CassCluster;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -59,16 +58,10 @@ public class CassPersistenceTest extends PersistenceTest {
             System.out.print("Using External Cassandra for unit testing...");
         }
 
-        keyspace = AlertProperties.getProperty("hawkular-alerts.cassandra-keyspace", "hawkular_alerts_test");
+        keyspace = "hawkular_alerts_test";
+        System.setProperty("hawkular-alerts.cassandra-keyspace", keyspace);
 
-        Session session = CassCluster.getSession();
-
-        // try and clean up if this was somehow left around by a prior run
-        try {
-            session.execute("DROP KEYSPACE " + keyspace);
-        } catch (Throwable t) {
-            // never mind, it may not be there
-        }
+        CassCluster.getSession(true);
 
         definitionsService = StandaloneAlerts.getDefinitionsService();
         alertsService = StandaloneAlerts.getAlertsService();

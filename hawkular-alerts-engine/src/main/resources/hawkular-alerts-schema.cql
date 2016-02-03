@@ -58,8 +58,9 @@ CREATE TABLE ${keyspace}.triggers_actions (
     tenantId text,
     triggerId text,
     actionPlugin text,
-    actions set<text>,
-    PRIMARY KEY (tenantId, triggerId, actionPlugin)
+    actionId text,
+    payload text,
+    PRIMARY KEY (tenantId, triggerId, actionPlugin, actionId)
 );
 
 -- #
@@ -123,11 +124,11 @@ CREATE TABLE ${keyspace}.action_plugins (
 
 -- #
 
-CREATE TABLE ${keyspace}.actions (
+CREATE TABLE ${keyspace}.actions_definitions (
     tenantId text,
     actionId text,
     actionPlugin text,
-    properties map<text, text>,
+    payload text,
     PRIMARY KEY (tenantId, actionPlugin, actionId)
 );
 

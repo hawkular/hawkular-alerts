@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -69,6 +69,7 @@ public class Alert extends Event {
     public Alert() {
         // for json assembly
         this.eventType = EventType.ALERT.name();
+        this.status = Status.OPEN;
     }
 
     /**

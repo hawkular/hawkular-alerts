@@ -43,6 +43,7 @@ import org.hawkular.alerts.api.model.event.EventType;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.engine.util.RateData;
 
@@ -51,7 +52,8 @@ import org.jboss.logging.Logger;
 import java.util.Set;
 import java.util.List;
 import java.util.Map
-import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Alert
+import org.hawkular.alerts.engine.util.ActionsValidator;
 
 global Logger log;
 global ActionsService actions;
@@ -397,11 +399,8 @@ rule AlertOnSatisfiedDampening
         insert( newEvent );
 
         if (actions != null) {
-            for (String actionPlugin : $t.getActions().keySet()) {
-                for (String actionId : $t.getActions().get(actionPlugin)) {
-                    Action action = new Action($t.getTenantId(), actionPlugin, actionId, newEvent);
-                    actions.send(action);
-                }
+            for (TriggerAction triggerAction : $t.getActions()) {
+                actions.send(triggerAction, newEvent);
             }
         }
 

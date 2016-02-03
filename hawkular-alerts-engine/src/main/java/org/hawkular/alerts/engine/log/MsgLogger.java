@@ -67,7 +67,7 @@ public interface MsgLogger extends BasicLogger {
 
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 220011, value = "DefinitionsService cannot be initialized. Msg: [%s]")
-    void errorCannotInitializeDefinitionsService(String msg);
+    void errorCannotUpdateAction(String msg);
 
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 220012, value = "AlertsService cannot be initialized. Msg: [%s]")
@@ -84,4 +84,9 @@ public interface MsgLogger extends BasicLogger {
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 220016, value = "PartitionManager cannot be initialized. Msg: [%s]")
     void errorCannotInitializePartitionManager(String msg);
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 220017, value = "Action cannot be validated. Msg: [%s]")
+    void errorCannotValidateAction(String msg);
+
 }
