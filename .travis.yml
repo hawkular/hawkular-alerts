@@ -10,6 +10,7 @@ notifications:
 install:
 - mvn -version -B
 script:
+- mvn -s .travis.maven.settings.xml verify -Denv=perf
 - mvn -s .travis.maven.settings.xml verify -Pitest
 env:
   global:
