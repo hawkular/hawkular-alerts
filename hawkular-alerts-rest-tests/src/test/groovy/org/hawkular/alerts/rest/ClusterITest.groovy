@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,8 @@ import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.Test
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
@@ -34,6 +36,8 @@ import static org.junit.Assert.assertTrue
  * @author Lucas Ponce
  */
 class ClusterITest extends AbstractITestBase {
+
+    static Logger logger = LoggerFactory.getLogger(ClusterITest.class)
 
     long startCall = 0, endCall = 0, timeCall = 0, totalCalls = 0, totalTime = 0, moreThan1Sec = 0;
 
@@ -48,14 +52,14 @@ class ClusterITest extends AbstractITestBase {
         totalCalls++;
         if (timeCall > 1000) {
             moreThan1Sec++;
-            println("!!! > 1 sec : " + callDesc);
+            logger.info("!!! > 1 sec : " + callDesc);
         }
     }
 
     void summary() {
-        println("Total calls: " + totalCalls);
-        println("Average: " + ((double)totalTime / (double)totalCalls) + " ms");
-        println("> 1 sec: " + moreThan1Sec);
+        logger.info("Total calls: " + totalCalls);
+        logger.info("Average: " + ((double)totalTime / (double)totalCalls) + " ms");
+        logger.info("> 1 sec: " + moreThan1Sec);
     }
 
     long startWait = 0, endWait = 0, waitCall = 0, totalWait = 0, totalWaitTime = 0;
@@ -68,7 +72,7 @@ class ClusterITest extends AbstractITestBase {
         endWait = System.currentTimeMillis();
         totalWait++;
         totalWaitTime = endWait - startWait;
-        println(msg + " took " + totalWaitTime + " ms");
+        logger.info(msg + " took " + totalWaitTime + " ms");
     }
 
     @Test
@@ -93,7 +97,7 @@ class ClusterITest extends AbstractITestBase {
             startCall();
             resp = client.put(path: "delete", query: [triggerIds:"test-cluster-" + i])
             endCall("PUT /delete?triggerIds=test-cluster-" + i);
-            println "Deleted test-cluster-" + i + " - num: " + resp.data
+            logger.info "Deleted test-cluster-" + i + " - num: " + resp.data
             assert resp.status == 200 : resp.status
 
             // remove if it exists
@@ -169,7 +173,7 @@ class ClusterITest extends AbstractITestBase {
             }
         }
 
-        println("Giving some time to digest the data....");
+        logger.info("Giving some time to digest the data....");
         Thread.sleep(2000);
 
         for (int i = 0; i < numTriggers; i++) {
@@ -177,7 +181,6 @@ class ClusterITest extends AbstractITestBase {
             // The alert processing happens async, so give it a little time before failing...
             startWaitResult();
             for (int j = 0; j < 200; ++j ) {
-                // println "SLEEP!" ;
                 Thread.sleep(200);
 
                 // FETCH recent alerts for trigger, there should be 5
@@ -197,7 +200,7 @@ class ClusterITest extends AbstractITestBase {
         long endTest = System.currentTimeMillis();
         long total = endTest - startTest;
 
-        println("Total test: " + total + " ms");
+        logger.info("Total test: " + total + " ms");
         summary();
     }
 }

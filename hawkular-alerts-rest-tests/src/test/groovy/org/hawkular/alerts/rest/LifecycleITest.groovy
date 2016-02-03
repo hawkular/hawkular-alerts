@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.rest
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
 import static org.hawkular.alerts.api.model.data.AvailabilityType.DOWN
 import static org.hawkular.alerts.api.model.data.AvailabilityType.UP
@@ -47,6 +50,8 @@ import org.junit.Test
 @FixMethodOrder(NAME_ASCENDING)
 class LifecycleITest extends AbstractITestBase {
 
+    static Logger logger = LoggerFactory.getLogger(LifecycleITest.class)
+
     static host = System.getProperty('hawkular.host') ?: '127.0.0.1'
     static port = Integer.valueOf(System.getProperty('hawkular.port') ?: "8080")
     static t01Start = String.valueOf(System.currentTimeMillis())
@@ -54,7 +59,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t01_disableTest() {
-        println( "Running t01_disableTest")
+        logger.info( "Running t01_disableTest")
         String start = t01Start;
 
         // CREATE the trigger
@@ -128,7 +133,7 @@ class LifecycleITest extends AbstractITestBase {
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger"] )
             if ( resp.status == 200 && resp.data != null && resp.data.size > 0) {
                 if ( i > 10 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -143,7 +148,7 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "triggers/test-autodisable-trigger");
         assertEquals(200, resp.status)
         Trigger t = (Trigger)resp.data;
-        System.out.println(t);
+        logger.info(t.toString());
         assertEquals("test-autodisable-trigger", resp.data.name)
         assertFalse(t.toString(), resp.data.enabled)
 
@@ -171,7 +176,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t02_autoResolveTest() {
-        println( "Running t02_autoResolveTest")
+        logger.info( "Running t02_autoResolveTest")
         String start = t02Start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
@@ -250,7 +255,7 @@ class LifecycleITest extends AbstractITestBase {
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 if ( i > 10 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -296,7 +301,7 @@ class LifecycleITest extends AbstractITestBase {
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"RESOLVED"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 if ( i > 10 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -310,7 +315,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t03_manualResolutionTest() {
-        println( "Running t03_manualResolutionTest")
+        logger.info( "Running t03_manualResolutionTest")
         String start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
@@ -377,7 +382,7 @@ class LifecycleITest extends AbstractITestBase {
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-trigger"] )
             if ( resp.status == 200 && resp.data.size() == 5 ) {
                 if ( i > 15 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -405,7 +410,7 @@ class LifecycleITest extends AbstractITestBase {
     // to test alert queries and updates.
     @Test
     void t04_fetchTest() {
-        println( "Running t04_fetchTest")
+        logger.info( "Running t04_fetchTest")
         // queries will look for alerts generated in this test tun
         String start = t01Start;
 
@@ -545,7 +550,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t05_paging() {
-        println( "Running t05_paging")
+        logger.info( "Running t05_paging")
         // queries will look for alerts generated in this test tun
         String start = t01Start;
 
@@ -555,19 +560,19 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(3, resp.data.size())
 
-        // println(resp.headers)
+        // logger.info(resp.headers)
 
         resp = client.get(path: "",
                 query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED", page: "1", per_page: "3"] )
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size())
 
-        // println(resp.headers)
+        // logger.info(resp.headers)
     }
 
     @Test
     void t055_tagging() {
-        println( "Running t055_tagging")
+        logger.info( "Running t055_tagging")
         // queries will look for alerts generated in this test tun
         String start = t01Start;
 
@@ -599,7 +604,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t06_manualAckAndResolutionTest() {
-        println( "Running t06_manualAckAndResolutionTest")
+        logger.info( "Running t06_manualAckAndResolutionTest")
         String start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
@@ -666,7 +671,7 @@ class LifecycleITest extends AbstractITestBase {
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger"] )
             if ( resp.status == 200 && resp.data != null && resp.data.size() == 5 ) {
                 if ( i > 15 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -701,7 +706,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t07_autoResolveWithThresholdTest() {
-        println( "Running t07_autoResolveWithThresholdTest")
+        logger.info( "Running t07_autoResolveWithThresholdTest")
         String start = String.valueOf(System.currentTimeMillis());
 
         /*
@@ -806,7 +811,7 @@ class LifecycleITest extends AbstractITestBase {
              */
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 if ( i > 10 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -879,7 +884,7 @@ class LifecycleITest extends AbstractITestBase {
              */
             if ( resp.status == 200 && resp.data.size() == 2 ) {
                 if ( i > 10 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -893,7 +898,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t08_autoEnableTest() {
-        println("Running t08_autoEnableTest")
+        logger.info("Running t08_autoEnableTest")
         String start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
@@ -962,7 +967,7 @@ class LifecycleITest extends AbstractITestBase {
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autoenable-trigger"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 if ( i > 10 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -1004,7 +1009,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t09_manualAutoResolveTest() {
-        println("Running t09_manualAutoResolveTest")
+        logger.info("Running t09_manualAutoResolveTest")
         String start = String.valueOf(System.currentTimeMillis());
 
         // CREATE the trigger
@@ -1082,7 +1087,7 @@ class LifecycleITest extends AbstractITestBase {
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual-autoresolve-trigger"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 if ( i > 10 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -1135,7 +1140,7 @@ class LifecycleITest extends AbstractITestBase {
                 query: [startTime:start,triggerIds:"test-manual-autoresolve-trigger",statuses:"OPEN"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
                 if ( i > 10 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -1148,7 +1153,7 @@ class LifecycleITest extends AbstractITestBase {
 
     @Test
     void t100_cleanup() {
-        println("Running t100_cleanup")
+        logger.info("Running t100_cleanup")
         // clean up triggers
         def resp = client.delete(path: "triggers/test-autodisable-trigger")
         assert(200 == resp.status || 404 == resp.status)

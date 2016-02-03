@@ -16,22 +16,21 @@
  */
 package org.hawkular.alerts.rest
 
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertNotNull
-
-import org.hawkular.alerts.api.model.condition.Condition
-import org.hawkular.alerts.api.model.condition.ThresholdCondition
-import org.hawkular.alerts.api.model.dampening.Dampening
-import org.hawkular.alerts.api.model.Severity
-import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.json.GroupConditionsInfo
 import org.hawkular.alerts.api.json.GroupMemberInfo
 import org.hawkular.alerts.api.json.UnorphanMemberInfo
+import org.hawkular.alerts.api.model.Severity
+import org.hawkular.alerts.api.model.condition.Condition
+import org.hawkular.alerts.api.model.condition.ThresholdCondition
+import org.hawkular.alerts.api.model.dampening.Dampening
 import org.hawkular.alerts.api.model.trigger.Mode
+import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.Test
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-import java.util.Map
-import java.util.HashMap
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNotNull
 
 /**
  * Triggers REST tests.
@@ -39,6 +38,8 @@ import java.util.HashMap
  * @author Lucas Ponce
  */
 class TriggersITest extends AbstractITestBase {
+
+    static Logger logger = LoggerFactory.getLogger(TriggersITest.class)
 
     @Test
     void findInitialTriggers() {
@@ -48,7 +49,7 @@ class TriggersITest extends AbstractITestBase {
         assert data.size() > 0
         for (int i = 0; i < data.size(); i++) {
             Trigger t = data[i]
-            println t.toString()
+            logger.info(t.toString())
         }
     }
 
@@ -319,7 +320,7 @@ class TriggersITest extends AbstractITestBase {
         // delete group cond1 (done by re-setting conditions w/o the undesired condition)
         groupConditions.clear();
         groupConditions.add(cond2);
-        println groupConditions
+        logger.info(groupConditions.toString())
         assertEquals(1, groupConditions.size());
         dataId2Map.clear();
         dataId2Map.put("member1", "DataId2-Child1");

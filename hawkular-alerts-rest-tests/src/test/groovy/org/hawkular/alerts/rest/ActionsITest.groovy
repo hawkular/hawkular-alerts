@@ -21,13 +21,14 @@ import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Data
-import org.hawkular.alerts.api.model.event.Alert
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.trigger.TriggerAction
 import org.junit.Test
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-import static org.hawkular.alerts.api.model.event.Alert.*
+import static org.hawkular.alerts.api.model.event.Alert.Status
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 
@@ -38,13 +39,15 @@ import static org.junit.Assert.assertTrue
  */
 class ActionsITest extends AbstractITestBase {
 
+    static Logger logger = LoggerFactory.getLogger(ActionsITest.class)
+
     @Test
     void findPlugins() {
         def resp = client.get(path: "plugins")
         def data = resp.data
         assertEquals(200, resp.status)
         assertTrue(data.size() > 0)
-        println "Plugins: " + data
+        logger.info("Plugins: " + data)
     }
 
     @Test
@@ -55,7 +58,7 @@ class ActionsITest extends AbstractITestBase {
         def resp =client.get(path: "plugins/email")
         def data = resp.data
         assertEquals(200, resp.status)
-        println "Email plugin: " + data
+        logger.info("Email plugin: " + data)
     }
 
     @Test
@@ -66,7 +69,7 @@ class ActionsITest extends AbstractITestBase {
         assertTrue(data.size() > 0)
         Map map = (Map)data;
         for (String actionPlugin : map.keySet()) {
-            println "ActionPlugin: " + actionPlugin + " - Plugins: " + map.get(actionPlugin)
+            logger.info("ActionPlugin: " + actionPlugin + " - Plugins: " + map.get(actionPlugin))
         }
     }
 
@@ -170,7 +173,6 @@ class ActionsITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
@@ -250,7 +252,6 @@ class ActionsITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
@@ -369,7 +370,6 @@ class ActionsITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
@@ -403,7 +403,6 @@ class ActionsITest extends AbstractITestBase {
 
         // Check if we have the actions for ACKNOWLEDGE
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5

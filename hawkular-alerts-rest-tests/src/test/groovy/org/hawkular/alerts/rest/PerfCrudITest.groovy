@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,9 @@
  */
 package org.hawkular.alerts.rest
 
-import groovyx.gpars.dataflow.Dataflows
 import groovyx.gpars.dataflow.Promise
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
-
-import static groovyx.gpars.actor.Actors.actor
-import static groovyx.gpars.dataflow.Dataflow.task
-
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.dampening.Dampening
@@ -31,7 +26,10 @@ import org.hawkular.alerts.api.model.dampening.Dampening.Type
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.Test
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
+import static groovyx.gpars.dataflow.Dataflow.task
 import static org.junit.Assert.assertEquals
 
 /**
@@ -41,6 +39,8 @@ import static org.junit.Assert.assertEquals
  * @author Lucas Ponce
  */
 class PerfCrudITest extends AbstractITestBase {
+
+    static Logger logger = LoggerFactory.getLogger(PerfCrudITest.class)
 
     /*
         This test is designed to study performance on REST endpoints.
@@ -261,10 +261,10 @@ class PerfCrudITest extends AbstractITestBase {
             }
             totalTimeCalls += timeCall;
 
-            println("Iteration: " + i);
-            println("Total calls: " + numCalls);
-            println("Avg: " + ((double)totalTimeCalls / (double)numCalls) + " ms");
-            println("> 1 sec: " + more1sec);
+            logger.info("Iteration: " + i);
+            logger.info("Total calls: " + numCalls);
+            logger.info("Avg: " + ((double)totalTimeCalls / (double)numCalls) + " ms");
+            logger.info("> 1 sec: " + more1sec);
 
         }
 
@@ -290,7 +290,7 @@ class PerfCrudITest extends AbstractITestBase {
             numCalls++;
             timeCall = (endCall - startCall);
             if (timeCall > 1000) {
-                println "WARNING: >1s call with " + timeCall + " ms (delete)"
+                logger.warn("WARNING: >1s call with " + timeCall + " ms (delete)")
                 more1sec++;
             }
             totalTimeCalls += timeCall;
@@ -304,7 +304,7 @@ class PerfCrudITest extends AbstractITestBase {
             numCalls++;
             timeCall = (endCall - startCall);
             if (timeCall > 1000) {
-                println "WARNING: >1s call with " + timeCall + " ms (trigger)"
+                logger.warn("WARNING: >1s call with " + timeCall + " ms (trigger)")
                 more1sec++;
             }
             totalTimeCalls += timeCall;
@@ -320,7 +320,7 @@ class PerfCrudITest extends AbstractITestBase {
             numCalls++;
             timeCall = (endCall - startCall);
             if (timeCall > 1000) {
-                println "WARNING: >1s call with " + timeCall + " ms (dampenings)"
+                logger.warn("WARNING: >1s call with " + timeCall + " ms (dampenings)")
                 more1sec++;
             }
             totalTimeCalls += timeCall;
@@ -343,7 +343,7 @@ class PerfCrudITest extends AbstractITestBase {
             numCalls++;
             timeCall = (endCall - startCall);
             if (timeCall > 1000) {
-                println "WARNING: >1s call with " + timeCall + " ms (firing)"
+                logger.warn("WARNING: >1s call with " + timeCall + " ms (firing)")
                 more1sec++;
             }
             totalTimeCalls += timeCall;
@@ -365,15 +365,15 @@ class PerfCrudITest extends AbstractITestBase {
             numCalls++;
             timeCall = (endCall - startCall);
             if (timeCall > 1000) {
-                println "WARNING: >1s call with " + timeCall + " ms (autoresolve)"
+                logger.warn("WARNING: >1s call with " + timeCall + " ms (autoresolve)")
                 more1sec++;
             }
             totalTimeCalls += timeCall;
 
-            println("Iteration: " + i);
-            println("Total calls: " + numCalls);
-            println("Avg: " + ((double)totalTimeCalls / (double)numCalls) + " ms");
-            println("> 1 sec: " + more1sec);
+            logger.info("Iteration: " + i);
+            logger.info("Total calls: " + numCalls);
+            logger.info("Avg: " + ((double)totalTimeCalls / (double)numCalls) + " ms");
+            logger.info("> 1 sec: " + more1sec);
 
         }
 
@@ -401,7 +401,7 @@ class PerfCrudITest extends AbstractITestBase {
             numCalls++;
             def timeCall = (endCall - startCall);
             if (timeCall > 1000) {
-                println "WARNING: >1s call with " + timeCall + " ms (delete)"
+                logger.warn("WARNING: >1s call with " + timeCall + " ms (delete)")
                 more1sec++;
             }
             totalTimeCalls += timeCall;
@@ -415,7 +415,7 @@ class PerfCrudITest extends AbstractITestBase {
             numCalls++;
             timeCall = (endCall - startCall);
             if (timeCall > 1000) {
-                println "WARNING: >1s call with " + timeCall + " ms (trigger)"
+                logger.warn("WARNING: >1s call with " + timeCall + " ms (trigger)")
                 more1sec++;
             }
             totalTimeCalls += timeCall;
@@ -499,7 +499,7 @@ class PerfCrudITest extends AbstractITestBase {
 
             def dampeningTimeCall= dampeningPromise.val;
             if (dampeningTimeCall > 1000) {
-                println "WARNING: >1s call with " + dampeningTimeCall + " ms (dampening)"
+                logger.warn("WARNING: >1s call with " + dampeningTimeCall + " ms (dampening)")
                 more1sec++
             }
             totalTimeCalls += dampeningTimeCall
@@ -507,7 +507,7 @@ class PerfCrudITest extends AbstractITestBase {
 
             def conditionsTimeCall= conditionsPromise.val;
             if (conditionsTimeCall > 1000) {
-                println "WARNING: >1s call with " + conditionsTimeCall + " ms (firing)"
+                logger.warn("WARNING: >1s call with " + conditionsTimeCall + " ms (firing)")
                 more1sec++
             }
             totalTimeCalls += conditionsTimeCall
@@ -515,40 +515,17 @@ class PerfCrudITest extends AbstractITestBase {
 
             def autoConditionsTimeCall= autoConditionsPromise.val;
             if (autoConditionsTimeCall > 1000) {
-                println "WARNING: >1s call with " + autoConditionsTimeCall + " ms (autoresolve)"
+                logger.warn("WARNING: >1s call with " + autoConditionsTimeCall + " ms (autoresolve)")
                 more1sec++
             }
             totalTimeCalls += autoConditionsTimeCall
             numCalls++;
 
-            println("Iteration: " + i);
-            println("Total calls: " + numCalls);
-            println("Avg: " + ((double)totalTimeCalls / (double)numCalls) + " ms");
-            println("> 1 sec: " + more1sec);
+            logger.info("Iteration: " + i);
+            logger.info("Total calls: " + numCalls);
+            logger.info("Avg: " + ((double)totalTimeCalls / (double)numCalls) + " ms");
+            logger.info("> 1 sec: " + more1sec);
         }
 
     }
-
-    @Test
-    void anotherTask() {
-
-        def Promise task1 = task {
-            for (int i = 0; i < 10; i++) {
-                println "Task 1 ${i} "
-                sleep 500
-            }
-            return 10;
-        }
-        def Promise task2 = task {
-            for (int i = 0; i < 10; i++) {
-                println "Task 2 ${i} "
-                sleep 500
-            }
-            return 20;
-        }
-
-        println "task1: ${task1.val}"
-        println "task2: ${task2.val}"
-    }
-
 }

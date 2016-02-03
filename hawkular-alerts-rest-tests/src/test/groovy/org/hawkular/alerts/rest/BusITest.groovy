@@ -121,7 +121,6 @@ class BusITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 20; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
@@ -215,7 +214,6 @@ class BusITest extends AbstractITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 20; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5

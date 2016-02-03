@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,19 +16,15 @@
  */
 package org.hawkular.alerts.external
 
-import java.util.List
-
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ExternalCondition
-import org.hawkular.alerts.api.model.trigger.Trigger
-
 import org.hawkular.alerts.api.model.trigger.Mode
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertTrue
-
+import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.FixMethodOrder
 import org.junit.Test
 
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
 import static org.junit.runners.MethodSorters.NAME_ASCENDING
 
 /**
@@ -108,7 +104,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -120,7 +115,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-        // println resp.data[0].toString();
 
         assertEquals("trigger-test-avg", resp.data[0].trigger.id)
         assertEquals("61.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -196,7 +190,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -208,7 +201,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-        // println resp.data[0].toString();
 
         assertEquals("trigger-test-avgd", resp.data[0].trigger.id)
         assertEquals("50.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -284,7 +276,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -296,7 +287,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-        // println resp.data[0].toString();
 
         assertEquals("trigger-test-avgw", resp.data[0].trigger.id)
         assertEquals("100.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -368,7 +358,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -380,7 +369,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-        // println resp.data[0].toString();
 
         assertEquals("trigger-test-min", resp.data[0].trigger.id)
         assertEquals("9.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -452,7 +440,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -464,7 +451,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-        // println resp.data[0].toString();
 
         assertEquals("trigger-test-max", resp.data[0].trigger.id)
         assertEquals("20.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -536,7 +522,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -548,7 +533,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-        // println resp.data[0].toString();
 
         assertEquals("trigger-test-range", resp.data[0].trigger.id)
         assertEquals("10.0", resp.data[0].evalSets[0].iterator().next().value)
@@ -620,7 +604,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 10; ++i ) {
-            // println "SLEEP!" ;
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 1
@@ -632,7 +615,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
-        // println resp.data[0].toString();
 
         assertEquals("trigger-test-rangep", resp.data[0].trigger.id)
         assertEquals("0.8", resp.data[0].evalSets[0].iterator().next().value)
@@ -647,7 +629,6 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         }
 
         // Send it to metrics via rest
-        // println mMetrics
         def resp = metricsClient.post(path:"gauges/data", body:mMetrics, headers:['Hawkular-Tenant':tenantId]);
         assertEquals(200, resp.status)
     }
