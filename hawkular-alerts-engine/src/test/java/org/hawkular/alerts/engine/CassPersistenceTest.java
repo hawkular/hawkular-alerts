@@ -16,11 +16,14 @@
  */
 package org.hawkular.alerts.engine;
 
+import static org.hawkular.commons.cassandra.EmbeddedConstants.EMBEDDED_CASSANDRA_OPTION;
+import static org.hawkular.commons.cassandra.EmbeddedConstants.HAWKULAR_BACKEND_PROPERTY;
+
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.EventsCriteria;
-import org.hawkular.alerts.engine.cassandra.EmbeddedCassandra;
 import org.hawkular.alerts.engine.impl.CassCluster;
+import org.hawkular.commons.cassandra.EmbeddedCassandra;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -38,9 +41,8 @@ import com.datastax.driver.core.Session;
 public class CassPersistenceTest extends PersistenceTest {
 
     private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
-    private static final String EXTERNAL_CASSANDRA = "external_cassandra";
 
-    static boolean externalCassandra;
+    static EmbeddedCassandra embeddedCassandra;
     static String keyspace;
 
     @BeforeClass
@@ -49,14 +51,15 @@ public class CassPersistenceTest extends PersistenceTest {
         String testFolder = CassPersistenceTest.class.getResource("/").getPath();
         System.setProperty(JBOSS_DATA_DIR, testFolder);
 
-        externalCassandra = (null != System.getProperty(EXTERNAL_CASSANDRA));
-
-        if (!externalCassandra) {
-            System.out.print("Starting embedded Cassandra for unit testing...");
-            EmbeddedCassandra.start();
-        } else {
-            System.out.print("Using External Cassandra for unit testing...");
+        /*
+            If not property defined, we initialized the embedded Cassandra
+         */
+        if (System.getProperty(HAWKULAR_BACKEND_PROPERTY) == null) {
+            System.setProperty(HAWKULAR_BACKEND_PROPERTY, EMBEDDED_CASSANDRA_OPTION);
         }
+
+        embeddedCassandra = new EmbeddedCassandra();
+        embeddedCassandra.start();
 
         keyspace = "hawkular_alerts_test";
         System.setProperty("hawkular-alerts.cassandra-keyspace", keyspace);
@@ -75,10 +78,8 @@ public class CassPersistenceTest extends PersistenceTest {
         try {
             Session session = CassCluster.getSession();
             session.execute("DROP KEYSPACE " + keyspace);
-            if (!externalCassandra) {
-                System.out.print("Stopping embedded Cassandra for unit testing...");
-                CassCluster.shutdown();
-                EmbeddedCassandra.stop();
+            if (embeddedCassandra != null) {
+                embeddedCassandra.stop();
             }
         } catch (Throwable t) {
             // never mind, don't prevent further cleanup

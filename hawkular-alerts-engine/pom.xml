@@ -112,6 +112,13 @@
       <scope>provided</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-core</artifactId>
+      <scope>provided</scope>
+      <version>${version.org.infinispan.wildfly}</version>
+    </dependency>
+
     <!-- Tests -->
     <dependency>
       <groupId>junit</groupId>
@@ -129,6 +136,13 @@
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hawkular.commons</groupId>
+      <artifactId>hawkular-commons-embedded-cassandra-service</artifactId>
+      <version>${version.org.hawkular.commons}</version>
       <scope>test</scope>
     </dependency>
 
@@ -188,24 +202,6 @@
 
   <profiles>
 
-    <!-- Profiles to compile with specific clustering libraries -->
-    <profile>
-      <id>clustering-wildfly</id>
-      <activation>
-        <property>
-          <name>!env</name>
-        </property>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>org.infinispan</groupId>
-          <artifactId>infinispan-core</artifactId>
-          <scope>provided</scope>
-          <version>${version.org.infinispan.wildfly}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-
     <!-- Profiles to control test scenarios -->
     <profile>
       <id>default-tests</id>
@@ -244,14 +240,6 @@
           <value>perf</value>
         </property>
       </activation>
-      <dependencies>
-        <dependency>
-          <groupId>org.infinispan</groupId>
-          <artifactId>infinispan-core</artifactId>
-          <scope>provided</scope>
-          <version>${version.org.infinispan.wildfly}</version>
-        </dependency>
-      </dependencies>
       <build>
         <plugins>
           <plugin>
