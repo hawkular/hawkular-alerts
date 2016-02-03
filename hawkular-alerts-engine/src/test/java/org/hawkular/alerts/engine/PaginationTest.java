@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,15 @@
 package org.hawkular.alerts.engine;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Lucas Ponce
  */
 public class PaginationTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(PaginationTest.class);
 
     @Test
     public void cassandraSmallTests() {
@@ -42,31 +46,31 @@ public class PaginationTest {
         /*
             Populate data
          */
-        System.out.println("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
+        logger.info("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
                 "non_primary_key) " +
                 "values ('A01', 'B01', 'C01', 'D01', '01'); ");
 
-        System.out.println("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
+        logger.info("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
                 "non_primary_key) " +
                 "values ('A01', 'B01', 'C01', 'D02', '02'); ");
 
-        System.out.println("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
+        logger.info("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
                 "non_primary_key) " +
                 "values ('A01', 'B01', 'C02', 'D03', '03'); ");
 
-        System.out.println("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
+        logger.info("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
                 "non_primary_key) " +
                 "values ('A01', 'B01', 'C02', 'D04', '04'); ");
 
-        System.out.println("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
+        logger.info("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
                 "non_primary_key) " +
                 "values ('A01', 'B02', 'C03', 'D05', '05'); ");
 
-        System.out.println("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
+        logger.info("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
                 "non_primary_key) " +
                 "values ('A01', 'B02', 'C03', 'D06', '06'); ");
 
-        System.out.println("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
+        logger.info("insert into paging_table (partition, cluster_01, cluster_02, cluster_03, " +
                 "non_primary_key) " +
                 "values ('A02', 'B03', 'C04', 'D07', '07'); ");
 

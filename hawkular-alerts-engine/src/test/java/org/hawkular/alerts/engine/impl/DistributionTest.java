@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,8 @@ import java.util.Map;
 
 import org.hawkular.alerts.engine.impl.PartitionManagerImpl.PartitionEntry;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -34,6 +36,8 @@ import com.google.common.hash.Hashing;
  * @author Lucas Ponce
  */
 public class DistributionTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(DistributionTest.class);
 
     public static List<PartitionEntry> generateTriggers(int numTenants, int numTriggers) {
         List<PartitionEntry> triggers = new ArrayList<>();
@@ -56,7 +60,7 @@ public class DistributionTest {
     }
 
     public static void print(String s) {
-        System.out.println(s);
+        logger.info(s);
     }
 
     @Test

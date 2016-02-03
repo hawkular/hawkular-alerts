@@ -68,6 +68,8 @@ import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -75,6 +77,8 @@ import org.junit.runners.MethodSorters;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class PersistenceTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(PersistenceTest.class);
 
     /*
         TenantId = 28026b36-8fe4-4332-84c8-524e173a68bf
@@ -87,7 +91,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test000InitScheme() throws Exception {
-        System.out.println("test000InitScheme...");
+        logger.info("test000InitScheme...");
 
         assertTrue(definitionsService.getAllTriggers().size() > 0);
         assertTrue(definitionsService.getAllConditions().size() > 0);
@@ -97,7 +101,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0010GroupTrigger() throws Exception {
-        System.out.println("test0010GroupTrigger...");
+        logger.info("test0010GroupTrigger...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
@@ -306,7 +310,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0020GroupTriggerUpdate() throws Exception {
-        System.out.println("test0020GroupTriggerUpdate...");
+        logger.info("test0020GroupTriggerUpdate...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
@@ -405,7 +409,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0021GroupCondition() throws Exception {
-        System.out.println("test0021GroupCondition...");
+        logger.info("test0021GroupCondition...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
@@ -571,7 +575,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0022GroupDampening() throws Exception {
-        System.out.println("test0022GroupDampening...");
+        logger.info("test0022GroupDampening...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
@@ -667,7 +671,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0030BasicTags() throws Exception {
-        System.out.println("test0030BasicTags...");
+        logger.info("test0030BasicTags...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-1");
         assertNotNull(t);
@@ -710,7 +714,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0035PagingTriggers() throws Exception {
-        System.out.println("test0035PagingTriggers...");
+        logger.info("test0035PagingTriggers...");
 
         List<Trigger> result = definitionsService.getTriggers(TENANT, null, null);
         assertEquals(9, result.size());
@@ -724,9 +728,9 @@ public abstract class PersistenceTest {
         String first;
         String last;
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         Page<Trigger> page = definitionsService.getTriggers(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         first = page.get(0).getId();
 
@@ -735,25 +739,25 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = definitionsService.getTriggers(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(4, page.size());
 
         last = page.get(2).getId();
 
-        //System.out.println("first trigger: " + first + " last trigger: " + last);
+        //logger.info("first trigger: " + first + " last trigger: " + last);
 
         assertTrue(first.compareTo(last) < 0);
 
         pager = Pager.builder().withPageSize(5).withStartPage(0)
                 .orderByDescending(TriggerComparator.Field.ID.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = definitionsService.getTriggers(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         first = page.get(0).getId();
 
@@ -762,16 +766,16 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = definitionsService.getTriggers(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(4, page.size());
 
         last = page.get(2).getId();
 
-        //System.out.println("first alert: " + first + " last alert: " + last);
+        //logger.info("first alert: " + first + " last alert: " + last);
 
         assertTrue(first.compareTo(last) > 0);
 
@@ -781,9 +785,9 @@ public abstract class PersistenceTest {
         pager = Pager.builder().withPageSize(5).withStartPage(0)
                 .orderByAscending(TriggerComparator.Field.DESCRIPTION.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = definitionsService.getTriggers(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         first = page.get(0).getDescription();
 
@@ -792,25 +796,25 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = definitionsService.getTriggers(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(4, page.size());
 
         last = page.get(2).getDescription();
 
-        //System.out.println("first trigger: " + first + " last trigger: " + last);
+        //logger.info("first trigger: " + first + " last trigger: " + last);
 
         assertTrue(first.compareTo(last) < 0);
 
         pager = Pager.builder().withPageSize(5).withStartPage(0)
                 .orderByDescending(TriggerComparator.Field.DESCRIPTION.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = definitionsService.getTriggers(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         first = page.get(0).getDescription();
 
@@ -819,16 +823,16 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = definitionsService.getTriggers(TENANT, null, pager);
-            System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(4, page.size());
 
         last = page.get(2).getDescription();
 
-        //System.out.println("first alert: " + first + " last alert: " + last);
+        //logger.info("first alert: " + first + " last alert: " + last);
 
         assertTrue(first.compareTo(last) > 0);
 
@@ -838,9 +842,9 @@ public abstract class PersistenceTest {
         pager = Pager.builder().withPageSize(5).withStartPage(0)
                 .orderByAscending(TriggerComparator.Field.NAME.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = definitionsService.getTriggers(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         first = page.get(0).getName();
 
@@ -849,25 +853,25 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = definitionsService.getTriggers(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(4, page.size());
 
         last = page.get(2).getName();
 
-        //System.out.println("first trigger: " + first + " last trigger: " + last);
+        //logger.info("first trigger: " + first + " last trigger: " + last);
 
         assertTrue(first.compareTo(last) < 0);
 
         pager = Pager.builder().withPageSize(5).withStartPage(0)
                 .orderByDescending(TriggerComparator.Field.NAME.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = definitionsService.getTriggers(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         first = page.get(0).getName();
 
@@ -876,23 +880,23 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = definitionsService.getTriggers(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(4, page.size());
 
         last = page.get(2).getName();
 
-        //System.out.println("first alert: " + first + " last alert: " + last);
+        //logger.info("first alert: " + first + " last alert: " + last);
 
         assertTrue(first.compareTo(last) > 0);
     }
 
     @Test
     public void test0040BasicAlert() throws Exception {
-        System.out.println("test0040BasicAlert...");
+        logger.info("test0040BasicAlert...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-1");
         assertNotNull(t);
@@ -1024,7 +1028,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0050PagingAlerts() throws Exception {
-        System.out.println("test0050PagingAlerts...");
+        logger.info("test0050PagingAlerts...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-6");
         assertNotNull(t);
@@ -1077,9 +1081,9 @@ public abstract class PersistenceTest {
         String firstAlertId;
         String lastAlertId;
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         Page<Alert> page = alertsService.getAlerts(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstAlertId = page.get(0).getAlertId();
 
@@ -1088,25 +1092,25 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getAlerts(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         lastAlertId = page.get(6).getAlertId();
 
-        //System.out.println("first alert: " + firstAlertId + " last alert: " + lastAlertId);
+        //logger.info("first alert: " + firstAlertId + " last alert: " + lastAlertId);
 
         assertTrue(firstAlertId.compareTo(lastAlertId) < 0);
 
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByDescending(AlertComparator.Field.ALERT_ID.getText()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getAlerts(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstAlertId = page.get(0).getAlertId();
 
@@ -1115,16 +1119,16 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getAlerts(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         lastAlertId = page.get(6).getAlertId();
 
-        //System.out.println("first alert: " + firstAlertId + " last alert: " + lastAlertId);
+        //logger.info("first alert: " + firstAlertId + " last alert: " + lastAlertId);
 
         assertTrue(firstAlertId.compareTo(lastAlertId) > 0);
 
@@ -1134,9 +1138,9 @@ public abstract class PersistenceTest {
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByAscending(AlertComparator.Field.CTIME.getText()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getAlerts(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         long firstCtime = page.get(0).getCtime();
 
@@ -1145,25 +1149,25 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getAlerts(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         long lastCtime = page.get(6).getCtime();
 
-        //System.out.println("first ctime: " + firstCtime + " last ctime: " + lastCtime);
+        //logger.info("first ctime: " + firstCtime + " last ctime: " + lastCtime);
 
         assertTrue(firstCtime < lastCtime);
 
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByDescending(AlertComparator.Field.CTIME.getText()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getAlerts(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstCtime = page.get(0).getCtime();
 
@@ -1172,16 +1176,16 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getAlerts(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         lastCtime = page.get(6).getCtime();
 
-        //System.out.println("first ctime: " + firstCtime + " last ctime: " + lastCtime);
+        //logger.info("first ctime: " + firstCtime + " last ctime: " + lastCtime);
 
         assertTrue(firstCtime > lastCtime);
 
@@ -1191,9 +1195,9 @@ public abstract class PersistenceTest {
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByAscending(AlertComparator.Field.SEVERITY.getText()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getAlerts(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         Severity firstSeverity = page.get(0).getSeverity();
 
@@ -1202,25 +1206,25 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getAlerts(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         Severity lastSeverity = page.get(6).getSeverity();
 
-        //System.out.println("first severity: " + firstSeverity + " last severity: " + lastSeverity);
+        //logger.info("first severity: " + firstSeverity + " last severity: " + lastSeverity);
 
         assertTrue(firstSeverity.compareTo(lastSeverity) < 0);
 
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByDescending(AlertComparator.Field.SEVERITY.getText()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getAlerts(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstSeverity = page.get(0).getSeverity();
 
@@ -1229,16 +1233,16 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getAlerts(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         lastSeverity = page.get(6).getSeverity();
 
-        //System.out.println("first severity: " + firstSeverity + " last severity: " + lastSeverity);
+        //logger.info("first severity: " + firstSeverity + " last severity: " + lastSeverity);
 
         assertTrue(firstSeverity.compareTo(lastSeverity) > 0);
 
@@ -1248,9 +1252,9 @@ public abstract class PersistenceTest {
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByAscending(AlertComparator.Field.STATUS.getText()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getAlerts(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         Alert.Status firstStatus = page.get(0).getStatus();
 
@@ -1259,25 +1263,25 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getAlerts(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         Alert.Status lastStatus = page.get(6).getStatus();
 
-        //System.out.println("first status: " + firstStatus + " last status: " + lastStatus);
+        //logger.info("first status: " + firstStatus + " last status: " + lastStatus);
 
         assertTrue(firstStatus.compareTo(lastStatus) < 0);
 
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByDescending(AlertComparator.Field.STATUS.getText()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getAlerts(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstStatus = page.get(0).getStatus();
 
@@ -1286,16 +1290,16 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getAlerts(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         lastStatus = page.get(6).getStatus();
 
-        //System.out.println("first status: " + firstStatus + " last status: " + lastStatus);
+        //logger.info("first status: " + firstStatus + " last status: " + lastStatus);
 
         assertTrue(firstStatus.compareTo(lastStatus) > 0);
     }
@@ -1353,9 +1357,9 @@ public abstract class PersistenceTest {
         String firstContext;
         String lastContext;
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         Page<Alert> page = alertsService.getAlerts(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstContext = page.get(0).getContext().get("random");
 
@@ -1364,23 +1368,23 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getAlerts(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         lastContext = page.get(6).getContext().get("random");
 
-        //System.out.println("first alert: " + firstContext + " last alert: " + lastContext);
+        //logger.info("first alert: " + firstContext + " last alert: " + lastContext);
 
         assertTrue(firstContext.compareTo(lastContext) < 0);
     }
 
     @Test
     public void test0060BasicEvent() throws Exception {
-        System.out.println("test0060BasicEvent...");
+        logger.info("test0060BasicEvent...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-8");
         assertNotNull(t);
@@ -1517,7 +1521,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0070PagingEvents() throws Exception {
-        System.out.println("test0070PagingEvents...");
+        logger.info("test0070PagingEvents...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-8");
         assertNotNull(t);
@@ -1570,9 +1574,9 @@ public abstract class PersistenceTest {
         String firstEventId;
         String lastEventId;
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         Page<Event> page = alertsService.getEvents(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstEventId = page.get(0).getId();
 
@@ -1581,25 +1585,25 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getEvents(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         lastEventId = page.get(6).getId();
 
-        //System.out.println("first event: " + firstEventId + " last event: " + lastEventId);
+        //logger.info("first event: " + firstEventId + " last event: " + lastEventId);
 
         assertTrue(firstEventId.compareTo(lastEventId) < 0);
 
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByDescending(EventComparator.Field.ID.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getEvents(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstEventId = page.get(0).getId();
 
@@ -1608,16 +1612,16 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getEvents(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         lastEventId = page.get(6).getId();
 
-        //System.out.println("first eventt: " + firstEventId + " last event: " + lastEventId);
+        //logger.info("first eventt: " + firstEventId + " last event: " + lastEventId);
 
         assertTrue(firstEventId.compareTo(lastEventId) > 0);
 
@@ -1627,9 +1631,9 @@ public abstract class PersistenceTest {
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByAscending(EventComparator.Field.CTIME.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getEvents(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         long firstCtime = page.get(0).getCtime();
 
@@ -1638,25 +1642,25 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getEvents(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         long lastCtime = page.get(6).getCtime();
 
-        //System.out.println("first ctime: " + firstCtime + " last ctime: " + lastCtime);
+        //logger.info("first ctime: " + firstCtime + " last ctime: " + lastCtime);
 
         assertTrue(firstCtime < lastCtime);
 
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByDescending(EventComparator.Field.CTIME.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getEvents(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstCtime = page.get(0).getCtime();
 
@@ -1665,16 +1669,16 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getEvents(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         lastCtime = page.get(6).getCtime();
 
-        //System.out.println("first ctime: " + firstCtime + " last ctime: " + lastCtime);
+        //logger.info("first ctime: " + firstCtime + " last ctime: " + lastCtime);
 
         assertTrue(firstCtime > lastCtime);
 
@@ -1684,9 +1688,9 @@ public abstract class PersistenceTest {
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByAscending(EventComparator.Field.CATEGORY.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getEvents(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         String firstCategory = page.get(0).getCategory();
 
@@ -1695,25 +1699,25 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getEvents(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         String lastCategory = page.get(6).getCategory();
 
-        //System.out.println("first category: " + firstCategory + " last category: " + lastCategory);
+        //logger.info("first category: " + firstCategory + " last category: " + lastCategory);
 
         assertTrue(firstCategory.compareTo(lastCategory) < 0);
 
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByDescending(EventComparator.Field.CATEGORY.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getEvents(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstCategory = page.get(0).getCategory();
 
@@ -1722,16 +1726,16 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getEvents(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         lastCategory = page.get(6).getCategory();
 
-        //System.out.println("first category: " + firstCategory + " last category: " + lastCategory);
+        //logger.info("first category: " + firstCategory + " last category: " + lastCategory);
 
         assertTrue(firstCategory.compareTo(lastCategory) > 0);
 
@@ -1741,9 +1745,9 @@ public abstract class PersistenceTest {
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByAscending(EventComparator.Field.TEXT.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getEvents(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         String firstText = page.get(0).getText();
 
@@ -1752,25 +1756,25 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getEvents(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         String lastText = page.get(6).getText();
 
-        //System.out.println("first status: " + firstText + " last status: " + lastText);
+        //logger.info("first status: " + firstText + " last status: " + lastText);
 
         assertTrue(firstText.compareTo(lastText) < 0);
 
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByDescending(EventComparator.Field.TEXT.getName()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = alertsService.getEvents(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstText = page.get(0).getText();
 
@@ -1779,16 +1783,16 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = alertsService.getEvents(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(7, page.size());
 
         lastText = page.get(6).getText();
 
-        //System.out.println("first text: " + firstText + " last text: " + lastText);
+        //logger.info("first text: " + firstText + " last text: " + lastText);
 
         assertTrue(firstText.compareTo(lastText) > 0);
 
@@ -1814,7 +1818,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0090SearchActionsHistory() throws Exception {
-        System.out.println("test0090SearchActionsHistory...");
+        logger.info("test0090SearchActionsHistory...");
 
         for (int i = 0; i < 10; i++) {
             Alert testAlert = new Alert();
@@ -1918,7 +1922,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test00100PaginationActionsHistory() throws Exception {
-        System.out.println(" test00100PaginationActionsHistory...");
+        logger.info(" test00100PaginationActionsHistory...");
 
         for (int i = 0; i < 103; i++) {
             Alert testAlert = new Alert();
@@ -1957,9 +1961,9 @@ public abstract class PersistenceTest {
         Pager pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByAscending(ActionComparator.Field.ALERT_ID.getText()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         Page<Action> page = actionsService.getActions(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         Action firstAction = page.get(0);
 
@@ -1968,9 +1972,9 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = actionsService.getActions(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(2, page.size());
@@ -1982,9 +1986,9 @@ public abstract class PersistenceTest {
         pager = Pager.builder().withPageSize(10).withStartPage(0)
                 .orderByDescending(ActionComparator.Field.RESULT.getText()).build();
 
-        //System.out.println("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
         page = actionsService.getActions(TENANT, null, pager);
-        //System.out.println("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
 
         firstAction = page.get(0);
 
@@ -1993,9 +1997,9 @@ public abstract class PersistenceTest {
 
         while (pager.getEnd() < page.getTotalSize()) {
             pager = pager.nextPage();
-            //System.out.println("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
+            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = actionsService.getActions(TENANT, null, pager);
-            //System.out.println("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(2, page.size());
@@ -2007,7 +2011,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0110ThinActionsHistory() throws Exception {
-        System.out.println("test0110ThinActionsHistory...");
+        logger.info("test0110ThinActionsHistory...");
 
         for (int i = 0; i < 103; i++) {
             Alert testAlert = new Alert();
@@ -2046,14 +2050,14 @@ public abstract class PersistenceTest {
         assertEquals(103 * 4, actions.size());
 
         for (Action action : actions) {
-            //System.out.println(action);
+            //logger.info(action);
             assertNull(action.getEvent());
         }
     }
 
     @Test
     public void test0120BasicNotesOnAlert() throws Exception {
-        System.out.println(" test0120BasicNotesOnAlert...");
+        logger.info(" test0120BasicNotesOnAlert...");
 
         Trigger t = new Trigger("non-existence-trigger", "non-existence-trigger");
         Alert testAlert = new Alert(TENANT, t, null);
@@ -2080,7 +2084,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0130AlertTags() throws Exception {
-        System.out.println(" test0130Tags...");
+        logger.info(" test0130Tags...");
 
         Trigger t = new Trigger("non-existence-trigger", "non-existence-trigger");
         t.addTag("TriggerTag1Name", "TriggerTag1Value");
@@ -2219,7 +2223,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0140EventTags() throws Exception {
-        System.out.println(" test0130Tags...");
+        logger.info(" test0130Tags...");
 
         Trigger t = new Trigger("non-existence-trigger", "non-existence-trigger");
         t.addTag("TriggerTag1Name", "TriggerTag1Value");

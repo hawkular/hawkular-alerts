@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,8 @@ import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.FixMethodOrder
 import org.junit.Test
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
@@ -38,12 +40,14 @@ import static org.junit.runners.MethodSorters.NAME_ASCENDING
 @FixMethodOrder(NAME_ASCENDING)
 class EventsLifecycleITest extends AbstractITestBase {
 
+    static Logger logger = LoggerFactory.getLogger(EventsLifecycleITest.class)
+
     static host = System.getProperty('hawkular.host') ?: '127.0.0.1'
     static port = Integer.valueOf(System.getProperty('hawkular.port') ?: "8080")
 
     @Test
     void t01_eventsBasicTest() {
-        println( "Running t01_eventsBasicTest" )
+        logger.info( "Running t01_eventsBasicTest" )
 
         String start = String.valueOf(System.currentTimeMillis())
 
@@ -90,7 +94,7 @@ class EventsLifecycleITest extends AbstractITestBase {
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-events-t01"] )
             if ( resp.status == 200 && resp.data != null && resp.data.size > 0) {
                 if ( i > 50 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -103,7 +107,7 @@ class EventsLifecycleITest extends AbstractITestBase {
 
     @Test
     void t02_eventsChainedTest() {
-        println( "Running t02_eventsChainedTest" )
+        logger.info( "Running t02_eventsChainedTest" )
 
         String start = String.valueOf(System.currentTimeMillis())
 
@@ -219,7 +223,7 @@ class EventsLifecycleITest extends AbstractITestBase {
             resp = client.get(path: "", query: [startTime:start,triggerIds:"test-events-t02-combined"] )
             if ( resp.status == 200 && resp.data != null && resp.data.size > 0) {
                 if ( i > 50 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -231,7 +235,7 @@ class EventsLifecycleITest extends AbstractITestBase {
 
     @Test
     void t100_eventsCleanup() {
-        println("Running t100_eventsCleanup")
+        logger.info("Running t100_eventsCleanup")
 
         // clean up triggers
         def resp = client.delete(path: "triggers/test-events-t01")

@@ -16,29 +16,21 @@
  */
 package org.hawkular.alerts.rest
 
-import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
-import static org.hawkular.alerts.api.model.data.AvailabilityType.DOWN
-import static org.hawkular.alerts.api.model.data.AvailabilityType.UP
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertTrue
-import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertNull
-import static org.junit.runners.MethodSorters.NAME_ASCENDING
-
 import org.hawkular.alerts.api.json.GroupConditionsInfo
 import org.hawkular.alerts.api.model.Severity
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
-import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval
 import org.hawkular.alerts.api.model.condition.Condition
-import org.hawkular.alerts.api.model.condition.ThresholdCondition
-import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.trigger.TriggerType
 import org.junit.FixMethodOrder
 import org.junit.Test
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
+import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
+import static org.junit.Assert.*
+import static org.junit.runners.MethodSorters.NAME_ASCENDING
 
 /**
  * Alerts REST tests.
@@ -48,6 +40,8 @@ import org.junit.Test
 @FixMethodOrder(NAME_ASCENDING)
 class GroupITest extends AbstractITestBase {
 
+    static Logger logger = LoggerFactory.getLogger(GroupITest.class)
+
     static host = System.getProperty('hawkular.host') ?: '127.0.0.1'
     static port = Integer.valueOf(System.getProperty('hawkular.port') ?: "8080")
     static t01Start = String.valueOf(System.currentTimeMillis())
@@ -55,7 +49,7 @@ class GroupITest extends AbstractITestBase {
 
     @Test
     void t01_dataDrivenGroupTest() {
-        println( "Running t01_dataDrivenGroupTest")
+        logger.info( "Running t01_dataDrivenGroupTest")
         String start = t01Start;
 
         // CREATE the data-driven group trigger
@@ -135,7 +129,7 @@ class GroupITest extends AbstractITestBase {
             resp = client.get(path: "triggers/groups/test-ddgroup-trigger/members")
             if ( resp.status == 200 && resp.data != null && resp.data.size > 1) {
                 if ( i > 10 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
@@ -184,7 +178,7 @@ class GroupITest extends AbstractITestBase {
                                       triggerIds:"test-ddgroup-trigger_Source-1,test-ddgroup-trigger_Source-2"] )
             if ( resp.status == 200 && resp.data != null && resp.data.size > 1) {
                 if ( i > 10 ) {
-                    println( "Perf: passing but sleep iterations high [" + i + "]" );
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
                 }
                 break;
             }
