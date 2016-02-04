@@ -645,21 +645,21 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
             if (!pager.isLimited() || ordered.size() < pager.getStart()) {
                 pager = new Pager(0, ordered.size(), pager.getOrder());
-                return new Page(ordered, pager, ordered.size());
+                return new Page<>(ordered, pager, ordered.size());
             }
             if (pager.getEnd() >= ordered.size()) {
-                return new Page(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
+                return new Page<>(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
             }
-            return new Page(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
+            return new Page<>(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
         } else {
             pager = Pager.builder().withPageSize(alerts.size()).orderBy(Field.ALERT_ID.getText(),
                     Order.Direction.ASCENDING).build();
-            return new Page(alerts, pager, alerts.size());
+            return new Page<>(alerts, pager, alerts.size());
         }
     }
 
     private Set<String> filterByAlerts(AlertsCriteria criteria) {
-        Set<String> result = Collections.EMPTY_SET;
+        Set<String> result = Collections.emptySet();
         if (isEmpty(criteria.getAlertIds())) {
             if (!isEmpty(criteria.getAlertId())) {
                 result = new HashSet<>(1);
@@ -673,7 +673,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     private Set<String> filterByTriggers(String tenantId, AlertsCriteria criteria) throws Exception {
-        Set<String> result = Collections.EMPTY_SET;
+        Set<String> result = Collections.emptySet();
         Set<String> triggerIds = extractTriggerIds(tenantId, criteria);
 
         if (triggerIds.size() > 0) {
@@ -702,7 +702,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         boolean hasTriggerId = !isEmpty(criteria.getTriggerId());
         boolean hasTriggerIds = !isEmpty(criteria.getTriggerIds());
 
-        Set<String> triggerIds = hasTriggerId || hasTriggerIds ? new HashSet<>() : Collections.EMPTY_SET;
+        Set<String> triggerIds = hasTriggerId || hasTriggerIds ? new HashSet<>() : Collections.emptySet();
 
         if (!hasTriggerIds) {
             if (hasTriggerId) {
@@ -721,7 +721,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     private Set<String> filterByCTime(String tenantId, AlertsCriteria criteria) throws Exception {
-        Set<String> result = Collections.EMPTY_SET;
+        Set<String> result = Collections.emptySet();
 
         if (criteria.getStartTime() != null || criteria.getEndTime() != null) {
             result = new HashSet<>();
@@ -753,7 +753,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     private Set<String> filterByStatuses(String tenantId, AlertsCriteria criteria) throws Exception {
-        Set<String> result = Collections.EMPTY_SET;
+        Set<String> result = Collections.emptySet();
 
         Set<Alert.Status> statuses = new HashSet<>();
         if (isEmpty(criteria.getStatusSet())) {
@@ -788,7 +788,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     private Set<String> filterBySeverities(String tenantId, AlertsCriteria criteria)
             throws Exception {
 
-        Set<String> result = Collections.EMPTY_SET;
+        Set<String> result = Collections.emptySet();
 
         Set<Severity> severities = new HashSet<>();
         if (isEmpty(criteria.getSeverities())) {
@@ -822,7 +822,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     private Set<String> filterByEvents(EventsCriteria criteria) {
-        Set<String> result = Collections.EMPTY_SET;
+        Set<String> result = Collections.emptySet();
         if (isEmpty(criteria.getEventIds())) {
             if (!isEmpty(criteria.getEventId())) {
                 result = new HashSet<>(1);
@@ -1061,21 +1061,21 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
             if (!pager.isLimited() || ordered.size() < pager.getStart()) {
                 pager = new Pager(0, ordered.size(), pager.getOrder());
-                return new Page(ordered, pager, ordered.size());
+                return new Page<>(ordered, pager, ordered.size());
             }
             if (pager.getEnd() >= ordered.size()) {
-                return new Page(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
+                return new Page<>(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
             }
-            return new Page(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
+            return new Page<>(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
         } else {
             pager = Pager.builder().withPageSize(events.size()).orderBy(EventComparator.Field.ID.getName(),
                     Order.Direction.ASCENDING).build();
-            return new Page(events, pager, events.size());
+            return new Page<>(events, pager, events.size());
         }
     }
 
     private Set<String> filterByTriggers(String tenantId, EventsCriteria criteria) throws Exception {
-        Set<String> result = Collections.EMPTY_SET;
+        Set<String> result = Collections.emptySet();
         Set<String> triggerIds = extractTriggerIds(tenantId, criteria);
 
         if (triggerIds.size() > 0) {
@@ -1109,7 +1109,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         boolean hasTriggerId = !isEmpty(criteria.getTriggerId());
         boolean hasTriggerIds = !isEmpty(criteria.getTriggerIds());
 
-        Set<String> triggerIds = hasTriggerId || hasTriggerIds ? new HashSet<>() : Collections.EMPTY_SET;
+        Set<String> triggerIds = hasTriggerId || hasTriggerIds ? new HashSet<>() : Collections.emptySet();
 
         if (!hasTriggerIds) {
             if (hasTriggerId) {
@@ -1128,7 +1128,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     private Set<String> filterByCTime(String tenantId, EventsCriteria criteria) throws Exception {
-        Set<String> result = Collections.EMPTY_SET;
+        Set<String> result = Collections.emptySet();
 
         if (criteria.getStartTime() != null || criteria.getEndTime() != null) {
             result = new HashSet<>();
@@ -1160,7 +1160,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     private Set<String> filterByCategories(String tenantId, EventsCriteria criteria) throws Exception {
-        Set<String> result = Collections.EMPTY_SET;
+        Set<String> result = Collections.emptySet();
 
         Set<String> categories = new HashSet<>();
         if (isEmpty(criteria.getCategories())) {

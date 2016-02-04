@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.ejb.AccessTimeout;
 import javax.ejb.EJB;
@@ -139,13 +138,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 }
             });
         }
-    }
-
-    // Note, the cassandra cluster shutdown should be performed only once and is performed here because
-    // this is a singleton bean.  If it becomes Stateless this login will need to be moved.
-    @PreDestroy
-    public void shutdown() {
-        CassCluster.shutdown();
     }
 
     private void initialData() throws IOException {
@@ -557,8 +549,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private Trigger updateTrigger(Trigger trigger, Set<TriggerAction> existingActions,
-            Map<String, String> existingTags)
-            throws Exception {
+            Map<String, String> existingTags) throws Exception {
         Session session = CassCluster.getSession();
         PreparedStatement updateTrigger = CassStatement.get(session, CassStatement.UPDATE_TRIGGER);
         if (updateTrigger == null) {
@@ -755,8 +746,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                  */
                 PreparedStatement selectTrigger = CassStatement
                         .get(session, CassStatement.SELECT_TRIGGER);
-                List<ResultSetFuture> futures = triggerIds.stream().map(id ->
-                        session.executeAsync(selectTrigger.bind(tenantId, id)))
+                List<ResultSetFuture> futures = triggerIds.stream()
+                        .map(id -> session.executeAsync(selectTrigger.bind(tenantId, id)))
                         .collect(Collectors.toList());
                 List<ResultSet> rsTriggers = Futures.allAsList(futures).get();
                 for (ResultSet rs : rsTriggers) {
@@ -779,7 +770,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private Set<String> filterByTriggers(TriggersCriteria criteria) {
-        Set<String> result = Collections.EMPTY_SET;
+        Set<String> result = Collections.emptySet();
         if (isEmpty(criteria.getTriggerIds())) {
             if (!isEmpty(criteria.getTriggerId())) {
                 result = new HashSet<>(1);
@@ -819,18 +810,18 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     private Collection<Trigger> selectTriggers(String tenantId) throws Exception {
         Session session = CassCluster.getSession();
-        PreparedStatement selectTriggers = isEmpty(tenantId) ?
-                CassStatement.get(session, CassStatement.SELECT_TRIGGERS_ALL) :
-                CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
+        PreparedStatement selectTriggers = isEmpty(tenantId)
+                ? CassStatement.get(session, CassStatement.SELECT_TRIGGERS_ALL)
+                : CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
         if (null == selectTriggers) {
             throw new RuntimeException("selectTriggersTenant PreparedStatement is null");
         }
 
         List<Trigger> triggers = new ArrayList<>();
         try {
-            ResultSet rsTriggers = session.execute(isEmpty(tenantId) ?
-                    selectTriggers.bind() :
-                    selectTriggers.bind(tenantId));
+            ResultSet rsTriggers = session.execute(isEmpty(tenantId)
+                    ? selectTriggers.bind()
+                    : selectTriggers.bind(tenantId));
             for (Row row : rsTriggers) {
                 Trigger trigger = mapTrigger(row);
                 selectTriggerActions(trigger);
@@ -865,16 +856,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             }
             if (!pager.isLimited() || ordered.size() < pager.getStart()) {
                 pager = new Pager(0, ordered.size(), pager.getOrder());
-                return new Page(ordered, pager, ordered.size());
+                return new Page<>(ordered, pager, ordered.size());
             }
             if (pager.getEnd() >= ordered.size()) {
-                return new Page(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
+                return new Page<>(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
             }
-            return new Page(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
+            return new Page<>(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
         } else {
             pager = Pager.builder().withPageSize(triggers.size()).orderBy(TriggerComparator.Field.ID.getName(),
                     Order.Direction.ASCENDING).build();
-            return new Page(triggers, pager, triggers.size());
+            return new Page<>(triggers, pager, triggers.size());
         }
     }
 
@@ -900,19 +891,17 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
             // next, get all of the tagged triggerIds
             boolean nameOnly = "*".equals(value);
-            PreparedStatement selectTags = nameOnly ?
-                    CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME) :
-                    CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME_AND_VALUE);
+            PreparedStatement selectTags = nameOnly
+                    ? CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME)
+                    : CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME_AND_VALUE);
             if (selectTags == null) {
                 throw new RuntimeException("selectTags PreparedStatement is null");
             }
 
             Map<String, Set<String>> tenantTriggerIdsMap = new HashMap<>();
-            List<ResultSetFuture> futures = nameOnly ?
-                    tenants.stream()
-                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name)))
-                            .collect(Collectors.toList()) :
-                    tenants.stream()
+            List<ResultSetFuture> futures = nameOnly ? tenants.stream()
+                    .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name)))
+                    .collect(Collectors.toList()) : tenants.stream()
                             .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name,
                                     value)))
                             .collect(Collectors.toList());
@@ -936,8 +925,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             for (Map.Entry<String, Set<String>> entry : tenantTriggerIdsMap.entrySet()) {
                 String tenantId = entry.getKey();
                 Set<String> triggerIds = entry.getValue();
-                futures = triggerIds.stream().map(triggerId ->
-                        session.executeAsync(selectTrigger.bind(tenantId, triggerId)))
+                futures = triggerIds.stream()
+                        .map(triggerId -> session.executeAsync(selectTrigger.bind(tenantId, triggerId)))
                         .collect(Collectors.toList());
                 List<ResultSet> rsTriggers = Futures.allAsList(futures).get();
                 for (ResultSet rs : rsTriggers) {
@@ -1157,8 +1146,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 String tokenDataId = groupCondition.getDataId();
                 String memberDataId = dataIdMap.get(tokenDataId);
                 String tokenExpression = ((ExternalCondition) groupCondition).getExpression();
-                String memberExpression = isEmpty(tokenExpression) ? tokenExpression :
-                        tokenExpression.replace(tokenDataId, memberDataId);
+                String memberExpression = isEmpty(tokenExpression) ? tokenExpression
+                        : tokenExpression.replace(tokenDataId, memberDataId);
                 newCondition = new ExternalCondition(member.getTenantId(), member.getId(),
                         groupCondition.getTriggerMode(),
                         groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
@@ -1208,6 +1197,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 throw new IllegalArgumentException("Unexpected Condition type: " + groupCondition.getType().name());
         }
 
+        newCondition.setContext(groupCondition.getContext());
         return newCondition;
     }
 
@@ -1794,7 +1784,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 Condition memberCondition = getMemberCondition(member, groupCondition, dataIdMap);
                 memberConditions.add(memberCondition);
             }
-            Collection memberConditionSet = setConditions(tenantId, member.getId(), triggerMode, memberConditions);
+            Collection<Condition> memberConditionSet = setConditions(tenantId, member.getId(), triggerMode,
+                    memberConditions);
             if (log.isDebugEnabled()) {
                 log.debug("Member condition set: " + memberConditionSet);
             }
@@ -1839,7 +1830,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         String triggerId = condition.getTriggerId();
-        Mode triggerMode = condition.getTriggerMode();
         Trigger trigger = getTrigger(tenantId, triggerId);
         if (null == trigger) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
@@ -2311,10 +2301,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     rCondition.setConditionSetSize(row.getInt("conditionSetSize"));
                     rCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
                     rCondition.setDataId(row.getString("dataId"));
-                    rCondition.setOperatorLow(ThresholdRangeCondition.Operator.valueOf(row.getString
-                            ("operatorLow")));
-                    rCondition.setOperatorHigh(ThresholdRangeCondition.Operator.valueOf(row.getString
-                            ("operatorHigh")));
+                    rCondition.setOperatorLow(ThresholdRangeCondition.Operator.valueOf(row.getString("operatorLow")));
+                    rCondition.setOperatorHigh(ThresholdRangeCondition.Operator.valueOf(row.getString("operatorHigh")));
                     rCondition.setThresholdLow(row.getDouble("thresholdLow"));
                     rCondition.setThresholdHigh(row.getDouble("thresholdHigh"));
                     rCondition.setInRange(row.getBool("inRange"));
@@ -2764,7 +2752,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return map == null || map.isEmpty();
     }
 
-    private boolean isEmpty(Collection collection) {
+    private boolean isEmpty(Collection<?> collection) {
         return collection == null || collection.isEmpty();
     }
 
