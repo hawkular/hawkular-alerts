@@ -37,6 +37,7 @@ CREATE TABLE ${keyspace}.triggers (
     autoResolveAlerts boolean,
     autoResolveMatch text,
     context map<text,text>,
+    dataIdMap map<text,text>,
     description text,
     enabled boolean,
     eventCategory text,

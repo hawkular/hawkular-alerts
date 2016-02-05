@@ -448,13 +448,27 @@ public interface DefinitionsService {
             Collection<Condition> conditions) throws Exception;
 
     /**
-     * The condition set for the specified Group Trigger and trigger mode.  The set conditions are ordered
-     * using the Collection ordering as the conditionSet ordering (assuming an ordered Collection implementation
-     * is supplied).  Any existing conditions are replaced. The non-orphan member triggers will have the new condition
-     * set applied, using the provided dataIdMemberMap.
-     * See {@link org.hawkular.alerts.api.json.GroupConditions#setDataIdMemberMap(Map)} for
-     * an example of the <code>dataIdMemberMap</code> parameter.  The following Condition fields are ignored for
-     * the incoming conditions, and set in the returned collection set:
+     * The condition set for the specified Group Trigger and trigger mode.  The conditionSet is ordered
+     * using the Collection ordering (assuming an ordered Collection implementation is supplied).  Any existing
+     * conditions are replaced. The non-orphan member triggers will have the new condition set applied, using the
+     * provided dataIdMemberMap. See {@link org.hawkular.alerts.api.json.GroupConditionsInfo#setDataIdMemberMap(Map)}
+     * for an example of the <code>dataIdMemberMap</code> parameter.
+     * <p>
+     * The <code>dataIdMemberMap</code> should be null if the group has no members.
+     * </p>
+     * <p>
+     * The <code>dataIdMemberMap</code> should be null if this is a DataDriven group trigger.  In this
+     * case the member triggers are removed and will be re-populated as incoming data demands.
+     * </p>
+     * <p>
+     * For [non-data-driven] group triggers with existing members the <code>dataIdMemberMap</code> is handled
+     * as follows. For members not included in the <code>dataIdMemberMap</code> their most recently supplied
+     * dataIdMap will be used. This means that it is not necessary to supply mappings if the new condition set
+     * uses only dataIds found in the old condition set. If the new conditions introduce new dataIds a full
+     * <code>dataIdMemberMap</code> must be supplied.
+     * </p>
+     * <p>
+     * The following Condition fields are ignored for the incoming conditions, and set in the returned collection set:
      * <pre>
      *   conditionId
      *   triggerId
@@ -462,6 +476,7 @@ public interface DefinitionsService {
      *   conditionSetSize
      *   conditionSetIndex
      * </pre>
+     * </p>
      * @param tenantId Tenant where trigger is stored
      * @param groupId Group Trigger adding the condition and whose non-orphan members will also have it added.
      * @param triggerMode Mode where condition is applied
