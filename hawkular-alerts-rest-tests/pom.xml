@@ -219,6 +219,7 @@
               <excludes>
                 <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
                 <excludeFile>org/hawkular/alerts/rest/PerfCrudITest.class</excludeFile>
+                <exclude>${hawkular.itest-exclude}</exclude>
               </excludes>
               <systemPropertyVariables>
                 <hawkular.host>${hawkular.host}</hawkular.host>
@@ -505,6 +506,7 @@
                   <excludes>
                     <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
                     <excludeFile>org/hawkular/alerts/rest/PerfCrudITest.class</excludeFile>
+                    <exclude>${hawkular.itest-exclude}</exclude>
                   </excludes>
                 </configuration>
               </execution>
