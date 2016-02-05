@@ -22,6 +22,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
+import org.hawkular.alerts.api.model.trigger.TriggerAction
 import org.junit.Test
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -112,7 +113,7 @@ class ClusterITest extends AbstractITestBase {
             /*
                 email-to-admin action is pre-created from demo data
              */
-            testTrigger.addAction("email", "email-to-admin");
+            testTrigger.addAction(new TriggerAction("email", "email-to-admin"));
 
             startCall();
             resp = client.post(path: "triggers", body: testTrigger)
