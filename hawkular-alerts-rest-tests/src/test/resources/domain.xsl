@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,14 +37,14 @@
     </xsl:copy>
     <cache-container name="hawkular-alerts" default-cache="triggers" statistics-enabled="true">
       <transport lock-timeout="60000"/>
-      <replicated-cache name="partition" mode="ASYNC" batching="true">
-        <transaction mode="NONE"/>
+      <replicated-cache name="partition" mode="SYNC">
+        <transaction mode="BATCH"/>
       </replicated-cache>
       <replicated-cache name="triggers" mode="ASYNC">
-        <transaction mode="NONE"/>
+        <transaction mode="BATCH"/>
       </replicated-cache>
       <replicated-cache name="data" mode="ASYNC">
-        <transaction mode="NONE"/>
+        <transaction mode="BATCH"/>
       </replicated-cache>
     </cache-container>
   </xsl:template>
@@ -53,9 +53,29 @@
     <xsl:copy>
       <xsl:copy-of select="node()|@*"/>
     </xsl:copy>
-    <logger category="org.hawkular.alerts.engine.impl">
+    <logger category="org.hawkular.alerts.engine.impl.PartitionManagerImpl">
       <level name="DEBUG"/>
     </logger>
+    <logger category="org.hawkular.alerts.engine.impl.AlertsEngineImpl">
+      <level name="DEBUG"/>
+    </logger>
+  </xsl:template>
+
+  <xsl:template match="node()[name(.)='server-groups']">
+    <server-groups>
+      <server-group name="cassandra-group" profile="default" >
+        <jvm name="default">
+          <heap size="64m" max-size="512m"/>
+        </jvm>
+        <socket-binding-group ref="standard-sockets"/>
+      </server-group>
+      <server-group name="hawkular-alerts-group" profile="ha" >
+        <jvm name="default">
+          <heap size="64m" max-size="512m"/>
+        </jvm>
+        <socket-binding-group ref="ha-sockets"/>
+      </server-group>
+    </server-groups>
   </xsl:template>
 
   <!-- copy everything else as-is -->

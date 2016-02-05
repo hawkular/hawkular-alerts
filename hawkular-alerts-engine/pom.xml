@@ -202,12 +202,15 @@
 
   <profiles>
 
-    <!-- Profiles to control test scenarios -->
+    <!--
+          Profiles to control test scenarios activated with the variable test-env
+          Default tests don't run performance and persistence tests.
+    -->
     <profile>
       <id>default-tests</id>
       <activation>
         <property>
-          <name>!env</name>
+          <name>!test-env</name>
         </property>
       </activation>
       <build>
@@ -236,7 +239,7 @@
       <id>perf-tests</id>
       <activation>
         <property>
-          <name>env</name>
+          <name>test-env</name>
           <value>perf</value>
         </property>
       </activation>

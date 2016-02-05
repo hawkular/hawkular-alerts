@@ -525,18 +525,15 @@
 
     <!-- This profile prepares a standalone distribution of hawkular-alerts on top of a Wildfly Server -->
     <profile>
-      <id>standalone</id>
+      <id>build-standalone</id>
+      <activation>
+        <property>
+          <name>!env</name>
+        </property>
+      </activation>
       <properties>
-        <hawkular.host>127.0.0.1</hawkular.host>
-        <hawkular.port>8080</hawkular.port>
-        <hawkular.path>/hawkular/alerts/</hawkular.path>
-        <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
-        <!-- IMPORTANT: The port must be the port offset + 8080. -->
-        <wildfly.port.offset>1897</wildfly.port.offset>
-        <!-- IMPORTANT: The management port must be the port offset + 9990. -->
-        <wildfly.management.port>11887</wildfly.management.port>
         <hawkular.home>${project.build.directory}</hawkular.home>
-        <hawkular.configuration>${hawkular.home}/wildfly-${version.org.wildfly}/standalone/configuration</hawkular.configuration>
+        <hawkular.standalone.conf>${hawkular.home}/wildfly-${version.org.wildfly}/standalone/configuration</hawkular.standalone.conf>
         <hawkular.data>${hawkular.home}/wildfly-${version.org.wildfly}/standalone/data</hawkular.data>
         <hawkular.deployments>${hawkular.home}/wildfly-${version.org.wildfly}/standalone/deployments</hawkular.deployments>
       </properties>
@@ -565,7 +562,7 @@
             <artifactId>maven-dependency-plugin</artifactId>
             <executions>
               <execution>
-                <id>unpack-hawkular</id>
+                <id>unpack-hawkular-on-standalone</id>
                 <phase>pre-integration-test</phase>
                 <goals>
                   <goal>unpack-dependencies</goal>
@@ -579,7 +576,7 @@
                 </configuration>
               </execution>
               <execution>
-                <id>update-hawkular-alerts</id>
+                <id>update-hawkular-alerts-on-standalone</id>
                 <phase>pre-integration-test</phase>
                 <goals>
                   <goal>copy</goal>
@@ -645,7 +642,7 @@
             <artifactId>maven-resources-plugin</artifactId>
             <executions>
               <execution>
-                <id>copy-data-dir</id>
+                <id>copy-data-dir-on-standalone</id>
                 <phase>pre-integration-test</phase>
                 <goals>
                   <goal>copy-resources</goal>
@@ -671,7 +668,7 @@
             <artifactId>xml-maven-plugin</artifactId>
             <executions>
               <execution>
-                <id>transform-standalone-xml</id>
+                <id>transform-standalone-xml-on-standalone</id>
                 <phase>pre-integration-test</phase>
                 <goals>
                   <goal>transform</goal>
@@ -680,24 +677,277 @@
                   <transformationSets>
                     <!-- standalone.xml -->
                     <transformationSet>
-                      <dir>${hawkular.configuration}</dir>
+                      <dir>${hawkular.standalone.conf}</dir>
                       <stylesheet>src/test/resources/standalone.xsl</stylesheet>
                       <includes>
                         <include>standalone.xml</include>
                       </includes>
-                      <outputDir>${hawkular.configuration}</outputDir>
+                      <outputDir>${hawkular.standalone.conf}</outputDir>
                     </transformationSet>
                     <!-- standalone-ha.xml -->
                     <transformationSet>
-                      <dir>${hawkular.configuration}</dir>
-                      <stylesheet>src/test/resources/standalone-ha-wildfly.xsl</stylesheet>
+                      <dir>${hawkular.standalone.conf}</dir>
+                      <stylesheet>src/test/resources/standalone-ha.xsl</stylesheet>
                       <includes>
                         <include>standalone-ha.xml</include>
                       </includes>
-                      <outputDir>${hawkular.configuration}</outputDir>
+                      <outputDir>${hawkular.standalone.conf}</outputDir>
                     </transformationSet>
                   </transformationSets>
                 </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- This profile prepares a standalone distribution of hawkular-alerts on top of a Wildfly Server -->
+    <profile>
+      <id>build-domain-cluster</id>
+      <activation>
+        <property>
+          <name>env</name>
+          <value>cluster</value>
+        </property>
+      </activation>
+      <properties>
+        <hawkular.home>${project.build.directory}/cluster</hawkular.home>
+        <hawkular.domain.conf>${hawkular.home}/wildfly-${version.org.wildfly}/domain/configuration</hawkular.domain.conf>
+        <hawkular.alerts1.data>${hawkular.home}/wildfly-${version.org.wildfly}/domain/servers/alerts1/data</hawkular.alerts1.data>
+        <hawkular.host>127.0.0.1</hawkular.host>
+        <hawkular.port>8230</hawkular.port>
+        <hawkular.path>/hawkular/alerts/</hawkular.path>
+        <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
+      </properties>
+      <dependencies>
+
+        <dependency>
+          <groupId>org.hawkular.commons</groupId>
+          <artifactId>hawkular-commons-embedded-cassandra-ear</artifactId>
+          <version>${version.org.hawkular.commons}</version>
+          <type>ear</type>
+        </dependency>
+
+        <dependency>
+          <groupId>org.hawkular.alerts</groupId>
+          <artifactId>hawkular-alerts-rest</artifactId>
+          <version>${project.version}</version>
+          <type>war</type>
+        </dependency>
+
+        <dependency>
+          <groupId>org.wildfly</groupId>
+          <artifactId>wildfly-dist</artifactId>
+          <version>${version.org.wildfly}</version>
+          <type>tar.gz</type>
+          <scope>test</scope>
+        </dependency>
+
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>unpack-hawkular</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>unpack-dependencies</goal>
+                </goals>
+                <configuration>
+                  <includeGroupIds>org.wildfly</includeGroupIds>
+                  <includeArtifactIds>wildfly-dist</includeArtifactIds>
+                  <outputDirectory>
+                    ${hawkular.home}
+                  </outputDirectory>
+                </configuration>
+              </execution>
+              <execution>
+                <id>update-hawkular-alerts</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>copy</goal>
+                </goals>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>org.hawkular.commons</groupId>
+                      <artifactId>hawkular-commons-embedded-cassandra-ear</artifactId>
+                      <type>ear</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${project.build.directory}</outputDirectory>
+                      <destFileName>hawkular-commons-embedded-cassandra-ear.ear</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-rest</artifactId>
+                      <version>${project.version}</version>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${project.build.directory}</outputDirectory>
+                      <destFileName>hawkular-alerts-rest.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-email</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${project.build.directory}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-email.war</destFileName>
+                    </artifactItem>
+                  </artifactItems>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>xml-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>transform-standalone-xml</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>transform</goal>
+                </goals>
+                <configuration>
+                  <transformationSets>
+                    <!-- domain.xml -->
+                    <transformationSet>
+                      <dir>${hawkular.domain.conf}</dir>
+                      <stylesheet>src/test/resources/domain.xsl</stylesheet>
+                      <includes>
+                        <include>domain.xml</include>
+                      </includes>
+                      <outputDir>${hawkular.domain.conf}</outputDir>
+                    </transformationSet>
+                    <!-- host.xml -->
+                    <transformationSet>
+                      <dir>${hawkular.domain.conf}</dir>
+                      <stylesheet>src/test/resources/host.xsl</stylesheet>
+                      <includes>
+                        <include>host.xml</include>
+                      </includes>
+                      <outputDir>${hawkular.domain.conf}</outputDir>
+                    </transformationSet>
+                  </transformationSets>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.wildfly.plugins</groupId>
+            <artifactId>wildfly-maven-plugin</artifactId>
+            <configuration>
+              <jboss-home>${hawkular.home}/wildfly-${version.org.wildfly}</jboss-home>
+              <skip>${skipTests}</skip>
+              <startupTimeout>240</startupTimeout>
+              <serverType>DOMAIN</serverType>
+              <domain-config>domain.xml</domain-config>
+              <host-config>host.xml</host-config>
+            </configuration>
+            <executions>
+              <execution>
+                <id>start-domain</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>start</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>deploy-embedded-cassandra</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>deploy</goal>
+                </goals>
+                <configuration>
+                  <domain>
+                    <server-groups>
+                      <server-group>cassandra-group</server-group>
+                    </server-groups>
+                  </domain>
+                  <filename>hawkular-commons-embedded-cassandra-ear.ear</filename>
+                </configuration>
+              </execution>
+              <execution>
+                <id>deploy-hawkular-alerts</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>deploy</goal>
+                </goals>
+                <configuration>
+                  <domain>
+                    <server-groups>
+                      <server-group>hawkular-alerts-group</server-group>
+                    </server-groups>
+                  </domain>
+                  <filename>hawkular-alerts-rest.war</filename>
+                </configuration>
+              </execution>
+              <execution>
+                <id>stop-domain</id>
+                <phase>post-integration-test</phase>
+                <goals>
+                  <goal>shutdown</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Adding a delay to let the server to process initial data at deployment -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <configuration>
+              <tasks>
+                <echo message="Giving some time to the cluster to finish deployment and process initial data..." />
+                <sleep seconds="10" />
+              </tasks>
+            </configuration>
+            <executions>
+              <execution>
+                <id>sleep-for-a-while</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Configure integration tests -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <systemPropertyVariables>
+                <hawkular.host>${hawkular.host}</hawkular.host>
+                <hawkular.port>${hawkular.port}</hawkular.port>
+                <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
+              </systemPropertyVariables>
+            </configuration>
+            <executions>
+              <execution>
+                <id>exec-cluster-tests</id>
+                <goals>
+                  <goal>integration-test</goal>
+                </goals>
+                <configuration>
+                  <includes>
+                    <include>org/hawkular/alerts/rest/ClusterITest.class</include>
+                  </includes>
+                </configuration>
+              </execution>
+              <execution>
+                <id>final-verify</id>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
               </execution>
             </executions>
           </plugin>
