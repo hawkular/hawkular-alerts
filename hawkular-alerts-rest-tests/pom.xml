@@ -560,7 +560,7 @@
             <artifactId>maven-dependency-plugin</artifactId>
             <executions>
               <execution>
-                <id>unpack-hawkular</id>
+                <id>unpack-hawkular-on-standalone</id>
                 <phase>pre-integration-test</phase>
                 <goals>
                   <goal>unpack-dependencies</goal>
@@ -574,7 +574,7 @@
                 </configuration>
               </execution>
               <execution>
-                <id>update-hawkular-alerts</id>
+                <id>update-hawkular-alerts-on-standalone</id>
                 <phase>pre-integration-test</phase>
                 <goals>
                   <goal>copy</goal>
@@ -640,7 +640,7 @@
             <artifactId>maven-resources-plugin</artifactId>
             <executions>
               <execution>
-                <id>copy-data-dir</id>
+                <id>copy-data-dir-on-standalone</id>
                 <phase>pre-integration-test</phase>
                 <goals>
                   <goal>copy-resources</goal>
@@ -666,7 +666,7 @@
             <artifactId>xml-maven-plugin</artifactId>
             <executions>
               <execution>
-                <id>transform-standalone-xml</id>
+                <id>transform-standalone-xml-on-standalone</id>
                 <phase>pre-integration-test</phase>
                 <goals>
                   <goal>transform</goal>
