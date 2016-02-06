@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,15 @@
  */
 package org.hawkular.alerts.api.json;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
 import org.hawkular.alerts.api.model.condition.Condition;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * A convenience class used in the REST API to POST a new Group Condition.
@@ -35,7 +39,11 @@ import org.hawkular.alerts.api.model.condition.Condition;
  * @author lucas ponce
  */
 public class GroupConditionsInfo {
+
+    @JsonInclude(Include.NON_EMPTY)
     private Collection<Condition> conditions;
+
+    @JsonInclude(Include.NON_EMPTY)
     private Map<String, Map<String, String>> dataIdMemberMap;
 
     public GroupConditionsInfo() {

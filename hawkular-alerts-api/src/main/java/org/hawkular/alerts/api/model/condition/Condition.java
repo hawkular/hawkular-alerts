@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,10 +20,12 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.hawkular.alerts.api.json.JacksonDeserializer;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * A base class for condition definition.
@@ -31,6 +33,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@JsonDeserialize(using = JacksonDeserializer.ConditionDeserializer.class)
 public abstract class Condition implements Serializable {
 
     private static final long serialVersionUID = 1L;

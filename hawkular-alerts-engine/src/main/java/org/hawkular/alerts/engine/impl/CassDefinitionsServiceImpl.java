@@ -40,8 +40,6 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.enterprise.concurrent.ManagedExecutorService;
 
-import org.hawkular.alerts.api.json.JsonImport.FullAction;
-import org.hawkular.alerts.api.json.JsonImport.FullTrigger;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
@@ -61,6 +59,7 @@ import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.paging.TriggerComparator;
+import org.hawkular.alerts.api.model.trigger.FullTrigger;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
@@ -185,9 +184,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     initCondition(condition);
                 }
             }
-            for (FullAction fAction : importManager.getFullActions()) {
-                ActionDefinition actionDefinition = new ActionDefinition(fAction.getTenantId(),
-                        fAction.getActionPlugin(), fAction.getActionId(), fAction.getProperties());
+            for (ActionDefinition actionDefinition : importManager.getActionDefinitions()) {
                 addActionDefinition(actionDefinition.getTenantId(), actionDefinition);
             }
         } catch (Exception e) {

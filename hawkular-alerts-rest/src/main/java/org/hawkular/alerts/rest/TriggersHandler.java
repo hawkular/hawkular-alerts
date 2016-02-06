@@ -44,23 +44,20 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.hawkular.alerts.api.exception.NotFoundException;
+import org.hawkular.alerts.api.json.GroupConditionsInfo;
 import org.hawkular.alerts.api.json.GroupMemberInfo;
-import org.hawkular.alerts.api.json.JacksonDeserializer;
-import org.hawkular.alerts.api.json.JsonImport;
-import org.hawkular.alerts.api.json.JsonImport.FullTrigger;
 import org.hawkular.alerts.api.json.UnorphanMemberInfo;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.model.trigger.FullTrigger;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.jboss.logging.Logger;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wordnik.swagger.annotations.Api;
 import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
@@ -85,11 +82,8 @@ public class TriggersHandler {
     @EJB
     DefinitionsService definitions;
 
-    ObjectMapper objectMapper;
-
     public TriggersHandler() {
         log.debug("Creating instance.");
-        objectMapper = new ObjectMapper();
     }
 
     @GET
@@ -231,17 +225,7 @@ public class TriggersHandler {
     public Response createFullTrigger(
             @ApiParam(value = "Full Trigger definition (trigger, dampenings, conditions) to be created",
                     name = "jsonFullTrigger", required = true)
-            final String jsonFullTrigger) {
-        if (isEmpty(jsonFullTrigger)) {
-            return ResponseUtil.badRequest("Trigger is null");
-        }
-        FullTrigger fullTrigger;
-        try {
-            fullTrigger = JsonImport.readFullTrigger(tenantId, jsonFullTrigger);
-        } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.badRequest("Malformed trigger: " + e.getMessage());
-        }
+            final FullTrigger fullTrigger) {
         if (fullTrigger == null || fullTrigger.getTrigger() == null) {
             return ResponseUtil.badRequest("Trigger is empty ");
         }
@@ -1013,25 +997,15 @@ public class TriggersHandler {
             @ApiParam(value = "Json representation of a condition list. For examples of Condition types, See "
                     + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
                     + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
-            String jsonConditions) {
+            Collection<Condition> conditions) {
         try {
             Mode mode = Mode.valueOf(triggerMode.toUpperCase());
-            Collection<Condition> conditions = new ArrayList<>();
-            if (!isEmpty(jsonConditions)) {
-
-                ObjectMapper om = new ObjectMapper();
-                JsonNode rootNode = om.readTree(jsonConditions);
-                for (JsonNode conditionNode : rootNode) {
-                    Condition condition = JacksonDeserializer.deserializeCondition(conditionNode);
-                    if (condition == null) {
-                        return ResponseUtil.badRequest("Bad json conditions: " + jsonConditions);
-                    }
+            if (!isEmpty(conditions)) {
+                for (Condition condition : conditions) {
                     condition.setTriggerId(triggerId);
                     condition.setTriggerMode(mode);
-                    conditions.add(condition);
                 }
             }
-
             conditions = definitions.setConditions(tenantId, triggerId, mode, conditions);
             if (log.isDebugEnabled()) {
                 log.debug("Conditions: " + conditions);
@@ -1066,38 +1040,25 @@ public class TriggersHandler {
             @ApiParam(value = "FIRING or AUTORESOLVE (not case sensitive).", required = true)
             @PathParam("triggerMode")
             final String triggerMode,
+            // TODO Update doc
             @ApiParam(value = "Json representation of GroupConditionsInfo. For examples of Condition types, See "
                     + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
                     + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
-            String jsonGroupConditionsInfo) {
+            final GroupConditionsInfo groupConditionsInfo) {
         try {
-            if (isEmpty(jsonGroupConditionsInfo)) {
-                return ResponseUtil.badRequest("GroupConditionsInfo can not be null");
-            }
-
             Mode mode = Mode.valueOf(triggerMode.toUpperCase());
-            Collection<Condition> conditions = new ArrayList<>();
-
-            ObjectMapper om = new ObjectMapper();
-            JsonNode rootNode = om.readTree(jsonGroupConditionsInfo);
-            JsonNode conditionsNode = rootNode.get("conditions");
-            for (JsonNode conditionNode : conditionsNode) {
-                Condition condition = JacksonDeserializer.deserializeCondition(conditionNode);
+            for (Condition condition : groupConditionsInfo.getConditions()) {
                 if (condition == null) {
-                    return ResponseUtil.badRequest("Bad json conditions: " + conditionsNode.toString());
+                    return ResponseUtil.badRequest("GroupConditionsInfo must have non null conditions: " +
+                            groupConditionsInfo);
                 }
                 condition.setTriggerId(groupId);
                 condition.setTriggerMode(mode);
-                conditions.add(condition);
             }
 
-            JsonNode dataIdMemberMapNode = rootNode.get("dataIdMemberMap");
-            Map<String, Map<String, String>> dataIdMemberMap = null;
-            if (null != dataIdMemberMapNode) {
-                dataIdMemberMap = om.treeToValue(dataIdMemberMapNode, Map.class);
-            }
-
-            conditions = definitions.setGroupConditions(tenantId, groupId, mode, conditions, dataIdMemberMap);
+            Collection<Condition> conditions = definitions.setGroupConditions(tenantId, groupId, mode,
+                    groupConditionsInfo.getConditions(),
+                    groupConditionsInfo.getDataIdMemberMap());
 
             if (log.isDebugEnabled()) {
                 log.debug("Conditions: " + conditions);
@@ -1130,19 +1091,12 @@ public class TriggersHandler {
             @ApiParam(value = "Trigger definition id to be retrieved", required = true)
             @PathParam("triggerId")
             final String triggerId,
+            // TODO Update doc
             @ApiParam(value = "Json representation of a condition. For examples of Condition types, See "
                     + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
                     + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
-            String jsonCondition) {
+            final Condition condition) {
         try {
-            if (isEmpty(jsonCondition) || !jsonCondition.contains("type")) {
-                return ResponseUtil.badRequest("json condition empty or without type");
-            }
-
-            ObjectMapper om = new ObjectMapper();
-            JsonNode rootNode = om.readTree(jsonCondition);
-            Condition condition = JacksonDeserializer.deserializeCondition(rootNode);
-
             if (condition == null) {
                 return ResponseUtil.badRequest("Bad json condition");
             }
@@ -1183,20 +1137,14 @@ public class TriggersHandler {
             final String triggerId,
             @PathParam("conditionId")
             final String conditionId,
+            // TODO Update doc
             @ApiParam(value = "Json representation of a condition")
-            String jsonCondition) {
+            final Condition condition) {
         try {
             Trigger trigger = definitions.getTrigger(tenantId, triggerId);
             if (trigger == null) {
                 return ResponseUtil.notFound("No trigger found for triggerId: " + triggerId);
             }
-            if (isEmpty(jsonCondition) || !jsonCondition.contains("type")) {
-                return ResponseUtil.badRequest("json condition empty or without type");
-            }
-
-            ObjectMapper om = new ObjectMapper();
-            JsonNode rootNode = om.readTree(jsonCondition);
-            Condition condition = JacksonDeserializer.deserializeCondition(rootNode);
             if (condition == null) {
                 return ResponseUtil.badRequest("Bad json condition");
             }
