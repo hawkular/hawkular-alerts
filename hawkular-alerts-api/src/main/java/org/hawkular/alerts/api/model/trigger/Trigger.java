@@ -103,6 +103,12 @@ public class Trigger implements Serializable {
     @JsonInclude
     private Match autoResolveMatch;
 
+    // Only set for MEMBER triggers, the dataIdMap used when adding the member. Is re-used
+    // for group condition updates unless a new dataIdMap is provided.
+    @JsonInclude(Include.NON_EMPTY)
+    protected Map<String, String> dataIdMap;
+
+    // Only set for MEMBER triggers, the group trigger for which this is a member.
     @JsonInclude(Include.NON_EMPTY)
     private String memberOf;
 
@@ -173,6 +179,7 @@ public class Trigger implements Serializable {
         this.autoResolve = false;
         this.autoResolveAlerts = true;
         this.autoResolveMatch = Match.ALL;
+        this.dataIdMap = null;
         this.eventCategory = null;
         this.eventText = null;
         this.eventType = EventType.ALERT; // Is this an OK default, or should it be a constructor parameter?
@@ -346,6 +353,14 @@ public class Trigger implements Serializable {
         this.actions = actions;
     }
 
+    public Map<String, String> getDataIdMap() {
+        return dataIdMap;
+    }
+
+    public void setDataIdMap(Map<String, String> dataIdMap) {
+        this.dataIdMap = dataIdMap;
+    }
+
     public void addAction(TriggerAction triggerAction) {
         getActions().add(triggerAction);
     }
@@ -488,7 +503,8 @@ public class Trigger implements Serializable {
                 + ", context=" + context + ", actions=" + actions + ", autoDisable=" + autoDisable
                 + ", autoEnable=" + autoEnable + ", autoResolve=" + autoResolve + ", autoResolveAlerts="
                 + autoResolveAlerts + ", autoResolveMatch=" + autoResolveMatch + ", memberOf=" + memberOf
-                + ", enabled=" + enabled + ", firingMatch=" + firingMatch + ", mode=" + mode + ", tags=" + tags + "]";
+                + ", dataIdMap=" + dataIdMap + ", enabled=" + enabled + ", firingMatch=" + firingMatch
+                + ", mode=" + mode + ", tags=" + tags + "]";
     }
 
 }

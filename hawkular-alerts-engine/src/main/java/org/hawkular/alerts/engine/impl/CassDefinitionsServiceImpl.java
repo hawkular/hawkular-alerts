@@ -282,9 +282,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(insertTrigger.bind(trigger.getTenantId(), trigger.getId(), trigger.isAutoDisable(),
                     trigger.isAutoEnable(), trigger.isAutoResolve(), trigger.isAutoResolveAlerts(),
-                    trigger.getAutoResolveMatch().name(), trigger.getContext(), trigger.getDescription(),
-                    trigger.isEnabled(), trigger.getEventCategory(), trigger.getEventText(), trigger.getEventType(),
-                    trigger.getFiringMatch().name(), trigger.getMemberOf(), trigger.getName(),
+                    trigger.getAutoResolveMatch().name(), trigger.getContext(), trigger.getDataIdMap(),
+                    trigger.getDescription(), trigger.isEnabled(), trigger.getEventCategory(), trigger.getEventText(),
+                    trigger.getEventType(), trigger.getFiringMatch().name(), trigger.getMemberOf(), trigger.getName(),
                     trigger.getSeverity().name(), trigger.getSource(), trigger.getTags(), trigger.getType().name()));
 
             insertTriggerActions(trigger);
@@ -313,9 +313,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 triggerAction.setTenantId(trigger.getTenantId());
             });
             List<ResultSetFuture> futures = trigger.getActions().stream().map(triggerAction -> session.
-            executeAsync(insertTriggerActions.bind(trigger.getTenantId(), trigger.getId(),
-                    triggerAction.getActionPlugin(), triggerAction.getActionId(),
-                    JsonUtil.toJson(triggerAction)))).collect(Collectors.toList());
+                    executeAsync(insertTriggerActions.bind(trigger.getTenantId(), trigger.getId(),
+                            triggerAction.getActionPlugin(), triggerAction.getActionId(),
+                            JsonUtil.toJson(triggerAction)))).collect(Collectors.toList());
             Futures.allAsList(futures).get();
         }
     }
@@ -536,6 +536,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         member.setAutoResolveAlerts(group.isAutoResolveAlerts());
         member.setAutoResolveMatch(group.getAutoResolveMatch());
         member.setContext(group.getContext());
+        member.setDataIdMap(group.getDataIdMap()); // irrelevant but here for completeness
         member.setDescription(group.getDescription());
         member.setEnabled(group.isEnabled());
         member.setEventType(group.getEventType());
@@ -558,10 +559,10 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(updateTrigger.bind(trigger.isAutoDisable(), trigger.isAutoEnable(),
                     trigger.isAutoResolve(), trigger.isAutoResolveAlerts(), trigger.getAutoResolveMatch().name(),
-                    trigger.getContext(), trigger.getDescription(), trigger.isEnabled(), trigger.getEventCategory(),
-                    trigger.getEventText(), trigger.getFiringMatch().name(), trigger.getMemberOf(), trigger.getName(),
-                    trigger.getSeverity().name(), trigger.getSource(), trigger.getTags(), trigger.getType().name(),
-                    trigger.getTenantId(), trigger.getId()));
+                    trigger.getContext(), trigger.getDataIdMap(), trigger.getDescription(), trigger.isEnabled(),
+                    trigger.getEventCategory(), trigger.getEventText(), trigger.getFiringMatch().name(),
+                    trigger.getMemberOf(), trigger.getName(), trigger.getSeverity().name(), trigger.getSource(),
+                    trigger.getTags(), trigger.getType().name(), trigger.getTenantId(), trigger.getId()));
             if (!trigger.getActions().equals(existingActions)) {
                 deleteTriggerActions(trigger.getTenantId(), trigger.getId());
                 insertTriggerActions(trigger);
@@ -902,9 +903,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             List<ResultSetFuture> futures = nameOnly ? tenants.stream()
                     .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name)))
                     .collect(Collectors.toList()) : tenants.stream()
-                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name,
-                                    value)))
-                            .collect(Collectors.toList());
+                    .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name,
+                            value)))
+                    .collect(Collectors.toList());
             List<ResultSet> rsTriggerIds = Futures.allAsList(futures).get();
             rsTriggerIds.stream().forEach(rs -> {
                 for (Row row : rs) {
@@ -1011,6 +1012,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         trigger.setAutoResolveAlerts(row.getBool("autoResolveAlerts"));
         trigger.setAutoResolveMatch(Match.valueOf(row.getString("autoResolveMatch")));
         trigger.setContext(row.getMap("context", String.class, String.class));
+        trigger.setDataIdMap(row.getMap("dataIdMap", String.class, String.class));
         trigger.setDescription(row.getString("description"));
         trigger.setEnabled(row.getBool("enabled"));
         trigger.setEventCategory(row.getString("eventCategory"));
@@ -1090,6 +1092,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             combinedTags.putAll(memberTags);
             member.setTags(combinedTags);
         }
+
+        // store the dataIdMap so that it can be used for future condition updates (where the mappings are unchanged)
+        member.setDataIdMap(dataIdMap);
 
         addTrigger(member);
 
@@ -1724,13 +1729,39 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             memberTriggers.clear();
         }
 
-        // allow the dataIdMap to be empty when there are no member triggers
         if (!memberTriggers.isEmpty()) {
-            if (dataIdMemberMap == null) {
-                throw new IllegalArgumentException("DataIdMemberMap must be not null when member triggers exist.");
+            // fill in dataIdMap entries not supplied using the most recently supplied mapping
+            if (null == dataIdMemberMap) {
+                dataIdMemberMap = new HashMap<>();
+            }
+            for (Trigger member : memberTriggers) {
+                String memberId = member.getId();
+
+                for (Map.Entry<String, String> entry : member.getDataIdMap().entrySet()) {
+                    String groupDataId = entry.getKey();
+                    String memberDataId = entry.getValue();
+
+                    Map<String, String> memberIdMap = dataIdMemberMap.get(groupDataId);
+                    if (null == memberIdMap) {
+                        memberIdMap = new HashMap<>(memberTriggers.size());
+                        dataIdMemberMap.put(groupDataId, memberIdMap);
+                    }
+                    if (memberIdMap.containsKey(memberId)) {
+                        // supplied mapping has a mapping for this groupDataId and member. If it is
+                        // a new mapping for this member then update the member's dataIdMap
+                        if (!memberIdMap.get(memberId).equals(member.getDataIdMap().get(groupDataId))) {
+                            Map<String, String> updatedDataIdMap = new HashMap<>(member.getDataIdMap());
+                            updatedDataIdMap.put(groupDataId, memberIdMap.get(memberId));
+                            updateMemberTriggerDataIdMap(tenantId, memberId, updatedDataIdMap);
+                        }
+                    } else {
+                        // supplied map did not have the previously stored mapping, use the existing mapping
+                        memberIdMap.put(memberId, memberDataId);
+                    }
+                }
             }
 
-            // first, validate the dataIdMap
+            // validate the dataIdMemberMap
             for (Condition groupCondition : groupConditions) {
                 if (!dataIdMemberMap.containsKey(groupCondition.getDataId())) {
                     throw new IllegalArgumentException("Missing dataIdMap entry for dataId token ["
@@ -1793,6 +1824,32 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         // set conditions on the group trigger
         return setConditions(tenantId, groupId, triggerMode, groupConditions);
+    }
+
+    private void updateMemberTriggerDataIdMap(String tenantId, String memberTriggerId, Map<String, String> dataIdMap)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(memberTriggerId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (isEmpty(dataIdMap)) {
+            throw new IllegalArgumentException("DatIdMap must be not null");
+        }
+
+        Session session = CassCluster.getSession();
+        PreparedStatement updateTriggerDataIdMap = CassStatement
+                .get(session, CassStatement.UPDATE_TRIGGER_DATA_ID_MAP);
+        if (updateTriggerDataIdMap == null) {
+            throw new RuntimeException("updateTriggerDataIdMap PreparedStatement is null");
+        }
+        try {
+            session.execute(updateTriggerDataIdMap.bind(dataIdMap, tenantId, memberTriggerId));
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
     }
 
     private Collection<Condition> addCondition(Condition condition) throws Exception {
@@ -2302,7 +2359,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     rCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
                     rCondition.setDataId(row.getString("dataId"));
                     rCondition.setOperatorLow(ThresholdRangeCondition.Operator.valueOf(row.getString("operatorLow")));
-                    rCondition.setOperatorHigh(ThresholdRangeCondition.Operator.valueOf(row.getString("operatorHigh")));
+                    rCondition
+                            .setOperatorHigh(ThresholdRangeCondition.Operator.valueOf(row.getString("operatorHigh")));
                     rCondition.setThresholdLow(row.getDouble("thresholdLow"));
                     rCondition.setThresholdHigh(row.getDouble("thresholdHigh"));
                     rCondition.setInRange(row.getBool("inRange"));

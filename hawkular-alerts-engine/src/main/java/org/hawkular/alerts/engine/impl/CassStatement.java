@@ -149,6 +149,7 @@ public class CassStatement {
     public static final String UPDATE_DAMPENING_ID;
     public static final String UPDATE_EVENT;
     public static final String UPDATE_TRIGGER;
+    public static final String UPDATE_TRIGGER_DATA_ID_MAP;
     public static final String UPDATE_TRIGGER_ENABLED;
 
     static {
@@ -317,9 +318,9 @@ public class CassStatement {
 
         INSERT_TRIGGER = "INSERT INTO " + keyspace + ".triggers " +
                 "(tenantId, id, autoDisable, autoEnable, autoResolve, autoResolveAlerts, autoResolveMatch, "
-                + "context, description, enabled, eventCategory, eventText, eventType, firingMatch, memberOf, name, "
-                + "severity, source, tags, type) "
-                + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
+                + "context, dataIdMap, description, enabled, eventCategory, eventText, eventType, firingMatch, "
+                + "memberOf, name, severity, source, tags, type) "
+                + "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ";
 
         INSERT_TRIGGER_ACTIONS = "INSERT INTO " + keyspace + ".triggers_actions "
                 + "(tenantId, triggerId, actionPlugin, actionId, payload) VALUES (?, ?, ?, ?, ?) ";
@@ -467,7 +468,7 @@ public class CassStatement {
                 + "WHERE tenantId = ? AND type = ? and name = ? AND value = ? ";
 
         SELECT_TRIGGER = "SELECT tenantId, id, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
-                + "autoResolveMatch, context, description, enabled, eventCategory, eventText, eventType, "
+                + "autoResolveMatch, context, dataIdMap, description, enabled, eventCategory, eventText, eventType, "
                 + "firingMatch, memberOf, name, severity, source, tags, type "
                 + "FROM " + keyspace + ".triggers "
                 + "WHERE tenantId = ? AND id = ? ";
@@ -501,12 +502,12 @@ public class CassStatement {
                 + "WHERE tenantId = ? AND triggerId = ? and triggerMode = ? ";
 
         SELECT_TRIGGERS_ALL = "SELECT tenantId, id, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
-                + "autoResolveMatch, context, description, enabled, eventCategory, eventText, eventType, "
+                + "autoResolveMatch, context, dataIdMap, description, enabled, eventCategory, eventText, eventType, "
                 + "firingMatch, memberOf, name, severity, source, tags, type "
                 + "FROM " + keyspace + ".triggers ";
 
         SELECT_TRIGGERS_TENANT = "SELECT tenantId, id, autoDisable, autoEnable, autoResolve, autoResolveAlerts, "
-                + "autoResolveMatch, context, description, enabled, eventCategory, eventText, eventType, "
+                + "autoResolveMatch, context, dataIdMap, description, enabled, eventCategory, eventText, eventType, "
                 + "firingMatch, memberOf, name, severity, source, tags, type "
                 + "FROM " + keyspace + ".triggers WHERE tenantId = ? ";
 
@@ -532,9 +533,12 @@ public class CassStatement {
 
         UPDATE_TRIGGER = "UPDATE " + keyspace + ".triggers "
                 + "SET autoDisable = ?, autoEnable = ?, autoResolve = ?, autoResolveAlerts = ?, autoResolveMatch = ?, "
-                + "context = ?, description = ?,  enabled = ?, eventCategory = ?, eventText = ?, firingMatch = ?, "
-                + "memberOf = ?, name = ?, severity = ?, source = ?, tags = ?, type = ? "
+                + "context = ?, dataIdMap = ?, description = ?,  enabled = ?, eventCategory = ?, eventText = ?, "
+                + "firingMatch = ?, memberOf = ?, name = ?, severity = ?, source = ?, tags = ?, type = ? "
                 + "WHERE tenantId = ? AND id = ? ";
+
+        UPDATE_TRIGGER_DATA_ID_MAP = "UPDATE " + keyspace + ".triggers "
+                + "SET dataIdMap = ? WHERE tenantId = ? AND id = ? ";
 
         UPDATE_TRIGGER_ENABLED = "UPDATE " + keyspace + ".triggers "
                 + "SET enabled = ? WHERE tenantId = ? AND id = ? ";
