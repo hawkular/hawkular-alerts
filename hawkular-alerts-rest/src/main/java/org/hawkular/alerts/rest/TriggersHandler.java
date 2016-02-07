@@ -56,6 +56,7 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.TriggersCriteria;
+import org.hawkular.alerts.rest.ResponseUtil.ApiError;
 import org.jboss.logging.Logger;
 
 import com.wordnik.swagger.annotations.Api;
@@ -89,21 +90,22 @@ public class TriggersHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Get triggers with optional filtering")
+    @ApiOperation(value = "Get triggers with optional filtering.",
+            response = Trigger.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Successfully fetched list of triggers."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response findTriggers(
-            @ApiParam(required = false, value = "filter out triggers for unspecified triggerIds, " +
-                    "comma separated list of trigger IDs")
+            @ApiParam(required = false, value = "Filter out triggers for unspecified triggerIds, " +
+                    "comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
             final String triggerIds,
-            @ApiParam(required = false, value = "filter out triggers for unspecified tags, comma separated list of "
+            @ApiParam(required = false, value = "Filter out triggers for unspecified tags, comma separated list of "
                     + "tags, each tag of format 'name|value'. Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
-            @ApiParam(required = false, value = "return only thin triggers. Currently Ignored")
+            @ApiParam(required = false, value = "Return only thin triggers. Currently Ignored.")
             @QueryParam("thin")
             final Boolean thin,
             @Context final UriInfo uri) {
@@ -155,14 +157,15 @@ public class TriggersHandler {
     @GET
     @Path("/groups/{groupId}/members")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Find all Group Member Trigger Definitions",
-            notes = "Pagination is not yet implemented")
+    @ApiOperation(value = "Find all Group Member Trigger Definitions.",
+            notes = "Pagination is not yet implemented.",
+            response = Trigger.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Successfully fetched list of triggers."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response findGroupMembers(
-            @ApiParam(value = "Group TriggerId", required = true)
+            @ApiParam(value = "Group TriggerId.", required = true)
             @PathParam("groupId")
             final String groupId,
             @ApiParam(value = "include Orphan members? No if omitted.", required = false)
@@ -184,16 +187,16 @@ public class TriggersHandler {
     @Path("/")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Create a new trigger",
-            response = Trigger.class,
-            notes = "Returns created Trigger")
+    @ApiOperation(value = "Create a new trigger.",
+            notes = "Return created trigger.",
+            response = Trigger.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Trigger Created"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Trigger created."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+    })
     public Response createTrigger(
-            @ApiParam(value = "Trigger definition to be created", name = "trigger", required = true)
+            @ApiParam(value = "Trigger definition to be created.", name = "trigger", required = true)
             final Trigger trigger) {
         try {
             if (null != trigger) {
@@ -218,13 +221,17 @@ public class TriggersHandler {
     @Path("/trigger")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Create a new full trigger (trigger, dampenings and conditions)",
-            response = FullTrigger.class,
-            notes = "Returns created full Trigger")
+    @ApiOperation(value = "Create a new full trigger (trigger, dampenings and conditions).",
+            notes = "Return created full trigger.",
+            response = FullTrigger.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, FullTrigger created."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     public Response createFullTrigger(
-            @ApiParam(value = "Full Trigger definition (trigger, dampenings, conditions) to be created",
-                    name = "jsonFullTrigger", required = true)
+            @ApiParam(value = "FullTrigger (trigger, dampenings, conditions) to be created.",
+                    name = "fullTrigger", required = true)
             final FullTrigger fullTrigger) {
         if (fullTrigger == null || fullTrigger.getTrigger() == null) {
             return ResponseUtil.badRequest("Trigger is empty ");
@@ -278,16 +285,16 @@ public class TriggersHandler {
     @Path("/groups")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Create a new group trigger",
-            response = Trigger.class,
-            notes = "Returns created GroupTrigger")
+    @ApiOperation(value = "Create a new group trigger.",
+            notes = "Returns created group trigger.",
+            response = Trigger.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Group Trigger Created"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Group Trigger Created."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     public Response createGroupTrigger(
-            @ApiParam(value = "Trigger definition to be created", name = "groupTrigger", required = true)
+            @ApiParam(value = "Trigger definition to be created.", name = "groupTrigger", required = true)
             final Trigger groupTrigger) {
         try {
             if (null != groupTrigger) {
@@ -312,17 +319,17 @@ public class TriggersHandler {
     @Path("/groups/members")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Create a new member trigger for a parent trigger.",
-            response = Trigger.class,
-            notes = "Returns Member Trigger created if operation finished correctly")
+    @ApiOperation(value = "Create a new member trigger for a parent trigger.",
+            notes = "Returns Member Trigger created if operation finished correctly.",
+            response = Trigger.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Member Trigger Created"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "Group trigger not found."),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Member Trigger Created."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Group trigger not found.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     public Response createGroupMember(
-            @ApiParam(value = "Group member trigger to be created", name = "groupMember", required = true)
+            @ApiParam(value = "Group member trigger to be created.", name = "groupMember", required = true)
             final GroupMemberInfo groupMember) {
         try {
             if (null == groupMember) {
@@ -355,14 +362,15 @@ public class TriggersHandler {
     @GET
     @Path("/{triggerId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get an existing trigger definition",
+    @ApiOperation(value = "Get an existing trigger definition.",
             response = Trigger.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Trigger found"),
-            @ApiResponse(code = 404, message = "Trigger not found"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, Trigger found."),
+            @ApiResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response getTrigger(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
             @PathParam("triggerId")
             final String triggerId) {
         try {
@@ -382,14 +390,15 @@ public class TriggersHandler {
     @GET
     @Path("/trigger/{triggerId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get an existing trigger definition",
-            response = Trigger.class)
+    @ApiOperation(value = "Get an existing full trigger definition (trigger, dampenings and conditions).",
+            response = FullTrigger.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Trigger found"),
-            @ApiResponse(code = 404, message = "Trigger not found"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, FullTrigger found."),
+            @ApiResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response getFullTrigger(
-            @ApiParam(value = "Full Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Full Trigger definition id to be retrieved.", required = true)
             @PathParam("triggerId")
             final String triggerId) {
         try {
@@ -415,16 +424,17 @@ public class TriggersHandler {
     @PUT
     @Path("/{triggerId}")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing trigger definition")
+    @ApiOperation(value = "Update an existing trigger definition.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Trigger updated"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Trigger updated."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters.", response = ApiError.class)
+    })
     public Response updateTrigger(
-            @ApiParam(value = "Trigger definition id to be updated", required = true)
+            @ApiParam(value = "Trigger definition id to be updated.", required = true)
             @PathParam("triggerId")
             final String triggerId,
-            @ApiParam(value = "Updated trigger definition", name = "trigger", required = true)
+            @ApiParam(value = "Updated trigger definition.", name = "trigger", required = true)
             final Trigger trigger) {
         try {
             if (trigger != null && !isEmpty(triggerId)) {
@@ -448,16 +458,17 @@ public class TriggersHandler {
     @PUT
     @Path("/groups/{groupId}")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing group trigger definition and its member definitions")
+    @ApiOperation(value = "Update an existing group trigger definition and its member definitions.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Group Trigger updated"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Group Trigger updated."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters.", response = ApiError.class)
+    })
     public Response updateGroupTrigger(
-            @ApiParam(value = "Group Trigger id to be updated", required = true)
+            @ApiParam(value = "Group Trigger id to be updated.", required = true)
             @PathParam("groupId")
             final String groupId,
-            @ApiParam(value = "Updated group trigger definition", name = "trigger", required = true)
+            @ApiParam(value = "Updated group trigger definition.", name = "trigger", required = true)
             final Trigger groupTrigger) {
         try {
             if (groupTrigger != null && !isEmpty(groupId)) {
@@ -478,15 +489,15 @@ public class TriggersHandler {
         }
     }
 
-
     @POST
     @Path("/groups/members/{memberId}/orphan")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Make a non-orphan member trigger into an orphan.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Trigger updated"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Trigger updated."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters.", response = ApiError.class)
+    })
     public Response orphanMemberTrigger(
             @ApiParam(value = "Member Trigger id to be made an orphan.", required = true)
             @PathParam("memberId")
@@ -512,9 +523,10 @@ public class TriggersHandler {
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Make a non-orphan member trigger into an orphan.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Trigger updated"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Trigger updated."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters.", response = ApiError.class)
+    })
     public Response unorphanMemberTrigger(
             @ApiParam(value = "Member Trigger id to be made an orphan.", required = true)
             @PathParam("memberId")
@@ -546,13 +558,14 @@ public class TriggersHandler {
 
     @DELETE
     @Path("/{triggerId}")
-    @ApiOperation(value = "Delete an existing trigger definition")
+    @ApiOperation(value = "Delete an existing trigger definition.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Trigger deleted"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "Trigger not found") })
+            @ApiResponse(code = 200, message = "Success, Trigger deleted."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Trigger not found.", response = ApiError.class)
+    })
     public Response deleteTrigger(
-            @ApiParam(value = "Trigger definition id to be deleted", required = true) @PathParam("triggerId")
+            @ApiParam(value = "Trigger definition id to be deleted.", required = true) @PathParam("triggerId")
             final String triggerId) {
         try {
             definitions.removeTrigger(tenantId, triggerId);
@@ -574,15 +587,15 @@ public class TriggersHandler {
     @Path("/groups/{groupId}")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Delete a group trigger.")
+    @ApiOperation(value = "Delete a group trigger.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Group Trigger Removed"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "Group Trigger not found"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Group Trigger Removed."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Group Trigger not found.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     public Response deleteGroupTrigger(
-            @ApiParam(required = true, value = "Group Trigger id")
+            @ApiParam(required = true, value = "Group Trigger id.")
             @PathParam("groupId")
             final String groupId,
             @ApiParam(required = true, value = "Convert the non-orphan member triggers to standard triggers.")
@@ -607,16 +620,17 @@ public class TriggersHandler {
         }
     }
 
-
     @GET
     @Path("/{triggerId}/dampenings")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get all Dampenings for a Trigger (1 Dampening per mode).")
+    @ApiOperation(value = "Get all Dampenings for a Trigger (1 Dampening per mode).",
+            response = Dampening.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error")})
+            @ApiResponse(code = 200, message = "Successfully fetched list of dampenings."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response getTriggerDampenings(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
             @PathParam("triggerId")
             final String triggerId) {
         try {
@@ -632,14 +646,16 @@ public class TriggersHandler {
     @GET
     @Path("/{triggerId}/dampenings/mode/{triggerMode}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get a dampening using triggerId and triggerMode")
+    @ApiOperation(value = "Get dampening using triggerId and triggerMode.",
+            response = Dampening.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Successfully fetched list of dampenings."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response getTriggerModeDampenings(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
             @PathParam("triggerId")
-            final String triggerId,//
+            final String triggerId,
             @ApiParam(value = "Trigger mode", required = true)
             @PathParam("triggerMode")
             final Mode triggerMode) {
@@ -659,13 +675,15 @@ public class TriggersHandler {
     @GET
     @Path("/{triggerId}/dampenings/{dampeningId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get an existing dampening")
+    @ApiOperation(value = "Get an existing dampening.",
+            response = Dampening.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Dampening Found"),
-            @ApiResponse(code = 404, message = "No Dampening Found"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, Dampening Found."),
+            @ApiResponse(code = 404, message = "No Dampening Found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response getDampening(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @ApiParam(value = "Dampening id", required = true)
@@ -689,16 +707,19 @@ public class TriggersHandler {
     @Path("/{triggerId}/dampenings")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Create a new dampening", notes = "Returns Dampening created if operation finishes correctly")
+    @ApiOperation(value = "Create a new dampening.",
+            notes = "Return Dampening created.",
+            response = Dampening.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Dampening created"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Dampening created."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     public Response createDampening(
-            @ApiParam(value = "Trigger definition id attached to dampening", required = true)
+            @ApiParam(value = "Trigger definition id attached to dampening.", required = true)
             @PathParam("triggerId")
             final String triggerId,
-            @ApiParam(value = "Dampening definition to be created", required = true)
+            @ApiParam(value = "Dampening definition to be created.", required = true)
             final Dampening dampening) {
         try {
             dampening.setTenantId(tenantId);
@@ -725,17 +746,19 @@ public class TriggersHandler {
     @Path("/groups/{groupId}/dampenings")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Create a new group dampening",
-            notes = "Returns Dampening created if operation finishes correctly")
+    @ApiOperation(value = "Create a new group dampening.",
+            notes = " Return group Dampening created.",
+            response = Dampening.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Dampening created"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Dampening created."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+    })
     public Response createGroupDampening(
-            @ApiParam(value = "Group Trigger definition id attached to dampening", required = true)
+            @ApiParam(value = "Group Trigger definition id attached to dampening.", required = true)
             @PathParam("groupId")
             final String groupId,
-            @ApiParam(value = "Dampening definition to be created", required = true)
+            @ApiParam(value = "Dampening definition to be created.", required = true)
             final Dampening dampening) {
         try {
             dampening.setTriggerId(groupId);
@@ -791,16 +814,19 @@ public class TriggersHandler {
     @PUT
     @Path("/{triggerId}/dampenings/{dampeningId}")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing dampening definition. Note that the trigger mode can not be changed.")
+    @ApiOperation(value = "Update an existing dampening definition.",
+            notes = "Note that the trigger mode can not be changed. Return Dampening updated.",
+            response = Dampening.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Dampening Updated"),
-            @ApiResponse(code = 404, message = "No Dampening Found"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, Dampening Updated."),
+            @ApiResponse(code = 404, message = "No Dampening Found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class)
+    })
     public Response updateDampening(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
             @PathParam("triggerId")
             final String triggerId,
-            @ApiParam(value = "Dampening id", required = true)
+            @ApiParam(value = "Dampening id.", required = true)
             @PathParam("dampeningId")
             final String dampeningId,
             @ApiParam(value = "Updated dampening definition", required = true)
@@ -827,19 +853,22 @@ public class TriggersHandler {
     @PUT
     @Path("/groups/{groupId}/dampenings/{dampeningId}")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing group dampening definition. Note that trigger mode can not be changed.")
+    @ApiOperation(value = "Update an existing group dampening definition.",
+            notes = "Note that the trigger mode can not be changed. Return Dampening updated.",
+            response = Dampening.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Dampening Updated"),
-            @ApiResponse(code = 404, message = "No Dampening Found"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, Dampening Updated."),
+            @ApiResponse(code = 404, message = "No Dampening Found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class)
+    })
     public Response updateGroupDampening(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
             @PathParam("groupId")
             final String groupId,
-            @ApiParam(value = "Dampening id", required = true)
+            @ApiParam(value = "Dampening id.", required = true)
             @PathParam("dampeningId")
             final String dampeningId,
-            @ApiParam(value = "Updated dampening definition", required = true)
+            @ApiParam(value = "Updated dampening definition.", required = true)
             final Dampening dampening) {
         try {
             boolean exists = (definitions.getDampening(tenantId, dampeningId) != null);
@@ -862,16 +891,17 @@ public class TriggersHandler {
 
     @DELETE
     @Path("/{triggerId}/dampenings/{dampeningId}")
-    @ApiOperation(value = "Delete an existing dampening definition")
+    @ApiOperation(value = "Delete an existing dampening definition.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Dampening deleted"),
-            @ApiResponse(code = 404, message = "No Dampening found"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, Dampening deleted."),
+            @ApiResponse(code = 404, message = "No Dampening found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class)
+    })
     public Response deleteDampening(
-            @ApiParam(value = "Trigger definition id to be deleted", required = true)
+            @ApiParam(value = "Trigger definition id to be deleted.", required = true)
             @PathParam("triggerId")
             final String triggerId,
-            @ApiParam(value = "Dampening id for dampening definition to be deleted", required = true)
+            @ApiParam(value = "Dampening id for dampening definition to be deleted.", required = true)
             @PathParam("dampeningId")
             final String dampeningId) {
         try {
@@ -891,16 +921,17 @@ public class TriggersHandler {
 
     @DELETE
     @Path("/groups/{groupId}/dampenings/{dampeningId}")
-    @ApiOperation(value = "Delete an existing group dampening definition")
+    @ApiOperation(value = "Delete an existing group dampening definition.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Dampening deleted"),
-            @ApiResponse(code = 404, message = "No Dampening found"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, Dampening deleted."),
+            @ApiResponse(code = 404, message = "No Dampening found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response deleteGroupDampening(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
             @PathParam("groupId")
             final String groupId,
-            @ApiParam(value = "Dampening id for dampening definition to be deleted", required = true)
+            @ApiParam(value = "Dampening id for dampening definition to be deleted.", required = true)
             @PathParam("dampeningId")
             final String dampeningId) {
         try {
@@ -923,12 +954,14 @@ public class TriggersHandler {
     @GET
     @Path("/{triggerId}/conditions")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get all conditions for a specific trigger.")
+    @ApiOperation(value = "Get all conditions for a specific trigger.",
+            response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Successfully fetched list of conditions."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response getTriggerConditions(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
             @PathParam("triggerId")
             final String triggerId) {
         try {
@@ -944,14 +977,17 @@ public class TriggersHandler {
     @GET
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "@Deprecated : Use GET /alerts/triggers/{triggerId}/conditions")
+    @ApiOperation(value = "@Deprecated : Get Condition by conditionId.",
+            notes = "Use GET /alerts/triggers/{triggerId}/conditions .",
+            response = Condition.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Condition found"),
-            @ApiResponse(code = 404, message = "No Condition found"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, Condition found."),
+            @ApiResponse(code = 404, message = "No Condition found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error,", response = ApiError.class)
+    })
     @Deprecated
     public Response getTriggerCondition(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @PathParam("conditionId")
@@ -980,13 +1016,15 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions/{triggerMode}")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Set the conditions for the trigger. This replaces any existing conditions. Returns "
-            + "the new conditions.")
+    @ApiOperation(value = "Set the conditions for the trigger. ",
+            notes = "This replaces any existing conditions. Returns the new conditions.",
+            response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Condition Set created"),
-            @ApiResponse(code = 404, message = "No trigger found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Condition Set created."),
+            @ApiResponse(code = 404, message = "No trigger found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+    })
     public Response setConditions(
             @ApiParam(value = "The relevant Trigger.", required = true)
             @PathParam("triggerId")
@@ -994,10 +1032,8 @@ public class TriggersHandler {
             @ApiParam(value = "FIRING or AUTORESOLVE (not case sensitive).", required = true)
             @PathParam("triggerMode")
             final String triggerMode,
-            @ApiParam(value = "Json representation of a condition list. For examples of Condition types, See "
-                    + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
-                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
-            Collection<Condition> conditions) {
+            @ApiParam(value = "Collection of Conditions to set.", required = true)
+            final Collection<Condition> conditions) {
         try {
             Mode mode = Mode.valueOf(triggerMode.toUpperCase());
             if (!isEmpty(conditions)) {
@@ -1006,11 +1042,11 @@ public class TriggersHandler {
                     condition.setTriggerMode(mode);
                 }
             }
-            conditions = definitions.setConditions(tenantId, triggerId, mode, conditions);
+            Collection<Condition> updatedConditions = definitions.setConditions(tenantId, triggerId, mode, conditions);
             if (log.isDebugEnabled()) {
-                log.debug("Conditions: " + conditions);
+                log.debug("Conditions: " + updatedConditions);
             }
-            return ResponseUtil.ok(conditions);
+            return ResponseUtil.ok(updatedConditions);
 
         } catch (IllegalArgumentException e) {
             return ResponseUtil.badRequest("Bad argument: " + e.getMessage());
@@ -1026,13 +1062,16 @@ public class TriggersHandler {
     @Path("/groups/{groupId}/conditions/{triggerMode}")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Set the conditions for the group trigger. This replaces any existing conditions on "
-            + "the group and member conditions.  Returns the new group conditions.")
+    @ApiOperation(value = "Set the conditions for the group trigger.",
+            notes = "This replaces any existing conditions on the group and member conditions. " +
+                    "Return the new group conditions.",
+            response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Group Condition Set created"),
-            @ApiResponse(code = 404, message = "No trigger found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Group Condition Set created."),
+            @ApiResponse(code = 404, message = "No trigger found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+    })
     public Response setGroupConditions(
             @ApiParam(value = "The relevant Group Trigger.", required = true)
             @PathParam("groupId")
@@ -1040,10 +1079,7 @@ public class TriggersHandler {
             @ApiParam(value = "FIRING or AUTORESOLVE (not case sensitive).", required = true)
             @PathParam("triggerMode")
             final String triggerMode,
-            // TODO Update doc
-            @ApiParam(value = "Json representation of GroupConditionsInfo. For examples of Condition types, See "
-                    + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
-                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
+            @ApiParam(value = "Collection of Conditions to set and Map with tokens per dataId on members.")
             final GroupConditionsInfo groupConditionsInfo) {
         try {
             Mode mode = Mode.valueOf(triggerMode.toUpperCase());
@@ -1079,22 +1115,22 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Deprecated : Use PUT /alerts/triggers/{triggerId}/conditions to set the entire "
-            + "condition set in one service.")
+    @ApiOperation(value = "@Deprecated : Add a condition.",
+            notes = "Use PUT /alerts/triggers/{triggerId}/conditions to set the entire condition set in one service. " +
+                    "Return the updated collection of Conditions for a trigger.",
+            response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Condition created"),
-            @ApiResponse(code = 404, message = "No trigger found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Successfully fetched list of conditions."),
+            @ApiResponse(code = 404, message = "No trigger found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     @Deprecated
     public Response createCondition(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
             @PathParam("triggerId")
             final String triggerId,
-            // TODO Update doc
-            @ApiParam(value = "Json representation of a condition. For examples of Condition types, See "
-                    + "https://github.com/hawkular/hawkular-alerts/blob/master/hawkular-alerts-rest-tests/"
-                    + "src/test/groovy/org/hawkular/alerts/rest/ConditionsITest.groovy")
+            @ApiParam(value = "Condition to add.")
             final Condition condition) {
         try {
             if (condition == null) {
@@ -1123,22 +1159,24 @@ public class TriggersHandler {
     @PUT
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Deprecated : Use PUT /alerts/triggers/{triggerId}/conditions to set the entire "
-            + "condition set in one service.")
+    @ApiOperation(value = "@Deprecated : Update an existing Condition.",
+            notes = "Use PUT /alerts/triggers/{triggerId}/conditions to set the entire condition set in one service. " +
+                    "Return the updated collection of Conditions for a trigger.",
+            response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Condition updated"),
-            @ApiResponse(code = 404, message = "No Condition found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Condition updated."),
+            @ApiResponse(code = 404, message = "No Condition found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     @Deprecated
     public Response updateCondition(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
+            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
             @PathParam("triggerId")
             final String triggerId,
             @PathParam("conditionId")
             final String conditionId,
-            // TODO Update doc
-            @ApiParam(value = "Json representation of a condition")
+            @ApiParam(value = "Condition to update.")
             final Condition condition) {
         try {
             Trigger trigger = definitions.getTrigger(tenantId, triggerId);
@@ -1171,13 +1209,16 @@ public class TriggersHandler {
     @DELETE
     @Path("/{triggerId}/conditions/{conditionId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Deprecated : Use PUT /alerts/triggers/{triggerId}/conditions to set the entire "
-            + "condition set in one service.")
+    @ApiOperation(value = "@Deprecated : Delete a condition.",
+            notes = "Use PUT /alerts/triggers/{triggerId}/conditions to set the entire condition set in one service." +
+                    "Return the updated collection of Conditions for a trigger.",
+            response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Condition deleted"),
-            @ApiResponse(code = 404, message = "No Condition found"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Condition deleted."),
+            @ApiResponse(code = 404, message = "No Condition found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     @Deprecated
     public Response deleteCondition(
             @ApiParam(value = "Trigger definition id to be retrieved", required = true)

@@ -95,7 +95,7 @@ class ActionsITest extends AbstractITestBase {
         assertEquals("value1", resp.data.properties.prop1)
 
         actionDefinition.getProperties().put("prop3", "value3Modified")
-        resp = client.put(path: "actions/" + actionPlugin + "/" + actionId, body: actionDefinition)
+        resp = client.put(path: "actions", body: actionDefinition)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "actions/" + actionPlugin + "/" + actionId)

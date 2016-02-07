@@ -50,6 +50,7 @@ import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.engine.service.AlertsEngine;
+import org.hawkular.alerts.rest.ResponseUtil.ApiError;
 import org.jboss.logging.Logger;
 
 import com.wordnik.swagger.annotations.Api;
@@ -65,7 +66,7 @@ import com.wordnik.swagger.annotations.ApiResponses;
  * @author Lucas Ponce
  */
 @Path("/")
-@Api(value = "/", description = "Alert Handling")
+@Api(value = "/", description = "Alerts Handling")
 public class AlertsHandler {
     private final Logger log = Logger.getLogger(AlertsHandler.class);
 
@@ -85,39 +86,40 @@ public class AlertsHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Get alerts with optional filtering")
+    @ApiOperation(value = "Get alerts with optional filtering.",
+            response = Alert.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Successfully fetched list of alerts."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response findAlerts(
-            @ApiParam(required = false, value = "filter out alerts created before this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out alerts created before this time, millisecond since epoch.")
             @QueryParam("startTime")
             final Long startTime,
-            @ApiParam(required = false, value = "filter out alerts created after this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out alerts created after this time, millisecond since epoch.")
             @QueryParam("endTime")
             final Long endTime,
-            @ApiParam(required = false, value = "filter out alerts for unspecified alertIds, " +
-                    "comma separated list of alert IDs")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified alertIds, " +
+                    "comma separated list of alert IDs.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = false, value = "filter out alerts for unspecified triggers, " +
-                    "comma separated list of trigger IDs")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified triggers, " +
+                    "comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
             final String triggerIds,
-            @ApiParam(required = false, value = "filter out alerts for unspecified lifecycle status, " +
-                    "comma separated list of status values")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified lifecycle status, " +
+                    "comma separated list of status values.")
             @QueryParam("statuses")
             final String statuses,
-            @ApiParam(required = false, value = "filter out alerts for unspecified severity, " +
-                    "comma separated list of severity values")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified severity, " +
+                    "comma separated list of severity values.")
             @QueryParam("severities")
             final String severities,
-            @ApiParam(required = false, value = "filter out events for unspecified tags, comma separated list of tags, "
+            @ApiParam(required = false, value = "Filter out events for unspecified tags, comma separated list of tags, "
                     + "each tag of format 'name|value'. Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
-            @ApiParam(required = false, value = "return only thin alerts, do not include: evalSets, resolvedEvalSets")
+            @ApiParam(required = false, value = "Return only thin alerts, do not include: evalSets, resolvedEvalSets.")
             @QueryParam("thin")
             final Boolean thin,
             @Context
@@ -143,18 +145,19 @@ public class AlertsHandler {
     @PUT
     @Path("/ack/{alertId}")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Set one alert Acknowledged")
+    @ApiOperation(value = "Set one alert Acknowledged.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Alert Acknowledged invoked successfully"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response ackAlert(@ApiParam(required = true, value = "alertId to Ack")
+            @ApiResponse(code = 200, message = "Success, Alert Acknowledged invoked successfully."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
+    public Response ackAlert(@ApiParam(required = true, value = "The alertId to Ack.")
     @PathParam("alertId")
     final String alertId,
-            @ApiParam(required = false, value = "user acknowledging the alerts")
+            @ApiParam(required = false, value = "User acknowledging the alerts.")
             @QueryParam("ackBy")
             final String ackBy,
-            @ApiParam(required = false, value = "additional notes associated with the acknowledgement")
+            @ApiParam(required = false, value = "Additional notes associated with the acknowledgement.")
             @QueryParam("ackNotes")
             final String ackNotes) {
         try {
@@ -176,18 +179,19 @@ public class AlertsHandler {
     @PUT
     @Path("/note/{alertId}")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Add a note into an existing Alert")
+    @ApiOperation(value = "Add a note into an existing Alert.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Alert Acknowledged invoked successfully"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response addAlertNote(@ApiParam(required = true, value = "alertId to add the note")
+            @ApiResponse(code = 200, message = "Success, Alert Acknowledged invoked successfully."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
+    public Response addAlertNote(@ApiParam(required = true, value = "The alertId to add the note.")
                              @PathParam("alertId")
                              final String alertId,
-                             @ApiParam(required = false, value = "author of the note")
+                             @ApiParam(required = false, value = "Author of the note.")
                              @QueryParam("user")
                              final String user,
-                             @ApiParam(required = false, value = "text of the note")
+                             @ApiParam(required = false, value = "Text of the note.")
                              @QueryParam("text")
                              final String text) {
         try {
@@ -209,16 +213,17 @@ public class AlertsHandler {
     @PUT
     @Path("/tags")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Add tags to existing Alerts")
+    @ApiOperation(value = "Add tags to existing Alerts.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Alerts tagged successfully"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Alerts tagged successfully."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     public Response addTags(
-            @ApiParam(required = true, value = "comma separated list of alertIds to tag")
+            @ApiParam(required = true, value = "Comma separated list of alertIds to tag.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = true, value = "comma separated list of tags to add, "
+            @ApiParam(required = true, value = "Comma separated list of tags to add, "
                     + "each tag of format 'name|value'.")
             @QueryParam("tags")
             final String tags) {
@@ -243,16 +248,17 @@ public class AlertsHandler {
     @DELETE
     @Path("/tags")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Remove tags from existing Alerts")
+    @ApiOperation(value = "Remove tags from existing Alerts.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Alerts untagged successfully"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Alerts untagged successfully."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     public Response deleteTags(
-            @ApiParam(required = true, value = "comma separated list of alertIds to untag")
+            @ApiParam(required = true, value = "Comma separated list of alertIds to untag.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = true, value = "comma separated list of tag names to remove")
+            @ApiParam(required = true, value = "Comma separated list of tag names to remove.")
             @QueryParam("tagNames")
             final String tagNames) {
         try {
@@ -276,19 +282,20 @@ public class AlertsHandler {
     @PUT
     @Path("/ack")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Set one or more alerts Acknowledged")
+    @ApiOperation(value = "Set one or more alerts Acknowledged.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Alerts Acknowledged invoked successfully"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Alerts Acknowledged invoked successfully."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+    })
     public Response ackAlerts(
-            @ApiParam(required = true, value = "comma separated list of alertIds to Ack")
+            @ApiParam(required = true, value = "Comma separated list of alertIds to Ack.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = false, value = "user acknowledging the alerts")
+            @ApiParam(required = false, value = "User acknowledging the alerts.")
             @QueryParam("ackBy")
             final String ackBy,
-            @ApiParam(required = false, value = "additional notes asscoiated with the acknowledgement")
+            @ApiParam(required = false, value = "Additional notes asscoiated with the acknowledgement.")
             @QueryParam("ackNotes")
             final String ackNotes) {
         try {
@@ -309,13 +316,14 @@ public class AlertsHandler {
 
     @DELETE
     @Path("/{alertId}")
-    @ApiOperation(value = "Delete an existing Alert")
+    @ApiOperation(value = "Delete an existing Alert.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Alert deleted"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "Alert not found") })
+            @ApiResponse(code = 200, message = "Success, Alert deleted."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Alert not found.", response = ApiError.class)
+    })
     public Response deleteAlert(
-            @ApiParam(required = true, value = "Alert id to be deleted")
+            @ApiParam(required = true, value = "Alert id to be deleted.")
             @PathParam("alertId")
             final String alertId) {
         try {
@@ -339,35 +347,37 @@ public class AlertsHandler {
     @PUT
     @Path("/delete")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Delete alerts with optional filtering")
+    @ApiOperation(value = "Delete alerts with optional filtering.",
+            notes = "Return number of alerts deleted.",
+            response = Integer.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, Alerts deleted."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response deleteAlerts(
-            @ApiParam(required = false, value = "filter out alerts created before this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out alerts created before this time, millisecond since epoch.")
             @QueryParam("startTime")
             final Long startTime,
-            @ApiParam(required = false, value = "filter out alerts created after this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out alerts created after this time, millisecond since epoch.")
             @QueryParam("endTime")
             final Long endTime,
-            @ApiParam(required = false, value = "filter out alerts for unspecified alertIds, " +
-                    "comma separated list of alert IDs")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified alertIds, " +
+                    "comma separated list of alert IDs.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = false, value = "filter out alerts for unspecified triggers, " +
-                    "comma separated list of trigger IDs")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified triggers, " +
+                    "comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
             final String triggerIds,
-            @ApiParam(required = false, value = "filter out alerts for unspecified lifecycle status, " +
-                    "comma separated list of status values")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified lifecycle status, " +
+                    "comma separated list of status values.")
             @QueryParam("statuses")
             final String statuses,
-            @ApiParam(required = false, value = "filter out alerts for unspecified severity, " +
-                    "comma separated list of severity values")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified severity, " +
+                    "comma separated list of severity values.")
             @QueryParam("severities")
             final String severities,
-            @ApiParam(required = false, value = "filter out alerts for unspecified tags, comma separated list of tags, "
+            @ApiParam(required = false, value = "Filter out alerts for unspecified tags, comma separated list of tags, "
                     + "each tag of format 'name|value'. Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags
@@ -437,17 +447,18 @@ public class AlertsHandler {
     @GET
     @Path("/alert/{alertId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get an existing Alert",
+    @ApiOperation(value = "Get an existing Alert.",
             response = Alert.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Alert found"),
-            @ApiResponse(code = 404, message = "Alert not found"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, Alert found."),
+            @ApiResponse(code = 404, message = "Alert not found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class)
+    })
     public Response getAlert(
             @ApiParam(value = "Id of alert to be retrieved", required = true)
             @PathParam("alertId")
             final String alertId,
-            @ApiParam(required = false, value = "return only a thin alert, do not include: evalSets, resolvedEvalSets")
+            @ApiParam(required = false, value = "Return only a thin alert, do not include: evalSets, resolvedEvalSets.")
             @QueryParam("thin")
             final Boolean thin) {
         try {
@@ -469,18 +480,19 @@ public class AlertsHandler {
     @PUT
     @Path("/resolve/{alertId}")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Set one alert Resolved")
+    @ApiOperation(value = "Set one alert Resolved.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alerts Resolution invoked successfully."),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
-    public Response resolveAlert(@ApiParam(required = true, value = "alertId to set Resolved")
-    @PathParam("alertId")
-    final String alertId,
-            @ApiParam(required = false, value = "user resolving the alerts")
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+    })
+    public Response resolveAlert(@ApiParam(required = true, value = "The alertId to set resolved.")
+            @PathParam("alertId")
+            final String alertId,
+            @ApiParam(required = false, value = "User resolving the alerts.")
             @QueryParam("resolvedBy")
             final String resolvedBy,
-            @ApiParam(required = false, value = "additional notes asscoiated with the resolution")
+            @ApiParam(required = false, value = "Additional notes associated with the resolution.")
             @QueryParam("resolvedNotes")
             final String resolvedNotes) {
         try {
@@ -503,19 +515,20 @@ public class AlertsHandler {
     @PUT
     @Path("/resolve")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Set one or more alerts Resolved")
+    @ApiOperation(value = "Set one or more alerts resolved.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alerts Resolution invoked successfully."),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+    })
     public Response resolveAlerts(
-            @ApiParam(required = true, value = "comma separated list of alertIds to set Resolved")
+            @ApiParam(required = true, value = "Comma separated list of alertIds to set resolved.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = false, value = "user resolving the alerts")
+            @ApiParam(required = false, value = "User resolving the alerts.")
             @QueryParam("resolvedBy")
             final String resolvedBy,
-            @ApiParam(required = false, value = "additional notes asscoiated with the resolution")
+            @ApiParam(required = false, value = "Additional notes associated with the resolution.")
             @QueryParam("resolvedNotes")
             final String resolvedNotes) {
         try {
@@ -541,10 +554,11 @@ public class AlertsHandler {
     @ApiOperation(value = "Send data for alert processing/condition evaluation.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, data added."),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+    })
     public Response sendData(
-            @ApiParam(required = true, name = "datums", value = "data to be processed by alerting")//
+            @ApiParam(required = true, name = "datums", value = "Data to be processed by alerting.")
             final Collection<Data> datums) {
         try {
             if (isEmpty(datums)) {

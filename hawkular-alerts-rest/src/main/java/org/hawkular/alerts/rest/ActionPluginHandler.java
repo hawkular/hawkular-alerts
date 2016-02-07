@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.rest.ResponseUtil.ApiError;
 import org.jboss.logging.Logger;
 
 import com.wordnik.swagger.annotations.Api;
@@ -64,11 +65,12 @@ public class ActionPluginHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Find all action plugins",
-                  notes = "Pagination is not yet implemented")
+    @ApiOperation(value = "Find all action plugins.",
+            response = String.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success."),
-            @ApiResponse(code = 500, message = "Internal server error")})
+            @ApiResponse(code = 200, message = "Successfully fetched list of actions plugins."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response findActionPlugins() {
         try {
             Collection<String> actionPlugins = definitions.getActionPlugins();
@@ -85,16 +87,18 @@ public class ActionPluginHandler {
     @GET
     @Path("/{actionPlugin}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Find list of properties to fill for a specific action plugin",
-                  notes = "Each action plugin can have a different and variable number of properties. " +
-                          "This method should be invoked before of a creation of a new action.")
+    @ApiOperation(value = "Find list of properties to fill for a specific action plugin.",
+            notes = "Each action plugin can have a different and variable number of properties. " +
+                    "This method should be invoked before of a creation of a new action.",
+            response = String.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Action Plugin found."),
-            @ApiResponse(code = 404, message = "Action Plugin not found."),
-            @ApiResponse(code = 500, message = "Internal server error")})
-    public Response getActionPlugin(@ApiParam(value = "Action plugin to query", required = true)
-                                        @PathParam ("actionPlugin")
-                                        final String actionPlugin) {
+            @ApiResponse(code = 404, message = "Action Plugin not found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class)
+    })
+    public Response getActionPlugin(@ApiParam(value = "Action plugin to query.", required = true)
+            @PathParam ("actionPlugin")
+            final String actionPlugin) {
         try {
             Set<String> actionPluginProps = definitions.getActionPlugin(actionPlugin);
             if (log.isDebugEnabled()) {
