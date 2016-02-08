@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,7 +56,6 @@ public class IrcPluginTest {
 
         /* Wait to receive some response */
         for (int i = 0; i < 15; i++) {
-            System.out.printf("[%s] Waiting response... \n", i);
             Thread.sleep(1000);
         }
         conn.doQuit();

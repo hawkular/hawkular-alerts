@@ -23,6 +23,8 @@ import java.util.Set;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.export.AlertDefinitions;
+import org.hawkular.alerts.api.model.export.ImportType;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Mode;
@@ -644,4 +646,30 @@ public interface DefinitionsService {
     ActionDefinition getActionDefinition(String tenantId, String actionPlugin, String actionId) throws Exception;
 
     void registerListener(DefinitionsListener listener, Type eventType, Type... eventTypes);
+
+    /**
+     * Export alert definitions per a specific Tenant.
+     * Alert definitions are wrapped in a AlertDefinitions object, which is a collection of FullTrigger (a Trigger
+     * with Dampenings and Conditions) objects and a collection of ActionDefinition objects.
+     *
+     * @param tenantId Tenant where definitions are stored
+     * @return AlertDefinitions object with full triggers and actions definitions specified by tenantId
+     * @throws Exception on any problem
+     */
+    AlertDefinitions exportDefinitions(String tenantId) throws Exception;
+
+    /**
+     * Import alert definitions per a specific Tenant.
+     * Alert definitions are wrapped in an AlertDefinitions object, which contains a collection of FullTrigger (a
+     * Trigger with Dampenings and Conditions) objects and a collection of ActionDefinition objects.
+     * An ImportType stragy must be defined to resolve conflicts with existing data.
+     *
+     * @param tenantId Tenant where definitions will be imported
+     * @param alertDefinitions AlertDefinitions with the collections of FullTrigger and ActionDefinition to import
+     * @param strategy the ImportType strategy to apply
+     * @return an ActionDefinition object updated with the effective FullTrigger and ActionDefinition imported
+     * @throws Exception on any problem
+     */
+    AlertDefinitions importDefinitions(String tenantId, AlertDefinitions alertDefinitions, ImportType strategy)
+            throws Exception;
 }

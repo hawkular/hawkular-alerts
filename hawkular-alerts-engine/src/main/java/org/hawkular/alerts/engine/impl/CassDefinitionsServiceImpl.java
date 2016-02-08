@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -55,6 +56,8 @@ import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.EventType;
+import org.hawkular.alerts.api.model.export.AlertDefinitions;
+import org.hawkular.alerts.api.model.export.ImportType;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
@@ -790,7 +793,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         PreparedStatement selectTagsByNameAndValue = CassStatement.get(session,
                 CassStatement.SELECT_TAGS_BY_NAME_AND_VALUE);
 
-        for (Map.Entry<String, String> tag : tags.entrySet()) {
+        for (Entry<String, String> tag : tags.entrySet()) {
             boolean nameOnly = "*".equals(tag.getValue());
             BoundStatement bs = nameOnly ?
                     selectTagsByName.bind(tenantId, tagType.name(), tag.getKey()) :
@@ -920,7 +923,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             // Now, generate a cross-tenant result set if Triggers using the tenantIds and triggerIds
             List<Trigger> triggers = new ArrayList<>();
             PreparedStatement selectTrigger = CassStatement.get(session, CassStatement.SELECT_TRIGGER);
-            for (Map.Entry<String, Set<String>> entry : tenantTriggerIdsMap.entrySet()) {
+            for (Entry<String, Set<String>> entry : tenantTriggerIdsMap.entrySet()) {
                 String tenantId = entry.getKey();
                 Set<String> triggerIds = entry.getValue();
                 futures = triggerIds.stream()
@@ -1734,7 +1737,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             for (Trigger member : memberTriggers) {
                 String memberId = member.getId();
 
-                for (Map.Entry<String, String> entry : member.getDataIdMap().entrySet()) {
+                for (Entry<String, String> entry : member.getDataIdMap().entrySet()) {
                     String groupDataId = entry.getKey();
                     String memberDataId = entry.getValue();
 
@@ -1772,7 +1775,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                         + cc.getData2Id() + "]");
                     }
                 }
-                for (Map.Entry<String, Map<String, String>> entry : dataIdMemberMap.entrySet()) {
+                for (Entry<String, Map<String, String>> entry : dataIdMemberMap.entrySet()) {
                     String dataId = entry.getKey();
                     Map<String, String> memberMap = entry.getValue();
                     if (memberMap.size() != memberTriggers.size()) {
@@ -1804,7 +1807,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         for (Trigger member : memberTriggers) {
             dataIdMap.clear();
             memberConditions.clear();
-            for (Map.Entry<String, Map<String, String>> entry : dataIdMemberMap.entrySet()) {
+            for (Entry<String, Map<String, String>> entry : dataIdMemberMap.entrySet()) {
                 dataIdMap.put(entry.getKey(), entry.getValue().get(member.getId()));
             }
 
@@ -2131,7 +2134,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         List<ResultSetFuture> futures = new ArrayList<>(tags.size());
-        for (Map.Entry<String, String> tag : tags.entrySet()) {
+        for (Entry<String, String> tag : tags.entrySet()) {
             futures.add(session.executeAsync(insertTag.bind(tenantId, type.name(), tag.getKey(), tag.getValue(), id)));
         }
         Futures.allAsList(futures).get();
@@ -2170,7 +2173,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         PreparedStatement deleteTag = CassStatement.get(session, CassStatement.DELETE_TAG);
 
         List<ResultSetFuture> futures = new ArrayList<>(tags.size());
-        for (Map.Entry<String, String> tag : tags.entrySet()) {
+        for (Entry<String, String> tag : tags.entrySet()) {
             futures.add(session.executeAsync(deleteTag.bind(tenantId, type.name(), tag.getKey(), tag.getValue(), id)));
         }
         Futures.allAsList(futures).get();
@@ -2711,6 +2714,64 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return actions;
     }
 
+    private List<FullTrigger> getFullTriggers(String tenantId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        List<FullTrigger> fullTriggers = new ArrayList<>();
+        try {
+            Collection<Trigger> triggers = selectTriggers(tenantId);
+            for (Trigger t : triggers) {
+                List<Dampening> allDampenings = new ArrayList<>();
+                Collection<Dampening> firingDampenings = getTriggerDampenings(tenantId, t.getId(), Mode.FIRING);
+                Collection<Dampening> autoDampenings = getTriggerDampenings(tenantId, t.getId(), Mode.AUTORESOLVE);
+                if (!isEmpty(firingDampenings)) {
+                    allDampenings.addAll(firingDampenings);
+                }
+                if (!isEmpty(autoDampenings)) {
+                    allDampenings.addAll(autoDampenings);
+                }
+                List<Condition> allConditions = new ArrayList<>();
+                Collection<Condition> firingConditions = getTriggerConditions(tenantId, t.getId(), Mode.FIRING);
+                Collection<Condition> autoConditions = getTriggerConditions(tenantId, t.getId(), Mode.AUTORESOLVE);
+                if (!isEmpty(firingConditions)) {
+                    allConditions.addAll(firingConditions);
+                }
+                if (!isEmpty(autoConditions)) {
+                    allConditions.addAll(autoConditions);
+                }
+                fullTriggers.add(new FullTrigger(t, allDampenings, allConditions));
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return fullTriggers;
+    }
+
+    private List<ActionDefinition> getActionDefinitions(String tenantId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        Session session = CassCluster.getSession();
+        PreparedStatement selectActionsByTenant = CassStatement.get(session,
+                CassStatement.SELECT_ACTION_DEFINITIONS_BY_TENANT);
+        if (selectActionsByTenant == null) {
+            throw new RuntimeException("selectActionsByTenant PreparedStatement is null");
+        }
+        List<ActionDefinition> actionDefinitions = new ArrayList<>();
+        try {
+            ResultSet rsActions = session.execute(selectActionsByTenant.bind(tenantId));
+            for (Row row : rsActions) {
+                actionDefinitions.add(JsonUtil.fromJson(row.getString("payload"), ActionDefinition.class));
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return actionDefinitions;
+    }
+
     @Override
     public Collection<String> getActionDefinitionIds(String tenantId, String actionPlugin) throws Exception {
         if (isEmpty(tenantId)) {
@@ -2780,12 +2841,166 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             log.debug("Notifying applicable listeners " + alertsContext.getDefinitionListeners() +
                     " of event " + eventType.name());
         }
-        for (Map.Entry<DefinitionsListener, Set<Type>> me : alertsContext.getDefinitionListeners().entrySet()) {
+        for (Entry<DefinitionsListener, Set<Type>> me : alertsContext.getDefinitionListeners().entrySet()) {
             if (me.getValue().contains(eventType)) {
                 if (log.isDebugEnabled()) {
                     log.debug("Notified Listener " + eventType.name());
                 }
                 me.getKey().onChange(de);
+            }
+        }
+    }
+
+    @Override
+    public AlertDefinitions exportDefinitions(String tenantId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        AlertDefinitions alertDefinitions = new AlertDefinitions();
+        try {
+            alertDefinitions.setTriggers(getFullTriggers(tenantId));
+            alertDefinitions.setActions(getActionDefinitions(tenantId));
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return alertDefinitions;
+    }
+
+    @Override
+    public AlertDefinitions importDefinitions(String tenantId, AlertDefinitions alertDefinitions, ImportType strategy)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (null == alertDefinitions) {
+            throw new IllegalArgumentException("AlertDefinitions must be not null");
+        }
+        if (null == strategy) {
+            throw new IllegalArgumentException("ImportType startegy must be not null");
+        }
+        AlertDefinitions imported = new AlertDefinitions();
+        try {
+            Collection<Trigger> existingTriggers = selectTriggers(tenantId);
+            Map<String, Set<String>> existingDefinitions = getActionDefinitionIds(tenantId);
+            if (strategy.equals(ImportType.DELETE)) {
+                msgLog.warningDeleteDefinitionsTenant(tenantId);
+                for (Trigger t : existingTriggers) {
+                    removeTrigger(t);
+                }
+                for (Entry<String, Set<String>> entry : existingDefinitions.entrySet()) {
+                    String actionPlugin = entry.getKey();
+                    for (String actionId : entry.getValue()) {
+                        removeActionDefinition(tenantId, actionPlugin, actionId);
+                    }
+                }
+            }
+            List<FullTrigger> importedTriggers = new ArrayList<>();
+            if (!isEmpty(alertDefinitions.getTriggers())) {
+                for (FullTrigger t : alertDefinitions.getTriggers()) {
+                    if (!isEmpty(t.getTrigger())) {
+                        boolean existing = existingTriggers.contains(t.getTrigger());
+                        switch (strategy) {
+                            case DELETE:
+                                addFullTrigger(tenantId, t);
+                                importedTriggers.add(t);
+                                break;
+                            case ALL:
+                                if (existing) {
+                                    removeTrigger(t.getTrigger());
+                                }
+                                addFullTrigger(tenantId, t);
+                                importedTriggers.add(t);
+                                break;
+                            case NEW:
+                                if (!existing) {
+                                    addFullTrigger(tenantId, t);
+                                    importedTriggers.add(t);
+                                }
+                                break;
+                            case OLD:
+                                if (existing) {
+                                    removeTrigger(t.getTrigger());
+                                    addFullTrigger(tenantId, t);
+                                    importedTriggers.add(t);
+                                }
+                                break;
+                        }
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Trigger " + t + " is empty. Ignored on the import process");
+                        }
+                    }
+                }
+            }
+            List<ActionDefinition> importedActionDefinitions = new ArrayList<>();
+            if (!isEmpty(alertDefinitions.getActions())) {
+                for (ActionDefinition a : alertDefinitions.getActions()) {
+                    a.setTenantId(tenantId);
+                    if (!isEmpty(a)) {
+                        boolean existing = existingDefinitions.containsKey(a.getActionPlugin()) &&
+                                existingDefinitions.get(a.getActionPlugin()).contains(a.getActionId());
+                        switch (strategy) {
+                            case DELETE:
+                                addActionDefinition(tenantId, a);
+                                importedActionDefinitions.add(a);
+                                break;
+                            case ALL:
+                                if (existing) {
+                                    removeActionDefinition(tenantId, a.getActionPlugin(), a.getActionId());
+                                }
+                                addActionDefinition(tenantId, a);
+                                importedActionDefinitions.add(a);
+                                break;
+                            case NEW:
+                                if (!existing) {
+                                    addActionDefinition(tenantId, a);
+                                    importedActionDefinitions.add(a);
+                                }
+                                break;
+                            case OLD:
+                                if (existing) {
+                                    removeActionDefinition(tenantId, a.getActionPlugin(), a.getActionId());
+                                    addActionDefinition(tenantId, a);
+                                    importedActionDefinitions.add(a);
+                                }
+                                break;
+                        }
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("ActionDefinition " + a + " is empty. Ignored on the import process");
+                        }
+                    }
+                }
+            }
+            imported.setTriggers(importedTriggers);
+            imported.setActions(importedActionDefinitions);
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return imported;
+    }
+
+    private void addFullTrigger(String tenantId, FullTrigger fullTrigger) throws Exception {
+        if (null == fullTrigger) {
+            throw new IllegalArgumentException("FullTrigger must be not null");
+        }
+        if (fullTrigger.getTrigger() != null) {
+            Trigger trigger = fullTrigger.getTrigger();
+            trigger.setTenantId(tenantId);
+            addTrigger(trigger);
+            if (!isEmpty(fullTrigger.getDampenings())) {
+                for (Dampening d : fullTrigger.getDampenings()) {
+                    d.setTenantId(tenantId);
+                    addDampening(d);
+                }
+            }
+            if (!isEmpty(fullTrigger.getConditions())) {
+                for (Condition c : fullTrigger.getConditions()) {
+                    c.setTenantId(tenantId);
+                    addCondition(c);
+                }
             }
         }
     }
@@ -2803,12 +3018,17 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return id == null || id.trim().isEmpty();
     }
 
-    public boolean isEmpty(Map<String, String> map) {
+    private boolean isEmpty(Map<String, String> map) {
         return map == null || map.isEmpty();
     }
 
     private boolean isEmpty(Collection<?> collection) {
         return collection == null || collection.isEmpty();
+    }
+
+    private boolean isEmpty(ActionDefinition a) {
+        return a == null || a.getActionPlugin() == null || a.getActionPlugin().trim().isEmpty() ||
+                a.getActionId() == null || a.getActionId().trim().isEmpty();
     }
 
     /*

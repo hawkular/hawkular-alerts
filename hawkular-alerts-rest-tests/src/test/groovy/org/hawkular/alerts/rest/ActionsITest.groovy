@@ -184,6 +184,9 @@ class ActionsITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(5, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
+
+        resp = client.delete(path: "triggers/test-email-availability");
+        assertEquals(200, resp.status)
     }
 
     @Test
@@ -263,6 +266,9 @@ class ActionsITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(5, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
+
+        resp = client.delete(path: "triggers/test-email-threshold");
+        assertEquals(200, resp.status)
     }
 
     @Test
@@ -414,6 +420,15 @@ class ActionsITest extends AbstractITestBase {
 
         assertEquals(200, resp.status)
         assertEquals(10, resp.data.size())
+
+        resp = client.delete(path: "triggers/test-status-threshold");
+        assertEquals(200, resp.status)
+
+        resp = client.delete(path: "actions/plugin1/notify-to-admins")
+        assertEquals(200, resp.status)
+
+        resp = client.delete(path: "actions/plugin2/notify-to-developers")
+        assertEquals(200, resp.status)
     }
 
 }

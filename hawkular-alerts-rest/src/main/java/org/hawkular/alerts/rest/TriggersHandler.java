@@ -468,7 +468,7 @@ public class TriggersHandler {
             @ApiParam(value = "Group Trigger id to be updated.", required = true)
             @PathParam("groupId")
             final String groupId,
-            @ApiParam(value = "Updated group trigger definition.", name = "trigger", required = true)
+            @ApiParam(value = "Updated group trigger definition.", name = "groupTrigger", required = true)
             final Trigger groupTrigger) {
         try {
             if (groupTrigger != null && !isEmpty(groupId)) {

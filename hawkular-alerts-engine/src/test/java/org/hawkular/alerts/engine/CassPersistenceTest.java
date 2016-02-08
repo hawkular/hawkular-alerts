@@ -29,6 +29,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.Session;
 
@@ -39,6 +41,8 @@ import com.datastax.driver.core.Session;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class CassPersistenceTest extends PersistenceTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(CassPersistenceTest.class);
 
     private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
 
@@ -89,19 +93,19 @@ public class CassPersistenceTest extends PersistenceTest {
     @Before
     public void cleanAlerts() throws Exception {
         AlertsCriteria criteria = new AlertsCriteria();
-        System.out.printf("Deleted [%s] Alerts before test.\n", alertsService.deleteAlerts(TENANT, criteria));
+        logger.info("Deleted " + alertsService.deleteAlerts(TENANT, criteria) + " Alerts before test.\n");
     }
 
     @Before
     public void cleanEvents() throws Exception {
         EventsCriteria criteria = new EventsCriteria();
-        System.out.printf("Deleted [%s] Events before test.\n", alertsService.deleteEvents(TENANT, criteria));
+        logger.info("Deleted " + alertsService.deleteEvents(TENANT, criteria) + " Events before test.\n");
     }
 
     @Before
     public void cleanActions() throws Exception {
         ActionsCriteria criteria = new ActionsCriteria();
-        System.out.printf("Deleted [%s] Actions before test.\n", actionsService.deleteActions(TENANT, criteria));
+        logger.info("Deleted " + actionsService.deleteActions(TENANT, criteria) + " Actions before test.\n");
     }
 
 }
