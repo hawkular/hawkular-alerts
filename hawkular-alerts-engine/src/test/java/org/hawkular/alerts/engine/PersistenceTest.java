@@ -49,6 +49,8 @@ import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.event.EventCategory;
+import org.hawkular.alerts.api.model.export.Definitions;
+import org.hawkular.alerts.api.model.export.ImportType;
 import org.hawkular.alerts.api.model.paging.ActionComparator;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.EventComparator;
@@ -97,6 +99,22 @@ public abstract class PersistenceTest {
         assertTrue(definitionsService.getAllConditions().size() > 0);
         assertTrue(definitionsService.getAllDampenings().size() > 0);
         assertTrue(definitionsService.getAllActionDefinitionIds().size() > 0);
+    }
+
+    @Test
+    public void test001ExportImport() throws Exception {
+        logger.info("test001ExportDefinitions");
+
+        Definitions exported = definitionsService.exportDefinitions(TENANT);
+        int exportedTriggers = exported.getTriggers().size();
+        int exportedActionDefinitions = exported.getActions().size();
+        assertTrue(exportedTriggers > 0);
+        assertTrue(exportedActionDefinitions > 0);
+
+        definitionsService.importDefinitions(TENANT, exported, ImportType.DELETE);
+
+        int importedTriggers = definitionsService.getTriggers(TENANT, null, null).size();
+        assertEquals(exportedTriggers, importedTriggers);
     }
 
     @Test
@@ -1849,9 +1867,9 @@ public abstract class PersistenceTest {
             actionsService.updateResult(action4);
         }
 
-        System.out.print("Actions are asynchronous. Give them some time.");
+        logger.info("Actions are asynchronous. Give them some time.");
         for (int i = 0; i < 30; i++) {
-            System.out.print(".");
+            logger.info(".");
             Thread.sleep(200);
         }
 
@@ -1949,9 +1967,9 @@ public abstract class PersistenceTest {
             actionsService.updateResult(action4);
         }
 
-        System.out.print("Actions are asynchronous. Give them some time.");
+        logger.info("Actions are asynchronous. Give them some time.");
         for (int i = 0; i < 30; i++) {
-            System.out.print(".");
+            logger.info(".");
             Thread.sleep(200);
         }
 
@@ -2038,9 +2056,9 @@ public abstract class PersistenceTest {
             actionsService.updateResult(action4);
         }
 
-        System.out.print("Actions are asynchronous. Give them some time.");
+        logger.info("Actions are asynchronous. Give them some time.");
         for (int i = 0; i < 30; i++) {
-            System.out.print(".");
+            logger.info(".");
             Thread.sleep(200);
         }
 

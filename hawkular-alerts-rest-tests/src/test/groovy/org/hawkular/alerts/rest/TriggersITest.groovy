@@ -485,6 +485,9 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(testTenant, resp.data.trigger.tenantId)
         assertEquals(1, resp.data.dampenings.size())
         assertEquals(1, resp.data.conditions.size())
+
+        resp = client.delete(path: "triggers/full-test-trigger-1")
+        assertEquals(200, resp.status)
     }
 
 }

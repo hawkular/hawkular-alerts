@@ -201,5 +201,8 @@ class GroupITest extends AbstractITestBase {
         resp = client.get(path: "triggers/groups/test-ddgroup-trigger/members")
         assertEquals(200, resp.status)
         assertEquals(0, resp.data.size)
+
+        resp = client.delete(path: "triggers/groups/test-ddgroup-trigger")
+        assertEquals(200, resp.status)
     }
 }

@@ -47,6 +47,7 @@ import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.rest.ResponseUtil.ApiError;
 import org.jboss.logging.Logger;
 
 import com.wordnik.swagger.annotations.Api;
@@ -61,7 +62,7 @@ import com.wordnik.swagger.annotations.ApiResponses;
  * @author Lucas Ponce
  */
 @Path("/actions")
-@Api(value = "/actions", description = "Action Handling")
+@Api(value = "/actions", description = "Actions Handling")
 public class ActionsHandler {
     private final Logger log = Logger.getLogger(ActionsHandler.class);
 
@@ -81,11 +82,14 @@ public class ActionsHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Find all action ids grouped by plugin",
-            notes = "Pagination is not yet implemented")
+    @ApiOperation(value = "Find all action ids grouped by plugin.",
+            notes = "Return a Map<String, Collection<String>> where key is the plugin id and value a collection if " +
+                    "actionIds.",
+            response = Map.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success."),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Successfully fetched map of action ids grouped by plugin."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response findActionIds() {
         try {
             Map<String, Set<String>> actions = definitions.getActionDefinitionIds(tenantId);
@@ -102,12 +106,13 @@ public class ActionsHandler {
     @GET
     @Path("/plugin/{actionPlugin}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Find all action ids of an specific action plugin",
-            notes = "Pagination is not yet implemented")
+    @ApiOperation(value = "Find all action ids of an specific action plugin.",
+            response = String.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error") })
-    public Response findActionIdsByPlugin(@ApiParam(value = "Action plugin to filter query for action ids",
+            @ApiResponse(code = 200, message = "Successfully fetched list of action ids."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public Response findActionIdsByPlugin(@ApiParam(value = "Action plugin to filter query for action ids.",
             required = true)
             @PathParam("actionPlugin")
             final String actionPlugin) {
@@ -126,18 +131,17 @@ public class ActionsHandler {
     @GET
     @Path("/{actionPlugin}/{actionId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get an existing action",
-            responseContainer = "Map<String, String>",
-            response = String.class,
-            notes = "Action is represented as a map of properties.")
+    @ApiOperation(value = "Get an existing action definition.",
+            response = ActionDefinition.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Action Found"),
-            @ApiResponse(code = 404, message = "No Action Found"),
-            @ApiResponse(code = 500, message = "Internal server error")})
-    public Response getActionDefinition(@ApiParam(value = "Action plugin", required = true)
+            @ApiResponse(code = 200, message = "Success, Action found."),
+            @ApiResponse(code = 404, message = "No Action found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public Response getActionDefinition(@ApiParam(value = "Action plugin.", required = true)
             @PathParam("actionPlugin")
             final String actionPlugin,
-            @ApiParam(value = "Action id to be retrieved", required = true)
+            @ApiParam(value = "Action id to be retrieved.", required = true)
             @PathParam("actionId")
             final String actionId) {
         try {
@@ -160,14 +164,16 @@ public class ActionsHandler {
     @Path("/")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Create a new ActionDefinition",
-            response = ActionDefinition.class,
-            notes = "Returns created ActionDefinition")
+    @ApiOperation(value = "Create a new ActionDefinition.",
+            notes = "Returns created ActionDefinition",
+            response = ActionDefinition.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, ActionDefinition Created"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Existing ActionDefinition/Invalid Parameters") })
-    public Response createActionDefinition(@ApiParam(value = "ActionDefinition to be created",
+            @ApiResponse(code = 200, message = "Success, ActionDefinition Created."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Existing ActionDefinition/Invalid Parameters",
+                    response = ApiError.class)
+    })
+    public Response createActionDefinition(@ApiParam(value = "ActionDefinition to be created.",
             name = "actionDefinition",
             required = true)
            final ActionDefinition actionDefinition) {
@@ -201,16 +207,17 @@ public class ActionsHandler {
     }
 
     @PUT
-    @Path("/{actionPlugin}/{actionId}")
+    @Path("/")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Update an existing ActionDefinition",
-            response = ActionDefinition.class,
-            notes = "Returns created ActionDefinition")
+    @ApiOperation(value = "Update an existing ActionDefinition.",
+            notes = "Returns updated ActionDefinition.",
+            response = ActionDefinition.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, ActionDefinition Updated"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "ActionDefinition not found for update") })
-    public Response updateActionDefinition(@ApiParam(value = "ActionDefinition to be updated",
+            @ApiResponse(code = 200, message = "Success, ActionDefinition Updated."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "ActionDefinition not found for update.", response = ApiError.class)
+    })
+    public Response updateActionDefinition(@ApiParam(value = "ActionDefinition to be updated.",
             name = "actionDefinition",
             required = true)
            final ActionDefinition actionDefinition) {
@@ -243,15 +250,16 @@ public class ActionsHandler {
 
     @DELETE
     @Path("/{actionPlugin}/{actionId}")
-    @ApiOperation(value = "Delete an existing ActionDefinition")
+    @ApiOperation(value = "Delete an existing ActionDefinition.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, ActionDefinition Deleted"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "ActionDefinition not found for delete") })
-    public Response deleteActionDefinition(@ApiParam(value = "Action plugin", required = true)
+            @ApiResponse(code = 200, message = "Success, ActionDefinition Deleted."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "ActionDefinition not found for delete.", response = ApiError.class)
+    })
+    public Response deleteActionDefinition(@ApiParam(value = "Action plugin.", required = true)
             @PathParam("actionPlugin")
             final String actionPlugin,
-            @ApiParam(value = "Action id to be deleted", required = true)
+            @ApiParam(value = "Action id to be deleted.", required = true)
             @PathParam("actionId")
             final String actionId) {
         try {
@@ -274,35 +282,37 @@ public class ActionsHandler {
     @GET
     @Path("/history")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Get actions from history with optional filtering")
+    @ApiOperation(value = "Get actions from history with optional filtering.",
+            response = Action.class,
+            responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Successfully fetched list of actions."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response findActionsHistory(
-            @ApiParam(required = false, value = "filter out actions created before this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out actions created before this time, millisecond since epoch.")
             @QueryParam("startTime")
             final Long startTime,
-            @ApiParam(required = false, value = "filter out action created after this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out actions created after this time, millisecond since epoch.")
             @QueryParam("endTime")
             final Long endTime,
-            @ApiParam(required = false, value = "filter out actions for unspecified actionPlugin, " +
-                    "comma separated list of plugin names")
+            @ApiParam(required = false, value = "Filter out actions for unspecified actionPlugin, " +
+                    "comma separated list of plugin names.")
             @QueryParam("actionPlugins")
             final String actionPlugins,
-            @ApiParam(required = false, value = "filter out actions for unspecified actionId, " +
-                    "comma separated list of action IDs")
+            @ApiParam(required = false, value = "Filter out actions for unspecified actionId, " +
+                    "comma separated list of action IDs.")
             @QueryParam("actionIds")
             final String actionIds,
-            @ApiParam(required = false, value = "filter out actions for unspecified alertIds, " +
-                    "comma separated list of alert IDs")
+            @ApiParam(required = false, value = "Filter out actions for unspecified alertIds, " +
+                    "comma separated list of alert IDs.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = false, value = "filter out alerts for unspecified result, " +
-                    "comma separated list of action results")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified result, " +
+                    "comma separated list of action results.")
             @QueryParam("results")
             final String results,
-            @ApiParam(required = false, value = "return only thin actions, do not include full alert, only alertId")
+            @ApiParam(required = false, value = "Return only thin actions, do not include full alert, only alertId.")
             @QueryParam("thin")
             final Boolean thin,
             @Context
@@ -328,32 +338,34 @@ public class ActionsHandler {
     @PUT
     @Path("/history/delete")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Delete actions from history with optional filtering")
+    @ApiOperation(value = "Delete actions from history with optional filtering.",
+            response = Integer.class,
+            responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, Actions deleted."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response deleteActionsHistory(
-            @ApiParam(required = false, value = "filter out actions created before this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out actions created before this time, millisecond since epoch.")
             @QueryParam("startTime")
             final Long startTime,
-            @ApiParam(required = false, value = "filter out action created after this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out action created after this time, millisecond since epoch.")
             @QueryParam("endTime")
             final Long endTime,
-            @ApiParam(required = false, value = "filter out actions for unspecified actionPlugin, " +
-                    "comma separated list of plugin names")
+            @ApiParam(required = false, value = "Filter out actions for unspecified actionPlugin, " +
+                    "comma separated list of plugin names.")
             @QueryParam("actionPlugins")
             final String actionPlugins,
-            @ApiParam(required = false, value = "filter out actions for unspecified actionId, " +
-                    "comma separated list of action IDs")
+            @ApiParam(required = false, value = "Filter out actions for unspecified actionId, " +
+                    "comma separated list of action IDs.")
             @QueryParam("actionIds")
             final String actionIds,
-            @ApiParam(required = false, value = "filter out actions for unspecified alertIds, " +
-                    "comma separated list of alert IDs")
+            @ApiParam(required = false, value = "Filter out actions for unspecified alertIds, " +
+                    "comma separated list of alert IDs.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = false, value = "filter out alerts for unspecified result, " +
-                    "comma separated list of action results")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified result, " +
+                    "comma separated list of action results.")
             @QueryParam("results")
             final String results) {
         try {

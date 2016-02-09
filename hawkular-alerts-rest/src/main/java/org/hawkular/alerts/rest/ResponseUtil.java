@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,7 @@ package org.hawkular.alerts.rest;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -31,6 +29,8 @@ import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.PageContext;
 import org.hawkular.alerts.rest.json.Link;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * Helper class used to build REST responses and deal with errors.
  *
@@ -39,17 +39,13 @@ import org.hawkular.alerts.rest.json.Link;
 public class ResponseUtil {
 
     public static Response internalError(String message) {
-        Map<String, String> errors = new HashMap<>();
-        errors.put("errorMsg", "Internal error: " + message);
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(errors).type(APPLICATION_JSON_TYPE).build();
+                .entity(new ApiError(message)).type(APPLICATION_JSON_TYPE).build();
     }
 
     public static Response notFound(String message) {
-        Map<String, String> errors = new HashMap<>();
-        errors.put("errorMsg", "Not found: " + message);
         return Response.status(Response.Status.NOT_FOUND)
-                .entity(errors).type(APPLICATION_JSON_TYPE).build();
+                .entity(new ApiError(message)).type(APPLICATION_JSON_TYPE).build();
     }
 
     public static Response ok(Object entity) {
@@ -73,10 +69,8 @@ public class ResponseUtil {
     }
 
     public static Response badRequest(String message) {
-        Map<String, String> errors = new HashMap<>();
-        errors.put("errorMsg", "Bad request: " + message);
         return Response.status(Response.Status.BAD_REQUEST)
-                .entity(errors).type(APPLICATION_JSON_TYPE).build();
+                .entity(new ApiError(message)).type(APPLICATION_JSON_TYPE).build();
     }
 
     /**
@@ -139,5 +133,19 @@ public class ResponseUtil {
 
         // Create a total size header
         builder.header("X-Total-Count", resultList.getTotalSize());
+    }
+
+    public static class ApiError {
+
+        @JsonInclude
+        private final String errorMsg;
+
+        public ApiError(String errorMsg) {
+            this.errorMsg = errorMsg != null && !errorMsg.trim().isEmpty() ? errorMsg : "No details";
+        }
+
+        public String getErrorMsg() {
+            return errorMsg;
+        }
     }
 }

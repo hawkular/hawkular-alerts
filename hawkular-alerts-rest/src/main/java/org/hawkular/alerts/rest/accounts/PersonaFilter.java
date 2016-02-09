@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,6 +43,10 @@ public class PersonaFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
+        if (requestContext.getHeaderString(HawkularAlertsApp.TENANT_HEADER_NAME) != null) {
+            requestContext.abortWith(ResponseUtil.badRequest(HawkularAlertsApp.TENANT_HEADER_NAME + " " +
+                    "should not be provided on Hawkular deployment."));
+        }
         if (!checkPersona()) {
             requestContext.abortWith(ResponseUtil.internalError("No persona found"));
         }

@@ -34,7 +34,7 @@ import javax.naming.InitialContext
 import static org.junit.Assert.assertEquals
 
 /**
- * Actions REST tests.
+ * Bus REST tests.
  *
  * @author Lucas Ponce
  */
@@ -132,6 +132,9 @@ class BusITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(5, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
+
+        resp = client.delete(path: "triggers/test-bus-email-availability");
+        assertEquals(200, resp.status)
     }
 
     @Test
@@ -225,6 +228,9 @@ class BusITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(5, resp.data.size())
         assertEquals("OPEN", resp.data[0].status)
+
+        resp = client.delete(path: "triggers/test-bus-email-threshold");
+        assertEquals(200, resp.status)
     }
 
 

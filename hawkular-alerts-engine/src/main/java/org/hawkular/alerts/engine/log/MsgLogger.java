@@ -89,4 +89,9 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 220017, value = "Action cannot be validated. Msg: [%s]")
     void errorCannotValidateAction(String msg);
 
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 220018, value = "Deleting all definitions on tenantId [%s] before import.")
+    void warningDeleteDefinitionsTenant(String tenantId);
+
+
 }

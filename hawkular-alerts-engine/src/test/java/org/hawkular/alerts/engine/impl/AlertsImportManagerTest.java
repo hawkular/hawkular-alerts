@@ -22,12 +22,12 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.util.List;
 
-import org.hawkular.alerts.api.json.JsonImport.FullAction;
-import org.hawkular.alerts.api.json.JsonImport.FullTrigger;
+import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.RateCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.FullTrigger;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,10 +49,10 @@ public class AlertsImportManagerTest {
     @Test
     public void detailedCheck() throws Exception {
         List<FullTrigger> fullTriggers = importManager.getFullTriggers();
-        List<FullAction> fullActions = importManager.getFullActions();
+        List<ActionDefinition> actionDefinitions = importManager.getActionDefinitions();
 
         assertTrue(fullTriggers.size() > 0);
-        assertTrue(fullActions.size() > 0);
+        assertTrue(actionDefinitions.size() > 0);
 
         // Check trigger-1
         assertEquals("value1", fullTriggers.get(0).getTrigger().getContext().get("name1"));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -67,6 +67,22 @@ import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
  */
 public class JacksonDeserializer {
 
+    public static class ConditionDeserializer extends JsonDeserializer<Condition> {
+
+        @Override
+        public Condition deserialize(JsonParser jp, DeserializationContext ctxt)
+                throws IOException, JsonProcessingException {
+
+            ObjectCodec objectCodec = jp.getCodec();
+            JsonNode node = objectCodec.readTree(jp);
+
+            if (null == node) {
+                throw new ConditionException("Unexpected null node.");
+            }
+            return deserializeCondition(node);
+        }
+    }
+
     public static class ConditionEvalDeserializer extends JsonDeserializer<ConditionEval> {
 
         @Override
@@ -85,92 +101,124 @@ public class JacksonDeserializer {
             Condition condition = deserializeCondition(conditionNode);
             switch (condition.getType()) {
                 case AVAILABILITY: {
-                    conditionEval = new AvailabilityConditionEval();
-                    AvailabilityConditionEval aConditionEval = (AvailabilityConditionEval) conditionEval;
-                    aConditionEval.setCondition((AvailabilityCondition) condition);
-                    if (node.get("value") != null) {
-                        aConditionEval.setValue(AvailabilityType.valueOf(node.get("value").textValue()));
+                    try {
+                        conditionEval = new AvailabilityConditionEval();
+                        AvailabilityConditionEval aConditionEval = (AvailabilityConditionEval) conditionEval;
+                        aConditionEval.setCondition((AvailabilityCondition) condition);
+                        if (node.get("value") != null) {
+                            aConditionEval.setValue(AvailabilityType.valueOf(node.get("value").textValue()));
+                        }
+                    } catch (Exception e) {
+                        throw new ConditionEvalException(e);
                     }
                     break;
                 }
                 case COMPARE: {
-                    conditionEval = new CompareConditionEval();
-                    CompareConditionEval cConditionEval = (CompareConditionEval) conditionEval;
-                    cConditionEval.setCondition((CompareCondition) condition);
-                    if (node.get("value1") != null) {
-                        cConditionEval.setValue1(node.get("value1").doubleValue());
-                    }
-                    if (node.get("value2") != null) {
-                        cConditionEval.setValue2(node.get("value2").doubleValue());
-                    }
-                    if (node.get("context2") != null) {
-                        cConditionEval.setContext2(deserializeMap(node.get("context2")));
+                    try {
+                        conditionEval = new CompareConditionEval();
+                        CompareConditionEval cConditionEval = (CompareConditionEval) conditionEval;
+                        cConditionEval.setCondition((CompareCondition) condition);
+                        if (node.get("value1") != null) {
+                            cConditionEval.setValue1(node.get("value1").doubleValue());
+                        }
+                        if (node.get("value2") != null) {
+                            cConditionEval.setValue2(node.get("value2").doubleValue());
+                        }
+                        if (node.get("context2") != null) {
+                            cConditionEval.setContext2(deserializeMap(node.get("context2")));
+                        }
+                    } catch (Exception e) {
+                        throw new ConditionEvalException(e);
                     }
                     break;
                 }
                 case EVENT: {
-                    conditionEval = new EventConditionEval();
-                    EventConditionEval evConditionEval = (EventConditionEval) conditionEval;
-                    evConditionEval.setCondition((EventCondition) condition);
-                    if (node.get("value") != null) {
-                        evConditionEval.setValue(node.get("value").traverse(objectCodec).readValueAs(Event.class));
+                    try {
+                        conditionEval = new EventConditionEval();
+                        EventConditionEval evConditionEval = (EventConditionEval) conditionEval;
+                        evConditionEval.setCondition((EventCondition) condition);
+                        if (node.get("value") != null) {
+                            evConditionEval.setValue(node.get("value").traverse(objectCodec).readValueAs(Event.class));
+                        }
+                    } catch (Exception e) {
+                        throw new ConditionEvalException(e);
                     }
                     break;
                 }
                 case EXTERNAL: {
-                    conditionEval = new ExternalConditionEval();
-                    ExternalConditionEval eConditionEval = (ExternalConditionEval) conditionEval;
-                    eConditionEval.setCondition((ExternalCondition) condition);
-                    if (node.get("value") != null) {
-                        eConditionEval.setValue(node.get("value").textValue());
+                    try {
+                        conditionEval = new ExternalConditionEval();
+                        ExternalConditionEval eConditionEval = (ExternalConditionEval) conditionEval;
+                        eConditionEval.setCondition((ExternalCondition) condition);
+                        if (node.get("value") != null) {
+                            eConditionEval.setValue(node.get("value").textValue());
+                        }
+                    } catch (Exception e) {
+                        throw new ConditionEvalException(e);
                     }
                     break;
                 }
                 case RATE: {
-                    conditionEval = new RateConditionEval();
-                    RateConditionEval rConditionEval = (RateConditionEval) conditionEval;
-                    rConditionEval.setCondition((RateCondition) condition);
-                    if (node.get("time") != null) {
-                        rConditionEval.setTime(node.get("time").longValue());
-                    }
-                    if (node.get("value") != null) {
-                        rConditionEval.setValue(node.get("value").doubleValue());
-                    }
-                    if (node.get("previousTime") != null) {
-                        rConditionEval.setPreviousTime(node.get("previousTime").longValue());
-                    }
-                    if (node.get("previousValue") != null) {
-                        rConditionEval.setPreviousValue(node.get("previousValue").doubleValue());
-                    }
-                    if (node.get("rate") != null) {
-                        rConditionEval.setRate(node.get("rate").doubleValue());
+                    try {
+                        conditionEval = new RateConditionEval();
+                        RateConditionEval rConditionEval = (RateConditionEval) conditionEval;
+                        rConditionEval.setCondition((RateCondition) condition);
+                        if (node.get("time") != null) {
+                            rConditionEval.setTime(node.get("time").longValue());
+                        }
+                        if (node.get("value") != null) {
+                            rConditionEval.setValue(node.get("value").doubleValue());
+                        }
+                        if (node.get("previousTime") != null) {
+                            rConditionEval.setPreviousTime(node.get("previousTime").longValue());
+                        }
+                        if (node.get("previousValue") != null) {
+                            rConditionEval.setPreviousValue(node.get("previousValue").doubleValue());
+                        }
+                        if (node.get("rate") != null) {
+                            rConditionEval.setRate(node.get("rate").doubleValue());
+                        }
+                    } catch (Exception e) {
+                        throw new ConditionEvalException(e);
                     }
                     break;
                 }
                 case RANGE: {
-                    conditionEval = new ThresholdRangeConditionEval();
-                    ThresholdRangeConditionEval rConditionEval = (ThresholdRangeConditionEval) conditionEval;
-                    rConditionEval.setCondition((ThresholdRangeCondition) condition);
-                    if (node.get("value") != null) {
-                        rConditionEval.setValue(node.get("value").doubleValue());
+                    try {
+                        conditionEval = new ThresholdRangeConditionEval();
+                        ThresholdRangeConditionEval rConditionEval = (ThresholdRangeConditionEval) conditionEval;
+                        rConditionEval.setCondition((ThresholdRangeCondition) condition);
+                        if (node.get("value") != null) {
+                            rConditionEval.setValue(node.get("value").doubleValue());
+                        }
+                    } catch (Exception e) {
+                        throw new ConditionEvalException(e);
                     }
                     break;
                 }
                 case STRING: {
-                    conditionEval = new StringConditionEval();
-                    StringConditionEval sConditionEval = (StringConditionEval) conditionEval;
-                    sConditionEval.setCondition((StringCondition) condition);
-                    if (node.get("value") != null) {
-                        sConditionEval.setValue(node.get("value").textValue());
+                    try {
+                        conditionEval = new StringConditionEval();
+                        StringConditionEval sConditionEval = (StringConditionEval) conditionEval;
+                        sConditionEval.setCondition((StringCondition) condition);
+                        if (node.get("value") != null) {
+                            sConditionEval.setValue(node.get("value").textValue());
+                        }
+                    } catch (Exception e) {
+                        throw new ConditionEvalException(e);
                     }
                     break;
                 }
                 case THRESHOLD: {
-                    conditionEval = new ThresholdConditionEval();
-                    ThresholdConditionEval tConditionEval = (ThresholdConditionEval) conditionEval;
-                    tConditionEval.setCondition((ThresholdCondition) condition);
-                    if (node.get("value") != null) {
-                        tConditionEval.setValue(node.get("value").doubleValue());
+                    try {
+                        conditionEval = new ThresholdConditionEval();
+                        ThresholdConditionEval tConditionEval = (ThresholdConditionEval) conditionEval;
+                        tConditionEval.setCondition((ThresholdCondition) condition);
+                        if (node.get("value") != null) {
+                            tConditionEval.setValue(node.get("value").doubleValue());
+                        }
+                    } catch (Exception e) {
+                        throw new ConditionEvalException(e);
                     }
                     break;
                 }
@@ -178,22 +226,24 @@ public class JacksonDeserializer {
                     throw new ConditionEvalException("Unexpected Condition type [" + condition.getType().name() + "]");
                 }
             }
-
             if (conditionEval != null) {
-                if (node.get("match") != null) {
-                    conditionEval.setMatch(node.get("match").booleanValue());
-                }
-                if (node.get("evalTimestamp") != null) {
-                    conditionEval.setEvalTimestamp(node.get("evalTimestamp").longValue());
-                }
-                if (node.get("dataTimestamp") != null) {
-                    conditionEval.setDataTimestamp(node.get("dataTimestamp").longValue());
-                }
-                if (node.get("context") != null) {
-                    conditionEval.setContext(deserializeMap(node.get("context")));
+                try {
+                    if (node.get("match") != null) {
+                        conditionEval.setMatch(node.get("match").booleanValue());
+                    }
+                    if (node.get("evalTimestamp") != null) {
+                        conditionEval.setEvalTimestamp(node.get("evalTimestamp").longValue());
+                    }
+                    if (node.get("dataTimestamp") != null) {
+                        conditionEval.setDataTimestamp(node.get("dataTimestamp").longValue());
+                    }
+                    if (node.get("context") != null) {
+                        conditionEval.setContext(deserializeMap(node.get("context")));
+                    }
+                } catch (Exception e) {
+                    throw new ConditionEvalException(e);
                 }
             }
-
             return conditionEval;
         }
     }
@@ -205,163 +255,203 @@ public class JacksonDeserializer {
 
         Condition condition = null;
         Condition.Type conditionType = null;
+        if (node.get("type") == null) {
+            throw new ConditionException("Condition must have a type");
+        }
         try {
             conditionType = Condition.Type.valueOf(node.get("type").asText().toUpperCase());
         } catch (Exception e) {
-            throw new ConditionEvalException(e);
+            throw new ConditionException(e);
         }
 
         switch (conditionType) {
             case THRESHOLD: {
-                condition = new ThresholdCondition();
-                ThresholdCondition tCondition = (ThresholdCondition) condition;
-                if (node.get("dataId") != null) {
-                    tCondition.setDataId(node.get("dataId").textValue());
-                }
-                if (node.get("operator") != null) {
-                    tCondition.setOperator(ThresholdCondition.Operator.valueOf(node.get("operator").textValue()));
-                }
-                if (node.get("threshold") != null) {
-                    tCondition.setThreshold(node.get("threshold").doubleValue());
+                try {
+                    condition = new ThresholdCondition();
+                    ThresholdCondition tCondition = (ThresholdCondition) condition;
+                    if (node.get("dataId") != null) {
+                        tCondition.setDataId(node.get("dataId").textValue());
+                    }
+                    if (node.get("operator") != null) {
+                        tCondition.setOperator(ThresholdCondition.Operator.valueOf(node.get("operator").textValue()));
+                    }
+                    if (node.get("threshold") != null) {
+                        tCondition.setThreshold(node.get("threshold").doubleValue());
+                    }
+                } catch (Exception e) {
+                    throw new ConditionException(e);
                 }
                 break;
             }
             case AVAILABILITY: {
-                condition = new AvailabilityCondition();
-                AvailabilityCondition aCondition = (AvailabilityCondition) condition;
-                if (node.get("dataId") != null) {
-                    aCondition.setDataId(node.get("dataId").textValue());
-                }
-                if (node.get("operator") != null) {
-                    aCondition.setOperator(AvailabilityCondition.Operator.valueOf(node.get("operator").textValue()));
+                try {
+                    condition = new AvailabilityCondition();
+                    AvailabilityCondition aCondition = (AvailabilityCondition) condition;
+                    if (node.get("dataId") != null) {
+                        aCondition.setDataId(node.get("dataId").textValue());
+                    }
+                    if (node.get("operator") != null) {
+                        aCondition
+                                .setOperator(AvailabilityCondition.Operator.valueOf(node.get("operator").textValue()));
+                    }
+                } catch (Exception e) {
+                    throw new ConditionException(e);
                 }
                 break;
             }
             case COMPARE: {
-                condition = new CompareCondition();
-                CompareCondition cCondition = (CompareCondition) condition;
-                if (node.get("dataId") != null) {
-                    cCondition.setDataId(node.get("dataId").textValue());
-                }
-                if (node.get("operator") != null) {
-                    cCondition.setOperator(CompareCondition.Operator.valueOf(node.get("operator").textValue()));
-                }
-                if (node.get("data2Id") != null) {
-                    cCondition.setData2Id(node.get("data2Id").textValue());
-                }
-                if (node.get("data2Multiplier") != null) {
-                    cCondition.setData2Multiplier(node.get("data2Multiplier").doubleValue());
+                try {
+                    condition = new CompareCondition();
+                    CompareCondition cCondition = (CompareCondition) condition;
+                    if (node.get("dataId") != null) {
+                        cCondition.setDataId(node.get("dataId").textValue());
+                    }
+                    if (node.get("operator") != null) {
+                        cCondition.setOperator(CompareCondition.Operator.valueOf(node.get("operator").textValue()));
+                    }
+                    if (node.get("data2Id") != null) {
+                        cCondition.setData2Id(node.get("data2Id").textValue());
+                    }
+                    if (node.get("data2Multiplier") != null) {
+                        cCondition.setData2Multiplier(node.get("data2Multiplier").doubleValue());
+                    }
+                } catch (Exception e) {
+                    throw new ConditionException(e);
                 }
                 break;
             }
             case RANGE: {
-                condition = new ThresholdRangeCondition();
-                ThresholdRangeCondition rCondition = (ThresholdRangeCondition) condition;
-                if (node.get("dataId") != null) {
-                    rCondition.setDataId(node.get("dataId").textValue());
-                }
-                if (node.get("operatorLow") != null) {
-                    rCondition.setOperatorLow(ThresholdRangeCondition
-                            .Operator.valueOf(node.get("operatorLow").textValue()));
-                }
-                if (node.get("operatorHigh") != null) {
-                    rCondition.setOperatorHigh(ThresholdRangeCondition
-                            .Operator.valueOf(node.get("operatorHigh").textValue()));
-                }
-                if (node.get("thresholdLow") != null) {
-                    rCondition.setThresholdLow(node.get("thresholdLow").doubleValue());
-                }
-                if (node.get("thresholdHigh") != null) {
-                    rCondition.setThresholdHigh(node.get("thresholdHigh").doubleValue());
-                }
-                if (node.get("inRange") != null) {
-                    rCondition.setInRange(node.get("inRange").booleanValue());
+                try {
+                    condition = new ThresholdRangeCondition();
+                    ThresholdRangeCondition rCondition = (ThresholdRangeCondition) condition;
+                    if (node.get("dataId") != null) {
+                        rCondition.setDataId(node.get("dataId").textValue());
+                    }
+                    if (node.get("operatorLow") != null) {
+                        rCondition.setOperatorLow(ThresholdRangeCondition
+                                .Operator.valueOf(node.get("operatorLow").textValue()));
+                    }
+                    if (node.get("operatorHigh") != null) {
+                        rCondition.setOperatorHigh(ThresholdRangeCondition
+                                .Operator.valueOf(node.get("operatorHigh").textValue()));
+                    }
+                    if (node.get("thresholdLow") != null) {
+                        rCondition.setThresholdLow(node.get("thresholdLow").doubleValue());
+                    }
+                    if (node.get("thresholdHigh") != null) {
+                        rCondition.setThresholdHigh(node.get("thresholdHigh").doubleValue());
+                    }
+                    if (node.get("inRange") != null) {
+                        rCondition.setInRange(node.get("inRange").booleanValue());
+                    }
+                } catch (Exception e) {
+                    throw new ConditionException(e);
                 }
                 break;
             }
             case STRING: {
-                condition = new StringCondition();
-                StringCondition sCondition = (StringCondition) condition;
-                if (node.get("dataId") != null) {
-                    sCondition.setDataId(node.get("dataId").textValue());
-                }
-                if (node.get("operator") != null) {
-                    sCondition.setOperator(StringCondition.Operator.valueOf(node.get("operator").textValue()));
-                }
-                if (node.get("pattern") != null) {
-                    sCondition.setPattern(node.get("pattern").textValue());
-                }
-                if (node.get("ignoreCase") != null) {
-                    sCondition.setIgnoreCase(node.get("ignoreCase").booleanValue());
+                try {
+                    condition = new StringCondition();
+                    StringCondition sCondition = (StringCondition) condition;
+                    if (node.get("dataId") != null) {
+                        sCondition.setDataId(node.get("dataId").textValue());
+                    }
+                    if (node.get("operator") != null) {
+                        sCondition.setOperator(StringCondition.Operator.valueOf(node.get("operator").textValue()));
+                    }
+                    if (node.get("pattern") != null) {
+                        sCondition.setPattern(node.get("pattern").textValue());
+                    }
+                    if (node.get("ignoreCase") != null) {
+                        sCondition.setIgnoreCase(node.get("ignoreCase").booleanValue());
+                    }
+                } catch (Exception e) {
+                    throw new ConditionException(e);
                 }
                 break;
             }
             case EXTERNAL: {
-                condition = new ExternalCondition();
-                ExternalCondition eCondition = (ExternalCondition) condition;
-                if (node.get("systemId") != null) {
-                    eCondition.setSystemId(node.get("systemId").textValue());
-                }
-                if (node.get("dataId") != null) {
-                    eCondition.setDataId(node.get("dataId").textValue());
-                }
-                if (node.get("expression") != null) {
-                    eCondition.setExpression(node.get("expression").textValue());
+                try {
+                    condition = new ExternalCondition();
+                    ExternalCondition eCondition = (ExternalCondition) condition;
+                    if (node.get("systemId") != null) {
+                        eCondition.setSystemId(node.get("systemId").textValue());
+                    }
+                    if (node.get("dataId") != null) {
+                        eCondition.setDataId(node.get("dataId").textValue());
+                    }
+                    if (node.get("expression") != null) {
+                        eCondition.setExpression(node.get("expression").textValue());
+                    }
+                } catch (Exception e) {
+                    throw new ConditionException(e);
                 }
                 break;
             }
             case EVENT: {
-                condition = new EventCondition();
-                EventCondition evCondition = (EventCondition) condition;
-                if (node.get("dataId") != null) {
-                    evCondition.setDataId(node.get("dataId").textValue());
-                }
-                if (node.get("expression") != null) {
-                    evCondition.setExpression(node.get("expression").textValue());
+                try {
+                    condition = new EventCondition();
+                    EventCondition evCondition = (EventCondition) condition;
+                    if (node.get("dataId") != null) {
+                        evCondition.setDataId(node.get("dataId").textValue());
+                    }
+                    if (node.get("expression") != null) {
+                        evCondition.setExpression(node.get("expression").textValue());
+                    }
+                } catch (Exception e) {
+                    throw new ConditionException(e);
                 }
                 break;
             }
             case RATE: {
-                condition = new RateCondition();
-                RateCondition rCondition = (RateCondition) condition;
-                if (node.get("dataId") != null) {
-                    rCondition.setDataId(node.get("dataId").textValue());
-                }
-                if (node.get("direction") != null) {
-                    rCondition.setDirection(RateCondition.Direction.valueOf(node.get("direction").textValue()));
-                }
-                if (node.get("period") != null) {
-                    rCondition.setPeriod(RateCondition.Period.valueOf(node.get("period").textValue()));
-                }
-                if (node.get("operator") != null) {
-                    rCondition.setOperator(RateCondition.Operator.valueOf(node.get("operator").textValue()));
-                }
-                if (node.get("threshold") != null) {
-                    rCondition.setThreshold(node.get("threshold").doubleValue());
+                try {
+                    condition = new RateCondition();
+                    RateCondition rCondition = (RateCondition) condition;
+                    if (node.get("dataId") != null) {
+                        rCondition.setDataId(node.get("dataId").textValue());
+                    }
+                    if (node.get("direction") != null) {
+                        rCondition.setDirection(RateCondition.Direction.valueOf(node.get("direction").textValue()));
+                    }
+                    if (node.get("period") != null) {
+                        rCondition.setPeriod(RateCondition.Period.valueOf(node.get("period").textValue()));
+                    }
+                    if (node.get("operator") != null) {
+                        rCondition.setOperator(RateCondition.Operator.valueOf(node.get("operator").textValue()));
+                    }
+                    if (node.get("threshold") != null) {
+                        rCondition.setThreshold(node.get("threshold").doubleValue());
+                    }
+                } catch (Exception e) {
+                    throw new ConditionException(e);
                 }
                 break;
             }
             default:
-                throw new ConditionEvalException("Unexpected Condition Type [" + conditionType.name() + "]");
+                throw new ConditionException("Unexpected Condition Type [" + conditionType.name() + "]");
         }
         if (condition != null) {
-            if (node.get("tenantId") != null) {
-                condition.setTenantId(node.get("tenantId").textValue());
-            }
-            if (node.get("triggerId") != null) {
-                condition.setTriggerId(node.get("triggerId").textValue());
-            }
-            if (node.get("triggerMode") != null) {
-                condition.setTriggerMode(Mode.valueOf(node.get("triggerMode").textValue()));
-            }
-            if (node.get("conditionSetSize") != null) {
-                condition.setConditionSetSize(node.get("conditionSetSize").intValue());
-            }
-            if (node.get("conditionSetIndex") != null) {
-                condition.setConditionSetIndex(node.get("conditionSetIndex").intValue());
-            }
-            if (node.get("context") != null) {
-                condition.setContext(deserializeMap(node.get("context")));
+            try {
+                if (node.get("tenantId") != null) {
+                    condition.setTenantId(node.get("tenantId").textValue());
+                }
+                if (node.get("triggerId") != null) {
+                    condition.setTriggerId(node.get("triggerId").textValue());
+                }
+                if (node.get("triggerMode") != null) {
+                    condition.setTriggerMode(Mode.valueOf(node.get("triggerMode").textValue()));
+                }
+                if (node.get("conditionSetSize") != null) {
+                    condition.setConditionSetSize(node.get("conditionSetSize").intValue());
+                }
+                if (node.get("conditionSetIndex") != null) {
+                    condition.setConditionSetIndex(node.get("conditionSetIndex").intValue());
+                }
+                if (node.get("context") != null) {
+                    condition.setContext(deserializeMap(node.get("context")));
+                }
+            } catch (Exception e) {
+                throw new ConditionException(e);
             }
         }
         return condition;
@@ -375,6 +465,30 @@ public class JacksonDeserializer {
             map.put(field, mapNode.get(field).asText());
         }
         return map;
+    }
+
+    public static class ConditionException extends JsonProcessingException {
+        private static final long serialVersionUID = 1L;
+
+        protected ConditionException(String msg, JsonLocation loc, Throwable rootCause) {
+            super(msg, loc, rootCause);
+        }
+
+        protected ConditionException(String msg) {
+            super(msg);
+        }
+
+        protected ConditionException(String msg, JsonLocation loc) {
+            super(msg, loc);
+        }
+
+        protected ConditionException(String msg, Throwable rootCause) {
+            super(msg, rootCause);
+        }
+
+        protected ConditionException(Throwable rootCause) {
+            super(rootCause);
+        }
     }
 
     public static class ConditionEvalException extends JsonProcessingException {

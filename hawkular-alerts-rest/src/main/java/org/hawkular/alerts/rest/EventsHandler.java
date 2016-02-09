@@ -46,6 +46,7 @@ import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
+import org.hawkular.alerts.rest.ResponseUtil.ApiError;
 import org.jboss.logging.Logger;
 
 import com.wordnik.swagger.annotations.Api;
@@ -81,14 +82,15 @@ public class EventsHandler {
     @Produces(APPLICATION_JSON)
     @ApiOperation(
             value = "Create a new Event.",
-            response = Event.class,
-            notes = "Returns created Event")
+            notes = "Returns created Event.",
+            response = Event.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Event Created"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Event Created."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     public Response createEvent(
-            @ApiParam(value = "Event to be created. Category and Text fields required",
+            @ApiParam(value = "Event to be created. Category and Text fields required,",
                     name = "event", required = true)
             final Event event) {
         try {
@@ -124,16 +126,17 @@ public class EventsHandler {
     @PUT
     @Path("/tags")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Add tags to existing Events")
+    @ApiOperation(value = "Add tags to existing Events.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Events tagged successfully"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Events tagged successfully."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     public Response addTags(
-            @ApiParam(required = true, value = "comma separated list of eventIds to tag")
+            @ApiParam(required = true, value = "Comma separated list of eventIds to tag.")
             @QueryParam("eventIds")
             final String eventIds,
-            @ApiParam(required = true, value = "comma separated list of tags to add, "
+            @ApiParam(required = true, value = "Comma separated list of tags to add, "
                     + "each tag of format 'name|value'.")
             @QueryParam("tags")
             final String tags) {
@@ -158,16 +161,17 @@ public class EventsHandler {
     @DELETE
     @Path("/tags")
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Remove tags from existing Events")
+    @ApiOperation(value = "Remove tags from existing Events.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Events untagged successfully"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters") })
+            @ApiResponse(code = 200, message = "Success, Events untagged successfully."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+    })
     public Response deleteTags(
-            @ApiParam(required = true, value = "comma separated list of eventIds to untag")
+            @ApiParam(required = true, value = "Comma separated list of eventIds to untag.")
             @QueryParam("eventIds")
             final String eventIds,
-            @ApiParam(required = true, value = "comma separated list of tag names to remove")
+            @ApiParam(required = true, value = "Comma separated list of tag names to remove.")
             @QueryParam("tagNames")
             final String tagNames) {
         try {
@@ -191,34 +195,35 @@ public class EventsHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Get events with optional filtering")
+    @ApiOperation(value = "Get events with optional filtering.",
+            response = Event.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Successfully fetched list of events."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response findEvents(
-            @ApiParam(required = false, value = "filter out events created before this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out events created before this time, millisecond since epoch.")
             @QueryParam("startTime")
             final Long startTime,
-            @ApiParam(required = false, value = "filter out events created after this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out events created after this time, millisecond since epoch.")
             @QueryParam("endTime")
             final Long endTime,
-            @ApiParam(required = false, value = "filter out events for unspecified eventIds, " +
-                    "comma separated list of event IDs")
+            @ApiParam(required = false, value = "Filter out events for unspecified eventIds, " +
+                    "comma separated list of event IDs.")
             @QueryParam("eventIds") final String eventIds,
-            @ApiParam(required = false, value = "filter out events for unspecified triggers, " +
-                    "comma separated list of trigger IDs")
+            @ApiParam(required = false, value = "Filter out events for unspecified triggers, " +
+                    "comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
             final String triggerIds,
-            @ApiParam(required = false, value = "filter out events for unspecified categories, " +
-                    "comma separated list of category values")
+            @ApiParam(required = false, value = "Filter out events for unspecified categories, " +
+                    "comma separated list of category values.")
             @QueryParam("categories")
             final String categories,
-            @ApiParam(required = false, value = "filter out events for unspecified tags, comma separated list of tags, "
+            @ApiParam(required = false, value = "Filter out events for unspecified tags, comma separated list of tags, "
                     + "each tag of format 'name|value'. Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
-            @ApiParam(required = false, value = "return only thin events, do not include: evalSets")
+            @ApiParam(required = false, value = "Return only thin events, do not include: evalSets.")
             @QueryParam("thin")
             final Boolean thin,
             @Context
@@ -243,13 +248,14 @@ public class EventsHandler {
 
     @DELETE
     @Path("/{eventId}")
-    @ApiOperation(value = "Delete an existing Event")
+    @ApiOperation(value = "Delete an existing Event.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Event deleted"),
-            @ApiResponse(code = 500, message = "Internal server error"),
-            @ApiResponse(code = 404, message = "Event not found") })
+            @ApiResponse(code = 200, message = "Success, Event deleted."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Event not found.", response = ApiError.class)
+    })
     public Response deleteEvent(
-            @ApiParam(required = true, value = "Event id to be deleted")
+            @ApiParam(required = true, value = "Event id to be deleted.")
             @PathParam("eventId")
             final String eventId) {
         try {
@@ -273,27 +279,31 @@ public class EventsHandler {
     @PUT
     @Path("/delete")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(
-            value = "Delete events with optional filtering")
+    @ApiOperation(value = "Delete events with optional filtering.",
+            notes = "Return number of events deleted.",
+            response = Integer.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response deleteEvents(
-            @ApiParam(required = false, value = "filter out events created before this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out events created before this time, millisecond since epoch.")
             @QueryParam("startTime")
             final Long startTime,
-            @ApiParam(required = false, value = "filter out events created after this time, millisecond since epoch")
+            @ApiParam(required = false, value = "Filter out events created after this time, millisecond since epoch.")
             @QueryParam("endTime")
             final Long endTime,
-            @ApiParam(required = false, value = "filter out events for unspecified eventIds, " +
-                    "comma separated list of event IDs") @QueryParam("eventIds") final String eventIds,
-            @ApiParam(required = false, value = "filter out events for unspecified triggers, " +
-                    "comma separated list of trigger IDs")
+            @ApiParam(required = false, value = "Filter out events for unspecified eventIds, " +
+                    "comma separated list of event IDs.") @QueryParam("eventIds")
+            final String eventIds,
+            @ApiParam(required = false, value = "Filter out events for unspecified triggers, " +
+                    "comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
             final String triggerIds,
-            @ApiParam(required = false, value = "filter out events for unspecified categories, " +
-                    "comma separated list of category values") @QueryParam("categories") final String categories,
-            @ApiParam(required = false, value = "filter out events for unspecified tags, comma separated list of tags, "
+            @ApiParam(required = false, value = "Filter out events for unspecified categories, " +
+                    "comma separated list of category values.") @QueryParam("categories")
+            final String categories,
+            @ApiParam(required = false, value = "Filter out events for unspecified tags, comma separated list of tags, "
                     + "each tag of format 'name|value'. Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags
@@ -350,17 +360,18 @@ public class EventsHandler {
     @GET
     @Path("/event/{eventId}")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get an existing Event",
+    @ApiOperation(value = "Get an existing Event.",
             response = Event.class)
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Event found"),
-            @ApiResponse(code = 404, message = "Event not found"),
-            @ApiResponse(code = 500, message = "Internal server error") })
+            @ApiResponse(code = 200, message = "Success, Event found."),
+            @ApiResponse(code = 404, message = "Event not found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     public Response getEvent(
-            @ApiParam(value = "Id of Event to be retrieved", required = true)
+            @ApiParam(value = "Id of Event to be retrieved.", required = true)
             @PathParam("eventId")
             final String eventId,
-            @ApiParam(required = false, value = "return only a thin event, do not include: evalSets, dampening")
+            @ApiParam(required = false, value = "Return only a thin event, do not include: evalSets, dampening.")
             @QueryParam("thin")
             final Boolean thin) {
         try {

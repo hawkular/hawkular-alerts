@@ -59,7 +59,7 @@
       <artifactId>wildfly-jms-client-bom</artifactId>
       <version>${version.org.wildfly}</version>
       <type>pom</type>
-      <scope>import</scope>
+      <scope>test</scope>
     </dependency>
 
     <dependency>

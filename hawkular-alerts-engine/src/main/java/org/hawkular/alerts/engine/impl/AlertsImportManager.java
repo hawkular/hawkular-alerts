@@ -17,20 +17,17 @@
 package org.hawkular.alerts.engine.impl;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import org.hawkular.alerts.api.json.JsonImport;
-import org.hawkular.alerts.api.json.JsonImport.FullAction;
-import org.hawkular.alerts.api.json.JsonImport.FullTrigger;
+import org.hawkular.alerts.api.model.action.ActionDefinition;
+import org.hawkular.alerts.api.model.export.Definitions;
+import org.hawkular.alerts.api.model.trigger.FullTrigger;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Read a json file with a list of full triggers and actions.
- * A full trigger is a Trigger with its Dampening and Conditions.
+ * Read a json file with a list of full triggers and actions definitions.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -38,9 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class AlertsImportManager {
     private static final Logger log = Logger.getLogger(AlertsImportManager.class);
     private ObjectMapper objectMapper = new ObjectMapper();
-    private List<FullTrigger> fullTriggers = new ArrayList<>();
-    private List<FullAction> fullActions = new ArrayList<>();
-
+    private Definitions definitions;
 
     /**
      * Read a json file and initialize the AlertsImportManager instance
@@ -55,32 +50,23 @@ public class AlertsImportManager {
         if (!fAlerts.exists() || !fAlerts.isFile()) {
             throw new IllegalArgumentException(fAlerts.getName() + " file must exist");
         }
-        Map<String, Object> rawImport = objectMapper.readValue(fAlerts, Map.class);
-        List<Map<String, Object>> rawTriggers = (List<Map<String, Object>>) rawImport.get("triggers");
-        for (Map<String, Object> rawTrigger: rawTriggers) {
-            FullTrigger fTrigger = JsonImport.readFullTrigger(rawTrigger);
-            if (log.isDebugEnabled()) {
-                log.debug("Importing... " + fTrigger.toString());
-            }
-            fullTriggers.add(fTrigger);
-        }
 
-        List<Map<String, Object>> rawActions = (List<Map<String, Object>>) rawImport.get("actions");
-        for (Map<String, Object> rawAction : rawActions) {
-            FullAction fAction = JsonImport.readFullAction(rawAction);
-            if (log.isDebugEnabled()) {
-                log.debug("Importing... " + fAction.toString());
+        definitions = objectMapper.readValue(fAlerts, Definitions.class);
+        if (log.isDebugEnabled()) {
+            if (definitions != null) {
+                log.debug("File: " + fAlerts.toString() + " imported in " + definitions.toString());
+            } else {
+                log.debug("File: " + fAlerts.toString() + " imported is null");
             }
-            fullActions.add(fAction);
         }
     }
 
     public List<FullTrigger> getFullTriggers() {
-        return fullTriggers;
+        return (definitions != null ? definitions.getTriggers() : null);
     }
 
-    public List<FullAction> getFullActions() {
-        return fullActions;
+    public List<ActionDefinition> getActionDefinitions() {
+        return (definitions != null ? definitions.getActions() : null);
     }
 
 }
