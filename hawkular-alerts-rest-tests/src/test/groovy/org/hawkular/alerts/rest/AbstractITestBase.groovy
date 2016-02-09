@@ -58,7 +58,8 @@ class AbstractITestBase {
             This is used for non-bus scenarios.
             In Bus scenarios this property is skipped
          */
-        if (System.getProperty("standalone-test") != null) {
+        if (System.getProperty("standalone-test") != null ||
+                (System.getProperty("env") != null && System.getProperty("env").equals("cluster"))) {
             client.headers.put("Hawkular-Tenant", testTenant)
         }
     }
