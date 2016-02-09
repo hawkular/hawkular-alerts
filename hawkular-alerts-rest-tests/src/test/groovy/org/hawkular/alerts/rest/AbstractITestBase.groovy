@@ -58,7 +58,9 @@ class AbstractITestBase {
             This is used for non-bus scenarios.
             In Bus scenarios this property is skipped
          */
-        client.headers.put("Hawkular-Tenant", testTenant)
+        if (System.getProperty("standalone-test") != null) {
+            client.headers.put("Hawkular-Tenant", testTenant)
+        }
     }
 
     @BeforeClass
