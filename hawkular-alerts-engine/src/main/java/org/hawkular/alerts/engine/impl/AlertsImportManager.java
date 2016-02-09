@@ -20,7 +20,7 @@ import java.io.File;
 import java.util.List;
 
 import org.hawkular.alerts.api.model.action.ActionDefinition;
-import org.hawkular.alerts.api.model.export.AlertDefinitions;
+import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.model.trigger.FullTrigger;
 import org.jboss.logging.Logger;
 
@@ -35,7 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class AlertsImportManager {
     private static final Logger log = Logger.getLogger(AlertsImportManager.class);
     private ObjectMapper objectMapper = new ObjectMapper();
-    private AlertDefinitions alertDefinitions;
+    private Definitions definitions;
 
     /**
      * Read a json file and initialize the AlertsImportManager instance
@@ -51,10 +51,10 @@ public class AlertsImportManager {
             throw new IllegalArgumentException(fAlerts.getName() + " file must exist");
         }
 
-        alertDefinitions = objectMapper.readValue(fAlerts, AlertDefinitions.class);
+        definitions = objectMapper.readValue(fAlerts, Definitions.class);
         if (log.isDebugEnabled()) {
-            if (alertDefinitions != null) {
-                log.debug("File: " + fAlerts.toString() + " imported in " + alertDefinitions.toString());
+            if (definitions != null) {
+                log.debug("File: " + fAlerts.toString() + " imported in " + definitions.toString());
             } else {
                 log.debug("File: " + fAlerts.toString() + " imported is null");
             }
@@ -62,11 +62,11 @@ public class AlertsImportManager {
     }
 
     public List<FullTrigger> getFullTriggers() {
-        return (alertDefinitions != null ? alertDefinitions.getTriggers() : null);
+        return (definitions != null ? definitions.getTriggers() : null);
     }
 
     public List<ActionDefinition> getActionDefinitions() {
-        return (alertDefinitions != null ? alertDefinitions.getActions() : null);
+        return (definitions != null ? definitions.getActions() : null);
     }
 
 }

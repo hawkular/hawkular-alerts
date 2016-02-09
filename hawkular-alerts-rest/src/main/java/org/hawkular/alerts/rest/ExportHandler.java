@@ -27,7 +27,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
-import org.hawkular.alerts.api.model.export.AlertDefinitions;
+import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.rest.ResponseUtil.ApiError;
 import org.jboss.logging.Logger;
@@ -58,15 +58,15 @@ public class ExportHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Export a list of full triggers and action definitions.",
-            response = AlertDefinitions.class)
+            response = Definitions.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully exported list of full triggers and action definitions."),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response exportDefinitions() {
         try {
-            AlertDefinitions alertDefinitions = definitions.exportDefinitions(tenantId);
-            return ResponseUtil.ok(alertDefinitions);
+            Definitions definitions = this.definitions.exportDefinitions(tenantId);
+            return ResponseUtil.ok(definitions);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e.getMessage());

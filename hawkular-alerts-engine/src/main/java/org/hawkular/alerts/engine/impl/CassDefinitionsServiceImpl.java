@@ -56,7 +56,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.EventType;
-import org.hawkular.alerts.api.model.export.AlertDefinitions;
+import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.model.export.ImportType;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
@@ -2852,34 +2852,34 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public AlertDefinitions exportDefinitions(String tenantId) throws Exception {
+    public Definitions exportDefinitions(String tenantId) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        AlertDefinitions alertDefinitions = new AlertDefinitions();
+        Definitions definitions = new Definitions();
         try {
-            alertDefinitions.setTriggers(getFullTriggers(tenantId));
-            alertDefinitions.setActions(getActionDefinitions(tenantId));
+            definitions.setTriggers(getFullTriggers(tenantId));
+            definitions.setActions(getActionDefinitions(tenantId));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
-        return alertDefinitions;
+        return definitions;
     }
 
     @Override
-    public AlertDefinitions importDefinitions(String tenantId, AlertDefinitions alertDefinitions, ImportType strategy)
+    public Definitions importDefinitions(String tenantId, Definitions definitions, ImportType strategy)
             throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        if (null == alertDefinitions) {
-            throw new IllegalArgumentException("AlertDefinitions must be not null");
+        if (null == definitions) {
+            throw new IllegalArgumentException("Definitions must be not null");
         }
         if (null == strategy) {
             throw new IllegalArgumentException("ImportType startegy must be not null");
         }
-        AlertDefinitions imported = new AlertDefinitions();
+        Definitions imported = new Definitions();
         try {
             Collection<Trigger> existingTriggers = selectTriggers(tenantId);
             Map<String, Set<String>> existingDefinitions = getActionDefinitionIds(tenantId);
@@ -2896,8 +2896,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 }
             }
             List<FullTrigger> importedTriggers = new ArrayList<>();
-            if (!isEmpty(alertDefinitions.getTriggers())) {
-                for (FullTrigger t : alertDefinitions.getTriggers()) {
+            if (!isEmpty(definitions.getTriggers())) {
+                for (FullTrigger t : definitions.getTriggers()) {
                     if (!isEmpty(t.getTrigger())) {
                         boolean existing = existingTriggers.contains(t.getTrigger());
                         switch (strategy) {
@@ -2934,8 +2934,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 }
             }
             List<ActionDefinition> importedActionDefinitions = new ArrayList<>();
-            if (!isEmpty(alertDefinitions.getActions())) {
-                for (ActionDefinition a : alertDefinitions.getActions()) {
+            if (!isEmpty(definitions.getActions())) {
+                for (ActionDefinition a : definitions.getActions()) {
                     a.setTenantId(tenantId);
                     if (!isEmpty(a)) {
                         boolean existing = existingDefinitions.containsKey(a.getActionPlugin()) &&

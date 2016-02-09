@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class AlertDefinitions {
+public class Definitions {
 
     @JsonInclude(Include.NON_EMPTY)
     private List<FullTrigger> triggers;
@@ -39,11 +39,11 @@ public class AlertDefinitions {
     @JsonInclude(Include.NON_EMPTY)
     private List<ActionDefinition> actions;
 
-    public AlertDefinitions() {
+    public Definitions() {
     }
 
-    public AlertDefinitions(List<FullTrigger> triggers,
-                            List<ActionDefinition> actions) {
+    public Definitions(List<FullTrigger> triggers,
+                       List<ActionDefinition> actions) {
         this.triggers = triggers;
         this.actions = actions;
     }
@@ -69,7 +69,7 @@ public class AlertDefinitions {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        AlertDefinitions that = (AlertDefinitions) o;
+        Definitions that = (Definitions) o;
 
         if (triggers != null ? !triggers.equals(that.triggers) : that.triggers != null) return false;
         return actions != null ? actions.equals(that.actions) : that.actions == null;
@@ -84,7 +84,7 @@ public class AlertDefinitions {
 
     @Override
     public String toString() {
-        return "AlertDefinitions" + '[' +
+        return "Definitions" + '[' +
                 "triggers=" + triggers +
                 ", actions=" + actions +
                 ']';

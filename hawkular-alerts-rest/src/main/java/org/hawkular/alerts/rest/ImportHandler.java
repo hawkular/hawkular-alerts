@@ -28,7 +28,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
-import org.hawkular.alerts.api.model.export.AlertDefinitions;
+import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.model.export.ImportType;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.rest.ResponseUtil.ApiError;
@@ -62,7 +62,7 @@ public class ImportHandler {
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Import a list of full triggers and action definitions.",
             notes = "Return a list of effectively imported full triggers and action definitions.",
-            response = AlertDefinitions.class)
+            response = Definitions.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully exported list of full triggers and action definitions."),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
@@ -73,10 +73,10 @@ public class ImportHandler {
             @PathParam("strategy")
             final String strategy,
             @ApiParam(value = "Collection of full triggers and action definitions to import.")
-            final AlertDefinitions alertDefinitions) {
+            final Definitions definitions) {
         try {
             ImportType importType = ImportType.valueOf(strategy.toUpperCase());
-            AlertDefinitions imported = definitions.importDefinitions(tenantId, alertDefinitions, importType);
+            Definitions imported = this.definitions.importDefinitions(tenantId, definitions, importType);
             return ResponseUtil.ok(imported);
         } catch (IllegalArgumentException e) {
             return ResponseUtil.badRequest("Bad argument: " + e.getMessage());

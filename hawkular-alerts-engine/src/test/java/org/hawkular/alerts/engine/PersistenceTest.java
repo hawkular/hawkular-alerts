@@ -49,7 +49,7 @@ import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.event.EventCategory;
-import org.hawkular.alerts.api.model.export.AlertDefinitions;
+import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.model.export.ImportType;
 import org.hawkular.alerts.api.model.paging.ActionComparator;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
@@ -105,7 +105,7 @@ public abstract class PersistenceTest {
     public void test001ExportImport() throws Exception {
         logger.info("test001ExportDefinitions");
 
-        AlertDefinitions exported = definitionsService.exportDefinitions(TENANT);
+        Definitions exported = definitionsService.exportDefinitions(TENANT);
         int exportedTriggers = exported.getTriggers().size();
         int exportedActionDefinitions = exported.getActions().size();
         assertTrue(exportedTriggers > 0);
