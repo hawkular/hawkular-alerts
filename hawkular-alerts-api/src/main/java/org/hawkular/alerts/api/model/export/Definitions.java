@@ -64,6 +64,24 @@ public class Definitions {
         this.actions = actions;
     }
 
+    public void updateTenant(String tenantId) {
+        if (triggers != null) {
+            for (FullTrigger t : triggers) {
+                if (t.getTrigger() != null) {
+                    t.getTrigger().setTenantId(tenantId);
+                    t.check();
+                }
+            }
+        }
+        if (actions != null) {
+            for (ActionDefinition a : actions) {
+                if (a != null) {
+                    a.setTenantId(tenantId);
+                }
+            }
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

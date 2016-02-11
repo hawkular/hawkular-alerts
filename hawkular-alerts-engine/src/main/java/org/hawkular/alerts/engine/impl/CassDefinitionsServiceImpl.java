@@ -2879,6 +2879,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (null == strategy) {
             throw new IllegalArgumentException("ImportType startegy must be not null");
         }
+        definitions.updateTenant(tenantId);
         Definitions imported = new Definitions();
         try {
             Collection<Trigger> existingTriggers = selectTriggers(tenantId);

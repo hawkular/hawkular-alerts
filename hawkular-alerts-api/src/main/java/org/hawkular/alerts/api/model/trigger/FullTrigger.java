@@ -86,6 +86,11 @@ public class FullTrigger implements Serializable {
         checkConditions();
     }
 
+    public void check() {
+        checkDampenings();
+        checkConditions();
+    }
+
     private void checkDampenings() {
         if (trigger != null && !isEmpty(dampenings) && !isEmpty(trigger.getId()) && !isEmpty(trigger.getTenantId())) {
             for (Dampening d : dampenings) {
