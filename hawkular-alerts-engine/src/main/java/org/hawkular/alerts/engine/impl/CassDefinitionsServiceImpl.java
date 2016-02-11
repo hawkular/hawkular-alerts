@@ -312,10 +312,11 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             trigger.getActions().forEach(triggerAction -> {
                 triggerAction.setTenantId(trigger.getTenantId());
             });
-            List<ResultSetFuture> futures = trigger.getActions().stream().map(triggerAction -> session.
-                    executeAsync(insertTriggerActions.bind(trigger.getTenantId(), trigger.getId(),
+            List<ResultSetFuture> futures = trigger.getActions().stream().map(triggerAction -> session
+                    .executeAsync(insertTriggerActions.bind(trigger.getTenantId(), trigger.getId(),
                             triggerAction.getActionPlugin(), triggerAction.getActionId(),
-                            JsonUtil.toJson(triggerAction)))).collect(Collectors.toList());
+                            JsonUtil.toJson(triggerAction))))
+                    .collect(Collectors.toList());
             Futures.allAsList(futures).get();
         }
     }
@@ -481,7 +482,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         Map<String, String> existingTags = existingGroupTrigger.getTags();
 
         for (Trigger member : memberTriggers) {
-            copyGroupTrigger(groupTrigger, member);
+            copyGroupTrigger(groupTrigger, member, false);
             updateTrigger(member, existingActions, existingTags);
         }
 
@@ -528,23 +529,47 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         notifyListeners(DefinitionsEvent.Type.TRIGGER_UPDATE);
     }
 
-    private Trigger copyGroupTrigger(Trigger group, Trigger member) {
+    private Trigger copyGroupTrigger(Trigger group, Trigger member, boolean isNewMember) {
         member.setActions(group.getActions());
         member.setAutoDisable(group.isAutoDisable());
         member.setAutoEnable(group.isAutoEnable());
         member.setAutoResolve(group.isAutoResolve());
         member.setAutoResolveAlerts(group.isAutoResolveAlerts());
         member.setAutoResolveMatch(group.getAutoResolveMatch());
-        member.setContext(group.getContext());
-        member.setDataIdMap(group.getDataIdMap()); // irrelevant but here for completeness
-        member.setDescription(group.getDescription());
         member.setEnabled(group.isEnabled());
         member.setEventType(group.getEventType());
         member.setFiringMatch(group.getFiringMatch());
         member.setMemberOf(group.getId());
         member.setSeverity(group.getSeverity());
-        member.setTags(group.getTags());
         member.setType(TriggerType.MEMBER);
+
+        // On update don't override fields that can be customized at the member level. Make sure new
+        // Context or Tag settings are merged in but don't remove or reset any existing keys.
+        if (isNewMember) {
+            member.setDataIdMap(group.getDataIdMap()); // likely irrelevant but here for completeness
+            member.setDescription(group.getDescription());
+            member.setContext(group.getContext());
+            member.setTags(group.getTags());
+        } else {
+            if (!isEmpty(group.getContext())) {
+                // add new group-level context
+                Map<String, String> combinedContext = new HashMap<>();
+                combinedContext.putAll(member.getContext());
+                for (Map.Entry<String, String> entry : group.getContext().entrySet()) {
+                    combinedContext.putIfAbsent(entry.getKey(), entry.getValue());
+                }
+                member.setContext(combinedContext);
+            }
+            if (!isEmpty(group.getTags())) {
+                // add new group-level tags
+                Map<String, String> combinedTags = new HashMap<>();
+                combinedTags.putAll(member.getTags());
+                for (Map.Entry<String, String> entry : group.getTags().entrySet()) {
+                    combinedTags.putIfAbsent(entry.getKey(), entry.getValue());
+                }
+                member.setTags(combinedTags);
+            }
+        }
 
         return member;
     }
@@ -795,9 +820,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         for (Entry<String, String> tag : tags.entrySet()) {
             boolean nameOnly = "*".equals(tag.getValue());
-            BoundStatement bs = nameOnly ?
-                    selectTagsByName.bind(tenantId, tagType.name(), tag.getKey()) :
-                    selectTagsByNameAndValue.bind(tenantId, tagType.name(), tag.getKey(), tag.getValue());
+            BoundStatement bs = nameOnly ? selectTagsByName.bind(tenantId, tagType.name(), tag.getKey())
+                    : selectTagsByNameAndValue.bind(tenantId, tagType.name(), tag.getKey(), tag.getValue());
             futures.add(session.executeAsync(bs));
         }
         List<ResultSet> rsTags = Futures.allAsList(futures).get();
@@ -903,9 +927,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             List<ResultSetFuture> futures = nameOnly ? tenants.stream()
                     .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name)))
                     .collect(Collectors.toList()) : tenants.stream()
-                    .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name,
-                            value)))
-                    .collect(Collectors.toList());
+                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name,
+                                    value)))
+                            .collect(Collectors.toList());
             List<ResultSet> rsTriggerIds = Futures.allAsList(futures).get();
             rsTriggerIds.stream().forEach(rs -> {
                 for (Row row : rs) {
@@ -1073,7 +1097,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         memberName = isEmpty(memberName) ? group.getName() : memberName;
         Trigger member = new Trigger(tenantId, memberId, memberName);
 
-        copyGroupTrigger(group, member);
+        copyGroupTrigger(group, member, true);
 
         if (!isEmpty(memberDescription)) {
             member.setDescription(memberDescription);
@@ -1243,7 +1267,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         String memberId = group.getId() + "_" + source;
         Trigger member = new Trigger(tenantId, memberId, group.getName());
 
-        copyGroupTrigger(group, member);
+        copyGroupTrigger(group, member, true);
         member.setSource(source);
 
         addTrigger(member);
