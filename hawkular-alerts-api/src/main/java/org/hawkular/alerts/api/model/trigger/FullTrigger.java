@@ -119,6 +119,7 @@ public class FullTrigger implements Serializable {
     private boolean isEmpty(Collection c) {
         return c == null || c.isEmpty();
     }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -126,18 +127,13 @@ public class FullTrigger implements Serializable {
 
         FullTrigger that = (FullTrigger) o;
 
-        if (trigger != null ? !trigger.equals(that.trigger) : that.trigger != null) return false;
-        if (dampenings != null ? !dampenings.equals(that.dampenings) : that.dampenings != null) return false;
-        return conditions != null ? conditions.equals(that.conditions) : that.conditions == null;
+        return trigger != null ? trigger.equals(that.trigger) : that.trigger == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = trigger != null ? trigger.hashCode() : 0;
-        result = 31 * result + (dampenings != null ? dampenings.hashCode() : 0);
-        result = 31 * result + (conditions != null ? conditions.hashCode() : 0);
-        return result;
+        return trigger != null ? trigger.hashCode() : 0;
     }
 
     @Override
