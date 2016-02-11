@@ -2993,12 +2993,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             if (!isEmpty(fullTrigger.getDampenings())) {
                 for (Dampening d : fullTrigger.getDampenings()) {
                     d.setTenantId(tenantId);
+                    d.setTriggerId(trigger.getId());
                     addDampening(d);
                 }
             }
             if (!isEmpty(fullTrigger.getConditions())) {
                 for (Condition c : fullTrigger.getConditions()) {
                     c.setTenantId(tenantId);
+                    c.setTriggerId(trigger.getId());
                     addCondition(c);
                 }
             }
