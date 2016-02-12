@@ -68,7 +68,7 @@ public class StandaloneActionPluginListener implements ActionListener {
                 return;
             }
             String actionPlugin = action.getActionPlugin();
-            ActionPluginListener plugin = plugins.get(actionPlugin);
+            final ActionPluginListener plugin = plugins.get(actionPlugin);
             Set<String> globals = ActionPlugins.getGlobals();
             if (plugin == null && ActionPlugins.getGlobals().isEmpty()) {
                 if (log.isDebugEnabled()) {
@@ -79,26 +79,30 @@ public class StandaloneActionPluginListener implements ActionListener {
             }
 
             ActionMessage pluginMessage = new StandaloneActionMessage(action);
-            executorService.execute(() -> {
-                try {
-                    plugin.process(pluginMessage);
-                } catch (Exception e) {
-                    log.debug("Error processing action: " + action.getActionPlugin(), e);
-                    msgLog.errorProcessingAction(e.getMessage());
-                }
-            });
+            if (plugin != null) {
+                executorService.execute(() -> {
+                    try {
+                        plugin.process(pluginMessage);
+                    } catch (Exception e) {
+                        log.debug("Error processing action: " + action.getActionPlugin(), e);
+                        msgLog.errorProcessingAction(e.getMessage());
+                    }
+                });
+            }
             // Check if the plugin is executed twice
             if (!globals.contains(actionPlugin)) {
                 for (String global : globals) {
                     ActionPluginListener globalPlugin = ActionPlugins.getPlugins().get(global);
-                    executorService.execute(() -> {
-                        try {
-                            globalPlugin.process(pluginMessage);
-                        } catch (Exception e) {
-                            log.debug("Error processing action: " + action.getActionPlugin(), e);
-                            msgLog.errorProcessingAction(e.getMessage());
-                        }
-                    });
+                    if (globalPlugin != null) {
+                        executorService.execute(() -> {
+                            try {
+                                globalPlugin.process(pluginMessage);
+                            } catch (Exception e) {
+                                log.debug("Error processing action: " + action.getActionPlugin(), e);
+                                msgLog.errorProcessingAction(e.getMessage());
+                            }
+                        });
+                    }
                 }
             }
 
