@@ -37,7 +37,7 @@ TIP: By default, Hawkular Alerts will send email notifications using a SMTP serv
 
 TIP: To run the example against the Hawkular distribution, use the command `mvn validate -Dhawkular`.
 
-== create.definitions.groovy
+== create_definitions.groovy
 
 Create a hello world trigger to two conditions to fire an alert everytime that:
 
