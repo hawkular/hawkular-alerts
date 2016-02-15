@@ -1,4 +1,4 @@
-= hello world
+= Hello World
 
 This example shows how to use Hawkular Alerts REST API from a script.
 
