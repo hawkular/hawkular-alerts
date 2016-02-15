@@ -82,11 +82,16 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
         Set<String> activeMetricIds = cacheManager.getActiveDataIds();
         for (SingleMetric m : data) {
             if (isNeeded(activeMetricIds, m.getSource())) {
+                if (log.isTraceEnabled()) {
+                    log.tracef("KEEPING METRIC [%s:%s]", m.getSource(), String.valueOf(m.getValue()));
+                }
                 if (null == alertData) {
                     alertData = new ArrayList<>(data.size());
                 }
                 alertData.add(Data.forNumeric(metricData.getTenantId(), m.getSource(), m.getTimestamp(),
                         m.getValue()));
+            } else if (log.isTraceEnabled()) {
+                log.tracef("TOSSING METRIC [%s]", m.getSource());
             }
         }
         if (null == alertData) {
