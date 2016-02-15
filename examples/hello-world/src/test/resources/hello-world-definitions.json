@@ -1,0 +1,46 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "hello-world-trigger",
+        "name": "Hello World Trigger",
+        "description": "A mandatory Hello World Trigger",
+        "severity": "HIGH",
+        "enabled": true,
+        "actions":[
+          {
+            "actionPlugin": "email",
+            "actionId": "notify-to-admins"
+          }
+        ]
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "data-x",
+          "operator": "LT",
+          "threshold": 5
+        },
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "data-y",
+          "operator": "GT",
+          "threshold": 5
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "email",
+      "actionId": "notify-to-admins",
+      "properties": {
+        "to": "admins@hawkular.org",
+        "cc": "developers@hawkular.org",
+        "description": "Notify by email to Admins with cc to Developers"
+      }
+    }
+  ]
+}
