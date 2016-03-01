@@ -316,7 +316,7 @@
                       <version>${project.version}</version>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}/modules/org/hawkular/nest/main/deployments</outputDirectory>
+                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
                       <destFileName>hawkular-alerts-rest.war</destFileName>
                     </artifactItem>
                     <artifactItem>
@@ -324,7 +324,7 @@
                       <artifactId>hawkular-alerts-actions-email</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}/modules/org/hawkular/nest/main/deployments</outputDirectory>
+                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
                       <destFileName>hawkular-alerts-actions-email.war</destFileName>
                     </artifactItem>
                     <artifactItem>
@@ -332,7 +332,7 @@
                       <artifactId>hawkular-alerts-actions-file</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}/modules/org/hawkular/nest/main/deployments</outputDirectory>
+                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
                       <destFileName>hawkular-alerts-actions-file.war</destFileName>
                     </artifactItem>
                   </artifactItems>
@@ -353,7 +353,7 @@
                   <goal>copy-resources</goal>
                 </goals>
                 <configuration>
-                  <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}/standalone/configuration</outputDirectory>
+                  <outputDirectory>${project.build.directory}/${project.build.finalName}/standalone/configuration</outputDirectory>
                   <overwrite>true</overwrite>
                   <resources>
                     <resource>
@@ -373,7 +373,7 @@
                   <goal>copy-resources</goal>
                 </goals>
                 <configuration>
-                  <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}/standalone/data</outputDirectory>
+                  <outputDirectory>${project.build.directory}/${project.build.finalName}/standalone/data</outputDirectory>
                   <overwrite>true</overwrite>
                   <resources>
                     <resource>
@@ -403,12 +403,12 @@
                   <transformationSets>
                     <!-- standalone.xml -->
                     <transformationSet>
-                      <dir>${project.build.directory}/${project.artifactId}-${project.version}/standalone/configuration</dir>
+                      <dir>${project.build.directory}/${project.build.finalName}/standalone/configuration</dir>
                       <stylesheet>src/test/resources/standalone-hawkular.xsl</stylesheet>
                       <includes>
                         <include>standalone.xml</include>
                       </includes>
-                      <outputDir>${project.build.directory}/${project.artifactId}-${project.version}/standalone/configuration</outputDir>
+                      <outputDir>${project.build.directory}/${project.build.finalName}/standalone/configuration</outputDir>
                     </transformationSet>
                   </transformationSets>
                 </configuration>
@@ -421,7 +421,7 @@
             <groupId>org.wildfly.plugins</groupId>
             <artifactId>wildfly-maven-plugin</artifactId>
             <configuration>
-              <jboss-home>${project.build.directory}/${project.artifactId}-${project.version}</jboss-home>
+              <jboss-home>${project.build.directory}/${project.build.finalName}</jboss-home>
               <skip>${skipTests}</skip>
               <startupTimeout>240</startupTimeout>
               <port>${hawkular.management.port}</port>
@@ -434,7 +434,7 @@
                 <javaOpt>-Djava.awt.headless=true</javaOpt>
                 <javaOpt>-Djboss.bind.address=${hawkular.host}</javaOpt>
                 <javaOpt>-Djboss.socket.binding.port-offset=${hawkular.port.offset}</javaOpt>
-                <javaOpt>-Dkeycloak.import=${project.build.directory}/${project.artifactId}-${project.version}/standalone/configuration/hawkular-realm-for-dev.json</javaOpt>
+                <javaOpt>-Dkeycloak.import=${project.build.directory}/${project.build.finalName}/standalone/configuration/hawkular-realm-for-dev.json</javaOpt>
                 <javaOpt>-Dmail.smtp.host=localhost</javaOpt>
                 <javaOpt>-Dmail.smtp.port=2525</javaOpt>
                 <!--<javaOpt>-Xdebug</javaOpt>-->
