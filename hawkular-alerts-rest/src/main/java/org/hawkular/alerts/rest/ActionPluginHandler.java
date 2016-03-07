@@ -80,7 +80,7 @@ public class ActionPluginHandler {
             return ResponseUtil.ok(actionPlugins);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -110,7 +110,7 @@ public class ActionPluginHandler {
             return ResponseUtil.ok(actionPluginProps);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 

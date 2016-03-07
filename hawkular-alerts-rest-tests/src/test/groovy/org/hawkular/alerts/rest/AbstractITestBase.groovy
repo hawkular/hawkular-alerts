@@ -18,6 +18,8 @@ package org.hawkular.alerts.rest
 
 import com.icegreen.greenmail.util.GreenMail
 import com.icegreen.greenmail.util.ServerSetup
+import groovyx.net.http.HttpResponseDecorator
+import groovyx.net.http.HttpResponseException
 import org.junit.AfterClass
 import org.junit.BeforeClass
 
@@ -45,7 +47,14 @@ class AbstractITestBase {
         client = new RESTClient(baseURI, ContentType.JSON)
         // this prevents 404 from being wrapped in an Exception, just return the response, better for testing
         client.handler.failure = { it }
-
+        client.handler.failure = { resp, data ->
+            resp.setData(data)
+            String headers = ""
+            resp.headers.each {
+                headers = headers+"${it.name} : ${it.value}\n"
+            }
+            return resp
+        }
         /*
             User: jdoe
             Password: password

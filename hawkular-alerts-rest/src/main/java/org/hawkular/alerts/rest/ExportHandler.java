@@ -69,7 +69,7 @@ public class ExportHandler {
             return ResponseUtil.ok(definitions);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 }

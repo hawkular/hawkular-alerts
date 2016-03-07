@@ -122,7 +122,7 @@ public class TriggersHandler {
             return ResponseUtil.paginatedOk(triggerPage, uri);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -179,7 +179,7 @@ public class TriggersHandler {
             return ResponseUtil.ok(members);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -213,7 +213,7 @@ public class TriggersHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -277,7 +277,7 @@ public class TriggersHandler {
             return ResponseUtil.ok(fullTrigger);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -311,7 +311,7 @@ public class TriggersHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -355,7 +355,7 @@ public class TriggersHandler {
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -383,7 +383,7 @@ public class TriggersHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -417,7 +417,7 @@ public class TriggersHandler {
 
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -451,7 +451,7 @@ public class TriggersHandler {
 
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -485,7 +485,7 @@ public class TriggersHandler {
 
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -514,7 +514,7 @@ public class TriggersHandler {
 
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -552,7 +552,7 @@ public class TriggersHandler {
 
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -579,7 +579,7 @@ public class TriggersHandler {
 
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -616,7 +616,7 @@ public class TriggersHandler {
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -639,7 +639,7 @@ public class TriggersHandler {
             return ResponseUtil.ok(dampenings);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -668,7 +668,7 @@ public class TriggersHandler {
             return ResponseUtil.ok(dampenings);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -699,7 +699,7 @@ public class TriggersHandler {
             return ResponseUtil.ok(found);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -738,7 +738,7 @@ public class TriggersHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -776,7 +776,7 @@ public class TriggersHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -846,7 +846,7 @@ public class TriggersHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -885,7 +885,7 @@ public class TriggersHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -915,7 +915,7 @@ public class TriggersHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -947,7 +947,7 @@ public class TriggersHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -970,7 +970,7 @@ public class TriggersHandler {
             return ResponseUtil.ok(conditions);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -1008,7 +1008,7 @@ public class TriggersHandler {
             return ResponseUtil.ok(found);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -1054,7 +1054,7 @@ public class TriggersHandler {
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -1107,7 +1107,7 @@ public class TriggersHandler {
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -1152,7 +1152,7 @@ public class TriggersHandler {
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -1202,7 +1202,7 @@ public class TriggersHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -1246,7 +1246,7 @@ public class TriggersHandler {
             return ResponseUtil.ok(conditions);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 

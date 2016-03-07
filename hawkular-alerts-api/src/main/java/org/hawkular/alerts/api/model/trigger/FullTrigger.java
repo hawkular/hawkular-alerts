@@ -17,6 +17,7 @@
 package org.hawkular.alerts.api.model.trigger;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -69,19 +70,31 @@ public class FullTrigger implements Serializable {
     }
 
     public List<Dampening> getDampenings() {
+        if (dampenings == null) {
+            dampenings = new ArrayList<>();
+        }
         return dampenings;
     }
 
     public void setDampenings(List<Dampening> dampenings) {
+        if (dampenings == null) {
+            dampenings = new ArrayList<>();
+        }
         this.dampenings = dampenings;
         checkDampenings();
     }
 
     public List<Condition> getConditions() {
+        if (conditions == null) {
+            conditions = new ArrayList<>();
+        }
         return conditions;
     }
 
     public void setConditions(List<Condition> conditions) {
+        if (conditions == null) {
+            conditions = new ArrayList<>();
+        }
         this.conditions = conditions;
         checkConditions();
     }

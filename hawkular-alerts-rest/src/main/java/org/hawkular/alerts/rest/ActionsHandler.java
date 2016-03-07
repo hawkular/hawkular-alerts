@@ -99,7 +99,7 @@ public class ActionsHandler {
             return ResponseUtil.ok(actions);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -124,7 +124,7 @@ public class ActionsHandler {
             return ResponseUtil.ok(actions);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -156,7 +156,7 @@ public class ActionsHandler {
             return ResponseUtil.ok(actionDefinition);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -202,7 +202,7 @@ public class ActionsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -244,7 +244,7 @@ public class ActionsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -275,7 +275,7 @@ public class ActionsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -331,7 +331,7 @@ public class ActionsHandler {
             return ResponseUtil.paginatedOk(actionPage, uri);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -378,7 +378,7 @@ public class ActionsHandler {
             return ResponseUtil.ok(numDeleted);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 

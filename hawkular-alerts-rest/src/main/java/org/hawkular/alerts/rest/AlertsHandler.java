@@ -138,7 +138,7 @@ public class AlertsHandler {
             return ResponseUtil.paginatedOk(alertPage, uri);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -172,7 +172,7 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -206,7 +206,7 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -241,7 +241,7 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -275,7 +275,7 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -310,7 +310,7 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -340,7 +340,7 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -392,7 +392,7 @@ public class AlertsHandler {
             return ResponseUtil.ok(numDeleted);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -473,7 +473,7 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -508,7 +508,7 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -544,7 +544,7 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -575,7 +575,7 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 

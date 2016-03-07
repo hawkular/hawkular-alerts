@@ -490,4 +490,35 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(200, resp.status)
     }
 
+    @Test
+    void createFullTriggerWithNullValues() {
+        String jsonTrigger = "{\n" +
+                "      \"trigger\":{\n" +
+                "        \"id\": \"full-test-trigger-with-nulls\",\n" +
+                "        \"enabled\": true,\n" +
+                "        \"name\": \"NumericData-01-low\",\n" +
+                "        \"description\": \"description 1\",\n" +
+                "        \"severity\": null\n," +
+                "        \"autoResolve\": null\n," +
+                "        \"autoResolveAlerts\": null\n," +
+                "        \"eventType\": null\n," +
+                "        \"tenantId\": null\n," +
+                "        \"description\": null\n," +
+                "        \"autoEnable\": null\n," +
+                "        \"autoDisable\": null\n" +
+                "      }\n" +
+                "    }";
+
+        // remove if it exists
+        def resp = client.delete(path: "triggers/full-test-trigger-with-nulls")
+        assert(200 == resp.status || 404 == resp.status)
+
+        // create the test trigger
+        resp = client.post(path: "triggers/trigger", body: jsonTrigger)
+        assertEquals(200, resp.status)
+
+        resp = client.delete(path: "triggers/full-test-trigger-with-nulls")
+        assertEquals(200, resp.status)
+    }
+
 }
