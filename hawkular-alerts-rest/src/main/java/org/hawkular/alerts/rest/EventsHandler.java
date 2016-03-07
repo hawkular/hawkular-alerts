@@ -119,7 +119,7 @@ public class EventsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -154,7 +154,7 @@ public class EventsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -188,7 +188,7 @@ public class EventsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -241,7 +241,7 @@ public class EventsHandler {
             return ResponseUtil.paginatedOk(eventPage, uri);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -272,7 +272,7 @@ public class EventsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -317,7 +317,7 @@ public class EventsHandler {
             return ResponseUtil.ok(numDeleted);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 
@@ -386,7 +386,7 @@ public class EventsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 

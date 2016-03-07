@@ -82,7 +82,7 @@ public class ImportHandler {
             return ResponseUtil.badRequest("Bad argument: " + e.getMessage());
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e.getMessage());
+            return ResponseUtil.internalError(e);
         }
     }
 

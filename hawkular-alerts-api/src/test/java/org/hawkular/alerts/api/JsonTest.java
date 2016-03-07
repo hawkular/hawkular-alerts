@@ -1010,6 +1010,38 @@ public class JsonTest {
     }
 
     @Test
+    public void jsonTriggerNullValuesTest() throws Exception {
+        String str = "{\"name\":\"test-name\"," +
+                "\"description\":null," +
+                "\"actions\":null," +
+                "\"firingMatch\":null," +
+                "\"autoResolveMatch\":null," +
+                "\"id\":null," +
+                "\"enabled\":true," +
+                "\"autoDisable\":null," +
+                "\"autoEnable\":null," +
+                "\"autoResolve\":null," +
+                "\"autoResolveAlerts\":null," +
+                "\"severity\":null," +
+                "\"context\":null}";
+        Trigger trigger = objectMapper.readValue(str, Trigger.class);
+
+        assertTrue(trigger.getName().equals("test-name"));
+        assertNull(trigger.getDescription());
+        assertNotNull(trigger.getActions());
+        assertTrue(trigger.getFiringMatch().equals(Match.ALL));
+        assertTrue(trigger.getAutoResolveMatch().equals(Match.ALL));
+        assertNull(trigger.getId());
+        assertTrue(trigger.isEnabled());
+        assertFalse(trigger.isAutoDisable());
+        assertFalse(trigger.isAutoEnable());
+        assertFalse(trigger.isAutoResolve());
+        assertFalse(trigger.isAutoResolveAlerts());
+        assertTrue(trigger.getSeverity() == Severity.MEDIUM);
+        assertNotNull(trigger.getContext());
+    }
+
+    @Test
     public void jsonTriggerMatchAnyTest() throws Exception {
         String str = "{\"name\":\"test-name\",\"description\":\"test-description\"," +
                 "\"actions\":[" +

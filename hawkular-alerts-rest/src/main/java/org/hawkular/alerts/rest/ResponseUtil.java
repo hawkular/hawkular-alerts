@@ -38,6 +38,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 public class ResponseUtil {
 
+    public static Response internalError(Exception e) {
+        if (e.getMessage() == null) {
+            return internalError(e.toString());
+        } else {
+            return internalError(e.getMessage());
+        }
+    }
+
     public static Response internalError(String message) {
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity(new ApiError(message)).type(APPLICATION_JSON_TYPE).build();

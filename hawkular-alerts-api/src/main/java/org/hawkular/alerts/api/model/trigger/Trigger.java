@@ -239,6 +239,9 @@ public class Trigger implements Serializable {
     }
 
     public void setEventType(EventType eventType) {
+        if (eventType == null) {
+            eventType = EventType.ALERT;
+        }
         this.eventType = eventType;
     }
 
@@ -266,6 +269,9 @@ public class Trigger implements Serializable {
     }
 
     public void setContext(Map<String, String> context) {
+        if (null == context) {
+            context = new HashMap<>();
+        }
         this.context = context;
     }
 
@@ -284,6 +290,9 @@ public class Trigger implements Serializable {
     }
 
     public void setTags(Map<String, String> tags) {
+        if (null == tags) {
+            tags = new HashMap<>();
+        }
         this.tags = tags;
     }
 
@@ -331,6 +340,9 @@ public class Trigger implements Serializable {
     }
 
     public void setSeverity(Severity severity) {
+        if (severity == null) {
+            severity = Severity.MEDIUM;
+        }
         this.severity = severity;
     }
 
@@ -350,6 +362,9 @@ public class Trigger implements Serializable {
     }
 
     public void setActions(Set<TriggerAction> actions) {
+        if (actions == null) {
+            actions = new HashSet<>();
+        }
         this.actions = actions;
     }
 
@@ -464,11 +479,17 @@ public class Trigger implements Serializable {
     }
 
     public void setFiringMatch(Match firingMatch) {
+        if (firingMatch == null) {
+            firingMatch = Match.ALL;
+        }
         this.firingMatch = firingMatch;
         setMatch(this.mode == Mode.FIRING ? getFiringMatch() : getAutoResolveMatch());
     }
 
     public void setAutoResolveMatch(Match autoResolveMatch) {
+        if (autoResolveMatch == null) {
+            autoResolveMatch = Match.ALL;
+        }
         this.autoResolveMatch = autoResolveMatch;
         setMatch(this.mode == Mode.FIRING ? getFiringMatch() : getAutoResolveMatch());
     }
