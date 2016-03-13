@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,41 +16,35 @@
  */
 package org.hawkular.alerts.actions.webhook;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
-import org.hawkular.alerts.actions.api.Global;
+import org.hawkular.alerts.actions.api.ActionPluginSender;
+import org.hawkular.alerts.actions.api.ActionResponseMessage;
 import org.hawkular.alerts.actions.api.MsgLogger;
 import org.hawkular.alerts.actions.api.Plugin;
+import org.hawkular.alerts.actions.api.Sender;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
-import org.hawkular.alerts.api.model.event.Alert;
 import org.jboss.logging.Logger;
 
 /**
- * An example of listener for webhook gateway processing.
+ * An example of listener for basic webhook processing.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Global
 @Plugin(name = "webhook")
 public class WebHookPlugin implements ActionPluginListener {
-    public static final String FILE_PROPERTY = "org.hawkular.alerts.actions.webhooks.file";
-    private static final String TRIGGER_ID = "triggerId";
-    private static final String ALERT_ID = "alertId";
-    private static final String STATUS = "status";
-    private static final String SEVERITY = "severity";
-    private static final String POST = "POST";
+
+    private static final String DEFAULT_URL = "http://localhost:8080/hawkular/actions/webhook/ping";
+    private static final String DEFAULT_METHOD = "POST";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String APPLICATION_JSON = "application/json";
 
@@ -58,28 +52,15 @@ public class WebHookPlugin implements ActionPluginListener {
     private static final Logger log = Logger.getLogger(WebHookPlugin.class);
     Map<String, String> defaultProperties = new HashMap<>();
 
+    @Sender
+    ActionPluginSender sender;
+
+    private static final String MESSAGE_PROCESSED = "PROCESSED";
+    private static final String MESSAGE_FAILED = "FAILED";
+
     public WebHookPlugin() {
-        String webHooksFile = System.getProperty(FILE_PROPERTY);
-        if (webHooksFile != null) {
-            WebHooks.setFile(webHooksFile);
-            File f = new File(webHooksFile);
-            if (!f.exists()) {
-                log.debug("WebHooks file " + webHooksFile + " doesn't exist");
-            } else {
-                try {
-                    WebHooks.loadFile();
-                    log.debug("WebHooks file loaded.");
-                } catch (IOException e) {
-                    msgLog.warn(e.toString(), e);
-                }
-            }
-        }
-        if (WebHooks.isSupportsFile()) {
-            defaultProperties.put("usingWebHooksFile", "true");
-            defaultProperties.put("webHooksFile", WebHooks.getFile());
-        } else {
-            defaultProperties.put("usingWebHooksFile", "false");
-        }
+        defaultProperties.put("url", DEFAULT_URL);
+        defaultProperties.put("method", DEFAULT_METHOD);
     }
 
     @Override
@@ -96,79 +77,30 @@ public class WebHookPlugin implements ActionPluginListener {
     public void process(ActionMessage msg) throws Exception {
         msgLog.infoActionReceived("webhook", msg.toString());
         Action receivedAction = msg.getAction();
-        String tenantId = receivedAction.getTenantId();
-        List<Map<String,String>> webhooks = WebHooks.getWebHooks(tenantId);
-        if (webhooks == null) {
-            log.debug("Webhook received a message but there are not webhooks configured");
-            return;
+        try {
+            invokeWebhook(receivedAction);
+            receivedAction.setResult(MESSAGE_PROCESSED);
+        } catch (Exception e) {
+            msgLog.errorCannotProcessMessage("webhook", e.getMessage());
+            receivedAction.setResult(MESSAGE_FAILED);
         }
-        for (Map<String, String> webhook : webhooks) {
-            if (checkFilter(receivedAction, webhook.get("filter"))) {
-                try {
-                    invokeWebhook(receivedAction, webhook.get("url"));
-                } catch (IOException e) {
-                    msgLog.errorCannotProcessMessage("webhook",
-                            "Webhook with url " + webhook.get("url") + " cannot be invoked");
-                }
-            }
-        }
+        sendResult(receivedAction);
     }
 
-    /**
-     * Implement a filter for actions.
-     * Filter is a comma separated list of field=value to filter with.
-     * Filter is a basic startsWith() match.
-     * More than one filter is considered as an AND filtered.
-     * Filters on non supported fields are just ignored.
-     *
-     * Supported fields:
-     * - Action.alert.triggerId
-     * - Action.alert.alertId
-     * - Action.alert.status
-     * - Action.alert.severity
-     *
-     * @param action to be filtered
-     * @param filter comma separated list
-     * @return filter result
-     */
-    public boolean checkFilter(Action action, String filter) {
-        if (action == null || action.getEvent() == null || filter == null || filter.isEmpty()) {
-            return true;
-        }
-        if (!(action.getEvent() instanceof Alert)) {
-            return true;
-        }
-        Alert alert = (Alert)action.getEvent();
-        String[] filters = filter.split(",");
-        for (String f : filters) {
-            String[] filterDetails = f.split("=");
-            if (filterDetails.length != 2) {
-                continue;
-            }
-            String key = filterDetails[0];
-            String value = filterDetails[1];
-            if (!TRIGGER_ID.equals(key) && !ALERT_ID.equals(key) && !SEVERITY.equals(key) && !STATUS.equals(key)) {
-                continue;
-            }
-            if (TRIGGER_ID.equals(key) && !alert.getTriggerId().equals(value)) {
-                return false;
-            } else if (ALERT_ID.equals(key) && !alert.getAlertId().equals(value)) {
-                return false;
-            } else if (STATUS.equals(key) && !alert.getStatus().name().equals(value)) {
-                return false;
-            } else if (SEVERITY.equals(key) && !alert.getSeverity().name().equals(value)) {
-                return false;
-            }
-        }
-        return true;
-    }
+    public void invokeWebhook(Action action) throws Exception {
 
-    public void invokeWebhook(Action action, String url) throws IOException {
+        if (action.getProperties() == null) {
+            throw new IllegalArgumentException("Received action without properties");
+        }
+        String url = isEmpty(action.getProperties().get("url")) ? DEFAULT_URL : action.getProperties().get("url");
+        String method = isEmpty(action.getProperties().get("method")) ? DEFAULT_METHOD :
+                action.getProperties().get("method");
+
         String jsonAction = JsonUtil.toJson(action);
         URL webHookUrl = new URL(url);
         HttpURLConnection conn = (HttpURLConnection)webHookUrl.openConnection();
         conn.setDoOutput(true);
-        conn.setRequestMethod(POST);
+        conn.setRequestMethod(method);
         conn.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
 
         OutputStream os = conn.getOutputStream();
@@ -181,4 +113,25 @@ public class WebHookPlugin implements ActionPluginListener {
 
         conn.disconnect();
     }
+
+    private void sendResult(Action action) {
+        if (sender == null) {
+            throw new IllegalStateException("ActionPluginSender is not present in the plugin");
+        }
+        if (action == null) {
+            throw new IllegalStateException("Action to update result must be not null");
+        }
+        ActionResponseMessage newMessage = sender.createMessage(ActionResponseMessage.Operation.RESULT);
+        newMessage.getPayload().put("action", JsonUtil.toJson(action));
+        try {
+            sender.send(newMessage);
+        } catch (Exception e) {
+            msgLog.error("Error sending ActionResponseMessage", e);
+        }
+    }
+
+    private boolean isEmpty(String s) {
+        return s == null || s.isEmpty();
+    }
+
 }

@@ -20,10 +20,12 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 
+import org.hawkular.alerts.actions.api.MsgLogger;
 import org.jboss.logging.Logger;
 
 /**
@@ -33,10 +35,13 @@ import org.jboss.logging.Logger;
  */
 @ApplicationPath("/")
 public class WebHookApp extends Application {
+    private final MsgLogger msgLog = MsgLogger.LOGGER;
     private static final Logger log = Logger.getLogger(WebHookApp.class);
 
+    public static final String TENANT_HEADER_NAME = "Hawkular-Tenant";
+
     public WebHookApp() {
-        log.debug("Hawkular Alerts WebHook starting...");
+        log.debug("Hawkular Alerts WebHook Global starting...");
     }
 
     public static Response internalError(String message) {
@@ -49,4 +54,16 @@ public class WebHookApp extends Application {
     public static Response ok(Object entity) {
         return Response.status(Response.Status.OK).entity(entity).type(APPLICATION_JSON_TYPE).build();
     }
+
+    public static Response ok() {
+        return Response.status(Response.Status.OK).type(APPLICATION_JSON_TYPE).build();
+    }
+
+    public static Response badRequest(String message) {
+        Map<String, String> errors = new HashMap<>();
+        errors.put("errorMsg", "Bad request: " + message);
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(errors).type(APPLICATION_JSON_TYPE).build();
+    }
+
 }
