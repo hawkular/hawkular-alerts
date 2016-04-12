@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +32,7 @@ import javax.ws.rs.core.Response;
 
 import org.hawkular.alerts.api.services.DefinitionsService;
 
-import com.wordnik.swagger.annotations.Api;
+import io.swagger.annotations.Api;
 
 /**
  * REST endpoint for status

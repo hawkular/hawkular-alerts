@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,8 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.wordnik.swagger.annotations.ApiModelProperty;
+
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * A representation of dampening status.
