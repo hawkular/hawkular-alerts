@@ -26,8 +26,8 @@ import org.hawkular.alerts.engine.util.TokenReplacingReader;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.ProtocolVersion;
-import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
@@ -67,9 +67,8 @@ public class CassCluster {
             log.debug("Checking Schema existence for keyspace: " + keyspace);
         }
 
-        ResultSet resultSet = session.execute("SELECT * FROM system.schema_keyspaces WHERE keyspace_name = '" +
-                keyspace + "'");
-        if (!resultSet.isExhausted()) {
+        KeyspaceMetadata keyspaceMetadata = cluster.getMetadata().getKeyspace(keyspace);
+        if (keyspaceMetadata != null) {
             if (overwrite) {
                 session.execute("DROP KEYSPACE " + keyspace);
             } else {

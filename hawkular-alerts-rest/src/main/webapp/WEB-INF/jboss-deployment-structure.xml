@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 
-    Copyright 2015 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,7 @@
   <deployment>
     <dependencies>
       <module name="org.hawkular.commons.cassandra-driver" export="true" />
-      <module name="org.hawkular.commons.guava" export="true" />
+      <module name="com.google.guava" export="true" />
       <module name="org.hawkular.bus" />
       <module name="org.infinispan" export="true" />
     </dependencies>
