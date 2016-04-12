@@ -284,7 +284,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     trigger.isAutoEnable(), trigger.isAutoResolve(), trigger.isAutoResolveAlerts(),
                     trigger.getAutoResolveMatch().name(), trigger.getContext(), trigger.getDataIdMap(),
                     trigger.getDescription(), trigger.isEnabled(), trigger.getEventCategory(), trigger.getEventText(),
-                    trigger.getEventType(), trigger.getFiringMatch().name(), trigger.getMemberOf(), trigger.getName(),
+                    trigger.getEventType().name(), trigger.getFiringMatch().name(), trigger.getMemberOf(), trigger.getName(),
                     trigger.getSeverity().name(), trigger.getSource(), trigger.getTags(), trigger.getType().name()));
 
             insertTriggerActions(trigger);
@@ -2107,8 +2107,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         futures.add(session.executeAsync(insertConditionRate.bind(rateCond.getTenantId(),
                                 rateCond.getTriggerId(), rateCond.getTriggerMode().name(), rateCond.getContext(),
                                 rateCond.getConditionSetSize(), rateCond.getConditionSetIndex(),
-                                rateCond.getConditionId(), rateCond.getDataId(), rateCond.getDirection(),
-                                rateCond.getPeriod(), rateCond.getOperator().name(), rateCond.getThreshold())));
+                                rateCond.getConditionId(), rateCond.getDataId(), rateCond.getDirection().name(),
+                                rateCond.getPeriod().name(), rateCond.getOperator().name(), rateCond.getThreshold())));
                         break;
                     case STRING:
                         StringCondition sCond = (StringCondition) cond;

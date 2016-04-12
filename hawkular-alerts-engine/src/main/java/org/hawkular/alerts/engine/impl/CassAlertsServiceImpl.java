@@ -1399,7 +1399,7 @@ public class CassAlertsServiceImpl implements AlertsService {
 
             List<ResultSetFuture> futures = new ArrayList<>();
             for (Alert.Status statusToDelete : EnumSet.complementOf(EnumSet.of(alert.getStatus()))) {
-                futures.add(session.executeAsync(deleteAlertStatus.bind(alert.getTenantId(), statusToDelete,
+                futures.add(session.executeAsync(deleteAlertStatus.bind(alert.getTenantId(), statusToDelete.name(),
                         alert.getAlertId())));
             }
             futures.add(session.executeAsync(insertAlertStatus.bind(alert.getTenantId(), alert.getAlertId(), alert

@@ -21,7 +21,7 @@
   <deployment>
     <dependencies>
       <module name="org.hawkular.commons.cassandra-driver" export="true" />
-      <module name="org.hawkular.commons.guava" export="true" />
+      <module name="com.google.guava" export="true" />
       <module name="org.hawkular.bus"/>
     </dependencies>
   </deployment>
