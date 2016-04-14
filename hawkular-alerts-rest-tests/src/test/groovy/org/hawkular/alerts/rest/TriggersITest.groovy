@@ -20,6 +20,7 @@ import org.hawkular.alerts.api.json.GroupConditionsInfo
 import org.hawkular.alerts.api.json.GroupMemberInfo
 import org.hawkular.alerts.api.json.UnorphanMemberInfo
 import org.hawkular.alerts.api.model.Severity
+import org.hawkular.alerts.api.model.action.ActionDefinition
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.dampening.Dampening
@@ -40,18 +41,6 @@ import static org.junit.Assert.assertNotNull
 class TriggersITest extends AbstractITestBase {
 
     static Logger logger = LoggerFactory.getLogger(TriggersITest.class)
-
-    @Test
-    void findInitialTriggers() {
-        def resp = client.get(path: "triggers")
-        def data = resp.data
-        assertEquals(200, resp.status)
-        assert data.size() > 0
-        for (int i = 0; i < data.size(); i++) {
-            Trigger t = data[i]
-            logger.info(t.toString())
-        }
-    }
 
     @Test
     void createTrigger() {
@@ -426,6 +415,20 @@ class TriggersITest extends AbstractITestBase {
 
     @Test
     void createFullTrigger() {
+        // CREATE the action definition
+        String actionPlugin = "email"
+        String actionId = "email-to-admin";
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("from", "from-alerts@company.org");
+        actionProperties.put("to", "to-admin@company.org");
+        actionProperties.put("cc", "cc-developers@company.org");
+
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        def resp = client.post(path: "actions", body: actionDefinition)
+        assert(200 == resp.status || 400 == resp.status)
+
         String jsonTrigger = "{\n" +
                 "      \"trigger\":{\n" +
                 "        \"id\": \"full-test-trigger-1\",\n" +
@@ -434,11 +437,104 @@ class TriggersITest extends AbstractITestBase {
                 "        \"description\": \"description 1\",\n" +
                 "        \"severity\": \"HIGH\",\n" +
                 "        \"actions\": [\n" +
-                "          {\"actionPlugin\":\"snmp\", \"actionId\":\"SNMP-Trap-1\"},\n" +
-                "          {\"actionPlugin\":\"snmp\", \"actionId\":\"SNMP-Trap-2\"},\n" +
-                "          {\"actionPlugin\":\"sms\", \"actionId\":\"sms-to-cio\"},\n" +
-                "          {\"actionPlugin\":\"email\", \"actionId\":\"email-to-admin\"},\n" +
-                "          {\"actionPlugin\":\"aerogear\", \"actionId\":\"agpush-to-admin\"}\n" +
+                "          {\"actionPlugin\":\"email\", \"actionId\":\"email-to-admin\"}\n" +
+                "        ],\n" +
+                "        \"context\": {\n" +
+                "          \"name1\":\"value1\"\n" +
+                "        },\n" +
+                "        \"tags\": {\n" +
+                "          \"tname1\":\"tvalue1\",\n" +
+                "          \"tname2\":\"tvalue2\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      \"dampenings\":[\n" +
+                "        {\n" +
+                "          \"triggerMode\": \"FIRING\",\n" +
+                "          \"type\": \"STRICT\",\n" +
+                "          \"evalTrueSetting\": 2,\n" +
+                "          \"evalTotalSetting\": 2\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"conditions\":[\n" +
+                "        {\n" +
+                "          \"triggerMode\": \"FIRING\",\n" +
+                "          \"type\": \"threshold\",\n" +
+                "          \"dataId\": \"NumericData-01\",\n" +
+                "          \"operator\": \"LT\",\n" +
+                "          \"threshold\": 10.0,\n" +
+                "          \"context\": {\n" +
+                "            \"description\": \"Response Time\",\n" +
+                "            \"unit\": \"ms\"\n" +
+                "          }\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }";
+
+        // remove if it exists
+        resp = client.delete(path: "triggers/full-test-trigger-1")
+        assert(200 == resp.status || 404 == resp.status)
+
+        // create the test trigger
+        resp = client.post(path: "triggers/trigger", body: jsonTrigger)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/trigger/full-test-trigger-1");
+        assertEquals(200, resp.status)
+        assertEquals("NumericData-01-low", resp.data.trigger.name)
+        assertEquals(testTenant, resp.data.trigger.tenantId)
+        assertEquals(1, resp.data.dampenings.size())
+        assertEquals(1, resp.data.conditions.size())
+
+        resp = client.delete(path: "triggers/full-test-trigger-1")
+        assertEquals(200, resp.status)
+
+        resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
+        assertEquals(200, resp.status)
+    }
+
+    @Test
+    void createFullTriggerWithNullValues() {
+        String jsonTrigger = "{\n" +
+                "      \"trigger\":{\n" +
+                "        \"id\": \"full-test-trigger-with-nulls\",\n" +
+                "        \"enabled\": true,\n" +
+                "        \"name\": \"NumericData-01-low\",\n" +
+                "        \"description\": \"description 1\",\n" +
+                "        \"severity\": null\n," +
+                "        \"autoResolve\": null\n," +
+                "        \"autoResolveAlerts\": null\n," +
+                "        \"eventType\": null\n," +
+                "        \"tenantId\": null\n," +
+                "        \"description\": null\n," +
+                "        \"autoEnable\": null\n," +
+                "        \"autoDisable\": null\n" +
+                "      }\n" +
+                "    }";
+
+        // remove if it exists
+        def resp = client.delete(path: "triggers/full-test-trigger-with-nulls")
+        assert(200 == resp.status || 404 == resp.status)
+
+        // create the test trigger
+        resp = client.post(path: "triggers/trigger", body: jsonTrigger)
+        assertEquals(200, resp.status)
+
+        resp = client.delete(path: "triggers/full-test-trigger-with-nulls")
+        assertEquals(200, resp.status)
+    }
+
+    @Test
+    void failWithUnknownActionOrPluginFullTrigger() {
+        String jsonTrigger = "{\n" +
+                "      \"trigger\":{\n" +
+                "        \"id\": \"full-test-trigger-1\",\n" +
+                "        \"enabled\": true,\n" +
+                "        \"name\": \"NumericData-01-low\",\n" +
+                "        \"description\": \"description 1\",\n" +
+                "        \"severity\": \"HIGH\",\n" +
+                "        \"actions\": [\n" +
+                // Unknown email-to-nothing action
+                "          {\"actionPlugin\":\"email\", \"actionId\":\"email-to-nothing\"}\n" +
                 "        ],\n" +
                 "        \"context\": {\n" +
                 "          \"name1\":\"value1\"\n" +
@@ -477,48 +573,71 @@ class TriggersITest extends AbstractITestBase {
 
         // create the test trigger
         resp = client.post(path: "triggers/trigger", body: jsonTrigger)
-        assertEquals(200, resp.status)
+        assertEquals(400, resp.status)
 
-        resp = client.get(path: "triggers/trigger/full-test-trigger-1");
-        assertEquals(200, resp.status)
-        assertEquals("NumericData-01-low", resp.data.trigger.name)
-        assertEquals(testTenant, resp.data.trigger.tenantId)
-        assertEquals(1, resp.data.dampenings.size())
-        assertEquals(1, resp.data.conditions.size())
-
-        resp = client.delete(path: "triggers/full-test-trigger-1")
-        assertEquals(200, resp.status)
-    }
-
-    @Test
-    void createFullTriggerWithNullValues() {
-        String jsonTrigger = "{\n" +
+        jsonTrigger = "{\n" +
                 "      \"trigger\":{\n" +
-                "        \"id\": \"full-test-trigger-with-nulls\",\n" +
+                "        \"id\": \"full-test-trigger-1\",\n" +
                 "        \"enabled\": true,\n" +
                 "        \"name\": \"NumericData-01-low\",\n" +
                 "        \"description\": \"description 1\",\n" +
-                "        \"severity\": null\n," +
-                "        \"autoResolve\": null\n," +
-                "        \"autoResolveAlerts\": null\n," +
-                "        \"eventType\": null\n," +
-                "        \"tenantId\": null\n," +
-                "        \"description\": null\n," +
-                "        \"autoEnable\": null\n," +
-                "        \"autoDisable\": null\n" +
-                "      }\n" +
+                "        \"severity\": \"HIGH\",\n" +
+                "        \"actions\": [\n" +
+                // Unknown plugin
+                "          {\"actionPlugin\":\"unknown\", \"actionId\":\"email-to-nothing\"}\n" +
+                "        ],\n" +
+                "        \"context\": {\n" +
+                "          \"name1\":\"value1\"\n" +
+                "        },\n" +
+                "        \"tags\": {\n" +
+                "          \"tname1\":\"tvalue1\",\n" +
+                "          \"tname2\":\"tvalue2\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      \"dampenings\":[\n" +
+                "        {\n" +
+                "          \"triggerMode\": \"FIRING\",\n" +
+                "          \"type\": \"STRICT\",\n" +
+                "          \"evalTrueSetting\": 2,\n" +
+                "          \"evalTotalSetting\": 2\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"conditions\":[\n" +
+                "        {\n" +
+                "          \"triggerMode\": \"FIRING\",\n" +
+                "          \"type\": \"threshold\",\n" +
+                "          \"dataId\": \"NumericData-01\",\n" +
+                "          \"operator\": \"LT\",\n" +
+                "          \"threshold\": 10.0,\n" +
+                "          \"context\": {\n" +
+                "            \"description\": \"Response Time\",\n" +
+                "            \"unit\": \"ms\"\n" +
+                "          }\n" +
+                "        }\n" +
+                "      ]\n" +
                 "    }";
-
-        // remove if it exists
-        def resp = client.delete(path: "triggers/full-test-trigger-with-nulls")
-        assert(200 == resp.status || 404 == resp.status)
 
         // create the test trigger
         resp = client.post(path: "triggers/trigger", body: jsonTrigger)
-        assertEquals(200, resp.status)
+        assertEquals(400, resp.status)
+    }
 
-        resp = client.delete(path: "triggers/full-test-trigger-with-nulls")
-        assertEquals(200, resp.status)
+    @Test
+    void failWithUnknownPropertyOnPlugin() {
+        // CREATE the action definition
+        String actionPlugin = "email"
+        String actionId = "email-to-admin";
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("from", "from-alerts@company.org");
+        actionProperties.put("to", "to-admin@company.org");
+        actionProperties.put("cc", "cc-developers@company.org");
+        actionProperties.put("bad-property", "cc-developers@company.org");
+
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        def resp = client.post(path: "actions", body: actionDefinition)
+        assert(400 == resp.status)
     }
 
 }

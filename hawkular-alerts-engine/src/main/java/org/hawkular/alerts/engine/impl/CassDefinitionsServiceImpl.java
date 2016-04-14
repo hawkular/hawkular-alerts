@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.engine.impl;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,15 +29,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import javax.ejb.AccessTimeout;
 import javax.ejb.EJB;
 import javax.ejb.Local;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
-import javax.enterprise.concurrent.ManagedExecutorService;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
@@ -95,13 +90,6 @@ import com.google.common.util.concurrent.Futures;
 @Stateless
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class CassDefinitionsServiceImpl implements DefinitionsService {
-    /**
-     * Used on distributed environments.
-     * If present, the initial data are not loaded on this node.
-     */
-    public static final String SKIP_INIT_DATA = "hawkular-alerts.skip-init-data";
-    private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
-    private static final String INIT_FOLDER = "hawkular-alerts";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassDefinitionsServiceImpl.class);
 
@@ -110,9 +98,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @EJB
     AlertsContext alertsContext;
-
-    @Resource
-    private ManagedExecutorService executor;
 
     public CassDefinitionsServiceImpl() {
     }
@@ -123,87 +108,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     public void setAlertsContext(AlertsContext alertsContext) {
         this.alertsContext = alertsContext;
-    }
-
-    public void setExecutor(ManagedExecutorService executor) {
-        this.executor = executor;
-    }
-
-    @PostConstruct
-    public void init() {
-        if (!alertsContext.isInitialized()) {
-            executor.submit(() -> {
-                try {
-                    initialData();
-                } catch (IOException e) {
-                    msgLog.errorProcessInitialData(e.getMessage());
-                }
-            });
-        }
-    }
-
-    private void initialData() throws IOException {
-        if (!System.getProperties().containsKey(SKIP_INIT_DATA)) {
-            String data = System.getProperty(JBOSS_DATA_DIR);
-            if (data == null || data.isEmpty()) {
-                msgLog.errorFolderNotFound(data);
-                return;
-            }
-            String folder = data + "/" + INIT_FOLDER;
-            initFiles(folder);
-        }
-        alertsContext.setInitialized(true);
-    }
-
-    private void initFiles(String folder) {
-        if (folder == null) {
-            msgLog.errorFolderMustBeNotNull();
-            return;
-        }
-
-        File fFolder = new File(folder);
-        if (!fFolder.exists()) {
-            log.debug("Data folder doesn't exits. Skipping initialization.");
-            return;
-        }
-
-        File fAlerts = new File(fFolder, "alerts-data.json");
-        if (!fAlerts.exists()) {
-            if (log.isDebugEnabled()) {
-                log.debug(fAlerts.getAbsolutePath() + " doesn't exits. Skipping initialization.");
-            }
-            return;
-        }
-
-        try {
-            AlertsImportManager importManager = new AlertsImportManager(fAlerts);
-            for (FullTrigger fTrigger : importManager.getFullTriggers()) {
-                Trigger trigger = fTrigger.getTrigger();
-                addTrigger(trigger);
-                for (Dampening dampening : fTrigger.getDampenings()) {
-                    addDampening(dampening);
-                }
-                for (Condition condition : fTrigger.getConditions()) {
-                    initCondition(condition);
-                }
-            }
-            for (ActionDefinition actionDefinition : importManager.getActionDefinitions()) {
-                addActionDefinition(actionDefinition.getTenantId(), actionDefinition);
-            }
-        } catch (Exception e) {
-            if (log.isDebugEnabled()) {
-                e.printStackTrace();
-            }
-            msgLog.errorDatabaseException("Error initializing files. Msg: " + e);
-        }
-
-    }
-
-    private void initCondition(Condition condition) throws Exception {
-        Collection<Condition> conditions = getTriggerConditions(condition.getTenantId(), condition.getTriggerId(),
-                condition.getTriggerMode());
-        conditions.add(condition);
-        setConditions(condition.getTenantId(), condition.getTriggerId(), condition.getTriggerMode(), conditions);
     }
 
     @Override
@@ -225,6 +129,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionDefinition.getProperties())) {
             throw new IllegalArgumentException("Properties must be not null");
         }
+        String plugin = actionDefinition.getActionPlugin();
+        if (!getActionPlugins().contains(plugin)) {
+            throw new IllegalArgumentException("Plugin: " + plugin + " is not deployed");
+        }
+        Set<String> pluginProperties = getActionPlugin(plugin);
+        actionDefinition.getProperties().keySet().stream().forEach(property -> {
+            if (!pluginProperties.contains(property)) {
+                throw new IllegalArgumentException("Property: " + property + " is not valid on plugin: " + plugin);
+            }
+        });
         Session session = CassCluster.getSession();
         PreparedStatement insertAction = CassStatement.get(session, CassStatement.INSERT_ACTION_DEFINITION);
         if (insertAction == null) {
@@ -273,6 +187,19 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void addTrigger(Trigger trigger) throws Exception {
+        if (trigger.getActions() != null) {
+            List<ActionDefinition> actionDefinitions = getActionDefinitions(trigger.getTenantId());
+            trigger.getActions().stream().forEach(actionDefinition -> {
+                boolean found = actionDefinitions.stream()
+                        .filter(a -> a.getActionPlugin().equals(actionDefinition.getActionPlugin())
+                                && a.getActionId().equals(actionDefinition.getActionId()))
+                        .findFirst().isPresent();
+                if (!found) {
+                    throw new IllegalArgumentException("Action " + actionDefinition.getActionId() + " on plugin: "
+                        + actionDefinition.getActionPlugin() + " is not found");
+                }
+            });
+        }
         Session session = CassCluster.getSession();
         PreparedStatement insertTrigger = CassStatement.get(session, CassStatement.INSERT_TRIGGER);
         if (insertTrigger == null) {
@@ -295,7 +222,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (alertsContext.isInitialized() && null != alertsEngine) {
+        if (null != alertsEngine) {
             alertsEngine.addTrigger(trigger.getTenantId(), trigger.getId());
         }
 
@@ -411,7 +338,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         /*
             Trigger should be removed from the alerts engine.
          */
-        if (alertsContext.isInitialized() && null != alertsEngine) {
+        if (null != alertsEngine) {
             alertsEngine.removeTrigger(tenantId, triggerId);
         }
 
@@ -522,7 +449,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (alertsContext.isInitialized() && null != alertsEngine) {
+        if (null != alertsEngine) {
             alertsEngine.reloadTrigger(tenantId, triggerId);
         }
 
@@ -601,7 +528,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (alertsContext.isInitialized() && null != alertsEngine) {
+        if (null != alertsEngine) {
             alertsEngine.reloadTrigger(trigger.getTenantId(), trigger.getId());
         }
 
@@ -1371,7 +1298,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (alertsContext.isInitialized() && null != alertsEngine) {
+        if (null != alertsEngine) {
             alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
@@ -1468,7 +1395,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (alertsContext.isInitialized() && null != alertsEngine) {
+        if (null != alertsEngine) {
             alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
@@ -1549,7 +1476,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (alertsContext.isInitialized() && null != alertsEngine) {
+        if (null != alertsEngine) {
             alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
@@ -2137,7 +2064,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
 
-        if (alertsContext.isInitialized() && alertsEngine != null) {
+        if (alertsEngine != null) {
             alertsEngine.reloadTrigger(tenantId, triggerId);
         }
 
@@ -2920,44 +2847,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     }
                 }
             }
-            List<FullTrigger> importedTriggers = new ArrayList<>();
-            if (!isEmpty(definitions.getTriggers())) {
-                for (FullTrigger t : definitions.getTriggers()) {
-                    if (!isEmpty(t.getTrigger())) {
-                        boolean existing = existingTriggers.contains(t.getTrigger());
-                        switch (strategy) {
-                            case DELETE:
-                                addFullTrigger(tenantId, t);
-                                importedTriggers.add(t);
-                                break;
-                            case ALL:
-                                if (existing) {
-                                    removeTrigger(t.getTrigger());
-                                }
-                                addFullTrigger(tenantId, t);
-                                importedTriggers.add(t);
-                                break;
-                            case NEW:
-                                if (!existing) {
-                                    addFullTrigger(tenantId, t);
-                                    importedTriggers.add(t);
-                                }
-                                break;
-                            case OLD:
-                                if (existing) {
-                                    removeTrigger(t.getTrigger());
-                                    addFullTrigger(tenantId, t);
-                                    importedTriggers.add(t);
-                                }
-                                break;
-                        }
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Trigger " + t + " is empty. Ignored on the import process");
-                        }
-                    }
-                }
-            }
             List<ActionDefinition> importedActionDefinitions = new ArrayList<>();
             if (!isEmpty(definitions.getActions())) {
                 for (ActionDefinition a : definitions.getActions()) {
@@ -2994,6 +2883,44 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     } else {
                         if (log.isDebugEnabled()) {
                             log.debug("ActionDefinition " + a + " is empty. Ignored on the import process");
+                        }
+                    }
+                }
+            }
+            List<FullTrigger> importedTriggers = new ArrayList<>();
+            if (!isEmpty(definitions.getTriggers())) {
+                for (FullTrigger t : definitions.getTriggers()) {
+                    if (!isEmpty(t.getTrigger())) {
+                        boolean existing = existingTriggers.contains(t.getTrigger());
+                        switch (strategy) {
+                            case DELETE:
+                                addFullTrigger(tenantId, t);
+                                importedTriggers.add(t);
+                                break;
+                            case ALL:
+                                if (existing) {
+                                    removeTrigger(t.getTrigger());
+                                }
+                                addFullTrigger(tenantId, t);
+                                importedTriggers.add(t);
+                                break;
+                            case NEW:
+                                if (!existing) {
+                                    addFullTrigger(tenantId, t);
+                                    importedTriggers.add(t);
+                                }
+                                break;
+                            case OLD:
+                                if (existing) {
+                                    removeTrigger(t.getTrigger());
+                                    addFullTrigger(tenantId, t);
+                                    importedTriggers.add(t);
+                                }
+                                break;
+                        }
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Trigger " + t + " is empty. Ignored on the import process");
                         }
                     }
                 }

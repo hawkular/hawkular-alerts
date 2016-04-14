@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.rest
 
+import org.hawkular.alerts.api.model.action.ActionDefinition
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
@@ -44,8 +45,22 @@ class BusITest extends AbstractITestBase {
     void availabilityThroughBusTest() {
         String start = String.valueOf(System.currentTimeMillis());
 
+        // CREATE the action definition
+        String actionPlugin = "email"
+        String actionId = "email-to-admin";
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("from", "from-alerts@company.org");
+        actionProperties.put("to", "to-admin@company.org");
+        actionProperties.put("cc", "cc-developers@company.org");
+
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        def resp = client.post(path: "actions", body: actionDefinition)
+        assert(200 == resp.status || 400 == resp.status)
+
         // CREATE the trigger
-        def resp = client.get(path: "")
+        resp = client.get(path: "")
         assert resp.status == 200 : resp.status
 
         Trigger testTrigger = new Trigger("test-bus-email-availability", "http://www.mydemourl.com");
@@ -61,7 +76,6 @@ class BusITest extends AbstractITestBase {
             email-to-admin action is pre-created from demo data
          */
         testTrigger.addAction(new TriggerAction("email", "email-to-admin"));
-        testTrigger.addAction(new TriggerAction("file", "file-to-admin"));
 
         resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
@@ -135,14 +149,31 @@ class BusITest extends AbstractITestBase {
 
         resp = client.delete(path: "triggers/test-bus-email-availability");
         assertEquals(200, resp.status)
+
+        resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
+        assertEquals(200, resp.status)
     }
 
     @Test
     void thresholdThroughBusTest() {
         String start = String.valueOf(System.currentTimeMillis());
 
+        // CREATE the action definition
+        String actionPlugin = "email"
+        String actionId = "email-to-admin";
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("from", "from-alerts@company.org");
+        actionProperties.put("to", "to-admin@company.org");
+        actionProperties.put("cc", "cc-developers@company.org");
+
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        def resp = client.post(path: "actions", body: actionDefinition)
+        assert(200 == resp.status || 400 == resp.status)
+
         // CREATE the trigger
-        def resp = client.get(path: "")
+        resp = client.get(path: "")
         assert resp.status == 200 : resp.status
 
         Trigger testTrigger = new Trigger("test-bus-email-threshold", "http://www.mydemourl.com");
@@ -231,7 +262,8 @@ class BusITest extends AbstractITestBase {
 
         resp = client.delete(path: "triggers/test-bus-email-threshold");
         assertEquals(200, resp.status)
+
+        resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
+        assertEquals(200, resp.status)
     }
-
-
 }

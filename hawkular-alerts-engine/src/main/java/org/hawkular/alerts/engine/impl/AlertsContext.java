@@ -43,21 +43,9 @@ import org.jboss.logging.Logger;
 public class AlertsContext {
     private final Logger log = Logger.getLogger(AlertsContext.class);
 
-    private boolean initialized = false;
-
     private Map<DefinitionsListener, Set<Type>> definitionListeners = new HashMap<>();
 
     List<ActionListener> actionsListeners = new CopyOnWriteArrayList<>();
-
-    public boolean isInitialized() {
-        return initialized;
-    }
-
-    public void setInitialized(boolean initialized) {
-        synchronized (this) {
-            this.initialized = initialized;
-        }
-    }
 
     public void registerDefinitionListener(DefinitionsListener listener, Type eventType, Type... eventTypes) {
         EnumSet<Type> types = EnumSet.of(eventType, eventTypes);

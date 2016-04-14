@@ -9,11 +9,7 @@
         "description": "description 1",
         "severity": "HIGH",
         "actions": [
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
-          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
-          {"actionPlugin":"email", "actionId":"email-to-admin"},
-          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
         ],
         "context": {
           "name1":"value1"
@@ -54,11 +50,7 @@
         "description": "description 2",
         "severity": "HIGH",
         "actions": [
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
-          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
-          {"actionPlugin":"email", "actionId":"email-to-admin"},
-          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
         ]
       },
       "dampenings":[],
@@ -96,11 +88,7 @@
         "description": "description 3",
         "severity": "HIGH",
         "actions": [
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
-          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
-          {"actionPlugin":"email", "actionId":"email-to-admin"},
-          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
         ]
       },
       "dampenings":[],
@@ -130,11 +118,7 @@
         "description": "description 4",
         "severity": "HIGH",
         "actions": [
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
-          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
-          {"actionPlugin":"email", "actionId":"email-to-admin"},
-          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
         ]
       },
       "dampenings":[],
@@ -162,11 +146,7 @@
         "description": "description 5",
         "severity": "HIGH",
         "actions": [
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
-          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
-          {"actionPlugin":"email", "actionId":"email-to-admin"},
-          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
         ]
       },
       "dampenings":[],
@@ -193,11 +173,7 @@
         "description": "description 6",
         "severity": "HIGH",
         "actions": [
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
-          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
-          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
-          {"actionPlugin":"email", "actionId":"email-to-admin"},
-          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
         ]
       },
       "dampenings":[],
@@ -315,60 +291,11 @@
   "actions":[
     {
       "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
-      "actionPlugin": "snmp",
-      "actionId": "SNMP-Trap-1",
-      "properties": {
-        "host": "snmp-host",
-        "port": "1234",
-        "oid": "1.2.3.4.5",
-        "description": "This is an example of SNMP Action Plugin"
-      }
-    },
-    {
-      "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
-      "actionPlugin": "snmp",
-      "actionId": "SNMP-Trap-2",
-      "properties": {
-        "host": "snmp-host",
-        "port": "1234",
-        "oid": "1.2.3.4.5",
-        "description": "This is an example of SNMP Action Plugin"
-      }
-    },
-    {
-      "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
       "actionPlugin": "email",
       "actionId": "email-to-admin",
       "properties": {
         "to": "admin@hawkular.org",
-        "cc": "bigboss@hawkular.org",
-        "description": "This is an example of Email Action Plugin"
-      }
-    },
-    {
-      "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
-      "actionPlugin": "sms",
-      "actionId": "sms-to-cio",
-      "properties": {
-        "phone": "+15005550006",
-        "description": "This is an example of SMS Action Plugin"
-      }
-    },
-    {
-      "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
-      "actionPlugin": "aerogear",
-      "actionId": "agpush-to-admin",
-      "properties": {
-        "alias": "GeorgeAbitbol",
-        "description": "This is an example of Aerogear Action Plugin"
-      }
-    },
-    {
-      "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
-      "actionPlugin": "file",
-      "actionId": "file-to-admin",
-      "properties": {
-        "description": "This is an example of File Plugin"
+        "cc": "bigboss@hawkular.org"
       }
     }
   ]

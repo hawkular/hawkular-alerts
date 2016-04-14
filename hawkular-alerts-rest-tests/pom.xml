@@ -366,25 +366,6 @@
                   </resources>
                 </configuration>
               </execution>
-              <execution>
-                <id>copy-data-dir</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>copy-resources</goal>
-                </goals>
-                <configuration>
-                  <outputDirectory>${project.build.directory}/${project.build.finalName}/standalone/data</outputDirectory>
-                  <overwrite>true</overwrite>
-                  <resources>
-                    <resource>
-                      <directory>${project.basedir}/src/test/wildfly-data</directory>
-                      <includes>
-                        <include>**/*</include>
-                      </includes>
-                    </resource>
-                  </resources>
-                </configuration>
-              </execution>
             </executions>
           </plugin>
 
@@ -633,31 +614,6 @@
                       <destFileName>hawkular-alerts-actions-webhook.war</destFileName>
                     </artifactItem>
                   </artifactItems>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-resources-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>copy-data-dir-on-standalone</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>copy-resources</goal>
-                </goals>
-                <configuration>
-                  <outputDirectory>${hawkular.data}</outputDirectory>
-                  <overwrite>true</overwrite>
-                  <resources>
-                    <resource>
-                      <directory>${project.basedir}/src/test/wildfly-data</directory>
-                      <includes>
-                        <include>**/*</include>
-                      </includes>
-                    </resource>
-                  </resources>
                 </configuration>
               </execution>
             </executions>

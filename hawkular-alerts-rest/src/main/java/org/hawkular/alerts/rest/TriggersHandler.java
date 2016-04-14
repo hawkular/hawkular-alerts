@@ -213,6 +213,9 @@ public class TriggersHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -277,6 +280,9 @@ public class TriggersHandler {
             return ResponseUtil.ok(fullTrigger);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -451,6 +457,9 @@ public class TriggersHandler {
 
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -1048,8 +1057,6 @@ public class TriggersHandler {
             }
             return ResponseUtil.ok(updatedConditions);
 
-        } catch (IllegalArgumentException e) {
-            return ResponseUtil.badRequest("Bad argument: " + e.getMessage());
         } catch (NotFoundException e) {
             return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
