@@ -38,8 +38,7 @@
       "actionId": "notify-to-admins",
       "properties": {
         "to": "admins@hawkular.org",
-        "cc": "developers@hawkular.org",
-        "description": "Notify by email to Admins with cc to Developers"
+        "cc": "developers@hawkular.org"
       }
     }
   ]
