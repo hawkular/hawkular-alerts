@@ -32,30 +32,11 @@ class ImportExportITest extends AbstractITestBase {
     static Logger logger = LoggerFactory.getLogger(ImportExportITest.class)
 
     @Test
-    void exportTest() {
-        def resp = client.get(path: "export")
-        assertEquals(200, resp.status)
+    void importExportTest() {
+        String basePath = new File(".").canonicalPath
+        String toImport = new File(basePath + "/src/test/wildfly-data/hawkular-alerts/alerts-data.json").text
 
-        for (int i = 0; i < resp.data.triggers.size(); i++) {
-            logger.info("Exported trigger: " + resp.data.triggers[i])
-        }
-        for (int i = 0; i < resp.data.actions.size(); i++) {
-            logger.info("Exported action: " + resp.data.actions[i])
-        }
-
-        // Original definitions from alerts-data.json should be in the backend
-        assertEquals(9, resp.data.triggers.size())
-        assertEquals(6, resp.data.actions.size())
-    }
-
-    @Test
-    void exportImportTest() {
-        def resp = client.get(path: "export")
-        assertEquals(200, resp.status)
-
-        def exported = resp.data
-
-        resp = client.post(path: "import/delete", body: exported)
+        def resp = client.post(path: "import/delete", body: toImport)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "export")
@@ -63,7 +44,7 @@ class ImportExportITest extends AbstractITestBase {
 
         // Original definitions from alerts-data.json should be in the backend
         assertEquals(9, resp.data.triggers.size())
-        assertEquals(6, resp.data.actions.size())
+        assertEquals(1, resp.data.actions.size())
     }
 
 

@@ -62,28 +62,14 @@ class ActionsITest extends AbstractITestBase {
     }
 
     @Test
-    void findInitialActions() {
-        def resp = client.get(path: "actions")
-        def data = resp.data
-        assertEquals(200, resp.status)
-        assertTrue(data.size() > 0)
-        Map map = (Map)data;
-        for (String actionPlugin : map.keySet()) {
-            logger.info("ActionPlugin: " + actionPlugin + " - Plugins: " + map.get(actionPlugin))
-        }
-    }
-
-    @Test
     void createAction() {
         String actionPlugin = "email"
         String actionId = "test-action";
 
         Map<String, String> actionProperties = new HashMap<>();
-        actionProperties.put("actionPlugin", actionPlugin);
-        actionProperties.put("actionId", actionId);
-        actionProperties.put("prop1", "value1");
-        actionProperties.put("prop2", "value2");
-        actionProperties.put("prop3", "value3");
+        actionProperties.put("from", "from-email@company.org");
+        actionProperties.put("to", "to-email@company.org");
+        actionProperties.put("cc", "cc-email@company.org");
 
         ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
 
@@ -92,15 +78,15 @@ class ActionsITest extends AbstractITestBase {
 
         resp = client.get(path: "actions/" + actionPlugin + "/" + actionId);
         assertEquals(200, resp.status)
-        assertEquals("value1", resp.data.properties.prop1)
+        assertEquals("from-email@company.org", resp.data.properties.from)
 
-        actionDefinition.getProperties().put("prop3", "value3Modified")
+        actionDefinition.getProperties().put("cc", "cc-modified@company.org")
         resp = client.put(path: "actions", body: actionDefinition)
         assertEquals(200, resp.status)
 
         resp = client.get(path: "actions/" + actionPlugin + "/" + actionId)
         assertEquals(200, resp.status)
-        assertEquals("value3Modified", resp.data.properties.prop3)
+        assertEquals("cc-modified@company.org", resp.data.properties.cc)
 
         resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
         assertEquals(200, resp.status)
@@ -110,8 +96,22 @@ class ActionsITest extends AbstractITestBase {
     void availabilityTest() {
         String start = String.valueOf(System.currentTimeMillis());
 
+        // CREATE the action definition
+        String actionPlugin = "email"
+        String actionId = "email-to-admin";
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("from", "from-alerts@company.org");
+        actionProperties.put("to", "to-admin@company.org");
+        actionProperties.put("cc", "cc-developers@company.org");
+
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        def resp = client.post(path: "actions", body: actionDefinition)
+        assert(200 == resp.status || 400 == resp.status)
+
         // CREATE the trigger
-        def resp = client.get(path: "")
+        resp = client.get(path: "")
         assert resp.status == 200 : resp.status
 
         Trigger testTrigger = new Trigger("test-email-availability", "http://www.mydemourl.com");
@@ -127,7 +127,6 @@ class ActionsITest extends AbstractITestBase {
             email-to-admin action is pre-created from demo data
          */
         testTrigger.addAction(new TriggerAction("email", "email-to-admin"));
-        testTrigger.addAction(new TriggerAction("file", "file-to-admin"));
 
         resp = client.post(path: "triggers", body: testTrigger)
         assertEquals(200, resp.status)
@@ -187,14 +186,31 @@ class ActionsITest extends AbstractITestBase {
 
         resp = client.delete(path: "triggers/test-email-availability");
         assertEquals(200, resp.status)
+
+        resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
+        assertEquals(200, resp.status)
     }
 
     @Test
     void thresholdTest() {
         String start = String.valueOf(System.currentTimeMillis());
 
+        // CREATE the action definition
+        String actionPlugin = "email"
+        String actionId = "email-to-admin";
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("from", "from-alerts@company.org");
+        actionProperties.put("to", "to-admin@company.org");
+        actionProperties.put("cc", "cc-developers@company.org");
+
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        def resp = client.post(path: "actions", body: actionDefinition)
+        assert(200 == resp.status || 400 == resp.status)
+
         // CREATE the trigger
-        def resp = client.get(path: "")
+        resp = client.get(path: "")
         assert resp.status == 200 : resp.status
 
         Trigger testTrigger = new Trigger("test-email-threshold", "http://www.mydemourl.com");
@@ -269,6 +285,9 @@ class ActionsITest extends AbstractITestBase {
 
         resp = client.delete(path: "triggers/test-email-threshold");
         assertEquals(200, resp.status)
+
+        resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
+        assertEquals(200, resp.status)
     }
 
     @Test
@@ -280,19 +299,18 @@ class ActionsITest extends AbstractITestBase {
         assert resp.status == 200 : resp.status
 
         // Create an action definition for admins
-        String actionPlugin = "plugin1"
+        String actionPlugin = "email"
         String actionId = "notify-to-admins";
 
         // Remove previous history
-        client.put(path: "actions/history/delete", query: [actionPlugins:"plugin1,plugin2"])
+        client.put(path: "actions/history/delete", query: [actionPlugins:"email"])
 
         // Remove a previous action
         client.delete(path: "actions/" + actionPlugin + "/" + actionId)
 
         Map<String, String> actionProperties = new HashMap<>();
-        actionProperties.put("actionPlugin", actionPlugin);
-        actionProperties.put("actionId", actionId);
-        actionProperties.put("description", "Notify to admins of the platform");
+        actionProperties.put("from", "from-alerts@company.org");
+        actionProperties.put("to", "to-admin@company.org");
 
         ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
 
@@ -300,16 +318,15 @@ class ActionsITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // Create an action definition for developers
-        actionPlugin = "plugin2"
+        actionPlugin = "email"
         actionId = "notify-to-developers";
 
         // Remove a previous action
         client.delete(path: "actions/" + actionPlugin + "/" + actionId)
 
         actionProperties = new HashMap<>();
-        actionProperties.put("actionPlugin", actionPlugin);
-        actionProperties.put("actionId", actionId);
-        actionProperties.put("description", "Notify to developers of the application");
+        actionProperties.put("from", "from-alerts@company.org");
+        actionProperties.put("to", "to-developers@company.org");
 
         actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
 
@@ -328,9 +345,9 @@ class ActionsITest extends AbstractITestBase {
         testTrigger.setAutoResolve(false);
         testTrigger.setAutoResolveAlerts(false);
 
-        TriggerAction notifyAdmins = new TriggerAction("plugin1", "notify-to-admins");
+        TriggerAction notifyAdmins = new TriggerAction("email", "notify-to-admins");
         notifyAdmins.addState(Status.OPEN.name());
-        TriggerAction notifyDevelopers = new TriggerAction("plugin2", "notify-to-developers");
+        TriggerAction notifyDevelopers = new TriggerAction("email", "notify-to-developers");
         notifyDevelopers.addState(Status.ACKNOWLEDGED.name());
 
         testTrigger.addAction(notifyAdmins);
@@ -375,7 +392,7 @@ class ActionsITest extends AbstractITestBase {
         }
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
+        for ( int i=0; i < 100; ++i ) {
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
@@ -391,7 +408,7 @@ class ActionsITest extends AbstractITestBase {
         def alertsToAck = resp.data;
 
         // Check actions generated
-        resp = client.get(path: "actions/history", query: [startTime:start,actionPlugins:"plugin1,plugin2"])
+        resp = client.get(path: "actions/history", query: [startTime:start,actionPlugins:"email"])
         assertEquals(200, resp.status)
         assertEquals(5, resp.data.size())
 
@@ -412,7 +429,7 @@ class ActionsITest extends AbstractITestBase {
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
-            resp = client.get(path: "actions/history", query: [startTime:start,actionPlugins:"plugin1,plugin2"])
+            resp = client.get(path: "actions/history", query: [startTime:start,actionPlugins:"email"])
             if ( resp.status == 200 && resp.data.size() == 10 ) {
                 break;
             }
@@ -424,10 +441,10 @@ class ActionsITest extends AbstractITestBase {
         resp = client.delete(path: "triggers/test-status-threshold");
         assertEquals(200, resp.status)
 
-        resp = client.delete(path: "actions/plugin1/notify-to-admins")
+        resp = client.delete(path: "actions/email/notify-to-admins")
         assertEquals(200, resp.status)
 
-        resp = client.delete(path: "actions/plugin2/notify-to-developers")
+        resp = client.delete(path: "actions/email/notify-to-developers")
         assertEquals(200, resp.status)
     }
 

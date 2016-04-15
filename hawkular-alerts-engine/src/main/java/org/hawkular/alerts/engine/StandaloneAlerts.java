@@ -69,7 +69,6 @@ public class StandaloneAlerts {
 
         definitions.setAlertsEngine(engine);
         definitions.setAlertsContext(alertsContext);
-        definitions.setExecutor(new StandaloneExecutorService());
 
         actions.setAlertsContext(alertsContext);
         actions.setDefinitions(definitions);
@@ -78,8 +77,6 @@ public class StandaloneAlerts {
         engine.setDefinitions(definitions);
         engine.setActions(actions);
         engine.setRules(rules);
-
-        definitions.init();
 
         log.debug("Waiting for initialization...");
         try {

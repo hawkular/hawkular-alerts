@@ -202,6 +202,9 @@ public class ActionsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -215,6 +218,7 @@ public class ActionsHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, ActionDefinition Updated."),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "ActionDefinition not found for update.", response = ApiError.class)
     })
     public Response updateActionDefinition(@ApiParam(value = "ActionDefinition to be updated.",
@@ -244,6 +248,9 @@ public class ActionsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -287,6 +294,7 @@ public class ActionsHandler {
             responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of actions."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters."),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response findActionsHistory(
@@ -331,6 +339,9 @@ public class ActionsHandler {
             return ResponseUtil.paginatedOk(actionPage, uri);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -343,6 +354,7 @@ public class ActionsHandler {
             responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Actions deleted."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters."),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response deleteActionsHistory(
@@ -378,6 +390,9 @@ public class ActionsHandler {
             return ResponseUtil.ok(numDeleted);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
