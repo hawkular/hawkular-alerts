@@ -90,6 +90,7 @@ public class AlertsHandler {
             response = Alert.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of alerts."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters"),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response findAlerts(
@@ -138,6 +139,9 @@ public class AlertsHandler {
             return ResponseUtil.paginatedOk(alertPage, uri);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -172,6 +176,9 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -206,6 +213,9 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -241,6 +251,9 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -275,6 +288,9 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -310,6 +326,9 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -320,6 +339,7 @@ public class AlertsHandler {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alert deleted."),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "Alert not found.", response = ApiError.class)
     })
     public Response deleteAlert(
@@ -340,6 +360,9 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -352,6 +375,7 @@ public class AlertsHandler {
             response = Integer.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alerts deleted."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters"),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response deleteAlerts(
@@ -392,6 +416,9 @@ public class AlertsHandler {
             return ResponseUtil.ok(numDeleted);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -508,6 +535,9 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -544,6 +574,9 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -575,6 +608,9 @@ public class AlertsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }

@@ -119,6 +119,9 @@ public class EventsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -154,6 +157,9 @@ public class EventsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -188,6 +194,9 @@ public class EventsHandler {
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -199,6 +208,7 @@ public class EventsHandler {
             response = Event.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of events."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters."),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response findEvents(
@@ -241,6 +251,9 @@ public class EventsHandler {
             return ResponseUtil.paginatedOk(eventPage, uri);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
@@ -284,6 +297,7 @@ public class EventsHandler {
             response = Integer.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters."),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response deleteEvents(
@@ -317,6 +331,9 @@ public class EventsHandler {
             return ResponseUtil.ok(numDeleted);
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
             return ResponseUtil.internalError(e);
         }
     }
