@@ -45,7 +45,6 @@ apidocFile.withWriterAppend('UTF-8') { writer ->
 """
     swagger.tags.sort { t1, t2 -> t1.name.compareTo(t2.name) }.each { tag ->
         writer.println "=== ${tag.name}"
-        println "DEBUG tag.name: ${tag.name}"
         swagger.paths.sort { p1, p2 -> p1.key.compareTo(p2.key) }.each { Entry path ->
             path.value.each { Entry method ->
 
@@ -57,7 +56,6 @@ apidocFile.withWriterAppend('UTF-8') { writer ->
 
         swagger.paths.sort { p1, p2 -> p1.key.compareTo(p2.key) }.each { Entry path ->
             path.value.each { Entry method ->
-                println "DEBUG method2: ${method}"
                 if (method.value.tags != null && method.value.tags.contains(tag.name)) {
 
                     writeEndpointHeader(writer, path, method)

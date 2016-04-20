@@ -66,7 +66,7 @@ import io.swagger.annotations.ApiResponses;
  * @author Lucas Ponce
  */
 @Path("/")
-@Api(value = "/", description = "Alerts Handling")
+@Api(tags = {"/"}, description = "Alerts Handling")
 public class AlertsHandler {
     private final Logger log = Logger.getLogger(AlertsHandler.class);
 
