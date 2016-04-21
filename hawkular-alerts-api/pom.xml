@@ -43,14 +43,12 @@
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-annotations</artifactId>
-      <version>${version.io.swagger}</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-core</artifactId>
-      <version>${version.io.swagger}</version>
       <scope>provided</scope>
     </dependency>
 

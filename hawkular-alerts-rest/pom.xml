@@ -82,14 +82,12 @@
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-annotations</artifactId>
-      <version>${version.io.swagger}</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-core</artifactId>
-      <version>${version.io.swagger}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -247,7 +245,6 @@
           <plugin>
             <groupId>com.github.kongchen</groupId>
             <artifactId>swagger-maven-plugin</artifactId>
-            <version>${version.com.github.kongchen.swagger-maven-plugin}</version>
             <configuration>
               <apiSources>
                 <apiSource>
