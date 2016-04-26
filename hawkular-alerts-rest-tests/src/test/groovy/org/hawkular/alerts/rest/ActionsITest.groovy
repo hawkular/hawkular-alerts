@@ -408,7 +408,14 @@ class ActionsITest extends AbstractITestBase {
         def alertsToAck = resp.data;
 
         // Check actions generated
-        resp = client.get(path: "actions/history", query: [startTime:start,actionPlugins:"email"])
+        // This used to fail randomly, therefore try several times before failing
+        for ( int i=0; i < 20; ++i ) {
+            resp = client.get(path: "actions/history", query: [startTime:start,actionPlugins:"email"])
+            if ( resp.status == 200 && resp.data.size() == 5 ) {
+                break;
+            }
+            Thread.sleep(500);
+        }
         assertEquals(200, resp.status)
         assertEquals(5, resp.data.size())
 

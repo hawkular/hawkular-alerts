@@ -522,9 +522,9 @@
 
         <dependency>
           <groupId>org.hawkular.commons</groupId>
-          <artifactId>hawkular-commons-embedded-cassandra-ear</artifactId>
+          <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
           <version>${version.org.hawkular.commons}</version>
-          <type>ear</type>
+          <type>war</type>
         </dependency>
 
         <dependency>
@@ -566,11 +566,11 @@
                   <artifactItems>
                     <artifactItem>
                       <groupId>org.hawkular.commons</groupId>
-                      <artifactId>hawkular-commons-embedded-cassandra-ear</artifactId>
-                      <type>ear</type>
+                      <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
+                      <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-commons-embedded-cassandra-ear.ear</destFileName>
+                      <destFileName>hawkular-commons-embedded-cassandra-war.war</destFileName>
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
@@ -680,9 +680,9 @@
 
         <dependency>
           <groupId>org.hawkular.commons</groupId>
-          <artifactId>hawkular-commons-embedded-cassandra-ear</artifactId>
+          <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
           <version>${version.org.hawkular.commons}</version>
-          <type>ear</type>
+          <type>war</type>
         </dependency>
 
         <dependency>
@@ -731,11 +731,11 @@
                   <artifactItems>
                     <artifactItem>
                       <groupId>org.hawkular.commons</groupId>
-                      <artifactId>hawkular-commons-embedded-cassandra-ear</artifactId>
-                      <type>ear</type>
+                      <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
+                      <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${project.build.directory}</outputDirectory>
-                      <destFileName>hawkular-commons-embedded-cassandra-ear.ear</destFileName>
+                      <destFileName>hawkular-commons-embedded-cassandra-war.war</destFileName>
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
@@ -827,7 +827,7 @@
                       <server-group>cassandra-group</server-group>
                     </server-groups>
                   </domain>
-                  <filename>hawkular-commons-embedded-cassandra-ear.ear</filename>
+                  <filename>hawkular-commons-embedded-cassandra-war.war</filename>
                 </configuration>
               </execution>
               <execution>

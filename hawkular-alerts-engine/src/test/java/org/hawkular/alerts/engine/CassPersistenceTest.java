@@ -16,14 +16,18 @@
  */
 package org.hawkular.alerts.engine;
 
-import static org.hawkular.commons.cassandra.EmbeddedConstants.EMBEDDED_CASSANDRA_OPTION;
-import static org.hawkular.commons.cassandra.EmbeddedConstants.HAWKULAR_BACKEND_PROPERTY;
+import static org.hawkular.commons.cassandra.EmbeddedConstants.CASSANDRA_YAML;
 
+import java.io.File;
+import java.net.URL;
+import java.nio.file.Files;
+
+import org.apache.cassandra.service.EmbeddedCassandraService;
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.engine.impl.CassCluster;
-import org.hawkular.commons.cassandra.EmbeddedCassandra;
+import org.hawkular.commons.cassandra.CassandraYaml;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -44,28 +48,28 @@ public class CassPersistenceTest extends PersistenceTest {
 
     private static final Logger logger = LoggerFactory.getLogger(CassPersistenceTest.class);
 
-    private static final String JBOSS_DATA_DIR = "jboss.server.data.dir";
-
-    static EmbeddedCassandra embeddedCassandra;
-    static String keyspace;
+    static EmbeddedCassandraService embeddedCassandra;
+    public static final String keyspace = "hawkular_alerts_test";
 
     @BeforeClass
     public static void initSessionAndResetTestSchema() throws Exception {
 
-        String testFolder = CassPersistenceTest.class.getResource("/").getPath();
-        System.setProperty(JBOSS_DATA_DIR, testFolder);
+        File baseDir = Files.createTempDirectory(CassPersistenceTest.class.getName()).toFile();
+        File cassandraYaml = new File(baseDir, "cassandra.yaml");
 
-        /*
-            If not property defined, we initialized the embedded Cassandra
-         */
-        if (System.getProperty(HAWKULAR_BACKEND_PROPERTY) == null) {
-            System.setProperty(HAWKULAR_BACKEND_PROPERTY, EMBEDDED_CASSANDRA_OPTION);
-        }
+        URL defaultCassandraYamlUrl = CassandraYaml.class.getResource("/" + CASSANDRA_YAML);
+        CassandraYaml.builder()
+                .load(defaultCassandraYamlUrl)//
+                .baseDir(baseDir)//
+                .clusterName("hawkular-alerts")//
+                .store(cassandraYaml)//
+                .mkdirs()//
+                .setCassandraConfigProp()//
+                .setTriggersDirProp();
 
-        embeddedCassandra = new EmbeddedCassandra();
+        embeddedCassandra = new EmbeddedCassandraService();
         embeddedCassandra.start();
 
-        keyspace = "hawkular_alerts_test";
         System.setProperty("hawkular-alerts.cassandra-keyspace", keyspace);
 
         CassCluster.getSession(true);
@@ -82,9 +86,6 @@ public class CassPersistenceTest extends PersistenceTest {
         try {
             Session session = CassCluster.getSession();
             session.execute("DROP KEYSPACE " + keyspace);
-            if (embeddedCassandra != null) {
-                embeddedCassandra.stop();
-            }
         } catch (Throwable t) {
             // never mind, don't prevent further cleanup
         }
