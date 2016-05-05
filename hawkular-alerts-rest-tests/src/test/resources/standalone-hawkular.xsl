@@ -46,32 +46,17 @@
     </cache-container>
   </xsl:template>
 
-  <!-- //*[local-name()='secure-deployment'] is an xPath's 1.0 way of saying of xPath's 2.0 prefix-less selector //*:secure-deployment  -->
-  <xsl:template match="//*[*[local-name()='secure-deployment']]">
+  <xsl:template match="//*[*[local-name()='log-system-exceptions']]">
     <xsl:copy>
       <xsl:apply-templates select="@*|node()" />
-      <secure-deployment name="hawkular-alerts-rest.war">
-        <realm>hawkular</realm>
-        <resource>hawkular-accounts-backend</resource>
-        <use-resource-role-mappings>true</use-resource-role-mappings>
-        <enable-cors>true</enable-cors>
-        <enable-basic-auth>true</enable-basic-auth>
-        <!-- copy the secret value from the previous available secure-deployment -->
-        <credential name="secret"><xsl:value-of select="*[local-name()='secure-deployment']/*[local-name()='credential' and @name='secret']/text()"/></credential>
-      </secure-deployment>
-      <secure-deployment name="hawkular-alerts-actions-email.war">
-        <realm>hawkular</realm>
-        <resource>hawkular-accounts-backend</resource>
-        <use-resource-role-mappings>true</use-resource-role-mappings>
-        <enable-cors>true</enable-cors>
-        <enable-basic-auth>true</enable-basic-auth>
-        <!-- copy the secret value from the previous available secure-deployment -->
-        <credential name="secret"><xsl:value-of select="*[local-name()='secure-deployment']/*[local-name()='credential' and @name='secret']/text()"/></credential>
-      </secure-deployment>
+      <mdb>
+        <resource-adapter-ref resource-adapter-name="activemq-ra.rar"/>
+        <bean-instance-pool-ref pool-name="mdb-strict-max-pool"/>
+      </mdb>
     </xsl:copy>
   </xsl:template>
 
-  <xsl:template match="//*[*[local-name()='jms-topic']]">
+  <xsl:template match="//*[*[local-name()='in-vm-acceptor']]">
     <xsl:copy>
       <xsl:apply-templates select="@*|node()" />
       <jms-topic name="HawkularAlertData" entries="java:/topic/HawkularAlertData"/>

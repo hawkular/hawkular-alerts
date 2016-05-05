@@ -62,15 +62,7 @@ class AbstractITestBase {
             .encodeToString("$testUser:$testPasword".getBytes("utf-8"))
          */
         client.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
-
-        /*
-            This is used for non-bus scenarios.
-            In Bus scenarios this property is skipped
-         */
-        if (System.getProperty("standalone-test") != null ||
-                (System.getProperty("env") != null && System.getProperty("env").equals("cluster"))) {
-            client.headers.put("Hawkular-Tenant", testTenant)
-        }
+        client.headers.put("Hawkular-Tenant", testTenant)
     }
 
     @BeforeClass

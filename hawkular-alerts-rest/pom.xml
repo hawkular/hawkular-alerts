@@ -112,13 +112,6 @@
           <version>${project.version}</version>
         </dependency>
 
-        <!-- Hawkular Accounts dependencies -->
-        <dependency>
-          <groupId>org.hawkular.accounts</groupId>
-          <artifactId>hawkular-accounts-api</artifactId>
-          <version>${version.org.hawkular.accounts}</version>
-        </dependency>
-
       </dependencies>
       <activation>
         <activeByDefault>true</activeByDefault>
