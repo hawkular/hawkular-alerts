@@ -35,16 +35,6 @@
 
     <profile>
       <id>bus</id>
-      <dependencies>
-
-        <!-- Hawkular Accounts dependencies -->
-        <dependency>
-          <groupId>org.hawkular.accounts</groupId>
-          <artifactId>hawkular-accounts-api</artifactId>
-          <version>${version.org.hawkular.accounts}</version>
-        </dependency>
-
-      </dependencies>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
@@ -54,25 +44,6 @@
       <id>standalone</id>
       <build>
         <plugins>
-
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>default-compile</id>
-                <phase>compile</phase>
-                <goals>
-                  <goal>compile</goal>
-                </goals>
-                <configuration>
-                  <excludes>
-                    <exclude>org/hawkular/alerts/actions/webhook/accounts/*.java</exclude>
-                  </excludes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
 
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
