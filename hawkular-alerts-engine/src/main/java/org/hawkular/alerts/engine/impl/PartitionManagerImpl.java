@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -126,7 +126,7 @@ public class PartitionManagerImpl implements PartitionManager {
      * Access to the manager of the caches used for the partition services.
      * Main function is to manage the list of members and add listener for topology changes.
      */
-    @Resource(name = "container/hawkular-alerts")
+    @Resource(lookup = "java:jboss/infinispan/container/hawkular-alerts")
     private EmbeddedCacheManager cacheManager;
 
     /**
@@ -139,21 +139,21 @@ public class PartitionManagerImpl implements PartitionManager {
      *
      * Partition cache is modified by cluster coordinator.
      */
-    @Resource(name = "cache/partition")
+    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/partition")
     private Cache partitionCache;
 
     /**
      * This cache will be used to propagate a trigger across nodes.
      * It will hold listeners to notify the change.
      */
-    @Resource(name = "cache/triggers")
+    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/triggers")
     private Cache triggersCache;
 
     /**
      * This cache will be used to propagate a data or event across nodes.
      * It will hold listeners to notify the change.
      */
-    @Resource(name = "cache/data")
+    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/data")
     private Cache dataCache;
 
     /**

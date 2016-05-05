@@ -19,5 +19,4 @@
 -->
 <jboss-web>
   <context-root>/hawkular/actions/file</context-root>
-  <security-domain>keycloak</security-domain>
 </jboss-web>
