@@ -165,8 +165,8 @@ public class Event implements Comparable<Event>, Serializable {
             String text, Map<String, String> context, Map<String, String> tags) {
         this.tenantId = tenantId;
         this.id = id;
-        this.ctime = (ctime <= 0) ? System.currentTimeMillis() : ctime;
-        this.dataSource = isEmpty(dataSource) ? Data.SOURCE_NONE : dataSource;
+        setCtime(ctime);
+        setDataSource(dataSource);
         this.dataId = dataId;
         this.category = category;
         this.text = text;
@@ -247,7 +247,7 @@ public class Event implements Comparable<Event>, Serializable {
     }
 
     public void setCtime(long ctime) {
-        this.ctime = ctime;
+        this.ctime = (ctime <= 0) ? System.currentTimeMillis() : ctime;
     }
 
     public String getDataSource() {
@@ -255,7 +255,7 @@ public class Event implements Comparable<Event>, Serializable {
     }
 
     public void setDataSource(String dataSource) {
-        this.dataSource = dataSource;
+        this.dataSource = isEmpty(dataSource) ? Data.SOURCE_NONE : dataSource;
     }
 
     public String getDataId() {
