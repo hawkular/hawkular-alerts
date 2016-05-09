@@ -114,12 +114,12 @@ class BusITest extends AbstractITestBase {
         Properties env = new Properties();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.naming.remote.client.InitialContextFactory")
         env.put(Context.PROVIDER_URL, "http-remoting://127.0.0.1:8080")
-        env.put(Context.SECURITY_PRINCIPAL, 'hawkular')
-        env.put(Context.SECURITY_CREDENTIALS, 'hawkular')
+        env.put(Context.SECURITY_PRINCIPAL, 'jdoe')
+        env.put(Context.SECURITY_CREDENTIALS, 'password')
 
         InitialContext namingContext = new InitialContext(env)
         ConnectionFactory connectionFactory = (ConnectionFactory) namingContext.lookup('jms/RemoteConnectionFactory')
-        JMSContext context = connectionFactory.createContext('hawkular', 'hawkular')
+        JMSContext context = connectionFactory.createContext('jdoe', 'password')
         Topic topic = (Topic) namingContext.lookup('java:/topic/HawkularAvailData')
         JMSProducer producer = context.createProducer()
 
@@ -227,12 +227,12 @@ class BusITest extends AbstractITestBase {
         Properties env = new Properties();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.naming.remote.client.InitialContextFactory")
         env.put(Context.PROVIDER_URL, "http-remoting://127.0.0.1:8080")
-        env.put(Context.SECURITY_PRINCIPAL, 'hawkular')
-        env.put(Context.SECURITY_CREDENTIALS, 'hawkular')
+        env.put(Context.SECURITY_PRINCIPAL, 'jdoe')
+        env.put(Context.SECURITY_CREDENTIALS, 'password')
 
         InitialContext namingContext = new InitialContext(env)
         ConnectionFactory connectionFactory = (ConnectionFactory) namingContext.lookup('jms/RemoteConnectionFactory')
-        JMSContext context = connectionFactory.createContext('hawkular', 'hawkular')
+        JMSContext context = connectionFactory.createContext('jdoe', 'password')
         Topic topic = (Topic) namingContext.lookup('java:/topic/HawkularMetricData')
         JMSProducer producer = context.createProducer()
 
