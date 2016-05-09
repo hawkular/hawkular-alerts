@@ -111,6 +111,7 @@ public interface DefinitionsService {
 
     /**
      * The <code>Trigger</code> will be removed from the Alerts engine, as needed, and will no longer be persisted.
+     * This can be used to remove both standard or group member triggers but not a group trigger.
      * @param tenantId Tenant where trigger is stored
      * @param triggerId Trigger to be removed
      * @throws NotFoundException if trigger is not found

@@ -264,10 +264,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (doomedTrigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
         }
-        if (doomedTrigger.isMember()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
-                    + "] is a member trigger and must be removed via the group.");
-        }
 
         removeTrigger(doomedTrigger);
     }

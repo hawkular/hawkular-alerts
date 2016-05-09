@@ -586,7 +586,8 @@ public class TriggersHandler {
 
     @DELETE
     @Path("/{triggerId}")
-    @ApiOperation(value = "Delete an existing trigger definition.")
+    @ApiOperation(value = "Delete an existing standard or group member trigger definition." +
+            " This can not be used to delete a group trigger definition.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Trigger deleted."),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
