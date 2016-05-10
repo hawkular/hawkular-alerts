@@ -482,7 +482,7 @@
                 </goals>
                 <configuration>
                   <includes>
-                    <include>**/*ITest*</include>
+                    <include>org/hawkular/alerts/rest/IntegrationSuite.class</include>
                   </includes>
                   <excludes>
                     <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
