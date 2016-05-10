@@ -73,6 +73,10 @@ class AbstractITestBase {
 
     @AfterClass
     static void closeSmtpServer() {
+        // Giving some time to process emails before to shutdown the SMTP server
+        for ( int i=0; i < 10; ++i ) {
+            Thread.sleep(500);
+        }
         if (smtpServer != null) {
             smtpServer.stop();
         }
