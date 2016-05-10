@@ -449,7 +449,7 @@
             <artifactId>maven-antrun-plugin</artifactId>
             <configuration>
               <tasks>
-                <sleep seconds="5" />
+                <sleep seconds="45" />
               </tasks>
             </configuration>
             <executions>
