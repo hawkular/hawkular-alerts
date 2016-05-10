@@ -16,11 +16,6 @@
  */
 package org.hawkular.alerts.rest
 
-import com.icegreen.greenmail.util.GreenMail
-import com.icegreen.greenmail.util.ServerSetup
-import groovyx.net.http.HttpResponseDecorator
-import groovyx.net.http.HttpResponseException
-import org.junit.AfterClass
 import org.junit.BeforeClass
 
 import groovyx.net.http.ContentType
@@ -59,5 +54,13 @@ class AbstractITestBase {
          */
         client.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
         client.headers.put("Hawkular-Tenant", testTenant)
+
+        def resp = client.get(path: "status")
+        def tries = 100
+        while (tries > 0 && resp.data.status != "STARTED") {
+            Thread.sleep(500);
+            resp = client.get(path: "status")
+            tries--
+        }
     }
 }

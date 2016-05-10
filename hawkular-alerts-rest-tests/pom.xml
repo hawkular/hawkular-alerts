@@ -443,26 +443,6 @@
             </executions>
           </plugin>
 
-          <!-- Adding a delay to let the server to process initial data -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <configuration>
-              <tasks>
-                <sleep seconds="45" />
-              </tasks>
-            </configuration>
-            <executions>
-              <execution>
-                <id>sleep-for-a-while</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-
           <!-- Configure integration tests -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
