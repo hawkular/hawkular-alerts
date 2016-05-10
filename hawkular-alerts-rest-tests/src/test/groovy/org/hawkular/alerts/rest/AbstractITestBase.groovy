@@ -16,11 +16,6 @@
  */
 package org.hawkular.alerts.rest
 
-import com.icegreen.greenmail.util.GreenMail
-import com.icegreen.greenmail.util.ServerSetup
-import groovyx.net.http.HttpResponseDecorator
-import groovyx.net.http.HttpResponseException
-import org.junit.AfterClass
 import org.junit.BeforeClass
 
 import groovyx.net.http.ContentType
@@ -36,10 +31,6 @@ class AbstractITestBase {
     static baseURI = System.getProperty('hawkular.base-uri') ?: 'http://127.0.0.1:8080/hawkular/alerts/'
     static RESTClient client
     static testTenant = "28026b36-8fe4-4332-84c8-524e173a68bf"
-
-    static TEST_SMTP_HOST = "localhost";
-    static TEST_SMTP_PORT = 2525;
-    static GreenMail smtpServer;
 
     @BeforeClass
     static void initClient() {
@@ -63,22 +54,13 @@ class AbstractITestBase {
          */
         client.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
         client.headers.put("Hawkular-Tenant", testTenant)
-    }
 
-    @BeforeClass
-    static void initSmtpServer() {
-        smtpServer = new GreenMail(new ServerSetup(TEST_SMTP_PORT, TEST_SMTP_HOST, "smtp"));
-        smtpServer.start();
-    }
-
-    @AfterClass
-    static void closeSmtpServer() {
-        // Giving some time to process emails before to shutdown the SMTP server
-        for ( int i=0; i < 10; ++i ) {
+        def resp = client.get(path: "status")
+        def tries = 100
+        while (tries > 0 && resp.data.status != "STARTED") {
             Thread.sleep(500);
-        }
-        if (smtpServer != null) {
-            smtpServer.stop();
+            resp = client.get(path: "status")
+            tries--
         }
     }
 }
