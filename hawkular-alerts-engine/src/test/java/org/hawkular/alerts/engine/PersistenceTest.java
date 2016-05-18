@@ -398,15 +398,11 @@ public abstract class PersistenceTest {
         assertTrue(nt1.toString(), "member-1-trigger".equals(nt1.getId()));
         assertTrue(nt1.toString(), "member-1".equals(nt1.getName()));
         assertNotNull(nt1.getContext());
-        assertTrue(nt1.toString(), "context-1".equals(nt1.getContext().get("context")));
-        assertTrue(nt1.toString(), !"Updated".equals(nt1.getDescription()));
         assertTrue(nt1.toString(), nt1.isEnabled());
 
         assertTrue(nt1.toString(), !nt2.isOrphan());
         assertTrue(nt2.toString(), "member-2-trigger".equals(nt2.getId()));
         assertTrue(nt2.toString(), "member-2".equals(nt2.getName()));
-        assertTrue(nt2.toString(), nt2.getContext().isEmpty());
-        assertTrue(nt2.toString(), "Updated".equals(nt2.getDescription()));
         assertTrue(nt2.toString(), !nt2.isEnabled());
 
         definitionsService.removeGroupTrigger(TENANT, "group-trigger", true, true);
