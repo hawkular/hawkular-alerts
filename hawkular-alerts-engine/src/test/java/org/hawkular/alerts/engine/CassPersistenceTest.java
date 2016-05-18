@@ -21,8 +21,13 @@ import static org.hawkular.commons.cassandra.EmbeddedConstants.CASSANDRA_YAML;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.cassandra.service.EmbeddedCassandraService;
+import org.hawkular.alerts.api.model.export.Definitions;
+import org.hawkular.alerts.api.model.export.ImportType;
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.EventsCriteria;
@@ -37,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.Session;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Basic tests for CassDefinitionsServiceImpl
@@ -47,13 +53,13 @@ import com.datastax.driver.core.Session;
 public class CassPersistenceTest extends PersistenceTest {
 
     private static final Logger logger = LoggerFactory.getLogger(CassPersistenceTest.class);
+    private static ObjectMapper objectMapper;
 
     static EmbeddedCassandraService embeddedCassandra;
     public static final String keyspace = "hawkular_alerts_test";
 
     @BeforeClass
     public static void initSessionAndResetTestSchema() throws Exception {
-
         File baseDir = Files.createTempDirectory(CassPersistenceTest.class.getName()).toFile();
         File cassandraYaml = new File(baseDir, "cassandra.yaml");
 
@@ -77,6 +83,30 @@ public class CassPersistenceTest extends PersistenceTest {
         definitionsService = StandaloneAlerts.getDefinitionsService();
         alertsService = StandaloneAlerts.getAlertsService();
         actionsService = StandaloneAlerts.getActionsService();
+
+        mockPluginsDeployments();
+
+        objectMapper = new ObjectMapper();
+        Definitions definitions = objectMapper.readValue(
+                CassPersistenceTest.class.getResourceAsStream("/hawkular-alerts/alerts-data.json"), Definitions.class);
+        definitionsService.importDefinitions(TENANT, definitions, ImportType.DELETE);
+    }
+
+    private static void mockPluginsDeployments() throws Exception {
+        Set<String> propsSnmp = new HashSet<>(Arrays.asList("host", "port", "oid", "description"));
+        definitionsService.addActionPlugin("snmp", propsSnmp);
+
+        Set<String> propsEmail = new HashSet<>(Arrays.asList("to", "cc", "description"));
+        definitionsService.addActionPlugin("email", propsEmail);
+
+        Set<String> propsSms = new HashSet<>(Arrays.asList("phone", "description"));
+        definitionsService.addActionPlugin("sms", propsSms);
+
+        Set<String> propsAerogear = new HashSet<>(Arrays.asList("alias", "description"));
+        definitionsService.addActionPlugin("aerogear", propsAerogear);
+
+        Set<String> propsFile = new HashSet<>(Arrays.asList("description"));
+        definitionsService.addActionPlugin("file", propsFile);
     }
 
     @AfterClass
