@@ -24,7 +24,7 @@
   <artifactId>hello-world</artifactId>
   <version>0.9.0.Final-SNAPSHOT</version>
 
-  <name>Hawkular Alerts Examples: Hello World</name>
+  <name>Hawkular Alerting Examples: Hello World</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

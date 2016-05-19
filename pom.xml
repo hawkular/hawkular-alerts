@@ -31,7 +31,7 @@
   <version>1.1.0.Final-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <name>Hawkular Alerts</name>
+  <name>Hawkular Alerting:</name>
   <description>Alerting subsystem for Hawkular</description>
   <url>https://github.com/hawkular/hawkular-alerts</url>
   <inceptionYear>2015</inceptionYear>

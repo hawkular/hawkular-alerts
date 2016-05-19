@@ -29,7 +29,7 @@
   <artifactId>hawkular-alerts-actions-file</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerts Action Filesystem Plugin</name>
+  <name>Hawkular Alerting: Action Filesystem Plugin</name>
 
   <profiles>
 

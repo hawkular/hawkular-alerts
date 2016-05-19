@@ -30,7 +30,7 @@
   <artifactId>hawkular-alerts-actions-plugins</artifactId>
   <packaging>pom</packaging>
 
-  <name>Hawkular Alerts Action Plugins</name>
+  <name>Hawkular Alerting: Action Plugins</name>
   <description>Parent module of all Action Plugins</description>
 
   <properties>
@@ -51,7 +51,7 @@
 
   <dependencies>
 
-    <!-- Hawkular Alerts dependencies -->
+    <!-- Hawkular Alerting dependencies -->
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>
@@ -134,7 +134,7 @@
       <id>bus</id>
       <dependencies>
 
-        <!-- Hawkular Alerts Bus dependencies. Used only on bus deployments. -->
+        <!-- Hawkular Alerting Bus dependencies. Used only on bus deployments. -->
         <dependency>
           <groupId>org.hawkular.alerts</groupId>
           <artifactId>hawkular-alerts-bus-api</artifactId>
@@ -157,7 +157,7 @@
       <id>standalone</id>
       <dependencies>
 
-        <!-- Hawkular Alerts Standalone dependencies. Used only on non-bus scenarios. -->
+        <!-- Hawkular Alerting Standalone dependencies. Used only on non-bus scenarios. -->
         <dependency>
           <groupId>org.hawkular.alerts</groupId>
           <artifactId>hawkular-alerts-actions-standalone</artifactId>

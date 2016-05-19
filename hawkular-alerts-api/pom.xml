@@ -29,7 +29,7 @@
   <artifactId>hawkular-alerts-api</artifactId>
   <packaging>jar</packaging>
 
-  <name>Hawkular Alerts Api</name>
+  <name>Hawkular Alerting: Api</name>
 
   <dependencies>
 

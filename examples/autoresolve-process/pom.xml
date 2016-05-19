@@ -24,7 +24,7 @@
   <artifactId>autoresolve-process</artifactId>
   <version>0.9.0.Final-SNAPSHOT</version>
 
-  <name>Hawkular Alerts Examples: Autoresolve process</name>
+  <name>Hawkular Alerting Examples: Autoresolve process</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

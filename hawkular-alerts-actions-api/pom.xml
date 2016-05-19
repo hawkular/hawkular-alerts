@@ -29,11 +29,11 @@
   <artifactId>hawkular-alerts-actions-api</artifactId>
   <packaging>jar</packaging>
 
-  <name>Hawkular Alerts Actions Api</name>
+  <name>Hawkular Alerting: Actions Api</name>
 
   <dependencies>
 
-    <!-- Hawkular Alerts dependencies -->
+    <!-- Hawkular Alerting dependencies -->
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>

@@ -7,7 +7,7 @@ image::https://travis-ci.org/hawkular/hawkular-alerts.svg?branch=master[Build St
 endif::[]
 
 [.lead]
-*Hawkular Alerts* is the alerts module for Hawkular. It is responsible to define conditions rules over data events
+*Hawkular Alerting* is the alerts module for Hawkular. It is responsible to define conditions rules over data events
 and fire alerts that can be sent by several action plugins.
 
 Hawkular is a modular systems monitoring suite, that consists of several sub-projects for
@@ -58,7 +58,7 @@ Optional component used to offer advance evaluation of complex Metrics expressio
 
 == Getting started
 
-*Hawkular Alerts* can be built with the following steps:
+*Hawkular Alerting* can be built with the following steps:
 
 ```shell
     git clone https://github.com/hawkular/hawkular-alerts.git
@@ -94,7 +94,7 @@ The doc is generated under *hawkular-alerts-rest/target* folder.
 mvn clean install -Pdocgen
 ```
 
-== Hawkular Alerts Documentation
+== Hawkular Alerting Documentation
 
 * link:http://www.hawkular.org/docs/components/alerts/index.html[Installation and configuration].
 * link:http://www.hawkular.org/docs/dev/alerts.html[Developer guide]
