@@ -29,7 +29,7 @@
   <artifactId>hawkular-alerts-actions-pagerduty</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerts Action PagerDuty Plugin</name>
+  <name>Hawkular Alerting: Action PagerDuty Plugin</name>
 
   <dependencies>
 

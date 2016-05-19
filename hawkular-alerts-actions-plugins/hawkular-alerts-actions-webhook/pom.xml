@@ -29,7 +29,7 @@
   <artifactId>hawkular-alerts-actions-webhook</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerts Action Webhook Plugin</name>
+  <name>Hawkular Alerting: Action Webhook Plugin</name>
 
   <profiles>
 

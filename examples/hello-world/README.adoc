@@ -1,13 +1,13 @@
 = Hello World
 
-This example shows how to use Hawkular Alerts REST API from a script.
+This example shows how to use Hawkular Alerting REST API from a script.
 
 The scripts are written in groovy to make them work from maven in any platorm but those are pretty simple and can be
 translated to bash or a different environment easily.
 
 == Running the example
 
-Build a Hawkular Alerts standalone distribution
+Build a Hawkular Alerting standalone distribution
 
 [source,shell,subs="+attributes"]
 ----
@@ -31,8 +31,8 @@ Open a new shell to run the hello-world example
     mvn validate
 ----
 
-TIP: By default, Hawkular Alerts will send email notifications using a SMTP server on localhost:25, for demo purposes
- a test smtp server can be used to validate the reception of the emails. Hawkular Alerts has been tested using
+TIP: By default, Hawkular Alerting will send email notifications using a SMTP server on localhost:25, for demo purposes
+ a test smtp server can be used to validate the reception of the emails. Hawkular Alerting has been tested using
  https://nilhcem.github.io/FakeSMTP/[FakeSMTP].
 
 TIP: To run the example against the Hawkular distribution, use the command `mvn validate -Dhawkular`.

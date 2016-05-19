@@ -29,7 +29,7 @@
   <artifactId>hawkular-alerts-actions-snmp</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerts Action Snmp Plugin</name>
+  <name>Hawkular Alerting: Action Snmp Plugin</name>
 
   <profiles>
 

@@ -1,8 +1,8 @@
 = autoresolve process
 
-This example shows how to use AUTORESOLVE triggers in Hawkular Alerts.
+This example shows how to use AUTORESOLVE triggers in Hawkular Alerting.
 
-Hawkular Alerts offers the flexibility to detect when a bad situation occurs, firing an Alert, but also,
+Hawkular Alerting offers the flexibility to detect when a bad situation occurs, firing an Alert, but also,
 the ability to detect when the bad status is resolved.
 
 This mechanism is implemented using a Trigger with FIRING and AUTORESOLVE conditions.
@@ -21,7 +21,7 @@ translated to bash or a different environment easily.
 
 == Running the example
 
-Build a Hawkular Alerts standalone distribution
+Build a Hawkular Alerting standalone distribution
 
 [source,shell,subs="+attributes"]
 ----
@@ -46,8 +46,8 @@ Open a new shell to run the autoresolve-process example
     ## Use mvn validate -Dprocess=otherprocess to change the process to monitor
 ----
 
-TIP: By default, Hawkular Alerts will send email notifications using a SMTP server on localhost:25, for demo purposes
- a test smtp server can be used to validate the reception of the emails. Hawkular Alerts has been tested using
+TIP: By default, Hawkular Alerting will send email notifications using a SMTP server on localhost:25, for demo purposes
+ a test smtp server can be used to validate the reception of the emails. Hawkular Alerting has been tested using
  https://nilhcem.github.io/FakeSMTP/[FakeSMTP].
 
 TIP: To run the example against the Hawkular distribution, use the command `mvn validate -Dhawkular`.

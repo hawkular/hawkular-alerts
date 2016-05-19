@@ -29,6 +29,6 @@
   <artifactId>hawkular-alerts-actions-tests</artifactId>
   <packaging>jar</packaging>
 
-  <name>Hawkular Alerts Actions Tests</name>
+  <name>Hawkular Alerting: Actions Tests</name>
 
 </project>

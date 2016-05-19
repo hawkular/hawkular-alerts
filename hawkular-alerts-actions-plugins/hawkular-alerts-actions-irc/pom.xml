@@ -29,7 +29,7 @@
   <artifactId>hawkular-alerts-actions-irc</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerts Action Irc Plugin</name>
+  <name>Hawkular Alerting: Action Irc Plugin</name>
 
   <dependencies>
 

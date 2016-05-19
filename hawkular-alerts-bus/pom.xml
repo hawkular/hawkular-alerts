@@ -29,11 +29,11 @@
   <artifactId>hawkular-alerts-bus</artifactId>
   <packaging>jar</packaging>
 
-  <name>Hawkular Alerts Bus</name>
+  <name>Hawkular Alerting: Bus</name>
 
   <dependencies>
 
-    <!-- Hawkular Alerts dependencies -->
+    <!-- Hawkular Alerting dependencies -->
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>

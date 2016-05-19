@@ -29,7 +29,7 @@
   <artifactId>hawkular-alerts-actions-aerogear</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerts Action Aerogear Plugin</name>
+  <name>Hawkular Alerting: Action Aerogear Plugin</name>
 
   <dependencies>
 

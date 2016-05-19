@@ -29,11 +29,11 @@
   <artifactId>hawkular-alerts-rest</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerts Rest</name>
+  <name>Hawkular Alerting: Rest</name>
 
   <dependencies>
 
-    <!-- Hawkular Alerts dependencies -->
+    <!-- Hawkular Alerting dependencies -->
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>
@@ -226,7 +226,7 @@
                   <locations>org.hawkular.alerts.rest</locations>
                   <basePath>/hawkular/alerts</basePath>
                   <info>
-                    <title>Hawkular Alerts</title>
+                    <title>Hawkular Alerting</title>
                     <version>${project.version}</version>
                   </info>
                   <swaggerDirectory>${swaggerDirectory}</swaggerDirectory>
