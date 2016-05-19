@@ -1864,12 +1864,14 @@ public abstract class PersistenceTest {
         }
 
         logger.info("Actions are asynchronous. Give them some time.");
-        for (int i = 0; i < 30; i++) {
-            logger.info(".");
-            Thread.sleep(200);
-        }
 
+        int tries = 10;
         List<Action> actions = actionsService.getActions(TENANT, null, null);
+        while (actions.size() != (10 * 4) && tries > 0) {
+            actions = actionsService.getActions(TENANT, null, null);
+            Thread.sleep(1000);
+            tries--;
+        }
         assertEquals(10 * 4, actions.size());
 
         ActionsCriteria criteria = new ActionsCriteria();
@@ -1964,12 +1966,14 @@ public abstract class PersistenceTest {
         }
 
         logger.info("Actions are asynchronous. Give them some time.");
-        for (int i = 0; i < 30; i++) {
-            logger.info(".");
-            Thread.sleep(200);
-        }
 
+        int tries = 10;
         List<Action> actions = actionsService.getActions(TENANT, null, null);
+        while (actions.size() != (103 * 4) && tries > 0) {
+            actions = actionsService.getActions(TENANT, null, null);
+            Thread.sleep(1000);
+            tries--;
+        }
         assertEquals(103 * 4, actions.size());
 
         Pager pager = Pager.builder().withPageSize(10).withStartPage(0)
@@ -2053,14 +2057,16 @@ public abstract class PersistenceTest {
         }
 
         logger.info("Actions are asynchronous. Give them some time.");
-        for (int i = 0; i < 30; i++) {
-            logger.info(".");
-            Thread.sleep(200);
-        }
 
         ActionsCriteria criteria = new ActionsCriteria();
         criteria.setThin(true);
+        int tries = 10;
         List<Action> actions = actionsService.getActions(TENANT, criteria, null);
+        while (actions.size() != (103 * 4) && tries > 0) {
+            actions = actionsService.getActions(TENANT, criteria, null);
+            Thread.sleep(1000);
+            tries--;
+        }
         assertEquals(103 * 4, actions.size());
 
         for (Action action : actions) {
