@@ -31,6 +31,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.jaxrs.filter.tenant.TenantRequired;
 
 import io.swagger.annotations.Api;
 
@@ -42,6 +43,7 @@ import io.swagger.annotations.Api;
  */
 @Path("/status")
 @Api(value = "/status", description = "Status of Alerts Service")
+@TenantRequired(false)
 public class StatusHandler {
     private static final String STATUS = "status";
     private static final String STARTED = "STARTED";
