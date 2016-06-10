@@ -92,7 +92,7 @@
     <version.org.codehaus.groovy.maven>1.0</version.org.codehaus.groovy.maven>
     <version.org.drools>6.3.0.Final</version.org.drools>
     <version.org.freemarker>2.3.17</version.org.freemarker>
-    <version.org.hawkular.commons>0.7.1.Final</version.org.hawkular.commons>
+    <version.org.hawkular.commons>0.7.3.Final</version.org.hawkular.commons>
     <version.org.hawkular.metrics>0.15.0.Final</version.org.hawkular.metrics>
     <version.org.infinispan.wildfly>8.0.1.Final</version.org.infinispan.wildfly>
     <version.org.infinispan.eap64>5.2.9.Final</version.org.infinispan.eap64>
