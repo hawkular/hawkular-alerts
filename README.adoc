@@ -79,10 +79,10 @@ mvn clean install -Pitest
 == Performance tests
 
 There is a performance test suite focus in the *hawkular-alerts-engine* project.
-These tests are not active by default, they can be run using *-Pperf* profile:
+These tests are not active by default, they can be run using *-Dtest-env=perf* variable:
 
 ```shell
-mvn clean install -Pperf
+mvn clean install -Dtest-env=perf
 ```
 
 == Building REST API documentation
