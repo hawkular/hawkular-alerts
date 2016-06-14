@@ -276,6 +276,12 @@
             </exclusion>
           </exclusions>
         </dependency>
+        <dependency>
+          <groupId>org.hawkular.commons</groupId>
+          <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
+          <version>${version.org.hawkular.commons}</version>
+          <type>war</type>
+        </dependency>
       </dependencies>
       <build>
         <plugins>
@@ -334,6 +340,14 @@
                       <overWrite>true</overWrite>
                       <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
                       <destFileName>hawkular-alerts-actions-file.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.commons</groupId>
+                      <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
+                      <destFileName>hawkular-commons-embedded-cassandra-war.war</destFileName>
                     </artifactItem>
                   </artifactItems>
                 </configuration>
@@ -418,6 +432,7 @@
                 <javaOpt>-Dkeycloak.import=${project.build.directory}/${project.build.finalName}/standalone/configuration/hawkular-realm-for-dev.json</javaOpt>
                 <javaOpt>-Dmail.smtp.host=localhost</javaOpt>
                 <javaOpt>-Dmail.smtp.port=2525</javaOpt>
+                <javaOpt>-Dhawkular.backend=embedded_cassandra</javaOpt>
                 <!--<javaOpt>-Xdebug</javaOpt>-->
                 <!--<javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt>-->
               </javaOpts>
