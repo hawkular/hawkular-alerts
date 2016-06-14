@@ -90,7 +90,7 @@
     <version.org.codehaus.jsr166-mirror>1.7.0</version.org.codehaus.jsr166-mirror>
     <version.org.codehaus.gpars>1.2.0</version.org.codehaus.gpars>
     <version.org.codehaus.groovy.maven>1.0</version.org.codehaus.groovy.maven>
-    <version.org.drools>6.3.0.Final</version.org.drools>
+    <version.org.drools>6.4.0.Final</version.org.drools>
     <version.org.freemarker>2.3.17</version.org.freemarker>
     <version.org.hawkular.commons>0.7.3.Final</version.org.hawkular.commons>
     <version.org.hawkular.metrics>0.15.0.Final</version.org.hawkular.metrics>
