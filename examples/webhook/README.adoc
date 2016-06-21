@@ -31,7 +31,16 @@ Open a new shell to run the webhook example
     mvn validate
 ----
 
-TIP: To run the example against the Hawkular distribution, use the command `mvn validate -Dhawkular`.
+TIP: To run the example against the Hawkular Services distribution, you must install the webhook plugin manually.
+
+[source,shell,subs="+attributes"]
+----
+    # Build the Hawkular Alerting without any flag to prepare the plugin for hawkular services distribution
+    mvn clean install
+    # Copy the plugin into hawkular-services distribution
+    cp hawkular-alerts-actions-plugins/hawkular-alerts-actions-webhook/target/hawkular-alerts-actions-webhook.war \
+    $HAWKULAR_SERVICES/modules/system/layers/hawkular/org/hawkular/nest/main/deployments/
+----
 
 == create_definitions.groovy
 

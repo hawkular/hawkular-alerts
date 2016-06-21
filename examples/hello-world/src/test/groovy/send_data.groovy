@@ -30,17 +30,17 @@ client.handler.failure = { resp ->
     return resp
 }
 
-if (System.getProperties().containsKey("hawkular")) {
-    /*
-        User: jdoe
-        Password: password
-        String encodedCredentials = Base64.getMimeEncoder()
-        .encodeToString("$testUser:$testPasword".getBytes("utf-8"))
-     */
-    client.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
-} else {
-    client.defaultRequestHeaders.put("Hawkular-Tenant", tenant)
-}
+/*
+    Basic header is used only for hawkular-services distribution.
+    This header is ignored on standalone scenarios.
+
+    User: jdoe
+    Password: password
+    String encodedCredentials = Base64.getMimeEncoder()
+    .encodeToString("$testUser:$testPasword".getBytes("utf-8"))
+ */
+client.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
+client.defaultRequestHeaders.put("Hawkular-Tenant", tenant)
 
 while (true) {
 

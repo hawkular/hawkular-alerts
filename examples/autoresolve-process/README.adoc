@@ -50,8 +50,6 @@ TIP: By default, Hawkular Alerting will send email notifications using a SMTP se
  a test smtp server can be used to validate the reception of the emails. Hawkular Alerting has been tested using
  https://nilhcem.github.io/FakeSMTP/[FakeSMTP].
 
-TIP: To run the example against the Hawkular distribution, use the command `mvn validate -Dhawkular`.
-
 == create_definitions.groovy
 
 Create a trigger to two conditions to fire an alert when a process is down and update when the process is up:
@@ -67,3 +65,11 @@ Create an action definition to notify by email to admins group with cc to develo
 
 Invoke a shell command (Linux) to detect if the process is present and send a data for "process-status" over the REST
  API.
+
+The detection of the process is OS dependent, this example is tested under Linux platforms.
+For other platform this command should be changed for an equivalent expression:
+
+[source,shell,subs="+attributes"]
+----
+    def proc = ["sh", "-c", "ps -e | grep ${processName} | wc -l"].execute()
+----
