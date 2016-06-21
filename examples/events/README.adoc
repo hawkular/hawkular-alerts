@@ -37,8 +37,6 @@ TIP: By default, Hawkular Alerting will send email notifications using a SMTP se
  a test smtp server can be used to validate the reception of the emails. Hawkular Alerting has been tested using
  https://nilhcem.github.io/FakeSMTP/[FakeSMTP].
 
-TIP: To run the example against the Hawkular distribution, use the command `mvn validate -Dhawkular`.
-
 == tutorial1
 
 Minimalist example to send and event.
