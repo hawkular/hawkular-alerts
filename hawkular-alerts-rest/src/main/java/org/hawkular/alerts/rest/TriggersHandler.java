@@ -103,7 +103,7 @@ public class TriggersHandler {
             @QueryParam("triggerIds")
             final String triggerIds,
             @ApiParam(required = false, value = "Filter out triggers for unspecified tags, comma separated list of "
-                    + "tags, each tag of format 'name|value'. Specify '*' for value to match all values.")
+                    + "tags, each tag of format \'name|value\'. Specify \'*\' for value to match all values.")
             @QueryParam("tags")
             final String tags,
             @ApiParam(required = false, value = "Return only thin triggers. Currently Ignored.")
