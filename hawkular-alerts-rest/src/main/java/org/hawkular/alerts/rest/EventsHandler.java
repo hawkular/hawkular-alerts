@@ -140,7 +140,7 @@ public class EventsHandler {
             @QueryParam("eventIds")
             final String eventIds,
             @ApiParam(required = true, value = "Comma separated list of tags to add, "
-                    + "each tag of format 'name|value'.")
+                    + "each tag of format \'name|value\'.")
             @QueryParam("tags")
             final String tags) {
         try {
@@ -230,7 +230,7 @@ public class EventsHandler {
             @QueryParam("categories")
             final String categories,
             @ApiParam(required = false, value = "Filter out events for unspecified tags, comma separated list of tags, "
-                    + "each tag of format 'name|value'. Specify '*' for value to match all values.")
+                    + "each tag of format \'name|value\'. Specify \'*\' for value to match all values.")
             @QueryParam("tags")
             final String tags,
             @ApiParam(required = false, value = "Return only thin events, do not include: evalSets.")
@@ -318,7 +318,7 @@ public class EventsHandler {
                     "comma separated list of category values.") @QueryParam("categories")
             final String categories,
             @ApiParam(required = false, value = "Filter out events for unspecified tags, comma separated list of tags, "
-                    + "each tag of format 'name|value'. Specify '*' for value to match all values.")
+                    + "each tag of format \'name|value\'. Specify \'*\' for value to match all values.")
             @QueryParam("tags")
             final String tags
             ) {

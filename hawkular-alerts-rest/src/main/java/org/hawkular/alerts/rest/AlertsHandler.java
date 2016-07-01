@@ -117,7 +117,7 @@ public class AlertsHandler {
             @QueryParam("severities")
             final String severities,
             @ApiParam(required = false, value = "Filter out events for unspecified tags, comma separated list of tags, "
-                    + "each tag of format 'name|value'. Specify '*' for value to match all values.")
+                    + "each tag of format \'name|value\'. Specify \'*\' for value to match all values.")
             @QueryParam("tags")
             final String tags,
             @ApiParam(required = false, value = "Return only thin alerts, do not include: evalSets, resolvedEvalSets.")
@@ -234,7 +234,7 @@ public class AlertsHandler {
             @QueryParam("alertIds")
             final String alertIds,
             @ApiParam(required = true, value = "Comma separated list of tags to add, "
-                    + "each tag of format 'name|value'.")
+                    + "each tag of format \'name|value\'.")
             @QueryParam("tags")
             final String tags) {
         try {
@@ -402,7 +402,7 @@ public class AlertsHandler {
             @QueryParam("severities")
             final String severities,
             @ApiParam(required = false, value = "Filter out alerts for unspecified tags, comma separated list of tags, "
-                    + "each tag of format 'name|value'. Specify '*' for value to match all values.")
+                    + "each tag of format \'name|value\'. Specify \'*\' for value to match all values.")
             @QueryParam("tags")
             final String tags
             ) {
