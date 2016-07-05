@@ -145,4 +145,11 @@ public class BusActionPluginSender implements ActionPluginSender {
             msgLog.errorCannotSendMessage(e.getMessage());
         }
     }
+
+    @Override
+    public String toString() {
+        return "BusActionPluginSender[" +
+                "actionPlugin='" + actionPlugin + '\'' +
+                ']';
+    }
 }
