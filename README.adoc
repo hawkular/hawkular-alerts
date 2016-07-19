@@ -97,7 +97,7 @@ mvn clean install -Pdocgen
 == Hawkular Alerting Documentation
 
 * link:http://www.hawkular.org/docs/components/alerts/index.html[Installation and configuration].
-* link:http://www.hawkular.org/docs/dev/alerts.html[Developer guide]
+* link:http://www.hawkular.org/community/docs/developer-guide/alerts.html[Developer guide]
 * link:http://www.hawkular.org/docs/rest/rest-alerts.html[REST API]
 
 == License
