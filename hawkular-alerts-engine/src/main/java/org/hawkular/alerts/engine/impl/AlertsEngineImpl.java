@@ -76,7 +76,14 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(AlertsEngineImpl.class);
 
+    /*
+        ENGINE_DELAY defined in milliseconds
+     */
     private static final String ENGINE_DELAY = "hawkular-alerts.engine-delay";
+
+    /*
+        ENGINE_PERIOD defined in milliseconds
+     */
     private static final String ENGINE_PERIOD = "hawkular-alerts.engine-period";
 
     private int delay;
