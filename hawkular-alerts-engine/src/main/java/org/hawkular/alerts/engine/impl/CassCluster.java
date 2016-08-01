@@ -29,6 +29,7 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SocketOptions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 
@@ -45,7 +46,23 @@ public class CassCluster {
     private static final String ALERTS_CASSANDRA_NODES_ENV = "CASSANDRA_NODES";
     private static final String ALERTS_CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
     private static final String ALERTS_CASSANDRA_RETRY_ATTEMPTS = "hawkular-alerts.cassandra-retry-attempts";
+
+    /*
+        ALERTS_CASSANDRA_RETRY_TIMEOUT defined in milliseconds
+     */
     private static final String ALERTS_CASSANDRA_RETRY_TIMEOUT = "hawkular-alerts.cassandra-retry-timeout";
+
+    /*
+        ALERTS_CASSANDRA_CONNECT_TIMEOUT and ALERTS_CASSANDRA_CONNECT_TIMEOUT_ENV defined in milliseconds
+     */
+    private static final String ALERTS_CASSANDRA_CONNECT_TIMEOUT = "hawkular-alerts.cassandra-connect-timeout";
+    private static final String ALERTS_CASSANDRA_CONNECT_TIMEOUT_ENV = "CASSANDRA_CONNECT_TIMEOUT";
+
+    /*
+        ALERTS_CASSANDRA_READ_TIMEOUT and ALERTS_CASSANDRA_READ_TIMEOUT_ENV defined in milliseconds
+     */
+    private static final String ALERTS_CASSANDRA_READ_TIMEOUT = "hawkular-alerts.cassandra-read-timeout";
+    private static final String ALERTS_CASSANDRA_READ_TIMEOUT_ENV = "CASSANDRA_READ_TIMEOUT";
 
     private Cluster cluster = null;
 
@@ -144,17 +161,41 @@ public class CassCluster {
             String nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, ALERTS_CASSANDRA_NODES_ENV, "127.0.0.1");
             int attempts = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_ATTEMPTS, "5"));
             int timeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_TIMEOUT, "2000"));
+            int connTimeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_CONNECT_TIMEOUT,
+                    ALERTS_CASSANDRA_CONNECT_TIMEOUT_ENV,
+                    String.valueOf(SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS)));
+            int readTimeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_READ_TIMEOUT,
+                    ALERTS_CASSANDRA_READ_TIMEOUT_ENV,
+                    String.valueOf(SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS)));
+
             /*
                 It might happen that alerts component is faster than embedded cassandra deployed in hawkular.
                 We will provide a simple attempt/retry loop to avoid issues at initialization.
              */
             while(instance.session == null && !Thread.currentThread().isInterrupted() && attempts >= 0) {
                 try {
-                    instance.cluster = new Cluster.Builder()
+                    SocketOptions socketOptions = null;
+                    if (connTimeout != SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS ||
+                            readTimeout != SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS) {
+                        socketOptions = new SocketOptions();
+                        if (connTimeout != SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS) {
+                            socketOptions.setConnectTimeoutMillis(connTimeout);
+                        }
+                        if (readTimeout != SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS) {
+                            socketOptions.setReadTimeoutMillis(readTimeout);
+                        }
+                    }
+
+                    Cluster.Builder clusterBuilder = new Cluster.Builder()
                             .addContactPoints(nodes.split(","))
                             .withPort(new Integer(cqlPort))
-                            .withProtocolVersion(ProtocolVersion.V3)
-                            .build();
+                            .withProtocolVersion(ProtocolVersion.V3);
+
+                    if (socketOptions != null) {
+                        clusterBuilder.withSocketOptions(socketOptions);
+                    }
+
+                    instance.cluster = clusterBuilder.build();
                     instance.session = instance.cluster.connect();
                 } catch (Exception e) {
                     log.warn("Could not connect to Cassandra cluster - assuming is not up yet. Cause: " +
