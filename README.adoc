@@ -30,8 +30,6 @@ It includes a rules engine as part of the implementation details.
 | hawkular-alerts-rest |
 This is a public REST API for alerts component. +
 It is a wrapper of the main *hawkular-alerts-api*.
-| hawkular-alerts-bus-api |
-Common message API used to interact with the bus.
 | hawkular-alerts-bus |
 This component is responsible for the communication between the alerts engine and the bus. +
 *hawkular-alerts-engine* is decoupled from the bus, so it can be used in other scenarios +
