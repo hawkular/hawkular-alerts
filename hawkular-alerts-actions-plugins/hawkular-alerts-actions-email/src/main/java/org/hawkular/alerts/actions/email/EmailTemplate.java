@@ -148,7 +148,7 @@ public class EmailTemplate {
 
         /*
             Invoke freemarker template with PluginMessageDescription as root object for dynamic data.
-            PluginMessageDescription fields are accesible within .ftl templates.
+            PluginMessageDescription fields are accessible within .ftl templates.
          */
         StringWriter writerPlain = new StringWriter();
         StringWriter writerHtml = new StringWriter();
