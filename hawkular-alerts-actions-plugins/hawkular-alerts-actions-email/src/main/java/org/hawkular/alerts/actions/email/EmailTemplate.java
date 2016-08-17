@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -148,7 +148,7 @@ public class EmailTemplate {
 
         /*
             Invoke freemarker template with PluginMessageDescription as root object for dynamic data.
-            PluginMessageDescription fields are accesible within .ftl templates.
+            PluginMessageDescription fields are accessible within .ftl templates.
          */
         StringWriter writerPlain = new StringWriter();
         StringWriter writerHtml = new StringWriter();

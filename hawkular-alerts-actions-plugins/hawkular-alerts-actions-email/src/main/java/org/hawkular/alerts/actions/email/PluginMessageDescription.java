@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,10 +17,12 @@
 package org.hawkular.alerts.actions.email;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -116,7 +118,7 @@ public class PluginMessageDescription {
     /** Base URL to be used on templates to build links into main UI */
     private String baseUrl;
 
-    private DecimalFormat decimalFormat = new DecimalFormat("####0.0");
+    private DecimalFormat decimalFormat = new DecimalFormat("####0.0", new DecimalFormatSymbols(Locale.ENGLISH));
 
     /**
      * Helper inner class to store a Condition with a calculated description.
