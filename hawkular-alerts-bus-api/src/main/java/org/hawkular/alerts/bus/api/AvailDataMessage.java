@@ -127,11 +127,36 @@ public class AvailDataMessage extends AbstractMessage {
         }
 
         @Override
-        public String toString() {
-            return "SingleAvail [tenantId=" + tenantId + ", id=" + id + ", timestamp=" + timestamp + ", avail="
-                    + avail + "]";
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            SingleAvail that = (SingleAvail) o;
+
+            if (timestamp != that.timestamp) return false;
+            if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
+            if (id != null ? !id.equals(that.id) : that.id != null) return false;
+            return avail != null ? avail.equals(that.avail) : that.avail == null;
+
         }
 
-    }
+        @Override
+        public int hashCode() {
+            int result = tenantId != null ? tenantId.hashCode() : 0;
+            result = 31 * result + (id != null ? id.hashCode() : 0);
+            result = 31 * result + (int) (timestamp ^ (timestamp >>> 32));
+            result = 31 * result + (avail != null ? avail.hashCode() : 0);
+            return result;
+        }
 
+        @Override
+        public String toString() {
+            return "SingleAvail{" +
+                    "tenantId='" + tenantId + '\'' +
+                    ", id='" + id + '\'' +
+                    ", timestamp=" + timestamp +
+                    ", avail='" + avail + '\'' +
+                    '}';
+        }
+    }
 }

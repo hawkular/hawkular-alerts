@@ -52,6 +52,12 @@
       <version>${project.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.hawkular.metrics</groupId>
+      <artifactId>hawkular-metrics-model</artifactId>
+      <version>${version.org.hawkular.metrics}</version>
+    </dependency>
+
     <!-- Hawkular Nest dependencies -->
     <dependency>
       <groupId>org.hawkular.commons</groupId>
@@ -90,6 +96,13 @@
       <groupId>org.jboss.resteasy</groupId>
       <artifactId>resteasy-jackson2-provider</artifactId>
       <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-core</artifactId>
+      <scope>provided</scope>
+      <version>${version.org.infinispan.wildfly}</version>
     </dependency>
 
     <!-- Tests -->

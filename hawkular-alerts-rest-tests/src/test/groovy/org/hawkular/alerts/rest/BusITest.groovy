@@ -82,7 +82,7 @@ class BusITest extends AbstractITestBase {
 
         // ADD Firing condition
         AvailabilityCondition firingCond = new AvailabilityCondition("test-bus-email-availability",
-                Mode.FIRING, "test-bus-email-availability", AvailabilityCondition.Operator.NOT_UP);
+                Mode.FIRING, "availability-test-bus-email-availability", AvailabilityCondition.Operator.NOT_UP);
 
         Collection<Condition> conditions = new ArrayList<>(1);
         conditions.add( firingCond );
@@ -195,7 +195,7 @@ class BusITest extends AbstractITestBase {
 
         // ADD Firing condition
         ThresholdCondition firingCond = new ThresholdCondition("test-bus-email-threshold",
-                Mode.FIRING, "test-bus-email-threshold", ThresholdCondition.Operator.GT, 300);
+                Mode.FIRING, "gauge-test-bus-email-threshold", ThresholdCondition.Operator.GT, 300);
 
         Collection<Condition> conditions = new ArrayList<>(1);
         conditions.add( firingCond );
@@ -238,7 +238,8 @@ class BusITest extends AbstractITestBase {
 
         for (int i=0; i<5; i++) {
             String strMetricData = "{\"metricData\":{\"tenantId\":\"$testTenant\"," +
-                    "\"data\":[{\"source\":\"test-bus-email-threshold\"," +
+                    "\"data\":[{\"type\":\"gauge\"," +
+                    "\"source\":\"test-bus-email-threshold\"," +
                     "\"timestamp\":" + (System.currentTimeMillis() + i) + "," +
                     "\"value\":" + String.valueOf(305.5 + i) + "}]}}"
             producer.send(topic, strMetricData)

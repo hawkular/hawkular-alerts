@@ -33,6 +33,7 @@ import org.hawkular.alerts.bus.api.MetricDataMessage;
 import org.hawkular.alerts.bus.api.MetricDataMessage.MetricData;
 import org.hawkular.alerts.bus.api.MetricDataMessage.SingleMetric;
 import org.hawkular.alerts.bus.init.CacheManager;
+import org.hawkular.alerts.bus.init.CacheManager.DataIdKey;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
 
@@ -60,7 +61,7 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
     @EJB
     CacheManager cacheManager;
 
-    private boolean isNeeded(Set<String> activeMetricIds, String metricId) {
+    private boolean isNeeded(Set<DataIdKey> activeMetricIds, DataIdKey metricId) {
         if (null == activeMetricIds) {
             return true;
         }
@@ -79,19 +80,20 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
 
         List<SingleMetric> data = metricData.getData();
         List<Data> alertData = null;
-        Set<String> activeMetricIds = cacheManager.getActiveDataIds();
+        Set<DataIdKey> activeMetricIds = cacheManager.getActiveDataIds();
         for (SingleMetric m : data) {
-            if (isNeeded(activeMetricIds, m.getSource())) {
+            String fullMetricId = m.getType() + "-" + m.getSource();
+            if (isNeeded(activeMetricIds, new DataIdKey(metricData.getTenantId(), fullMetricId))) {
                 if (log.isTraceEnabled()) {
-                    log.tracef("KEEPING METRIC [%s:%s]", m.getSource(), String.valueOf(m.getValue()));
+                    log.tracef("KEEPING METRIC [%s:%s]", fullMetricId, String.valueOf(m.getValue()));
                 }
                 if (null == alertData) {
                     alertData = new ArrayList<>(data.size());
                 }
-                alertData.add(Data.forNumeric(metricData.getTenantId(), m.getSource(), m.getTimestamp(),
+                alertData.add(Data.forNumeric(metricData.getTenantId(), fullMetricId, m.getTimestamp(),
                         m.getValue()));
             } else if (log.isTraceEnabled()) {
-                log.tracef("TOSSING METRIC [%s]", m.getSource());
+                log.tracef("TOSSING METRIC [%s]", fullMetricId);
             }
         }
         if (null == alertData) {

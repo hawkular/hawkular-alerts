@@ -35,6 +35,7 @@ import org.hawkular.alerts.bus.api.AvailDataMessage;
 import org.hawkular.alerts.bus.api.AvailDataMessage.AvailData;
 import org.hawkular.alerts.bus.api.AvailDataMessage.SingleAvail;
 import org.hawkular.alerts.bus.init.CacheManager;
+import org.hawkular.alerts.bus.init.CacheManager.DataIdKey;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
 
@@ -55,6 +56,7 @@ import org.jboss.logging.Logger;
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
     private final Logger log = Logger.getLogger(AvailDataListener.class);
+    private final String AVAILABILITY = "availability";
 
     @EJB
     AlertsService alerts;
@@ -65,7 +67,7 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
     @EJB
     CacheManager cacheManager;
 
-    private boolean isNeeded(Set<String> activeAvailabilityIds, String id) {
+    private boolean isNeeded(Set<DataIdKey> activeAvailabilityIds, DataIdKey id) {
         if (null == activeAvailabilityIds) {
             return true;
         }
@@ -83,13 +85,14 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
 
         List<SingleAvail> data = availData.getData();
         List<Data> alertData = null;
-        Set<String> activeAvailabilityIds = cacheManager.getActiveAvailabilityIds();
+        Set<DataIdKey> activeAvailabilityIds = cacheManager.getActiveAvailabilityIds();
         for (SingleAvail a : data) {
-            if (isNeeded(activeAvailabilityIds, a.getId())) {
+            String fullMetricId = AVAILABILITY + "-" + a.getId();
+            if (isNeeded(activeAvailabilityIds, new DataIdKey(a.getTenantId(), fullMetricId))) {
                 if (null == alertData) {
                     alertData = new ArrayList<>(data.size());
                 }
-                alertData.add(Data.forAvailability(a.getTenantId(), a.getId(), a.getTimestamp(),
+                alertData.add(Data.forAvailability(a.getTenantId(), fullMetricId, a.getTimestamp(),
                         AvailabilityType.valueOf(a.getAvail())));
             }
         }
