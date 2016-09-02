@@ -19,6 +19,7 @@ package org.hawkular.alerts.api.model.dampening;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
-import org.hawkular.alerts.api.model.condition.TriggerConditionEval;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
@@ -39,6 +39,7 @@ import io.swagger.annotations.ApiModelProperty;
  * A representation of dampening status.
  *
  * @author Jay Shaughnessy
+ * @author Lucas Ponce
  */
 public class Dampening implements Serializable {
 
@@ -109,7 +110,7 @@ public class Dampening implements Serializable {
     }
 
     /**
-     * Fire if we have <code>numTrueEvals</code> consecutive true evaluations of the condition set.  There is
+     * Fire if we have <code>numTrueEvals</code> consecutive true evaluations of the condition set. There is
      * no time limit for the evaluations.
      * @param tenantId the tenantId, not null, can be "" for REST client, it will be assigned by the service.
      * @param triggerId the triggerId, not null
@@ -178,7 +179,7 @@ public class Dampening implements Serializable {
      * @param triggerId the triggerId, not null
      * @param triggerMode the trigger mode for when this dampening is active
      * @param evalPeriod Elapsed real time, in milliseconds. In other words, this is not measured against
-     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times.  >=1ms.
+     * collectionTimes (i.e. the timestamp on the data) but rather the evaluation times. >=1ms.
      * @return the configured Dampening
      */
     public static Dampening forStrictTime(String tenantId, String triggerId, Mode triggerMode, long evalPeriod) {
@@ -341,20 +342,20 @@ public class Dampening implements Serializable {
         updateId();
     }
 
-    public void perform(Match match, TriggerConditionEval triggerConditionEval) {
+    public void perform(Match match, Set<ConditionEval> conditionEvalSet) {
         if (null == match) {
             throw new IllegalArgumentException("Match can not be null");
         }
-        if (null == triggerConditionEval || triggerConditionEval.getSize() == 0) {
-            throw new IllegalArgumentException("TriggerConditionEval can not be null or empty");
+        if (null == conditionEvalSet || isEmpty(conditionEvalSet)) {
+            throw new IllegalArgumentException("ConditionEval Set can not be null or empty");
         }
 
         // The currentEvals map holds the most recent eval for each condition in the condition set.
-        triggerConditionEval.getConditionEvals().stream()
+        conditionEvalSet.stream()
                 .forEach(conditionEval -> currentEvals.put(conditionEval.getConditionSetIndex(), conditionEval));
 
-        int conditionSetSize = triggerConditionEval.getConditionEvals().iterator().next().getConditionSetSize();
-
+        // The conditionEvals for the same trigger will all have the same condition set size, so just use the first
+        int conditionSetSize = conditionEvalSet.iterator().next().getConditionSetSize();
         boolean trueEval = false;
         switch (match) {
             case ALL:
@@ -453,9 +454,8 @@ public class Dampening implements Serializable {
     }
 
     public String log() {
-        StringBuilder sb = new StringBuilder("[" + triggerId + ", numTrueEvals="
-                + numTrueEvals + ", numEvals=" + numEvals + ", trueEvalsStartTime=" + trueEvalsStartTime
-                + ", satisfied=" + satisfied);
+        StringBuilder sb = new StringBuilder("[" + triggerId + ", numTrueEvals=" + numTrueEvals + ", numEvals="
+                + numEvals + ", trueEvalsStartTime=" + trueEvalsStartTime + ", satisfied=" + satisfied);
         if (satisfied) {
             for (Set<ConditionEval> ces : satisfyingEvals) {
                 sb.append("\n\t[");
@@ -483,6 +483,10 @@ public class Dampening implements Serializable {
         sb.append("-").append(triggerId);
         sb.append("-").append(triggerMode.name());
         this.dampeningId = sb.toString();
+    }
+
+    private boolean isEmpty(Collection<?> c) {
+        return null == c || c.isEmpty();
     }
 
     @Override
@@ -513,10 +517,9 @@ public class Dampening implements Serializable {
     @Override
     public String toString() {
         return "Dampening [satisfied=" + satisfied + ", triggerId=" + triggerId + ", triggerMode=" + triggerMode
-                + ", type=" + type
-                + ", evalTrueSetting=" + evalTrueSetting + ", evalTotalSetting=" + evalTotalSetting
-                + ", evalTimeSetting=" + evalTimeSetting + ", numTrueEvals="
-                + numTrueEvals + ", numEvals=" + numEvals + ", trueEvalsStartTime=" + trueEvalsStartTime + "]";
+                + ", type=" + type + ", evalTrueSetting=" + evalTrueSetting + ", evalTotalSetting=" + evalTotalSetting
+                + ", evalTimeSetting=" + evalTimeSetting + ", numTrueEvals=" + numTrueEvals + ", numEvals=" + numEvals
+                + ", trueEvalsStartTime=" + trueEvalsStartTime + "]";
     }
 
 }
