@@ -32,6 +32,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
+import org.hawkular.alerts.api.model.condition.TriggerConditionEval;
 import org.hawkular.alerts.api.model.condition.RateCondition;
 import org.hawkular.alerts.api.model.condition.RateConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
@@ -49,10 +50,10 @@ import org.hawkular.alerts.engine.util.RateData;
 
 import org.jboss.logging.Logger;
 
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.List;
-import java.util.Map
-import org.hawkular.alerts.api.model.event.Alert
+import java.util.Map;
 import org.hawkular.alerts.engine.util.ActionsValidator;
 
 global Logger log;
@@ -320,22 +321,37 @@ rule ProvideDefaultDampening
         insert( d );
 end
 
+rule CollectConditionEvals
+    when
+        $t  : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
+        $ces : TriggerConditionEval( size > 0 )
+               from accumulate(
+                $ce: ConditionEval ( tenantId == $tenantId,  triggerId == $tid ),
+                init( TriggerConditionEval tce = new TriggerConditionEval($tenantId, $tid, $tmode); ),
+                action ( tce.addConditionEval($ce); ),
+                result( tce )
+               )
+    then
+        $ces.getConditionEvals().stream().forEach(ce -> retract(ce));
+        insert( $ces );
+end
+
 rule DampenTrigger
     when
         $t  : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
         $d  : Dampening( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, satisfied == false )
-        $ce : ConditionEval ( tenantId == $tenantId,  triggerId == $tid )
+        $tce : TriggerConditionEval ( tenantId == $tenantId,  triggerId == $tid )
     then
         retract( $d );
-        retract ( $ce );
+        retract ( $tce );
 
-        $d.perform( $t.getMatch(), $ce );
+        $d.perform( $t.getMatch(), $tce );
 
         insert( $d );
 
         if (log != null && log.isDebugEnabled()) {
             log.debug( "Updated " + $d + " using [match=" + $t.getMatch() + "] " + $d.getCurrentEvals() );
-            log.debug( "Retracted " + $ce );
+            log.debug( "Retracted " + $tce );
         }
 end
 

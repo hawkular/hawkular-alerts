@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.condition.TriggerConditionEval;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
@@ -340,22 +341,25 @@ public class Dampening implements Serializable {
         updateId();
     }
 
-    public void perform(Match match, ConditionEval conditionEval) {
+    public void perform(Match match, TriggerConditionEval triggerConditionEval) {
         if (null == match) {
             throw new IllegalArgumentException("Match can not be null");
         }
-        if (null == conditionEval) {
-            throw new IllegalArgumentException("ConditionEval can not be null");
+        if (null == triggerConditionEval || triggerConditionEval.getSize() == 0) {
+            throw new IllegalArgumentException("TriggerConditionEval can not be null or empty");
         }
 
         // The currentEvals map holds the most recent eval for each condition in the condition set.
-        currentEvals.put(conditionEval.getConditionSetIndex(), conditionEval);
+        triggerConditionEval.getConditionEvals().stream()
+                .forEach(conditionEval -> currentEvals.put(conditionEval.getConditionSetIndex(), conditionEval));
+
+        int conditionSetSize = triggerConditionEval.getConditionEvals().iterator().next().getConditionSetSize();
 
         boolean trueEval = false;
         switch (match) {
             case ALL:
                 // Don't perform a dampening eval until we have a conditionEval for each member of the ConditionSet.
-                if (currentEvals.size() < conditionEval.getConditionSetSize()) {
+                if (currentEvals.size() < conditionSetSize) {
                     return;
                 }
                 // Otherwise, all condition evals must be true for the condition set eval to be true

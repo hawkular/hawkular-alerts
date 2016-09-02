@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -512,6 +513,35 @@ public class RulesEngineTest {
         assertTrue(e.toString(), v2.equals(20.0D));
         assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
         assertTrue(e.getCondition().toString(), e.getCondition().getData2Id().equals("NumericData-02"));
+    }
+
+    @Test
+    public void multipleConditionsOnSameDataIdWithAnyMatching() {
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Multiple Conditions in ANY");
+        t1.setFiringMatch(Match.ANY);
+        t1.setEventType(EventType.EVENT);
+        t1.setEnabled(true);
+        ThresholdCondition t1c1 = new ThresholdCondition("tenant", "trigger-1", 2, 1,
+                "HeapUsed",
+                ThresholdCondition.Operator.LT, 10.0);
+        ThresholdCondition t1c2 = new ThresholdCondition("tenant", "trigger-1", 2, 2,
+                "HeapUsed",
+                ThresholdCondition.Operator.GT, 20.0);
+
+        // Default dampening
+
+        rulesEngine.addFacts(Arrays.asList(t1, t1c1, t1c2));
+
+        datums.add(Data.forNumeric("tenant", "HeapUsed", 1, 9.0));
+        datums.add(Data.forNumeric("tenant", "HeapUsed", 2, 11.0));
+        datums.add(Data.forNumeric("tenant", "HeapUsed", 3, 21.0));
+        datums.add(Data.forNumeric("tenant", "HeapUsed", 4, 19.0));
+
+        rulesEngine.addData(datums);
+
+        rulesEngine.fire();
+
+        assertEquals(2, outputEvents.size());
     }
 
     @Test
@@ -1101,7 +1131,34 @@ public class RulesEngineTest {
 
         rulesEngine.fire();
 
-        assertEquals(outputEvents.toString(), 3, outputEvents.size());
+        /*
+            Trigger1
+                Conditions
+                    "myapp.war" text == 'DOWN' AND
+                    "datacenter1" text starts 'ERROR' AND
+                    "datacenter2" text starts 'WARN'
+
+            Incoming data:
+
+            t1. "myapp.war" "DOWN"
+            t2. "datacenter1" "ERROR [Time] This is a sample as app logging"
+            t3. "datacenter2" "WARN [Time] This is a sample as app logging"
+
+            --> EVENT
+
+            t4. "myapp.war" "UP"
+            t5. "datacenter1" "ERROR [Time] This is a sample as app logging"
+            t6. "datacenter2" "WARN [Time] This is a sample as app logging"
+
+            --> NOT EVENT
+
+            t7. "myapp.war" "UP"
+            t8. "datacenter1" "ERROR [Time] This is a sample as app logging"
+            t9. "datacenter2" "WARN [Time] This is a sample as app logging"
+
+            --> NOT EVENT
+         */
+        assertEquals(outputEvents.toString(), 1, outputEvents.size());
     }
 
     @Test
