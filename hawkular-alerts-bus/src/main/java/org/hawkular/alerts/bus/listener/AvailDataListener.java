@@ -16,9 +16,10 @@
  */
 package org.hawkular.alerts.bus.listener;
 
+import static org.hawkular.alerts.bus.api.DataIdPrefix.ALERT_AVAILABILITY;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
@@ -34,8 +35,6 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.bus.api.AvailDataMessage;
 import org.hawkular.alerts.bus.api.AvailDataMessage.AvailData;
 import org.hawkular.alerts.bus.api.AvailDataMessage.SingleAvail;
-import org.hawkular.alerts.bus.init.CacheManager;
-import org.hawkular.alerts.bus.init.CacheManager.DataIdKey;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
 
@@ -56,24 +55,12 @@ import org.jboss.logging.Logger;
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
     private final Logger log = Logger.getLogger(AvailDataListener.class);
-    private final String AVAILABILITY = "availability";
 
     @EJB
     AlertsService alerts;
 
     @EJB
     DefinitionsService definitions;
-
-    @EJB
-    CacheManager cacheManager;
-
-    private boolean isNeeded(Set<DataIdKey> activeAvailabilityIds, DataIdKey id) {
-        if (null == activeAvailabilityIds) {
-            return true;
-        }
-
-        return activeAvailabilityIds.contains(id);
-    }
 
     @Override
     protected void onBasicMessage(AvailDataMessage msg) {
@@ -84,32 +71,17 @@ public class AvailDataListener extends BasicMessageListener<AvailDataMessage> {
         }
 
         List<SingleAvail> data = availData.getData();
-        List<Data> alertData = null;
-        Set<DataIdKey> activeAvailabilityIds = cacheManager.getActiveAvailabilityIds();
+        List<Data> alertData = new ArrayList<>(data.size());
         for (SingleAvail a : data) {
-            String fullMetricId = AVAILABILITY + "-" + a.getId();
-            if (isNeeded(activeAvailabilityIds, new DataIdKey(a.getTenantId(), fullMetricId))) {
-                if (null == alertData) {
-                    alertData = new ArrayList<>(data.size());
-                }
-                alertData.add(Data.forAvailability(a.getTenantId(), fullMetricId, a.getTimestamp(),
-                        AvailabilityType.valueOf(a.getAvail())));
-            }
+            String dataId = ALERT_AVAILABILITY + a.getId();
+            alertData.add(Data.forAvailability(a.getTenantId(), dataId, a.getTimestamp(),
+                    AvailabilityType.valueOf(a.getAvail())));
         }
-        if (null == alertData) {
-            if (log.isTraceEnabled()) {
-                log.trace("Forwarding 0 of [" + data.size() + "] avails to Alerts Engine...");
-            }
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Forwarding [" + alertData.size() + "] of [" + data.size() + "] avails to Alerts Engine " +
-                "(filtered [" + (data.size() - alertData.size()) + "])...");
-            }
-            try {
-                alerts.sendData(alertData);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        log.debugf("Forwarding [%s] avails to Alerts Engine", alertData.size());
+        try {
+            alerts.sendData(alertData);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

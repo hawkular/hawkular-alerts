@@ -18,6 +18,12 @@ package org.hawkular.alerts.bus.init;
 
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.CONDITION_CHANGE;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_REMOVE;
+import static org.hawkular.alerts.bus.api.DataIdPrefix.ALERT_AVAILABILITY;
+import static org.hawkular.alerts.bus.api.DataIdPrefix.ALERT_COUNTER;
+import static org.hawkular.alerts.bus.api.DataIdPrefix.ALERT_COUNTER_RATE;
+import static org.hawkular.alerts.bus.api.DataIdPrefix.ALERT_GAUGE;
+import static org.hawkular.alerts.bus.api.DataIdPrefix.ALERT_GAUGE_RATE;
+import static org.hawkular.alerts.bus.api.DataIdPrefix.ALERT_STRING;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +34,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
+import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 
@@ -49,6 +56,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 @Singleton
+@Startup
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class CacheManager {
     private final Logger log = Logger.getLogger(CacheManager.class);
@@ -58,17 +66,6 @@ public class CacheManager {
     private final String DISABLE_PUBLISH_FILTERING_ENV = "DISABLE_PUBLISH_FILTERING";
     private final String RESET_PUBLISH_CACHE = "hawkular-alerts.reset-publish-cache";
     private final String RESET_PUBLISH_CACHE_ENV = "RESET_PUBLISH_CACHE";
-
-    /*
-        TODO These constants should be properly documented into hawkular clients
-             hawkular-client-ruby will need to update its logic for conditions
-     */
-    private final String AVAILABILITY = "hm_a_";
-    private final String GAUGE = "hm_g_";
-    private final String COUNTER = "hm_c_";
-    private final String COUNTER_RATE = "hm_cr_";
-    private final String STRING = "hm_s_";
-    private final String GAUGE_RATE = "hm_gr_";
 
     Set<DataIdKey> activeDataIds;
     Set<DataIdKey> activeAvailabityIds;
@@ -155,11 +152,7 @@ public class CacheManager {
             return;
         }
 
-
-        if (log.isDebugEnabled()) {
-            log.debug("Updated activeDataIds! " + activeDataIds);
-            log.debug("Updated activeAvailIds! " + activeAvailabityIds);
-        }
+        log.debugf("Published Cache %s [%s]", publishCache.size());
     }
 
     private boolean isNewAvailId(DataIdKey availIdKey) {
@@ -183,10 +176,8 @@ public class CacheManager {
             /*
                 This logic assumes that alerting is the only writer for the shared publishCache
              */
-            if (log.isDebugEnabled()) {
-                log.debug("Publishing metricId: " + metricId);
-            }
-            publishCache.put(metricId, metricId);
+            log.debugf("Publishing metricId %s ", metricId);
+            publishCache.put(metricId, dataIdKey.getDataId());
             /*
                 This alternative logic assumes that more writers can add/remove entries into the shared publishCache.
 
@@ -213,9 +204,7 @@ public class CacheManager {
             /*
                 This logic assumes that alerting is the only writer for the shared publishCache
              */
-            if (log.isDebugEnabled()) {
-                log.debug("Unpublishing metricId: " + metricId);
-            }
+            log.debugf("Unpublishing metricId %s ", metricId);
             publishCache.remove(metricId);
             /*
                 This alternative logic assumes that more writers can add/remove entries into the shared publishCache.
@@ -242,24 +231,24 @@ public class CacheManager {
         String dataId = dataIdKey.getDataId();
         String metricId;
         MetricType type;
-        if (dataId.startsWith(AVAILABILITY)) {
+        if (dataId.startsWith(ALERT_AVAILABILITY)) {
             type = MetricType.AVAILABILITY;
-            metricId = dataId.substring(AVAILABILITY.length());
-        } else if (dataId.startsWith(GAUGE)) {
+            metricId = dataId.substring(ALERT_AVAILABILITY.length());
+        } else if (dataId.startsWith(ALERT_GAUGE)) {
             type = MetricType.GAUGE;
-            metricId = dataId.substring(GAUGE.length());
-        } else if (dataId.startsWith(COUNTER)) {
-            type = MetricType.COUNTER;
-            metricId = dataId.substring(COUNTER.length());
-        } else if (dataId.startsWith(COUNTER_RATE)) {
-            type = MetricType.COUNTER_RATE;
-            metricId = dataId.substring(COUNTER_RATE.length());
-        } else if (dataId.startsWith(STRING)) {
-            type = MetricType.STRING;
-            metricId = dataId.substring(STRING.length());
-        } else if (dataId.startsWith(GAUGE_RATE)) {
+            metricId = dataId.substring(ALERT_GAUGE.length());
+        } else if (dataId.startsWith(ALERT_GAUGE_RATE)) {
             type = MetricType.GAUGE_RATE;
-            metricId = dataId.substring(GAUGE_RATE.length());
+            metricId = dataId.substring(ALERT_GAUGE_RATE.length());
+        } else if (dataId.startsWith(ALERT_COUNTER)) {
+            type = MetricType.COUNTER;
+            metricId = dataId.substring(ALERT_COUNTER.length());
+        } else if (dataId.startsWith(ALERT_COUNTER_RATE)) {
+            type = MetricType.COUNTER_RATE;
+            metricId = dataId.substring(ALERT_COUNTER_RATE.length());
+        } else if (dataId.startsWith(ALERT_STRING)) {
+            type = MetricType.STRING;
+            metricId = dataId.substring(ALERT_STRING.length());
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("DataId " + dataId + " doesn't have a valid metrics type.");

@@ -46,6 +46,12 @@
       <version>${project.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.hawkular.metrics</groupId>
+      <artifactId>hawkular-metrics-model</artifactId>
+      <version>${version.org.hawkular.metrics}</version>
+    </dependency>
+
     <!-- Hawkular Nest dependencies -->
     <dependency>
       <groupId>org.hawkular.commons</groupId>

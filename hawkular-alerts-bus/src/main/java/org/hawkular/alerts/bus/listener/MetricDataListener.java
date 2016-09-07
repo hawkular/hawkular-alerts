@@ -16,9 +16,10 @@
  */
 package org.hawkular.alerts.bus.listener;
 
+import static org.hawkular.alerts.bus.api.DataIdPrefix.METRIC_TYPE_PREFIX;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
@@ -32,8 +33,6 @@ import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.bus.api.MetricDataMessage;
 import org.hawkular.alerts.bus.api.MetricDataMessage.MetricData;
 import org.hawkular.alerts.bus.api.MetricDataMessage.SingleMetric;
-import org.hawkular.alerts.bus.init.CacheManager;
-import org.hawkular.alerts.bus.init.CacheManager.DataIdKey;
 import org.hawkular.bus.common.consumer.BasicMessageListener;
 import org.jboss.logging.Logger;
 
@@ -58,58 +57,26 @@ public class MetricDataListener extends BasicMessageListener<MetricDataMessage> 
     @EJB
     AlertsService alerts;
 
-    @EJB
-    CacheManager cacheManager;
-
-    private boolean isNeeded(Set<DataIdKey> activeMetricIds, DataIdKey metricId) {
-        if (null == activeMetricIds) {
-            return true;
-        }
-
-        return activeMetricIds.contains(metricId);
-    }
-
     @Override
     protected void onBasicMessage(MetricDataMessage msg) {
 
-        // TODO: tenants?
         MetricData metricData = msg.getMetricData();
         if (log.isTraceEnabled()) {
             log.trace("Message received with [" + metricData.getData().size() + "] metrics.");
         }
 
         List<SingleMetric> data = metricData.getData();
-        List<Data> alertData = null;
-        Set<DataIdKey> activeMetricIds = cacheManager.getActiveDataIds();
+        List<Data> alertData = new ArrayList<>(data.size());
         for (SingleMetric m : data) {
-            String fullMetricId = m.getType() + "-" + m.getSource();
-            if (isNeeded(activeMetricIds, new DataIdKey(metricData.getTenantId(), fullMetricId))) {
-                if (log.isTraceEnabled()) {
-                    log.tracef("KEEPING METRIC [%s:%s]", fullMetricId, String.valueOf(m.getValue()));
-                }
-                if (null == alertData) {
-                    alertData = new ArrayList<>(data.size());
-                }
-                alertData.add(Data.forNumeric(metricData.getTenantId(), fullMetricId, m.getTimestamp(),
-                        m.getValue()));
-            } else if (log.isTraceEnabled()) {
-                log.tracef("TOSSING METRIC [%s]", fullMetricId);
-            }
+            String dataId = METRIC_TYPE_PREFIX.get(m.getType()) + m.getSource();
+            alertData.add(Data.forNumeric(metricData.getTenantId(), dataId, m.getTimestamp(),
+                    m.getValue()));
         }
-        if (null == alertData) {
-            if (log.isTraceEnabled()) {
-                log.trace("Forwarding 0 of [" + data.size() + "] metrics to Alerts Engine...");
-            }
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Forwarding [" + alertData.size() + "] of [" + data.size() + "] metrics to Alerts Engine " +
-                        "(filtered [" + (data.size() - alertData.size()) + "])...");
-            }
-            try {
-                alerts.sendData(alertData);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        log.debugf("Forwarding [%s] metrics to Alerts Engine", alertData.size());
+        try {
+            alerts.sendData(alertData);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

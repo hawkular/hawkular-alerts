@@ -81,8 +81,10 @@ class BusITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // ADD Firing condition
+        // Note that as this condition expects data from Hawkular Metrics integration through the Bus
+        // it is needed to prefix the dataId with "hm_a_".
         AvailabilityCondition firingCond = new AvailabilityCondition("test-bus-email-availability",
-                Mode.FIRING, "availability-test-bus-email-availability", AvailabilityCondition.Operator.NOT_UP);
+                Mode.FIRING, "hm_a_test-bus-email-availability", AvailabilityCondition.Operator.NOT_UP);
 
         Collection<Condition> conditions = new ArrayList<>(1);
         conditions.add( firingCond );
@@ -194,8 +196,10 @@ class BusITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // ADD Firing condition
+        // Note that as this condition expects data from Hawkular Metrics integration through the Bus
+        // it is needed to prefix the dataId with "hm_g_"
         ThresholdCondition firingCond = new ThresholdCondition("test-bus-email-threshold",
-                Mode.FIRING, "gauge-test-bus-email-threshold", ThresholdCondition.Operator.GT, 300);
+                Mode.FIRING, "hm_g_test-bus-email-threshold", ThresholdCondition.Operator.GT, 300);
 
         Collection<Condition> conditions = new ArrayList<>(1);
         conditions.add( firingCond );
