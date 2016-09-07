@@ -32,7 +32,6 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
-import org.hawkular.alerts.api.model.condition.TriggerConditionEval;
 import org.hawkular.alerts.api.model.condition.RateCondition;
 import org.hawkular.alerts.api.model.condition.RateConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
@@ -89,7 +88,7 @@ rule Threshold
     then
         ThresholdConditionEval ce = new ThresholdConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debug("Threshold Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+            log.debugf("Threshold Eval: %s %s", (ce.isMatch() ? "Match!" : "no match "), ce.getLog());
         }
         insert( ce );
 end
@@ -102,7 +101,7 @@ rule ThresholdRange
     then
         ThresholdRangeConditionEval ce = new ThresholdRangeConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debug("ThresholdRange Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+            log.debugf("ThresholdRange Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -125,7 +124,7 @@ rule Compare
     then
         CompareConditionEval ce = new CompareConditionEval($c, $d1, $d2);
         if (log != null && log.isDebugEnabled()) {
-            log.debug("Compare Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+            log.debugf("Compare Eval: ", (ce.isMatch() ? "Match!" : "no match "), ce.getLog());
         }
         insert( ce );
 end
@@ -138,7 +137,7 @@ rule Availability
     then
         AvailabilityConditionEval ce = new AvailabilityConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debug("Availability Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+            log.debugf("Availability Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -151,7 +150,7 @@ rule String
     then
         StringConditionEval ce = new StringConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debug("String Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+            log.debugf("String Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -164,7 +163,7 @@ rule External
     then
         ExternalConditionEval ce = new ExternalConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debug("External Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+            log.debugf("External Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -177,7 +176,7 @@ rule Event
     then
         EventConditionEval ce = new EventConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debug("Event Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+            log.debugf("Event Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -194,6 +193,7 @@ rule ProvideInitialRateData
         not  RateData( data.tenantId == $tenantId, data.source == $tsource, data.id == $did )
     then
         RateData rateData = new RateData( $d );
+        log.debugf("ProvideInitialRateData: %s", rateData);
 
         insert( rateData );
 end
@@ -208,7 +208,7 @@ rule Rate
     then
         RateConditionEval ce = new RateConditionEval($c, $d, $rd.getData());
         if (log != null && log.isDebugEnabled()) {
-            log.debug("Rate Eval: " + (ce.isMatch() ? "  Match! " : "no match ")  + ce.getLog());
+            log.debugf("Rate Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -227,10 +227,9 @@ rule RetractProcessedRateData
     then
         $rd.setData( $d );
 
-        if (log != null && log.isDebugEnabled()) {
-            log.debug( "Updating " + $rd + "..." );
-            log.debug( "Retracting " + $d + "..." );
-        }
+        log.debugf("Updating %s...", $rd);
+        log.debugf("Retracting %s...", $d);
+
         retract ( $d );
         update ( $rd );
 end
@@ -239,9 +238,7 @@ rule RetractProcessedData
     when
         $d : Data()
     then
-        if (log != null && log.isDebugEnabled()) {
-            log.debug( "Retracting " + $d + "..." );
-        }
+        log.debugf("Retracting %s...", $d);
         retract ( $d );
 end
 
@@ -249,9 +246,7 @@ rule RetractProcessedEvent
     when
         $e : Event()
     then
-        if (log != null && log.isDebugEnabled()) {
-            log.debug( "Retracting " + $e + "..." );
-        }
+        log.debugf("Retracting %s...", $e);
         retract ( $e );
 end
 
@@ -285,10 +280,10 @@ end
 //     t3, Y=300
 //     t4, X=110
 //     t5, Y=150
-// The t1 condition eval of X=125 will be superseded by the t2 condition eval of X=50. When Y is finally reported at t3,
-// the tuple tested for T is (X=50, Y=300). The dampening eval is false because the X condition (50 > 100) is false.
-// At t4 we test the tuple (X=110, Y=300). The dampening eval is true because both conditions are met.  T does not
-// fire because we need two consecutive true tuples. At t5 the condition eval of Y=300 will be superseded by
+// The t1 condition eval of X=125 will be superseded by the t2 condition eval of X=50. When Y is finally reported at
+// t3, the tuple tested for T is (X=50, Y=300). The dampening eval is false because the X condition (50 > 100) is
+// false. At t4 we test the tuple (X=110, Y=300). The dampening eval is true because both conditions are met.  T does
+// not fire because we need two consecutive true tuples. At t5 the condition eval of Y=300 will be superseded by
 // Y=150, the tuple (X=110, Y=150) will evaluate to false.  T will not fire, the dampening will reset.
 //
 // Now assume T were an ANY-match trigger. For ANY-match we still use a tuple with the most recent evaluation for each
@@ -306,6 +301,13 @@ end
 // simple processing here in the rules.  We just take every condition evaluation, have the required dampening
 // Fact process it, and then retract the ConditionEvaluation.
 //
+// Finally, it is important to note that the examples above assume discrete firings of the engine for the different
+// times data is sent in.  In other words, for a multi-condition trigger only one ConditionEval is processed per
+// engine execution.  But it is quite possible that the data supplied to a single engine execution results in multiple
+// ConditionEvals for a single trigger.  To ensure dampening is evaluated with all of the most recent evaluations
+// they must all be supplied. In this case dampening must be supplied with the set of relevant ConditionEvals to ensure
+// we are using the most recent evaluation for each condition.
+//
 
 // Dampening update rules
 
@@ -314,47 +316,37 @@ rule ProvideDefaultDampening
         $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
         not Dampening( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode )
     then
-        if (log != null && log.isDebugEnabled()) {
-            log.debug("Adding default " + $tmode + " dampening for trigger! " + $t.getId());
-        }
+        log.debugf("Adding default %s dampening for trigger! %s", $tmode, $t.getId());
+
         Dampening d = Dampening.forStrict( $tenantId, $tid, $tmode, 1 );
         insert( d );
 end
 
-rule CollectConditionEvals
-    when
-        $t  : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
-        $ces : TriggerConditionEval( size > 0 )
-               from accumulate(
-                $ce: ConditionEval ( tenantId == $tenantId,  triggerId == $tid ),
-                init( TriggerConditionEval tce = new TriggerConditionEval($tenantId, $tid, $tmode); ),
-                action ( tce.addConditionEval($ce); ),
-                result( tce )
-               )
-    then
-        $ces.getConditionEvals().stream().forEach(ce -> retract(ce));
-        insert( $ces );
-end
-
+// Group all of the ConditionEvals for a trigger (1 or more) as a Set, and update the trigger's dampening
 rule DampenTrigger
     when
-        $t  : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
-        $d  : Dampening( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, satisfied == false )
-        $tce : TriggerConditionEval ( tenantId == $tenantId,  triggerId == $tid )
+        $t   : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
+        $d   : Dampening( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, satisfied == false )
+        not    Data( )
+        not    Event( )
+        $ces : Set( size > 0 )
+               from accumulate(
+                   $ce: ConditionEval ( tenantId == $tenantId,  triggerId == $tid ),
+                   collectSet( $ce )
+               )
     then
+        $ces.stream().forEach(ce -> retract(ce));
         retract( $d );
-        retract ( $tce );
 
-        $d.perform( $t.getMatch(), $tce );
+        $d.perform( $t.getMatch(), $ces );
 
         insert( $d );
 
         if (log != null && log.isDebugEnabled()) {
-            log.debug( "Updated " + $d + " using [match=" + $t.getMatch() + "] " + $d.getCurrentEvals() );
-            log.debug( "Retracted " + $tce );
+            log.debugf( "DampenTrigger %s using [match=%s] %s", $d, $t.getMatch(), $d.getCurrentEvals() );
+            log.debugf( "Retracted %s", $ces );
         }
 end
-
 
 // Dampening with STRICT_TIMEOUT
 // Because we are not running the engine in Stream/CEP mode and instead use discrete rulebase executions, we
@@ -365,6 +357,7 @@ rule DampeningTimeoutAdd
     when
         $d   : Dampening( type == Type.STRICT_TIMEOUT, numTrueEvals == 1, satisfied == false )
     then
+        log.debugf( "DampeningTimeoutAdd %s", $d );
         pendingTimeouts.add( $d );
 end 
 
@@ -374,6 +367,7 @@ rule DampeningTimeoutRemove
     when
         $d   : Dampening( type == Type.STRICT_TIMEOUT, numTrueEvals == 0, satisfied == false )
     then
+        log.debugf( "DampeningTimeoutRemove %s", $d );
         pendingTimeouts.remove( $d );
 end 
 
@@ -395,7 +389,7 @@ rule AlertOnSatisfiedDampening
         // Only some triggers generate an alert
         if ($t.getEventType() == EventType.ALERT) {
             if (log != null && log.isDebugEnabled()) {
-                log.debug("Alert! Dampening Satisfied! " + $d.log());
+                log.debugf("Alert! Dampening Satisfied! %s", $d.log());
             }
 
             newEvent = new Alert( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
@@ -404,7 +398,7 @@ rule AlertOnSatisfiedDampening
 
         } else {
             if (log != null && log.isDebugEnabled() && $t.getEventType() == EventType.EVENT) {
-                log.debug("Event! Dampening Satisfied! " + $d.log());
+                log.debugf("Event! Dampening Satisfied! %s", $d.log());
             }
 
             newEvent = new Event( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
@@ -425,17 +419,13 @@ rule AlertOnSatisfiedDampening
         insert( $d );
 
         if ($t.isAutoResolve()) {
-            if (log != null && log.isDebugEnabled()) {
-                log.debug("Setting Trigger to AutoResolve Mode! " + $t);
-            }
+            log.debugf("Setting Trigger to AutoResolve Mode! %s", $t);
             retract( $t );
             $t.setMode(Mode.AUTORESOLVE);
             insert( $t );
 
         } else if ($t.isAutoDisable()) {
-            if (log != null && log.isDebugEnabled()) {
-                log.debug("Setting Trigger Disabled! " + $t);
-            }
+            log.debugf("Setting Trigger Disabled! %s", $t);
 
             // the autoDisable trigger handling will result in a trigger reload, so we can just retract the
             // current definition. And given that it will be disabled, it actually will not get loaded.
@@ -443,8 +433,8 @@ rule AlertOnSatisfiedDampening
 
             retract( $t );
 
-        } else if (log != null && log.isDebugEnabled()) {
-            log.debug("Trigger remains in Firing mode, AutoDisable and AutoResolve not set. " + $t);
+        } else {
+            log.debugf("Trigger remains in Firing mode, AutoDisable and AutoResolve not set. %s", $t);
         }
 end
 
@@ -455,7 +445,7 @@ rule SetFiringModeOnSatisfiedDampening
         $d  : Dampening( triggerMode == Mode.AUTORESOLVE, tenantId == $tenantId, triggerId == $tid, satisfied == true )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debug("SetFiringModeOnSatisfiedDampening! " + $d.log());
+            log.debugf("SetFiringModeOnSatisfiedDampening! %s", $d.log());
         }
 
         // the autoResolved trigger handling will result in a trigger reload, so we can just retract the
