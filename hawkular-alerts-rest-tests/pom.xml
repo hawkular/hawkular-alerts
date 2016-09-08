@@ -433,6 +433,7 @@
                 <javaOpt>-Dmail.smtp.host=localhost</javaOpt>
                 <javaOpt>-Dmail.smtp.port=2525</javaOpt>
                 <javaOpt>-Dhawkular.backend=embedded_cassandra</javaOpt>
+                <javaOpt>-Dhawkular.log.alerts=${hawkular.log.alerts}</javaOpt>
                 <!--<javaOpt>-Xdebug</javaOpt>-->
                 <!--<javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt>-->
               </javaOpts>

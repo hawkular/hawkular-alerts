@@ -47,6 +47,15 @@
     </cache-container>
   </xsl:template>
 
+  <xsl:template match="//*[*[local-name()='root-logger']]">
+    <xsl:copy>
+      <xsl:copy-of select="node()|@*"/>
+      <logger category="org.hawkular.alerts">
+        <level name="${{hawkular.log.alerts:INFO}}" />
+      </logger>
+    </xsl:copy>
+  </xsl:template>
+
   <xsl:template match="//*[*[local-name()='in-vm-acceptor']]">
     <xsl:copy>
       <xsl:apply-templates select="@*|comment()|node()" />

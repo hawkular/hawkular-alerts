@@ -145,14 +145,13 @@ public class CacheManager {
             activeDataIds = Collections.unmodifiableSet(dataIds);
             activeAvailabityIds = Collections.unmodifiableSet(availIds);
 
+            log.debugf("Publish Cache size: %s", publishCache.size());
         } catch (Exception e) {
             log.error("FAILED to load conditions to create Id filters. All data being forwarded to alerting!", e);
             activeDataIds = null;
             activeAvailabityIds = null;
             return;
         }
-
-        log.debugf("Published Cache %s [%s]", publishCache.size());
     }
 
     private boolean isNewAvailId(DataIdKey availIdKey) {
