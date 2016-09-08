@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Expression parser
+ * Expression parser.
+ *
+ * TODO: tag/group based expressions need to be fully fleshed out. None yet available.
  *
  * @author jay shaughnessy
  * @author elias ross
@@ -58,43 +60,21 @@ public class Expression {
         min,
         /** Maximum reported value for the period. */
         max,
-        // Group metric only
-        /** number of distinct [trait] values for the group. No period. */
-        card(false),
-        /** percent [0.0,1.0] with last-reported availability down. No period */
-        down(false),
-        /** percent [0.0,1.0] with last-reported availability up. No period */
-        up(false);
+        /** Count of UP avail for the period. */
+        heartbeat;
 
-        private final boolean single; // true if supported by single metric/ requires a period
         private final int days; // days back
 
         private Func() {
-            this(0, true);
+            this(0);
         }
 
         private Func(int days) {
-            this(days, true);
-        }
-
-        private Func(boolean single) {
-            this(0, single);
-        }
-
-        private Func(int days, boolean single) {
             this.days = days;
-            this.single = single;
         }
 
         public int getDays() {
             return days;
-        }
-
-        /**
-         * Returns true if supported for single metric.
-         */
-        public boolean isSingle() {
-            return single;
         }
     }
 
@@ -148,20 +128,17 @@ public class Expression {
         if (sPeriod != null) {
             period = Integer.parseInt(sPeriod);
         }
-        if (func.isSingle()) {
-            if (null == period) {
-                throw new IllegalArgumentException("Invalid expression syntax. Function " + func.name()
-                        + " requires a time period");
-            }
-        } else {
-            if (Target.Metric == target) {
-                throw new IllegalArgumentException("Invalid expression syntax. Function " + func.name()
-                        + " can not have Metric target");
-            }
-            if (null != period) {
-                throw new IllegalArgumentException("Invalid expression syntax. Function " + func.name()
-                        + " does not support a time period");
-            }
+
+        // Currently, all of the supported functions require a period
+        if (null == period) {
+            throw new IllegalArgumentException("Invalid expression syntax. Function " + func.name()
+            + " requires a time period");
+        }
+
+        // Currently, all of the supported functions support only a 'metric' target
+        if (Target.Tag == target) {
+            throw new IllegalArgumentException("Invalid expression syntax. Function " + func.name()
+            + " does not yet support Tag targets");
         }
     }
 

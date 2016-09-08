@@ -37,7 +37,8 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class StandaloneActionPluginListener implements ActionListener {
-    public static final String DEFINITIONS_SERVICE = "java:app/hawkular-alerts-rest/CassDefinitionsServiceImpl";
+    public static final String DEFINITIONS_SERVICE =
+            "java:global/hawkular-metrics/hawkular-alerts/CassDefinitionsServiceImpl";
     private static final String NUM_THREADS = "hawkular-alerts.standalone-actions-threads";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(StandaloneActionPluginListener.class);

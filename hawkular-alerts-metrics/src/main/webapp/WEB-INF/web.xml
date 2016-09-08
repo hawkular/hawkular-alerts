@@ -1,6 +1,6 @@
 <!--
 
-    Copyright 2015 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,7 @@
       xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
       version="3.0">
 
-  <display-name>Hawkular Alerter: Metrics</display-name>
-  <description>A Hawkular Alerts External Alerter for alerting on aggregate Hawkular Metrics data.</description>
+  <display-name>Hawkular Metrics: External Alerter</display-name>
+  <description>A Hawkular Alerting External Alerter for alerting on aggregate Hawkular Metrics data.</description>
 
 </web-app>

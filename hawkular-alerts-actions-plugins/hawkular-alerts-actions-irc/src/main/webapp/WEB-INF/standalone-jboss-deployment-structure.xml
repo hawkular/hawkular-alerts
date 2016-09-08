@@ -20,7 +20,7 @@
 <jboss-deployment-structure>
   <deployment>
     <dependencies>
-      <module name="deployment.hawkular-metrics.ear.hawkular-alerts.war"/>
+      <module name="deployment.hawkular-alerts-rest.war" />
     </dependencies>
   </deployment>
 </jboss-deployment-structure>

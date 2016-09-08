@@ -1,6 +1,6 @@
 <%--
 
-    Copyright 2015 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +18,9 @@
 --%>
 <html>
     <head>
-        <title>Hawkular Alerts Engine</title>
+        <title>Hawkular Metrics External Alerter</title>
     </head>
     <body>
-        <h3>Hawkular Alerts Engine</h3>
+        <h3>Hawkular Metrics External Alerter</h3>
     </body>
 </html>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,11 +37,11 @@ public class ExternalCondition extends Condition {
     private static final long serialVersionUID = 1L;
 
     /**
-     * An identifier assigned by the external system to identify this condition as being handled by that
-     * external system. It should be unique enough such that externalSystemIds are unique.
+     * An identifier assigned by the external alerter to identify this condition as being handled by that
+     * alerter. It should be unique enough such that external AlerterIds are unique.
      */
     @JsonInclude(Include.NON_NULL)
-    private String systemId;
+    private String alerterId;
 
     /**
      * The ID of a StringData.  StringData is used with an ExternalCondition to provide any free-form value
@@ -69,14 +69,14 @@ public class ExternalCondition extends Condition {
      * This constructor requires the tenantId be assigned prior to persistence. It can be used when
      * creating triggers via Rest, as the tenant will be assigned automatically.
      */
-    public ExternalCondition(String triggerId, Mode triggerMode, String dataId, String systemId,
+    public ExternalCondition(String triggerId, Mode triggerMode, String dataId, String alerterId,
             String expression) {
-        this("", triggerId, triggerMode, 1, 1, dataId, systemId, expression);
+        this("", triggerId, triggerMode, 1, 1, dataId, alerterId, expression);
     }
 
-    public ExternalCondition(String tenantId, String triggerId, Mode triggerMode, String dataId, String systemId,
+    public ExternalCondition(String tenantId, String triggerId, Mode triggerMode, String dataId, String alerterId,
             String expression) {
-        this(tenantId, triggerId, triggerMode, 1, 1, dataId, systemId, expression);
+        this(tenantId, triggerId, triggerMode, 1, 1, dataId, alerterId, expression);
     }
 
     /**
@@ -84,26 +84,27 @@ public class ExternalCondition extends Condition {
      * creating triggers via Rest, as the tenant will be assigned automatically.
      */
     public ExternalCondition(String triggerId, Mode triggerMode, int conditionSetSize,
-            int conditionSetIndex, String dataId, String systemId, String expression) {
-        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, systemId, expression);
+            int conditionSetIndex, String dataId, String alerterId, String expression) {
+        this("", triggerId, triggerMode, conditionSetSize, conditionSetIndex, dataId, alerterId, expression);
     }
 
     public ExternalCondition(String tenantId, String triggerId, Mode triggerMode, int conditionSetSize,
-            int conditionSetIndex, String dataId, String systemId, String expression) {
+            int conditionSetIndex, String dataId, String alerterId, String expression) {
         super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.EXTERNAL);
-        this.systemId = systemId;
+        this.alerterId = alerterId;
         this.dataId = dataId;
         this.expression = expression;
     }
 
-    public String getSystemId() {
-        return systemId;
+    public String getAlerterId() {
+        return alerterId;
     }
 
-    public void setSystemId(String systemId) {
-        this.systemId = systemId;
+    public void setAlerterId(String alerterId) {
+        this.alerterId = alerterId;
     }
 
+    @Override
     public String getDataId() {
         return dataId;
     }
@@ -140,7 +141,7 @@ public class ExternalCondition extends Condition {
         int result = super.hashCode();
         result = prime * result + ((dataId == null) ? 0 : dataId.hashCode());
         result = prime * result + ((expression == null) ? 0 : expression.hashCode());
-        result = prime * result + ((systemId == null) ? 0 : systemId.hashCode());
+        result = prime * result + ((alerterId == null) ? 0 : alerterId.hashCode());
         return result;
     }
 
@@ -163,17 +164,17 @@ public class ExternalCondition extends Condition {
                 return false;
         } else if (!expression.equals(other.expression))
             return false;
-        if (systemId == null) {
-            if (other.systemId != null)
+        if (alerterId == null) {
+            if (other.alerterId != null)
                 return false;
-        } else if (!systemId.equals(other.systemId))
+        } else if (!alerterId.equals(other.alerterId))
             return false;
         return true;
     }
 
     @Override
     public String toString() {
-        return "ExternalCondition [systemId=" + systemId + ", dataId=" + dataId + ", expression=" + expression + "]";
+        return "ExternalCondition [alerterId=" + alerterId + ", dataId=" + dataId + ", expression=" + expression + "]";
     }
 
 }

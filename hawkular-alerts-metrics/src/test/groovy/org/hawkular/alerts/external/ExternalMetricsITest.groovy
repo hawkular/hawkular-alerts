@@ -22,6 +22,7 @@ import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.junit.FixMethodOrder
 import org.junit.Test
+import org.junit.Ignore
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
@@ -62,7 +63,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.post(path: "triggers", body: triggerTestAvg)
         assertEquals(200, resp.status)
 
-        // ADD external metrics avg condition. Note: systemId must be "HawkularMetrics"
+        // ADD external metrics avg condition. Note: alerterId must be "HawkularMetrics"
         // Average over the last 1 minute > 50, check every minute
         ExternalCondition firingCond = new ExternalCondition("trigger-test-avg", Mode.FIRING, "external-dataId-avg",
             "HawkularMetrics", "metric:1:avg(" + metricId + " > 50),1");
@@ -143,7 +144,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.post(path: "triggers", body: triggerTestAvgD)
         assertEquals(200, resp.status)
 
-        // ADD external metrics avgd condition. Note: systemId must be "HawkularMetrics"
+        // ADD external metrics avgd condition. Note: alerterId must be "HawkularMetrics"
         // Average over the last 1 minute > 50, check every minute
         ExternalCondition firingCond = new ExternalCondition("trigger-test-avgd", Mode.FIRING, "external-dataId-avgd",
             "HawkularMetrics", "metric:1:avgd(" + metricId + " > 25),1");
@@ -229,7 +230,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.post(path: "triggers", body:triggerTestAvgW)
         assertEquals(200, resp.status)
 
-        // ADD external metrics min condition. Note: systemId must be "HawkularMetrics"
+        // ADD external metrics min condition. Note: alerterId must be "HawkularMetrics"
         // Average over the last 1 minute > 75, check every minute
         ExternalCondition firingCond = new ExternalCondition("trigger-test-avgw", Mode.FIRING, "external-dataId-avgw",
             "HawkularMetrics", "metric:1:avgw(" + metricId + " > 75),1");
@@ -315,7 +316,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.post(path: "triggers", body:triggerTestMin)
         assertEquals(200, resp.status)
 
-        // ADD external metrics min condition. Note: systemId must be "HawkularMetrics"
+        // ADD external metrics min condition. Note: alerterId must be "HawkularMetrics"
         // Average over the last 1 minute > 50, check every minute
         ExternalCondition firingCond = new ExternalCondition("trigger-test-min", Mode.FIRING, "external-dataId-min",
             "HawkularMetrics", "metric:1:min(" + metricId + " < 10),1");
@@ -397,7 +398,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.post(path: "triggers", body: triggerTestMax)
         assertEquals(200, resp.status)
 
-        // ADD external metrics min condition. Note: systemId must be "HawkularMetrics"
+        // ADD external metrics max condition. Note: alerterId must be "HawkularMetrics"
         // Average over the last 1 minute > 50, check every minute
         ExternalCondition firingCond = new ExternalCondition("trigger-test-max", Mode.FIRING, "external-dataId-max",
             "HawkularMetrics", "metric:1:max(" + metricId + " > 19),1");
@@ -479,7 +480,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.post(path: "triggers", body: triggerTestRange)
         assertEquals(200, resp.status)
 
-        // ADD external metrics min condition. Note: systemId must be "HawkularMetrics"
+        // ADD external metrics range condition. Note: alerterId must be "HawkularMetrics"
         // Average over the last 1 minute > 50, check every minute
         ExternalCondition firingCond = new ExternalCondition("trigger-test-range", Mode.FIRING, "external-dataId-range",
             "HawkularMetrics", "metric:1:range(" + metricId + " >= 10),1");
@@ -561,7 +562,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         resp = client.post(path: "triggers", body: triggerTestRangep)
         assertEquals(200, resp.status)
 
-        // ADD external metrics min condition. Note: systemId must be "HawkularMetrics"
+        // ADD external metrics rangep condition. Note: alerterId must be "HawkularMetrics"
         // Average over the last 1 minute > 50, check every minute
         ExternalCondition firingCond = new ExternalCondition("trigger-test-rangep", Mode.FIRING, "external-dataId-rangep",
             "HawkularMetrics", "metric:1:rangep(" + metricId + " >= 0.75),1");
@@ -620,6 +621,100 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         assertEquals("0.8", resp.data[0].evalSets[0].iterator().next().value)
     }
 
+    @Test
+    void t08_heartbeatTest() {
+        // use a unique metricId for the test run so that we don't conflict with prior test runs
+        String availId = "alerts-test-heartbeat-" + start;
+
+        // CREATE trigger using external metrics expression
+        def resp = client.get(path: "")
+        assertTrue(resp.status == 200 || resp.status == 204)
+
+        Trigger triggerTestHeartbeat = new Trigger("trigger-test-heartbeat", "trigger-test-heartbeat");
+
+        // remove if it exists
+        resp = client.delete(path: "triggers/trigger-test-heartbeat")
+        assertTrue(200 == resp.status || 404 == resp.status)
+
+        triggerTestHeartbeat.setAutoDisable(true);
+
+        // Tag the trigger as a HawkularMetrics:MetricsCondition so it gets picked up for processing
+        triggerTestHeartbeat.addTag("HawkularMetrics", "MetricsCondition" );
+
+        resp = client.post(path: "triggers", body: triggerTestHeartbeat)
+        assertEquals(200, resp.status)
+
+        // ADD external metrics heartbeat condition. Note: alerterId must be "HawkularMetrics"
+        // Average over the last 1 minute > 50, check every minute
+        ExternalCondition firingCond = new ExternalCondition("trigger-test-heartbeat", Mode.FIRING, "external-dataId-heartbeat",
+            "HawkularMetrics", "metric:1:heartbeat(" + availId + " <= 2),1");
+
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/trigger-test-heartbeat/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // FETCH trigger to validate and get the tenantId
+        resp = client.get(path: "triggers/trigger-test-heartbeat");
+        assertEquals(200, resp.status)
+        assertEquals("trigger-test-heartbeat", resp.data.name)
+        assertEquals(false, resp.data.enabled)
+        assertEquals(true, resp.data.autoDisable);
+        def tenantId = resp.data.tenantId;
+        assert( null != tenantId )
+
+        // FETCH recent alerts for trigger, should not be any
+        resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-heartbeat"] )
+        assertEquals(200, resp.status)
+        assertTrue(resp.data.isEmpty())
+
+        // Send in AVAIL data before enabling the trigger because the external evaluations start as soon
+        // as the enabled Trigger is processed.
+        long now = System.currentTimeMillis();
+        AvailPoint ap1 = new AvailPoint( availId, "UP", now - 30000 );  // 30 seconds ago
+        AvailPoint ap2 = new AvailPoint( availId, "UP", now - 20000 );  // 20 seconds ago
+
+        sendAvailViaRest( tenantId, ap1, ap2);
+
+        // ENABLE Trigger, this should get picked up by the listener and the expression should be submitted
+        // to a runner for processing...
+        triggerTestHeartbeat.setEnabled(true);
+
+        resp = client.put(path: "triggers/trigger-test-heartbeat/", body: triggerTestHeartbeat)
+        assertEquals(200, resp.status)
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 10; ++i ) {
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 1
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"trigger-test-heartbeat"] )
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
+                break;
+            }
+            assertEquals(200, resp.status)
+        }
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        assertEquals("trigger-test-heartbeat", resp.data[0].trigger.id)
+        assertEquals("2.0", resp.data[0].evalSets[0].iterator().next().value)
+    }
+
+    @Test
+    void t09_cleanupTriggers() {
+        // stop the external alerter from processing these test triggers...
+        def resp = client.delete(path: "triggers/trigger-test-avg")
+        resp = client.delete(path: "triggers/trigger-test-avgd")
+        resp = client.delete(path: "triggers/trigger-test-avgw")
+        resp = client.delete(path: "triggers/trigger-test-heartbeat")
+        resp = client.delete(path: "triggers/trigger-test-min")
+        resp = client.delete(path: "triggers/trigger-test-max")
+        resp = client.delete(path: "triggers/trigger-test-range")
+        resp = client.delete(path: "triggers/trigger-test-rangep")
+    }
+
     private void sendMetricDataViaRest(String tenantId, DataPoint... dataPoints) {
 
         List<Map<String, Object>> mMetrics = new ArrayList<>();
@@ -629,7 +724,7 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
         }
 
         // Send it to metrics via rest
-        def resp = metricsClient.post(path:"gauges/data", body:mMetrics, headers:['Hawkular-Tenant':tenantId]);
+        def resp = metricsClient.post(path:"gauges/raw", body:mMetrics, headers:['Hawkular-Tenant':tenantId]);
         assertEquals(200, resp.status)
     }
 
@@ -656,4 +751,42 @@ class ExternalMetricsITest extends AbstractExternalITestBase {
             this.time = time;
         }
     }
+
+    private void sendAvailViaRest(String tenantId, AvailPoint... availPoints) {
+
+        List<Map<String, Object>> mMetrics = new ArrayList<>();
+
+        for( AvailPoint ap : availPoints ) {
+            addAvailItem(mMetrics, ap.metricId, ap.time, ap.value);
+        }
+
+        // Send it to metrics via rest
+        def resp = metricsClient.post(path:"availability/raw", body:mMetrics, headers:['Hawkular-Tenant':tenantId]);
+        assertEquals(200, resp.status)
+    }
+
+    private static void addAvailItem(List<Map<String, Object>> mMetrics, String metricId, Long timestamp, String value) {
+        Map<String, Object> dataMap = new HashMap<>(2);
+        dataMap.put("timestamp", timestamp);
+        dataMap.put("value", value);
+        List<Map<String, Object>> data = new ArrayList<>(1);
+        data.add(dataMap);
+        Map<String, Object> outer = new HashMap<>(2);
+        outer.put("id", metricId);
+        outer.put("data", data);
+        mMetrics.add(outer);
+    }
+
+    private static class AvailPoint {
+        String metricId;
+        String value;
+        long time;
+
+        public AvailPoint( String metricId, String value, long time ) {
+            this.metricId = metricId;
+            this.value = value;
+            this.time = time;
+        }
+    }
+
 }

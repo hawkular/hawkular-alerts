@@ -273,8 +273,7 @@ public class PluginMessageDescription {
                 break;
             case RELAXED_TIME:
                 description += "after" + d.getEvalTrueSetting() + " evaluations in " + (d.getEvalTimeSetting() / 1000)
-                        +
-                        " s";
+                        + " s";
                 break;
             case STRICT_TIME:
             case STRICT_TIMEOUT:
@@ -477,7 +476,7 @@ public class PluginMessageDescription {
      * @return a description to be used on email templates
      */
     public String external(ExternalCondition condition) {
-        String description = "SystemId: " + condition.getSystemId();
+        String description = "AlerterId: " + condition.getAlerterId();
         description += " DataId: " + condition.getDataId();
         description += " Expression: " + condition.getExpression();
         return description;

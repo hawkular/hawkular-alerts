@@ -72,8 +72,7 @@ import io.swagger.annotations.ApiResponses;
  * @author Lucas Ponce
  */
 @Path("/triggers")
-@Api(value = "/triggers",
-        description = "Trigger Handling")
+@Api(value = "/triggers")
 public class TriggersHandler {
     private static final Logger log = Logger.getLogger(TriggersHandler.class);
 
@@ -1021,44 +1020,6 @@ public class TriggersHandler {
         }
     }
 
-    @GET
-    @Path("/{triggerId}/conditions/{conditionId}")
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "@Deprecated : Get Condition by conditionId.",
-            notes = "Use GET /alerts/triggers/{triggerId}/conditions .",
-            response = Condition.class)
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Condition found."),
-            @ApiResponse(code = 404, message = "No Condition found.", response = ApiError.class),
-            @ApiResponse(code = 500, message = "Internal server error,", response = ApiError.class)
-    })
-    @Deprecated
-    public Response getTriggerCondition(
-            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
-            @PathParam("triggerId")
-            final String triggerId,
-            @PathParam("conditionId")
-            final String conditionId) {
-        try {
-            Trigger trigger = definitions.getTrigger(tenantId, triggerId);
-            if (trigger == null) {
-                return ResponseUtil.notFound("No trigger found for triggerId: " + triggerId);
-            }
-            Condition found = definitions.getCondition(tenantId, conditionId);
-            if (found == null) {
-                return ResponseUtil.notFound("No condition found for conditionId: " + conditionId);
-            }
-            if (!found.getTriggerId().equals(triggerId)) {
-                return ResponseUtil.notFound("ConditionId: " + conditionId + " does not belong to triggerId: " +
-                        triggerId);
-            }
-            return ResponseUtil.ok(found);
-        } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
-        }
-    }
-
     @PUT
     @Path("/{triggerId}/conditions/{triggerMode}")
     @Consumes(APPLICATION_JSON)
@@ -1158,151 +1119,6 @@ public class TriggersHandler {
             if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
                 return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
             }
-            return ResponseUtil.internalError(e);
-        }
-    }
-
-    @POST
-    @Path("/{triggerId}/conditions")
-    @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "@Deprecated : Add a condition.",
-            notes = "Use PUT /alerts/triggers/{triggerId}/conditions to set the entire condition set in one service. " +
-                    "Return the updated collection of Conditions for a trigger.",
-            response = Condition.class, responseContainer = "List")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Successfully fetched list of conditions."),
-            @ApiResponse(code = 404, message = "No trigger found.", response = ApiError.class),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
-    })
-    @Deprecated
-    public Response createCondition(
-            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
-            @PathParam("triggerId")
-            final String triggerId,
-            @ApiParam(value = "Condition to add.")
-            final Condition condition) {
-        try {
-            if (condition == null) {
-                return ResponseUtil.badRequest("Bad json condition");
-            }
-            condition.setTriggerId(triggerId);
-
-            Collection<Condition> conditions;
-            conditions = definitions.addCondition(tenantId,
-                        condition.getTriggerId(),
-                        condition.getTriggerMode(),
-                        condition);
-            if (log.isDebugEnabled()) {
-                log.debug("Conditions: " + conditions);
-            }
-            return ResponseUtil.ok(conditions);
-
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound(e.getMessage());
-        } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
-        }
-    }
-
-    @PUT
-    @Path("/{triggerId}/conditions/{conditionId}")
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "@Deprecated : Update an existing Condition.",
-            notes = "Use PUT /alerts/triggers/{triggerId}/conditions to set the entire condition set in one service. " +
-                    "Return the updated collection of Conditions for a trigger.",
-            response = Condition.class, responseContainer = "List")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Condition updated."),
-            @ApiResponse(code = 404, message = "No Condition found.", response = ApiError.class),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
-    })
-    @Deprecated
-    public Response updateCondition(
-            @ApiParam(value = "Trigger definition id to be retrieved.", required = true)
-            @PathParam("triggerId")
-            final String triggerId,
-            @PathParam("conditionId")
-            final String conditionId,
-            @ApiParam(value = "Condition to update.")
-            final Condition condition) {
-        try {
-            Trigger trigger = definitions.getTrigger(tenantId, triggerId);
-            if (trigger == null) {
-                return ResponseUtil.notFound("No trigger found for triggerId: " + triggerId);
-            }
-            if (condition == null) {
-                return ResponseUtil.badRequest("Bad json condition");
-            }
-            condition.setTriggerId(triggerId);
-            boolean exists = false;
-            if (conditionId.equals(condition.getConditionId())) {
-                exists = (definitions.getCondition(tenantId, condition.getConditionId()) != null);
-            }
-            if (!exists) {
-                return ResponseUtil.notFound("Condition not found for conditionId: " + conditionId);
-            } else {
-                Collection<Condition> conditions = definitions.updateCondition(tenantId, condition);
-                if (log.isDebugEnabled()) {
-                    log.debug("Conditions: " + conditions);
-                }
-                return ResponseUtil.ok(conditions);
-            }
-        } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
-        }
-    }
-
-    @DELETE
-    @Path("/{triggerId}/conditions/{conditionId}")
-    @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "@Deprecated : Delete a condition.",
-            notes = "Use PUT /alerts/triggers/{triggerId}/conditions to set the entire condition set in one service." +
-                    "Return the updated collection of Conditions for a trigger.",
-            response = Condition.class, responseContainer = "List")
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Condition deleted."),
-            @ApiResponse(code = 404, message = "No Condition found.", response = ApiError.class),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
-    })
-    @Deprecated
-    public Response deleteCondition(
-            @ApiParam(value = "Trigger definition id to be retrieved", required = true)
-            @PathParam("triggerId")
-            final String triggerId,
-            @PathParam("conditionId")
-            final String conditionId) {
-        try {
-            Trigger trigger = definitions.getTrigger(tenantId, triggerId);
-            if (trigger == null) {
-                return ResponseUtil.notFound("No trigger found for triggerId: " + triggerId);
-            }
-            Condition condition = definitions.getCondition(tenantId, conditionId);
-            if (condition == null) {
-                return ResponseUtil.notFound("No condition found for conditionId: " + conditionId);
-            }
-            if (!condition.getTriggerId().equals(triggerId)) {
-                return ResponseUtil.badRequest("ConditionId: " + conditionId + " does not belong to triggerId: " +
-                        triggerId);
-            }
-            Collection<Condition> conditions = definitions.removeCondition(tenantId, conditionId);
-            if (log.isDebugEnabled()) {
-                log.debug("Conditions: " + conditions);
-            }
-            return ResponseUtil.ok(conditions);
-        } catch (Exception e) {
-            log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e);
         }
     }

@@ -291,8 +291,8 @@ public class JacksonDeserializer {
                         aCondition.setDataId(node.get("dataId").textValue());
                     }
                     if (node.get("operator") != null) {
-                        aCondition
-                                .setOperator(AvailabilityCondition.Operator.valueOf(node.get("operator").textValue()));
+                        aCondition.setOperator(AvailabilityCondition.Operator.valueOf(
+                                node.get("operator").textValue()));
                     }
                 } catch (Exception e) {
                     throw new ConditionException(e);
@@ -374,8 +374,8 @@ public class JacksonDeserializer {
                 try {
                     condition = new ExternalCondition();
                     ExternalCondition eCondition = (ExternalCondition) condition;
-                    if (node.get("systemId") != null) {
-                        eCondition.setSystemId(node.get("systemId").textValue());
+                    if (node.get("alerterId") != null) {
+                        eCondition.setAlerterId(node.get("alerterId").textValue());
                     }
                     if (node.get("dataId") != null) {
                         eCondition.setDataId(node.get("dataId").textValue());
