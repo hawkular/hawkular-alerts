@@ -176,7 +176,7 @@ public class CacheManager {
                 This logic assumes that alerting is the only writer for the shared publishCache
              */
             log.debugf("Publishing metricId %s ", metricId);
-            publishCache.put(metricId, dataIdKey.getDataId());
+            publishCache.put(convert(metricId), dataIdKey.getDataId());
             /*
                 This alternative logic assumes that more writers can add/remove entries into the shared publishCache.
 
@@ -204,7 +204,7 @@ public class CacheManager {
                 This logic assumes that alerting is the only writer for the shared publishCache
              */
             log.debugf("Unpublishing metricId %s ", metricId);
-            publishCache.remove(metricId);
+            publishCache.remove(convert(metricId));
             /*
                 This alternative logic assumes that more writers can add/remove entries into the shared publishCache.
 
@@ -255,6 +255,12 @@ public class CacheManager {
             return null;
         }
         return new MetricId(tenantId, type, metricId);
+    }
+
+    private String convert(MetricId id) {
+        return new StringBuilder(id.getTenantId() == null ? "" : id.getTenantId()).append("-")
+                .append((id.getType() == null ? "" : id.getType().getText())).append("-")
+                .append((id.getName() == null ? "" : id.getName())).toString();
     }
 
     public static class DataIdKey {
