@@ -423,8 +423,8 @@ public class RulesEngineTest {
         // Test LTE + GTE
         datums.clear();
         alerts.clear();
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0));
-        datums.add(Data.forNumeric("tenant", "NumericData-02", 2, 20.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 3, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 4, 20.0));
 
         rulesEngine.addData(datums);
 
@@ -470,8 +470,8 @@ public class RulesEngineTest {
         // Test GT (also GTE)
         datums.clear();
         alerts.clear();
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 15.0));
-        datums.add(Data.forNumeric("tenant", "NumericData-02", 2, 20.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 5, 15.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 6, 20.0));
 
         rulesEngine.addData(datums);
 
@@ -511,6 +511,88 @@ public class RulesEngineTest {
         v2 = e.getValue2();
         assertTrue(e.toString(), v1.equals(15.0D));
         assertTrue(e.toString(), v2.equals(20.0D));
+        assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
+        assertTrue(e.getCondition().toString(), e.getCondition().getData2Id().equals("NumericData-02"));
+    }
+
+    @Test
+    public void compareTest2() {
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Compare-D1-LT-Half-D2");
+        CompareCondition t1c1 = new CompareCondition("tenant", "trigger-1", 1, 1,
+                "NumericData-01",
+                CompareCondition.Operator.LT, 0.5, "NumericData-02");
+        Dampening t1d = Dampening.forRelaxedCount("tenant", "trigger-1", Mode.FIRING, 2, 3);
+
+        t1.setEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+        rulesEngine.addFact(t1d);
+
+        // Test Adding 1 datum at a time, with some repetition
+
+        // T1: D1=10, D2 unset : no condition eval
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0));
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+        assertEquals(alerts.toString(), 0, alerts.size());
+
+        // T2: D1=15, D2 unset : no condition eval
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 2, 15.0));
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+        assertEquals(alerts.toString(), 0, alerts.size());
+
+        // T3: D1=15, D2=25 : Eval False, dampening 0 for 1
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 3, 25.0));
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+        assertEquals(alerts.toString(), 0, alerts.size());
+
+        // T4: D1=15, D2=50 : Eval True, dampening 1 for 2
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 4, 50.0));
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+        assertEquals(alerts.toString(), 0, alerts.size());
+
+        // T5: D1=20, D2=50 : Eval True, dampening 2 for 3 -> fire
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 5, 20.0));
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+        assertEquals(alerts.toString(), 1, alerts.size());
+
+        Alert a = alerts.get(0);
+        assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-1"));
+        assertEquals(2, a.getEvalSets().size());
+        Set<ConditionEval> evals = a.getEvalSets().get(0);
+        assertEquals(evals.toString(), 1, evals.size());
+        CompareConditionEval e = (CompareConditionEval) evals.iterator().next();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertTrue(e.toString(), e.getTriggerId().equals("trigger-1"));
+        assertTrue(e.isMatch());
+        Double v1 = e.getValue1();
+        Double v2 = e.getValue2();
+        assertTrue(e.toString(), v1.equals(15.0D));
+        assertTrue(e.toString(), v2.equals(50.0D));
+        assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
+        assertTrue(e.getCondition().toString(), e.getCondition().getData2Id().equals("NumericData-02"));
+
+        evals = a.getEvalSets().get(1);
+        assertEquals(evals.toString(), 1, evals.size());
+        e = (CompareConditionEval) evals.iterator().next();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertTrue(e.toString(), e.getTriggerId().equals("trigger-1"));
+        assertTrue(e.isMatch());
+        v1 = e.getValue1();
+        v2 = e.getValue2();
+        assertTrue(e.toString(), v1.equals(20.0D));
+        assertTrue(e.toString(), v2.equals(50.0D));
         assertTrue(e.getCondition().toString(), e.getCondition().getDataId().equals("NumericData-01"));
         assertTrue(e.getCondition().toString(), e.getCondition().getData2Id().equals("NumericData-02"));
     }
@@ -1019,7 +1101,6 @@ public class RulesEngineTest {
         datums.add(Data.forNumeric("tenant", "CounterDown", t1minute, 100.0)); // minute 1
         datums.add(Data.forNumeric("tenant", "CounterDown", t3minute, 90.0)); // minute 3 (rate = 300 per hour)
         datums.add(Data.forNumeric("tenant", "CounterDown", t5minute, 10.0)); // minute 5 (rate = 2400 per hour)
-
 
         // default dampening
 
