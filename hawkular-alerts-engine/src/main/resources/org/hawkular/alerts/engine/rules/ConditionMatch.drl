@@ -45,6 +45,7 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.api.services.ActionsService;
+import org.hawkular.alerts.engine.util.CompareData;
 import org.hawkular.alerts.engine.util.RateData;
 
 import org.jboss.logging.Logger;
@@ -106,25 +107,70 @@ rule ThresholdRange
         insert( ce );
 end
 
-// Note that at the moment a CompareCondition will only ever match if the NumericData facts are inserted
-// at the same time. If only one Data is present in WM it will not match this rule and will get retracted
-// as unused/unnecessary.  We may have to revisit this behavior and nail down the desired semantics of this
-// kind of condition. But this may be correct behavior as is.  It makes sense to me that this sort of condition
-// should likely be used on data reported in the same batch. But if not, one approach may be to insert a special
-// fact type, here, like CompareData (in addition to inserting as NumericData, for other condition evals) and then
-// handle that retraction differently, always holding onto the most recent data for the dataId, as needed for comparing
-// data when it arrives at different times.
+// CompareCondition is a bit different because it involves two dataIds in one condition evaluation.  For example,
+// Heapused > 80% Heapmax.  The original implementation required that the two necessary Data facts (Heapused and
+// Heapmax) both be supplied in the same engine firing.  This proved to be an unrealistic constraint as, we needed
+// to allow Heapused and Heapmax Data facts to be supplied on different schedules.  The updated semantic is to
+// perform CompareCondition evaluations using the two most recent values for the relevant dataIds, holding data
+// across engine firings as needed.  So, if Heapused is reported every 30 seconds and Heapmax every 5 minutes, we'll
+// hold and update Heapused until we have a Heapmax value for comparison.  After that we'll update each as they
+// arrive, performing comparisons on each update.  We use CompareData as the special Fact to hold relevant data
+// across engine firings.
+rule ProvideCompareData1
+    when
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
+        $c : CompareCondition( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $d1id : dataId )
+        $d : Data( tenantId == $tenantId, source == $tsource, id == $d1id )
+        not  CompareData( data.tenantId == $tenantId, data.source == $tsource, data.id == $d1id )
+    then
+        CompareData compareData = new CompareData( $d );
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("ProvideCompareData1: %s", compareData);
+        }
+        insert( compareData );
+end
+
+rule ProvideCompareData2
+    when
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
+        $c : CompareCondition( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $d2id : data2Id )
+        $d : Data( tenantId == $tenantId, source == $tsource, id == $d2id )
+        not  CompareData( data.tenantId == $tenantId, data.source == $tsource, data.id == $d2id )
+    then
+        CompareData compareData = new CompareData( $d );
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("ProvideCompareData2: %s", compareData);
+        }
+        insert( compareData );
+end
+
+// Use a higher salience here to ensure that CompareData is always updated before Compare performs the evaluation
+rule UpdateCompareData
+    salience 100
+    when
+        $cd : CompareData( $tenantId : data.tenantId, $tsource : data.source, $did : data.id, $ts : data.timestamp )
+        $d  : Data( tenantId == $tenantId, source == $tsource, id == $did, timestamp > $ts )
+    then
+        retract( $cd )
+
+        CompareData compareData = new CompareData( $d );
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("UpdateCompareData: %s -> %s", $cd, compareData);
+        }
+        insert( compareData );
+end
+
 rule Compare
     when 
-        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
-        $c  : CompareCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode,
-                                 $d1id : dataId, $d2id : data2Id )
-        $d1 : Data( tenantId == $tenantId, source == $tsource, id == $d1id )
-        $d2 : Data( tenantId == $tenantId, source == $tsource, id == $d2id )
+        $t   : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
+        $c   : CompareCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode,
+                                  $d1id : dataId, $d2id : data2Id )
+        $cd1 : CompareData( data.tenantId == $tenantId, data.source == $tsource, data.id == $d1id )
+        $cd2 : CompareData( data.tenantId == $tenantId, data.source == $tsource, data.id == $d2id )
     then
-        CompareConditionEval ce = new CompareConditionEval($c, $d1, $d2);
+        CompareConditionEval ce = new CompareConditionEval($c, $cd1.data, $cd2.data);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Compare Eval: ", (ce.isMatch() ? "Match!" : "no match "), ce.getLog());
+            log.debugf("Compare Eval: %s %s", (ce.isMatch() ? "Match!" : "no match "), ce.getLog());
         }
         insert( ce );
 end
@@ -182,7 +228,7 @@ rule Event
 end
 
 // RateCondition is a bit different in that it calculates rate of change between the previous and most current
-// value of the same dataId and performs an evaluation againts that computed value.  The previous value is
+// value of the same dataId and performs an evaluation against that computed value.  The previous value is
 // stored as a RateData fact. This rule initializes the RateData fact to the current value. It will be used
 // when the next datum for dataId arrives in working memory.
 rule ProvideInitialRateData
@@ -193,8 +239,9 @@ rule ProvideInitialRateData
         not  RateData( data.tenantId == $tenantId, data.source == $tsource, data.id == $did )
     then
         RateData rateData = new RateData( $d );
-        log.debugf("ProvideInitialRateData: %s", rateData);
-
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("ProvideInitialRateData: %s", rateData);
+        }
         insert( rateData );
 end
 
@@ -226,10 +273,10 @@ rule RetractProcessedRateData
         $d  : Data( tenantId == $tenantId, source == $dsource, id == $did )
     then
         $rd.setData( $d );
-
-        log.debugf("Updating %s...", $rd);
-        log.debugf("Retracting %s...", $d);
-
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("Retracting %s", $d);
+            log.debugf("Updating %s", $rd);
+        }
         retract ( $d );
         update ( $rd );
 end
@@ -238,7 +285,9 @@ rule RetractProcessedData
     when
         $d : Data()
     then
-        log.debugf("Retracting %s...", $d);
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("Retracting %s", $d);
+        }
         retract ( $d );
 end
 
@@ -246,7 +295,9 @@ rule RetractProcessedEvent
     when
         $e : Event()
     then
-        log.debugf("Retracting %s...", $e);
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("Retracting %s", $e);
+        }
         retract ( $e );
 end
 
@@ -316,8 +367,9 @@ rule ProvideDefaultDampening
         $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode )
         not Dampening( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode )
     then
-        log.debugf("Adding default %s dampening for trigger! %s", $tmode, $t.getId());
-
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("Adding default %s dampening for trigger! %s", $tmode, $t.getId());
+        }
         Dampening d = Dampening.forStrict( $tenantId, $tid, $tmode, 1 );
         insert( d );
 end
@@ -357,7 +409,9 @@ rule DampeningTimeoutAdd
     when
         $d   : Dampening( type == Type.STRICT_TIMEOUT, numTrueEvals == 1, satisfied == false )
     then
-        log.debugf( "DampeningTimeoutAdd %s", $d );
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf( "DampeningTimeoutAdd %s", $d );
+        }
         pendingTimeouts.add( $d );
 end 
 
@@ -367,7 +421,9 @@ rule DampeningTimeoutRemove
     when
         $d   : Dampening( type == Type.STRICT_TIMEOUT, numTrueEvals == 0, satisfied == false )
     then
-        log.debugf( "DampeningTimeoutRemove %s", $d );
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf( "DampeningTimeoutRemove %s", $d );
+        }
         pendingTimeouts.remove( $d );
 end 
 
@@ -425,7 +481,9 @@ rule AlertOnSatisfiedDampening
             insert( $t );
 
         } else if ($t.isAutoDisable()) {
-            log.debugf("Setting Trigger Disabled! %s", $t);
+            if (log != null && log.isDebugEnabled()) {
+                log.debugf("Setting Trigger Disabled! %s", $t);
+            }
 
             // the autoDisable trigger handling will result in a trigger reload, so we can just retract the
             // current definition. And given that it will be disabled, it actually will not get loaded.
@@ -434,7 +492,9 @@ rule AlertOnSatisfiedDampening
             retract( $t );
 
         } else {
-            log.debugf("Trigger remains in Firing mode, AutoDisable and AutoResolve not set. %s", $t);
+            if (log != null && log.isDebugEnabled()) {
+                log.debugf("Trigger remains in Firing mode, AutoDisable and AutoResolve not set. %s", $t);
+            }
         }
 end
 
