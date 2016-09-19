@@ -48,6 +48,12 @@ class AlertsITest extends AbstractITestBase {
 
         resp = client.get(path: "", query: [tags:"dataId|data-01,dataId|data-02",thin:true] )
         assert resp.status == 200 : resp.status
+
+        resp = client.get(path: "", query: [endResolvedTime:now, startResolvedTime:"0"] )
+        assert resp.status == 200 : resp.status
+
+        resp = client.get(path: "", query: [endAckTime:now, startAckTime:"0"] )
+        assert resp.status == 200 : resp.status
     }
 
     @Test
@@ -70,6 +76,12 @@ class AlertsITest extends AbstractITestBase {
         assert resp.status == 200 : resp.status
 
         resp = client.put(path: "delete", query: [tags:"dataId|data-01,dataId|data-02"] )
+        assert resp.status == 200 : resp.status
+
+        resp = client.put(path: "delete", query: [endResolvedTime:now, startResolvedTime:"0"] )
+        assert resp.status == 200 : resp.status
+
+        resp = client.put(path: "delete", query: [endAckTime:now, startAckTime:"0"] )
         assert resp.status == 200 : resp.status
     }
 

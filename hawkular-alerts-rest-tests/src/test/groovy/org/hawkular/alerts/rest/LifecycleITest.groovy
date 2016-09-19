@@ -490,6 +490,11 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         resp = client.get(path: "",
+                query: [startResolvedTime:start,triggerIds:"test-manual-trigger"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        resp = client.get(path: "",
             query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED"] )
         assertEquals(200, resp.status)
         assertEquals(5, resp.data.size())
@@ -699,7 +704,15 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
 
+        resp = client.get(path: "", query: [startAckTime:start,triggerIds:"test-manual2-trigger"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-manual2-trigger",statuses:"RESOLVED"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        resp = client.get(path: "", query: [startResolvedTime:start,triggerIds:"test-manual2-trigger"] )
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
     }

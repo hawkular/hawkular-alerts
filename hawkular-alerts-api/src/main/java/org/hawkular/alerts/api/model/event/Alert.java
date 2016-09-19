@@ -60,7 +60,10 @@ public class Alert extends Event {
     private String resolvedBy;
 
     @JsonInclude(Include.NON_EMPTY)
-    private List<Note> notes;
+    private List<Note> notes = new ArrayList<>();;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private List<LifeCycle> lifecycle = new ArrayList<>();
 
     @JsonInclude(Include.NON_EMPTY)
     @Thin
@@ -85,6 +88,7 @@ public class Alert extends Event {
         this.status = Status.OPEN;
         this.severity = trigger.getSeverity();
         this.eventType = EventType.ALERT.name();
+        addLifecycle(this.status, "system", this.ctime);
     }
 
     @JsonIgnore
@@ -158,9 +162,6 @@ public class Alert extends Event {
     }
 
     public List<Note> getNotes() {
-        if (null == notes) {
-            this.notes = new ArrayList<>();
-        }
         return notes;
     }
 
@@ -179,6 +180,29 @@ public class Alert extends Event {
             throw new IllegalArgumentException("Note must have non-null user and text");
         }
         getNotes().add(new Note(user, text));
+    }
+
+    public List<LifeCycle> getLifecycle() {
+        return lifecycle;
+    }
+
+    public void setLifecycle(List<LifeCycle> lifecycle) {
+        this.lifecycle = lifecycle;
+    }
+
+    public void addLifecycle(Status status, String user, long stime) {
+        if (status == null || user == null) {
+            throw new IllegalArgumentException("Lifecycle must have non-null state and user");
+        }
+        getLifecycle().add(new LifeCycle(status, user, stime));
+    }
+
+    @JsonIgnore
+    public LifeCycle getCurrentLifecycle() {
+        if (getLifecycle().isEmpty()) {
+            return null;
+        }
+        return getLifecycle().get(getLifecycle().size() - 1);
     }
 
     @Override
@@ -268,6 +292,81 @@ public class Alert extends Event {
                     "user='" + user + '\'' +
                     ", ctime=" + ctime +
                     ", text='" + text + '\'' +
+                    '}';
+        }
+    }
+
+    public static class LifeCycle {
+        @JsonInclude(Include.NON_EMPTY)
+        private Status status;
+
+        @JsonInclude(Include.NON_EMPTY)
+        private String user;
+
+        @JsonInclude(Include.NON_EMPTY)
+        private long stime;
+
+        public LifeCycle() {
+            // for json assembly
+        }
+
+        public LifeCycle(Status status, String user, long stime) {
+            this.status = status;
+            this.user = user;
+            this.stime = stime;
+        }
+
+        public String getUser() {
+            return user;
+        }
+
+        public void setUser(String user) {
+            this.user = user;
+        }
+
+        public Status getStatus() {
+            return status;
+        }
+
+        public void setStatus(Status status) {
+            this.status = status;
+        }
+
+        public long getStime() {
+            return stime;
+        }
+
+        public void setStime(long stime) {
+            this.stime = stime;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            LifeCycle lifeCycle = (LifeCycle) o;
+
+            if (stime != lifeCycle.stime) return false;
+            if (user != null ? !user.equals(lifeCycle.user) : lifeCycle.user != null) return false;
+            return status == lifeCycle.status;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = user != null ? user.hashCode() : 0;
+            result = 31 * result + (status != null ? status.hashCode() : 0);
+            result = 31 * result + (int) (stime ^ (stime >>> 32));
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "LifeCycle{" +
+                    "user='" + user + '\'' +
+                    ", status=" + status +
+                    ", stime=" + stime +
                     '}';
         }
     }

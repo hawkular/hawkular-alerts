@@ -120,6 +120,20 @@ public class AlertsHandler {
                     + "each tag of format \'name|value\'. Specify \'*\' for value to match all values.")
             @QueryParam("tags")
             final String tags,
+            @ApiParam(required = false, value = "Filter out alerts resolved before this time, millisecond since epoch.")
+            @QueryParam("startResolvedTime")
+            final Long startResolvedTime,
+            @ApiParam(required = false, value = "Filter out alerts resolved after this time, millisecond since epoch.")
+            @QueryParam("endResolvedTime")
+            final Long endResolvedTime,
+            @ApiParam(required = false, value = "Filter out alerts acknowledged before this time, " +
+                    "millisecond since epoch.")
+            @QueryParam("startAckTime")
+            final Long startAckTime,
+            @ApiParam(required = false, value = "Filter out alerts acknowledged after this time, " +
+                    "millisecond since epoch.")
+            @QueryParam("endAckTime")
+            final Long endAckTime,
             @ApiParam(required = false, value = "Return only thin alerts, do not include: evalSets, resolvedEvalSets.")
             @QueryParam("thin")
             final Boolean thin,
@@ -128,7 +142,7 @@ public class AlertsHandler {
         Pager pager = RequestUtil.extractPaging(uri);
         try {
             AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
-                    tags, thin);
+                    tags, startResolvedTime, endResolvedTime, startAckTime, endAckTime, thin);
             Page<Alert> alertPage = alertsService.getAlerts(tenantId, criteria, pager);
             if (log.isDebugEnabled()) {
                 log.debug("Alerts: " + alertPage);
@@ -240,7 +254,8 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertIds) || isEmpty(tags)) {
                 // criteria just used for convenient type translation
-                AlertsCriteria c = buildCriteria(null, null, alertIds, null, null, null, tags, false);
+                AlertsCriteria c = buildCriteria(null, null, alertIds, null, null, null, tags, null, null, null,
+                        null, false);
                 alertsService.addAlertTags(tenantId, c.getAlertIds(), c.getTags());
                 if (log.isDebugEnabled()) {
                     log.debugf("Tagged alertIds:%s, %s", c.getAlertIds(), c.getTags());
@@ -404,11 +419,25 @@ public class AlertsHandler {
             @ApiParam(required = false, value = "Filter out alerts for unspecified tags, comma separated list of tags, "
                     + "each tag of format \'name|value\'. Specify \'*\' for value to match all values.")
             @QueryParam("tags")
-            final String tags
+            final String tags,
+            @ApiParam(required = false, value = "Filter out alerts resolved before this time, millisecond since epoch.")
+            @QueryParam("startResolvedTime")
+            final Long startResolvedTime,
+            @ApiParam(required = false, value = "Filter out alerts resolved after this time, millisecond since epoch.")
+            @QueryParam("endResolvedTime")
+            final Long endResolvedTime,
+            @ApiParam(required = false, value = "Filter out alerts acknowledged before this time, " +
+                    "millisecond since epoch.")
+            @QueryParam("startAckTime")
+            final Long startAckTime,
+            @ApiParam(required = false, value = "Filter out alerts acknowledged after this time, " +
+                    "millisecond since epoch.")
+            @QueryParam("endAckTime")
+            final Long endAckTime
             ) {
         try {
             AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
-                    tags, null);
+                    tags, startResolvedTime, endResolvedTime, startAckTime, endAckTime, null);
             int numDeleted = alertsService.deleteAlerts(tenantId, criteria);
             if (log.isDebugEnabled()) {
                 log.debug("Alerts deleted: " + numDeleted);
@@ -424,7 +453,8 @@ public class AlertsHandler {
     }
 
     private AlertsCriteria buildCriteria(Long startTime, Long endTime, String alertIds, String triggerIds,
-            String statuses, String severities, String tags, Boolean thin) {
+            String statuses, String severities, String tags, Long startResolvedTime, Long endResolvedTime,
+            Long startAckTime, Long endAckTime, Boolean thin) {
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setStartTime(startTime);
         criteria.setEndTime(endTime);
@@ -464,6 +494,10 @@ public class AlertsHandler {
             }
             criteria.setTags(tagsMap);
         }
+        criteria.setStartResolvedTime(startResolvedTime);
+        criteria.setEndResolvedTime(endResolvedTime);
+        criteria.setStartAckTime(startAckTime);
+        criteria.setEndAckTime(endAckTime);
         if (null != thin) {
             criteria.setThin(thin.booleanValue());
         }

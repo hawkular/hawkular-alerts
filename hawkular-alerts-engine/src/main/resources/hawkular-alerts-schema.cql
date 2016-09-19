@@ -248,6 +248,16 @@ CREATE TABLE ${keyspace}.alerts_severities (
 
 -- #
 
+CREATE TABLE ${keyspace}.alerts_lifecycle (
+    tenantId text,
+    alertId text,
+    status text,
+    stime bigint,
+    PRIMARY KEY (tenantId, status, stime, alertId)
+);
+
+-- #
+
 CREATE TABLE ${keyspace}.events (
     tenantId text,
     id text,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +31,10 @@ import org.hawkular.alerts.api.model.event.Alert;
 public class AlertsCriteria {
     Long startTime = null;
     Long endTime = null;
+    Long startResolvedTime = null;
+    Long endResolvedTime = null;
+    Long startAckTime = null;
+    Long endAckTime = null;
     String alertId = null;
     Collection<String> alertIds = null;
     Alert.Status status = null;
@@ -66,6 +70,59 @@ public class AlertsCriteria {
      */
     public void setEndTime(Long endTime) {
         this.endTime = endTime;
+    }
+
+    public Long getStartResolvedTime() {
+        return startResolvedTime;
+    }
+
+    /**
+     * @param startResolvedTime fetched Alerts must have at least one resolvedTime in the lifecycle greater than or
+     *                          equal to startResolvedTime.
+     *                          Alerts lifecycle might involve several transitions between ACKNOWLEDGE and RESOLVE
+     *                          states.
+     */
+    public void setStartResolvedTime(Long startResolvedTime) {
+        this.startResolvedTime = startResolvedTime;
+    }
+
+    public Long getEndResolvedTime() {
+        return endResolvedTime;
+    }
+
+    /**
+     * @param endResolvedTime fetched Alerts must have at least one resolvedTime in the lifecycle less than or equal to
+     *                        endResolvedTime.
+     *                        Alerts lifecycle might involve several transitions between ACKNOWLEDGE and RESOLVE states.
+     */
+    public void setEndResolvedTime(Long endResolvedTime) {
+        this.endResolvedTime = endResolvedTime;
+    }
+
+    public Long getStartAckTime() {
+        return startAckTime;
+    }
+
+    /**
+     * @param startAckTime fetched Alerts must have at least one ackTime in the lifecycle greater than or equal to
+     *                     startAckTime.
+     *                     Alerts lifecycle might involve several transitions between ACKNOWLEDGE and RESOLVE states.
+     */
+    public void setStartAckTime(Long startAckTime) {
+        this.startAckTime = startAckTime;
+    }
+
+    public Long getEndAckTime() {
+        return endAckTime;
+    }
+
+    /**
+     * @param endAckTime fetched Alerts must have at least one ackTime in the lifecycle less than or equal to
+     *                   endAckTime.
+     *                   Alerts lifecycle might involve several transitions between ACKNOWLEDGE and RESOLVE states.
+     */
+    public void setEndAckTime(Long endAckTime) {
+        this.endAckTime = endAckTime;
     }
 
     public String getAlertId() {
@@ -193,13 +250,23 @@ public class AlertsCriteria {
                 || (null != triggerIds && !triggerIds.isEmpty());
     }
 
+    public boolean hasResolvedTimeCriteria() {
+        return (null != startResolvedTime || null != endResolvedTime);
+    }
+
+    public boolean hasAckTimeCriteria() {
+        return (null != startAckTime || null != endAckTime);
+    }
+
     public boolean hasCriteria() {
         return hasAlertIdCriteria()
                 || hasStatusCriteria()
                 || hasSeverityCriteria()
                 || hasTagCriteria()
                 || hasCTimeCriteria()
-                || hasTriggerIdCriteria();
+                || hasTriggerIdCriteria()
+                || hasResolvedTimeCriteria()
+                || hasAckTimeCriteria();
     }
 
     @Override
@@ -207,6 +274,8 @@ public class AlertsCriteria {
         return "AlertsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", alertId=" + alertId
                 + ", alertIds=" + alertIds + ", status=" + status + ", statusSet=" + statusSet + ", severity="
                 + severity + ", severities=" + severities + ", triggerId=" + triggerId + ", triggerIds=" + triggerIds
-                + ", tags=" + tags + ", thin=" + thin + "]";
+                + ", tags=" + tags + ", startAckTime=" + startAckTime + ", endAckTime=" + endAckTime + ", " +
+                "startResolvedTime=" + startResolvedTime + ", endResolvedTime=" + endResolvedTime + ", " +
+                "thin=" + thin + "]";
     }
 }

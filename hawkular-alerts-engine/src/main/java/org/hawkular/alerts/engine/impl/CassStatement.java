@@ -45,6 +45,7 @@ public class CassStatement {
     public static final String DELETE_ACTION_PLUGIN;
     public static final String DELETE_ALERT;
     public static final String DELETE_ALERT_CTIME;
+    public static final String DELETE_ALERT_LIFECYCLE;
     public static final String DELETE_ALERT_SEVERITY;
     public static final String DELETE_ALERT_STATUS;
     public static final String DELETE_ALERT_TRIGGER;
@@ -70,6 +71,7 @@ public class CassStatement {
     public static final String INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES;
     public static final String INSERT_ALERT;
     public static final String INSERT_ALERT_CTIME;
+    public static final String INSERT_ALERT_LIFECYCLE;
     public static final String INSERT_ALERT_SEVERITY;
     public static final String INSERT_ALERT_STATUS;
     public static final String INSERT_ALERT_TRIGGER;
@@ -111,6 +113,9 @@ public class CassStatement {
     public static final String SELECT_ALERT_CTIME_END;
     public static final String SELECT_ALERT_CTIME_START;
     public static final String SELECT_ALERT_CTIME_START_END;
+    public static final String SELECT_ALERT_LIFECYCLE_END;
+    public static final String SELECT_ALERT_LIFECYCLE_START;
+    public static final String SELECT_ALERT_LIFECYCLE_START_END;
     public static final String SELECT_ALERT_STATUS;
     public static final String SELECT_ALERT_SEVERITY;
     public static final String SELECT_ALERT_TRIGGER;
@@ -180,6 +185,9 @@ public class CassStatement {
 
         DELETE_ALERT_CTIME = "DELETE FROM " + keyspace + ".alerts_ctimes "
                 + "WHERE tenantId = ? AND ctime = ? AND alertId = ? ";
+
+        DELETE_ALERT_LIFECYCLE = "DELETE FROM " + keyspace + ".alerts_lifecycle "
+                + "WHERE tenantId = ? AND status = ? AND stime = ? AND alertId = ? ";
 
         DELETE_ALERT_SEVERITY = "DELETE FROM " + keyspace + ".alerts_severities "
                 + "WHERE tenantId = ? AND severity = ? AND alertId = ? ";
@@ -252,6 +260,9 @@ public class CassStatement {
 
         INSERT_ALERT_CTIME = "INSERT INTO " + keyspace + ".alerts_ctimes "
                 + "(tenantId, alertId, ctime) VALUES (?, ?, ?) ";
+
+        INSERT_ALERT_LIFECYCLE = "INSERT INTO " + keyspace + ".alerts_lifecycle "
+                + "(tenantId, alertId, status, stime) VALUES (?, ?, ?, ?) ";
 
         INSERT_ALERT_SEVERITY = "INSERT INTO " + keyspace + ".alerts_severities "
                 + "(tenantId, alertId, severity) VALUES (?, ?, ?) ";
@@ -386,6 +397,15 @@ public class CassStatement {
 
         SELECT_ALERT_CTIME_START_END = "SELECT alertId FROM " + keyspace + ".alerts_ctimes "
                 + "WHERE tenantId = ? AND ctime >= ? AND ctime <= ? ";
+
+        SELECT_ALERT_LIFECYCLE_END = "SELECT alertId FROM " + keyspace + ".alerts_lifecycle "
+                + "WHERE tenantId = ? AND status = ? AND stime <= ? ";
+
+        SELECT_ALERT_LIFECYCLE_START = "SELECT alertId FROM " + keyspace + ".alerts_lifecycle "
+                + "WHERE tenantId = ? AND status = ? AND stime >= ? ";
+
+        SELECT_ALERT_LIFECYCLE_START_END = "SELECT alertId FROM " + keyspace + ".alerts_lifecycle "
+                + "WHERE tenantId = ? AND status = ? AND stime >= ? AND stime <= ? ";
 
         SELECT_ALERT_SEVERITY = "SELECT alertId FROM " + keyspace + ".alerts_severities "
                 + "WHERE tenantId = ? AND severity = ? ";

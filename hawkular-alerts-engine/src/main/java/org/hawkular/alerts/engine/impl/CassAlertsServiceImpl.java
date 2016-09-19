@@ -39,6 +39,7 @@ import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.AlertComparator.Field;
@@ -555,6 +556,38 @@ public class CassAlertsServiceImpl implements AlertsService {
                 }
 
                 /*
+                    Get alertsIds filtered by resolved time clause
+                 */
+                if (criteria.hasResolvedTimeCriteria()) {
+                    Set<String> alertIdsFilteredByResolvedTime = filterByResolvedTime(tenantId, criteria);
+                    if (activeFilter) {
+                        alertIds.retainAll(alertIdsFilteredByResolvedTime);
+                        if (alertIds.isEmpty()) {
+                            return new Page<>(alerts, pager, 0);
+                        }
+                    } else {
+                        alertIds.addAll(alertIdsFilteredByResolvedTime);
+                    }
+                    activeFilter = true;
+                }
+
+                /*
+                    Get alertsIds filtered by ack time clause
+                 */
+                if (criteria.hasAckTimeCriteria()) {
+                    Set<String> alertIdsFilteredByAckTime = filterByAckTime(tenantId, criteria);
+                    if (activeFilter) {
+                        alertIds.retainAll(alertIdsFilteredByAckTime);
+                        if (alertIds.isEmpty()) {
+                            return new Page<>(alerts, pager, 0);
+                        }
+                    } else {
+                        alertIds.addAll(alertIdsFilteredByAckTime);
+                    }
+                    activeFilter = true;
+                }
+
+                /*
                      Get alertsIds filtered by severities clause
                 */
                 if (criteria.hasSeverityCriteria()) {
@@ -756,7 +789,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     private Set<String> filterByStatuses(String tenantId, AlertsCriteria criteria) throws Exception {
         Set<String> result = Collections.emptySet();
 
-        Set<Alert.Status> statuses = new HashSet<>();
+        Set<Status> statuses = new HashSet<>();
         if (isEmpty(criteria.getStatusSet())) {
             if (criteria.getStatus() != null) {
                 statuses.add(criteria.getStatus());
@@ -832,6 +865,72 @@ public class CassAlertsServiceImpl implements AlertsService {
         } else {
             result = new HashSet<>();
             result.addAll(criteria.getEventIds());
+        }
+        return result;
+    }
+
+    private Set<String> filterByResolvedTime(String tenantId, AlertsCriteria criteria) throws Exception {
+        Set<String> result = Collections.emptySet();
+
+        if (criteria.getStartResolvedTime() != null || criteria.getEndResolvedTime() != null) {
+            result = new HashSet<>();
+
+            Session session = CassCluster.getSession();
+            BoundStatement boundLifecycleTime;
+            if (criteria.getStartResolvedTime() != null && criteria.getEndResolvedTime() != null) {
+                PreparedStatement selectAlertLifecycleStartEnd = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_LIFECYCLE_START_END);
+                boundLifecycleTime = selectAlertLifecycleStartEnd.bind(tenantId, Status.RESOLVED.name(),
+                        criteria.getStartResolvedTime(), criteria.getEndResolvedTime());
+            } else if (criteria.getStartResolvedTime() != null) {
+                PreparedStatement selectAlertLifecycleStart = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_LIFECYCLE_START);
+                boundLifecycleTime = selectAlertLifecycleStart.bind(tenantId, Status.RESOLVED.name(),
+                        criteria.getStartResolvedTime());
+            } else {
+                PreparedStatement selectAlertLifecycleEnd = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_LIFECYCLE_END);
+                boundLifecycleTime = selectAlertLifecycleEnd.bind(tenantId, criteria.getEndResolvedTime());
+            }
+
+            ResultSet rsAlertsLifecycleTimes = session.execute(boundLifecycleTime);
+            for (Row row : rsAlertsLifecycleTimes) {
+                String alertId = row.getString("alertId");
+                result.add(alertId);
+            }
+        }
+        return result;
+    }
+
+    private Set<String> filterByAckTime(String tenantId, AlertsCriteria criteria) throws Exception {
+        Set<String> result = Collections.emptySet();
+
+        if (criteria.getStartAckTime() != null || criteria.getEndAckTime() != null) {
+            result = new HashSet<>();
+
+            Session session = CassCluster.getSession();
+            BoundStatement boundLifecycleTime;
+            if (criteria.getStartAckTime() != null && criteria.getEndAckTime() != null) {
+                PreparedStatement selectAlertLifecycleStartEnd = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_LIFECYCLE_START_END);
+                boundLifecycleTime = selectAlertLifecycleStartEnd.bind(tenantId, Status.ACKNOWLEDGED.name(),
+                        criteria.getStartAckTime(), criteria.getEndAckTime());
+            } else if (criteria.getStartAckTime() != null) {
+                PreparedStatement selectAlertLifecycleStart = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_LIFECYCLE_START);
+                boundLifecycleTime = selectAlertLifecycleStart.bind(tenantId, Status.ACKNOWLEDGED.name(),
+                        criteria.getStartAckTime());
+            } else {
+                PreparedStatement selectAlertLifecycleEnd = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_LIFECYCLE_END);
+                boundLifecycleTime = selectAlertLifecycleEnd.bind(tenantId, criteria.getEndAckTime());
+            }
+
+            ResultSet rsAlertsLifecycleTimes = session.execute(boundLifecycleTime);
+            for (Row row : rsAlertsLifecycleTimes) {
+                String alertId = row.getString("alertId");
+                result.add(alertId);
+            }
         }
         return result;
     }
@@ -1215,10 +1314,11 @@ public class CassAlertsServiceImpl implements AlertsService {
         List<Alert> alertsToAck = getAlerts(tenantId, criteria, null);
 
         for (Alert a : alertsToAck) {
-            a.setStatus(Alert.Status.ACKNOWLEDGED);
+            a.setStatus(Status.ACKNOWLEDGED);
             a.setAckBy(ackBy);
             a.setAckTime(System.currentTimeMillis());
             a.addNote(ackBy, ackNotes);
+            a.addLifecycle(a.getStatus(), a.getAckBy(), a.getAckTime());
             updateAlertStatus(a);
             sendAction(a);
         }
@@ -1246,8 +1346,9 @@ public class CassAlertsServiceImpl implements AlertsService {
         PreparedStatement deleteAlertSeverity = CassStatement.get(session, CassStatement.DELETE_ALERT_SEVERITY);
         PreparedStatement deleteAlertStatus = CassStatement.get(session, CassStatement.DELETE_ALERT_STATUS);
         PreparedStatement deleteAlertTrigger = CassStatement.get(session, CassStatement.DELETE_ALERT_TRIGGER);
+        PreparedStatement deleteAlertLifecycle = CassStatement.get(session, CassStatement.DELETE_ALERT_LIFECYCLE);
         if (deleteAlert == null || deleteAlertCtime == null || deleteAlertSeverity == null
-                || deleteAlertStatus == null || deleteAlertTrigger == null) {
+                || deleteAlertStatus == null || deleteAlertTrigger == null || deleteAlertLifecycle == null) {
             throw new RuntimeException("delete*Alerts PreparedStatement is null");
         }
 
@@ -1259,6 +1360,10 @@ public class CassAlertsServiceImpl implements AlertsService {
             futures.add(session.executeAsync(deleteAlertSeverity.bind(tenantId, a.getSeverity().name(), id)));
             futures.add(session.executeAsync(deleteAlertStatus.bind(tenantId, a.getStatus().name(), id)));
             futures.add(session.executeAsync(deleteAlertTrigger.bind(tenantId, a.getTriggerId(), id)));
+            a.getLifecycle().stream().forEach(l -> {
+                futures.add(session.executeAsync(deleteAlertLifecycle.bind(tenantId, l.getStatus().name(), l.getStime(),
+                        a.getAlertId())));
+            });
             Futures.allAsList(futures).get();
         }
 
@@ -1331,11 +1436,12 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         // resolve the alerts
         for (Alert a : alertsToResolve) {
-            a.setStatus(Alert.Status.RESOLVED);
+            a.setStatus(Status.RESOLVED);
             a.setResolvedBy(resolvedBy);
             a.setResolvedTime(System.currentTimeMillis());
             a.addNote(resolvedBy, resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
+            a.addLifecycle(a.getStatus(), a.getResolvedBy(), a.getResolvedTime());
             updateAlertStatus(a);
             sendAction(a);
         }
@@ -1367,15 +1473,16 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setTriggerId(triggerId);
-        criteria.setStatusSet(EnumSet.complementOf(EnumSet.of(Alert.Status.RESOLVED)));
+        criteria.setStatusSet(EnumSet.complementOf(EnumSet.of(Status.RESOLVED)));
         List<Alert> alertsToResolve = getAlerts(tenantId, criteria, null);
 
         for (Alert a : alertsToResolve) {
-            a.setStatus(Alert.Status.RESOLVED);
+            a.setStatus(Status.RESOLVED);
             a.setResolvedBy(resolvedBy);
             a.setResolvedTime(System.currentTimeMillis());
             a.addNote(resolvedBy, resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
+            a.addLifecycle(a.getStatus(), a.getResolvedBy(), a.getResolvedTime());
             updateAlertStatus(a);
             sendAction(a);
         }
@@ -1395,16 +1502,23 @@ public class CassAlertsServiceImpl implements AlertsService {
                     CassStatement.DELETE_ALERT_STATUS);
             PreparedStatement insertAlertStatus = CassStatement.get(session,
                     CassStatement.INSERT_ALERT_STATUS);
+            PreparedStatement insertAlertLifecycle = CassStatement.get(session,
+                    CassStatement.INSERT_ALERT_LIFECYCLE);
             PreparedStatement updateAlert = CassStatement.get(session,
                     CassStatement.UPDATE_ALERT);
 
             List<ResultSetFuture> futures = new ArrayList<>();
-            for (Alert.Status statusToDelete : EnumSet.complementOf(EnumSet.of(alert.getStatus()))) {
+            for (Status statusToDelete : EnumSet.complementOf(EnumSet.of(alert.getStatus()))) {
                 futures.add(session.executeAsync(deleteAlertStatus.bind(alert.getTenantId(), statusToDelete.name(),
                         alert.getAlertId())));
             }
             futures.add(session.executeAsync(insertAlertStatus.bind(alert.getTenantId(), alert.getAlertId(), alert
                     .getStatus().name())));
+            Alert.LifeCycle lifecycle = alert.getCurrentLifecycle();
+            if (lifecycle != null) {
+                futures.add(session.executeAsync(insertAlertLifecycle.bind(alert.getTenantId(), alert.getAlertId(),
+                        lifecycle.getStatus().name(), lifecycle.getStime())));
+            }
             futures.add(session.executeAsync(updateAlert.bind(JsonUtil.toJson(alert), alert.getTenantId(),
                     alert.getAlertId())));
 
@@ -1451,7 +1565,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             if (checkIfAllResolved) {
                 AlertsCriteria ac = new AlertsCriteria();
                 ac.setTriggerId(triggerId);
-                ac.setStatusSet(EnumSet.complementOf(EnumSet.of(Alert.Status.RESOLVED)));
+                ac.setStatusSet(EnumSet.complementOf(EnumSet.of(Status.RESOLVED)));
                 Page<Alert> unresolvedAlerts = getAlerts(tenantId, ac, new Pager(0, 1, Order.unspecified()));
                 allResolved = unresolvedAlerts.isEmpty();
             }
