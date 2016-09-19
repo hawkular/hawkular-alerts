@@ -17,6 +17,7 @@
 package org.hawkular.alerts.engine.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -1518,6 +1519,22 @@ public class CassAlertsServiceImpl implements AlertsService {
             return;
         }
         persistEvents(events);
+        alertsEngine.sendEvents(events);
+    }
+
+    @Override
+    public void sendEvent(Event event) throws Exception {
+        if (null == event) {
+            return;
+        }
+        alertsEngine.sendEvents(Arrays.asList(event));
+    }
+
+    @Override
+    public void sendEvents(Collection<Event> events) throws Exception {
+        if (null == events || events.isEmpty()) {
+            return;
+        }
         alertsEngine.sendEvents(events);
     }
 

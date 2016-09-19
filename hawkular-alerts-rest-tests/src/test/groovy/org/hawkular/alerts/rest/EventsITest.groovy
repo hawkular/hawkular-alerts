@@ -146,4 +146,22 @@ class EventsITest extends AbstractITestBase {
         assert resp.status == 404 : resp.status
     }
 
+    @Test
+    void sendAndNoPersistEvents() {
+        String now = String.valueOf(System.currentTimeMillis());
+
+        Event event = new Event("test-tenant", "test-event-id", System.currentTimeMillis(), "test-event-data-id",
+                "test-category", "test event text");
+        Collection<Event> events = Arrays.asList(event);
+
+        def resp = client.post(path: "events/data", body: events )
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "events/event/test-event-id" )
+        assert resp.status == 404 : resp.status
+
+        resp = client.get(path: "events", query: [startTime:now] )
+        assertEquals(200, resp.status)
+        assertEquals(0, resp.data.size())
+    }
 }

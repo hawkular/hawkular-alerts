@@ -234,6 +234,142 @@ class EventsLifecycleITest extends AbstractITestBase {
     }
 
     @Test
+    void t03_eventsChainedWithoutPersistingInputEventsTest() {
+        logger.info( "Running t03_eventsChainedWithoutPersistingInputEventsTest" )
+
+        String start = String.valueOf(System.currentTimeMillis())
+
+        // Clean previous tests
+        def resp = client.delete(path: "triggers/test-events-t03-app1")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-events-t03-app2")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-events-t03-combined")
+        assert(200 == resp.status || 404 == resp.status)
+
+        // Triggers to fire events
+        Trigger t03app1 = new Trigger("test-events-t03-app1", "Check if app1 is down");
+        t03app1.setEventType(EventType.EVENT);
+
+        resp = client.post(path: "triggers", body: t03app1)
+        assertEquals(200, resp.status)
+
+        // Add a condition over events
+        EventCondition firingCond1 = new EventCondition("test-events-t03-app1", Mode.FIRING, "app1-03.war",
+                "text == 'DOWN'");
+        Collection<Condition> conditions1 = new ArrayList<>(1);
+        conditions1.add( firingCond1 );
+
+        resp = client.put(path: "triggers/test-events-t03-app1/conditions/firing", body: conditions1)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // Enable trigger
+        t03app1.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-events-t03-app1", body: t03app1)
+        assertEquals(200, resp.status)
+
+        // Triggers to fire events
+        Trigger t03app2 = new Trigger("test-events-t03-app2", "Check if app2 is down");
+        t03app2.setEventType(EventType.EVENT);
+
+        resp = client.post(path: "triggers", body: t03app2)
+        assertEquals(200, resp.status)
+
+        // Add a condition over events
+        EventCondition firingCond2 = new EventCondition("test-events-t03-app2", Mode.FIRING, "app2-03.war",
+                "text == 'DOWN'");
+        Collection<Condition> conditions2 = new ArrayList<>(1);
+        conditions2.add( firingCond2 );
+
+        resp = client.put(path: "triggers/test-events-t03-app2/conditions/firing", body: conditions2)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // Enable trigger
+        t03app2.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-events-t03-app2", body: t03app2)
+        assertEquals(200, resp.status)
+
+        // Trigger to fire alerts
+        Trigger t03combined = new Trigger("test-events-t03-combined", "App1 and App2 are down");
+
+        resp = client.post(path: "triggers", body: t03combined)
+        assertEquals(200, resp.status)
+
+        // Add a condition over events
+        EventCondition firingCond3 = new EventCondition("test-events-t03-combined", Mode.FIRING,
+                "test-events-t03-app1", null);
+        EventCondition firingCond4 = new EventCondition("test-events-t03-combined", Mode.FIRING,
+                "test-events-t03-app2", null);
+
+        Collection<Condition> conditions3 = new ArrayList<>(2);
+        conditions3.add( firingCond3 );
+        conditions3.add( firingCond4 );
+
+        resp = client.put(path: "triggers/test-events-t03-combined/conditions/firing", body: conditions3)
+        assertEquals(200, resp.status)
+        assertEquals(2, resp.data.size())
+
+        // Enable trigger
+        t03combined.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-events-t03-combined/", body: t03combined)
+        assertEquals(200, resp.status)
+
+        String jsonEventApp1DownId = UUID.randomUUID().toString();
+        String jsonEventApp1Down = "[{" +
+                "\"id\":\"" + jsonEventApp1DownId + "\"," +
+                "\"ctime\":" + System.currentTimeMillis() + "," +
+                "\"category\":\"" + EventCategory.DEPLOYMENT.toString() + "\"," +
+                "\"dataId\":\"app1-03.war\"," +
+                "\"text\":\"DOWN\"" +
+                "}]";
+
+        resp = client.post(path: "events/data", body: jsonEventApp1Down);
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "events/event/" + jsonEventApp1DownId);
+        assertEquals(404, resp.status)
+
+        String jsonEventApp2DownId = UUID.randomUUID().toString();
+        String jsonEventApp2Down = "[{" +
+                "\"id\":\"" + jsonEventApp2DownId + "\"," +
+                "\"ctime\":" + System.currentTimeMillis() + "," +
+                "\"category\":\"" + EventCategory.DEPLOYMENT.toString() + "\"," +
+                "\"dataId\":\"app2-03.war\"," +
+                "\"text\":\"DOWN\"" +
+                "}]";
+
+        resp = client.post(path: "events/data", body: jsonEventApp2Down);
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "events/event/" + jsonEventApp2DownId);
+        assertEquals(404, resp.status)
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 100; ++i ) {
+            Thread.sleep(100);
+
+            // FETCH recent alerts for trigger, there should be 1
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-events-t03-combined"] )
+            if ( resp.status == 200 && resp.data != null && resp.data.size > 0) {
+                if ( i > 50 ) {
+                    logger.info( "Perf: passing but sleep iterations high [" + i + "]" );
+                }
+                break;
+            }
+            assertEquals(200, resp.status)
+        }
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+    }
+
+    @Test
     void t100_eventsCleanup() {
         logger.info("Running t100_eventsCleanup")
 
@@ -248,6 +384,15 @@ class EventsLifecycleITest extends AbstractITestBase {
         assert(200 == resp.status || 404 == resp.status)
 
         resp = client.delete(path: "triggers/test-events-t02-combined")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-events-t03-app1")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-events-t03-app2")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-events-t03-combined")
         assert(200 == resp.status || 404 == resp.status)
 
         // clean up alerts

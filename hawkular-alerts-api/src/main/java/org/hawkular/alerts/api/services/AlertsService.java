@@ -64,7 +64,9 @@ public interface AlertsService {
     void addAlertTags(String tenantId, Collection<String> alertIds, Map<String, String> tags) throws Exception;
 
     /**
-     * Persist the provided events and send to the engine for alerts evaluation.
+     * Send events to the engine for alerts evaluation.
+     * Persist the provided events.
+     *
      * @param events Set of unpersisted Events.
      * @throws Exception any problem
      */
@@ -214,4 +216,22 @@ public interface AlertsService {
      * @throws Exception any problem.
      */
     void sendData(Collection<Data> data) throws Exception;
+
+    /**
+     * Send event to the engine for alerts evaluation.
+     * The event sent is not persisted into the alerts engine.
+     *
+     * @param event Not Null. The event to be evaluated by the alerting engine.
+     * @throws Exception any problem
+     */
+    void sendEvent(Event event) throws Exception;
+
+    /**
+     * Send events to the engine for alerts evaluation.
+     * The event sent are not persisted into the alerts engine.
+     *
+     * @param events Not null. The events to be evaluated by the alerting engine.
+     * @throws Exception
+     */
+    void sendEvents(Collection<Event> events) throws Exception;
 }
