@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -162,5 +162,25 @@ public class EventConditionTest {
         assertTrue(condition.match(event1));
     }
 
+    @Test
+    public void testComposeExpression() {
+        EventCondition condition = new EventCondition("tenant", "trigger-1", "bpm",
+                "tags.url == '/foo/bar', tags.method == 'GET', tags.threshold <= 100");
+        Event bpmEvent1 = new Event();
+        bpmEvent1.setDataId("bpm");
+        bpmEvent1.addTag("url", "/foo/bar");
+        bpmEvent1.addTag("method", "GET");
+        bpmEvent1.addTag("threshold", "45");
+
+        assertTrue(condition.match(bpmEvent1));
+
+        Event bpmEvent2 = new Event();
+        bpmEvent2.setDataId("bpm");
+        bpmEvent2.addTag("url", "/foo/bar");
+        bpmEvent2.addTag("method", "GET");
+        bpmEvent2.addTag("threshold", "101");
+
+        assertFalse(condition.match(bpmEvent2));
+    }
 
 }
