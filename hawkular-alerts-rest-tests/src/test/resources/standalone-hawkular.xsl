@@ -60,10 +60,7 @@
     <xsl:copy>
       <xsl:apply-templates select="@*|comment()|node()" />
       <jms-topic name="HawkularAlertData" entries="java:/topic/HawkularAlertData"/>
-      <jms-queue name="HawkularAlertsPluginsQueue" entries="java:/queue/HawkularAlertsPluginsQueue"/>
-      <jms-queue name="HawkularAlertsActionsResponseQueue" entries="java:/queue/HawkularAlertsActionsResponseQueue"/>
       <jms-topic name="HawkularCommandEvent" entries="java:/topic/HawkularCommandEvent"/>
-      <jms-topic name="HawkularAlertsActionsTopic" entries="java:/topic/HawkularAlertsActionsTopic"/>
 
       <jms-queue name="hawkular/metrics/gauges/new" entries="java:/queue/hawkular/metrics/gauges/new java:jboss/exported/queue/hawkular/metrics/gauges/new"/>
       <jms-queue name="hawkular/metrics/counters/new" entries="java:/queue/hawkular/metrics/counters/new java:jboss/exported/queue/hawkular/metrics/counters/new"/>

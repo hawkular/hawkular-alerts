@@ -69,34 +69,4 @@
     </plugins>
   </build>
 
-  <profiles>
-
-    <profile>
-      <id>standalone</id>
-      <build>
-        <plugins>
-
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-war-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>bus-war-package</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>war</goal>
-                </goals>
-                <configuration>
-                  <warSourceDirectory>src/main/webapp-standalone</warSourceDirectory>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
-        </plugins>
-      </build>
-    </profile>
-
-  </profiles>
-
 </project>

@@ -38,16 +38,16 @@
   </properties>
 
   <modules>
+    <module>hawkular-alerts-actions-aerogear</module>
     <module>hawkular-alerts-actions-email</module>
+    <module>hawkular-alerts-actions-file</module>
+    <module>hawkular-alerts-actions-irc</module>
+    <module>hawkular-alerts-actions-pagerduty</module>
     <module>hawkular-alerts-actions-sms</module>
     <module>hawkular-alerts-actions-snmp</module>
-    <module>hawkular-alerts-actions-aerogear</module>
-    <module>hawkular-alerts-actions-pagerduty</module>
-    <module>hawkular-alerts-actions-file</module>
     <module>hawkular-alerts-actions-tests</module>
     <module>hawkular-alerts-actions-webhook</module>
     <module>hawkular-alerts-actions-webhook-global</module>
-    <module>hawkular-alerts-actions-irc</module>
   </modules>
 
   <dependencies>
@@ -65,14 +65,13 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Hawkular Nest dependencies -->
     <dependency>
-      <groupId>org.hawkular.commons</groupId>
-      <artifactId>hawkular-bus-common</artifactId>
-      <version>${version.org.hawkular.commons}</version>
-      <scope>provided</scope>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-actions-standalone</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
+    <!-- Hawkular Nest dependencies -->
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
@@ -129,45 +128,4 @@
   <build>
     <finalName>${project.artifactId}</finalName>
   </build>
-
-  <profiles>
-    <profile>
-      <id>bus</id>
-      <dependencies>
-
-        <!-- Hawkular Alerting Bus dependencies. Used only on bus deployments. -->
-        <dependency>
-          <groupId>org.hawkular.alerts</groupId>
-          <artifactId>hawkular-alerts-bus-api</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-          <groupId>org.hawkular.alerts</groupId>
-          <artifactId>hawkular-alerts-actions-bus</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-
-      </dependencies>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-    </profile>
-
-    <profile>
-      <id>standalone</id>
-      <dependencies>
-
-        <!-- Hawkular Alerting Standalone dependencies. Used only on non-bus scenarios. -->
-        <dependency>
-          <groupId>org.hawkular.alerts</groupId>
-          <artifactId>hawkular-alerts-actions-standalone</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-
-      </dependencies>
-    </profile>
-
-  </profiles>
-
 </project>
