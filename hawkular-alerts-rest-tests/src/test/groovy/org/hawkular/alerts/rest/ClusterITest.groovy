@@ -110,10 +110,6 @@ class ClusterITest extends AbstractITestBase {
             testTrigger.setAutoDisable(false);
             testTrigger.setAutoResolve(false);
             testTrigger.setAutoResolveAlerts(false);
-            /*
-                email-to-admin action is pre-created from demo data
-             */
-            testTrigger.addAction(new TriggerAction("email", "email-to-admin"));
 
             startCall();
             resp = client.post(path: "triggers", body: testTrigger)
