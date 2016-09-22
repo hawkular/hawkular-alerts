@@ -159,7 +159,8 @@ class LifecycleITest extends AbstractITestBase {
         resp = client.get(path: "", query: [startTime:start,triggerIds:"test-autodisable-trigger"] )
         assertEquals(200, resp.status)
         assertEquals("RESOLVED", resp.data[0].status)
-        assertEquals("testUser", resp.data[0].resolvedBy)
+        assertEquals(2, resp.data[0].lifecycle.size())
+        assertEquals("testUser", resp.data[0].lifecycle[1].user)
         assertEquals("testNotes", resp.data[0].notes[0].text)
         assertNull(resp.data[0].resolvedEvalSets)
         assertNotNull(resp.data[0].trigger.context);
@@ -275,7 +276,8 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals("ACKNOWLEDGED", resp.data[0].status)
         assertEquals("HIGH", resp.data[0].severity)
-        assertEquals("testUser", resp.data[0].ackBy)
+        assertEquals(2, resp.data[0].lifecycle.size())
+        assertEquals("testUser", resp.data[0].lifecycle[1].user)
         assertEquals("testNotes", resp.data[0].notes[0].text)
 
         // FETCH trigger and make sure it's still enabled (note - we can't check the mode as that is runtime
@@ -310,7 +312,8 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals("RESOLVED", resp.data[0].status)
-        assertEquals("AutoResolve", resp.data[0].resolvedBy)
+        assertEquals(3, resp.data[0].lifecycle.size())
+        assertEquals("AutoResolve", resp.data[0].lifecycle[2].user)
     }
 
     @Test
@@ -538,7 +541,8 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
         assertEquals("RESOLVED", resp.data[0].status)
-        assertEquals("AutoResolve", resp.data[0].resolvedBy)
+        assertEquals(3, resp.data[0].lifecycle.size())
+        assertEquals("AutoResolve", resp.data[0].lifecycle[2].user)
         assertNotNull(resp.data[0].evalSets)
         assertNotNull(resp.data[0].resolvedEvalSets)
         assertFalse(resp.data[0].evalSets.isEmpty())
@@ -548,7 +552,8 @@ class LifecycleITest extends AbstractITestBase {
             query: [startTime:start,triggerIds:"test-autoresolve-trigger",statuses:"RESOLVED",thin:true] )
         assertEquals(200, resp.status)
         assertEquals("RESOLVED", resp.data[0].status)
-        assertEquals("AutoResolve", resp.data[0].resolvedBy)
+        assertEquals(3, resp.data[0].lifecycle.size())
+        assertEquals("AutoResolve", resp.data[0].lifecycle[2].user)
         assertNull(resp.data[0].evalSets)
         assertNull(resp.data[0].resolvedEvalSets)
     }

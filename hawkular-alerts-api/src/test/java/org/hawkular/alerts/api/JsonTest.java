@@ -180,10 +180,7 @@ public class JsonTest {
                     "]," +
                 "\"severity\":\"MEDIUM\"," +
                 "\"status\":\"OPEN\"," +
-                "\"ackTime\":0," +
-                "\"ackBy\":null," +
-                "\"resolvedTime\":0," +
-                "\"resolvedBy\":null," +
+                "\"lifecycle\":[{\"status\":\"OPEN\",\"user\":\"system\",\"stime\":1}]," +
                 "\"notes\":[{\"user\":\"user1\",\"ctime\":1,\"text\":\"The comment 1\"}," +
                            "{\"user\":\"user2\",\"ctime\":2,\"text\":\"The comment 2\"}" +
                           "]," +
@@ -195,10 +192,15 @@ public class JsonTest {
         assertNotNull(alert.getEvalSets());
         assertEquals(1, alert.getEvalSets().size());
         assertEquals(2, alert.getEvalSets().get(0).size());
-        assertTrue(alert.getContext() != null);
-        assertTrue(alert.getContext().size() == 2);
-        assertTrue(alert.getContext().get("n1").equals("v1"));
-        assertTrue(alert.getContext().get("n2").equals("v2"));
+        assertNotNull(alert.getContext());
+        assertEquals(2, alert.getContext().size());
+        assertEquals("v1", alert.getContext().get("n1"));
+        assertEquals("v2", alert.getContext().get("n2"));
+        assertEquals(Alert.Status.OPEN, alert.getCurrentLifecycle().getStatus());
+        assertEquals("system", alert.getCurrentLifecycle().getUser());
+        assertEquals(1, alert.getCurrentLifecycle().getStime());
+        assertNotNull(alert.getLastOpenTime());
+        assertEquals(1, alert.getLastOpenTime().longValue());
         assertEquals("trigger-test", alert.getText());
 
         /*
@@ -1285,21 +1287,14 @@ public class JsonTest {
                                         "]" + // Close Set
                                     "]," + // Close List
                                     "\"severity\":\"HIGH\"," +
-                                    "\"status\":\"OPEN\"," +
-                                    "\"ackTime\":0," +
-                                    "\"ackBy\":null," +
-                                    "\"resolvedTime\":0," +
-                                    "\"resolvedBy\":null" +
+                                    "\"status\":\"OPEN\"" +
                                 "}" + // End value
                             "}" + // End Condition Eval
                         "]" +   // End Set
                     "]," +  // End List
                     "\"severity\":\"HIGH\"," +
-                    "\"status\":\"OPEN\"," +
-                    "\"ackTime\":0," +
-                    "\"ackBy\":null," +
-                    "\"resolvedTime\":0," +
-                    "\"resolvedBy\":null}," +
+                    "\"status\":\"OPEN\"" +
+                    "}," +
                 "\"properties\":{" +
                     "\"cc\":\"cc-group@hawkular.org\"," +
                     "\"template.html\":\"\"," +

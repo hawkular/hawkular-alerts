@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -127,9 +127,7 @@ public class FilePluginTest {
 
         Alert rtAlertAck = new Alert(rtTrigger.getTenantId(), rtTrigger, getEvalList(rtFiringCondition, rtBadData));
         rtAlertAck.setDampening(rtFiringDampening);
-        rtAlertAck.setStatus(Alert.Status.ACKNOWLEDGED);
-        rtAlertAck.setAckBy("Test ACK user");
-        rtAlertAck.setAckTime(System.currentTimeMillis() + 10000);
+        rtAlertAck.addLifecycle(Alert.Status.ACKNOWLEDGED, "Test ACK user", System.currentTimeMillis() + 10000);
         rtAlertAck.addNote("Test ACK user", "Test ACK notes");
 
         Action ackThresholdAction = new Action(tenantId, "email", "email-to-test", rtAlertAck);
@@ -145,9 +143,7 @@ public class FilePluginTest {
         Alert rtAlertResolved = new Alert(rtTrigger.getTenantId(), rtTrigger,
                 getEvalList(rtFiringCondition, rtBadData));
         rtAlertResolved.setDampening(rtFiringDampening);
-        rtAlertResolved.setStatus(Alert.Status.RESOLVED);
-        rtAlertResolved.setResolvedBy("Test RESOLVED user");
-        rtAlertResolved.setResolvedTime(System.currentTimeMillis() + 20000);
+        rtAlertResolved.addLifecycle(Alert.Status.RESOLVED, "Test RESOLVED user", System.currentTimeMillis() + 20000);
         rtAlertResolved.addNote("Test RESOLVED user", "Test RESOLVED notes");
         rtAlertResolved.setResolvedEvalSets(getEvalList(rtResolveCondition, rtGoodData));
 
@@ -193,9 +189,7 @@ public class FilePluginTest {
 
         Alert avAlertAck = new Alert(avTrigger.getTenantId(), avTrigger, getEvalList(avFiringCondition, avBadData));
         avAlertAck.setDampening(avFiringDampening);
-        avAlertAck.setStatus(Alert.Status.ACKNOWLEDGED);
-        avAlertAck.setAckBy("Test ACK user");
-        avAlertAck.setAckTime(System.currentTimeMillis() + 10000);
+        avAlertAck.addLifecycle(Alert.Status.ACKNOWLEDGED, "Test ACK user", System.currentTimeMillis() + 10000);
         avAlertAck.addNote("Test ACK user", "Test ACK notes");
 
         Action ackAvailabilityAction = new Action(tenantId, "email", "email-to-test", avAlertAck);
@@ -212,9 +206,7 @@ public class FilePluginTest {
         Alert avAlertResolved = new Alert(avTrigger.getTenantId(), avTrigger,
                 getEvalList(avFiringCondition, avBadData));
         avAlertResolved.setDampening(avFiringDampening);
-        avAlertResolved.setStatus(Alert.Status.RESOLVED);
-        avAlertResolved.setResolvedBy("Test RESOLVED user");
-        avAlertResolved.setResolvedTime(System.currentTimeMillis() + 20000);
+        avAlertResolved.addLifecycle(Alert.Status.RESOLVED, "Test RESOLVED user", System.currentTimeMillis() + 20000);
         avAlertResolved.addNote("Test RESOLVED user", "Test RESOLVED notes");
         avAlertResolved.setResolvedEvalSets(getEvalList(avResolveCondition, avGoodData));
 
@@ -273,9 +265,7 @@ public class FilePluginTest {
         Alert mixAlertAck = new Alert(mixTrigger.getTenantId(), mixTrigger,
                 getEvalList(mixConditions, mixBadData));
         mixAlertAck.setDampening(mixFiringDampening);
-        mixAlertAck.setStatus(Alert.Status.ACKNOWLEDGED);
-        mixAlertAck.setAckBy("Test ACK user");
-        mixAlertAck.setAckTime(System.currentTimeMillis() + 10000);
+        mixAlertAck.addLifecycle(Alert.Status.ACKNOWLEDGED, "Test ACK user", System.currentTimeMillis() + 10000);
         mixAlertAck.addNote("Test ACK user", "Test ACK notes");
 
         Action ackTwoCondAction = new Action(tenantId, "email", "email-to-test", mixAlertAck);
@@ -300,10 +290,7 @@ public class FilePluginTest {
         Alert mixAlertResolved = new Alert(mixTrigger.getTenantId(), mixTrigger,
                 getEvalList(mixConditions, mixBadData));
         mixAlertResolved.setDampening(mixFiringDampening);
-        mixAlertResolved.setStatus(Alert.Status.ACKNOWLEDGED);
-        mixAlertResolved.setStatus(Alert.Status.RESOLVED);
-        mixAlertResolved.setResolvedBy("Test RESOLVED user");
-        mixAlertResolved.setResolvedTime(System.currentTimeMillis() + 20000);
+        mixAlertResolved.addLifecycle(Alert.Status.RESOLVED, "Test RESOLVED user", System.currentTimeMillis() + 20000);
         mixAlertResolved.addNote("Test RESOLVED user", "Test RESOLVED notes");
         mixAlertResolved.setResolvedEvalSets(getEvalList(mixResolveConditions, mixGoodData));
 

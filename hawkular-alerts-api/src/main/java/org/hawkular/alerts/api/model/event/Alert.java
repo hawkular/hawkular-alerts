@@ -18,6 +18,7 @@ package org.hawkular.alerts.api.model.event;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
@@ -46,18 +47,6 @@ public class Alert extends Event {
 
     @JsonInclude
     private Status status;
-
-    @JsonInclude
-    private long ackTime;
-
-    @JsonInclude
-    private String ackBy;
-
-    @JsonInclude
-    private long resolvedTime;
-
-    @JsonInclude
-    private String resolvedBy;
 
     @JsonInclude(Include.NON_EMPTY)
     private List<Note> notes = new ArrayList<>();;
@@ -121,38 +110,6 @@ public class Alert extends Event {
         this.status = status;
     }
 
-    public long getAckTime() {
-        return ackTime;
-    }
-
-    public void setAckTime(long ackTime) {
-        this.ackTime = ackTime;
-    }
-
-    public String getAckBy() {
-        return ackBy;
-    }
-
-    public void setAckBy(String ackBy) {
-        this.ackBy = ackBy;
-    }
-
-    public long getResolvedTime() {
-        return resolvedTime;
-    }
-
-    public void setResolvedTime(long resolvedTime) {
-        this.resolvedTime = resolvedTime;
-    }
-
-    public String getResolvedBy() {
-        return resolvedBy;
-    }
-
-    public void setResolvedBy(String resolvedBy) {
-        this.resolvedBy = resolvedBy;
-    }
-
     public List<Set<ConditionEval>> getResolvedEvalSets() {
         return resolvedEvalSets;
     }
@@ -194,6 +151,7 @@ public class Alert extends Event {
         if (status == null || user == null) {
             throw new IllegalArgumentException("Lifecycle must have non-null state and user");
         }
+        setStatus(status);
         getLifecycle().add(new LifeCycle(status, user, stime));
     }
 
@@ -205,13 +163,48 @@ public class Alert extends Event {
         return getLifecycle().get(getLifecycle().size() - 1);
     }
 
-    @Override
-    public String toString() {
-        return "Alert [alertId=" + id + ", status=" + status + ", ackTime=" + ackTime
-                + ", ackBy=" + ackBy + ", resolvedTime=" + resolvedTime + ", resolvedBy=" + resolvedBy + ", context="
-                + getContext() + "]";
+    @JsonIgnore
+    public Long getLastStatusTime(Status status) {
+        if (getLifecycle().isEmpty()) {
+            return null;
+        }
+        Long statusTime = null;
+        ListIterator<LifeCycle> iterator = getLifecycle().listIterator(getLifecycle().size());
+        while (iterator.hasPrevious()) {
+            LifeCycle lifeCycle = iterator.previous();
+            if (lifeCycle.getStatus().equals(status)) {
+                statusTime = lifeCycle.getStime();
+                break;
+            }
+        }
+        return statusTime;
     }
 
+    @JsonIgnore
+    public Long getLastOpenTime() {
+        return getLastStatusTime(Status.OPEN);
+    }
+
+    @JsonIgnore
+    public Long getLastAckTime() {
+        return getLastStatusTime(Status.ACKNOWLEDGED);
+    }
+
+    @JsonIgnore
+    public Long getLastResolvedTime() {
+        return getLastStatusTime(Status.RESOLVED);
+    }
+
+    @Override
+    public String toString() {
+        return "Alert{" +
+                "severity=" + severity +
+                ", status=" + status +
+                ", notes=" + notes +
+                ", lifecycle=" + lifecycle +
+                ", resolvedEvalSets=" + resolvedEvalSets +
+                '}';
+    }
 
     public static class Note {
         @JsonInclude(Include.NON_EMPTY)

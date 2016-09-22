@@ -19,19 +19,19 @@ Conditions:
 </#if>
 <#if alert?? && alert.status?? && alert.status == 'ACKNOWLEDGED'>
 Acknowledge time:
-${alert.ackTime?number_to_datetime}
-<#if alert.ackBy?? >
+${alert.currentLifecycle.stime?number_to_datetime}
+<#if alert.currentLifecycle.user?? >
 
-by ${alert.ackBy}
+by ${alert.currentLifecycle.user}
 </#if>
 </#if>
 <#if alert?? && alert.status?? && alert.status == 'RESOLVED'>
 
 Resolved time:
-${alert.resolvedTime?number_to_datetime}
-<#if alert.resolvedBy?? >
+${alert.currentLifecycle.stime?number_to_datetime}
+<#if alert.currentLifecycle.user?? >
 
-by ${alert.resolvedBy}
+by ${alert.currentLifecycle.user}
 </#if>
 </#if>
 <#if alert.notes?has_content>

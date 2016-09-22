@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -126,13 +126,7 @@ public class JvmNonHeapUsageData extends CommonData {
         evalSet1.add(eval1);
         resolvedEvals.add(evalSet1);
 
-        unresolvedAlert.setResolvedEvalSets(resolvedEvals);
-        unresolvedAlert.setStatus(Alert.Status.RESOLVED);
-        unresolvedAlert.setResolvedBy(RESOLVED_BY);
-        unresolvedAlert.addNote(RESOLVED_BY, RESOLVED_NOTES);
-        unresolvedAlert.setResolvedTime(System.currentTimeMillis());
-
-        return unresolvedAlert;
+        return resolveAlert(unresolvedAlert, resolvedEvals);
     }
 
 }

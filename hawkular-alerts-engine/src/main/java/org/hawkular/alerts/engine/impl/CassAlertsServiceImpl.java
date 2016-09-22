@@ -1314,11 +1314,8 @@ public class CassAlertsServiceImpl implements AlertsService {
         List<Alert> alertsToAck = getAlerts(tenantId, criteria, null);
 
         for (Alert a : alertsToAck) {
-            a.setStatus(Status.ACKNOWLEDGED);
-            a.setAckBy(ackBy);
-            a.setAckTime(System.currentTimeMillis());
             a.addNote(ackBy, ackNotes);
-            a.addLifecycle(a.getStatus(), a.getAckBy(), a.getAckTime());
+            a.addLifecycle(Status.ACKNOWLEDGED, ackBy, System.currentTimeMillis());
             updateAlertStatus(a);
             sendAction(a);
         }
@@ -1436,12 +1433,9 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         // resolve the alerts
         for (Alert a : alertsToResolve) {
-            a.setStatus(Status.RESOLVED);
-            a.setResolvedBy(resolvedBy);
-            a.setResolvedTime(System.currentTimeMillis());
             a.addNote(resolvedBy, resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
-            a.addLifecycle(a.getStatus(), a.getResolvedBy(), a.getResolvedTime());
+            a.addLifecycle(Status.RESOLVED, resolvedBy, System.currentTimeMillis());
             updateAlertStatus(a);
             sendAction(a);
         }
@@ -1477,12 +1471,9 @@ public class CassAlertsServiceImpl implements AlertsService {
         List<Alert> alertsToResolve = getAlerts(tenantId, criteria, null);
 
         for (Alert a : alertsToResolve) {
-            a.setStatus(Status.RESOLVED);
-            a.setResolvedBy(resolvedBy);
-            a.setResolvedTime(System.currentTimeMillis());
             a.addNote(resolvedBy, resolvedNotes);
             a.setResolvedEvalSets(resolvedEvalSets);
-            a.addLifecycle(a.getStatus(), a.getResolvedBy(), a.getResolvedTime());
+            a.addLifecycle(Status.RESOLVED, resolvedBy, System.currentTimeMillis());
             updateAlertStatus(a);
             sendAction(a);
         }

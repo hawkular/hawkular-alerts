@@ -147,15 +147,15 @@
                                                 <tr>
                                                     <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:13px; line-height:21px;">
                                                         Acknowledge time:
-                                                        <span style="font-size:15px;">${alert.ackTime?number_to_datetime}</span>
+                                                        <span style="font-size:15px;">${alert.currentLifecycle.stime?number_to_datetime}</span>
                                                     </td>
                                                 </tr>
-                                                <#if alert.ackBy?? >
+                                                <#if alert.currentLifecycle.user?? >
                                                     <tr>
                                                         <td align="center" style="color:#999999; font-family:Open
                                                         sans,sans-serif; font-size:13px; line-height:21px;
                                                         padding-bottom:2px;">
-                                                            by ${alert.ackBy}
+                                                            by ${alert.currentLifecycle.user}
                                                         </td>
                                                     </tr>
                                                 </#if>
@@ -164,16 +164,15 @@
                                                 <tr>
                                                     <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:13px; line-height:21px;">
                                                         Resolved time:
-                                                        <span style="font-size:15px;">${alert
-                                                        .resolvedTime?number_to_datetime}</span>
+                                                        <span style="font-size:15px;">${alert.currentLifecycle.stime?number_to_datetime}</span>
                                                     </td>
                                                 </tr>
-                                                <#if alert.resolvedBy?? >
+                                                <#if alert.currentLifecycle.user?? >
                                                     <tr>
                                                         <td align="center" style="color:#999999; font-family:Open
                                                             sans,sans-serif; font-size:13px; line-height:21px;
                                                             padding-bottom:2px;">
-                                                            by ${alert.resolvedBy}
+                                                            by ${alert.currentLifecycle.user}
                                                         </td>
                                                     </tr>
                                                 </#if>

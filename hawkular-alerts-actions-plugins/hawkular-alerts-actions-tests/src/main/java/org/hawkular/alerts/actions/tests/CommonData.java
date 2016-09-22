@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,12 @@
  */
 package org.hawkular.alerts.actions.tests;
 
+import java.util.List;
+import java.util.Set;
+
+import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Alert.Status;
 
 /**
  * Common variables for action tests scenarios
@@ -41,11 +46,18 @@ public abstract class CommonData {
      */
     public static Alert ackAlert(Alert openAlert) {
         if (null == openAlert) return null;
-        openAlert.setStatus(Alert.Status.ACKNOWLEDGED);
-        openAlert.setAckBy(ACK_BY);
+        openAlert.addLifecycle(Status.ACKNOWLEDGED, ACK_BY, System.currentTimeMillis());
+        openAlert.setStatus(Status.ACKNOWLEDGED);
         openAlert.addNote(ACK_BY, ACK_NOTES);
-        openAlert.setAckTime(System.currentTimeMillis());
         return openAlert;
+    }
+
+    public static Alert resolveAlert(Alert unresolvedAlert, List<Set<ConditionEval>> resolvedEvals) {
+        if (null == unresolvedAlert) return null;
+        unresolvedAlert.setResolvedEvalSets(resolvedEvals);
+        unresolvedAlert.addLifecycle(Status.RESOLVED, RESOLVED_BY, System.currentTimeMillis());
+        unresolvedAlert.addNote(RESOLVED_BY, RESOLVED_NOTES);
+        return unresolvedAlert;
     }
 
 }
