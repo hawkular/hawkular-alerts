@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,8 +44,10 @@ import org.jboss.logging.Logger;
 @Singleton
 @TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class StandaloneActionPluginRegister {
-    public static final String DEFINITIONS_SERVICE = "java:global/hawkular-alerts-rest/CassDefinitionsServiceImpl";
-    public static final String ACTIONS_SERVICE = "java:global/hawkular-alerts-rest/CassActionsServiceImpl";
+    public static final String DEFINITIONS_SERVICE =
+            "java:global/hawkular-metrics/hawkular-alerts/CassDefinitionsServiceImpl";
+    public static final String ACTIONS_SERVICE =
+            "java:global/hawkular-metrics/hawkular-alerts/CassActionsServiceImpl";
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(StandaloneActionPluginRegister.class);
 

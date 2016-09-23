@@ -93,5 +93,20 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 220018, value = "Deleting all definitions on tenantId [%s] before import.")
     void warningDeleteDefinitionsTenant(String tenantId);
 
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 220019, value = "Error sending publish message to the bus. Error: [%s]")
+    void errorCannotSendPublishMessage(String msg);
+
+    @LogMessage(level = Logger.Level.INFO)
+    @Message(id = 220020, value = "Init Publish Cache")
+    void infoInitPublishCache();
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 220021, value = "Clear Publish Cache")
+    void warnClearPublishCache();
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 220022, value = "Publish Cache is disabled")
+    void warnDisabledPublishCache();
 
 }

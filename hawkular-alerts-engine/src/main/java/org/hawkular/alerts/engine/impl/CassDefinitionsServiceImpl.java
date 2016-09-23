@@ -846,12 +846,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 throw new RuntimeException("selectTags PreparedStatement is null");
             }
 
+            String triggerType = TagType.TRIGGER.name();
             Map<String, Set<String>> tenantTriggerIdsMap = new HashMap<>();
-            List<ResultSetFuture> futures = nameOnly ? tenants.stream()
-                    .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name)))
-                    .collect(Collectors.toList()) : tenants.stream()
-                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, TagType.TRIGGER, name,
-                                    value)))
+            List<ResultSetFuture> futures = nameOnly
+                    ? tenants.stream()
+                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, triggerType, name)))
+                            .collect(Collectors.toList())
+                    : tenants.stream()
+                            .map(tenantId -> session.executeAsync(selectTags.bind(tenantId, triggerType, name, value)))
                             .collect(Collectors.toList());
             List<ResultSet> rsTriggerIds = Futures.allAsList(futures).get();
             rsTriggerIds.stream().forEach(rs -> {
@@ -1104,7 +1106,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         groupCondition.getTriggerMode(),
                         groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
                         memberDataId,
-                        ((ExternalCondition) groupCondition).getSystemId(),
+                        ((ExternalCondition) groupCondition).getAlerterId(),
                         memberExpression);
                 break;
             case RANGE:
@@ -2015,7 +2017,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         futures.add(session.executeAsync(insertConditionExternal.bind(eCond.getTenantId(),
                                 eCond.getTriggerId(), eCond.getTriggerMode().name(), eCond.getContext(),
                                 eCond.getConditionSetSize(), eCond.getConditionSetIndex(), eCond.getConditionId(),
-                                eCond.getDataId(), eCond.getSystemId(), eCond.getExpression())));
+                                eCond.getDataId(), eCond.getAlerterId(), eCond.getExpression())));
                         break;
                     case RANGE:
                         ThresholdRangeCondition rCond = (ThresholdRangeCondition) cond;
@@ -2280,7 +2282,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     eCondition.setConditionSetSize(row.getInt("conditionSetSize"));
                     eCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
                     eCondition.setDataId(row.getString("dataId"));
-                    eCondition.setSystemId(row.getString("operator"));
+                    eCondition.setAlerterId(row.getString("operator"));
                     eCondition.setExpression(row.getString("pattern"));
                     eCondition.setContext(row.getMap("context", String.class, String.class));
                     condition = eCondition;

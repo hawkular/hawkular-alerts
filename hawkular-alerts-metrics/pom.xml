@@ -118,7 +118,7 @@
   <profiles>
     <!-- This profile requires a running server with metrics, alerts and the external alerter running -->
     <profile>
-      <id>itest-tests</id>
+      <id>itest-external</id>
       <properties>
         <!-- IMPORTANT: The port must be the port offset + 8080. -->
         <hawkular.host>127.0.0.1</hawkular.host>
@@ -128,7 +128,7 @@
         <hawkular.base-uri-alerts>${hawkular.base-uri}/alerts/</hawkular.base-uri-alerts>
         <hawkular.base-uri-metrics>${hawkular.base-uri}/metrics/</hawkular.base-uri-metrics>
         <!-- IMPORTANT: The management port must be the port offset + 9990. -->
-        <wildfly.management.port>11887</wildfly.management.port>
+        <wildfly.management.port>9990</wildfly.management.port>
       </properties>
       <build>
         <plugins>

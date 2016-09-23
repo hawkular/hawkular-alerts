@@ -21,7 +21,6 @@ import com.icegreen.greenmail.util.ServerSetup
 
 import org.hawkular.alerts.rest.ActionsITest
 import org.hawkular.alerts.rest.AlertsITest
-import org.hawkular.alerts.rest.BusITest
 import org.hawkular.alerts.rest.ConditionsITest
 import org.hawkular.alerts.rest.DampeningITest
 import org.hawkular.alerts.rest.EventsITest
@@ -46,7 +45,6 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses([
         ActionsITest.class,
         AlertsITest.class,
-        BusITest.class,
         ConditionsITest.class,
         DampeningITest.class,
         EventsITest.class,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,8 +37,8 @@ public class ExpressionTest {
         assertTrue(x.getThreshold() == 100.5);
         assertEquals(x.getMetric(), "foo");
 
-        x = new Expression("TAG:5m:avgd(bar <= 100),10");
-        assertEquals(x.getTarget(), Target.Tag);
+        x = new Expression("metric:5m:avgd(bar <= 100),10");
+        assertEquals(x.getTarget(), Target.Metric);
         assertEquals(x.getFunc(), Func.avgd);
         assertEquals(x.getInterval().intValue(), 5);
         assertEquals(x.getPeriod().intValue(), 10);
@@ -64,8 +64,8 @@ public class ExpressionTest {
         assertTrue(x.getThreshold() == 2.0);
         assertEquals(x.getMetric(), "foo-bar");
 
-        x = new Expression("TAG:5m:rangep(bar <= 1.5),10");
-        assertEquals(x.getTarget(), Target.Tag);
+        x = new Expression("metric:5m:rangep(bar <= 1.5),10");
+        assertEquals(x.getTarget(), Target.Metric);
         assertEquals(x.getFunc(), Func.rangep);
         assertEquals(x.getInterval().intValue(), 5);
         assertEquals(x.getPeriod().intValue(), 10);
@@ -91,32 +91,14 @@ public class ExpressionTest {
         assertTrue(x.getThreshold() == 50.0);
         assertEquals(x.getMetric(), "bar");
 
-        x = new Expression("tag:5m:up(ignored > 50)");
-        assertEquals(x.getTarget(), Target.Tag);
-        assertEquals(x.getFunc(), Func.up);
-        assertEquals(x.getInterval().intValue(), 5);
-        assertEquals(x.getPeriod(), null);
-        assertEquals(x.getOp(), Op.GT);
-        assertTrue(x.getThreshold() == 50.0);
-        assertEquals(x.getMetric(), "ignored");
-
-        x = new Expression("tag:5m:down(ignored > 50)");
-        assertEquals(x.getTarget(), Target.Tag);
-        assertEquals(x.getFunc(), Func.down);
-        assertEquals(x.getInterval().intValue(), 5);
-        assertEquals(x.getPeriod(), null);
-        assertEquals(x.getOp(), Op.GT);
-        assertTrue(x.getThreshold() == 50.0);
-        assertEquals(x.getMetric(), "ignored");
-
-        x = new Expression("tag:5m:card(ignored > 50)");
-        assertEquals(x.getTarget(), Target.Tag);
-        assertEquals(x.getFunc(), Func.card);
-        assertEquals(x.getInterval().intValue(), 5);
-        assertEquals(x.getPeriod(), null);
-        assertEquals(x.getOp(), Op.GT);
-        assertTrue(x.getThreshold() == 50.0);
-        assertEquals(x.getMetric(), "ignored");
+        x = new Expression("metric:1m:heartbeat(bar <= 0),1");
+        assertEquals(x.getTarget(), Target.Metric);
+        assertEquals(x.getFunc(), Func.heartbeat);
+        assertEquals(x.getInterval().intValue(), 1);
+        assertEquals(x.getPeriod().intValue(), 1);
+        assertEquals(x.getOp(), Op.LTE);
+        assertTrue(x.getThreshold() == 0.0);
+        assertEquals(x.getMetric(), "bar");
 
         try {
             new Expression("metric:30:avg(foo > 40)");

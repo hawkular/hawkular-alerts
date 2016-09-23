@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
@@ -45,6 +44,8 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.external.metrics.Expression.Func;
 import org.hawkular.metrics.core.service.Aggregate;
 import org.hawkular.metrics.core.service.MetricsService;
+import org.hawkular.metrics.model.AvailabilityType;
+import org.hawkular.metrics.model.DataPoint;
 import org.hawkular.metrics.model.MetricId;
 import org.hawkular.metrics.model.MetricType;
 import org.jboss.logging.Logger;
@@ -74,10 +75,10 @@ public class Manager {
     @Inject
     private MetricsService metrics;
 
-    @EJB(mappedName = "java:global/hawkular-alerts-rest/CassDefinitionsServiceImpl")
+    @Inject
     private DefinitionsService definitions;
 
-    @EJB(mappedName = "java:global/hawkular-alerts-rest/CassAlertsServiceImpl")
+    @Inject
     private AlertsService alerts;
 
     @PostConstruct
@@ -136,7 +137,7 @@ public class Manager {
                 for (Condition condition : conditions) {
                     if (condition instanceof ExternalCondition) {
                         ExternalCondition externalCondition = (ExternalCondition) condition;
-                        if (TAG_NAME.equals(externalCondition.getSystemId())) {
+                        if (TAG_NAME.equals(externalCondition.getAlerterId())) {
                             if (log.isDebugEnabled()) {
                                 log.debug("Found Metrics ExternalCondition! " + externalCondition);
                             }
@@ -209,12 +210,12 @@ public class Manager {
             this.expression = expression;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             try {
                 Func func = expression.getFunc();
                 String tenantId = trigger.getTenantId();
-                MetricId metricId = new MetricId(tenantId, MetricType.GAUGE, expression.getMetric());
                 long end = System.currentTimeMillis();
                 long start = end - (expression.getPeriod() * 60000);
 
@@ -223,35 +224,37 @@ public class Manager {
                 Double value = Double.NaN;
                 switch (func) {
                     case avg: {
-                        value = (Double) metrics.findGaugeData(metricId, start, end, Aggregate.Average)
+                        MetricId<Double> metricId = new MetricId<>(tenantId, MetricType.GAUGE, expression.getMetric());
+                        value = metrics.findGaugeData(metricId, start, end, Aggregate.Average)
                                 .toBlocking().last();
                         break;
                     }
                     case avgd: {
-                        Double avgToday = (Double) metrics
+                        MetricId<Double> metricId = new MetricId<>(tenantId, MetricType.GAUGE, expression.getMetric());
+                        Double avgToday = metrics
                                 .findGaugeData(metricId, start, end, Aggregate.Average)
                                 .toBlocking().last();
-                        Double avgYesterday = (Double) metrics
+                        Double avgYesterday = metrics
                                 .findGaugeData(metricId, (start - DAY), (end - DAY),
-                                        Aggregate.Average).toBlocking().last();
+                                        Aggregate.Average)
+                                .toBlocking().last();
                         value = ((avgToday - avgYesterday) / avgYesterday) * 100;
                         break;
                     }
                     case avgw: {
-                        Double avgToday = (Double) metrics
+                        MetricId<Double> metricId = new MetricId<>(tenantId, MetricType.GAUGE, expression.getMetric());
+                        Double avgToday = metrics
                                 .findGaugeData(metricId, start, end, Aggregate.Average)
                                 .toBlocking().last();
-                        Double avgLastWeek = (Double) metrics
+                        Double avgLastWeek = metrics
                                 .findGaugeData(metricId, (start - WEEK), (end - WEEK),
-                                        Aggregate.Average).toBlocking().last();
+                                        Aggregate.Average)
+                                .toBlocking().last();
                         value = ((avgToday - avgLastWeek) / avgLastWeek) * 100;
                         break;
                     }
-                    case card: {
-                        log.errorf("Not Yet Supported Function: %s", func);
-                        break;
-                    }
                     case range: {
+                        MetricId<Double> metricId = new MetricId<>(tenantId, MetricType.GAUGE, expression.getMetric());
                         Iterator<Double> iterator = metrics.findGaugeData(metricId, start, end,
                                 Aggregate.Min, Aggregate.Max)
                                 .toBlocking().toIterable().iterator();
@@ -261,6 +264,7 @@ public class Manager {
                         break;
                     }
                     case rangep: {
+                        MetricId<Double> metricId = new MetricId<>(tenantId, MetricType.GAUGE, expression.getMetric());
                         Iterator<Double> iterator = metrics.findGaugeData(metricId, start, end,
                                 Aggregate.Min, Aggregate.Max, Aggregate.Average)
                                 .toBlocking().toIterable().iterator();
@@ -270,22 +274,31 @@ public class Manager {
                         value = (max - min) / avg;
                         break;
                     }
-                    case down: {
-                        log.errorf("Not Yet Supported Function: %s", func);
-                        break;
-                    }
                     case max: {
-                        value = (Double) metrics.findGaugeData(metricId, start, end, Aggregate.Max)
+                        MetricId<Double> metricId = new MetricId<>(tenantId, MetricType.GAUGE, expression.getMetric());
+                        value = metrics.findGaugeData(metricId, start, end, Aggregate.Max)
                                 .toBlocking().last();
                         break;
                     }
                     case min: {
-                        value = (Double) metrics.findGaugeData(metricId, start, end, Aggregate.Min)
+                        MetricId<Double> metricId = new MetricId<>(tenantId, MetricType.GAUGE, expression.getMetric());
+                        value = metrics.findGaugeData(metricId, start, end, Aggregate.Min)
                                 .toBlocking().last();
                         break;
                     }
-                    case up: {
-                        log.errorf("Not Yet Supported Function: %s", func);
+                    case heartbeat: {
+                        MetricId<AvailabilityType> availId = new MetricId<>(tenantId, MetricType.AVAILABILITY,
+                                expression.getMetric());
+                        Iterator<DataPoint<AvailabilityType>> iterator = metrics
+                                .findAvailabilityData(availId, start, end, false, -1, null)
+                                .toBlocking().toIterable().iterator();
+                        int upCount = 0;
+                        while (iterator.hasNext()) {
+                            if (AvailabilityType.UP == iterator.next().getValue()) {
+                                ++upCount;
+                            }
+                        }
+                        value = Double.valueOf(upCount);
                         break;
                     }
                     default: {

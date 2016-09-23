@@ -725,7 +725,7 @@ public class JsonTest {
     public void jsonExternalConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\","
                 + "\"type\":\"EXTERNAL\", \"conditionId\":\"test-test-FIRING-1-1\",\"conditionSetSize\":1,"
-                + "\"conditionSetIndex\":1,\"dataId\":\"Default\",\"systemId\":\"HawkularMetrics\","
+                + "\"conditionSetIndex\":1,\"dataId\":\"Default\",\"alerterId\":\"HawkularMetrics\","
                 + "\"expression\":\"metric:5:avg(foo > 100.5)\"}";
         ExternalCondition condition = objectMapper.readValue(str, ExternalCondition.class);
 
@@ -734,7 +734,7 @@ public class JsonTest {
         assertTrue(condition.getTriggerId().equals("test"));
         assertTrue(condition.getTriggerMode().equals(Mode.FIRING));
         assertTrue(condition.getDataId().equals("Default"));
-        assertTrue(condition.getSystemId().equals("HawkularMetrics"));
+        assertTrue(condition.getAlerterId().equals("HawkularMetrics"));
         assertTrue(condition.getExpression().equals("metric:5:avg(foo > 100.5)"));
 
         String output = objectMapper.writeValueAsString(condition);
@@ -745,7 +745,7 @@ public class JsonTest {
         String str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"EXTERNAL\"," +
                 "\"condition\":" +
                 "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"EXTERNAL\"," +
-                "\"dataId\":\"Default\",\"systemId\":\"HawkularMetrics\"," +
+                "\"dataId\":\"Default\",\"alerterId\":\"HawkularMetrics\"," +
                 "\"expression\":\"metric:5:avg(foo > 100.5)\"}," +
                 "\"value\":\"foo\",\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
         ExternalConditionEval eval = objectMapper.readValue(str, ExternalConditionEval.class);
@@ -756,7 +756,7 @@ public class JsonTest {
         assertTrue(eval.getCondition().getTriggerId().equals("test"));
         assertTrue(eval.getCondition().getTriggerMode().equals(Mode.FIRING));
         assertTrue(eval.getCondition().getDataId().equals("Default"));
-        assertTrue(eval.getCondition().getSystemId().equals("HawkularMetrics"));
+        assertTrue(eval.getCondition().getAlerterId().equals("HawkularMetrics"));
         assertTrue(eval.getCondition().getExpression().equals("metric:5:avg(foo > 100.5)"));
         assertTrue(eval.getValue().equals("foo"));
         assertTrue(eval.getContext().size() == 2);

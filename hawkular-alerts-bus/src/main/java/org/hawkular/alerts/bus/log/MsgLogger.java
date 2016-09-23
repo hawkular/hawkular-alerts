@@ -64,20 +64,4 @@ public interface MsgLogger extends BasicLogger {
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 210010, value = "Cannot connect to the broker. Attempt [%s]. Trying in [%s] ms. Error: [%s]")
     void warnCannotConnectBroker(int attempt, int next, String msg);
-
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 210011, value = "Error sending publish message to the bus. Error: [%s]")
-    void errorCannotSendPublishMessage(String msg);
-
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 210012, value = "Init Publish Cache")
-    void infoInitPublishCache();
-
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 210013, value = "Clear Publish Cache")
-    void warnClearPublishCache();
-
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 210014, value = "Publish Cache is disabled")
-    void warnDisabledPublishCache();
 }

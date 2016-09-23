@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,7 +46,8 @@ import org.jboss.vfs.VirtualFile;
  * @author Lucas Ponce
  */
 public class ActionPlugins {
-    public static final String ACTIONS_SERVICE = "java:global/hawkular-alerts-rest/CassActionsServiceImpl";
+    public static final String ACTIONS_SERVICE =
+            "java:global/hawkular-metrics/hawkular-alerts/CassActionsServiceImpl";
 
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private ActionsService actions;

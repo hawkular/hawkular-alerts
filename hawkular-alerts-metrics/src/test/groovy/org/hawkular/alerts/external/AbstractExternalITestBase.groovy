@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,6 +51,8 @@ class AbstractExternalITestBase {
             .encodeToString("$testUser:$testPasword".getBytes("utf-8"))
          */
         client.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
+        client.defaultRequestHeaders.'Hawkular-Tenant' = "hawkular"
         metricsClient.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
+        metricsClient.defaultRequestHeaders.'Hawkular-Tenant' = "hawkular"
     }
 }
