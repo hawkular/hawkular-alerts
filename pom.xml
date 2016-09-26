@@ -58,15 +58,12 @@
 
   <modules>
     <module>hawkular-alerts-api</module>
-    <module>hawkular-alerts-actions-api</module>
     <module>hawkular-alerts-bus-api</module>
     <module>hawkular-alerts-engine</module>
     <module>hawkular-alerts-bus</module>
-    <module>hawkular-alerts-actions-standalone</module>
     <module>hawkular-alerts-rest</module>
-    <module>hawkular-alerts-actions-plugins</module>
     <module>hawkular-alerts-rest-tests</module>
-    <module>hawkular-alerts-metrics</module>
+    <module>hawkular-alerter-metrics</module>
   </modules>
 
   <scm>
@@ -114,5 +111,31 @@
 
     </dependencies>
   </dependencyManagement>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <configuration>
+          <excludes combine.children="append">
+            <exclude>**/*.ftl</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>actions</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>hawkular-alerts-actions</module>
+      </modules>
+    </profile>
+  </profiles>
 
 </project>

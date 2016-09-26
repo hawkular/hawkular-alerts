@@ -18,269 +18,46 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts</artifactId>
+    <groupId>org.hawkular.alerts</groupId>
     <version>1.1.5.Final-SNAPSHOT</version>
   </parent>
 
   <artifactId>hawkular-alerts-rest</artifactId>
-  <packaging>war</packaging>
+  <packaging>pom</packaging>
 
-  <name>Hawkular Alerting: Rest</name>
+  <name>Hawkular Alerting: Rest parent</name>
+  <description>Parent module of all REST packaging distributions</description>
 
-  <dependencies>
-
-    <!-- Hawkular Alerting dependencies -->
-    <dependency>
-      <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-engine</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-actions-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.hawkular.commons</groupId>
-      <artifactId>hawkular-tenant-jaxrs-filter</artifactId>
-      <version>${version.org.hawkular.commons}</version>
-    </dependency>
-
-    <!-- Wildfly dependencies -->
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-annotations</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-processor</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>javax</groupId>
-      <artifactId>javaee-api</artifactId>
-      <version>${version.javaee.spec}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Documentation -->
-    <dependency>
-      <groupId>io.swagger</groupId>
-      <artifactId>swagger-annotations</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>io.swagger</groupId>
-      <artifactId>swagger-core</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Tests -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-  </dependencies>
+  <modules>
+    <module>hawkular-alerts-rest-api</module>
+  </modules>
 
   <profiles>
-
     <profile>
-      <id>bus</id>
-      <dependencies>
-
-        <dependency>
-          <groupId>org.hawkular.alerts</groupId>
-          <artifactId>hawkular-alerts-bus</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-
-      </dependencies>
+      <id>metrics</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
+      <modules>
+        <module>deployments/hawkular-alerts-rest-metrics</module>
+        <module>deployments/hawkular-alerts-rest-services</module>
+      </modules>
     </profile>
 
     <profile>
       <id>standalone</id>
-
-      <dependencies>
-        <dependency>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
-        </dependency>
-
-        <dependency>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </dependency>
-
-        <dependency>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
-        </dependency>
-
-        <dependency>
-          <groupId>com.datastax.cassandra</groupId>
-          <artifactId>cassandra-driver-core</artifactId>
-        </dependency>
-      </dependencies>
-
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>default-compile</id>
-                <phase>compile</phase>
-                <goals>
-                  <goal>compile</goal>
-                </goals>
-                <configuration>
-                  <excludes>
-                    <exclude>org/hawkular/alerts/rest/swagger/filter/*.java</exclude>
-                  </excludes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-war-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>bus-war-package</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>war</goal>
-                </goals>
-                <configuration>
-                  <warSourceDirectory>src/main/webapp-standalone</warSourceDirectory>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>deployments/hawkular-alerts-rest-standalone</module>
+      </modules>
     </profile>
-
-    <profile>
-      <id>docgen</id>
-      <properties>
-        <restDocDirectory>${project.basedir}/src/main/rest-doc</restDocDirectory>
-        <swaggerDirectory>${project.build.directory}/generated/swagger-ui</swaggerDirectory>
-      </properties>
-      <build>
-        <!-- Document generation from the Annotations on the REST-API. -->
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>unpack</id>
-                <phase>process-resources</phase>
-                <goals>
-                  <goal>unpack</goal>
-                </goals>
-                <configuration>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>org.hawkular</groupId>
-                      <artifactId>hawkular-build-tools</artifactId>
-                      <version>${version.org.hawkular.hawkular-build-tools}</version>
-                      <type>jar</type>
-                      <includes>**/*.mustache</includes>
-                    </artifactItem>
-                  </artifactItems>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>com.github.kongchen</groupId>
-            <artifactId>swagger-maven-plugin</artifactId>
-            <configuration>
-              <apiSources>
-                <apiSource>
-                  <springmvc>false</springmvc>
-                  <locations>org.hawkular.alerts.rest</locations>
-                  <basePath>/hawkular/alerts</basePath>
-                  <info>
-                    <title>Hawkular Alerting</title>
-                    <version>${project.version}</version>
-                  </info>
-                  <swaggerDirectory>${swaggerDirectory}</swaggerDirectory>
-                </apiSource>
-              </apiSources>
-            </configuration>
-            <executions>
-              <execution>
-                <phase>compile</phase>
-                <goals>
-                  <goal>generate</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.gmavenplus</groupId>
-            <artifactId>gmavenplus-plugin</artifactId>
-            <dependencies>
-              <dependency>
-                <groupId>org.codehaus.groovy</groupId>
-                <artifactId>groovy-all</artifactId>
-                <version>${version.org.codehaus.groovy}</version>
-              </dependency>
-            </dependencies>
-            <configuration>
-              <properties>
-                <baseFile>${restDocDirectory}/base.adoc</baseFile>
-                <swaggerFile>${swaggerDirectory}/swagger.json</swaggerFile>
-                <outputFile>${project.build.directory}/generated/rest-alerts.adoc</outputFile>
-              </properties>
-              <scripts>
-                <script>file:///${restDocDirectory}/apidoc.groovy</script>
-              </scripts>
-            </configuration>
-            <executions>
-              <execution>
-                <id>generate-api-doc</id>
-                <phase>compile</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
   </profiles>
+
 </project>

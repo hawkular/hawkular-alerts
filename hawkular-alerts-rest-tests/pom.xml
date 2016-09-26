@@ -82,7 +82,7 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>hawkular-alerts-actions-email</artifactId>
+      <artifactId>hawkular-alerts-actions-email-standalone</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <scope>test</scope>
@@ -90,7 +90,7 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>hawkular-alerts-actions-file</artifactId>
+      <artifactId>hawkular-alerts-actions-file-standalone</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <scope>test</scope>
@@ -98,7 +98,7 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>hawkular-alerts-actions-irc</artifactId>
+      <artifactId>hawkular-alerts-actions-irc-standalone</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <scope>test</scope>
@@ -106,7 +106,7 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>hawkular-alerts-actions-webhook</artifactId>
+      <artifactId>hawkular-alerts-actions-webhook-standalone</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <scope>test</scope>
@@ -318,16 +318,16 @@
                   <artifactItems>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-rest</artifactId>
+                      <artifactId>hawkular-alerts-rest-standalone</artifactId>
                       <version>${project.version}</version>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
-                      <destFileName>hawkular-alerts-rest.war</destFileName>
+                      <destFileName>hawkular-alerts.war</destFileName>
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-email</artifactId>
+                      <artifactId>hawkular-alerts-actions-email-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
@@ -335,7 +335,7 @@
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-file</artifactId>
+                      <artifactId>hawkular-alerts-actions-file-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
@@ -570,16 +570,16 @@
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-rest</artifactId>
+                      <artifactId>hawkular-alerts-rest-standalone</artifactId>
                       <version>${project.version}</version>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-alerts-rest.war</destFileName>
+                      <destFileName>hawkular-alerts.war</destFileName>
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-email</artifactId>
+                      <artifactId>hawkular-alerts-actions-email-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
@@ -587,7 +587,7 @@
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-file</artifactId>
+                      <artifactId>hawkular-alerts-actions-file-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
@@ -595,7 +595,7 @@
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-irc</artifactId>
+                      <artifactId>hawkular-alerts-actions-irc-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
@@ -603,7 +603,7 @@
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-webhook</artifactId>
+                      <artifactId>hawkular-alerts-actions-webhook-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
@@ -683,7 +683,7 @@
 
         <dependency>
           <groupId>org.hawkular.alerts</groupId>
-          <artifactId>hawkular-alerts-rest</artifactId>
+          <artifactId>hawkular-alerts-rest-standalone</artifactId>
           <version>${project.version}</version>
           <type>war</type>
         </dependency>
@@ -735,16 +735,16 @@
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-rest</artifactId>
+                      <artifactId>hawkular-alerts-rest-standalone</artifactId>
                       <version>${project.version}</version>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${project.build.directory}</outputDirectory>
-                      <destFileName>hawkular-alerts-rest.war</destFileName>
+                      <destFileName>hawkular-alerts.war</destFileName>
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-email</artifactId>
+                      <artifactId>hawkular-alerts-actions-email-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
                       <outputDirectory>${project.build.directory}</outputDirectory>
@@ -838,7 +838,7 @@
                       <server-group>hawkular-alerts-group</server-group>
                     </server-groups>
                   </domain>
-                  <filename>hawkular-alerts-rest.war</filename>
+                  <filename>hawkular-alerts.war</filename>
                 </configuration>
               </execution>
               <execution>

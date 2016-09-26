@@ -46,6 +46,9 @@
       <replicated-cache name="data" mode="ASYNC">
         <transaction mode="BATCH"/>
       </replicated-cache>
+      <replicated-cache name="publish" mode="ASYNC">
+        <transaction mode="BATCH"/>
+      </replicated-cache>
     </cache-container>
   </xsl:template>
 

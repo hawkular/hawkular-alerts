@@ -39,10 +39,7 @@ This is the public API for message objects used in *hawkular-alerts-bus*. +
 | hawkular-alerts-actions-api |
 Common API for action plugins. +
 An action plugin will be deployed as a .war artifact.
-| hawkular-alerts-actions-bus |
-Component responsible of the communication of the plugins with the engine via bus. +
-It is used on bus deployments.
-| hawkular-alerts-actions-standalone |
+| hawkular-alerts-actions-impl |
 Component responsible of the communication of the plugins with the engine directly using Java API +
 It is used on standalone deployments.
 | hawkular-alerts-actions-plugins |
@@ -50,7 +47,7 @@ Alert actions plugins. +
 Main responsabilities are: +
 - Publish supported properties. +
 - Process actions messages.
-| hawkular-alerts-metrics |
+| hawkular-alerter-metrics |
 Optional component used to offer advance evaluation of complex Metrics expressions that interact with the Alerts system.
 |=======================
 
@@ -81,6 +78,16 @@ These tests are not active by default, they can be run using *-Dtest-env=perf* v
 
 ```shell
 mvn clean install -Dtest-env=perf
+```
+
+== Clustering tests
+
+There is a clustering test suite focus on partition and distribution of the triggers and data across
+a topology of nodes.
+These test are not active by default, they can be run using *-Denv=cluster* variable:
+
+```shell
+mvn clean install -Denv=cluster
 ```
 
 == Building REST API documentation
