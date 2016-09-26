@@ -43,8 +43,9 @@
     <role-name>read-only</role-name>
   </security-role>
 
-  <context-param>
-    <param-name>hawkular-alerts.plugins-deployment</param-name>
-    <param-value>standalone</param-value>
-  </context-param>
+  <env-entry>
+    <env-entry-name>hawkular-alerts.plugins-deployment</env-entry-name>
+    <env-entry-type>java.lang.String</env-entry-type>
+    <env-entry-value>standalone</env-entry-value>
+  </env-entry>
 </web-app>
