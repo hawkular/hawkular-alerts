@@ -19,6 +19,8 @@ package org.hawkular.alerts.actions.standalone;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.naming.InitialContext;
+
 /**
  * Helper class to determine the JNDI name of a specific service
  *
@@ -33,20 +35,24 @@ public class ServiceNames {
 
     private static String JNDI_ACTIONS_METRICS = "java:global/hawkular-metrics/hawkular-alerts/CassActionsServiceImpl";
     private static String JNDI_ACTIONS_STANDALONE = "java:global/hawkular-alerts/CassActionsServiceImpl";
-    private static String JNDI_DEFINITIONS_METRICS =
-            "java:global/hawkular-metrics/hawkular-alerts/CassDefinitionsServiceImpl";
+    private static String JNDI_DEFINITIONS_METRICS = "java:global/hawkular-metrics/hawkular-alerts/CassDefinitionsServiceImpl";
     private static String JNDI_DEFINITIONS_STANDALONE = "java:global/hawkular-alerts/CassDefinitionsServiceImpl";
 
     public enum Service {
-        ACTIONS_SERVICE,
-        DEFINITIONS_SERVICE
+        ACTIONS_SERVICE, DEFINITIONS_SERVICE
     }
 
     private static Map<Service, String> services;
 
     static {
         services = new HashMap<>();
-        if (System.getProperty(HAWKULAR_ALERTS_ACTIONS_ENV, STANDALONE).equals(STANDALONE)) {
+        String env = null;
+        try {
+            env = (String) new InitialContext().lookup("java:comp/env/" + HAWKULAR_ALERTS_ACTIONS_ENV);
+        } catch (Exception e) {
+            // env does not need to be set, we'll default to METRICS
+        }
+        if (STANDALONE.equals(env)) {
             services.put(Service.ACTIONS_SERVICE, JNDI_ACTIONS_STANDALONE);
             services.put(Service.DEFINITIONS_SERVICE, JNDI_DEFINITIONS_STANDALONE);
         } else {
