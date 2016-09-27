@@ -35,6 +35,7 @@ import javax.ejb.Local;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.inject.Inject;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
@@ -99,6 +100,10 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     @EJB
     AlertsContext alertsContext;
 
+    @Inject
+    @CassClusterSession
+    Session session;
+
     public CassDefinitionsServiceImpl() {
     }
 
@@ -108,6 +113,10 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     public void setAlertsContext(AlertsContext alertsContext) {
         this.alertsContext = alertsContext;
+    }
+
+    public void setSession(Session session) {
+        this.session = session;
     }
 
     @Override
@@ -139,7 +148,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 throw new IllegalArgumentException("Property: " + property + " is not valid on plugin: " + plugin);
             }
         });
-        Session session = CassCluster.getSession();
         PreparedStatement insertAction = CassStatement.get(session, CassStatement.INSERT_ACTION_DEFINITION);
         if (insertAction == null) {
             throw new RuntimeException("insertAction PreparedStatement is null");
@@ -200,7 +208,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 }
             });
         }
-        Session session = CassCluster.getSession();
         PreparedStatement insertTrigger = CassStatement.get(session, CassStatement.INSERT_TRIGGER);
         if (insertTrigger == null) {
             throw new RuntimeException("insertTrigger PreparedStatement is null");
@@ -230,7 +237,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void insertTriggerActions(Trigger trigger) throws Exception {
-        Session session = CassCluster.getSession();
         PreparedStatement insertTriggerActions = CassStatement.get(session, CassStatement.INSERT_TRIGGER_ACTIONS);
         if (insertTriggerActions == null) {
             throw new RuntimeException("insertTriggerActions PreparedStatement is null");
@@ -303,8 +309,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void removeTrigger(Trigger trigger) throws Exception {
-        Session session = CassCluster.getSession();
-
         String tenantId = trigger.getTenantId();
         String triggerId = trigger.getId();
 
@@ -433,7 +437,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             return;
         }
 
-        Session session = CassCluster.getSession();
         PreparedStatement updateTriggerEnabled = CassStatement.get(session, CassStatement.UPDATE_TRIGGER_ENABLED);
         if (updateTriggerEnabled == null) {
             throw new RuntimeException("updateTriggerEnabled PreparedStatement is null");
@@ -499,7 +502,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     private Trigger updateTrigger(Trigger trigger, Set<TriggerAction> existingActions,
             Map<String, String> existingTags) throws Exception {
-        Session session = CassCluster.getSession();
         PreparedStatement updateTrigger = CassStatement.get(session, CassStatement.UPDATE_TRIGGER);
         if (updateTrigger == null) {
             throw new RuntimeException("updateTrigger PreparedStatement is null");
@@ -590,7 +592,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void deleteTriggerActions(String tenantId, String triggerId) throws Exception {
-        Session session = CassCluster.getSession();
         PreparedStatement deleteTriggerActions = CassStatement.get(session, CassStatement.DELETE_TRIGGER_ACTIONS);
         if (deleteTriggerActions == null) {
             throw new RuntimeException("updateTrigger PreparedStatement is null");
@@ -606,7 +607,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectTrigger = CassStatement.get(session, CassStatement.SELECT_TRIGGER);
         if (selectTrigger == null) {
             throw new RuntimeException("selectTrigger PreparedStatement is null");
@@ -643,7 +643,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        Session session = CassCluster.getSession();
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin()); // currently ignored, triggers have no thinned data
 
@@ -736,7 +735,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throws Exception {
         Set<String> ids = new HashSet<>();
         List<ResultSetFuture> futures = new ArrayList<>();
-        Session session = CassCluster.getSession();
         PreparedStatement selectTagsByName = CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME);
         PreparedStatement selectTagsByNameAndValue = CassStatement.get(session,
                 CassStatement.SELECT_TAGS_BY_NAME_AND_VALUE);
@@ -757,7 +755,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private Collection<Trigger> selectTriggers(String tenantId) throws Exception {
-        Session session = CassCluster.getSession();
         PreparedStatement selectTriggers = isEmpty(tenantId)
                 ? CassStatement.get(session, CassStatement.SELECT_TRIGGERS_ALL)
                 : CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
@@ -826,8 +823,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(value)) {
             throw new IllegalArgumentException("value must be not null (use '*' for all");
         }
-
-        Session session = CassCluster.getSession();
 
         try {
             // first, get all the partitions (i.e. tenants) for triggers
@@ -907,7 +902,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     public Collection<Trigger> getMemberTriggers(String tenantId, String groupId, boolean includeOrphans)
             throws Exception {
 
-        Session session = CassCluster.getSession();
         PreparedStatement selectTriggersTenant = CassStatement.get(session, CassStatement.SELECT_TRIGGERS_TENANT);
         if (null == selectTriggersTenant) {
             throw new RuntimeException("selectTriggersMemberOf PreparedStatement is null");
@@ -935,7 +929,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (trigger == null) {
             throw new IllegalArgumentException("Trigger must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectTriggerActions = CassStatement.get(session, CassStatement.SELECT_TRIGGER_ACTIONS);
         if (selectTriggerActions == null) {
             throw new RuntimeException("selectTriggerActions PreparedStatement is null");
@@ -1281,7 +1274,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private Dampening addDampening(Dampening dampening) throws Exception {
-        Session session = CassCluster.getSession();
         PreparedStatement insertDampening = CassStatement.get(session, CassStatement.INSERT_DAMPENING);
         if (insertDampening == null) {
             throw new RuntimeException("insertDampening PreparedStatement is null");
@@ -1379,7 +1371,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void removeDampening(Dampening dampening) throws Exception {
-        Session session = CassCluster.getSession();
         PreparedStatement deleteDampeningId = CassStatement.get(session, CassStatement.DELETE_DAMPENING_ID);
         if (deleteDampeningId == null) {
             throw new RuntimeException("deleteDampeningId PreparedStatement is null");
@@ -1459,7 +1450,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private Dampening updateDampening(Dampening dampening) throws Exception {
-        Session session = CassCluster.getSession();
         PreparedStatement updateDampeningId = CassStatement.get(session, CassStatement.UPDATE_DAMPENING_ID);
         if (updateDampeningId == null) {
             throw new RuntimeException("updateDampeningId PreparedStatement is null");
@@ -1491,7 +1481,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(dampeningId)) {
             throw new IllegalArgumentException("DampeningId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectDampeningId = CassStatement.get(session, CassStatement.SELECT_DAMPENING_ID);
         if (selectDampeningId == null) {
             throw new RuntimeException("selectDampeningId PreparedStatement is null");
@@ -1521,7 +1510,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectTriggerDampenings = CassStatement
                 .get(session, CassStatement.SELECT_TRIGGER_DAMPENINGS);
         PreparedStatement selectTriggerDampeningsMode = CassStatement.get(session,
@@ -1549,7 +1537,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Dampening> getAllDampenings() throws Exception {
-        Session session = CassCluster.getSession();
         PreparedStatement selectDampeningsAll = CassStatement.get(session, CassStatement.SELECT_DAMPENINGS_ALL);
         if (selectDampeningsAll == null) {
             throw new RuntimeException("selectDampeningsAll PreparedStatement is null");
@@ -1570,7 +1557,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectDampeningsByTenant = CassStatement.get(session,
                 CassStatement.SELECT_DAMPENINGS_BY_TENANT);
         if (selectDampeningsByTenant == null) {
@@ -1787,7 +1773,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("DatIdMap must be not null");
         }
 
-        Session session = CassCluster.getSession();
         PreparedStatement updateTriggerDataIdMap = CassStatement
                 .get(session, CassStatement.UPDATE_TRIGGER_DATA_ID_MAP);
         if (updateTriggerDataIdMap == null) {
@@ -1948,7 +1933,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (conditions == null) {
             throw new IllegalArgumentException("Conditions must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement insertConditionAvailability = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_AVAILABILITY);
         PreparedStatement insertConditionCompare = CassStatement.get(session, CassStatement.INSERT_CONDITION_COMPARE);
@@ -2076,7 +2060,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(tags)) {
             return;
         }
-        Session session = CassCluster.getSession();
         PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
         if (insertTag == null) {
             throw new RuntimeException("insertTag PreparedStatement is null");
@@ -2099,7 +2082,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (triggerMode == null) {
             throw new IllegalArgumentException("TriggerMode must not be null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement deleteConditionsMode = CassStatement.get(session, CassStatement.DELETE_CONDITIONS_MODE);
         if (deleteConditionsMode == null) {
             throw new RuntimeException("deleteConditionsMode PreparedStatement is null");
@@ -2118,7 +2100,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             return;
         }
 
-        Session session = CassCluster.getSession();
         PreparedStatement deleteTag = CassStatement.get(session, CassStatement.DELETE_TAG);
 
         List<ResultSetFuture> futures = new ArrayList<>(tags.size());
@@ -2137,7 +2118,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(conditionId)) {
             throw new IllegalArgumentException("conditionId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectConditionId = CassStatement.get(session, CassStatement.SELECT_CONDITION_ID);
         if (selectConditionId == null) {
             throw new RuntimeException("selectConditionId PreparedStatement is null");
@@ -2167,7 +2147,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("triggerId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectTriggerConditions = CassStatement
                 .get(session, CassStatement.SELECT_TRIGGER_CONDITIONS);
         PreparedStatement selectTriggerConditionsTriggerMode = CassStatement.get(session,
@@ -2196,7 +2175,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Condition> getAllConditions() throws Exception {
-        Session session = CassCluster.getSession();
         PreparedStatement selectConditionsAll = CassStatement.get(session, CassStatement.SELECT_CONDITIONS_ALL);
         if (selectConditionsAll == null) {
             throw new RuntimeException("selectConditionsAll PreparedStatement is null");
@@ -2217,7 +2195,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectConditionsByTenant = CassStatement.get(session,
                 CassStatement.SELECT_CONDITIONS_BY_TENANT);
         if (selectConditionsByTenant == null) {
@@ -2378,7 +2355,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (properties == null || properties.isEmpty()) {
             throw new IllegalArgumentException("properties must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement insertActionPlugin = CassStatement.get(session, CassStatement.INSERT_ACTION_PLUGIN);
         if (insertActionPlugin == null) {
             throw new RuntimeException("insertActionPlugin PreparedStatement is null");
@@ -2399,7 +2375,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (defaultProperties == null || defaultProperties.isEmpty()) {
             throw new IllegalArgumentException("defaultProperties must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement insertActionPluginDefaulProperties = CassStatement.get(session,
                 CassStatement.INSERT_ACTION_PLUGIN_DEFAULT_PROPERTIES);
         if (insertActionPluginDefaulProperties == null) {
@@ -2419,7 +2394,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement deleteActionPlugin = CassStatement.get(session, CassStatement.DELETE_ACTION_PLUGIN);
         if (deleteActionPlugin == null) {
             throw new RuntimeException("deleteActionPlugin PreparedStatement is null");
@@ -2440,7 +2414,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (properties == null || properties.isEmpty()) {
             throw new IllegalArgumentException("properties must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement updateActionPlugin = CassStatement.get(session, CassStatement.UPDATE_ACTION_PLUGIN);
         if (updateActionPlugin == null) {
             throw new RuntimeException("updateActionPlugin PreparedStatement is null");
@@ -2461,7 +2434,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (defaultProperties == null || defaultProperties.isEmpty()) {
             throw new IllegalArgumentException("defaultProperties must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement updateDefaultPropertiesActionPlugin = CassStatement.get(session,
                 CassStatement.UPDATE_ACTION_PLUGIN_DEFAULT_PROPERTIES);
         if (updateDefaultPropertiesActionPlugin == null) {
@@ -2478,7 +2450,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Collection<String> getActionPlugins() throws Exception {
-        Session session = CassCluster.getSession();
         PreparedStatement selectActionPlugins = CassStatement.get(session, CassStatement.SELECT_ACTION_PLUGINS);
         if (selectActionPlugins == null) {
             throw new RuntimeException("selectActionPlugins PreparedStatement is null");
@@ -2502,7 +2473,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectActionPlugin = CassStatement.get(session, CassStatement.SELECT_ACTION_PLUGIN);
         if (selectActionPlugin == null) {
             throw new RuntimeException("selectActionPlugin PreparedStatement is null");
@@ -2527,7 +2497,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectActionPluginDefaultProperties = CassStatement.get(session,
                 CassStatement.SELECT_ACTION_PLUGIN_DEFAULT_PROPERTIES);
         if (selectActionPluginDefaultProperties == null) {
@@ -2559,7 +2528,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionId)) {
             throw new IllegalArgumentException("ActionId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement deleteAction = CassStatement.get(session, CassStatement.DELETE_ACTION_DEFINITION);
         if (deleteAction == null) {
             throw new RuntimeException("deleteAction PreparedStatement is null");
@@ -2590,7 +2558,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Properties must be not null");
         }
 
-        Session session = CassCluster.getSession();
         PreparedStatement updateAction = CassStatement.get(session, CassStatement.UPDATE_ACTION_DEFINITION);
         if (updateAction == null) {
             throw new RuntimeException("updateAction PreparedStatement is null");
@@ -2607,7 +2574,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Map<String, Map<String, Set<String>>> getAllActionDefinitionIds() throws Exception {
-        Session session = CassCluster.getSession();
         PreparedStatement selectActionsAll = CassStatement.get(session, CassStatement.SELECT_ACTION_ID_ALL);
         if (selectActionsAll == null) {
             throw new RuntimeException("selectActionsAll PreparedStatement is null");
@@ -2639,7 +2605,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectActionsByTenant = CassStatement.get(session,
                 CassStatement.SELECT_ACTION_ID_BY_TENANT);
         if (selectActionsByTenant == null) {
@@ -2702,7 +2667,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectActionsByTenant = CassStatement.get(session,
                 CassStatement.SELECT_ACTION_DEFINITIONS_BY_TENANT);
         if (selectActionsByTenant == null) {
@@ -2729,7 +2693,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectActionsPlugin = CassStatement.get(session, CassStatement.SELECT_ACTION_ID_BY_PLUGIN);
         if (selectActionsPlugin == null) {
             throw new RuntimeException("selectActionsPlugin PreparedStatement is null");
@@ -2759,7 +2722,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionId)) {
             throw new IllegalArgumentException("actionId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectAction = CassStatement.get(session, CassStatement.SELECT_ACTION_DEFINITION);
         if (selectAction == null) {
             throw new RuntimeException("selectAction PreparedStatement is null");

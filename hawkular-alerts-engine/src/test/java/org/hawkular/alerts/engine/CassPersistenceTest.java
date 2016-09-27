@@ -57,6 +57,7 @@ public class CassPersistenceTest extends PersistenceTest {
 
     static EmbeddedCassandraService embeddedCassandra;
     public static final String keyspace = "hawkular_alerts_test";
+    static CassCluster cluster;
 
     @BeforeClass
     public static void initSessionAndResetTestSchema() throws Exception {
@@ -78,11 +79,13 @@ public class CassPersistenceTest extends PersistenceTest {
 
         System.setProperty("hawkular-alerts.cassandra-keyspace", keyspace);
 
-        CassCluster.getSession(true);
+        cluster = new CassCluster();
+        System.setProperty("hawkular-alerts.cassandra-overwrite", "true");
+        cluster.initCassCluster();
 
-        definitionsService = StandaloneAlerts.getDefinitionsService();
-        alertsService = StandaloneAlerts.getAlertsService();
-        actionsService = StandaloneAlerts.getActionsService();
+        definitionsService = StandaloneAlerts.getDefinitionsService(cluster.getSession());
+        alertsService = StandaloneAlerts.getAlertsService(cluster.getSession());
+        actionsService = StandaloneAlerts.getActionsService(cluster.getSession());
 
         mockPluginsDeployments();
 
@@ -114,7 +117,7 @@ public class CassPersistenceTest extends PersistenceTest {
 
         // try an clean up
         try {
-            Session session = CassCluster.getSession();
+            Session session = cluster.getSession();
             session.execute("DROP KEYSPACE " + keyspace);
         } catch (Throwable t) {
             // never mind, don't prevent further cleanup

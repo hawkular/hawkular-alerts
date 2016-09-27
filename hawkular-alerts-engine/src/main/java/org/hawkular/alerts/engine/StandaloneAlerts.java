@@ -39,6 +39,8 @@ import org.hawkular.alerts.engine.impl.CassDefinitionsServiceImpl;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.jboss.logging.Logger;
 
+import com.datastax.driver.core.Session;
+
 /**
  * Factory helper for standalone use cases.
  *
@@ -59,17 +61,20 @@ public class StandaloneAlerts {
     private AlertsEngineImpl engine = null;
     private DroolsRulesEngineImpl rules = null;
 
-    private StandaloneAlerts() {
+    private StandaloneAlerts(Session session) {
         actions = new CassActionsServiceImpl();
         rules = new DroolsRulesEngineImpl();
         engine = new AlertsEngineImpl();
         definitions = new CassDefinitionsServiceImpl();
         alerts = new CassAlertsServiceImpl();
+        alerts.setSession(session);
         alertsContext = new AlertsContext();
 
+        definitions.setSession(session);
         definitions.setAlertsEngine(engine);
         definitions.setAlertsContext(alertsContext);
 
+        actions.setSession(session);
         actions.setAlertsContext(alertsContext);
         actions.setDefinitions(definitions);
         actions.setExecutor(new StandaloneExecutorService());
@@ -89,23 +94,23 @@ public class StandaloneAlerts {
         }
     }
 
-    public static synchronized DefinitionsService getDefinitionsService() {
+    public static synchronized DefinitionsService getDefinitionsService(Session session) {
         if (instance == null) {
-            instance = new StandaloneAlerts();
+            instance = new StandaloneAlerts(session);
         }
         return instance.definitions;
     }
 
-    public static synchronized AlertsService getAlertsService() {
+    public static synchronized AlertsService getAlertsService(Session session) {
         if (instance == null) {
-            instance = new StandaloneAlerts();
+            instance = new StandaloneAlerts(session);
         }
         return instance.alerts;
     }
 
-    public static synchronized ActionsService getActionsService() {
+    public static synchronized ActionsService getActionsService(Session session) {
         if (instance == null) {
-            instance = new StandaloneAlerts();
+            instance = new StandaloneAlerts(session);
         }
         return instance.actions;
     }

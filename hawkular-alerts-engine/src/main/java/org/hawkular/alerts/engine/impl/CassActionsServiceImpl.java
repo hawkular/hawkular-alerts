@@ -34,6 +34,7 @@ import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.enterprise.concurrent.ManagedExecutorService;
+import javax.inject.Inject;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
@@ -86,6 +87,10 @@ public class CassActionsServiceImpl implements ActionsService {
     @Resource
     private ManagedExecutorService executor;
 
+    @Inject
+    @CassClusterSession
+    Session session;
+
     public CassActionsServiceImpl() {
         log.debug("Creating instance.");
     }
@@ -100,6 +105,10 @@ public class CassActionsServiceImpl implements ActionsService {
 
     public void setExecutor(ManagedExecutorService executor) {
         this.executor = executor;
+    }
+
+    public void setSession(Session session) {
+        this.session = session;
     }
 
     @Override
@@ -171,7 +180,6 @@ public class CassActionsServiceImpl implements ActionsService {
             action.setResult(WAITING_RESULT);
         }
         try {
-            Session session = CassCluster.getSession();
             PreparedStatement insertActionHistory = CassStatement.get(session,
                     CassStatement.INSERT_ACTION_HISTORY);
             PreparedStatement insertActionHistoryAction = CassStatement.get(session,
@@ -210,7 +218,6 @@ public class CassActionsServiceImpl implements ActionsService {
             long ctime) {
         Action actionHistory = null;
         try {
-            Session session = CassCluster.getSession();
             PreparedStatement selectActionHistory = CassStatement.get(session, CassStatement.SELECT_ACTION_HISTORY);
             ResultSet rsActionHistory = session.execute(selectActionHistory.bind(tenantId, actionPlugin, actionId,
                     alertId, ctime));
@@ -237,7 +244,6 @@ public class CassActionsServiceImpl implements ActionsService {
                 return;
             }
             String oldResult = oldActionHistory.getResult();
-            Session session = CassCluster.getSession();
             PreparedStatement deleteActionHistoryResult = CassStatement.get(session,
                     CassStatement.DELETE_ACTION_HISTORY_RESULT);
             PreparedStatement insertActionHistoryResult = CassStatement.get(session,
@@ -274,7 +280,6 @@ public class CassActionsServiceImpl implements ActionsService {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        Session session = CassCluster.getSession();
         boolean thin = (null != criteria && criteria.isThin());
         boolean filter = (null != criteria && criteria.hasCriteria());
 
@@ -396,7 +401,6 @@ public class CassActionsServiceImpl implements ActionsService {
         if (criteria.getStartTime() != null || criteria.getEndTime() != null) {
             filterByCtime = true;
 
-            Session session = CassCluster.getSession();
             BoundStatement boundCtime;
             if (criteria.getStartTime() != null && criteria.getEndTime() != null) {
                 PreparedStatement selectActionHistoryCTimeStartEnd = CassStatement.get(session,
@@ -436,7 +440,6 @@ public class CassActionsServiceImpl implements ActionsService {
                 || (criteria.getActionPlugins() != null && !criteria.getActionPlugins().isEmpty())) {
             filterByActionPlugin = true;
 
-            Session session = CassCluster.getSession();
             PreparedStatement selectActionHistoryActionPlugin = CassStatement.get(session,
                     CassStatement.SELECT_ACTION_HISTORY_ACTION_PLUGIN);
 
@@ -474,7 +477,6 @@ public class CassActionsServiceImpl implements ActionsService {
                 || (criteria.getActionIds() != null && !criteria.getActionIds().isEmpty())) {
             filterByActionId = true;
 
-            Session session = CassCluster.getSession();
             PreparedStatement selectActionHistoryActionId = CassStatement.get(session,
                     CassStatement.SELECT_ACTION_HISTORY_ACTION_ID);
 
@@ -511,7 +513,6 @@ public class CassActionsServiceImpl implements ActionsService {
                 || (criteria.getAlertIds() != null && !criteria.getAlertIds().isEmpty())) {
             filterByAlertId = true;
 
-            Session session = CassCluster.getSession();
             PreparedStatement selectActionHistoryAlertId = CassStatement.get(session,
                     CassStatement.SELECT_ACTION_HISTORY_ALERT_ID);
 
@@ -548,7 +549,6 @@ public class CassActionsServiceImpl implements ActionsService {
                 || (criteria.getResults() != null && !criteria.getResults().isEmpty())) {
             filterByResult = true;
 
-            Session session = CassCluster.getSession();
             PreparedStatement selectActionHistoryResult = CassStatement.get(session,
                     CassStatement.SELECT_ACTION_HISTORY_RESULT);
 
@@ -627,7 +627,6 @@ public class CassActionsServiceImpl implements ActionsService {
             return 0;
         }
 
-        Session session = CassCluster.getSession();
         PreparedStatement deleteActionHistory = CassStatement.get(session,
                 CassStatement.DELETE_ACTION_HISTORY);
         PreparedStatement deleteActionHistoryAction = CassStatement.get(session,

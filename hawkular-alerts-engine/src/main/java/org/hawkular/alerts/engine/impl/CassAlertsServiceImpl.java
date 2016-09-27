@@ -33,6 +33,7 @@ import javax.ejb.Local;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.inject.Inject;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
@@ -92,7 +93,15 @@ public class CassAlertsServiceImpl implements AlertsService {
     @EJB
     DataDrivenGroupCacheManager dataDrivenGroupCacheManager;
 
+    @Inject
+    @CassClusterSession
+    Session session;
+
     public CassAlertsServiceImpl() {
+    }
+
+    public void setSession(Session session) {
+        this.session = session;
     }
 
     @Override
@@ -106,7 +115,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (log.isDebugEnabled()) {
             log.debug("Adding " + alerts.size() + " alerts");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement insertAlert = CassStatement.get(session, CassStatement.INSERT_ALERT);
         PreparedStatement insertAlertTrigger = CassStatement.get(session, CassStatement.INSERT_ALERT_TRIGGER);
         PreparedStatement insertAlertCtime = CassStatement.get(session, CassStatement.INSERT_ALERT_CTIME);
@@ -164,7 +172,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (log.isDebugEnabled()) {
             log.debug("Adding " + events.size() + " events");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement insertEvent = CassStatement.get(session, CassStatement.INSERT_EVENT);
         PreparedStatement insertEventCategory = CassStatement.get(session, CassStatement.INSERT_EVENT_CATEGORY);
         PreparedStatement insertEventCtime = CassStatement.get(session, CassStatement.INSERT_EVENT_CTIME);
@@ -219,7 +226,6 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         alert.addNote(user, text);
 
-        Session session = CassCluster.getSession();
         PreparedStatement updateAlert = CassStatement.get(session, CassStatement.UPDATE_ALERT);
         if (updateAlert == null) {
             throw new RuntimeException("updateAlert PreparedStatement is null");
@@ -249,7 +255,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         criteria.setAlertIds(alertIds);
         Page<Alert> existingAlerts = getAlerts(tenantId, criteria, null);
 
-        Session session = CassCluster.getSession();
         PreparedStatement updateAlert = CassStatement.get(session, CassStatement.UPDATE_ALERT);
         PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
 
@@ -291,7 +296,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         criteria.setEventIds(eventIds);
         Page<Event> existingEvents = getEvents(tenantId, criteria, null);
 
-        Session session = CassCluster.getSession();
         PreparedStatement updateEvent = CassStatement.get(session, CassStatement.UPDATE_EVENT);
         PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
 
@@ -334,7 +338,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         criteria.setAlertIds(alertIds);
         Page<Alert> existingAlerts = getAlerts(tenantId, criteria, null);
 
-        Session session = CassCluster.getSession();
         PreparedStatement updateAlert = CassStatement.get(session, CassStatement.UPDATE_ALERT);
         PreparedStatement deleteTag = CassStatement.get(session, CassStatement.DELETE_TAG);
 
@@ -379,7 +382,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         criteria.setEventIds(eventIds);
         Page<Event> existingEvents = getEvents(tenantId, criteria, null);
 
-        Session session = CassCluster.getSession();
         PreparedStatement updateEvent = CassStatement.get(session, CassStatement.UPDATE_EVENT);
         PreparedStatement deleteTag = CassStatement.get(session, CassStatement.DELETE_TAG);
 
@@ -414,7 +416,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (isEmpty(alertId)) {
             throw new IllegalArgumentException("AlertId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectAlert = CassStatement.get(session, CassStatement.SELECT_ALERT);
         if (selectAlert == null) {
             throw new RuntimeException("selectAlert PreparedStatement is null");
@@ -442,7 +443,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (isEmpty(eventId)) {
             throw new IllegalArgumentException("EventId must be not null");
         }
-        Session session = CassCluster.getSession();
         PreparedStatement selectEvent = CassStatement.get(session, CassStatement.SELECT_EVENT);
         if (selectEvent == null) {
             throw new RuntimeException("selectEvent PreparedStatement is null");
@@ -477,7 +477,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        Session session = CassCluster.getSession();
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
 
@@ -711,7 +710,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         Set<String> triggerIds = extractTriggerIds(tenantId, criteria);
 
         if (triggerIds.size() > 0) {
-            Session session = CassCluster.getSession();
             PreparedStatement selectAlertsTriggers = CassStatement.get(session, CassStatement.SELECT_ALERT_TRIGGER);
 
             List<ResultSetFuture> futures = triggerIds.stream().map(triggerId ->
@@ -760,7 +758,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (criteria.getStartTime() != null || criteria.getEndTime() != null) {
             result = new HashSet<>();
 
-            Session session = CassCluster.getSession();
             BoundStatement boundCtime;
             if (criteria.getStartTime() != null && criteria.getEndTime() != null) {
                 PreparedStatement selectAlertCTimeStartEnd = CassStatement.get(session,
@@ -799,7 +796,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
 
         if (statuses.size() > 0) {
-            Session session = CassCluster.getSession();
             PreparedStatement selectAlertStatusByTenantAndStatus = CassStatement.get(session,
                     CassStatement.SELECT_ALERT_STATUS);
             List<ResultSetFuture> futures = statuses.stream().map(status ->
@@ -834,7 +830,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
 
         if (severities.size() > 0) {
-            Session session = CassCluster.getSession();
             PreparedStatement selectAlertSeverityByTenantAndSeverity = CassStatement.get(session,
                     CassStatement.SELECT_ALERT_SEVERITY);
             List<ResultSetFuture> futures = severities.stream().map(severity ->
@@ -875,7 +870,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (criteria.getStartResolvedTime() != null || criteria.getEndResolvedTime() != null) {
             result = new HashSet<>();
 
-            Session session = CassCluster.getSession();
             BoundStatement boundLifecycleTime;
             if (criteria.getStartResolvedTime() != null && criteria.getEndResolvedTime() != null) {
                 PreparedStatement selectAlertLifecycleStartEnd = CassStatement.get(session,
@@ -908,7 +902,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (criteria.getStartAckTime() != null || criteria.getEndAckTime() != null) {
             result = new HashSet<>();
 
-            Session session = CassCluster.getSession();
             BoundStatement boundLifecycleTime;
             if (criteria.getStartAckTime() != null && criteria.getEndAckTime() != null) {
                 PreparedStatement selectAlertLifecycleStartEnd = CassStatement.get(session,
@@ -939,7 +932,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             throws Exception {
         Set<String> ids = new HashSet<>();
         List<ResultSetFuture> futures = new ArrayList<>();
-        Session session = CassCluster.getSession();
         PreparedStatement selectTagsByName = CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME);
         PreparedStatement selectTagsByNameAndValue = CassStatement.get(session,
                 CassStatement.SELECT_TAGS_BY_NAME_AND_VALUE);
@@ -975,7 +967,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        Session session = CassCluster.getSession();
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
 
@@ -1180,7 +1171,6 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         if (triggerIds.size() > 0) {
             List<ResultSetFuture> futures = new ArrayList<>();
-            Session session = CassCluster.getSession();
             PreparedStatement selectEventsTriggers = CassStatement.get(session, CassStatement.SELECT_EVENT_TRIGGER);
 
             for (String triggerId : triggerIds) {
@@ -1233,7 +1223,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (criteria.getStartTime() != null || criteria.getEndTime() != null) {
             result = new HashSet<>();
 
-            Session session = CassCluster.getSession();
             BoundStatement boundCtime;
             if (criteria.getStartTime() != null && criteria.getEndTime() != null) {
                 PreparedStatement selectEventCTimeStartEnd = CassStatement.get(session,
@@ -1272,7 +1261,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
 
         if (categories.size() > 0) {
-            Session session = CassCluster.getSession();
             PreparedStatement selectEventCategory = CassStatement.get(session,
                     CassStatement.SELECT_EVENT_CATEGORY);
             List<ResultSetFuture> futures = categories.stream().map(category ->
@@ -1337,7 +1325,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (alertsToDelete.isEmpty()) {
             return 0;
         }
-        Session session = CassCluster.getSession();
         PreparedStatement deleteAlert = CassStatement.get(session, CassStatement.DELETE_ALERT);
         PreparedStatement deleteAlertCtime = CassStatement.get(session, CassStatement.DELETE_ALERT_CTIME);
         PreparedStatement deleteAlertSeverity = CassStatement.get(session, CassStatement.DELETE_ALERT_SEVERITY);
@@ -1384,7 +1371,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             return 0;
         }
 
-        Session session = CassCluster.getSession();
         PreparedStatement deleteEvent = CassStatement.get(session, CassStatement.DELETE_EVENT);
         PreparedStatement deleteEventCategory = CassStatement.get(session, CassStatement.DELETE_EVENT_CATEGORY);
         PreparedStatement deleteEventCTime = CassStatement.get(session, CassStatement.DELETE_EVENT_CTIME);
@@ -1485,7 +1471,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (alert == null || alert.getAlertId() == null || alert.getAlertId().isEmpty()) {
             throw new IllegalArgumentException("AlertId must be not null");
         }
-        Session session = CassCluster.getSession();
         try {
             // we need to delete the current status index entry, and enter the new one. And update the
             // alert.  We can do all of this concurrently/async because each call operates on a different key;

@@ -249,6 +249,7 @@
         <hawkular.path>/hawkular/alerts/</hawkular.path>
         <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
         <hawkular.management.port>9990</hawkular.management.port>
+        <hawkular.log.alerts>INFO</hawkular.log.alerts>
       </properties>
       <dependencies>
         <dependency>

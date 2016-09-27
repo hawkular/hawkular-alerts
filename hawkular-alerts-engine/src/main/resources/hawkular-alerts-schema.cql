@@ -18,7 +18,7 @@
 -- This CQL file is used to create the schema temporarily until we get a better schema
 -- change management tool in place. The file is parsed and executed by SchemaManger.
 --
--- NOTE: Statements must must be preceded by -- #
+-- NOTE: Statements must be preceded by -- #
 --
 -- Comments that start with a double dash like this are suppressed.
 

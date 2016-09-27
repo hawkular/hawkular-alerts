@@ -21,6 +21,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.ejb.AccessTimeout;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+import javax.enterprise.inject.Produces;
 
 import org.hawkular.alerts.engine.util.TokenReplacingReader;
 import org.jboss.logging.Logger;
@@ -28,6 +36,8 @@ import org.jboss.logging.Logger;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.ProtocolVersion;
+import com.datastax.driver.core.QueryOptions;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SocketOptions;
 import com.google.common.collect.ImmutableMap;
@@ -38,6 +48,8 @@ import com.google.common.io.CharStreams;
  *
  * @author Lucas Ponce
  */
+@Startup
+@Singleton
 public class CassCluster {
     private static final Logger log = Logger.getLogger(CassDefinitionsServiceImpl.class);
     private static final String ALERTS_CASSANDRA_PORT = "hawkular-alerts.cassandra-cql-port";
@@ -64,21 +76,111 @@ public class CassCluster {
     private static final String ALERTS_CASSANDRA_READ_TIMEOUT = "hawkular-alerts.cassandra-read-timeout";
     private static final String ALERTS_CASSANDRA_READ_TIMEOUT_ENV = "CASSANDRA_READ_TIMEOUT";
 
+    /*
+        GLOBAL OVERWRITE true/false flag to recreate an existing schema
+     */
+    private static final String ALERTS_CASSANDRA_OVERWRITE = "hawkular-alerts.cassandra-overwrite";
+    private static final String ALERTS_CASSANDRA_OVERWRITE_ENV = "CASSANDRA_OVERWRITE";
+
+    private int attempts;
+    private int timeout;
+    private String cqlPort;
+    private String nodes;
+    private int connTimeout;
+    private int readTimeout;
+    private boolean overwrite = false;
+
     private Cluster cluster = null;
 
     private Session session = null;
 
     private boolean initialized = false;
 
-    private static CassCluster instance = new CassCluster();
+    private void readProperties() {
+        attempts = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_ATTEMPTS, "5"));
+        timeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_TIMEOUT, "2000"));
+        cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, ALERTS_CASSANDRA_PORT_ENV, "9042");
+        nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, ALERTS_CASSANDRA_NODES_ENV, "127.0.0.1");
+        connTimeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_CONNECT_TIMEOUT,
+                ALERTS_CASSANDRA_CONNECT_TIMEOUT_ENV, String.valueOf(SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS)));
+        readTimeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_READ_TIMEOUT,
+                ALERTS_CASSANDRA_READ_TIMEOUT_ENV, String.valueOf(SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS)));
+        overwrite = Boolean.parseBoolean(AlertProperties.getProperty(ALERTS_CASSANDRA_OVERWRITE,
+                ALERTS_CASSANDRA_OVERWRITE_ENV, "false"));
+    }
 
-    private CassCluster() { }
+    @PostConstruct
+    public void initCassCluster() {
+        readProperties();
+        if (cluster == null && session == null) {
+
+            int currentAttempts = attempts;
+            /*
+                It might happen that alerts component is faster than embedded cassandra deployed in hawkular.
+                We will provide a simple attempt/retry loop to avoid issues at initialization.
+             */
+            while(session == null && !Thread.currentThread().isInterrupted() && currentAttempts >= 0) {
+                try {
+                    SocketOptions socketOptions = null;
+                    if (connTimeout != SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS ||
+                            readTimeout != SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS) {
+                        socketOptions = new SocketOptions();
+                        if (connTimeout != SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS) {
+                            socketOptions.setConnectTimeoutMillis(connTimeout);
+                        }
+                        if (readTimeout != SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS) {
+                            socketOptions.setReadTimeoutMillis(readTimeout);
+                        }
+                    }
+
+                    Cluster.Builder clusterBuilder = new Cluster.Builder()
+                            .addContactPoints(nodes.split(","))
+                            .withPort(new Integer(cqlPort))
+                            .withProtocolVersion(ProtocolVersion.V3)
+                            .withQueryOptions(new QueryOptions().setRefreshSchemaIntervalMillis(0));
+
+                    if (socketOptions != null) {
+                        clusterBuilder.withSocketOptions(socketOptions);
+                    }
+
+                    cluster = clusterBuilder.build();
+                    session = cluster.connect();
+                } catch (Exception e) {
+                    log.warn("Could not connect to Cassandra cluster - assuming is not up yet. Cause: " +
+                            ((e.getCause() == null) ? e : e.getCause()));
+                    if (attempts == 0) {
+                        throw e;
+                    }
+                }
+                if (session == null) {
+                    log.warn("[" + currentAttempts + "] Retrying connecting to Cassandra cluster " +
+                            "in [" + timeout + "]ms...");
+                    currentAttempts--;
+                    try {
+                        Thread.sleep(timeout);
+                    } catch(InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+            if (session != null && !initialized) {
+                String keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
+                try {
+                    initScheme(session, keyspace, overwrite);
+                } catch (IOException e) {
+                    log.error("Error on initialization of Alerts scheme", e);
+                }
+            }
+        }
+        if (session == null) {
+            throw new RuntimeException("Cassandra session is null");
+        }
+        if (session != null && !initialized) {
+            throw new RuntimeException("Cassandra alerts keyspace is not initialized");
+        }
+    }
 
     private void initScheme(Session session, String keyspace, boolean overwrite) throws IOException {
-
-        if (keyspace == null) {
-            keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
-        }
 
         if (log.isDebugEnabled()) {
             log.debug("Checking Schema existence for keyspace: " + keyspace);
@@ -89,6 +191,21 @@ public class CassCluster {
             if (overwrite) {
                 session.execute("DROP KEYSPACE " + keyspace);
             } else {
+                int currentAttempts = attempts;
+                while(!checkSchema(keyspace) && !Thread.currentThread().isInterrupted() && currentAttempts >= 0) {
+                    log.warn("[" + currentAttempts + "] Keyspace detected but schema not fully created. " +
+                            "Retrying in [" + timeout + "]ms...");
+                    currentAttempts--;
+                    try {
+                        Thread.sleep(timeout);
+                    } catch(InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                if (!checkSchema(keyspace)) {
+                    log.errorf("Keyspace detected, but failed on check phase.", keyspace);
+                    return;
+                }
                 log.debug("Schema already exist. Skipping schema creation.");
                 initialized = true;
                 return;
@@ -100,10 +217,9 @@ public class CassCluster {
         ImmutableMap<String, String> schemaVars = ImmutableMap.of("keyspace", keyspace);
 
         String updatedCQL = null;
-        try (InputStream inputStream = CassCluster.class.getResourceAsStream("/hawkular-alerts-schema.cql");
-             InputStreamReader reader = new InputStreamReader(inputStream)) {
-            String content = CharStreams.toString(reader);
-
+        try (InputStream isSchema = CassCluster.class.getResourceAsStream("/hawkular-alerts-schema.cql");
+             InputStreamReader readerSchema = new InputStreamReader(isSchema);) {
+            String content = CharStreams.toString(readerSchema);
             for (String cql : content.split("(?m)^-- #.*$")) {
                 if (!cql.startsWith("--")) {
                     updatedCQL = substituteVars(cql.trim(), schemaVars);
@@ -121,6 +237,33 @@ public class CassCluster {
         log.infof("Done creating Schema for keyspace: " + keyspace);
     }
 
+    private boolean checkSchema(String keyspace) {
+        ImmutableMap<String, String> schemaVars = ImmutableMap.of("keyspace", keyspace);
+
+        String updatedCQL = null;
+        try (InputStream isChecker = CassCluster.class.getResourceAsStream("/hawkular-alerts-checker.cql");
+             InputStreamReader readerChecker = new InputStreamReader(isChecker);) {
+            String content = CharStreams.toString(readerChecker);
+            for (String cql : content.split("(?m)^-- #.*$")) {
+                if (!cql.startsWith("--")) {
+                    updatedCQL = substituteVars(cql.trim(), schemaVars);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Checking CQL:\n" + updatedCQL + "\n");
+                    }
+                    ResultSet rs = session.execute(updatedCQL);
+                    if (rs.isExhausted()) {
+                        log.warnf("Table not created.\nEXECUTING CQL: \n%s", updatedCQL);
+                        return false;
+                    }
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            log.errorf("Failed schema check: %s\nEXECUTING CQL:\n%s", e, updatedCQL);
+            return false;
+        }
+    }
+
     private String substituteVars(String cql, Map<String, String> vars) {
         try (TokenReplacingReader reader = new TokenReplacingReader(cql, vars);
              StringWriter writer = new StringWriter()) {
@@ -135,102 +278,24 @@ public class CassCluster {
         }
     }
 
-    /**
-     * Return a cached cassandra Session.
-     * It generates the scheme keyspace on the first access.
-
-     * @return A cached Session
-     * @throws Exception on any issue
+    @Produces
+    @CassClusterSession
+    /*
+        This timeout value should be adjusted to the worst case on a Cassandra scheme initialization.
+        Normally it takes an order of < 1 minute a full schema generation.
+        Taking into consideration that there are CI systems very slow we will increase this threshold before to throw
+        an exception.
      */
-    public static synchronized Session getSession() throws Exception {
-        return getSession(false);
+    @AccessTimeout(value = 300, unit = TimeUnit.SECONDS)
+    public Session getSession() {
+        return session;
     }
 
-    /**
-     * Return a cached cassandra Session.
-     * It generates the scheme keyspace on the first access.
-     *
-     * @param overwrite true will overwrite an existing keyspace at initialization
-     *                  false will maintain an existing keyspace
-     * @return A cached Session
-     * @throws Exception on any issue
-     */
-    public static synchronized Session getSession(boolean overwrite) throws Exception {
-        if (instance.cluster == null && instance.session == null) {
-            String cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, ALERTS_CASSANDRA_PORT_ENV, "9042");
-            String nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, ALERTS_CASSANDRA_NODES_ENV, "127.0.0.1");
-            int attempts = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_ATTEMPTS, "5"));
-            int timeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_TIMEOUT, "2000"));
-            int connTimeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_CONNECT_TIMEOUT,
-                    ALERTS_CASSANDRA_CONNECT_TIMEOUT_ENV,
-                    String.valueOf(SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS)));
-            int readTimeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_READ_TIMEOUT,
-                    ALERTS_CASSANDRA_READ_TIMEOUT_ENV,
-                    String.valueOf(SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS)));
-
-            /*
-                It might happen that alerts component is faster than embedded cassandra deployed in hawkular.
-                We will provide a simple attempt/retry loop to avoid issues at initialization.
-             */
-            while(instance.session == null && !Thread.currentThread().isInterrupted() && attempts >= 0) {
-                try {
-                    SocketOptions socketOptions = null;
-                    if (connTimeout != SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS ||
-                            readTimeout != SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS) {
-                        socketOptions = new SocketOptions();
-                        if (connTimeout != SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS) {
-                            socketOptions.setConnectTimeoutMillis(connTimeout);
-                        }
-                        if (readTimeout != SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS) {
-                            socketOptions.setReadTimeoutMillis(readTimeout);
-                        }
-                    }
-
-                    Cluster.Builder clusterBuilder = new Cluster.Builder()
-                            .addContactPoints(nodes.split(","))
-                            .withPort(new Integer(cqlPort))
-                            .withProtocolVersion(ProtocolVersion.V3);
-
-                    if (socketOptions != null) {
-                        clusterBuilder.withSocketOptions(socketOptions);
-                    }
-
-                    instance.cluster = clusterBuilder.build();
-                    instance.session = instance.cluster.connect();
-                } catch (Exception e) {
-                    log.warn("Could not connect to Cassandra cluster - assuming is not up yet. Cause: " +
-                            ((e.getCause() == null) ? e : e.getCause()));
-                    if (attempts == 0) {
-                        throw e;
-                    }
-                }
-                if (instance.session == null) {
-                    log.warn("[" + attempts + "] Retrying connecting to Cassandra cluster in [" + timeout + "]ms...");
-                    attempts--;
-                    try {
-                        Thread.sleep(timeout);
-                    } catch(InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            }
-            if (instance.session != null && !instance.initialized) {
-                String keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
-                instance.initScheme(instance.session, keyspace, overwrite);
-            }
-        }
-        if (instance.session == null) {
-            throw new RuntimeException("Cassandra session is null");
-        }
-        if (instance.session != null && !instance.initialized) {
-            throw new RuntimeException("Cassandra alerts keyspace is not initialized");
-        }
-        return instance.session;
-    }
-
-    public static void shutdown() {
-        if (instance != null && instance.session != null && !instance.session.isClosed()) {
-            instance.session.close();
+    @PreDestroy
+    public void shutdown() {
+        log.info("Closing Cassandra cluster session");
+        if (session != null && !session.isClosed()) {
+            session.close();
         }
     }
 }
