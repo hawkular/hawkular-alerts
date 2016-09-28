@@ -20,7 +20,6 @@ import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.CONDITION_C
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_REMOVE;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,7 +43,8 @@ import org.infinispan.CacheSet;
 import org.jboss.logging.Logger;
 
 /**
- * A helper class to initialize bus callbacks into the alerts engine.
+ * Manages the cache of globally active dataIds. Incoming Data and Events with Ids not in the cache will be filtered
+ * away.  Only Data and Events with active Ids will be forwarded (published) to the engine for evaluation.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -56,29 +56,10 @@ public class CacheManager {
     private final Logger log = Logger.getLogger(CacheManager.class);
     private final MsgLogger msgLog = MsgLogger.LOGGER;
 
-    private static final String PUBLISH_REQUIRE_PREFIX_PROP = "hawkular-alerts.publish-require-prefix";
-    private static final String PUBLISH_REQUIRE_PREFIX_ENV = "PUBLISH_REQUIRE_PREFIX";
     private static final String DISABLE_PUBLISH_FILTERING_PROP = "hawkular-alerts.disable-publish-filtering";
     private static final String DISABLE_PUBLISH_FILTERING_ENV = "DISABLE_PUBLISH_FILTERING";
     private static final String RESET_PUBLISH_CACHE_PROP = "hawkular-alerts.reset-publish-cache";
     private static final String RESET_PUBLISH_CACHE_ENV = "RESET_PUBLISH_CACHE";
-
-    private static final Set<String> DATA_ID_PREFIXES = new HashSet<>();
-
-    static {
-        // TODO: For now just use the built-in H Metrics prefixes as a OOB convenience, but in the
-        //       future this should maybe be configurable where a list of prefixes could be supplied
-        //       via system prop.
-        DATA_ID_PREFIXES.add("hm_a_");  // Metrics AVAILABILITY
-        DATA_ID_PREFIXES.add("hm_c_");  // Metrics COUNTER
-        DATA_ID_PREFIXES.add("hm_cr_"); // Metrics COUNTER_RATE
-        DATA_ID_PREFIXES.add("hm_g_");  // Metrics GAUGE
-        DATA_ID_PREFIXES.add("hm_gr_"); // Metrics GAUGE_RATE
-        DATA_ID_PREFIXES.add("hm_s_");  // Metrics STRING
-        DATA_ID_PREFIXES.add("hm_u_");  // Metrics UNDEFINED
-    }
-
-    private static boolean PUBLISH_REQUIRE_PREFIX;
 
     @EJB
     PropertiesService properties;
@@ -86,13 +67,12 @@ public class CacheManager {
     @EJB
     DefinitionsService definitions;
 
+    // Note, Only the cache key is being used to today. The values are currently set to "" and reserved for future use.
     @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/publish")
     private Cache<CacheKey, String> publishCache;
 
     @PostConstruct
     public void init() {
-        PUBLISH_REQUIRE_PREFIX = Boolean.parseBoolean(properties.getProperty(PUBLISH_REQUIRE_PREFIX_PROP,
-                PUBLISH_REQUIRE_PREFIX_ENV, "true"));
         boolean disablePublish = Boolean.parseBoolean(properties.getProperty(DISABLE_PUBLISH_FILTERING_PROP,
                 DISABLE_PUBLISH_FILTERING_ENV, "false"));
         boolean resetCache = Boolean.parseBoolean(properties.getProperty(RESET_PUBLISH_CACHE_PROP,
@@ -110,15 +90,6 @@ public class CacheManager {
         } else {
             msgLog.warnDisabledPublishCache();
         }
-    }
-
-    // TODO REMOVE THESE WHEN THE JMS LISTENERS GO AWAY !!!
-    public Set<DataIdKey> getActiveDataIds() {
-        return Collections.emptySet();
-    }
-
-    public Set<DataIdKey> getActiveAvailabilityIds() {
-        return Collections.emptySet();
     }
 
     private synchronized void updateActiveIds() {
@@ -141,25 +112,24 @@ public class CacheManager {
                     continue;
                 }
 
-                DataIdKey dataIdKey = new DataIdKey(c.getTenantId(), c.getDataId());
-                CacheKey cacheKey = dataIdKey.getCacheKey();
-                if (dataIdKey.isValid() && !activeKeys.contains(cacheKey)) {
+                CacheKey cacheKey = new CacheKey(c.getTenantId(), c.getDataId());
+                if (!activeKeys.contains(cacheKey)) {
                     activeKeys.add(cacheKey);
                     if (!currentlyPublished.contains(cacheKey)) {
-                        publish(dataIdKey);
+                        publish(cacheKey);
                     }
                 }
                 if (c instanceof CompareCondition) {
                     String data2Id = ((CompareCondition) c).getData2Id();
-                    DataIdKey dataIdKey2 = new DataIdKey(c.getTenantId(), data2Id);
-                    CacheKey cacheKey2 = dataIdKey2.getCacheKey();
-                    if (dataIdKey2.isValid() && !activeKeys.contains(cacheKey2)) {
+                    CacheKey cacheKey2 = new CacheKey(c.getTenantId(), data2Id);
+                    if (!activeKeys.contains(cacheKey2)) {
                         activeKeys.add(cacheKey2);
                         if (!currentlyPublished.contains(cacheKey2)) {
-                            publish(dataIdKey2);
+                            publish(cacheKey2);
                         }
                     }
                 }
+
             }
 
             final Set<CacheKey> doomedKeys = new HashSet<>();
@@ -180,30 +150,27 @@ public class CacheManager {
         }
     }
 
-    private void publish(DataIdKey dataIdKey) {
-        CacheKey cacheKey = dataIdKey.getCacheKey();
+    private void publish(CacheKey cacheKey) {
         if (cacheKey != null && publishCache != null) {
             // This logic assumes that alerting is the only writer for the shared publishCache
             log.debugf("Publishing:%s ", cacheKey);
-            publishCache.put(cacheKey, dataIdKey.getDataId());
+            publishCache.put(cacheKey, "");
 
-            /*
-                This alternative logic assumes that more writers can add/remove entries into the shared publishCache.
-
-                Set<String> updatedSubscribers;
-                if (publishCache.containsKey(metricId)) {
-                    Set<String> subscribers = (Set<String>) publishCache.get(metricId);
-                    if (!subscribers.contains(ALERTING)) {
-                        updatedSubscribers = new HashSet<>(subscribers);
-                        updatedSubscribers.add(ALERTING);
-                        publishCache.put(metricId, updatedSubscribers);
-                    }
-                } else {
-                    updatedSubscribers = new HashSet<>();
-                    updatedSubscribers.add(ALERTING);
-                    publishCache.put(metricId, updatedSubscribers);
-                }
-             */
+            //            This alternative logic assumes that more writers can add/remove entries into the shared publishCache.
+            //
+            //            Set<String> updatedSubscribers;
+            //            if (publishCache.containsKey(metricId)) {
+            //                Set<String> subscribers = (Set<String>) publishCache.get(metricId);
+            //                if (!subscribers.contains(ALERTING)) {
+            //                    updatedSubscribers = new HashSet<>(subscribers);
+            //                    updatedSubscribers.add(ALERTING);
+            //                    publishCache.put(metricId, updatedSubscribers);
+            //                }
+            //            } else {
+            //                updatedSubscribers = new HashSet<>();
+            //                updatedSubscribers.add(ALERTING);
+            //                publishCache.put(metricId, updatedSubscribers);
+            //            }
         }
     }
 
@@ -214,99 +181,22 @@ public class CacheManager {
                 log.debugf("UN-Publishing:%s ", cacheKey);
                 publishCache.remove(cacheKey);
 
-                /*
-                This alternative logic assumes that more writers can add/remove entries into the shared publishCache.
-
-                if (publishCache.containsKey(metricId)) {
-                    Set<String> updatedSubscribers;
-                    Set<String> subscribers = (Set<String>) publishCache.get(metricId);
-                    if (subscribers.contains(ALERTING)) {
-                        updatedSubscribers = new HashSet<>(subscribers);
-                        updatedSubscribers.remove(ALERTING);
-                        if (updatedSubscribers.isEmpty()) {
-                            publishCache.remove(metricId);
-                        } else {
-                            publishCache.put(metricId, updatedSubscribers);
-                        }
-                    }
-                }
-                 */
+                //                This alternative logic assumes that more writers can add/remove entries into the shared publishCache.
+                //
+                //                if (publishCache.containsKey(metricId)) {
+                //                    Set<String> updatedSubscribers;
+                //                    Set<String> subscribers = (Set<String>) publishCache.get(metricId);
+                //                    if (subscribers.contains(ALERTING)) {
+                //                        updatedSubscribers = new HashSet<>(subscribers);
+                //                        updatedSubscribers.remove(ALERTING);
+                //                        if (updatedSubscribers.isEmpty()) {
+                //                            publishCache.remove(metricId);
+                //                        } else {
+                //                            publishCache.put(metricId, updatedSubscribers);
+                //                        }
+                //                    }
+                //                }
             }
         }
     }
-
-    public static class DataIdKey {
-        private final Logger log = Logger.getLogger(DataIdKey.class);
-
-        private String tenantId;
-        private String dataId;
-        private CacheKey cacheKey;
-
-        public DataIdKey(String tenantId, String dataId) {
-            this.tenantId = tenantId;
-            this.dataId = dataId;
-
-            String prefix = null;
-            String suffix = null;
-            for (String p : DATA_ID_PREFIXES) {
-                if (dataId.startsWith(p)) {
-                    prefix = p;
-                    suffix = dataId.substring(p.length());
-                    break;
-                }
-            }
-            if (null != prefix) {
-                this.cacheKey = new CacheKey(tenantId, prefix, suffix);
-            } else if (!PUBLISH_REQUIRE_PREFIX) {
-                log.debugf("Allowing Non-Prefixed Metric DataId: [%s]", dataId);
-                this.cacheKey = new CacheKey(tenantId, "", dataId);
-            } else {
-                log.debugf("Ignoring Non-Prefixed Metric DataId: [%s]", dataId);
-            }
-        }
-
-        public String getTenantId() {
-            return tenantId;
-        }
-
-        public String getDataId() {
-            return dataId;
-        }
-
-        public CacheKey getCacheKey() {
-            return cacheKey;
-        }
-
-        public boolean isValid() {
-            return cacheKey != null;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (o == null || getClass() != o.getClass())
-                return false;
-
-            DataIdKey dataIdKey = (DataIdKey) o;
-
-            if (tenantId != null ? !tenantId.equals(dataIdKey.tenantId) : dataIdKey.tenantId != null)
-                return false;
-            return dataId != null ? dataId.equals(dataIdKey.dataId) : dataIdKey.dataId == null;
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = tenantId != null ? tenantId.hashCode() : 0;
-            result = 31 * result + (dataId != null ? dataId.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return "DataIdKey [tenantId=" + tenantId + ", dataId=" + dataId + "]";
-        }
-    }
-
 }

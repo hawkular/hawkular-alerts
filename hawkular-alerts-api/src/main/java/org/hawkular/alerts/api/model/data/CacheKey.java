@@ -22,13 +22,11 @@ public class CacheKey implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String tenantId;
-    private String dataIdPrefix;
-    private String dataIdSuffix;
+    private String dataId;
 
-    public CacheKey(String tenantId, String dataIdPrefix, String dataIdSuffix) {
+    public CacheKey(String tenantId, String dataId) {
         this.tenantId = tenantId;
-        this.dataIdPrefix = null != dataIdPrefix ? dataIdPrefix : "";
-        this.dataIdSuffix = dataIdSuffix;
+        this.dataId = dataId;
     }
 
     public String getTenantId() {
@@ -39,28 +37,19 @@ public class CacheKey implements Serializable {
         this.tenantId = tenantId;
     }
 
-    public String getDataIdPrefix() {
-        return dataIdPrefix;
+    public String getDataId() {
+        return dataId;
     }
 
-    public void setDataIdPrefix(String dataIdPrefix) {
-        this.dataIdPrefix = dataIdPrefix;
-    }
-
-    public String getDataIdSuffix() {
-        return dataIdSuffix;
-    }
-
-    public void setDataIdSuffix(String dataIdSuffix) {
-        this.dataIdSuffix = dataIdSuffix;
+    public void setDataId(String dataId) {
+        this.dataId = dataId;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((dataIdPrefix == null) ? 0 : dataIdPrefix.hashCode());
-        result = prime * result + ((dataIdSuffix == null) ? 0 : dataIdSuffix.hashCode());
+        result = prime * result + ((dataId == null) ? 0 : dataId.hashCode());
         result = prime * result + ((tenantId == null) ? 0 : tenantId.hashCode());
         return result;
     }
@@ -74,15 +63,10 @@ public class CacheKey implements Serializable {
         if (getClass() != obj.getClass())
             return false;
         CacheKey other = (CacheKey) obj;
-        if (dataIdPrefix == null) {
-            if (other.dataIdPrefix != null)
+        if (dataId == null) {
+            if (other.dataId != null)
                 return false;
-        } else if (!dataIdPrefix.equals(other.dataIdPrefix))
-            return false;
-        if (dataIdSuffix == null) {
-            if (other.dataIdSuffix != null)
-                return false;
-        } else if (!dataIdSuffix.equals(other.dataIdSuffix))
+        } else if (!dataId.equals(other.dataId))
             return false;
         if (tenantId == null) {
             if (other.tenantId != null)
@@ -94,8 +78,7 @@ public class CacheKey implements Serializable {
 
     @Override
     public String toString() {
-        return "CacheKey [tenantId=" + tenantId + ", dataIdPrefix=" + dataIdPrefix + ", dataIdSuffix=" + dataIdSuffix
-                + "]";
+        return "CacheKey [tenantId=" + tenantId + ", dataId=" + dataId + "]";
     }
 
 }
