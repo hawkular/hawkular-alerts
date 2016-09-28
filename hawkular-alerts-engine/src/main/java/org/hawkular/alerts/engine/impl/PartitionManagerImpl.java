@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Local;
@@ -172,6 +173,11 @@ public class PartitionManagerImpl implements PartitionManager {
      */
     private PartitionDataListener dataListener;
 
+    private TopologyChangeListener topologyChangeListener = new TopologyChangeListener();
+    private PartitionChangeListener partitionChangeListener = new PartitionChangeListener();
+    private NewTriggerListener newTriggerListener = new NewTriggerListener();
+    private NewDataListener newDataListener = new NewDataListener();
+
     @Override
     public boolean isDistributed() {
         return distributed;
@@ -187,10 +193,10 @@ public class PartitionManagerImpl implements PartitionManager {
             msgLog.infoPartitionManagerDisabled();
         } else {
             currentNode = cacheManager.getAddress().hashCode();
-            cacheManager.addListener(new TopologyChangeListener());
-            partitionCache.addListener(new PartitionChangeListener());
-            triggersCache.addListener(new NewTriggerListener());
-            dataCache.addListener(new NewDataListener());
+            cacheManager.addListener(topologyChangeListener);
+            partitionCache.addListener(partitionChangeListener);
+            triggersCache.addListener(newTriggerListener);
+            dataCache.addListener(newDataListener);
             /*
                 Initial partition
              */
@@ -199,6 +205,21 @@ public class PartitionManagerImpl implements PartitionManager {
             }
             processTopologyChange();
             msgLog.infoPartitionManagerEnabled();
+        }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        if (distributed) {
+            cacheManager.removeListener(topologyChangeListener);
+            partitionCache.removeListener(partitionChangeListener);
+            triggersCache.removeListener(newTriggerListener);
+            dataCache.removeListener(newDataListener);
+
+            dataCache.stop();
+            triggersCache.stop();
+            partitionCache.stop();
+            cacheManager.stop();
         }
     }
 
