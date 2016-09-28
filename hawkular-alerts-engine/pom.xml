@@ -57,6 +57,12 @@
     </dependency>
 
     <dependency>
+      <groupId>org.cassalog</groupId>
+      <artifactId>cassalog</artifactId>
+      <version>${version.org.cassalog}</version>
+    </dependency>
+
+    <dependency>
       <groupId>com.datastax.cassandra</groupId>
       <artifactId>cassandra-driver-core</artifactId>
       <scope>provided</scope>
