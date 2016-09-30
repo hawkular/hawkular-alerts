@@ -67,6 +67,9 @@
       <replicated-cache name="publish" mode="ASYNC">
         <transaction mode="BATCH"/>
       </replicated-cache>
+      <replicated-cache name="schema" mode="SYNC">
+        <transaction mode="NON_XA"/>
+      </replicated-cache>
     </cache-container>
   </xsl:template>
 
