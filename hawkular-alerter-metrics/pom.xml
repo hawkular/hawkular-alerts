@@ -46,12 +46,14 @@
       <groupId>org.hawkular.metrics</groupId>
       <artifactId>hawkular-metrics-model</artifactId>
       <version>${version.org.hawkular.metrics}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.hawkular.metrics</groupId>
       <artifactId>hawkular-metrics-core-service</artifactId>
       <version>${version.org.hawkular.metrics}</version>
+      <scope>provided</scope>
     </dependency>
 
     <!-- Wildfly dependencies -->
