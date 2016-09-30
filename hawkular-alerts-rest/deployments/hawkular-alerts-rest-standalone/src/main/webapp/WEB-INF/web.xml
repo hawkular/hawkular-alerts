@@ -41,4 +41,9 @@
     <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/data</lookup-name>
   </resource-env-ref>
 
+  <resource-env-ref>
+    <resource-env-ref-name>cache/publish</resource-env-ref-name>
+    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/publish</lookup-name>
+  </resource-env-ref>
+
 </web-app>

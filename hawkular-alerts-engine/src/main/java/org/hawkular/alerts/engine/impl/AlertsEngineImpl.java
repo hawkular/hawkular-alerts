@@ -96,10 +96,16 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     private final Set<Dampening> pendingTimeouts;
     private final Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers;
     private final Set<Trigger> disabledTriggers;
-    private final AlertsEngineCache alertsEngineCache;
 
     private final Timer wakeUpTimer;
     private TimerTask rulesTask;
+
+    // All incoming Data and Events go through first-line global filtering and therefore, in a non-distributed
+    // env the global filtering is equivalent to node-specific filtering. As such we don't need to filter
+    // via the [node-specific] alertsEngineCache.
+    private AlertsEngineCache alertsEngineCache = null;
+
+    boolean distributed = false;
 
     @EJB
     RulesEngine rules;
@@ -119,8 +125,6 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     @Resource
     private ManagedExecutorService executor;
 
-    boolean distributed = false;
-
     public AlertsEngineImpl() {
         pendingData = new ArrayList<>();
         pendingEvents = new ArrayList<>();
@@ -129,7 +133,6 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         pendingTimeouts = new HashSet<>();
         autoResolvedTriggers = new HashMap<>();
         disabledTriggers = new HashSet<>();
-        alertsEngineCache = new AlertsEngineCache();
 
         wakeUpTimer = new Timer("CassAlertsServiceImpl-Timer");
 
@@ -175,6 +178,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             distributed = partitionManager.isDistributed();
             if (distributed) {
                 log.debug("Registering PartitionManager listeners...");
+                alertsEngineCache = new AlertsEngineCache();
                 partitionManager.registerDataListener(this);
                 partitionManager.registerTriggerListener(this);
             }
@@ -200,6 +204,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         wakeUpTimer.cancel();
     }
 
+    @Override
     public void clear() {
         rulesTask.cancel();
 
@@ -221,7 +226,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     public void reload() {
         log.debug("Start a full reload of the AlertsEngine");
         rules.reset();
-        alertsEngineCache.clear();
+        if (distributed) {
+            alertsEngineCache.clear();
+        }
         if (rulesTask != null) {
             rulesTask.cancel();
         }
@@ -355,12 +362,14 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                     Caching dataId from conditions.
                  */
                 for (Condition c : conditionSet) {
-                    DataEntry entry = new DataEntry(c.getTenantId(), c.getTriggerId(), c.getDataId());
-                    alertsEngineCache.add(entry);
-                    if (Condition.Type.COMPARE == c.getType()) {
-                        String data2Id = ((CompareCondition) c).getData2Id();
-                        DataEntry entry2 = new DataEntry(c.getTenantId(), c.getTriggerId(), data2Id);
-                        alertsEngineCache.add(entry2);
+                    if (distributed) {
+                        DataEntry entry = new DataEntry(c.getTenantId(), c.getTriggerId(), c.getDataId());
+                        alertsEngineCache.add(entry);
+                        if (Condition.Type.COMPARE == c.getType()) {
+                            String data2Id = ((CompareCondition) c).getData2Id();
+                            DataEntry entry2 = new DataEntry(c.getTenantId(), c.getTriggerId(), data2Id);
+                            alertsEngineCache.add(entry2);
+                        }
                     }
                 }
 
@@ -416,7 +425,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             rules.removeFact(trigger);
 
             // Remove dataId associated from cache
-            alertsEngineCache.remove(trigger.getTenantId(), trigger.getId());
+            if (distributed) {
+                alertsEngineCache.remove(trigger.getTenantId(), trigger.getId());
+            }
 
             // then remove everything else.
             // We may want to do this with rules, because as is, we need to loop through every Fact in
@@ -470,11 +481,14 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     }
 
     private void addPendingData(Collection<Data> data) {
-        ArrayList<Data> filteredData = new ArrayList<>(data);
-        for (Iterator<Data> i = filteredData.iterator(); i.hasNext(); ) {
-            Data d = i.next();
-            if (!alertsEngineCache.isDataIdActive(d.getId())) {
-                i.remove();
+        Collection<Data> filteredData = data;
+        if (distributed) {
+            filteredData = new ArrayList<>(data);
+            for (Iterator<Data> i = filteredData.iterator(); i.hasNext(); ) {
+                Data d = i.next();
+                if (!alertsEngineCache.isDataIdActive(d.getId())) {
+                    i.remove();
+                }
             }
         }
         synchronized (pendingData) {
@@ -483,19 +497,18 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     }
 
     private void addPendingData(Data data) {
-        if (data != null && data.getId() != null && alertsEngineCache.isDataIdActive(data.getId())) {
-            synchronized (pendingData) {
-                pendingData.add(data);
-            }
-        }
+        addPendingData(Collections.singleton(data));
     }
 
     private void addPendingEvents(Collection<Event> events) {
-        ArrayList<Event> filteredEvents = new ArrayList<>(events);
-        for (Iterator<Event> i = filteredEvents.iterator(); i.hasNext(); ) {
-            Event e = i.next();
-            if (!alertsEngineCache.isDataIdActive(e.getDataId())) {
-                i.remove();
+        Collection<Event> filteredEvents = events;
+        if (distributed) {
+            filteredEvents = new ArrayList<>(events);
+            for (Iterator<Event> i = filteredEvents.iterator(); i.hasNext(); ) {
+                Event e = i.next();
+                if (!alertsEngineCache.isDataIdActive(e.getDataId())) {
+                    i.remove();
+                }
             }
         }
         synchronized (pendingEvents) {
@@ -504,11 +517,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     }
 
     private void addPendingEvent(Event event) {
-        if (event != null && event.getDataId() != null && alertsEngineCache.isDataIdActive(event.getDataId())) {
-            synchronized (pendingEvents) {
-                pendingEvents.add(event);
-            }
-        }
+        addPendingEvents(Collections.singleton(event));
     }
 
     private synchronized Collection<Data> getAndClearPendingData() {
@@ -720,7 +729,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
      */
     @Override
     public void onPartitionChange(Map<String, List<String>> partition, Map<String, List<String>> removed,
-                                            Map<String, List<String>> added) {
+            Map<String, List<String>> added) {
         if (!pendingData.isEmpty() || !pendingEvents.isEmpty()) {
             if (!pendingData.isEmpty()) {
                 log.warn("Pending Data onPartitionChange: " + pendingData);
