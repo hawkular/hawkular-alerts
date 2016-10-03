@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts-actions-pagerduty</artifactId>
-    <version>1.2.1.Final</version>
+    <version>1.2.2.Final-SNAPSHOT</version>
   </parent>
 
   <artifactId>hawkular-alerts-actions-pagerduty-plugin</artifactId>
