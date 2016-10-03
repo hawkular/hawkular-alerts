@@ -23,6 +23,7 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +36,7 @@ import javax.ejb.AccessTimeout;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.enterprise.inject.Produces;
+import javax.net.ssl.SSLContext;
 
 import org.cassalog.core.Cassalog;
 import org.cassalog.core.CassalogBuilder;
@@ -44,10 +46,12 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.JdkSSLOptions;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.SSLOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SocketOptions;
 import com.google.common.collect.ImmutableMap;
@@ -108,7 +112,12 @@ public class CassCluster {
     private static final String ALERTS_CASSANDRA_OVERWRITE = "hawkular-alerts.cassandra-overwrite";
     private static final String ALERTS_CASSANDRA_OVERWRITE_ENV = "CASSANDRA_OVERWRITE";
 
-    private String keyspace;
+    /*
+       True/false flag to use SSL communication with Cassandra cluster
+     */
+    private static final String ALERTS_CASSANDRA_USESSL = "hawkular-alerts.cassandra-use-ssl";
+    private static final String ALERTS_CASSANDRA_USESSL_ENV = "CASSANDRA_USESSL";
+
     private int attempts;
     private int timeout;
     private String cqlPort;
@@ -116,6 +125,8 @@ public class CassCluster {
     private int connTimeout;
     private int readTimeout;
     private boolean overwrite = false;
+    private String keyspace;
+    private boolean cassandraUseSSL;
 
     private Cluster cluster = null;
 
@@ -151,6 +162,8 @@ public class CassCluster {
         overwrite = Boolean.parseBoolean(AlertProperties.getProperty(ALERTS_CASSANDRA_OVERWRITE,
                 ALERTS_CASSANDRA_OVERWRITE_ENV, "false"));
         keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
+        cassandraUseSSL = Boolean.parseBoolean(AlertProperties.getProperty(ALERTS_CASSANDRA_USESSL,
+                ALERTS_CASSANDRA_USESSL_ENV, "false"));
     }
 
     @PostConstruct
@@ -183,6 +196,18 @@ public class CassCluster {
 
         if (socketOptions != null) {
             clusterBuilder.withSocketOptions(socketOptions);
+        }
+
+        if (cassandraUseSSL) {
+            SSLOptions sslOptions = null;
+            try {
+                String[] defaultCipherSuites = { "TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA" };
+                sslOptions = JdkSSLOptions.builder().withSSLContext(SSLContext.getDefault())
+                        .withCipherSuites(defaultCipherSuites).build();
+                clusterBuilder.withSSL(sslOptions);
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("SSL support is required but is not available in the JVM.", e);
+            }
         }
 
         /*
