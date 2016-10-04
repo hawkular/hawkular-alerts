@@ -30,7 +30,7 @@
   <artifactId>hawkular-alerts-actions-irc-metrics</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerting: Action Irc Plugin deployment for Hakwular Metrics</name>
+  <name>Hawkular Alerting: Action Irc Plugin deployment for Hawkular Metrics</name>
 
   <dependencies>
 
