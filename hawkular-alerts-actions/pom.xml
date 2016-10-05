@@ -47,6 +47,7 @@
     <profile>
       <id>default</id>
       <activation>
+        <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
         <module>hawkular-alerts-actions-api</module>

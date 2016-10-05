@@ -124,7 +124,6 @@
       </activation>
       <modules>
         <module>hawkular-alerts-api</module>
-        <module>hawkular-alerts-actions</module>
         <module>hawkular-alerts-bus-api</module>
         <module>hawkular-alerts-engine</module>
         <module>hawkular-alerts-bus</module>
@@ -134,14 +133,12 @@
     </profile>
 
     <profile>
-      <id>noactions</id>
+      <id>actions</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <modules>
-        <module>hawkular-alerts-api</module>
-        <module>hawkular-alerts-bus-api</module>
-        <module>hawkular-alerts-engine</module>
-        <module>hawkular-alerts-bus</module>
-        <module>hawkular-alerts-rest</module>
-        <module>hawkular-alerts-rest-tests</module>
+        <module>hawkular-alerts-actions</module>
       </modules>
     </profile>
 
@@ -157,7 +154,6 @@
         <module>hawkular-alerts-actions</module>
       </modules>
     </profile>
-
   </profiles>
 
 </project>
