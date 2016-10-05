@@ -37,18 +37,6 @@
     <org.hawkular.wildfly.home>${project.basedir}/../../../hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-${version.org.wildfly}</org.hawkular.wildfly.home>
   </properties>
 
-  <modules>
-    <module>hawkular-alerts-actions-aerogear</module>
-    <module>hawkular-alerts-actions-email</module>
-    <module>hawkular-alerts-actions-file</module>
-    <module>hawkular-alerts-actions-generic</module>
-    <module>hawkular-alerts-actions-irc</module>
-    <module>hawkular-alerts-actions-pagerduty</module>
-    <module>hawkular-alerts-actions-sms</module>
-    <module>hawkular-alerts-actions-webhook</module>
-    <module>hawkular-alerts-actions-webhook-global</module>
-  </modules>
-
   <dependencies>
 
     <dependency>
@@ -120,4 +108,41 @@
   <build>
     <finalName>${project.artifactId}</finalName>
   </build>
+
+  <profiles>
+   <profile>
+     <id>default</id>
+     <activation>
+       <property>
+         <name>!openshift</name>
+       </property>
+     </activation>
+     <modules>
+       <module>hawkular-alerts-actions-aerogear</module>
+       <module>hawkular-alerts-actions-email</module>
+       <module>hawkular-alerts-actions-file</module>
+       <module>hawkular-alerts-actions-generic</module>
+       <module>hawkular-alerts-actions-irc</module>
+       <module>hawkular-alerts-actions-pagerduty</module>
+       <module>hawkular-alerts-actions-sms</module>
+       <module>hawkular-alerts-actions-webhook</module>
+       <module>hawkular-alerts-actions-webhook-global</module>
+     </modules>
+   </profile>
+   <profile>
+     <id>openshift</id>
+     <activation>
+       <property>
+         <name>openshift</name>
+       </property>
+     </activation>
+     <modules>
+       <module>hawkular-alerts-actions-email</module>
+       <module>hawkular-alerts-actions-file</module>
+       <module>hawkular-alerts-actions-generic</module>
+       <module>hawkular-alerts-actions-webhook</module>
+       <module>hawkular-alerts-actions-webhook-global</module>
+     </modules>
+   </profile>
+ </profiles>
 </project>

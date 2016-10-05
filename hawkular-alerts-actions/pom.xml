@@ -33,13 +33,6 @@
   <name>Hawkular Alerting: Actions parent</name>
   <description>Parent module of all Action Artifacts</description>
 
-  <modules>
-    <module>hawkular-alerts-actions-api</module>
-    <module>hawkular-alerts-actions-plugins</module>
-    <module>hawkular-alerts-actions-impl</module>
-    <module>hawkular-alerts-actions-tests</module>
-  </modules>
-
   <dependencies>
 
     <dependency>
@@ -49,5 +42,35 @@
     </dependency>
 
   </dependencies>
+
+  <profiles>
+   <profile>
+     <id>default</id>
+     <activation>
+       <property>
+         <name>!openshift</name>
+       </property>
+     </activation>
+     <modules>
+       <module>hawkular-alerts-actions-api</module>
+       <module>hawkular-alerts-actions-plugins</module>
+       <module>hawkular-alerts-actions-impl</module>
+       <module>hawkular-alerts-actions-tests</module>
+     </modules>
+   </profile>
+   <profile>
+     <id>openshift</id>
+     <activation>
+       <property>
+         <name>openshift</name>
+       </property>
+     </activation>
+     <modules>
+       <module>hawkular-alerts-actions-api</module>
+       <module>hawkular-alerts-actions-plugins</module>
+       <module>hawkular-alerts-actions-impl</module>
+     </modules>
+   </profile>
+ </profiles>
 
 </project>

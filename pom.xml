@@ -56,15 +56,6 @@
     </mailingList>
   </mailingLists>
 
-  <modules>
-    <module>hawkular-alerts-api</module>
-    <module>hawkular-alerts-bus-api</module>
-    <module>hawkular-alerts-engine</module>
-    <module>hawkular-alerts-bus</module>
-    <module>hawkular-alerts-rest</module>
-    <module>hawkular-alerts-rest-tests</module>
-  </modules>
-
   <scm>
     <connection>scm:git:git@github.com:hawkular/hawkular-alerts.git</connection>
     <developerConnection>scm:git:git@github.com:hawkular/hawkular-alerts.git</developerConnection>
@@ -127,14 +118,53 @@
 
   <profiles>
     <profile>
-      <id>actions</id>
+      <id>default</id>
       <activation>
-        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>!openshift</name>
+        </property>
       </activation>
       <modules>
+        <module>hawkular-alerts-api</module>
+        <module>hawkular-alerts-bus-api</module>
+        <module>hawkular-alerts-engine</module>
+        <module>hawkular-alerts-bus</module>
+        <module>hawkular-alerts-rest</module>
+        <module>hawkular-alerts-rest-tests</module>
         <module>hawkular-alerts-actions</module>
       </modules>
     </profile>
+
+    <profile>
+      <id>noactions</id>
+      <modules>
+        <module>hawkular-alerts-api</module>
+        <module>hawkular-alerts-bus-api</module>
+        <module>hawkular-alerts-engine</module>
+        <module>hawkular-alerts-bus</module>
+        <module>hawkular-alerts-rest</module>
+        <module>hawkular-alerts-rest-tests</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>openshift</id>
+      <activation>
+        <property>
+          <name>openshift</name>
+        </property>
+      </activation>
+      <properties>
+        <skipTests>true</skipTests>
+      </properties>
+      <modules>
+        <module>hawkular-alerts-api</module>
+        <module>hawkular-alerts-engine</module>
+        <module>hawkular-alerts-rest</module>
+        <module>hawkular-alerts-actions</module>
+      </modules>
+    </profile>
+
   </profiles>
 
 </project>
