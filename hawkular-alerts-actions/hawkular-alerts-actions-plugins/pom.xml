@@ -113,9 +113,7 @@
    <profile>
      <id>default</id>
      <activation>
-       <property>
-         <name>!openshift</name>
-       </property>
+       <activeByDefault>true</activeByDefault>
      </activation>
      <modules>
        <module>hawkular-alerts-actions-aerogear</module>
@@ -129,13 +127,9 @@
        <module>hawkular-alerts-actions-webhook-global</module>
      </modules>
    </profile>
+
    <profile>
      <id>openshift</id>
-     <activation>
-       <property>
-         <name>openshift</name>
-       </property>
-     </activation>
      <modules>
        <module>hawkular-alerts-actions-email</module>
        <module>hawkular-alerts-actions-file</module>

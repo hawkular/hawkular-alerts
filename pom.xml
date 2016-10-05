@@ -120,9 +120,7 @@
     <profile>
       <id>default</id>
       <activation>
-        <property>
-          <name>!openshift</name>
-        </property>
+          <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
         <module>hawkular-alerts-api</module>
@@ -149,11 +147,6 @@
 
     <profile>
       <id>openshift</id>
-      <activation>
-        <property>
-          <name>openshift</name>
-        </property>
-      </activation>
       <properties>
         <skipTests>true</skipTests>
       </properties>
