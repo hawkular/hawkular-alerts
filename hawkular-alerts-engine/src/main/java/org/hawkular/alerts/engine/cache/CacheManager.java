@@ -33,7 +33,6 @@ import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
-import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.data.CacheKey;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.PropertiesService;
@@ -106,12 +105,6 @@ public class CacheManager {
             Collection<Condition> conditions = definitions.getAllConditions();
             final Set<CacheKey> activeKeys = new HashSet<>();
             for (Condition c : conditions) {
-                // external conditions are evaluated by the relevant external alerter. Data is not metrics-based
-                // so don't waste energy adding it to the publishing cache.
-                if (c instanceof ExternalCondition) {
-                    continue;
-                }
-
                 CacheKey cacheKey = new CacheKey(c.getTenantId(), c.getDataId());
                 if (!activeKeys.contains(cacheKey)) {
                     activeKeys.add(cacheKey);
