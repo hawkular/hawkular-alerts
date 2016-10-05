@@ -30,7 +30,7 @@
   <artifactId>hawkular-alerts-actions-generic-metrics</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerting: Action Generic Plugin deployment for Hakwular Metrics</name>
+  <name>Hawkular Alerting: Action Generic Plugin deployment for Hawkular Metrics</name>
 
   <dependencies>
 

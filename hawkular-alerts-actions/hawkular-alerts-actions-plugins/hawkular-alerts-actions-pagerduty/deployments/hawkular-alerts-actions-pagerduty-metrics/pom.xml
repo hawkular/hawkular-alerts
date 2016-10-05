@@ -30,7 +30,7 @@
   <artifactId>hawkular-alerts-actions-pagerduty-metrics</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerting: Action PagerDuty Plugin deployment for Hakwular Metrics</name>
+  <name>Hawkular Alerting: Action PagerDuty Plugin deployment for Hawkular Metrics</name>
 
   <dependencies>
 
