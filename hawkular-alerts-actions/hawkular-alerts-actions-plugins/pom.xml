@@ -17,7 +17,8 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
 
@@ -36,18 +37,6 @@
   <properties>
     <org.hawkular.wildfly.home>${project.basedir}/../../../hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-${version.org.wildfly}</org.hawkular.wildfly.home>
   </properties>
-
-  <modules>
-    <module>hawkular-alerts-actions-aerogear</module>
-    <module>hawkular-alerts-actions-email</module>
-    <module>hawkular-alerts-actions-file</module>
-    <module>hawkular-alerts-actions-generic</module>
-    <module>hawkular-alerts-actions-irc</module>
-    <module>hawkular-alerts-actions-pagerduty</module>
-    <module>hawkular-alerts-actions-sms</module>
-    <module>hawkular-alerts-actions-webhook</module>
-    <module>hawkular-alerts-actions-webhook-global</module>
-  </modules>
 
   <dependencies>
 
@@ -120,4 +109,35 @@
   <build>
     <finalName>${project.artifactId}</finalName>
   </build>
+
+  <profiles>
+    <profile>
+      <id>default</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>hawkular-alerts-actions-aerogear</module>
+        <module>hawkular-alerts-actions-email</module>
+        <module>hawkular-alerts-actions-file</module>
+        <module>hawkular-alerts-actions-generic</module>
+        <module>hawkular-alerts-actions-irc</module>
+        <module>hawkular-alerts-actions-pagerduty</module>
+        <module>hawkular-alerts-actions-sms</module>
+        <module>hawkular-alerts-actions-webhook</module>
+        <module>hawkular-alerts-actions-webhook-global</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>openshift</id>
+      <modules>
+        <module>hawkular-alerts-actions-email</module>
+        <module>hawkular-alerts-actions-file</module>
+        <module>hawkular-alerts-actions-generic</module>
+        <module>hawkular-alerts-actions-webhook</module>
+        <module>hawkular-alerts-actions-webhook-global</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>

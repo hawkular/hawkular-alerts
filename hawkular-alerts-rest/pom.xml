@@ -58,6 +58,13 @@
         <module>deployments/hawkular-alerts-rest-standalone</module>
       </modules>
     </profile>
+
+    <profile>
+      <id>openshift</id>
+      <modules>
+        <module>deployments/hawkular-alerts-rest-metrics</module>
+      </modules>
+    </profile>
   </profiles>
 
 </project>

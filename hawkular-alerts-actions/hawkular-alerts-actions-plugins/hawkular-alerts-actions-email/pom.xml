@@ -55,6 +55,13 @@
         <module>deployments/hawkular-alerts-actions-email-standalone</module>
       </modules>
     </profile>
+
+    <profile>
+      <id>openshift</id>
+      <modules>
+        <module>deployments/hawkular-alerts-actions-email-metrics</module>
+      </modules>
+    </profile>
   </profiles>
 
 </project>
