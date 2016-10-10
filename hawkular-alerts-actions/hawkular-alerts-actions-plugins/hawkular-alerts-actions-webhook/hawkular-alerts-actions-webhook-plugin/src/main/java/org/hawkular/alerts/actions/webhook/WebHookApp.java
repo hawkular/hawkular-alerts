@@ -18,8 +18,6 @@ package org.hawkular.alerts.actions.webhook;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 
-import java.util.HashMap;
-import java.util.Map;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
@@ -37,13 +35,6 @@ public class WebHookApp extends Application {
 
     public WebHookApp() {
         log.debug("Hawkular Alerts WebHook starting...");
-    }
-
-    public static Response internalError(String message) {
-        Map<String, String> errors = new HashMap<>();
-        errors.put("errorMsg", "Internal error: " + message);
-        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(errors).type(APPLICATION_JSON_TYPE).build();
     }
 
     public static Response ok(Object entity) {

@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
     Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
@@ -17,6 +17,18 @@
     limitations under the License.
 
 -->
-<jboss-web>
-  <context-root>/hawkular/actions/file-global</context-root>
-</jboss-web>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.hawkular.alerts</groupId>
+    <artifactId>hawkular-alerts-actions-file-global</artifactId>
+    <version>1.2.2.Final-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>hawkular-alerts-actions-file-global-plugin</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Hawkular Alerting: Action Filesystem Global Plugin implementation</name>
+
+</project>

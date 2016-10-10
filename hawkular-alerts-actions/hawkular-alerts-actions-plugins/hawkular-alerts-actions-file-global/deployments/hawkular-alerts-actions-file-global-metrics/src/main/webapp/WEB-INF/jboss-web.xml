@@ -18,5 +18,5 @@
 
 -->
 <jboss-web>
-  <context-root>/hawkular/actions/file-global</context-root>
+  <context-root>/hawkular/actions/file</context-root>
 </jboss-web>

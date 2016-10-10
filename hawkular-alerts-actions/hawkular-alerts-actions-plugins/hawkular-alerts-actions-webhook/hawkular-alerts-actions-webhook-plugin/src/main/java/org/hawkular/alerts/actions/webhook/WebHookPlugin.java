@@ -96,7 +96,7 @@ public class WebHookPlugin implements ActionPluginListener {
         String method = isEmpty(action.getProperties().get("method")) ? DEFAULT_METHOD :
                 action.getProperties().get("method");
 
-        String jsonAction = JsonUtil.toJson(action);
+        String jsonEvent = JsonUtil.toJson(action.getEvent());
         URL webHookUrl = new URL(url);
         HttpURLConnection conn = (HttpURLConnection)webHookUrl.openConnection();
         conn.setDoOutput(true);
@@ -104,8 +104,9 @@ public class WebHookPlugin implements ActionPluginListener {
         conn.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
 
         OutputStream os = conn.getOutputStream();
-        os.write(jsonAction.getBytes());
+        os.write(jsonEvent.getBytes());
         os.flush();
+        os.close();
 
         if (log.isDebugEnabled()) {
             log.debug("Webhook for " + url + " . Request code: " + conn.getResponseCode());

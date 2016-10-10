@@ -120,12 +120,12 @@
         <module>hawkular-alerts-actions-aerogear</module>
         <module>hawkular-alerts-actions-email</module>
         <module>hawkular-alerts-actions-file</module>
+        <module>hawkular-alerts-actions-file-global</module>
         <module>hawkular-alerts-actions-generic</module>
         <module>hawkular-alerts-actions-irc</module>
         <module>hawkular-alerts-actions-pagerduty</module>
         <module>hawkular-alerts-actions-sms</module>
         <module>hawkular-alerts-actions-webhook</module>
-        <module>hawkular-alerts-actions-webhook-global</module>
       </modules>
     </profile>
 
@@ -136,7 +136,6 @@
         <module>hawkular-alerts-actions-file</module>
         <module>hawkular-alerts-actions-generic</module>
         <module>hawkular-alerts-actions-webhook</module>
-        <module>hawkular-alerts-actions-webhook-global</module>
       </modules>
     </profile>
   </profiles>
