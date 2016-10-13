@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.engine.cache;
+package org.hawkular.alerts.filter;
 
 import java.util.Collection;
 import java.util.Set;
@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 
-import org.hawkular.alerts.api.model.data.CacheKey;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
 import org.infinispan.Cache;
@@ -41,7 +40,7 @@ import org.infinispan.Cache;
 @ApplicationScoped
 public class CacheClient {
 
-    /** key=dataId, value="" */
+    /** key=CacheKey, value="" */
     @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/publish")
     private Cache<CacheKey, String> cache;
 
@@ -83,4 +82,10 @@ public class CacheClient {
         return key;
     }
 
+    /**
+     *  This is here for testing purposes only and should not be called in production code.
+     */
+    public void addTestKey(CacheKey key, String value) {
+        cache.put(key, value);
+    }
 }

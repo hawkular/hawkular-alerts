@@ -54,9 +54,9 @@ import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
-import org.hawkular.alerts.engine.cache.CacheClient;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
+import org.hawkular.alerts.filter.CacheClient;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BoundStatement;
@@ -1578,22 +1578,29 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     @Override
     public void sendData(Data data) throws Exception {
-        sendData(Collections.singleton(data));
+        sendData(Collections.singleton(data), false);
     }
 
     @Override
     public void sendData(Collection<Data> data) throws Exception {
+        sendData(data, false);
+    }
+
+    @Override
+    public void sendData(Collection<Data> data, boolean ignoreFiltering) throws Exception {
         if (isEmpty(data)) {
             return;
         }
 
         // Front-line filtering to remove Data not used in trigger evaluation (globally not used in any condition).
+        if (!ignoreFiltering) {
         data = dataIdCache.filterData(data);
         if (data.isEmpty()) {
             return;
         }
+        }
 
-        // check to see if any data can be used to generate data-diven group members
+        // check to see if any data can be used to generate data-driven group members
         checkDataDrivenGroupTriggers(data);
 
         // forward to the engine for node-specific filtering, propagation to other nodes, and/or evaluation
@@ -1637,19 +1644,27 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (null == event) {
             return;
         }
-        sendEvents(Collections.singleton(event));
+        sendEvents(Collections.singleton(event), false);
     }
 
     @Override
     public void sendEvents(Collection<Event> events) throws Exception {
+
+        sendEvents(events, false);
+    }
+
+    @Override
+    public void sendEvents(Collection<Event> events, boolean ignoreFiltering) throws Exception {
         if (isEmpty(events)) {
             return;
         }
 
         // Front-line filtering to remove Data not used in trigger evaluation (globally not used in any condition).
-        events = dataIdCache.filterEvents(events);
-        if (events.isEmpty()) {
-            return;
+        if (!ignoreFiltering) {
+            events = dataIdCache.filterEvents(events);
+            if (events.isEmpty()) {
+                return;
+            }
         }
 
         alertsEngine.sendEvents(events);

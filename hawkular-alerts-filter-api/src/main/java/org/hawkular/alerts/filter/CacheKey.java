@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.api.model.data;
+package org.hawkular.alerts.filter;
 
 import java.io.Serializable;
 

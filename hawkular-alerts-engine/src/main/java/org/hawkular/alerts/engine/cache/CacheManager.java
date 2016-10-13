@@ -33,10 +33,10 @@ import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
-import org.hawkular.alerts.api.model.data.CacheKey;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.engine.log.MsgLogger;
+import org.hawkular.alerts.filter.CacheKey;
 import org.infinispan.Cache;
 import org.infinispan.CacheSet;
 import org.jboss.logging.Logger;
