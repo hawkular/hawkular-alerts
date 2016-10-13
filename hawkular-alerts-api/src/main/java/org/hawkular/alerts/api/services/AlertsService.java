@@ -218,6 +218,15 @@ public interface AlertsService {
     void sendData(Collection<Data> data) throws Exception;
 
     /**
+     * Send data into the alerting system for evaluation.
+     *
+     * @param data Not Null.  The data to be evaluated by the alerting engine.
+     * @param ignoreFiltering  An optimization. Set true *only* if you are sure the data is useful for evaluation.
+     * @throws Exception any problem.
+     */
+    void sendData(Collection<Data> data, boolean ignoreFiltering) throws Exception;
+
+    /**
      * Send event to the engine for alerts evaluation.
      * The event sent is not persisted into the alerts engine.
      *
@@ -234,4 +243,14 @@ public interface AlertsService {
      * @throws Exception
      */
     void sendEvents(Collection<Event> events) throws Exception;
+
+    /**
+     * Send events to the engine for alerts evaluation.
+     * The event sent are not persisted into the alerts engine.
+     *
+     * @param events Not null. The events to be evaluated by the alerting engine.
+     * @param ignoreFiltering  An optimization. Set true *only* if you are sure the data is useful for evaluation.
+     * @throws Exception
+     */
+    void sendEvents(Collection<Event> events, boolean ignoreFiltering) throws Exception;
 }
