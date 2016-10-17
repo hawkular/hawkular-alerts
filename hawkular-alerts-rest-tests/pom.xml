@@ -170,6 +170,13 @@
       <scope>test</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.hawkular.commons</groupId>
+      <artifactId>hawkular-cors-jaxrs-filter</artifactId>
+      <version>${version.org.hawkular.commons}</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -219,6 +226,7 @@
               <excludes>
                 <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
                 <excludeFile>org/hawkular/alerts/rest/PerfCrudITest.class</excludeFile>
+                <excludeFile>org/hawkular/alerts/rest/CORSITest.class</excludeFile>
                 <exclude>${hawkular.itest-exclude}</exclude>
               </excludes>
               <systemPropertyVariables>
@@ -435,8 +443,10 @@
                 <javaOpt>-Dmail.smtp.port=2525</javaOpt>
                 <javaOpt>-Dhawkular.backend=embedded_cassandra</javaOpt>
                 <javaOpt>-Dhawkular.log.alerts=${hawkular.log.alerts}</javaOpt>
-                <!--<javaOpt>-Xdebug</javaOpt>-->
-                <!--<javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt>-->
+                <javaOpt>-Dhawkular.allowed-cors-origins=http://test.hawkular.org,https://secure.hawkular.io</javaOpt>
+                <javaOpt>-Dhawkular.allowed-cors-access-control-allow-headers=random-header1,random-header2</javaOpt>
+                <!-- <javaOpt>-Xdebug</javaOpt>  -->
+                <!-- <javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt> -->
               </javaOpts>
             </configuration>
             <executions>
@@ -469,6 +479,8 @@
                 <hawkular.host>${hawkular.host}</hawkular.host>
                 <hawkular.port>${hawkular.port}</hawkular.port>
                 <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
+                <hawkular.test.origin>http://test.hawkular.org</hawkular.test.origin>
+                <hawkular.test.access-control-allow-headers>random-header1,random-header2</hawkular.test.access-control-allow-headers>
               </systemPropertyVariables>
             </configuration>
             <executions>
@@ -696,6 +708,8 @@
                 <javaOpt>-Dmail.smtp.port=2525</javaOpt>
                 <javaOpt>-Dhawkular.backend=embedded_cassandra</javaOpt>
                 <javaOpt>-Dhawkular.log.alerts=${hawkular.log.alerts}</javaOpt>
+                <javaOpt>-Dhawkular.allowed-cors-origins=http://test.hawkular.org,https://secure.hawkular.io</javaOpt>
+                <javaOpt>-Dhawkular.allowed-cors-access-control-allow-headers=random-header1,random-header2</javaOpt>
                 <!--<javaOpt>-Xdebug</javaOpt>-->
                 <!--<javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt>-->
               </javaOpts>
@@ -730,6 +744,8 @@
                 <hawkular.host>${hawkular.host}</hawkular.host>
                 <hawkular.port>${hawkular.port}</hawkular.port>
                 <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
+                <hawkular.test.origin>http://test.hawkular.org</hawkular.test.origin>
+                <hawkular.test.access-control-allow-headers>random-header1,random-header2</hawkular.test.access-control-allow-headers>
               </systemPropertyVariables>
             </configuration>
             <executions>
@@ -1143,6 +1159,8 @@
                 <hawkular.host>${hawkular.host}</hawkular.host>
                 <hawkular.port>${hawkular.port}</hawkular.port>
                 <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
+                <hawkular.test.origin>http://test.hawkular.org</hawkular.test.origin>
+                <hawkular.test.access-control-allow-headers>random-header1,random-header2</hawkular.test.access-control-allow-headers>
               </systemPropertyVariables>
             </configuration>
             <executions>

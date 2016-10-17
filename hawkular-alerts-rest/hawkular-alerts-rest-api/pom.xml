@@ -58,6 +58,12 @@
       <version>${version.org.hawkular.commons}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.hawkular.commons</groupId>
+      <artifactId>hawkular-cors-jaxrs-filter</artifactId>
+      <version>${version.org.hawkular.commons}</version>
+    </dependency>
+
     <!-- Wildfly dependencies -->
     <dependency>
       <groupId>org.jboss.logging</groupId>

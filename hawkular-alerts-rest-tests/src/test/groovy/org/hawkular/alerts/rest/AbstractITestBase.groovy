@@ -20,6 +20,10 @@ import org.junit.BeforeClass
 
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
+import groovyx.net.http.HttpResponseDecorator
+import groovyx.net.http.HttpResponseException
+
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Base class for REST tests.
@@ -30,7 +34,10 @@ class AbstractITestBase {
 
     static baseURI = System.getProperty('hawkular.base-uri') ?: 'http://127.0.0.1:8080/hawkular/alerts/'
     static RESTClient client
+    static String tenantHeaderName = "Hawkular-Tenant"
     static testTenant = "28026b36-8fe4-4332-84c8-524e173a68bf"
+    static final String TENANT_PREFIX = UUID.randomUUID().toString()
+    static final AtomicInteger TENANT_ID_COUNTER = new AtomicInteger(0)
 
     @BeforeClass
     static void initClient() {
@@ -38,6 +45,7 @@ class AbstractITestBase {
         client = new RESTClient(baseURI, ContentType.JSON)
         // this prevents 404 from being wrapped in an Exception, just return the response, better for testing
         client.handler.failure = { it }
+        /*
         client.handler.failure = { resp, data ->
             resp.setData(data)
             String headers = ""
@@ -46,6 +54,7 @@ class AbstractITestBase {
             }
             return resp
         }
+        */
         /*
             User: jdoe
             Password: password
@@ -62,5 +71,9 @@ class AbstractITestBase {
             resp = client.get(path: "status")
             tries--
         }
+    }
+
+    static String nextTenantId() {
+        return "T${TENANT_PREFIX}${TENANT_ID_COUNTER.incrementAndGet()}"
     }
 }
