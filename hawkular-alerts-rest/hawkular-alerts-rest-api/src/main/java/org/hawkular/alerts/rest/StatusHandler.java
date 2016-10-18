@@ -30,7 +30,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
-import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.services.StatusService;
 import org.hawkular.jaxrs.filter.tenant.TenantRequired;
 
 import io.swagger.annotations.Api;
@@ -48,9 +48,10 @@ public class StatusHandler {
     private static final String STATUS = "status";
     private static final String STARTED = "STARTED";
     private static final String FAILED = "FAILED";
+    private static final String DISTRIBUTED = "distributed";
 
     @EJB
-    DefinitionsService definitionsService;
+    StatusService statusService;
 
     @Inject
     ManifestUtil manifestUtil;
@@ -62,8 +63,16 @@ public class StatusHandler {
         Map<String, String> status = new HashMap<>();
         status.putAll(manifestUtil.getFrom(servletContext));
         try {
-            definitionsService.getActionPlugins();
-            status.put(STATUS, STARTED);
+            if (statusService.isStarted()) {
+                status.put(STATUS, STARTED);
+            } else {
+                status.put(STATUS, FAILED);
+            }
+            boolean distributed = statusService.isDistributed();
+            status.put(DISTRIBUTED, Boolean.toString(distributed));
+            if (distributed) {
+                status.putAll(statusService.getDistributedStatus());
+            }
         } catch (Exception e) {
             status.put(STATUS, FAILED);
         }

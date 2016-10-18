@@ -402,6 +402,10 @@ public class CassCluster {
         return session;
     }
 
+    public boolean isInitialized() {
+        return initialized;
+    }
+
     @PreDestroy
     public void shutdown() {
         log.info("Closing Cassandra cluster session");

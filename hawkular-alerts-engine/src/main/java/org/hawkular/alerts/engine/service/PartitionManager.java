@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 package org.hawkular.alerts.engine.service;
 
 import java.util.Collection;
+import java.util.Map;
 
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
@@ -70,6 +71,18 @@ public interface PartitionManager {
      *         false otherwise
      */
     boolean isDistributed();
+
+    /**
+     * Show additional information about partition status.
+     * In distributed scenarios
+     *  - getStatus().get("currentNode") returns a string with the identifier of the current node
+     *  - getStatus().get("members") returns a string with a list comma identifiers of the topology nodes
+     *    at the moment of the call
+     * In standalone scenarios getStatus() returns an empty map.
+     *
+     * @return Map with currentNode and members information for distributed scenarios
+     */
+    Map<String, String> getStatus();
 
     /**
      * Notify partition manager when a trigger, dampening or condition has been added,updated or removed.

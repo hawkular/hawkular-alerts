@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -123,6 +124,8 @@ public class PartitionManagerImpl implements PartitionManager {
      */
     private boolean distributed = false;
 
+    private final Map<String, String> status = new HashMap<>();
+
     /**
      * Access to the manager of the caches used for the partition services.
      * Main function is to manage the list of members and add listener for topology changes.
@@ -183,6 +186,19 @@ public class PartitionManagerImpl implements PartitionManager {
         return distributed;
     }
 
+    @Override
+    public Map<String, String> getStatus() {
+        if (distributed) {
+            /*
+                Members are dynamic, so on each status request this info is refreshed
+             */
+            status.put("members", cacheManager.getMembers().stream()
+                    .map(Object::toString)
+                    .collect(Collectors.joining(", ")));
+        }
+        return status;
+    }
+
     @PostConstruct
     public void init() {
         /*
@@ -192,6 +208,7 @@ public class PartitionManagerImpl implements PartitionManager {
         if (!distributed) {
             msgLog.infoPartitionManagerDisabled();
         } else {
+            status.put("currentNode", cacheManager.getAddress().toString());
             currentNode = cacheManager.getAddress().hashCode();
             cacheManager.addListener(topologyChangeListener);
             partitionCache.addListener(partitionChangeListener);
