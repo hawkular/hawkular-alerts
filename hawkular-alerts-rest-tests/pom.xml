@@ -496,6 +496,7 @@
                   <excludes>
                     <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
                     <excludeFile>org/hawkular/alerts/rest/PerfCrudITest.class</excludeFile>
+                    <excludeFile>org/hawkular/alerts/rest/PerfSendITest.class</excludeFile>
                     <exclude>${hawkular.itest-exclude}</exclude>
                   </excludes>
                 </configuration>
@@ -712,6 +713,7 @@
                 <javaOpt>-Dhawkular.allowed-cors-access-control-allow-headers=random-header1,random-header2</javaOpt>
                 <!--<javaOpt>-Xdebug</javaOpt>-->
                 <!--<javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt>-->
+                <!--javaOpt>-agentpath:${jprofiler.path}/bin/linux-x64/libjprofilerti.so</javaOpt-->
               </javaOpts>
             </configuration>
             <executions>
@@ -757,6 +759,7 @@
                 <configuration>
                   <includes>
                     <include>org/hawkular/alerts/rest/PerfCrudITest.class</include>
+                    <include>org/hawkular/alerts/rest/PerfSendITest.class</include>
                   </includes>
                   <excludes>
                     <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
