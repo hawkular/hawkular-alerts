@@ -29,4 +29,5 @@ CREATE TABLE sys_config (
         PRIMARY KEY (config_id, name)
 )
 """
+  verify { tableExists(keyspace, "sys_config") }
 }
