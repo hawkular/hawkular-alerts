@@ -79,6 +79,7 @@ public class CassStatement {
     public static final String INSERT_CONDITION_COMPARE;
     public static final String INSERT_CONDITION_EVENT;
     public static final String INSERT_CONDITION_EXTERNAL;
+    public static final String INSERT_CONDITION_MISSING;
     public static final String INSERT_CONDITION_RATE;
     public static final String INSERT_CONDITION_STRING;
     public static final String INSERT_CONDITION_THRESHOLD;
@@ -290,6 +291,10 @@ public class CassStatement {
                 + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, " +
                 "conditionId, dataId, operator, pattern) VALUES (?, ?, ?, 'EXTERNAL', ?, ?, ?, ?, ?, ?, ?) ";
 
+        INSERT_CONDITION_MISSING = "INSERT INTO " + keyspace + ".conditions "
+                + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, " +
+                "conditionId, dataId, interval) VALUES (?, ?, ?, 'MISSING', ?, ?, ?, ?, ?, ?) ";
+
         INSERT_CONDITION_RATE = "INSERT INTO " + keyspace + ".conditions "
                 + "(tenantId, triggerId, triggerMode, type, context, conditionSetSize, conditionSetIndex, "
                 + "conditionId, dataId, direction, period, operator, threshold) "
@@ -421,20 +426,20 @@ public class CassStatement {
         SELECT_CONDITION_ID = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, "
                 + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, "
-                + "direction, period, tenantId, context "
+                + "direction, period, tenantId, context, interval "
                 + "FROM " + keyspace + ".conditions "
                 + "WHERE tenantId = ? AND conditionId = ? ";
 
         SELECT_CONDITIONS_ALL = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, "
                 + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, "
-                + "direction, period, tenantId, context "
+                + "direction, period, tenantId, context, interval "
                 + "FROM " + keyspace + ".conditions ";
 
         SELECT_CONDITIONS_BY_TENANT = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, "
                 + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, "
-                + "direction, period, tenantId, context "
+                + "direction, period, tenantId, context, interval "
                 + "FROM " + keyspace + ".conditions "
                 + "WHERE tenantId = ? ";
 
@@ -504,14 +509,14 @@ public class CassStatement {
         SELECT_TRIGGER_CONDITIONS = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, "
                 + "ignoreCase, threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, "
-                + "direction, period, tenantId, context "
+                + "direction, period, tenantId, context, interval "
                 + "FROM " + keyspace + ".conditions "
                 + "WHERE tenantId = ? AND triggerId = ?";
 
         SELECT_TRIGGER_CONDITIONS_TRIGGER_MODE = "SELECT triggerId, triggerMode, type, conditionSetSize, "
                 + "conditionSetIndex, conditionId, dataId, operator, data2Id, data2Multiplier, pattern, ignoreCase, "
                 + "threshold, operatorLow, operatorHigh, thresholdLow, thresholdHigh, inRange, "
-                + "direction, period, tenantId, context "
+                + "direction, period, tenantId, context, interval "
                 + "FROM " + keyspace + ".conditions "
                 + "WHERE tenantId = ? AND triggerId = ? AND triggerMode = ? ";
 

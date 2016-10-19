@@ -40,6 +40,8 @@ import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.EventCondition;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
+import org.hawkular.alerts.api.model.condition.MissingCondition;
+import org.hawkular.alerts.api.model.condition.MissingConditionEval;
 import org.hawkular.alerts.api.model.condition.RateCondition;
 import org.hawkular.alerts.api.model.condition.RateConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
@@ -60,6 +62,7 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.service.RulesEngine;
+import org.hawkular.alerts.engine.util.MissingState;
 import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -82,6 +85,7 @@ public class RulesEngineTest {
     Set<Data> datums = new HashSet<Data>();
     Set<Event> inputEvents = new HashSet<>();
     List<Event> outputEvents = new ArrayList<>();
+    Set<MissingState> missingStates = new HashSet<>();
 
     @Before
     public void before() {
@@ -101,6 +105,7 @@ public class RulesEngineTest {
         datums.clear();
         inputEvents.clear();
         outputEvents.clear();
+        missingStates.clear();
     }
 
     @Test
@@ -1887,5 +1892,84 @@ public class RulesEngineTest {
         assertTrue(rulesEngine.getFact(jsonfmt1d) != null);
         assertTrue(rulesEngine.getFact(jsonfmt1c2) != null);
         assertTrue(rulesEngine.getFact(jsonfmt1c2eval) != null);
+    }
+
+    public void checkMissingStates(long evalTime) {
+        missingStates.stream().forEach(missingState -> {
+            MissingConditionEval eval = new MissingConditionEval(missingState.getCondition(),
+                    missingState.getPreviousTime(),
+                    evalTime);
+            if (eval.isMatch()) {
+                rulesEngine.removeFact(missingState);
+                missingState.setPreviousTime(evalTime);
+                missingState.setTime(evalTime);
+                rulesEngine.addFact(missingState);
+                rulesEngine.addFact(eval);
+            }
+        });
+    }
+
+    @Test
+    public void missingDataTestNoData() throws Exception {
+        //Initial trigger and condition
+        Trigger t1 = new Trigger("tenant", "trigger-m", "Missing test Trigger");
+        MissingCondition fmt1 = new MissingCondition("tenant", "trigger-m", "data-id", 3000L);
+
+        t1.setEnabled(true);
+
+        // Missing state is generated on reloadTrigger()
+        MissingState missingState = new MissingState(t1, fmt1);
+        missingStates.add(missingState);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(fmt1);
+        rulesEngine.addFact(missingState);
+
+        checkMissingStates(System.currentTimeMillis() + 4000);
+
+        // If missing states but not data rules engine should fire
+        rulesEngine.fireNoData();
+
+        assertEquals(1, alerts.size());
+
+        checkMissingStates(System.currentTimeMillis() + 8000);
+
+        rulesEngine.fireNoData();
+
+        assertEquals(2, alerts.size());
+    }
+
+    @Test
+    public void missingDataTestWithData() throws Exception {
+        Trigger t1 = new Trigger("tenant", "trigger-m", "Missing test Trigger");
+        MissingCondition fmt1 = new MissingCondition("tenant", "trigger-m", "data-id", 3000L);
+
+        t1.setEnabled(true);
+
+        // Missing state is generated on reloadTrigger()
+        MissingState missingState = new MissingState(t1, fmt1);
+        missingStates.add(missingState);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(fmt1);
+        rulesEngine.addFact(missingState);
+
+        // Initial check will send a MissingState into the engine
+        checkMissingStates(System.currentTimeMillis());
+
+        rulesEngine.fireNoData();
+
+        // We add a data, so it should update the missingState and not fire any alert
+
+        Data data = Data.forAvailability("tenant", "data-id", System.currentTimeMillis() + 4001, AvailabilityType.DOWN);
+        rulesEngine.addData(data);
+
+        rulesEngine.fire();
+
+        checkMissingStates(4000);
+
+        rulesEngine.fireNoData();
+
+        assertEquals(0, alerts.size());
     }
 }

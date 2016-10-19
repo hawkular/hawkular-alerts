@@ -35,6 +35,8 @@ import org.hawkular.alerts.api.model.condition.EventCondition;
 import org.hawkular.alerts.api.model.condition.EventConditionEval;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
+import org.hawkular.alerts.api.model.condition.MissingCondition;
+import org.hawkular.alerts.api.model.condition.MissingConditionEval;
 import org.hawkular.alerts.api.model.condition.RateCondition;
 import org.hawkular.alerts.api.model.condition.RateConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
@@ -152,6 +154,22 @@ public class JacksonDeserializer {
                         eConditionEval.setCondition((ExternalCondition) condition);
                         if (node.get("value") != null) {
                             eConditionEval.setValue(node.get("value").textValue());
+                        }
+                    } catch (Exception e) {
+                        throw new ConditionEvalException(e);
+                    }
+                    break;
+                }
+                case MISSING: {
+                    try {
+                        conditionEval = new MissingConditionEval();
+                        MissingConditionEval mConditionEval = (MissingConditionEval) conditionEval;
+                        mConditionEval.setCondition((MissingCondition) condition);
+                        if (node.get("previousTime") != null) {
+                            mConditionEval.setPreviousTime(node.get("previousTime").longValue());
+                        }
+                        if (node.get("time") != null) {
+                            mConditionEval.setTime(node.get("time").longValue());
                         }
                     } catch (Exception e) {
                         throw new ConditionEvalException(e);
@@ -397,6 +415,21 @@ public class JacksonDeserializer {
                     }
                     if (node.get("expression") != null) {
                         evCondition.setExpression(node.get("expression").textValue());
+                    }
+                } catch (Exception e) {
+                    throw new ConditionException(e);
+                }
+                break;
+            }
+            case MISSING: {
+                try {
+                    condition = new MissingCondition();
+                    MissingCondition mCondition = (MissingCondition) condition;
+                    if (node.get("dataId") != null) {
+                        mCondition.setDataId(node.get("dataId").textValue());
+                    }
+                    if (node.get("interval") != null) {
+                        mCondition.setInterval(node.get("interval").longValue());
                     }
                 } catch (Exception e) {
                     throw new ConditionException(e);

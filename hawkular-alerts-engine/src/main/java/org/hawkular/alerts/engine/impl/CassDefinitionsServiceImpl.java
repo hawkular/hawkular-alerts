@@ -45,6 +45,7 @@ import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.EventCondition;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
+import org.hawkular.alerts.api.model.condition.MissingCondition;
 import org.hawkular.alerts.api.model.condition.RateCondition;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -1940,6 +1941,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 .get(session, CassStatement.INSERT_CONDITION_EVENT);
         PreparedStatement insertConditionExternal = CassStatement
                 .get(session, CassStatement.INSERT_CONDITION_EXTERNAL);
+        PreparedStatement insertConditionMissing = CassStatement
+                .get(session, CassStatement.INSERT_CONDITION_MISSING);
         PreparedStatement insertConditionRate = CassStatement
                 .get(session, CassStatement.INSERT_CONDITION_RATE);
         PreparedStatement insertConditionString = CassStatement.get(session, CassStatement.INSERT_CONDITION_STRING);
@@ -1951,6 +1954,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 || insertConditionCompare == null
                 || insertConditionEvent == null
                 || insertConditionExternal == null
+                || insertConditionMissing == null
                 || insertConditionRate == null
                 || insertConditionString == null
                 || insertConditionThreshold == null
@@ -2002,6 +2006,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 eCond.getTriggerId(), eCond.getTriggerMode().name(), eCond.getContext(),
                                 eCond.getConditionSetSize(), eCond.getConditionSetIndex(), eCond.getConditionId(),
                                 eCond.getDataId(), eCond.getAlerterId(), eCond.getExpression())));
+                        break;
+                    case MISSING:
+                        MissingCondition mCond = (MissingCondition) cond;
+                        futures.add(session.executeAsync(insertConditionMissing.bind(mCond.getTenantId(),
+                                mCond.getTriggerId(), mCond.getTriggerMode().name(), mCond.getContext(),
+                                mCond.getConditionSetSize(), mCond.getConditionSetIndex(), mCond.getConditionId(),
+                                mCond.getDataId(), mCond.getInterval())));
                         break;
                     case RANGE:
                         ThresholdRangeCondition rCond = (ThresholdRangeCondition) cond;
@@ -2275,6 +2286,18 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     evCondition.setExpression(row.getString("pattern"));
                     evCondition.setContext(row.getMap("context", String.class, String.class));
                     condition = evCondition;
+                    break;
+                case MISSING:
+                    MissingCondition mCondition = new MissingCondition();
+                    mCondition.setTenantId(row.getString("tenantId"));
+                    mCondition.setTriggerId(row.getString("triggerId"));
+                    mCondition.setTriggerMode(Mode.valueOf(row.getString("triggerMode")));
+                    mCondition.setConditionSetSize(row.getInt("conditionSetSize"));
+                    mCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
+                    mCondition.setDataId(row.getString("dataId"));
+                    mCondition.setInterval(row.getLong("interval"));
+                    mCondition.setContext(row.getMap("context", String.class, String.class));
+                    condition = mCondition;
                     break;
                 case RANGE:
                     ThresholdRangeCondition rCondition = new ThresholdRangeCondition();

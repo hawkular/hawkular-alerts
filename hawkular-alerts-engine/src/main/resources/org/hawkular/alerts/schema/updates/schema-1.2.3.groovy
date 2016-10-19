@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.schema
-
-include '/org/hawkular/alerts/schema/bootstrap.groovy'
 
 setKeyspace keyspace
 
-// Upgrade scripts are defined here:
-include '/org/hawkular/alerts/schema/updates/schema-1.2.1.groovy'
-include '/org/hawkular/alerts/schema/updates/schema-1.2.3.groovy'
+schemaChange {
+  version '2.0'
+  author 'lponce'
+  tags '1.2.x'
+  cql "ALTER TABLE conditions ADD interval bigint"
+}

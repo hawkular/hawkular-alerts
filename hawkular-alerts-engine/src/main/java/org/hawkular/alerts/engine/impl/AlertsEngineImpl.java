@@ -43,6 +43,8 @@ import javax.enterprise.concurrent.ManagedExecutorService;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.condition.MissingCondition;
+import org.hawkular.alerts.api.model.condition.MissingConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
@@ -59,6 +61,7 @@ import org.hawkular.alerts.engine.service.PartitionManager;
 import org.hawkular.alerts.engine.service.PartitionManager.Operation;
 import org.hawkular.alerts.engine.service.PartitionTriggerListener;
 import org.hawkular.alerts.engine.service.RulesEngine;
+import org.hawkular.alerts.engine.util.MissingState;
 import org.jboss.logging.Logger;
 
 /**
@@ -96,6 +99,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     private final Set<Dampening> pendingTimeouts;
     private final Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers;
     private final Set<Trigger> disabledTriggers;
+    private final Set<MissingState> missingStates;
 
     private final Timer wakeUpTimer;
     private TimerTask rulesTask;
@@ -133,6 +137,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         pendingTimeouts = new HashSet<>();
         autoResolvedTriggers = new HashMap<>();
         disabledTriggers = new HashSet<>();
+        missingStates = new HashSet<>();
 
         wakeUpTimer = new Timer("CassAlertsServiceImpl-Timer");
 
@@ -217,6 +222,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         pendingTimeouts.clear();
         autoResolvedTriggers.clear();
         disabledTriggers.clear();
+        missingStates.clear();
 
         rulesTask = new RulesInvoker();
         wakeUpTimer.schedule(rulesTask, delay, period);
@@ -371,6 +377,12 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                             alertsEngineCache.add(entry2);
                         }
                     }
+                    if (c instanceof MissingCondition) {
+                        MissingState missingState = new MissingState(trigger, (MissingCondition) c);
+                        // MissingStates are modified inside the rules engine
+                        missingStates.add(missingState);
+                        rules.addFact(missingState);
+                    }
                 }
 
                 rules.addFact(trigger);
@@ -441,6 +453,15 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 }
                 return false;
             });
+            Iterator<MissingState> it = missingStates.iterator();
+            while (it.hasNext()) {
+                MissingState missingState = it.next();
+                if (missingState.getTenantId().equals(trigger.getTenantId()) &&
+                        missingState.getTriggerId().equals(triggerId)) {
+                    rules.removeFact(missingState);
+                    it.remove();
+                }
+            }
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Trigger not found. Not removed from rulebase " + trigger.toString());
@@ -537,7 +558,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         public void run() {
             int numTimeouts = checkPendingTimeouts();
 
-            if (!pendingData.isEmpty() || !pendingEvents.isEmpty() || numTimeouts > 0) {
+            int numMissingEvals = checkMissingStates();
+
+            if (!pendingData.isEmpty() || !pendingEvents.isEmpty() || numTimeouts > 0 || numMissingEvals > 0) {
                 Collection<Data> newData = getAndClearPendingData();
                 Collection<Event> newEvents = getAndClearPendingEvents();
 
@@ -669,6 +692,25 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         } finally {
             autoResolvedTriggers.clear();
         }
+    }
+
+    private int checkMissingStates() {
+        int numMatchingEvals = 0;
+        for (MissingState missingState : missingStates) {
+            long now = System.currentTimeMillis();
+            if (missingState.getCondition().match(missingState.getPreviousTime(), now)) {
+                MissingConditionEval eval = new MissingConditionEval(missingState.getCondition(),
+                        missingState.getPreviousTime(),
+                        now);
+                rules.removeFact(missingState);
+                missingState.setPreviousTime(System.currentTimeMillis());
+                missingState.setTime(System.currentTimeMillis());
+                rules.addFact(missingState);
+                rules.addFact(eval);
+                numMatchingEvals++;
+            }
+        }
+        return numMatchingEvals;
     }
 
     /*

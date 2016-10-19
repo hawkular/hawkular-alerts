@@ -18,10 +18,12 @@ package org.hawkular.alerts.rest
 
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.EventCondition
+import org.hawkular.alerts.api.model.condition.MissingCondition
 import org.hawkular.alerts.api.model.event.EventCategory
 import org.hawkular.alerts.api.model.event.EventType
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
+import org.hawkular.alerts.api.model.trigger.TriggerType
 import org.junit.FixMethodOrder
 import org.junit.Test
 import org.slf4j.Logger
@@ -370,6 +372,126 @@ class EventsLifecycleITest extends AbstractITestBase {
     }
 
     @Test
+    void t04_missingEventsTest() {
+        logger.info( "Running t04_missingEventsTest" )
+
+        String start = String.valueOf(System.currentTimeMillis())
+
+        // Clean previous tests
+        def resp = client.delete(path: "triggers/test-events-t04")
+        assert(200 == resp.status || 404 == resp.status)
+
+        // Triggers to fire events
+        Trigger t04 = new Trigger("test-events-t04", "Check if we receive events on 5 secs");
+        t04.setEventType(EventType.EVENT);
+
+        resp = client.post(path: "triggers", body: t04)
+        assertEquals(200, resp.status)
+
+        MissingCondition firingCond = new MissingCondition("test-events-t04", Mode.FIRING,
+            "event-data-id-t04", 5000L);
+
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+
+        resp = client.put(path: "triggers/test-events-t04/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // Enable trigger
+        t04.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-events-t04/", body: t04)
+        assertEquals(200, resp.status)
+
+        // Wait for 7 seconds to fire the missing events
+        Thread.sleep(7000);
+
+        resp = client.get(path: "events", query: [startTime:start,triggerIds:"test-events-t04"] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+    }
+
+    @Test
+    void t05_missingEventsWithDataTest() {
+        logger.info( "Running t05_missingEventsWithDataTest" )
+
+        String start = String.valueOf(System.currentTimeMillis())
+
+        // Clean previous tests
+        def resp = client.delete(path: "triggers/test-events-t05")
+        assert(200 == resp.status || 404 == resp.status)
+
+        // Triggers to fire events
+        Trigger t05 = new Trigger("test-events-t05", "Check if we receive events on 5 secs");
+        t05.setEventType(EventType.EVENT);
+
+        resp = client.post(path: "triggers", body: t05)
+        assertEquals(200, resp.status)
+
+        MissingCondition firingCond = new MissingCondition("test-events-t05", Mode.FIRING, "event-data-id-t05", 5000L);
+
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+
+        resp = client.put(path: "triggers/test-events-t05/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // Enable trigger
+        t05.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-events-t05/", body: t05)
+        assertEquals(200, resp.status)
+
+        Thread.sleep(2000);
+
+        String jsonEventTest05Id = UUID.randomUUID().toString();
+        String jsonEventTest05 = "[{" +
+                "\"id\":\"" + jsonEventTest05Id + "\"," +
+                "\"ctime\":" + System.currentTimeMillis() + "," +
+                "\"category\":\"Test05\"," +
+                "\"dataId\":\"event-data-id-t05\"," +
+                "\"text\":\"Test05 text\"" +
+                "}]";
+
+        resp = client.post(path: "events/data", body: jsonEventTest05);
+        assertEquals(200, resp.status)
+
+        Thread.sleep(2000);
+
+        jsonEventTest05Id = UUID.randomUUID().toString();
+        jsonEventTest05 = "[{" +
+                "\"id\":\"" + jsonEventTest05Id + "\"," +
+                "\"ctime\":" + System.currentTimeMillis() + "," +
+                "\"category\":\"Test05\"," +
+                "\"dataId\":\"event-data-id-t05\"," +
+                "\"text\":\"Test05 text\"" +
+                "}]";
+
+        resp = client.post(path: "events/data", body: jsonEventTest05);
+        assertEquals(200, resp.status)
+
+        Thread.sleep(2000);
+
+        jsonEventTest05Id = UUID.randomUUID().toString();
+        jsonEventTest05 = "[{" +
+                "\"id\":\"" + jsonEventTest05Id + "\"," +
+                "\"ctime\":" + System.currentTimeMillis() + "," +
+                "\"category\":\"Test05\"," +
+                "\"dataId\":\"event-data-id-t05\"," +
+                "\"text\":\"Test05 text\"" +
+                "}]";
+
+        resp = client.post(path: "events/data", body: jsonEventTest05);
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "events", query: [startTime:start,triggerIds:"test-events-t05"] )
+        assertEquals(200, resp.status)
+        assertEquals(0, resp.data.size())
+    }
+
+    @Test
     void t100_eventsCleanup() {
         logger.info("Running t100_eventsCleanup")
 
@@ -395,11 +517,23 @@ class EventsLifecycleITest extends AbstractITestBase {
         resp = client.delete(path: "triggers/test-events-t03-combined")
         assert(200 == resp.status || 404 == resp.status)
 
+        resp = client.delete(path: "triggers/test-events-t04")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-events-t05")
+        assert(200 == resp.status || 404 == resp.status)
+
         // clean up alerts
         resp = client.put(path: "delete", query: [triggerIds:"test-events-t01"])
         assertEquals(200, resp.status)
 
         resp = client.put(path: "delete", query: [triggerIds:"test-events-t02-combined"])
+        assertEquals(200, resp.status)
+
+        resp = client.put(path: "events/delete", query: [triggerIds:"test-events-t04"])
+        assertEquals(200, resp.status)
+
+        resp = client.put(path: "events/delete", query: [triggerIds:"test-events-t05"])
         assertEquals(200, resp.status)
 
         // clean up events

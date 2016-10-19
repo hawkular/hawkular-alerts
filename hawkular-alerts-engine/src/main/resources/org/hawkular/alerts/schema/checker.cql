@@ -46,6 +46,11 @@ WHERE keyspace_name='${keyspace}' AND table_name = 'conditions';
 
 -- #
 
+SELECT column_name FROM system_schema.columns
+WHERE keyspace_name='${keyspace}' AND table_name = 'conditions' AND column_name = 'interval';
+
+-- #
+
 SELECT table_name FROM system_schema.tables
 WHERE keyspace_name='${keyspace}' AND table_name = 'dampenings';
 

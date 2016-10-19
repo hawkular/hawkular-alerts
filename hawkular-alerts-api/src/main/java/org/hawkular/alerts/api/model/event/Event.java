@@ -375,7 +375,8 @@ public class Event implements Comparable<Event>, Serializable {
     @Override
     public String toString() {
         return "Event [tenantId=" + tenantId + ", id=" + id + ", ctime=" + ctime + ", category=" + category
-                + ", text=" + text + ", context=" + context + ", tags=" + tags + ", trigger=" + trigger + "]";
+                + ", dataId=" + dataId + ", dataSource=" + dataSource + ", text=" + text + ", context=" + context + ", " +
+                "tags=" + tags + ", trigger=" + trigger + "]";
     }
 
     /* (non-Javadoc)

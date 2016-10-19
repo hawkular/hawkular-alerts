@@ -26,6 +26,8 @@ import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
 import org.hawkular.alerts.api.model.condition.EventCondition;
 import org.hawkular.alerts.api.model.condition.EventConditionEval;
+import org.hawkular.alerts.api.model.condition.MissingCondition;
+import org.hawkular.alerts.api.model.condition.MissingConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.StringConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -46,6 +48,7 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.engine.util.CompareData;
+import org.hawkular.alerts.engine.util.MissingState;
 import org.hawkular.alerts.engine.util.RateData;
 
 import org.jboss.logging.Logger;
@@ -54,7 +57,8 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.List;
 import java.util.Map;
-import org.hawkular.alerts.engine.util.ActionsValidator;
+import org.hawkular.alerts.engine.util.ActionsValidator
+import org.hawkular.alerts.engine.util.MissingState;
 
 global Logger log;
 global ActionsService actions;
@@ -63,7 +67,6 @@ global List events;
 global Set pendingTimeouts;
 global Map autoResolvedTriggers;
 global Set disabledTriggers;
-
 
 ////// CONDITION MATCHING
 //
@@ -260,6 +263,47 @@ rule Rate
         insert( ce );
 end
 
+rule UpdateMissingStateFromData
+    when
+        $ms : MissingState( $tenantId : tenantId, $tsource : source, $did : dataId, previousTime < time )
+        $d  : Data( tenantId == $tenantId, source == $tsource, id == $did)
+   then
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("UpdateMissingStateFromData: %s ", $ms);
+        }
+        // MissingState object is referenced in the AlertsEngineImpl.missingStates set
+        modify( $ms ) {
+            setPreviousTime($d.getTimestamp()),
+            setTime($d.getTimestamp())
+        }
+        // We now is a non matching eval but needed for Dampening
+        MissingConditionEval mce = new MissingConditionEval( $ms.getCondition(), $ms.getPreviousTime(), $ms.getTime());
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("MissingConditionEval : %s %s", (mce.isMatch() ? "Match!" : "no match"), mce.getLog());
+        }
+        insert( mce );
+end
+
+rule UpdateMissingStateFromEvent
+    when
+        $ms : MissingState( $tenantId : tenantId, $tsource : source, $did : dataId, previousTime < time )
+        $e  : Event( tenantId == $tenantId, dataSource == $tsource, dataId == $did)
+    then
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("UpdateMissingStateFromEvent: %s ", $ms);
+        }
+        // MissingState object is referenced in the AlertsEngineImpl.missingStates set
+        modify( $ms ) {
+            setPreviousTime($e.getCtime()),
+            setTime($e.getCtime())
+        };
+        // We now is a non matching eval but needed for Dampening
+        MissingConditionEval mce = new MissingConditionEval( $ms.getCondition(), $ms.getPreviousTime(), $ms.getTime());
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("MissingConditionEval : %s %s", (mce.isMatch() ? "Match!" : "no match"), mce.getLog());
+        }
+        insert( mce );
+end
 
 // Data retraction rules
 // These rules are expected to fire after any Eval rules, due to their simplicity.  Note that Data is not retracted
@@ -272,13 +316,14 @@ rule RetractProcessedRateData
         $rd : RateData( $tenantId : data.tenantId, $dsource : data.source, $did : data.id )
         $d  : Data( tenantId == $tenantId, source == $dsource, id == $did )
     then
-        $rd.setData( $d );
         if (log != null && log.isDebugEnabled()) {
             log.debugf("Retracting %s", $d);
             log.debugf("Updating %s", $rd);
         }
         retract ( $d );
-        update ( $rd );
+        modify ( $rd ) {
+            setData( $d )
+        }
 end
 
 rule RetractProcessedData
