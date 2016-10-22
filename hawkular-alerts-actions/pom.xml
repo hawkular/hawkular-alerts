@@ -63,6 +63,7 @@
         <module>hawkular-alerts-actions-api</module>
         <module>hawkular-alerts-actions-plugins</module>
         <module>hawkular-alerts-actions-impl</module>
+        <module>hawkular-alerts-actions-tests</module>
       </modules>
     </profile>
   </profiles>
