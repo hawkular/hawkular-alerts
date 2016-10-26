@@ -27,12 +27,19 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * A base class for condition definition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "A base class for condition definition. ",
+        subTypes = { AvailabilityCondition.class, CompareCondition.class, EventCondition.class, ExternalCondition.class,
+            MissingCondition.class, RateCondition.class, StringCondition.class, ThresholdCondition.class,
+            ThresholdRangeCondition.class })
 @JsonDeserialize(using = JacksonDeserializer.ConditionDeserializer.class)
 public abstract class Condition implements Serializable {
 
@@ -42,21 +49,35 @@ public abstract class Condition implements Serializable {
         AVAILABILITY, COMPARE, STRING, THRESHOLD, RANGE, EXTERNAL, EVENT, RATE, MISSING
     }
 
+    @ApiModelProperty(value = "Tenant id owner of this condition.",
+            position = 0,
+            required = true,
+            allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
     @JsonInclude
     protected String tenantId;
 
     /**
      * The owning trigger
      */
+    @ApiModelProperty(value = "The owning trigger.",
+            position = 1,
+            allowableValues = "triggerId is set up from REST request parameters")
     @JsonInclude
     protected String triggerId;
 
     /**
      * The owning trigger's mode when this condition is active
      */
+    @ApiModelProperty(value = "The owning trigger's mode when this condition is active.",
+            position = 2,
+            required = true)
     @JsonInclude
     protected Mode triggerMode;
 
+    @ApiModelProperty(value = "The type of the condition defined. Each type has its specific properties defined " +
+            "on its subtype of condition.",
+            position = 3,
+            required = true)
     @JsonInclude
     protected Type type;
 
@@ -64,6 +85,10 @@ public abstract class Condition implements Serializable {
      * Number of conditions associated with a particular trigger.
      * i.e. 2 [ conditions ]
      */
+    @ApiModelProperty(value = "Number of conditions associated with a particular trigger. This is a read-only value " +
+            "defined by the system.",
+            position = 4,
+            required = false)
     @JsonInclude
     protected int conditionSetSize;
 
@@ -71,15 +96,23 @@ public abstract class Condition implements Serializable {
      * Index of the current condition
      * i.e. 1 [ of 2 conditions ]
      */
+    @ApiModelProperty(value = "Index of the current condition. This is a read-only value defined by the system.",
+            position = 5,
+            required = false)
     @JsonInclude
     protected int conditionSetIndex;
 
     /**
      * A composed key for the condition
      */
+    @ApiModelProperty(value = "A composed key for the condition. This is a read-only value defined by the system.",
+            position = 6,
+            required = false)
     @JsonInclude
     protected String conditionId;
 
+    @ApiModelProperty(value = "Properties defined by the user for this condition.",
+            position = 7)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 
@@ -205,5 +238,10 @@ public abstract class Condition implements Serializable {
     /**
      * @return The dataId, can be null if the Condition has no relevant dataId.
      */
+    @ApiModelProperty(value = "Data identifier used for condition evaluation. dataId is used in conjunction with " +
+                "operators defined at subtype condition level.",
+            position = 8,
+            required = true,
+            name = "dataId")
     public abstract String getDataId();
 }

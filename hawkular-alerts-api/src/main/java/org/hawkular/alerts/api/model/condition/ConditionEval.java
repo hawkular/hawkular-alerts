@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,32 +27,50 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * An evaluation state of a specific condition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "A base class to represent an evaluation state of a specific condition.",
+        subTypes = { AvailabilityConditionEval.class, CompareConditionEval.class, EventConditionEval.class,
+            ExternalConditionEval.class, MissingConditionEval.class, RateConditionEval.class, StringConditionEval.class,
+            ThresholdConditionEval.class, ThresholdRangeConditionEval.class })
 @JsonDeserialize(using = JacksonDeserializer.ConditionEvalDeserializer.class)
 public abstract class ConditionEval implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     // result of the condition evaluation
+    @ApiModelProperty(value = "Result of the condition evaluation.",
+            position = 0)
     @JsonIgnore
     protected boolean match;
 
     // time of condition evaluation (i.e. creation time)
+    @ApiModelProperty(value = "Time of condition evaluation.",
+            position = 1)
     @JsonInclude
     protected long evalTimestamp;
 
     // time stamped on the data used in the eval
+    @ApiModelProperty(value = "Time stamped on the data used in the evaluation.",
+            position = 2)
     @JsonInclude
     protected long dataTimestamp;
 
+    @ApiModelProperty(value = "The type of the condition eval defined. Each type has its specific properties defined " +
+            "on its subtype of condition eval.",
+            position = 3)
     @JsonInclude
     protected Condition.Type type;
 
+    @ApiModelProperty(value = "Properties defined by the user at Data level on the dataId used for this evaluation.",
+            position = 4)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 

@@ -44,7 +44,7 @@ apidocFile.withWriterAppend('UTF-8') { writer ->
 
 """
     swagger.tags.sort { t1, t2 -> t1.name.compareTo(t2.name) }.each { tag ->
-        writer.println "=== ${tag.name}"
+        writer.println "=== [ /${tag.name == '*' ? '' : tag.name} ] ${tag.description}"
         swagger.paths.sort { p1, p2 -> p1.key.compareTo(p2.key) }.each { Entry path ->
             path.value.each { Entry method ->
 
@@ -107,8 +107,9 @@ private writeEndpointHeader(Writer writer, Entry path, Entry method) {
 [[${anchor}]]
 *Endpoint ${httpMethod} `${endpoint}`*
 
-NOTE: *${summary}* +
-${description ? "_${description}_" : ''}
+${summary} +
+ +
+${description ? "${description}" : ''}
 
 """
 }
@@ -118,18 +119,17 @@ def writeParams(Writer writer, String paramType, List params) {
         writer.println """
 *${paramType} parameters*
 
-[cols="15,^10,35,^15,^10,^15", options="header"]
+[cols="15,^10,35,^15,^15", options="header"]
 |=======================
-|Parameter|Required|Description|Type|Format|Allowable Values
+|Parameter|Required|Description|Type|Allowable Values
 """
         params.each { param ->
             def name = param.name
             def required = required(param.required)
             def description = param.description ?: '-'
             def type = param.type
-            def format = param.format ?: '-'
             def allowableValues = allowableValues(param.enum)
-            writer.println "|${name}|${required}|${description}|${type}|${format}|${allowableValues}"
+            writer.println "|${name}|${required}|${description}|${type}|${allowableValues}"
         }
         writer.println '''
 |=======================
@@ -193,16 +193,25 @@ def writeEndpointFooter(Writer writer) {
 def writeDataTypes(Writer writer, Map definitions) {
     definitions.findAll { Entry definition -> definition.key != 'AsyncResponse' }.each { Entry definition ->
         def definitionName = definition.key
+        def definitionValue = definition.value.allOf ? definition.value.allOf[1] : definition.value
+        def definitionParent
+        if (definition.value.allOf) {
+            definitionParent = "Subtype of <<${definition.value.allOf[0]['$ref'].substring("#/definitions/".length())}>>"
+        }
         writer.println """
 [[${definitionName}]]
 === ${definitionName}
-[cols="15,^10,35,^15,^10,^15", options="header"]
+${definitionValue.description}
+
+${definitionParent ? definitionParent : ''}
+[cols="15,^10,35,^15,^15,^15", options="header"]
 |=======================
-|Name|Required|Description|Type|Format|Allowable Values
+|Name|Required|Description|Type|Allowable Values|Default Value
 """
-        definition.value.properties.each { Entry property ->
+        (definitionValue.properties ?: []).sort{ a, b -> a.value.position <=> b.value.position }
+        .each { Entry property ->
             def propertyName = property.key
-            def required = required((definition.value.required ?: []).contains(propertyName))
+            def required = required((definitionValue.required ?: []).contains(propertyName))
             def description = property.value.description ?: '-'
             def type
             switch (property.value.type) {
@@ -212,15 +221,37 @@ def writeDataTypes(Writer writer, Map definitions) {
                         String itemsRef = items['$ref']
                         type = "array of <<${itemsRef.substring("#/definitions/".length())}>>"
                     } else {
-                        type = "array of ${items.type}"
+                        if (items['items']) {
+                            if (items['items']['$ref']) {
+                                String itemsItemsRef = items['items']['$ref']
+                                type = "array of array of <<${itemsItemsRef.substring("#/definitions/".length())}>>"
+                            } else {
+                                type = "array of array of ${items['items'].type}"
+                            }
+                        } else {
+                            type = "array of ${items.type}"
+                        }
                     }
                     break;
                 default:
-                    type = property.value.type
+                    if (property.value['$ref']) {
+                        type = "<<${property.value['$ref'].substring("#/definitions/".length())}>>"
+                    } else {
+                        type = property.value.type
+                    }
             }
-            def format = property.value.format ?: '-'
+            def map
+            if (property.value.type == 'object' && property.value.additionalProperties) {
+                // This is a hack but swagger doesn't support properly maps
+                if (property.value.additionalProperties.type == 'object') {
+                    map = "map[string,map[string,string]]"
+                } else {
+                    map = "map[string,string]"
+                }
+            }
             def allowableValues = allowableValues(property.value.enum)
-            writer.println "|${propertyName}|${required}|${description}|${type}|${format}|${allowableValues}"
+            def defaultValue = property.value.example ?: '-'
+            writer.println "|${propertyName}|${required}|${description}|${type}|${map ? map : allowableValues}|${defaultValue}"
         }
         writer.println '''
 |=======================
@@ -243,17 +274,40 @@ def String schemaToType(Map schema) {
         model = "<<${ref.substring("#/definitions/".length())}>>"
     } else if (schema.type) {
         switch (schema.type) {
-            case "array":
+            case 'array':
                 def items = schema.items ?: [:]
                 if (items['$ref']) {
                     String itemsRef = items['$ref']
                     model = "array of <<${itemsRef.substring("#/definitions/".length())}>>"
                 } else {
-                    model = "array of ${items.type}"
+                    if (items['items']) {
+                        if (items['items']['$ref']) {
+                            String itemsItemsRef = items['items']['$ref']
+                            model = "array of array of <<${itemsItemsRef.substring("#/definitions/".length())}>>"
+                        } else {
+                            model = "array of array of ${items['items'].type}"
+                        }
+                    } else {
+                        model = "array of ${items.type}"
+                    }
                 }
                 break;
             default:
-                model = schema.type
+                if (schema['$ref']) {
+                    model = "<<${schema['$ref'].substring("#/definitions/".length())}>>"
+                } else {
+                    if (schema.additionalProperties) {
+                        if (schema.additionalProperties.type == 'object') {
+                            model = "map[string,map[string,string]]"
+                        } else if (schema.additionalProperties.type == 'array') {
+                            model = "map[string,array of object]"
+                        } else {
+                            model = "map[string,string]"
+                        }
+                    } else {
+                        model = schema.type
+                    }
+                }
         }
     } else {
         model = '-'

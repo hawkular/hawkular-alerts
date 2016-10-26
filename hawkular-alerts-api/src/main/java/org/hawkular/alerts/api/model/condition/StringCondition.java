@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,12 +21,16 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * A string comparison condition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "A string comparison condition.")
 public class StringCondition extends Condition {
 
     private static final long serialVersionUID = 1L;
@@ -38,12 +42,22 @@ public class StringCondition extends Condition {
     @JsonInclude(Include.NON_NULL)
     private String dataId;
 
+    @ApiModelProperty(value = "String operator.",
+            position = 0,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private Operator operator;
 
+    @ApiModelProperty(value = "Pattern to be used with the string operator.",
+            position = 1,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private String pattern;
 
+    @ApiModelProperty(value = "Flag to indicate whether pattern should ignore case in the string operator expression.",
+            position = 2,
+            required = false,
+            example = "false")
     @JsonInclude
     private boolean ignoreCase;
 

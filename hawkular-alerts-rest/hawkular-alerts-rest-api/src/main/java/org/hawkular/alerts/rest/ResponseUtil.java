@@ -31,6 +31,9 @@ import org.hawkular.alerts.rest.json.Link;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * Helper class used to build REST responses and deal with errors.
  *
@@ -143,8 +146,26 @@ public class ResponseUtil {
         builder.header("X-Total-Count", resultList.getTotalSize());
     }
 
+    @ApiModel(description = "Payload for a simple REST deleted number response.")
+    public static class ApiDeleted {
+
+        @ApiModelProperty(value = "Deleted items.")
+        @JsonInclude
+        private final Integer deleted;
+
+        public ApiDeleted(Integer deleted) {
+            this.deleted = deleted;
+        }
+
+        public Integer getDeleted() {
+            return deleted;
+        }
+    }
+
+    @ApiModel(description = "Payload for a REST error response.")
     public static class ApiError {
 
+        @ApiModelProperty(value = "Description of the error message.")
         @JsonInclude
         private final String errorMsg;
 

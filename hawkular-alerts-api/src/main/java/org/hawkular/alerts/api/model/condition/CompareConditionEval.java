@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,25 +24,36 @@ import org.hawkular.alerts.api.model.data.Data;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 /**
  * An evaluation state for compare condition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "An evaluation state for compare condition.")
 public class CompareConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
+    @ApiModelProperty(value = "Compare condition linked with this state.",
+            position = 0)
     @JsonInclude(Include.NON_NULL)
     private CompareCondition condition;
 
+    @ApiModelProperty(value = "Numeric value used for dataId.",
+            position = 1)
     @JsonInclude(Include.NON_NULL)
     private Double value1;
 
+    @ApiModelProperty(value = "Numeric value used for data2Id.",
+            position = 2)
     @JsonInclude(Include.NON_NULL)
     private Double value2;
 
+    @ApiModelProperty(value = "Properties defined by the user at Data level on the data2Id used for this evaluation.",
+            position = 3)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context2;
 

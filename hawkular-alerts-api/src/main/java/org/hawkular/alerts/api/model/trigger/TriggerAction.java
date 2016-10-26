@@ -25,6 +25,9 @@ import org.hawkular.alerts.api.model.action.TimeConstraint;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * Link an ActionDefinition with a Trigger.
  *
@@ -40,25 +43,54 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "Link an <<ActionDefinition>> with a <<Trigger>>. + \n" +
+        " + \n" +
+        "It can add optional constraints that determine when an action will be executed: + \n" +
+        " + \n" +
+        "- A set of Alert.Status (represented by its string value). + \n" +
+        "The action will be executed if the linked Alert is set to one of the defined states. + \n" +
+        "Unlike Alerts, Events don't have lifecycle, TriggerActions on Events are all executed at " +
+        "Event creation time. + \n" +
+        " + \n" +
+        "- A <<TimeConstraint>> object that defines a time interval in absolute or relative way. + \n" +
+        "The action will be executed if the action creation time is satisfied by the time interval.")
 public class TriggerAction implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @ApiModelProperty(value = "Tenant id owner of this trigger.",
+            position = 0,
+            required = false,
+            allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
     @JsonInclude(Include.NON_NULL)
     private String tenantId;
 
+    @ApiModelProperty(value = "Action plugin identifier.",
+            position = 1,
+            required = true,
+            allowableValues = "Only plugins deployed on the system are valid.")
     @JsonInclude
     private String actionPlugin;
 
+    @ApiModelProperty(value = "Action definition identifier.",
+            position = 2,
+            required = true,
+            allowableValues = "Only existing action definitinons on the system are valid.")
     @JsonInclude
     private String actionId;
 
+    @ApiModelProperty(value = "A list of Alert.Status where this action is linked.",
+            position = 3,
+            required = false,
+            allowableValues = "OPEN, ACKNOWLEDGED, RESOLVED")
     @JsonInclude(Include.NON_EMPTY)
     private Set<String> states;
 
+    @ApiModelProperty(value = "A list of TimeConstraint where this action is linked.",
+            position = 4,
+            required = false)
     @JsonInclude(Include.NON_NULL)
     private TimeConstraint calendar;
-
 
     public TriggerAction() {
         this(null, null, null);

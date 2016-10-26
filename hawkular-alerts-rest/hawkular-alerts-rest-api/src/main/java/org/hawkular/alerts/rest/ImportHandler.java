@@ -61,7 +61,39 @@ public class ImportHandler {
     @Path("/{strategy}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Import a list of full triggers and action definitions.",
-            notes = "Return a list of effectively imported full triggers and action definitions.",
+            notes = "Return a list of effectively imported full triggers and action definitions. + \n" +
+                    " + \n" +
+                    "Import options: + \n" +
+                    " + \n" +
+                    "DELETE + \n" +
+                    "" +
+                    " + \n" +
+                    "Existing data in the backend is DELETED before the import operation. + \n" +
+                    "All <<FullTrigger>> and <<ActionDefinition objects>> defined in the <<Definitions>> parameter " +
+                    "are imported. + \n" +
+                    " + \n" +
+                    "ALL + \n" +
+                    " + \n" +
+                    "Existing data in the backend is NOT DELETED before the import operation. + \n" +
+                    "All <<FullTrigger>> and <<ActionDefinition>> objects defined in the <<Definitions>> parameter " +
+                    "are imported. + \n" +
+                    "Existing <<FullTrigger>> and <<ActionDefinition>> objects are overwritten with new values " +
+                    "passed in the <<Definitions>> parameter." +
+                    " + \n" +
+                    "NEW + \n" +
+                    " + \n" +
+                    "Existing data in the backend is NOT DELETED before the import operation. + \n" +
+                    "Only NEW <<FullTrigger>> and <<ActionDefinition>> objects defined in the <<Definitions>> " +
+                    "parameters are imported. + \n" +
+                    "Existing <<FullTrigger>> and <<ActionDefinition>> objects are maintained in the backend. + \n" +
+                    " + \n" +
+                    "OLD + \n" +
+                    "Existing data in the backend is NOT DELETED before the import operation. + \n" +
+                    "Only <<FullTrigger>> and <<ActionDefinition>> objects defined in the <<Definitions>> parameter " +
+                    "that previously exist in the backend are imported and overwritten. + \n" +
+                    "New <<FullTrigger>> and <<ActionDefinition>> objects that don't exist previously in the " +
+                    "backend are ignored. + \n" +
+                    " + \n",
             response = Definitions.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully exported list of full triggers and action definitions."),
@@ -69,7 +101,8 @@ public class ImportHandler {
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
     })
     public Response importDefinitions(
-            @ApiParam(value = "Import strategy: DELETE, ALL, NEW or OLD (not case sensitive).", required = true)
+            @ApiParam(value = "Import strategy.", required = true,
+                allowableValues = "DELETE,ALL,NEW,OLD")
             @PathParam("strategy")
             final String strategy,
             @ApiParam(value = "Collection of full triggers and action definitions to import.")

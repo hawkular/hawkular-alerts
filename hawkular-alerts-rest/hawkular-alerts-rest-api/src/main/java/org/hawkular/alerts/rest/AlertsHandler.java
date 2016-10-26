@@ -50,6 +50,7 @@ import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.engine.service.AlertsEngine;
+import org.hawkular.alerts.rest.ResponseUtil.ApiDeleted;
 import org.hawkular.alerts.rest.ResponseUtil.ApiError;
 import org.jboss.logging.Logger;
 
@@ -66,7 +67,7 @@ import io.swagger.annotations.ApiResponses;
  * @author Lucas Ponce
  */
 @Path("/")
-@Api(tags = {"/"}, description = "Alerts Handling")
+@Api(value = "/*", description = "Alerts Handling") // '/*' is a trick to manipulate root endpoint in apidoc.groovy
 public class AlertsHandler {
     private final Logger log = Logger.getLogger(AlertsHandler.class);
 
@@ -86,52 +87,58 @@ public class AlertsHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Get alerts with optional filtering.",
+    @ApiOperation(value = "Get alerts with optional filtering",
+            notes = "If not criteria defined, it fetches all alerts available in the system.",
             response = Alert.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of alerts."),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response findAlerts(
-            @ApiParam(required = false, value = "Filter out alerts created before this time, millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts created before this time.",
+                allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("startTime")
             final Long startTime,
-            @ApiParam(required = false, value = "Filter out alerts created after this time, millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts created after this time.",
+                    allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("endTime")
             final Long endTime,
-            @ApiParam(required = false, value = "Filter out alerts for unspecified alertIds, " +
-                    "comma separated list of alert IDs.")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified alertIds.",
+                    allowableValues = "Comma separated list of alert IDs.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = false, value = "Filter out alerts for unspecified triggers, " +
-                    "comma separated list of trigger IDs.")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified triggers. ",
+                    allowableValues = "Comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
             final String triggerIds,
-            @ApiParam(required = false, value = "Filter out alerts for unspecified lifecycle status, " +
-                    "comma separated list of status values.")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified lifecycle status.",
+                allowableValues = "Comma separated list of [OPEN, ACKNOWLEDGED, RESOLVED]")
             @QueryParam("statuses")
             final String statuses,
-            @ApiParam(required = false, value = "Filter out alerts for unspecified severity, " +
-                    "comma separated list of severity values.")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified severity. ",
+                allowableValues = "Comma separated list of [LOW, MEDIUM, HIGH, CRITICAL]")
             @QueryParam("severities")
             final String severities,
-            @ApiParam(required = false, value = "Filter out events for unspecified tags, comma separated list of tags, "
-                    + "each tag of format \'name|value\'. Specify \'*\' for value to match all values.")
+            @ApiParam(required = false, value = "Filter out events for unspecified tags.",
+                allowableValues = "Comma separated list of tags, each tag of format 'name\\|value'. + \n" +
+                        "Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
-            @ApiParam(required = false, value = "Filter out alerts resolved before this time, millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts resolved before this time.",
+                allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("startResolvedTime")
             final Long startResolvedTime,
-            @ApiParam(required = false, value = "Filter out alerts resolved after this time, millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts resolved after this time.",
+                allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("endResolvedTime")
             final Long endResolvedTime,
-            @ApiParam(required = false, value = "Filter out alerts acknowledged before this time, " +
-                    "millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts acknowledged before this time.",
+                    allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("startAckTime")
             final Long startAckTime,
-            @ApiParam(required = false, value = "Filter out alerts acknowledged after this time, " +
-                    "millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts acknowledged after this time.",
+                    allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("endAckTime")
             final Long endAckTime,
             @ApiParam(required = false, value = "Return only thin alerts, do not include: evalSets, resolvedEvalSets.")
@@ -169,9 +176,11 @@ public class AlertsHandler {
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
     })
-    public Response ackAlert(@ApiParam(required = true, value = "The alertId to Ack.")
-    @PathParam("alertId")
-    final String alertId,
+    public Response ackAlert(
+            @ApiParam(required = true, value = "The alertId to Ack.",
+                allowableValues = "An existing alertId.")
+            @PathParam("alertId")
+            final String alertId,
             @ApiParam(required = false, value = "User acknowledging the alerts.")
             @QueryParam("ackBy")
             final String ackBy,
@@ -202,19 +211,21 @@ public class AlertsHandler {
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Add a note into an existing Alert.")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "Success, Alert Acknowledged invoked successfully."),
+            @ApiResponse(code = 200, message = "Success, Alert note added successfully."),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
     })
-    public Response addAlertNote(@ApiParam(required = true, value = "The alertId to add the note.")
-                             @PathParam("alertId")
-                             final String alertId,
-                             @ApiParam(required = false, value = "Author of the note.")
-                             @QueryParam("user")
-                             final String user,
-                             @ApiParam(required = false, value = "Text of the note.")
-                             @QueryParam("text")
-                             final String text) {
+    public Response addAlertNote(
+            @ApiParam(required = true, value = "The alertId to add the note.",
+                allowableValues = "An existing alertId.")
+            @PathParam("alertId")
+            final String alertId,
+            @ApiParam(required = false, value = "Author of the note.")
+            @QueryParam("user")
+            final String user,
+            @ApiParam(required = false, value = "Text of the note.")
+            @QueryParam("text")
+            final String text) {
         try {
             if (!isEmpty(alertId)) {
                 alertsService.addNote(tenantId, alertId, user, text);
@@ -244,11 +255,13 @@ public class AlertsHandler {
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
     })
     public Response addTags(
-            @ApiParam(required = true, value = "Comma separated list of alertIds to tag.")
+            @ApiParam(required = true, value = "List of alerts to tag.",
+                allowableValues = "Comma separated list of alert IDs.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = true, value = "Comma separated list of tags to add, "
-                    + "each tag of format \'name|value\'.")
+            @ApiParam(required = true, value = "List of tags to add.",
+                allowableValues = "Comma separated list of tags. + \n" +
+                        "Each tag of format 'name\\|value'.")
             @QueryParam("tags")
             final String tags) {
         try {
@@ -283,10 +296,12 @@ public class AlertsHandler {
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
     })
     public Response deleteTags(
-            @ApiParam(required = true, value = "Comma separated list of alertIds to untag.")
+            @ApiParam(required = true, value = "List of alerts to untag.",
+                allowableValues = "Comma separated list of alert IDs.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = true, value = "Comma separated list of tag names to remove.")
+            @ApiParam(required = true, value = "List of tag names to remove.",
+                allowableValues = "Comma separated list of tags names.")
             @QueryParam("tagNames")
             final String tagNames) {
         try {
@@ -320,13 +335,14 @@ public class AlertsHandler {
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
     })
     public Response ackAlerts(
-            @ApiParam(required = true, value = "Comma separated list of alertIds to Ack.")
+            @ApiParam(required = true, value = "List of alerts to Ack.",
+                allowableValues = "Comma separated list of alert IDs.")
             @QueryParam("alertIds")
             final String alertIds,
             @ApiParam(required = false, value = "User acknowledging the alerts.")
             @QueryParam("ackBy")
             final String ackBy,
-            @ApiParam(required = false, value = "Additional notes asscoiated with the acknowledgement.")
+            @ApiParam(required = false, value = "Additional notes associated with the acknowledgement.")
             @QueryParam("ackNotes")
             final String ackNotes) {
         try {
@@ -386,52 +402,58 @@ public class AlertsHandler {
     @Path("/delete")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Delete alerts with optional filtering.",
-            notes = "Return number of alerts deleted.",
-            response = Integer.class)
+            notes = "Return number of alerts deleted. + \n" +
+                    "WARNING: If not criteria defined, it deletes all alerts stored in the system.",
+            response = ApiDeleted.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alerts deleted."),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters"),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response deleteAlerts(
-            @ApiParam(required = false, value = "Filter out alerts created before this time, millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts created before this time.",
+                allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("startTime")
             final Long startTime,
-            @ApiParam(required = false, value = "Filter out alerts created after this time, millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts created after this time.",
+                allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("endTime")
             final Long endTime,
-            @ApiParam(required = false, value = "Filter out alerts for unspecified alertIds, " +
-                    "comma separated list of alert IDs.")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified alertIds.",
+                allowableValues = "Comma separated list of alert IDs.")
             @QueryParam("alertIds")
             final String alertIds,
-            @ApiParam(required = false, value = "Filter out alerts for unspecified triggers, " +
-                    "comma separated list of trigger IDs.")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified triggers.",
+                allowableValues = "Comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
             final String triggerIds,
-            @ApiParam(required = false, value = "Filter out alerts for unspecified lifecycle status, " +
-                    "comma separated list of status values.")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified lifecycle status.",
+                allowableValues = "Comma separated list of [OPEN, ACKNOWLEDGED, RESOLVED]")
             @QueryParam("statuses")
             final String statuses,
-            @ApiParam(required = false, value = "Filter out alerts for unspecified severity, " +
-                    "comma separated list of severity values.")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified severity.",
+                allowableValues = "Comma separated list of [LOW, MEDIUM, HIGH, CRITICAL]")
             @QueryParam("severities")
             final String severities,
-            @ApiParam(required = false, value = "Filter out alerts for unspecified tags, comma separated list of tags, "
-                    + "each tag of format \'name|value\'. Specify \'*\' for value to match all values.")
+            @ApiParam(required = false, value = "Filter out alerts for unspecified tags.",
+                allowableValues = "Comma separated list of tags, each tag of format 'name\\|value'. + \n" +
+                    "Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
-            @ApiParam(required = false, value = "Filter out alerts resolved before this time, millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts resolved before this time.",
+                allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("startResolvedTime")
             final Long startResolvedTime,
-            @ApiParam(required = false, value = "Filter out alerts resolved after this time, millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts resolved after this time.",
+                allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("endResolvedTime")
             final Long endResolvedTime,
-            @ApiParam(required = false, value = "Filter out alerts acknowledged before this time, " +
-                    "millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts acknowledged before this time.",
+                allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("startAckTime")
             final Long startAckTime,
-            @ApiParam(required = false, value = "Filter out alerts acknowledged after this time, " +
-                    "millisecond since epoch.")
+            @ApiParam(required = false, value = "Filter out alerts acknowledged after this time.",
+                allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("endAckTime")
             final Long endAckTime
             ) {
@@ -442,7 +464,7 @@ public class AlertsHandler {
             if (log.isDebugEnabled()) {
                 log.debug("Alerts deleted: " + numDeleted);
             }
-            return ResponseUtil.ok(numDeleted);
+            return ResponseUtil.ok(new ApiDeleted(numDeleted));
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
@@ -547,7 +569,8 @@ public class AlertsHandler {
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
     })
-    public Response resolveAlert(@ApiParam(required = true, value = "The alertId to set resolved.")
+    public Response resolveAlert(
+            @ApiParam(required = true, value = "The alertId to set resolved.")
             @PathParam("alertId")
             final String alertId,
             @ApiParam(required = false, value = "User resolving the alerts.")
@@ -586,7 +609,8 @@ public class AlertsHandler {
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
     })
     public Response resolveAlerts(
-            @ApiParam(required = true, value = "Comma separated list of alertIds to set resolved.")
+            @ApiParam(required = true, value = "List of alertIds to set resolved.",
+                allowableValues = "Comma separated list of alert IDs.")
             @QueryParam("alertIds")
             final String alertIds,
             @ApiParam(required = false, value = "User resolving the alerts.")

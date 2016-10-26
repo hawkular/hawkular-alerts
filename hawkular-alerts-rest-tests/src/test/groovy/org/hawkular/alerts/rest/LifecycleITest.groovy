@@ -1219,31 +1219,31 @@ class LifecycleITest extends AbstractITestBase {
         // test empty multi-alert delete
         resp = client.put(path: "delete", query: [triggerIds:"test-autodisable-trigger"])
         assertEquals(200, resp.status)
-        assertEquals( 0, resp.data )
+        assertEquals( 0, resp.data.deleted )
 
         // test success multi-alert delete
         resp = client.put(path: "delete", query: [triggerIds:"test-autoresolve-trigger"])
         assertEquals(200, resp.status)
-        assertTrue( resp.data > 0 )
+        assertTrue( resp.data.deleted > 0 )
 
         resp = client.put(path: "delete", query: [triggerIds:"test-manual-trigger"])
         assertEquals(200, resp.status)
-        assertTrue( resp.data > 0 )
+        assertTrue( resp.data.deleted > 0 )
 
         resp = client.put(path: "delete", query: [triggerIds:"test-manual2-trigger"])
         assertEquals(200, resp.status)
-        assertTrue( resp.data > 0 )
+        assertTrue( resp.data.deleted > 0 )
 
         resp = client.put(path: "delete", query: [triggerIds:"test-autoresolve-threshold-trigger"])
         assertEquals(200, resp.status)
-        assertTrue( resp.data > 0 )
+        assertTrue( resp.data.deleted > 0 )
 
         resp = client.put(path: "delete", query: [triggerIds:"test-autoenable-trigger"])
         assertEquals(200, resp.status)
-        assertTrue( resp.data > 0 )
+        assertTrue( resp.data.deleted > 0 )
 
         resp = client.put(path: "delete", query: [triggerIds:"test-manual-autoresolve-trigger"])
         assertEquals(200, resp.status)
-        assertTrue( resp.data > 0 )
+        assertTrue( resp.data.deleted > 0 )
     }
 }

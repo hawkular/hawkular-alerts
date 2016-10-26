@@ -88,7 +88,7 @@ public class ActionPluginHandler {
     @Path("/{actionPlugin}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Find list of properties to fill for a specific action plugin.",
-            notes = "Each action plugin can have a different and variable number of properties. " +
+            notes = "Each action plugin can have a different and variable number of properties. + \n" +
                     "This method should be invoked before of a creation of a new action.",
             response = String.class, responseContainer = "List")
     @ApiResponses(value = {

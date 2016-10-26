@@ -26,6 +26,9 @@ import org.hawkular.alerts.api.model.condition.Condition;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * A convenience class used in the REST API to POST a new Group Condition.
  * <p>
@@ -38,11 +41,56 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author jay shaughnessy
  * @author lucas ponce
  */
+@ApiModel(description = "A convenience class used in the REST API to POST a new Group Condition. + \n" +
+        " + \n" +
+        "A group-level condition uses dataId tokens for the dataIds defined in the condition.  + \n" +
+        "The group members must then replace the tokens with actual dataIds. + \n" +
+        " + \n" +
+        "For example, we may define a group ThresholdCondition like ( $SystemLoad$ > 80 ). + \n" +
+        "Each member must then replace $SystemLoad$ with the actual system load dataId for that member. + \n" +
+        " + \n" +
+        "The dataIdMemberMap is a map of the dataId tokens in the group conditions to the actual dataIds + \n" +
+        "used for the current member triggers. + \n" +
+        "Because most condition types have only one dataId the map will typically have 1 entry per condition. + \n" +
+        "But because a condition could have multiple dataIds (e.g CompareCondition has dataId and data2Id), + \n" +
+        "it may have more entries than conditions. + \n" +
+        "The inner map maps member triggerIds to the dataId to be used for that member trigger " +
+        "for the given token. + \n" +
+        "It should have 1 entry for each member trigger. + \n" +
+        " + \n" +
+        "For example, let's define a group trigger with two conditions: + \n" +
+        " + \n" +
+        "ThresholdCondition( $SystemLoad$ > 80 ) + \n" +
+        "ThresholdCondition( $HeapUsed$ > 70 ) + \n" +
+        " + \n" +
+        "If the group has two current members, with triggerId's Member1 and Member2, + \n" +
+        "the map would look like this: + \n" +
+        " + \n" +
+        "{ + \n" +
+        "\"$SystemLoad$\":{\"Member1\":\"Member1SystemLoad\", \"Member2\":\"Member2SystemLoad\"}, + \n" +
+        "\"$HeapUsed$\":{\"Member1\":\"Member1HeapUsed\", \"Member2\":\"Member2HeapUsed\"} + \n" +
+        "} + \n" +
+        " + \n" +
+        "So, in the example the actual $SystemLoad$ dataIds would be Member1SystemLoad and Member2SystemLoad. + \n" +
+        "With this Map we can now add the group-level conditions and also the two member-level conditions + \n" +
+        "to each member + \n" +
+        " + \n" +
+        "A NOTE ABOUT EXTERNAL CONDITIONS. <code>ExternalCondition.expression</code> will automatically have the + \n" +
+        "same token replacement performed. So, all occurrences of the dataId token found in the expression, + \n" +
+        "will be replaced with the mapping. This allows the expression of a group external condition to be + \n" +
+        "automatically customized to the member.")
 public class GroupConditionsInfo {
 
+    @ApiModelProperty(value = "A list of conditions for a Group Trigger.",
+            position = 0,
+            required = true)
     @JsonInclude(Include.NON_EMPTY)
     private Collection<Condition> conditions;
 
+    @ApiModelProperty(value = "A map of the dataId tokens in the group conditions to the actual dataIds " +
+            "used for the current member triggers. Can be empty if the group has no existing members.",
+            position = 1,
+            required = true)
     @JsonInclude(Include.NON_EMPTY)
     private Map<String, Map<String, String>> dataIdMemberMap;
 

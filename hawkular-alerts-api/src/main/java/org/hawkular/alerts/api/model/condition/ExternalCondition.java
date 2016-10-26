@@ -21,6 +21,8 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 /**
  * An <code>ExternalCondition</code> is used for condition evaluations performed outside of the Alerts engine.
  * The external engine will send <code>StringData</code> providing the data for which the external evaluation
@@ -32,6 +34,17 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "An ExternalCondition is used for condition evaluations performed outside of the " +
+        "Alerting engine. + \n" +
+        " + \n" +
+        "The external engine will send StringData providing the data for which the external evaluation " +
+        " + \n" +
+        "has already evaluated to true. + \n" +
+        " + \n" +
+        "The Alerting engine assumes a true evaluation for the data being sent in from the external engine. " +
+        "In other words, every <<ExternalConditionEval>> will have a true evaluation and therefore, for triggers with " +
+        "only a single external condition, and with default dampening, an alert will be fired for each " +
+        "data submission.")
 public class ExternalCondition extends Condition {
 
     private static final long serialVersionUID = 1L;
@@ -40,6 +53,10 @@ public class ExternalCondition extends Condition {
      * An identifier assigned by the external alerter to identify this condition as being handled by that
      * alerter. It should be unique enough such that external AlerterIds are unique.
      */
+    @ApiModelProperty(value = "An identifier assigned by the external alerter to identify this condition as being " +
+            "handled by that. It should be unique enough such that external AlerterIds are unique.",
+            position = 0,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private String alerterId;
 
@@ -55,6 +72,12 @@ public class ExternalCondition extends Condition {
      * the external engine, It may be a pattern, expression or operator used to configure/drive an
      * external evaluation engine or may just be a static description of the externally defined event.
      */
+    @ApiModelProperty(value = "The operator/pattern/expression/description of the external condition. The use of " +
+            "this field is up to the external engine, It may be a pattern, expression or operator used to " +
+            "configure/drive an external evaluation engine or may just be a static description of the externally " +
+            "defined event.",
+            position = 1,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private String expression;
 

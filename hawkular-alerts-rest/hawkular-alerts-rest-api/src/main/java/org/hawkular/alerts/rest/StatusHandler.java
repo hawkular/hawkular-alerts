@@ -34,6 +34,7 @@ import org.hawkular.alerts.api.services.StatusService;
 import org.hawkular.jaxrs.filter.tenant.TenantRequired;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 
 /**
  * REST endpoint for status
@@ -42,7 +43,7 @@ import io.swagger.annotations.Api;
  * @author Lucas Ponce
  */
 @Path("/status")
-@Api(value = "/status", description = "Status of Alerts Service")
+@Api(value = "/status", description = "Status of Alerting Service")
 @TenantRequired(false)
 public class StatusHandler {
     private static final String STATUS = "status";
@@ -59,6 +60,17 @@ public class StatusHandler {
     @GET
     @Path("/")
     @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get status info of Alerting Service.",
+            notes = "Status fields:" +
+                    " + \n" +
+                    "{ + \n" +
+                    "\"status\":\"<STARTED>|<FAILED>\", + \n" +
+                    "\"Implementation-Version\":\"<Version>\", + \n" +
+                    "\"Built-From-Git-SHA1\":\"<Git-SHA1>\", + \n" +
+                    "\"distributed\":\"<true|false>\", + \n" +
+                    "\"members\":\"<comma list of nodes IDs>\" + \n" +
+                    "}",
+            response = String.class, responseContainer = "Map")
     public Response status(@Context ServletContext servletContext) {
         Map<String, String> status = new HashMap<>();
         status.putAll(manifestUtil.getFrom(servletContext));

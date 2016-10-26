@@ -72,7 +72,7 @@ import io.swagger.annotations.ApiResponses;
  * @author Lucas Ponce
  */
 @Path("/triggers")
-@Api(value = "/triggers")
+@Api(value = "/triggers", description = "Triggers Definitions Handling")
 public class TriggersHandler {
     private static final Logger log = Logger.getLogger(TriggersHandler.class);
 
@@ -90,6 +90,7 @@ public class TriggersHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get triggers with optional filtering.",
+            notes = "If not criteria defined, it fetches all triggers stored in the system.",
             response = Trigger.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of triggers."),
@@ -97,12 +98,13 @@ public class TriggersHandler {
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response findTriggers(
-            @ApiParam(required = false, value = "Filter out triggers for unspecified triggerIds, " +
-                    "comma separated list of trigger IDs.")
+            @ApiParam(required = false, value = "Filter out triggers for unspecified triggerIds. ",
+                allowableValues = "Comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
             final String triggerIds,
-            @ApiParam(required = false, value = "Filter out triggers for unspecified tags, comma separated list of "
-                    + "tags, each tag of format \'name|value\'. Specify \'*\' for value to match all values.")
+            @ApiParam(required = false, value = "Filter out triggers for unspecified tags.",
+                    allowableValues = "Comma separated list of tags, each tag of format 'name\\|value'. + \n" +
+                            "Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
             @ApiParam(required = false, value = "Return only thin triggers. Currently Ignored.")
@@ -160,7 +162,7 @@ public class TriggersHandler {
     @GET
     @Path("/groups/{groupId}/members")
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Find all Group Member Trigger Definitions.",
+    @ApiOperation(value = "Find all group member trigger definitions.",
             notes = "Pagination is not yet implemented.",
             response = Trigger.class, responseContainer = "List")
     @ApiResponses(value = {
@@ -606,15 +608,16 @@ public class TriggersHandler {
 
     @DELETE
     @Path("/{triggerId}")
-    @ApiOperation(value = "Delete an existing standard or group member trigger definition." +
-            " This can not be used to delete a group trigger definition.")
+    @ApiOperation(value = "Delete an existing standard or group member trigger definition.",
+            notes = "This can not be used to delete a group trigger definition.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Trigger deleted."),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 404, message = "Trigger not found.", response = ApiError.class)
     })
     public Response deleteTrigger(
-            @ApiParam(value = "Trigger definition id to be deleted.", required = true) @PathParam("triggerId")
+            @ApiParam(value = "Trigger definition id to be deleted.", required = true)
+            @PathParam("triggerId")
             final String triggerId) {
         try {
             definitions.removeTrigger(tenantId, triggerId);
@@ -874,7 +877,8 @@ public class TriggersHandler {
     @Path("/{triggerId}/dampenings/{dampeningId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing dampening definition.",
-            notes = "Note that the trigger mode can not be changed. Return Dampening updated.",
+            notes = "Note that the trigger mode can not be changed. + \n" +
+                    "Return Dampening updated.",
             response = Dampening.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampening Updated."),
@@ -917,7 +921,8 @@ public class TriggersHandler {
     @Path("/groups/{groupId}/dampenings/{dampeningId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Update an existing group dampening definition.",
-            notes = "Note that the trigger mode can not be changed. Return Dampening updated.",
+            notes = "Note that the trigger mode can not be changed. + \n" +
+                    "Return Dampening updated.",
             response = Dampening.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampening Updated."),
@@ -1058,7 +1063,8 @@ public class TriggersHandler {
             @ApiParam(value = "The relevant Trigger.", required = true)
             @PathParam("triggerId")
             final String triggerId,
-            @ApiParam(value = "FIRING or AUTORESOLVE (not case sensitive).", required = true)
+            @ApiParam(value = "The trigger mode.", required = true,
+                allowableValues = "FIRING or AUTORESOLVE (not case sensitive)")
             @PathParam("triggerMode")
             final String triggerMode,
             @ApiParam(value = "Collection of Conditions to set.", required = true)
@@ -1093,7 +1099,7 @@ public class TriggersHandler {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Set the conditions for the group trigger.",
-            notes = "This replaces any existing conditions on the group and member conditions. " +
+            notes = "This replaces any existing conditions on the group and member conditions. + \n" +
                     "Return the new group conditions.",
             response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
@@ -1106,7 +1112,8 @@ public class TriggersHandler {
             @ApiParam(value = "The relevant Group Trigger.", required = true)
             @PathParam("groupId")
             final String groupId,
-            @ApiParam(value = "FIRING or AUTORESOLVE (not case sensitive).", required = true)
+            @ApiParam(value = "The trigger mode.", required = true,
+                    allowableValues = "FIRING or AUTORESOLVE (not case sensitive)")
             @PathParam("triggerMode")
             final String triggerMode,
             @ApiParam(value = "Collection of Conditions to set and Map with tokens per dataId on members.")

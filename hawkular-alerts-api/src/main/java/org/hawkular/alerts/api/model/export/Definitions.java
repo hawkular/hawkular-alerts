@@ -25,17 +25,29 @@ import org.hawkular.alerts.api.model.trigger.FullTrigger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * Representation of a list of full triggers (trigger, dampenings and conditions) and actions definitions.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "Representation of a list of full triggers (trigger, dampenings and conditions) and " +
+        "actions definitions. + \n" +
+        "Used for bulk import/export operations.")
 public class Definitions {
 
+    @ApiModelProperty(value = "List of full triggers.",
+            position = 0,
+            required = false)
     @JsonInclude(Include.NON_EMPTY)
     private List<FullTrigger> triggers;
 
+    @ApiModelProperty(value = "List of action definitions.",
+            position = 1,
+            required = false)
     @JsonInclude(Include.NON_EMPTY)
     private List<ActionDefinition> actions;
 

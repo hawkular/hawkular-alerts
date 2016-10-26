@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,12 +20,16 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * A numeric threshold range condition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "A numeric threshold range condition.")
 public class ThresholdRangeCondition extends Condition {
 
     private static final long serialVersionUID = 1L;
@@ -52,18 +56,34 @@ public class ThresholdRangeCondition extends Condition {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String dataId;
 
+    @ApiModelProperty(value = "Define whether low threshold value is inclusive or exclusive.",
+            position = 0,
+            required = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Operator operatorLow;
 
+    @ApiModelProperty(value = "Define whether high threshold value is inclusive or exclusive.",
+            position = 1,
+            required = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Operator operatorHigh;
 
+    @ApiModelProperty(value = "Low threshold of the range interval.",
+            position = 2,
+            required = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Double thresholdLow;
 
+    @ApiModelProperty(value = "High threshold of the range interval.",
+            position = 3,
+            required = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Double thresholdHigh;
 
+    @ApiModelProperty(value = "Flag to indicate if condition will match when value is within the range interval or " +
+            "outside the range interval.",
+            position = 4,
+            required = true)
     @JsonInclude
     private boolean inRange;
 

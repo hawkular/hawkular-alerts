@@ -24,6 +24,9 @@ import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * An action is the abstract concept of ta consequence of an event.
  *
@@ -37,23 +40,65 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "An action represents a consequence of an event. + \n" +
+        " + \n" +
+        "Actions are processed by plugins, and plugins offer a map of properties to personalize an action. + \n" +
+        "An ActionDefinition stores which properties will be used for a specific action in a specific plugin. + \n" +
+        " + \n" +
+        "A Trigger definition can be linked with a list of action definitions. + \n" +
+        " + \n" +
+        "Alert engine will instantiate a specific Action based on its ActionDefinition. + \n" +
+        " + \n" +
+        "In a similar way as <<TriggerAction>> an ActionDefinition can add optional constraints that determine + \n" +
+        "when an action will be executed. + \n" +
+        " + \n" +
+        "- A set of Alert.Status (represented by its string value). + \n" +
+        "The action will be executed if the Alert which is linked is on one of the states defined. + \n" +
+        "Unlike Alerts, Events don't have lifecycle, TriggerActions on Events are all executed at " +
+        "Event creation time. + \n" +
+        " + \n" +
+        "- A <<TimeConstraint>> object that defines a time interval in absolute or relative way. + \n" +
+        "The action will be executed if the action creation time is satisfied by the time interval." +
+        " + \n" +
+        "If a <<TriggerAction>> does not define any constraint, <<ActionDefinition>> constraints will be used. + \n")
 public class ActionDefinition implements Serializable {
 
+    @ApiModelProperty(value = "Tenant id owner of this trigger.",
+            position = 0,
+            allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
     @JsonInclude
     private String tenantId;
 
+    @ApiModelProperty(value = "Action plugin identifier.",
+            position = 1,
+            required = true,
+            allowableValues = "Only plugins deployed on the system are valid.")
     @JsonInclude
     private String actionPlugin;
 
+    @ApiModelProperty(value = "Action definition identifier.",
+            position = 2,
+            required = true)
     @JsonInclude
     private String actionId;
 
+    @ApiModelProperty(value = "Plugin properties. Each plugin defines its own specific properties that can be " +
+            "supplied at action definition level.",
+            position = 3,
+            required = true)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, String> properties;
 
+    @ApiModelProperty(value = "A list of Alert.Status where this action is linked. <<TriggerAction>> constraints " +
+            "take precedence.",
+            position = 4,
+            allowableValues = "OPEN, ACKNOWLEDGED, RESOLVED")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<String> states;
 
+    @ApiModelProperty(value = "A list of TimeConstraint where this action is linked. <<TriggerAction>> constraints " +
+            "take precedence.",
+            position = 5)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private TimeConstraint calendar;
 

@@ -28,6 +28,9 @@ import java.util.IllegalFormatException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * Define a time interval (startTime, endTime) used as a constraint for action execution.
  * Time interval can be defined in a absolute or relative expression.
@@ -102,6 +105,77 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "Define a time interval (startTime, endTime) used as a constraint for action execution. + \n" +
+        "Time interval can be defined in a absolute or relative expression. + \n" +
+        " + \n" +
+        "An absolute time interval uses the pattern yyyy.MM.dd[,HH:mm] for startTime and endTime properties. + \n" +
+        "For example, these representations are valid absolute expressions for time interval: + \n" +
+        " + \n" +
+        "{startTime: \"2016.02.01\", endTime: \"2016.03.01\", relative: false} + \n" +
+        "{startTime: \"2016.02.01,09:00\", endTime: \"2016.03.01,18:00\", relative: false} + \n" +
+        " + \n" +
+        "Absolute time interval are marked with flag relative set to false. + \n" +
+        "Hour and minutes can be optional in absolute format, by default it takes 00:00 value. + \n" +
+        "The absolute interval time is based on the default time zone and locale. + \n" +
+        " + \n" +
+        "A relative interval is used for repetitive expressions. + \n" +
+        "It can be defined an interval between months (i.e. December to March), between days of the week + \n " +
+        "(i.e. Sunday to Friday), between hours and minutes (i.e. 23:00 to 04:30), or a combination of month, + \n" +
+        "day of the week and/or hours and minutes. + \n" +
+        "Relative interval uses the pattern [MMM],[WWW],[HH:mm] where months and days of the week can be used " +
+        "in long or short format. + \n" +
+        "Same pattern should be applied to both startTime and endTime properties. + \n" +
+        "For example, these representations are valid relative expressions for time interval: + \n" +
+        " + \n" +
+        "{startTime: \"Jul\", endTime: \"Dec\", relative: true} + \n" +
+        "{startTime: \"July\", endTime: \"December\", relative: true} + \n" +
+        " + \n" +
+        "All dates within July and December months will be valid. + \n" +
+        " + \n" +
+        "{startTime: \"Jul,Mon\", endTime: \"Dec,Fri\", relative: true} + \n" +
+        "{startTime: \"July,Monday\", endTime: \"December,Friday\", relative: true} + \n" +
+        " + \n" +
+        "All dates within July and December months and within Monday and Friday days are valid. + \n" +
+        "So, a Sunday day of August will not be valid according previous example. + \n" +
+        " + \n" +
+        "{startTime: \"Jul,Mon,09:00\", endTime: \"Dec,Fri,18:00\", relative: true} + \n" +
+        "{startTime: \"July,Monday\", endTime: \"December,Friday\", relative: true} + \n" +
+        " + \n" +
+        "All dates within July and December months and within Monday and Friday days and time between 09:00 and" +
+        "18:00 are valid. + \n" +
+        "So, a Monday day of August at 18:01 will not be valid according previous example. + \n" +
+        " + \n" +
+        "{startTime:\"Monday,09:00\", endTime:\"Friday,18:00\", relative: true} + \n" +
+        "{startTime:\"Mon,09:00\", endTime:\"Fri,18:00\", relative: true} + \n" +
+        " + \n" +
+        "All dates within Monday and Friday day and time between 09:00 and 18:00 will be valid. + \n" +
+        "So, a Monday at 18:01 will not be valid according previous example. + \n" +
+        " + \n" +
+        "{startTime:\"July,09:00\", endTime:\"August,18:00\", relative: true} + \n" +
+        "{startTime:\"Jul,09:00\", endTime:\"Aug,18:00\", relative: true} + \n" +
+        " + \n" +
+        "All dates within July and December months and time between 09:00 and 18:00 are valid. + \n" +
+        "A day of August at 18:01 will not be valid according previous example. + \n" +
+        " + \n" +
+        "{startTime:\"09:00\", endTime:\"18:00\", relative: true} + \n" +
+        " + \n" +
+        "All times within 09:00 and 18:00 are valid. + \n" +
+        " + \n" +
+        "TimeConstraint object can define if a given date will be satisfied within the interval or + \n" +
+        "outside interval using the property inRange. + \n" +
+        "A value inRange == true means that a time interval will be satisfied when a given date is + \n" +
+        "within the interval (taking the limits as inclusive), in case of inRange == false a given date + \n" +
+        "will be satisfied if it is outside of the interval. + \n" +
+        "By default, inRange == true. + \n" +
+        "For example, + \n" +
+        " + \n" +
+        "{startTime:\"09:00\", endTime:\"18:00\", relative: true, inRange: true} + \n" +
+        " + \n" +
+        "All times within 09:00 and 18:00 are satisfied by the interval. + \n" +
+        " + \n" +
+        "{startTime:\"09:00\", endTime:\"18:00\", relative: true, inRange: false} + \n" +
+        " + \n" +
+        "All times from 18:01 to 08:59 are satisfied in the interval. + \n")
 public class TimeConstraint implements Serializable {
 
     public enum MONTH {
@@ -183,6 +257,9 @@ public class TimeConstraint implements Serializable {
      * Define the start of the time interval.
      * It can be in absolute or relative format.
      */
+    @ApiModelProperty(value = "Define the start of the time interval. It can be in absolute or relative format.",
+            position = 0,
+            required = true)
     @JsonInclude
     private String startTime;
 
@@ -190,18 +267,28 @@ public class TimeConstraint implements Serializable {
      * Define the end of the time interval.
      * It can be in absolute or relative format.
      */
+    @ApiModelProperty(value = "Define the end of the time interval. It can be in absolute or relative format.",
+            position = 1,
+            required = true)
     @JsonInclude
     private String endTime;
 
     /**
      * Define if startTime and endTime properties are defined in absolute or relative format.
      */
+    @ApiModelProperty(value = "Define if startTime and endTime properties are defined in absolute or relative format.",
+            position = 2,
+            example = "true")
     @JsonInclude(Include.NON_NULL)
     private boolean relative;
 
     /**
      * Indicate if time constraint is satisfied when a given timestamp is inside or outside the interval.
      */
+    @ApiModelProperty(value = "Indicate if time constraint is satisfied when a given timestamp is inside or outside " +
+            "the interval.",
+            position = 3,
+            example = "false")
     @JsonInclude(Include.NON_NULL)
     private boolean inRange;
 

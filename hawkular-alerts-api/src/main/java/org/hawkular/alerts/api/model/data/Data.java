@@ -23,6 +23,9 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * A base class for incoming data into alerts subsystem.  All {@link Data} has TenantId, Id and a timestamp. An Id
  * should be unique within the tenant. The timestamp is used to ensure that data is time-ordered when being sent into
@@ -31,24 +34,44 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "A base class for incoming data into alerts subsystem. + \n" +
+        "All Data has TenantId, Id and a timestamp. + \n" +
+        "An Id should be unique within the tenant. + \n" +
+        "The timestamp is used to ensure that data is time-ordered when being sent into the alerting engine. + \n" +
+        "If not assigned the timestamp will be assigned to current time.")
 public class Data implements Comparable<Data>, Serializable {
 
     private static final long serialVersionUID = 1L;
 
     public static final String SOURCE_NONE = "_none_";
 
+    @ApiModelProperty(value = "Tenant id owner of this data.",
+            position = 0,
+            allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
     @JsonInclude
     protected String tenantId;
 
+    @ApiModelProperty(value = "Extended mechanism to match trigger conditions against Data with [source, dataId] " +
+            "identifiers. In this way it is possible to qualify triggers and data with a source such that a trigger " +
+            "only evaluates data having the same source.",
+            position = 1)
     @JsonInclude
     protected String source;
 
+    @ApiModelProperty(value = "Data id unique within the tenant.",
+            position = 2,
+            required = true)
     @JsonInclude
     protected String id;
 
+    @ApiModelProperty(value = "Timestamp for the data.",
+            position = 3,
+            example = "If not assigned, timestamp will be assigned to current time.")
     @JsonInclude
     protected long timestamp;
 
+    @ApiModelProperty(value = "Value for single-value condition types.",
+            position = 4)
     /** For single-value condition types. Null otherwise */
     @JsonInclude(Include.NON_EMPTY)
     protected String value;
@@ -61,6 +84,9 @@ public class Data implements Comparable<Data>, Serializable {
     //protected Map<String, String> values;
 
     /** Optional, non-evaluated contextual data to be kept with the datum */
+    @ApiModelProperty(value = "Properties defined by the user for this data. Context is propagated " +
+            "on generated Events/Alerts.",
+            position = 5)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 

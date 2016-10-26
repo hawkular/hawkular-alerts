@@ -30,30 +30,63 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * A status of an alert thrown by several matched conditions.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "Alerts are generated when an Alert Trigger fires, based on a set of defined conditions + \n" +
+        "that have been matched, possibly more than once or have held true over a period of time. + \n" +
+        " + \n" +
+        "When fired the trigger can perform actions based on plugins (e-mail, sms, etc). + \n" +
+        " + \n" +
+        "Alerts then start moving through the Open, Acknowledged, Resolved life-cycle. + \n" +
+        " + \n" +
+        "- Open status represents an alert which has not been seen/taken yet by any user. + \n" +
+        "- Acknowledge status represents an alert which has been seen/taken by any user and it is pending " +
+        "resolution. + \n" +
+        "- Resolved status represents an alert which problem has been resolved. + \n" +
+        " + \n" +
+        "Alerts can be resolved automatically using AUTORESOLVE <<Trigger>> conditions or manually via API. + \n" +
+        " + \n" +
+        "Alert can attach a list of notes defined by the user. + \n" +
+        " + \n" +
+        "There are many options on triggers to help ensure that alerts are not generated too frequently, + \n" +
+        "including ways of automatically disabling and enabling the trigger. + \n")
 public class Alert extends Event {
 
     public enum Status {
         OPEN, ACKNOWLEDGED, RESOLVED
     };
 
+    @ApiModelProperty(value = "Severity set for a <<Trigger>> and assigned to an alert when it is generated.",
+            position = 0,
+            example = "MEDIUM")
     @JsonInclude
     private Severity severity;
 
+    @ApiModelProperty(value = "Lifecycle current status.",
+            position = 1)
     @JsonInclude
     private Status status;
 
+    @ApiModelProperty(value = "Notes attached with this alert.",
+            position = 2)
     @JsonInclude(Include.NON_EMPTY)
     private List<Note> notes = new ArrayList<>();;
 
+    @ApiModelProperty(value = "List of lifecycle states that this alert has navigated.",
+            position = 3)
     @JsonInclude(Include.NON_EMPTY)
     private List<LifeCycle> lifecycle = new ArrayList<>();
 
+    @ApiModelProperty(value = "The Eval Sets that resolved the <<Trigger>> in AUTORESOLVE mode. + \n " +
+            "Null for non AUTORESOLVE triggers.",
+            position = 4)
     @JsonInclude(Include.NON_EMPTY)
     @Thin
     private List<Set<ConditionEval>> resolvedEvalSets;
@@ -206,13 +239,24 @@ public class Alert extends Event {
                 '}';
     }
 
+    @ApiModel(description = "A simple note representation.")
     public static class Note {
+
+        @ApiModelProperty(value = "The user who creates the note.",
+                position = 0,
+                required = true)
         @JsonInclude(Include.NON_EMPTY)
         private String user;
 
+        @ApiModelProperty(value = "Note creation time.",
+                position = 1,
+                allowableValues = "Timestamp in milliseconds.")
         @JsonInclude(Include.NON_EMPTY)
         private long ctime;
 
+        @ApiModelProperty(value = "The note text.",
+                position = 2,
+                required = true)
         @JsonInclude(Include.NON_EMPTY)
         private String text;
 
@@ -289,13 +333,25 @@ public class Alert extends Event {
         }
     }
 
+    @ApiModel(description = "A lifecycle state representation.")
     public static class LifeCycle {
+
+        @ApiModelProperty(value = "The status of this lifecycle.",
+                position = 0,
+                example = "OPEN")
         @JsonInclude(Include.NON_EMPTY)
         private Status status;
 
+        @ApiModelProperty(value = "The user who creates the state + \n" +
+                "Open statutes are created by 'system' + \n" +
+                "In AUTORESOLVE triggers Resolved statutes are create by 'AutoResolve'.",
+                position = 1)
         @JsonInclude(Include.NON_EMPTY)
         private String user;
 
+        @ApiModelProperty(value = "Creation time for this state.",
+                position = 2,
+                allowableValues = "Timestamp in milliseconds.")
         @JsonInclude(Include.NON_EMPTY)
         private long stime;
 

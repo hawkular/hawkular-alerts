@@ -33,6 +33,7 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
@@ -41,6 +42,40 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "A representation of dampening status. + \n" +
+        " + \n" +
+        "It’s often the case that you don’t want a trigger to fire every time a condition set is met. + \n" +
+        "Instead, you want to ensure that the issue is not a spike of activity. + \n" +
+        "Hawkular Alerting provides several ways of ensuring triggers fire only as desired. + \n" +
+        " + \n" +
+        "This is a Trigger Dampening in Hawkular Alerting terminology. + \n" +
+        " + \n" +
+        "Dampening types: + \n" +
+        " + \n" +
+        "STRICT + \n" +
+        " + \n" +
+        "- N consecutive true evaluations. + \n" +
+        "- Useful for ignoring spikes in activity or waiting for a prolonged event. + \n" +
+        " + \n" +
+        "RELAXED_COUNT + \n" +
+        " + \n" +
+        "- N true evaluations out of M total evaluations. + \n" +
+        "- Useful for ignoring short spikes in activity but catching frequently spiking activity. + \n" +
+        " + \n" +
+        "RELAXED_TIME + \n" +
+        " + \n" +
+        "- N true evaluations in T time. + \n" +
+        "- Useful for ignoring short spikes in activity but catching frequently spiking activity. \n" +
+        " + \n" +
+        "STRICT_TIME + \n" +
+        " + \n" +
+        "- Only true evaluations for at least T time. + \n" +
+        "- Useful for reporting a continued aberration. + \n" +
+        " + \n" +
+        "STRICT_TIMEOUT + \n" +
+        " + \n" +
+        "- Only true evaluations for T time. + \n" +
+        "- Useful for reporting a continued aberration with a more guaranteed firing time. + \n")
 public class Dampening implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -49,39 +84,55 @@ public class Dampening implements Serializable {
         STRICT, RELAXED_COUNT, RELAXED_TIME, STRICT_TIME, STRICT_TIMEOUT
     };
 
+    @ApiModelProperty(value = "Tenant id owner of this dampening.",
+            position = 0,
+            required = false,
+            allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
     @JsonInclude
     private String tenantId;
 
+    @ApiModelProperty(value = "The owning trigger.",
+            position = 1,
+            allowableValues = "triggerId is set up from REST request parameters")
     @JsonInclude
     private String triggerId;
 
+    @ApiModelProperty(value = "The owning trigger's mode when this dampening is active.",
+            position = 2,
+            required = true)
     @JsonInclude
     private Mode triggerMode;
 
+    @ApiModelProperty(value = "The type of the dampening.",
+            position = 3,
+            required = true)
     @JsonInclude
     private Type type;
 
     @JsonInclude
-    @ApiModelProperty(
-            value = "Number of required true evaluations for STRICT, RELAXED_COUNT, RELAXED_TIME",
+    @ApiModelProperty(value = "Number of required true evaluations for STRICT, RELAXED_COUNT, RELAXED_TIME",
+            position = 4,
             allowableValues = ">= 1")
     private int evalTrueSetting;
 
     @JsonInclude
-    @ApiModelProperty(
-            value = "Number of allowed evaluation attempts for RELAXED_COUNT",
+    @ApiModelProperty(value = "Number of allowed evaluation attempts for RELAXED_COUNT",
+            position = 5,
             allowableValues = "> evalTrueSetting")
     private int evalTotalSetting;
 
     @JsonInclude
-    @ApiModelProperty(
-            value = "Time period in milliseconds for RELAXED_TIME, STRICT_TIME, STRICT_TIMEOUT",
+    @ApiModelProperty(value = "Time period in milliseconds for RELAXED_TIME, STRICT_TIME, STRICT_TIMEOUT",
+            position = 6,
             allowableValues = "> 0")
     private long evalTimeSetting;
 
     /**
      * tenantId-UUID
      */
+    @ApiModelProperty(value = "A composed key for the dampening. This is a read-only value defined by the system.",
+            position = 7,
+            required = false)
     @JsonInclude
     protected String dampeningId;
 

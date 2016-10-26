@@ -31,99 +31,189 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * A Trigger definition.  A Trigger can fire an Alert or an Event.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "A Trigger definition. + \n" +
+        " + \n" +
+        "A Trigger can fire an Alert or an Event. + \n" +
+        " + \n" +
+        "Triggers always start in FIRING mode. + \n" +
+        " + \n" +
+        "If the auto-resolve feature is enabled for the Trigger, then it will switch to AUTORESOLVE " +
+        "mode after firing. + \n" +
+        " + \n" +
+        "When the auto-resolve condition set is satisfied, or if the Trigger is reloaded (manually, via edit, " +
+        "or at startup), the trigger returns to FIRING mode. + \n" +
+        " + \n" +
+        "The mode is also needed when defining a trigger, to indicate the relevant mode for a conditions or " +
+        "dampening definition.")
 public class Trigger implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @ApiModelProperty(value = "Tenant id owner of this trigger.",
+            position = 0,
+            required = true,
+            allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
     @JsonInclude
     private String tenantId;
 
     /** Unique within the tenant */
+    @ApiModelProperty(value = "Trigger identifier. Unique within the tenant.",
+            position = 1,
+            required = true,
+            // @ApiModelProperty doesnt support concept of "default" values
+            // we are going to re-use the "example" attribute for that purpose and update that on apidoc.groovy
+            example = "Auto-generated UUID if not explicitly defined.")
     @JsonInclude
     private String id;
 
     /** For display */
+    @ApiModelProperty(value = "Trigger name. Used for display.",
+            position = 2,
+            required = true)
     @JsonInclude
     private String name;
 
+    @ApiModelProperty(value = "Trigger description. Used for display.",
+            position = 3)
     @JsonInclude(Include.NON_EMPTY)
     private String description;
 
     /** The type of trigger, standard, group, etc.. Defaults to TriggerType.STANDARD */
+    @ApiModelProperty(value = "The type of the trigger.",
+            position = 4,
+            example = "STANDARD")
     @JsonInclude
     private TriggerType type;
 
     /** The type of event produced by the trigger. Defaults to EventType.ALERT */
+    @ApiModelProperty(value = "The type of event produced by the trigger.",
+            position = 5,
+            example = "ALERT")
     @JsonInclude
     private EventType eventType;
 
+    @ApiModelProperty(value = "The category of the event produced by the trigger.",
+            position = 6)
     @JsonInclude
     private String eventCategory;
 
     /** Defaults to the Trigger Description if not null, otherwise the trigger name. */
     @JsonInclude
+    @ApiModelProperty(value = "The text of the event produced by the trigger.",
+            position = 7,
+            example = "If not eventText defined. Description will be used. If not description defined, trigger name " +
+                    "will be used.")
     private String eventText;
 
     // Ignored for Event Triggers
+    @ApiModelProperty(value = "Severity of a trigger.",
+            position = 8,
+            example = "MEDIUM")
     @JsonInclude
     private Severity severity;
 
+    @ApiModelProperty(value = "Properties defined by the user for this trigger. Context is propagated " +
+            "on generated Events/Alerts. Context cannot be used as criteria on finder methods.",
+            position = 9)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 
+    @ApiModelProperty(value = "Tags defined by the user for this trigger. A tag is a [name, value] pair." +
+            "Tags can be used as criteria on finder methods. + \n" +
+            "Tag value cannot be null.",
+            position = 10)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> tags;
 
     /** A list of links to actions represented by TriggerAction*/
+    @ApiModelProperty(value = "A list of links to actions.",
+            position = 11)
     @JsonInclude(Include.NON_EMPTY)
     private Set<TriggerAction> actions;
 
     /** Disable automatically after firing */
+    @ApiModelProperty(value = "Disable automatically after firing.",
+            position = 12,
+            example = "false")
     @JsonInclude
     private boolean autoDisable;
 
     /** Enable automatically if disabled and resolved manually */
+    @ApiModelProperty(value = "Enable automatically if disabled and resolved manually.",
+            position = 13,
+            example = "false")
     @JsonInclude
     private boolean autoEnable;
 
     /** Switch to auto-resolve mode after firing */
+    @ApiModelProperty(value = "Switch to auto-resolve mode after firing.",
+            position = 14,
+            example = "false")
     @JsonInclude
     private boolean autoResolve;
 
     /** Resolve all unresolved alerts when auto-resolve condition-set is satisfied */
+    @ApiModelProperty(value = "Resolve all unresolved alerts when auto-resolve condition-set is satisfied.",
+            position = 15,
+            example = "false")
     @JsonInclude
     private boolean autoResolveAlerts;
 
+    @ApiModelProperty(value = "The policy used for deciding whether the trigger auto-resolved condition-set is " +
+            "satisfied. ALL conditions must evaluate to true or ANY one condition must evaluate to true.",
+            position = 16,
+            example = "ALL")
     @JsonInclude
     private Match autoResolveMatch;
 
     // Only set for MEMBER triggers, the dataIdMap used when adding the member. Is re-used
     // for group condition updates unless a new dataIdMap is provided.
+    @ApiModelProperty(value = "Only set for MEMBER triggers, the dataIdMap used when adding the member. " +
+            "It is reused for group condition updates unless a new dataIdMap is provided.",
+            position = 17)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> dataIdMap;
 
     // Only set for MEMBER triggers, the group trigger for which this is a member.
+    @ApiModelProperty(value = "Only set for MEMBER triggers, the group trigger for which this is a member.",
+            position = 18)
     @JsonInclude(Include.NON_EMPTY)
     private String memberOf;
 
+    @ApiModelProperty(value = "A enabled trigger is loaded into the engine for data evaluation.",
+            position = 19,
+            example = "false")
     @JsonInclude
     private boolean enabled;
 
+    @ApiModelProperty(value = "The policy used for deciding whether the trigger condition-set is satisfied. " +
+            "ALL conditions must evaluate to true or ANY one condition must evaluate to true.",
+            position = 20,
+            example = "ALL")
     @JsonInclude
     private Match firingMatch;
 
+    @ApiModelProperty(value = "Extended mechanism to match trigger conditions against Data with [source, dataId] " +
+            "identifiers. In this way it is possible to qualify triggers and data with a source such that a trigger " +
+            "only evaluates data having the same source.",
+            position = 21)
     @JsonInclude
     String source;
 
+    /** Used internally by the rules engine. Indicates current mode of a trigger: FIRING or AUTORESOLVE. */
     @JsonIgnore
     private Mode mode;
 
+    /** Used internally by the rules engine. Indicates current match of a trigger: ALL or ANY. */
     @JsonIgnore
     private transient Match match;
 

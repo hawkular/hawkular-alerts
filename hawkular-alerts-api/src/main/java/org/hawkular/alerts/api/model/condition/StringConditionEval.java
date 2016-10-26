@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,19 +22,27 @@ import org.hawkular.alerts.api.model.data.Data;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * An evaluation state for string condition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "An evaluation state for string condition.")
 public class StringConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
+    @ApiModelProperty(value = "String condition linked with this state.",
+            position = 0)
     @JsonInclude(Include.NON_NULL)
     private StringCondition condition;
 
+    @ApiModelProperty(value = "String value for dataId used in the evaluation.",
+            position = 1)
     @JsonInclude(Include.NON_NULL)
     private String value;
 

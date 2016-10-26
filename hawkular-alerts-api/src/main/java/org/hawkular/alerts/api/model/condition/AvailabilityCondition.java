@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,12 +24,19 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * An availability condition definition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "An availability condition definition. + \n" +
+        " + \n" +
+        "Examples: + \n" +
+        "X is DOWN")
 public class AvailabilityCondition extends Condition {
 
     private static final long serialVersionUID = 1L;
@@ -41,6 +48,9 @@ public class AvailabilityCondition extends Condition {
     @JsonInclude(Include.NON_NULL)
     private String dataId;
 
+    @ApiModelProperty(value = "Availability operator.",
+            position = 0,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private Operator operator;
 

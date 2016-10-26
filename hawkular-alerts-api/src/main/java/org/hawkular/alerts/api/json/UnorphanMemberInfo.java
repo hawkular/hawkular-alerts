@@ -18,6 +18,9 @@ package org.hawkular.alerts.api.json;
 
 import java.util.Map;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * A convenience class used in the REST API to un-orphan an orphan group Member Trigger.
  * <p>
@@ -29,10 +32,47 @@ import java.util.Map;
  * @author jay shaughnessy
  * @author lucas ponce
  */
+@ApiModel(description = "A convenience class used in the REST API to un-orphan an orphan group Member Trigger. + \n" +
+        " + \n" +
+        "A group-level condition uses dataId tokens for the dataIds defined in the condition. + \n" +
+        "The group members must then replace the tokens with actual dataIds. + \n" +
+        " + \n" +
+        "For example, we may define a group ThresholdCondition like ( $SystemLoad$ > 80 ). + \n" +
+        "Each member must then replace $SystemLoad$ with the actual system load dataId for that member." +
+        " + \n" +
+        "The dataIdMap is a map of the dataId tokens in the group conditions to the actual dataIds to + \n" +
+        "be used for the member being added. For example, assume the group trigger has two conditions defined: + \n" +
+        " + \n" +
+        "ThresholdCondition( $SystemLoad$ > 80 ) and ThresholdCondition( $HeapUsed$ > 70 ) + \n" +
+        " + \n" +
+        "And now let's assume we are adding a new member, Member1.  The map would look like this: + \n" +
+        " + \n" +
+        "{ \"$SystemLoad$\":\"Member1SystemLoad\", \"$HeapUsed$\":\"Member1HeapUsed\" } + \n" +
+        " + \n" +
+        "So, in the example the actual dataIds would be Member1SystemLoad and Member1HeapUsed. + \n" +
+        "With this Map we can now add the new member trigger. + \n" +
+        " + \n" +
+        "A NOTE ABOUT EXTERNAL CONDITIONS. ExternalCondition.expression will automatically have the + \n" +
+        "same token replacement performed. So, all occurrences of the dataId token found in the expression, + \n" +
+        "will be replaced with the mapping. + \n" +
+        "This allows the expression of a group external condition to be automatically customized to the member.")
 public class UnorphanMemberInfo {
 
+    @ApiModelProperty(value = "Trigger context for member Trigger.",
+            position = 1,
+            required = true)
     private Map<String, String> memberContext;
+
+    @ApiModelProperty(value = "Trigger tags for member Trigger.",
+            position = 2,
+            required = true)
     private Map<String, String> memberTags;
+
+    @ApiModelProperty(value = "A map of the dataId tokens in the group conditions to the actual dataIds to " +
+            "be used for the member being added. + \n" +
+            "Can be empty if the group has no current conditions.",
+            position = 3,
+            required = true)
     private Map<String, String> dataIdMap;
 
     public UnorphanMemberInfo() {

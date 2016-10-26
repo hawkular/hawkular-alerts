@@ -23,22 +23,32 @@ import org.hawkular.alerts.api.model.condition.Condition.Type;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * An evaluation state for MissingCondition
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "An evaluation state for missing condition.")
 public class MissingConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
+    @ApiModelProperty(value = "Missing condition linked with this state.",
+            position = 0)
     @JsonInclude(Include.NON_NULL)
     private MissingCondition condition;
 
+    @ApiModelProperty(value = "Time when trigger was enabled or last time a data/event was received.",
+            position = 1)
     @JsonInclude
     private long previousTime;
 
+    @ApiModelProperty(value = "Time when most recently evaluation of missing condition.",
+            position = 2)
     @JsonInclude
     private long time;
 

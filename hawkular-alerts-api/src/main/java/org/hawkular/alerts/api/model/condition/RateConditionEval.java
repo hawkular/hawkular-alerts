@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,31 +22,47 @@ import org.hawkular.alerts.api.model.data.Data;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * An evaluation state for rate condition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "An evaluation state for rate condition.")
 public class RateConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
+    @ApiModelProperty(value = "Rate condition linked with this state.",
+            position = 0)
     @JsonInclude(Include.NON_NULL)
     private RateCondition condition;
 
-    @JsonInclude(Include.NON_NULL)
-    private Double value;
-
+    @ApiModelProperty(value = "First (older) value for dataId used in the evaluation.",
+            position = 1)
     @JsonInclude(Include.NON_NULL)
     private Double previousValue;
 
-    @JsonInclude
-    private long time;
+    @ApiModelProperty(value = "Second (newer) value for dataId used in the evaluation.",
+            position = 2)
+    @JsonInclude(Include.NON_NULL)
+    private Double value;
 
+    @ApiModelProperty(value = "Time for first (older) value for dataId used in the evaluation.",
+            position = 3)
     @JsonInclude
     private long previousTime;
 
+    @ApiModelProperty(value = "Time for second (newer) value for dataId used in the evaluation.",
+            position = 4)
+    @JsonInclude
+    private long time;
+
+    @ApiModelProperty(value = "Calculated rate for this evaluation.",
+            position = 5)
     @JsonInclude(Include.NON_NULL)
     private Double rate;
 

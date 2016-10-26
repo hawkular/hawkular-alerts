@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,9 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * A numeric comparison condition. Examples:
  * <code>"X GT 80% of Y"</code>,  <code>"FreeSpace LT 20% of TotalSpace"</code>
@@ -33,6 +36,10 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "A numeric comparison condition. + \n" +
+        " + \n" +
+        "Examples: + \n" +
+        "X > 80% of Y, FreeSpace < 20% of TotalSpace + \n")
 public class CompareCondition extends Condition {
 
     private static final long serialVersionUID = 1L;
@@ -44,12 +51,22 @@ public class CompareCondition extends Condition {
     @JsonInclude(Include.NON_NULL)
     private String dataId;
 
+    @ApiModelProperty(value = "Compare operator [LT (<), GT (>), LTE (<=), GTE (>=)].",
+            position = 0,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private Operator operator;
 
+    @ApiModelProperty(value = "Data identifier of the metric used for comparison.",
+            position = 1,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private String data2Id;
 
+    @ApiModelProperty(value = "Straight multiplier to be applied to data2Id on the comparison. " +
+            "Final comparison expression can be read as \"dataId <operator> data2Multiplier*data2Id\".",
+            position = 2,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private Double data2Multiplier;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,9 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * A threshold condition against rate of change over time. Typically used for "counter" metrics, that continuously
@@ -47,6 +50,29 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "A threshold condition against rate of change over time. + \n" +
+        " + \n" +
+        "Typically used for \"counter\" metrics, that continuously increase or decrease. + \n" +
+        "Given the last two datums for dataId: + \n" +
+        " + \n" +
+        "deltaTime   = datum.time - prevDatum.time + \n" +
+        "deltaValue  = datum.value - prevData.value + \n" +
+        "periods     = deltaTime / <conditionPeriod> + \n" +
+        "rate        = deltaValue / periods + \n" +
+        "match       = rate <conditionOperator> <conditionThreshold> + \n" +
+        " + \n" +
+        "In other words, take the rate of change for the most recent datums and compare it to the threshold. + \n" +
+        "For example, + \n" +
+        "Let's say we have a metric, sessionCount, that increments for each new session.  If the sessionCount " +
+        "increases too quickly, say more than 20 per minute, we want an alert.  We'd want: + \n" +
+        " + \n" +
+        "RateCondition( 'SessionCount', INCREASING, MINUTE, GT, 20 ) + \n" +
+        " + \n" +
+        "By specifying the SessionCount data as increasing, we know to ignore/reset if the previous session count is " +
+        "less than the current session count.  This indicates that maybe the counter was reset " +
+        "(maybe due to a restart). + \n" +
+        " + \n" +
+        "Note that rate of change is always determined as an absolute value. So threshold values should be >= 0.")
 public class RateCondition extends Condition {
 
     private static final long serialVersionUID = 1L;
@@ -74,15 +100,27 @@ public class RateCondition extends Condition {
     @JsonInclude(Include.NON_NULL)
     private String dataId;
 
+    @ApiModelProperty(value = "Indicate if a metric is increasing/decreasing.",
+            position = 0,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private Direction direction;
 
+    @ApiModelProperty(value = "Time period used for the evaluation.",
+            position = 1,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private Period period;
 
+    @ApiModelProperty(value = "Compare operator [LT (<), GT (>), LTE (<=), GTE (>=)].",
+            position = 2,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private Operator operator;
 
+    @ApiModelProperty(value = "Condition threshold.",
+            position = 3,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private Double threshold;
 

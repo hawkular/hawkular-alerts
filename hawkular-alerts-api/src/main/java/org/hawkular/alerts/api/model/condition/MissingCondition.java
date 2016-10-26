@@ -21,6 +21,9 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * A <code>MissingCondition</code> is used to evaluate when a data or an event has not been received on time interval.
  *
@@ -30,6 +33,11 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "A MissingCondition is used to evaluate when a data or an event has not been received " +
+        "on time interval. + \n" +
+        " + \n" +
+        "A MissingCondition will be evaluated to true when a data/event has not been received in the " +
+        "last interval time starting to count from trigger was enabled or last received data/event.")
 public class MissingCondition extends Condition {
 
     private static final long serialVersionUID = 1L;
@@ -37,6 +45,9 @@ public class MissingCondition extends Condition {
     @JsonInclude
     private String dataId;
 
+    @ApiModelProperty(value = "A time interval defined in milliseconds.",
+            position = 0,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private long interval;
 

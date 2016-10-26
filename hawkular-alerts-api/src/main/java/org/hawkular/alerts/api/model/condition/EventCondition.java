@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,9 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * An <code>EventCondition</code> is used for condition evaluations over Event data using expressions.
@@ -70,6 +73,45 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
+@ApiModel(description = "An EventCondition is used for condition evaluations over Event data using expressions. + \n" +
+        " + \n" +
+        "Expression is a comma separated list of the following 3 tokens structure: + \n" +
+        " + \n" +
+        "<event.field> <operator> <constant> [,<event.field> <operator> <constant>]* + \n" +
+        " + \n" +
+        "<event.field> represent a fixed field of event structure or a key of tags. + \n" +
+        "Supported fields are the following: + \n" +
+        "- tenantId + \n" +
+        "- id + \n" +
+        "- ctime + \n" +
+        "- text + \n" +
+        "- category + \n" +
+        "- tags.<key> + \n" +
+        " + \n" +
+        "<operator> is a string representing a string/numeric operator, supported ones are: + \n" +
+        "\"==\" equals + \n" +
+        "\"!=\" not equals + \n" +
+        "\"starts\" starts with String operator + \n" +
+        "\"ends\" ends with String operator + \n" +
+        "\"contains\" contains String operator + \n" +
+        "\"match\" match String operator + \n" +
+        "\"<\" less than + \n" +
+        "\"<=\" less or equals than + \n" +
+        "\">\" greater than + \n" +
+        "\">=\" greater or equals than + \n" +
+        "\"==\" equals + \n" +
+        " + \n" +
+        "<constant> is a string that might be interpreted as a number if is not closed with single quotes or a " +
+        "string constant if it is closed with single quotes + \n" +
+        "i.e. 23, 'test' + \n" +
+        " + \n" +
+        "A constant string can contain special character comma but escaped with backslash. + \n" +
+        "i.e '\\,test', 'test\\,' + \n" +
+        " + \n" +
+        "So, putting everything together, a valid expression might look like: + \n" +
+        "event.id starts 'IDXYZ', event.tag.category == 'Server', event.tag.from end '.com' + \n" +
+        " + \n" +
+        "A non valid expression will return false. + \n")
 public class EventCondition extends Condition {
 
     private static final long serialVersionUID = 1L;
@@ -77,6 +119,9 @@ public class EventCondition extends Condition {
     @JsonInclude
     private String dataId;
 
+    @ApiModelProperty(value = "Event expression used for this condition.",
+            position = 0,
+            required = true)
     @JsonInclude(Include.NON_NULL)
     private String expression;
 
