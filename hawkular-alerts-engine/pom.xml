@@ -70,7 +70,6 @@
     <dependency>
       <groupId>com.datastax.cassandra</groupId>
       <artifactId>cassandra-driver-core</artifactId>
-      <scope>provided</scope>
     </dependency>
 
     <dependency>
