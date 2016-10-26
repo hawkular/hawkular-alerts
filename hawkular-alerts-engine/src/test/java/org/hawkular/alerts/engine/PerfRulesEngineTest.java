@@ -358,6 +358,64 @@ public class PerfRulesEngineTest {
 
     }
 
+    private void perfMixedLargeConditions(String test, int nDefinitions, int nConditions, int nData, int nQueue)
+            throws Exception {
+        List definitions = new ArrayList();
+
+        for (int i = 0; i < nDefinitions; i++) {
+
+            Trigger tN = new Trigger("tenant", "trigger-" + i, "Threshold-LT");
+            definitions.add(tN);
+
+            for (int j = 1; j <= nConditions; j++) {
+
+                ThresholdCondition tNcj = new ThresholdCondition("tenant", "trigger-" + i,
+                        nConditions,
+                        j,
+                        "NumericData-t" + i + "-c" + j,
+                        ThresholdCondition.Operator.LT,
+                        10.0);
+                definitions.add(tNcj);
+            }
+            tN.setEnabled(true);
+        }
+
+        if (nQueue > 0) {
+            for (int i = 0; i < nData; i++) {
+                for (int j = 0; j < nQueue; j++) {
+                    for (int k = 1; k <= nConditions; k++) {
+                        datums.add(Data.forNumeric("tenant", "NumericData-t" + i + "-c" + k, (i * nQueue) + j, 5.0));
+                    }
+                }
+            }
+        } else {
+            for (int i = 0; i < nData; i++) {
+                for (int j = 1; j <= nConditions; j++) {
+                    datums.add(Data.forNumeric("tenant", "NumericData-t" + i + "-c" + j, i, 5.0));
+                }
+            }
+        }
+
+        rulesEngine.addFacts(definitions);
+        rulesEngine.addData(datums);
+
+        long start = System.currentTimeMillis();
+
+        rulesEngine.fire();
+
+        long stop = System.currentTimeMillis();
+
+        if (nQueue > 0) {
+            assert alerts.size() == nData * nQueue : alerts;
+        } else {
+            assert alerts.size() == nData : alerts;
+        }
+
+        report(test, nDefinitions, nData, start, stop);
+
+    }
+
+
     private void report(String description, int numDefinitions, int numData, long start, long stop) {
         log.info("Report: " + description + " -- Definitions: " + numDefinitions + " -- Data: " + numData + " -- " +
                          "Total: " + (stop - start) + " ms ");
@@ -509,6 +567,46 @@ public class PerfRulesEngineTest {
             We have 10 data in the queue
          */
         perfCompare("perf022AvailabilityQueue", 1000, 1000, 10);
+    }
+
+    @Test
+    public void perf023LargeMixedConditionsNoQueueSmall() throws Exception {
+        /*
+            We have 25 conditions.
+         */
+        perfMixedLargeConditions("perf023LargeMixedConditions", 1000, 25, 1000, 0);
+    }
+
+    /*
+        These tests require to increase the JVM setting.
+        As we want to run this perf test from travis we will maintain them disabled for future uses.
+     */
+
+    // For manual testing
+    public void perf024LargeMixedConditionsNoQueueMedium() throws Exception {
+        /*
+            We have 25 conditions.
+         */
+        perfMixedLargeConditions("perf023LargeMixedConditions", 5000, 25, 5000, 0);
+    }
+
+    // For manual testing
+    public void perf025LargeMixedConditionsQueueSmall() throws Exception {
+        /*
+            We have 25 conditions.
+            We have 10 data in the queue.
+         */
+        perfMixedLargeConditions("perf023LargeMixedConditions", 1000, 25, 1000, 10);
+    }
+
+
+    // For manual testing
+    public void perf026LargeMixedConditionsQueueMedium() throws Exception {
+        /*
+            We have 25 conditions.
+            We have 10 data in the queue.
+         */
+        perfMixedLargeConditions("perf023LargeMixedConditions", 5000, 25, 5000, 10);
     }
 
     public class PerfLogger extends Logger {
