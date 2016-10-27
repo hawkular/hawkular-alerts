@@ -34,6 +34,9 @@ BRANCH="swagger"
 SHA=`curl -Ls https://api.github.com/repos/$REPO/contents/$FILE_NAME?ref=$BRANCH | grep '"sha"' | cut -d '"' -f4`
 CONTENT=`openssl enc -base64 -in $FILE_PATH | sed ':a;N;$!ba;s/\n//g'`
 
+TEMP_CURL_CONTENT="$(pwd)/curl-alerting.json"
+echo "{\"path\": \"$FILE_NAME\", \"message\": \"Travis CI (alerts): updating swagger documentation\", \"commiter\": {\"name\": \"Travis CI\", \"email\": \"foo@bar.com\"}, \"sha\": \"$SHA\", \"content\": \"$CONTENT\", \"branch\": \"$BRANCH\"}">$TEMP_CURL_CONTENT
+
 # update the adoc file using GitHub api
-curl -Lis -X PUT -H "Authorization: token $DEPLOY_TOKEN" -d "{\"path\": \"$FILE_NAME\", \"message\": \"Travis CI (alerts): updating swagger documentation\", \"commiter\": {\"name\": \"Travis CI\", \"email\": \"foo@bar.com\"}, \"sha\": \"$SHA\", \"content\": \"$CONTENT\", \"branch\": \"$BRANCH\"}" https://api.github.com/repos/$REPO/contents/$FILE_NAME
+curl -Lis -X PUT -H "Authorization: token $DEPLOY_TOKEN" -d @$TEMP_CURL_CONTENT "https://api.github.com/repos/$REPO/contents/$FILE_NAME"
 
