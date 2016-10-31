@@ -54,9 +54,9 @@ import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
+import org.hawkular.alerts.engine.impl.IncomingDataManager.IncomingData;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
-import org.hawkular.alerts.filter.CacheClient;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BoundStatement;
@@ -90,15 +90,12 @@ public class CassAlertsServiceImpl implements AlertsService {
     @EJB
     ActionsService actionsService;
 
-    @EJB
-    DataDrivenGroupCacheManager dataDrivenGroupCacheManager;
-
     @Inject
     @CassClusterSession
     Session session;
 
-    @Inject
-    CacheClient dataIdCache;
+    @EJB
+    IncomingDataManager incomingDataManager;
 
     public CassAlertsServiceImpl() {
     }
@@ -1591,43 +1588,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (isEmpty(data)) {
             return;
         }
-
-        // Front-line filtering to remove Data not used in trigger evaluation (globally not used in any condition).
-        if (!ignoreFiltering) {
-        data = dataIdCache.filterData(data);
-        if (data.isEmpty()) {
-            return;
-        }
-        }
-
-        // check to see if any data can be used to generate data-driven group members
-        checkDataDrivenGroupTriggers(data);
-
-        // forward to the engine for node-specific filtering, propagation to other nodes, and/or evaluation
-        alertsEngine.sendData(data);
-    }
-
-    private void checkDataDrivenGroupTriggers(Collection<Data> data) throws Exception {
-        if (!dataDrivenGroupCacheManager.isCacheActive()) {
-            return;
-        }
-        for (Data d : data) {
-            if (isEmpty(d.getSource())) {
-                continue;
-            }
-
-            String tenantId = d.getTenantId();
-            String dataId = d.getId();
-            String dataSource = d.getSource();
-
-            Set<String> groupTriggerIds = dataDrivenGroupCacheManager.needsSourceMember(tenantId, dataId, dataSource);
-
-            // Add a trigger members for the source
-
-            for (String groupTriggerId : groupTriggerIds) {
-                definitionsService.addDataDrivenMemberTrigger(tenantId, groupTriggerId, dataSource);
-            }
-        }
+        incomingDataManager.bufferData(new IncomingData(data, !ignoreFiltering));
     }
 
     @Override
@@ -1661,13 +1622,13 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         // Front-line filtering to remove Data not used in trigger evaluation (globally not used in any condition).
         if (!ignoreFiltering) {
-            events = dataIdCache.filterEvents(events);
+            //    events = dataIdCache.filterEvents(events);
             if (events.isEmpty()) {
                 return;
             }
         }
 
-        alertsEngine.sendEvents(events);
+        incomingDataManager.bufferEvents(events);
     }
 
     private void sendAction(Alert a) {
