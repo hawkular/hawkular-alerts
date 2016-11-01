@@ -30,8 +30,11 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
+import javax.ejb.AccessTimeout;
 import javax.ejb.EJB;
 import javax.ejb.Local;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
@@ -182,6 +185,7 @@ public class PartitionManagerImpl implements PartitionManager {
     private NewDataListener newDataListener = new NewDataListener();
 
     @Override
+    @Lock(LockType.READ)
     public boolean isDistributed() {
         return distributed;
     }
@@ -306,7 +310,9 @@ public class PartitionManagerImpl implements PartitionManager {
         Calculate a new partition based on the current topology.
         It should be invoked as a result of a topology event and it is executed by the coordinator node.
         It updated the new and old partition state on the "partition" cache.
+        This can take some time, avoid timeouts by allowing longer waits for pending client calls
      */
+    @AccessTimeout(value = 5, unit = TimeUnit.MINUTES)
     private void processTopologyChange() {
         if (distributed && cacheManager.isCoordinator()) {
             /*

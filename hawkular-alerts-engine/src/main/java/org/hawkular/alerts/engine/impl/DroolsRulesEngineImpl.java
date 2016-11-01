@@ -171,15 +171,14 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
             long startBatching = System.currentTimeMillis();
             for (Data data : batchData) {
-                if (null == previousData || !data.getId().equals(previousData.getId())) {
+                if (null == previousData || !(data.getId().equals(previousData.getId())
+                        && data.getTenantId().equals(previousData.getTenantId()))) {
                     kSession.insert(data);
                     previousData = data;
 
                 } else {
                     pendingData.add(data);
-                    if (log.isTraceEnabled()) {
-                        log.tracef("Deferring more recent %s until older %s is processed", data, previousData);
-                    }
+                    log.tracef("Deferring more recent %s until older %s is processed", data, previousData);
                 }
             }
             long batchingTime = System.currentTimeMillis() - startBatching;
