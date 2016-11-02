@@ -22,9 +22,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
+import javax.ejb.AccessTimeout;
 import javax.ejb.EJB;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
@@ -72,7 +76,11 @@ public class DataDrivenGroupCacheManager {
         }, DefinitionsEvent.Type.CONDITION_CHANGE);
     }
 
-    private synchronized void updateCache() {
+    // cache update can take some time if the trigger population is large and cross-tenant, avoid
+    // timeouts by allowing longer waits for pending client calls
+    @AccessTimeout(value = 5, unit = TimeUnit.MINUTES)
+    private void updateCache() {
+        log.debug("Updating cache...");
 
         try {
             Collection<Trigger> allTriggers = definitions.getAllTriggers();
@@ -82,7 +90,10 @@ public class DataDrivenGroupCacheManager {
                     ddGroupTriggers.add(t);
                 }
             }
-            Collection<Condition> conditions = new HashSet<>();
+
+            log.debugf("Updating [%d] data-driven triggers out of [%d] total triggers...", ddGroupTriggers.size(),
+                    allTriggers.size());
+
             for (Trigger groupTrigger : ddGroupTriggers) {
                 String tenantId = groupTrigger.getTenantId();
                 Set<String> sources = new HashSet<>();
@@ -117,31 +128,31 @@ public class DataDrivenGroupCacheManager {
             sourcesMap = new HashMap<>();
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Updated sourceMap! " + sourcesMap);
-        }
+        log.debugf("Updated cache sourceMap: %s", sourcesMap);
     }
 
+    @Lock(LockType.READ)
     public boolean isCacheActive() {
         return !sourcesMap.isEmpty();
     }
 
+    @Lock(LockType.READ)
     public Set<String> needsSourceMember(String tenantId, String dataId, String source) {
         if (isEmpty(source, dataId, tenantId) || Data.SOURCE_NONE.equals(source)) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
 
         CacheKey key = new CacheKey(tenantId, dataId);
 
         // if the dataId is not relevant to any group triggers just return empty set
         if (null == triggersMap.get(key)) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
 
         // if the dataId is relevant to group triggers but the source is already known just return empty set
         Set<String> sources = sourcesMap.get(key);
         if (sources.contains(source)) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
 
         // otherwise, return the triggers that need a member for this source

@@ -541,15 +541,21 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         addPendingEvents(Collections.singleton(event));
     }
 
-    private synchronized Collection<Data> getAndClearPendingData() {
-        Collection<Data> result = new ArrayList<>(pendingData);
-        pendingData.clear();
+    private Collection<Data> getAndClearPendingData() {
+        Collection<Data> result;
+        synchronized (pendingData) {
+            result = new ArrayList<>(pendingData);
+            pendingData.clear();
+        }
         return result;
     }
 
-    private synchronized Collection<Event> getAndClearPendingEvents() {
-        Collection<Event> result = new ArrayList<>(pendingEvents);
-        pendingEvents.clear();
+    private Collection<Event> getAndClearPendingEvents() {
+        Collection<Event> result;
+        synchronized (pendingEvents) {
+            result = new ArrayList<>(pendingEvents);
+            pendingEvents.clear();
+        }
         return result;
     }
 
