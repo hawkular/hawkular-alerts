@@ -207,14 +207,6 @@ public interface AlertsService {
      * @param data Not Null.  The data to be evaluated by the alerting engine.
      * @throws Exception any problem.
      */
-    void sendData(Data data) throws Exception;
-
-    /**
-     * Send data into the alerting system for evaluation.
-     *
-     * @param data Not Null.  The data to be evaluated by the alerting engine.
-     * @throws Exception any problem.
-     */
     void sendData(Collection<Data> data) throws Exception;
 
     /**
@@ -225,15 +217,6 @@ public interface AlertsService {
      * @throws Exception any problem.
      */
     void sendData(Collection<Data> data, boolean ignoreFiltering) throws Exception;
-
-    /**
-     * Send event to the engine for alerts evaluation.
-     * The event sent is not persisted into the alerts engine.
-     *
-     * @param event Not Null. The event to be evaluated by the alerting engine.
-     * @throws Exception any problem
-     */
-    void sendEvent(Event event) throws Exception;
 
     /**
      * Send events to the engine for alerts evaluation.

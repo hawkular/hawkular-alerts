@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 package org.hawkular.alerts.engine.service;
 
 import java.util.Collection;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 
 import org.hawkular.alerts.api.model.data.Data;
@@ -30,6 +31,10 @@ import org.hawkular.alerts.api.model.event.Event;
  * @author Lucas Ponce
  */
 public interface RulesEngine {
+
+    String MIN_REPORTING_INTERVAL = "hawkular-alerts.min-reporting-interval";
+    String MIN_REPORTING_INTERVAL_ENV = "HAWKULAR_MIN_REPORTING_INTERVAL";
+    String MIN_REPORTING_INTERVAL_DEFAULT = "1000";
 
     void addGlobal(String name, Object global);
 
@@ -88,28 +93,14 @@ public interface RulesEngine {
      * rules are fired on the accumulated <code>Data</code> it will be cleared.
      * @param data the data
      */
-    void addData(Data data);
-
-    /**
-     * Add to the accumulated <code>Data</code> to be processed the next time {@link #fire()} is called. After the
-     * rules are fired on the accumulated <code>Data</code> it will be cleared.
-     * @param data the data
-     */
-    void addData(Collection<Data> data);
-
-    /**
-     * Add to the accumulated <code>Event</code> to be processed the next time {@link #fire()} is called. After the
-     * rules are fired on the accumulated <code>Event</code> it will be cleared.
-     * @param event the event
-     */
-    void addEvent(Event event);
+    void addData(TreeSet<Data> data);
 
     /**
      * Add to the accumulated <code>Event</code> to be processed the next time {@link #fire()} is called. After the
      * rules are fired on the accumulated <code>Event</code> it will be cleared.
      * @param events the events
      */
-    void addEvents(Collection<Event> events);
+    void addEvents(TreeSet<Event> events);
 
     /**
      * Fire all rules given the current set of added definitions and the currently accumulated <code>Data</code>.

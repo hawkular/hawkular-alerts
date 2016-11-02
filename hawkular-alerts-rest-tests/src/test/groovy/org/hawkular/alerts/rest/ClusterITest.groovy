@@ -159,8 +159,8 @@ class ClusterITest extends AbstractITestBase {
 
             // Send in DOWN avail data to fire the trigger
             // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
-            for (int j = 0; j < 5; j++) {
-                Data avail = new Data("test-cluster-" + i, j + 1, "DOWN");
+            for (int j = 1000; j <= 5000; j+=1000) {
+                Data avail = new Data("test-cluster-" + i, j, "DOWN");
                 Collection<Data> datums = new ArrayList<>();
                 datums.add(avail);
                 startCall();
