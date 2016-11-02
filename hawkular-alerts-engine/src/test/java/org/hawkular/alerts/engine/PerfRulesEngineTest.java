@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
@@ -58,7 +59,7 @@ public class PerfRulesEngineTest {
     RulesEngine rulesEngine = new DroolsRulesEngineImpl();
     List<Alert> alerts = new ArrayList<>();
     Set<Dampening> pendingTimeouts = new HashSet<>();
-    Set<Data> datums = new HashSet<Data>();
+    TreeSet<Data> datums = new TreeSet<Data>();
 
     @Before
     public void before() {
@@ -93,12 +94,12 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(Data.forNumeric("tenant", "NumericData-" + i, (i * nQueue) + j, 5.0));
+                    datums.add(Data.forNumeric("tenant", "NumericData-" + i, ((i * nQueue) + j) * 1000, 5.0));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(Data.forNumeric("tenant", "NumericData-" + i, i, 5.0));
+                datums.add(Data.forNumeric("tenant", "NumericData-" + i, i * 1000, 5.0));
             }
         }
 
@@ -139,12 +140,12 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(Data.forNumeric("tenant", "NumericData-" + i, (i * nQueue) + j, 12.5));
+                    datums.add(Data.forNumeric("tenant", "NumericData-" + i, ((i * nQueue) + j) * 1000, 12.5));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(Data.forNumeric("tenant", "NumericData-" + i, i, 12.5));
+                datums.add(Data.forNumeric("tenant", "NumericData-" + i, i * 1000, 12.5));
             }
         }
 
@@ -183,14 +184,14 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, (i * nQueue) + j, 10d));
-                    datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, (i * nQueue) + j, 30d));
+                    datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, ((i * nQueue) + j) * 1000, 10d));
+                    datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, ((i * nQueue) + j) * 1000, 30d));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, i, 10d));
-                datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, i, 30d));
+                datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, i * 1000, 10d));
+                datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, i * 1000, 30d));
             }
         }
 
@@ -327,15 +328,73 @@ public class PerfRulesEngineTest {
         if (nQueue > 0) {
             for (int i = 0; i < nData; i++) {
                 for (int j = 0; j < nQueue; j++) {
-                    datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, (i * nQueue) + j, 5.0));
-                    datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, (i * nQueue) + j, 12.5));
+                    datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, ((i * nQueue) + j) * 1000, 5.0));
+                    datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, ((i * nQueue) + j) * 1000, 12.5));
                 }
             }
         } else {
             for (int i = 0; i < nData; i++) {
-                datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, i, 5.0));
-                datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, i, 12.5));
+                datums.add(Data.forNumeric("tenant", "NumericData-a-" + i, i * 1000, 5.0));
+                datums.add(Data.forNumeric("tenant", "NumericData-b-" + i, i * 1000, 12.5));
 
+            }
+        }
+
+        rulesEngine.addFacts(definitions);
+        rulesEngine.addData(datums);
+
+        long start = System.currentTimeMillis();
+
+        rulesEngine.fire();
+
+        long stop = System.currentTimeMillis();
+
+        if (nQueue > 0) {
+            assert alerts.size() == nData * nQueue : alerts;
+        } else {
+            assert alerts.size() == nData : alerts;
+        }
+
+        report(test, nDefinitions, nData, start, stop);
+
+    }
+
+    private void perfMixedLargeConditions(String test, int nDefinitions, int nConditions, int nData, int nQueue)
+            throws Exception {
+        List definitions = new ArrayList();
+
+        for (int i = 0; i < nDefinitions; i++) {
+
+            Trigger tN = new Trigger("tenant", "trigger-" + i, "Threshold-LT");
+            definitions.add(tN);
+
+            for (int j = 1; j <= nConditions; j++) {
+
+                ThresholdCondition tNcj = new ThresholdCondition("tenant", "trigger-" + i,
+                        nConditions,
+                        j,
+                        "NumericData-t" + i + "-c" + j,
+                        ThresholdCondition.Operator.LT,
+                        10.0);
+                definitions.add(tNcj);
+            }
+            tN.setEnabled(true);
+        }
+
+        if (nQueue > 0) {
+            for (int i = 0; i < nData; i++) {
+                for (int j = 0; j < nQueue; j++) {
+                    for (int k = 1; k <= nConditions; k++) {
+                        datums.add(Data.forNumeric("tenant", "NumericData-t" + i + "-c" + k, ((i * nQueue) + j) * 1000,
+                                5.0));
+                    }
+                }
+            }
+        } else {
+            for (int i = 0; i < nData; i++) {
+                for (int j = 1; j <= nConditions; j++) {
+                    datums.add(Data.forNumeric("tenant", "NumericData-t" + i + "-c" + j, i * 1000, 5.0));
+                }
             }
         }
 

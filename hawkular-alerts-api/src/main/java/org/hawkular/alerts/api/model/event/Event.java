@@ -387,7 +387,7 @@ public class Event implements Comparable<Event>, Serializable {
     @Override
     public int compareTo(Event o) {
         /*
-            Comparition only should be used on events with proper dataId defined.
+            Comparison only should be used on events with proper dataId defined.
          */
         if (this.dataId == null) {
             return this.id.compareTo(o.id);
@@ -400,6 +400,35 @@ public class Event implements Comparable<Event>, Serializable {
             return c;
         }
         return this.id.compareTo(o.id);
+    }
+
+    /**
+     * @return true if the two Event objects represent the same logical Event (just different values and/or times)
+     */
+    public boolean same(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Event other = (Event) obj;
+        if (dataId == null) {
+            if (other.dataId != null)
+                return false;
+        } else if (!dataId.equals(other.dataId))
+            return false;
+        if (dataSource == null) {
+            if (other.dataSource != null)
+                return false;
+        } else if (!dataSource.equals(other.dataSource))
+            return false;
+        if (tenantId == null) {
+            if (other.tenantId != null)
+                return false;
+        } else if (!tenantId.equals(other.tenantId))
+            return false;
+        return true;
     }
 
     private static boolean isEmpty(String s) {

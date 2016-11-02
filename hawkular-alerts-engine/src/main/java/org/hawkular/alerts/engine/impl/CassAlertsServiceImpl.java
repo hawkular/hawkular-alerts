@@ -54,9 +54,11 @@ import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
-import org.hawkular.alerts.engine.impl.IncomingDataManager.IncomingData;
+import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl.IncomingData;
+import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl.IncomingEvents;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
+import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BoundStatement;
@@ -90,12 +92,12 @@ public class CassAlertsServiceImpl implements AlertsService {
     @EJB
     ActionsService actionsService;
 
+    @EJB
+    IncomingDataManager incomingDataManager;
+
     @Inject
     @CassClusterSession
     Session session;
-
-    @EJB
-    IncomingDataManager incomingDataManager;
 
     public CassAlertsServiceImpl() {
     }
@@ -1146,12 +1148,12 @@ public class CassAlertsServiceImpl implements AlertsService {
             List<Event> ordered = events;
             if (pager.getOrder() != null) {
                 pager.getOrder()
-                .stream()
-                .filter(o -> o.getField() != null && o.getDirection() != null)
-                .forEach(o -> {
-                    EventComparator comparator = new EventComparator(o.getField(), o.getDirection());
-                    Collections.sort(ordered, comparator);
-                });
+                        .stream()
+                        .filter(o -> o.getField() != null && o.getDirection() != null)
+                        .forEach(o -> {
+                            EventComparator comparator = new EventComparator(o.getField(), o.getDirection());
+                            Collections.sort(ordered, comparator);
+                        });
             }
             if (!pager.isLimited() || ordered.size() < pager.getStart()) {
                 pager = new Pager(0, ordered.size(), pager.getOrder());
@@ -1574,11 +1576,6 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     @Override
-    public void sendData(Data data) throws Exception {
-        sendData(Collections.singleton(data), false);
-    }
-
-    @Override
     public void sendData(Collection<Data> data) throws Exception {
         sendData(data, false);
     }
@@ -1588,6 +1585,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (isEmpty(data)) {
             return;
         }
+
         incomingDataManager.bufferData(new IncomingData(data, !ignoreFiltering));
     }
 
@@ -1598,14 +1596,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
         persistEvents(events);
         sendEvents(events);
-    }
-
-    @Override
-    public void sendEvent(Event event) throws Exception {
-        if (null == event) {
-            return;
-        }
-        sendEvents(Collections.singleton(event), false);
     }
 
     @Override
@@ -1620,15 +1610,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             return;
         }
 
-        // Front-line filtering to remove Data not used in trigger evaluation (globally not used in any condition).
-        if (!ignoreFiltering) {
-            //    events = dataIdCache.filterEvents(events);
-            if (events.isEmpty()) {
-                return;
-            }
-        }
-
-        incomingDataManager.bufferEvents(events);
+        incomingDataManager.bufferEvents(new IncomingEvents(events, !ignoreFiltering));
     }
 
     private void sendAction(Alert a) {

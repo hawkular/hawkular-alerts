@@ -54,6 +54,11 @@ import org.jboss.logging.Logger;
 public class DataDrivenGroupCacheManager {
     private final Logger log = Logger.getLogger(DataDrivenGroupCacheManager.class);
 
+    private static final String DATA_DRIVEN_TRIGGERS_ENABLED = "hawkular-alerts.data-driven-triggers-enabled";
+    private static final String DATA_DRIVEN_TRIGGERS_ENABLED_DEFAULT = "true";
+
+    private boolean dataDrivenTriggersEnabled;
+
     // The sources with member triggers for the dataId.
     // - null if dataId is not used in a group trigger condition
     // - EmptySet if no source members are yet defined
@@ -66,14 +71,22 @@ public class DataDrivenGroupCacheManager {
 
     @PostConstruct
     public void init() {
-        updateCache();
+        dataDrivenTriggersEnabled = new Boolean(
+                AlertProperties.getProperty(DATA_DRIVEN_TRIGGERS_ENABLED, DATA_DRIVEN_TRIGGERS_ENABLED_DEFAULT));
 
-        definitions.registerListener(new DefinitionsListener() {
-            @Override
-            public void onChange(DefinitionsEvent event) {
-                updateCache();
-            }
-        }, DefinitionsEvent.Type.CONDITION_CHANGE);
+        log.infof("Data-driven Group Triggers enabled: %s", dataDrivenTriggersEnabled);
+
+        if (dataDrivenTriggersEnabled) {
+
+            updateCache();
+
+            definitions.registerListener(new DefinitionsListener() {
+                @Override
+                public void onChange(DefinitionsEvent event) {
+                    updateCache();
+                }
+            }, DefinitionsEvent.Type.CONDITION_CHANGE);
+        }
     }
 
     // cache update can take some time if the trigger population is large and cross-tenant, avoid

@@ -711,6 +711,7 @@
                 <javaOpt>-Dhawkular.log.alerts=${hawkular.log.alerts}</javaOpt>
                 <javaOpt>-Dhawkular.allowed-cors-origins=http://test.hawkular.org,https://secure.hawkular.io</javaOpt>
                 <javaOpt>-Dhawkular.allowed-cors-access-control-allow-headers=random-header1,random-header2</javaOpt>
+                <javaOpt>-Dhawkular-alerts.data-driven-triggers-enabled=false</javaOpt>
                 <!--<javaOpt>-Xdebug</javaOpt>-->
                 <!--<javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt>-->
                 <!--javaOpt>-agentpath:${jprofiler.path}/bin/linux-x64/libjprofilerti.so</javaOpt-->
@@ -1164,6 +1165,7 @@
                 <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
                 <hawkular.test.origin>http://test.hawkular.org</hawkular.test.origin>
                 <hawkular.test.access-control-allow-headers>random-header1,random-header2</hawkular.test.access-control-allow-headers>
+                <hawkular-alerts.data-driven-triggers-enabled>false</hawkular-alerts.data-driven-triggers-enabled>
               </systemPropertyVariables>
             </configuration>
             <executions>
