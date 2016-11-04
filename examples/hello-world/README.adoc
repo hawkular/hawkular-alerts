@@ -12,7 +12,7 @@ Build a Hawkular Alerting standalone distribution
 [source,shell,subs="+attributes"]
 ----
     cd hawkular-alerts
-    mvn clean install -Pstandalone
+    mvn clean install
 ----
 
 Start the standalone server
@@ -31,9 +31,25 @@ Open a new shell to run the hello-world example
     mvn validate
 ----
 
-TIP: By default, Hawkular Alerting will send email notifications using a SMTP server on localhost:25, for demo purposes
- a test smtp server can be used to validate the reception of the emails. Hawkular Alerting has been tested using
- https://nilhcem.github.io/FakeSMTP/[FakeSMTP].
+[TIP]
+.Test Email server
+==================
+By default, Hawkular Alerting will send email notifications using a SMTP server on localhost:25, for demo purposes
+ a test smtp server can be used to validate the reception of the emails. +
+  +
+Hawkular Alerting has been tested using
+  https://nilhcem.github.io/FakeSMTP/[FakeSMTP]. +
+  +
+A GUI SMTP server can be set up with these steps:
+[source,shell,subs="+attributes"]
+----
+    git clone https://github.com/Nilhcem/FakeSMTP
+    cd FakeSMTP
+    mvn clean install -DskipTests
+    cd target
+    sudo java -jar fakeSMTP-*.jar
+----
+==================
 
 == create_definitions.groovy
 

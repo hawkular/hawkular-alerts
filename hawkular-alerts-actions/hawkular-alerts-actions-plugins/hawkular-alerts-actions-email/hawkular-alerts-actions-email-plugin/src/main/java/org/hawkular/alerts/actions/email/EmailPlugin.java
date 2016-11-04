@@ -355,8 +355,8 @@ public class EmailPlugin implements ActionPluginListener {
             rich.setContent(html, "text/html");
 
             Multipart multipart = new MimeMultipart("alternative");
-            multipart.addBodyPart(rich);
             multipart.addBodyPart(text);
+            multipart.addBodyPart(rich);
             email.setContent(multipart);
         }
         return email;

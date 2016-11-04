@@ -45,6 +45,7 @@ public class WebHookPlugin implements ActionPluginListener {
 
     private static final String DEFAULT_URL = "http://localhost:8080/hawkular/actions/webhook/ping";
     private static final String DEFAULT_METHOD = "POST";
+    private static final String DEFAULT_TIMEOUT = "5000";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String APPLICATION_JSON = "application/json";
 
@@ -61,6 +62,7 @@ public class WebHookPlugin implements ActionPluginListener {
     public WebHookPlugin() {
         defaultProperties.put("url", DEFAULT_URL);
         defaultProperties.put("method", DEFAULT_METHOD);
+        defaultProperties.put("timeout", DEFAULT_TIMEOUT);
     }
 
     @Override
@@ -79,7 +81,6 @@ public class WebHookPlugin implements ActionPluginListener {
         Action receivedAction = msg.getAction();
         try {
             invokeWebhook(receivedAction);
-            receivedAction.setResult(MESSAGE_PROCESSED);
         } catch (Exception e) {
             msgLog.errorCannotProcessMessage("webhook", e.getMessage());
             receivedAction.setResult(MESSAGE_FAILED);
@@ -95,6 +96,8 @@ public class WebHookPlugin implements ActionPluginListener {
         String url = isEmpty(action.getProperties().get("url")) ? DEFAULT_URL : action.getProperties().get("url");
         String method = isEmpty(action.getProperties().get("method")) ? DEFAULT_METHOD :
                 action.getProperties().get("method");
+        int timeout = isEmpty(action.getProperties().get("timeout")) ? Integer.parseInt(DEFAULT_TIMEOUT) :
+                Integer.parseInt(action.getProperties().get("timeout"));
 
         String jsonEvent = JsonUtil.toJson(action.getEvent());
         URL webHookUrl = new URL(url);
@@ -102,16 +105,23 @@ public class WebHookPlugin implements ActionPluginListener {
         conn.setDoOutput(true);
         conn.setRequestMethod(method);
         conn.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
+        conn.setConnectTimeout(timeout);
+        conn.setReadTimeout(timeout);
 
         OutputStream os = conn.getOutputStream();
         os.write(jsonEvent.getBytes());
         os.flush();
         os.close();
-
-        if (log.isDebugEnabled()) {
-            log.debug("Webhook for " + url + " . Request code: " + conn.getResponseCode());
+        if (conn.getResponseCode() < 400) {
+            action.setResult(MESSAGE_PROCESSED);
+            if (log.isDebugEnabled()) {
+                log.debug("Webhook for " + url + " . Request code: " + conn.getResponseCode());
+            }
+        } else {
+            action.setResult(MESSAGE_FAILED);
+            log.errorf("Webhook for %s. Failed with: [%s]. Response code: %s", url, conn.getResponseCode(),
+                    conn.getResponseMessage());
         }
-
         conn.disconnect();
     }
 

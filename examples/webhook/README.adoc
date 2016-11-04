@@ -12,7 +12,7 @@ Build a Hawkular Alerting standalone distribution
 [source,shell,subs="+attributes"]
 ----
     cd hawkular-alerts
-    mvn clean install -Pstandalone
+    mvn clean install
 ----
 
 Start the standalone server
@@ -31,17 +31,6 @@ Open a new shell to run the webhook example
     mvn validate
 ----
 
-TIP: To run the example against the Hawkular Services distribution, you must install the webhook plugin manually.
-
-[source,shell,subs="+attributes"]
-----
-    # Build the Hawkular Alerting without any flag to prepare the plugin for hawkular services distribution
-    mvn clean install
-    # Copy the plugin into hawkular-services distribution
-    cp hawkular-alerts-actions-plugins/hawkular-alerts-actions-webhook/target/hawkular-alerts-actions-webhook.war \
-    $HAWKULAR_SERVICES/modules/system/layers/hawkular/org/hawkular/nest/main/deployments/
-----
-
 == create_definitions.groovy
 
 Create a hello world trigger to two conditions to fire an alert everytime that:
@@ -50,6 +39,8 @@ Create a hello world trigger to two conditions to fire an alert everytime that:
     . numeric data with id "data-y" is greater than 5
 
 Create an action definition to notify by a webhook url.
+
+It will use the ping endpoint `http://localhost:8080/hawkular/actions/webhook/ping` included into the webhook plugin.
 
 == send_data.groovy
 
