@@ -18,7 +18,6 @@ package org.hawkular.alerts.engine.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,12 +27,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeSet;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Local;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
@@ -68,13 +70,17 @@ import org.jboss.logging.Logger;
  * Cassandra implementation for {@link org.hawkular.alerts.api.services.AlertsService}.
  * This implementation processes data asynchronously using a buffer queue.
  *
+ * The engine may run in single-node or distributed (i.e. multi-node/clustered) mode.
+ * By design this class handles both and it should be transparent to callers which mode
+ * is currently in use.
+ *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 @Singleton
 @Startup
 @Local(AlertsEngine.class)
-@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
+@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener, PartitionDataListener {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(AlertsEngineImpl.class);
@@ -92,8 +98,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     private int delay;
     private int period;
 
-    private final List<Data> pendingData;
-    private final List<Event> pendingEvents;
+    private TreeSet<Data> pendingData;
+    private TreeSet<Event> pendingEvents;
+
     private final List<Alert> alerts;
     private final List<Event> events;
     private final Set<Dampening> pendingTimeouts;
@@ -104,11 +111,12 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     private final Timer wakeUpTimer;
     private TimerTask rulesTask;
 
-    // All incoming Data and Events go through first-line global filtering and therefore, in a non-distributed
-    // env the global filtering is equivalent to node-specific filtering. As such we don't need to filter
-    // via the [node-specific] alertsEngineCache.
+    /*
+        All incoming Data and Events go through front-line global filtering (via IncomingDataManager)
+        and therefore, in a non-distributed env the global filtering is equivalent to node-specific
+        filtering. As such we don't need to filter via nodeSpecificDataIdCache.
+     */
     private AlertsEngineCache alertsEngineCache = null;
-
     boolean distributed = false;
 
     @EJB
@@ -130,8 +138,8 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     private ManagedExecutorService executor;
 
     public AlertsEngineImpl() {
-        pendingData = new ArrayList<>();
-        pendingEvents = new ArrayList<>();
+        pendingData = new TreeSet<>();
+        pendingEvents = new TreeSet<>();
         alerts = new ArrayList<>();
         events = new ArrayList<>();
         pendingTimeouts = new HashSet<>();
@@ -365,7 +373,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                         trigger.getId(), null);
 
                 /*
-                    Caching dataId from conditions.
+                    Cache dataId from conditions, Handle MissingCondition's MissingState
                  */
                 for (Condition c : conditionSet) {
                     if (distributed) {
@@ -406,7 +414,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
         Trigger loadedTrigger = null;
         try {
-            loadedTrigger = (Trigger)rules.getFact(trigger);
+            loadedTrigger = (Trigger) rules.getFact(trigger);
 
         } catch (Exception e) {
             log.errorf("Failed to get Trigger from engine %s: %s", trigger, e);
@@ -447,9 +455,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             final String triggerId = trigger.getId();
             rules.removeFacts(t -> {
                 if (t instanceof Dampening) {
-                    return ((Dampening)t).getTriggerId().equals(triggerId);
+                    return ((Dampening) t).getTriggerId().equals(triggerId);
                 } else if (t instanceof Condition) {
-                    return ((Condition)t).getTriggerId().equals(triggerId);
+                    return ((Condition) t).getTriggerId().equals(triggerId);
                 }
                 return false;
             });
@@ -469,92 +477,100 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         }
     }
 
+    // We allow concurrent threads to make this call in order to process distributed data in parallel. We
+    // use synchronized blocks to protect pendingData.
     @Override
-    public void sendData(Collection<Data> data) {
+    @Lock(LockType.READ)
+    public void sendData(TreeSet<Data> data) {
         if (data == null) {
             throw new IllegalArgumentException("Data must be not null");
         }
-        addPendingData(data);
+        if (data.isEmpty()) {
+            return;
+        }
+
+        addData(data);
+
         if (distributed) {
-            partitionManager.notifyData(data);
+            partitionManager.notifyData(new ArrayList<>(data));
         }
     }
 
-    @Override
-    public void sendData(Data data) {
-        sendData(Collections.singleton(data));
+    private void addData(TreeSet<Data> data) {
+        if (distributed) {
+            data = filterIncomingDataForNode(data);
+        }
+
+        synchronized (pendingData) {
+            pendingData.addAll(data);
+        }
     }
 
-    @Override
-    public void sendEvent(Event event) {
-        sendEvents(Collections.singleton(event));
+    private TreeSet<Data> filterIncomingDataForNode(TreeSet<Data> data) {
+        TreeSet<Data> filteredData = new TreeSet<>(data);
+        for (Iterator<Data> i = filteredData.iterator(); i.hasNext();) {
+            Data d = i.next();
+            if (!alertsEngineCache.isDataIdActive(d.getId())) {
+                i.remove();
+            }
+        }
+        return filteredData;
     }
 
+    // We allow concurrent threads to make this call in order to process distributed data in parallel. We
+    // use synchronized blocks to protect pendingEvents.
     @Override
-    public void sendEvents(Collection<Event> events) {
+    @Lock(LockType.READ)
+    public void sendEvents(TreeSet<Event> events) {
         if (events == null) {
             throw new IllegalArgumentException("Events must be not null");
         }
-        addPendingEvents(events);
+        if (events.isEmpty()) {
+            return;
+        }
+
+        addEvents(events);
+
         if (distributed) {
             partitionManager.notifyEvents(events);
         }
     }
 
-    private void addPendingData(Collection<Data> data) {
-        Collection<Data> filteredData = data;
+    private void addEvents(TreeSet<Event> events) {
         if (distributed) {
-            filteredData = new ArrayList<>(data);
-            for (Iterator<Data> i = filteredData.iterator(); i.hasNext(); ) {
-                Data d = i.next();
-                if (!alertsEngineCache.isDataIdActive(d.getId())) {
-                    i.remove();
-                }
-            }
+            events = filterIncomingEventsForNode(events);
         }
-        synchronized (pendingData) {
-            pendingData.addAll(filteredData);
-        }
-    }
 
-    private void addPendingData(Data data) {
-        addPendingData(Collections.singleton(data));
-    }
-
-    private void addPendingEvents(Collection<Event> events) {
-        Collection<Event> filteredEvents = events;
-        if (distributed) {
-            filteredEvents = new ArrayList<>(events);
-            for (Iterator<Event> i = filteredEvents.iterator(); i.hasNext(); ) {
-                Event e = i.next();
-                if (!alertsEngineCache.isDataIdActive(e.getDataId())) {
-                    i.remove();
-                }
-            }
-        }
         synchronized (pendingEvents) {
-            pendingEvents.addAll(filteredEvents);
+            pendingEvents.addAll(events);
         }
     }
 
-    private void addPendingEvent(Event event) {
-        addPendingEvents(Collections.singleton(event));
+    private TreeSet<Event> filterIncomingEventsForNode(TreeSet<Event> events) {
+        TreeSet<Event> filteredEvents = new TreeSet<>(events);
+        for (Iterator<Event> i = filteredEvents.iterator(); i.hasNext();) {
+            Event e = i.next();
+            if (!alertsEngineCache.isDataIdActive(e.getDataId())) {
+                i.remove();
+            }
+        }
+        return filteredEvents;
     }
 
-    private Collection<Data> getAndClearPendingData() {
-        Collection<Data> result;
+    private TreeSet<Data> getAndClearPendingData() {
+        TreeSet<Data> result;
         synchronized (pendingData) {
-            result = new ArrayList<>(pendingData);
-            pendingData.clear();
+            result = pendingData;
+            pendingData = new TreeSet<>();
         }
         return result;
     }
 
-    private Collection<Event> getAndClearPendingEvents() {
-        Collection<Event> result;
+    private TreeSet<Event> getAndClearPendingEvents() {
+        TreeSet<Event> result;
         synchronized (pendingEvents) {
-            result = new ArrayList<>(pendingEvents);
-            pendingEvents.clear();
+            result = pendingEvents;
+            pendingEvents = new TreeSet<>();
         }
         return result;
     }
@@ -567,30 +583,31 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             int numMissingEvals = checkMissingStates();
 
             if (!pendingData.isEmpty() || !pendingEvents.isEmpty() || numTimeouts > 0 || numMissingEvals > 0) {
-                Collection<Data> newData = getAndClearPendingData();
-                Collection<Event> newEvents = getAndClearPendingEvents();
+                TreeSet<Data> newData = getAndClearPendingData();
+                TreeSet<Event> newEvents = getAndClearPendingEvents();
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Executing rules engine on " + newData.size() + " datums, "
-                            + newEvents.size() + " events and "
-                            + numTimeouts +" dampening timeouts.");
-                }
+                log.debugf("Executing rules engine on %d datums, %d events, %d dampening timeouts.", newData.size(),
+                        newEvents.size(), numTimeouts);
 
                 try {
                     if (newData.isEmpty() && newEvents.isEmpty()) {
                         rules.fireNoData();
+
                     } else {
                         if (!newData.isEmpty()) {
                             rules.addData(newData);
-                            newData.clear();
                         }
                         if (!newEvents.isEmpty()) {
                             rules.addEvents(newEvents);
-                            newEvents.clear();
                         }
+
+                        // release to GC
+                        newData = null;
+                        newEvents = null;
+
+                        rules.fire();
                     }
 
-                    rules.fire();
                     alertsService.addAlerts(alerts);
                     alerts.clear();
                     alertsService.persistEvents(events);
@@ -720,29 +737,29 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     }
 
     /*
-        Invoked when a data is added on a different node and this data should be propagated
+        Data incoming from a different node.  This has already been globally filtered but not locally filtered.
+        It does not need to be re-propagated.
+
+        We allow concurrent threads to make this call in order to process distributed data in parallel. We
+        use synchronized blocks to protect pendingData.
      */
     @Override
-    public void onNewData(Data data) {
-        addPendingData(data);
-    }
-
-    @Override
+    @Lock(LockType.READ)
     public void onNewData(Collection<Data> data) {
-        addPendingData(data);
+        addData(new TreeSet<>(data));
     }
 
     /*
-        Invoked when an event is added on a different node and this data should be propagated
+        Events incoming from a different node.  This has already been globally filtered but not locally filtered.
+        It does not need to be re-propagated.
+
+        We allow concurrent threads to make this call in order to process distributed data in parallel. We
+        use synchronized blocks to protect pendingEvents.
      */
     @Override
-    public void onNewEvent(Event event) {
-        addPendingEvent(event);
-    }
-
-    @Override
+    @Lock(LockType.READ)
     public void onNewEvents(Collection<Event> events) {
-        addPendingEvents(events);
+        addEvents(new TreeSet<>(events));
     }
 
     /*
@@ -755,7 +772,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         if (log.isDebugEnabled()) {
             log.debug("Executing: " + operation + " tenantId: " + tenantId + " triggerId: " + triggerId);
         }
-        switch(operation) {
+        switch (operation) {
             case ADD:
             case UPDATE:
                 Trigger reloadTrigger = new Trigger(tenantId, triggerId, "reload-trigger");
@@ -778,6 +795,13 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     @Override
     public void onPartitionChange(Map<String, List<String>> partition, Map<String, List<String>> removed,
             Map<String, List<String>> added) {
+        if (log.isDebugEnabled()) {
+            log.debug("Executing: PartitionChange ");
+            log.debug("Local partition: " + partition);
+            log.debug("Removed: " + removed);
+            log.debug("Added: " + added);
+        }
+
         if (!pendingData.isEmpty() || !pendingEvents.isEmpty()) {
             if (!pendingData.isEmpty()) {
                 log.warn("Pending Data onPartitionChange: " + pendingData);
@@ -786,12 +810,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 log.warn("Pending Events onPartitionChange: " + pendingData);
             }
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Executing: PartitionChange ");
-            log.debug("Local partition: " + partition);
-            log.debug("Removed: " + removed);
-            log.debug("Added: " + added);
-        }
+
         /*
             Removing old triggers for this node
          */

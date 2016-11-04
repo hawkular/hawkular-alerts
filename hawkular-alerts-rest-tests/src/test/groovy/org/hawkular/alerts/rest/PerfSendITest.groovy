@@ -84,8 +84,8 @@ class PerfSendITest extends AbstractITestBase {
 
         prepareTriggers();
 
-        // Some warm up time
-        Thread.sleep(5000L);
+        // Some warm up time (takes several seconds for final updates to DataDrivenGroupCacheManager)
+        Thread.sleep(15000L);
 
         // We simulate calls to alerting
         // Each call will have metric per each trigger

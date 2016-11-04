@@ -17,6 +17,7 @@
 package org.hawkular.alerts.engine.impl;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 
@@ -41,17 +42,22 @@ import org.kie.api.runtime.rule.FactHandle;
  *
  * This implementations has an approach of fixed rules based on filesystem.
  *
+ * The RulesEngine is invoked only by the AlertsEngine impl and is not invoked concurrently, so
+ * single-threading is a fair assumption.
+ *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 @Singleton
-@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
+@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class DroolsRulesEngineImpl implements RulesEngine {
     // private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(DroolsRulesEngineImpl.class);
     private static final String SESSION_NAME = "hawkular-alerts-engine-session";
-    private static final long PERF_BATCHING_THRESHOLD= 3000L; // 3 seconds
+    private static final long PERF_BATCHING_THRESHOLD = 3000L; // 3 seconds
     private static final long PERF_FIRING_THRESHOLD = 5000L; // 5 seconds
+
+    private int minReportingInterval;
 
     private KieServices ks;
     private KieContainer kc;
@@ -70,6 +76,11 @@ public class DroolsRulesEngineImpl implements RulesEngine {
             kSession.addEventListener(new DebugAgendaEventListener());
             kSession.addEventListener(new DebugRuleRuntimeEventListener());
         }
+
+        minReportingInterval = new Integer(
+                AlertProperties.getProperty(MIN_REPORTING_INTERVAL,
+                        MIN_REPORTING_INTERVAL_ENV,
+                        MIN_REPORTING_INTERVAL_DEFAULT));
     }
 
     @Override
@@ -83,7 +94,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
             log.debug("==> Begin Dump");
             for (FactHandle f : kSession.getFactHandles()) {
                 Object sessionObject = kSession.getObject(f);
-                log.debugf("Fact:  %s",sessionObject.toString());
+                log.debugf("Fact:  %s", sessionObject.toString());
             }
             log.debug("==> End Dump");
         }
@@ -114,22 +125,12 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     }
 
     @Override
-    public void addData(Data data) {
-        pendingData.add(data);
-    }
-
-    @Override
-    public void addData(Collection<Data> data) {
+    public void addData(TreeSet<Data> data) {
         pendingData.addAll(data);
     }
 
     @Override
-    public void addEvent(Event event) {
-        pendingEvents.add(event);
-    }
-
-    @Override
-    public void addEvents(Collection<Event> events) {
+    public void addEvents(TreeSet<Event> events) {
         pendingEvents.addAll(events);
     }
 
@@ -162,69 +163,17 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         int fireCycle = 0;
         long startFiring = System.currentTimeMillis();
         while (!pendingData.isEmpty() || !pendingEvents.isEmpty()) {
-            log.debugf("Firing rules... PendingData [%s] PendingEvents [%s]", initialPendingData, initialPendingEvents);
+            log.debugf("Firing rules... PendingData [%s] PendingEvents [%s]", initialPendingData,
+                    initialPendingEvents);
 
-            TreeSet<Data> batchData = new TreeSet<>(pendingData);
-            Data previousData = null;
+            batchData();
+            batchEvents();
 
-            pendingData.clear();
-
-            long startBatching = System.currentTimeMillis();
-            for (Data data : batchData) {
-                if (null == previousData || !(data.getId().equals(previousData.getId())
-                        && data.getTenantId().equals(previousData.getTenantId()))) {
-                    kSession.insert(data);
-                    previousData = data;
-
-                } else {
-                    pendingData.add(data);
-                    log.tracef("Deferring more recent %s until older %s is processed", data, previousData);
-                }
-            }
-            long batchingTime = System.currentTimeMillis() - startBatching;
-            log.debugf("Batching Data [%s] took [%s]", batchData.size(), batchingTime);
-            if (batchingTime > PERF_BATCHING_THRESHOLD) {
-                log.warnf("Batching Data [%s] took [%s] ms exceeding [%s] ms",
-                        batchData.size(), batchingTime, PERF_BATCHING_THRESHOLD);
-            }
-
-            if (!pendingData.isEmpty() && log.isDebugEnabled()) {
-                log.debugf("Deferring [%s] Datum(s) to next firing !!", pendingData.size());
-            }
-
-            batchData.clear();
-
-
-            TreeSet<Event> batchEvent = new TreeSet<Event>(pendingEvents);
-            Event previousEvent = null;
-
-            pendingEvents.clear();
-
-            startBatching = System.currentTimeMillis();
-            for (Event event : batchEvent) {
-                if (null == previousEvent
-                        || (null != event.getDataId() && !event.getDataId().equals(previousEvent.getDataId()))) {
-                    kSession.insert(event);
-                    previousEvent = event;
-                } else {
-                    pendingEvents.add(event);
-                    if (log.isTraceEnabled()) {
-                        log.tracef("Deferring more recent %s until older %s is processed ", event, previousEvent);
-                    }
-                }
-            }
-            batchingTime = System.currentTimeMillis() - startBatching;
-            log.debugf("Batching Events [%s] took [%s]", batchEvent.size(), batchingTime);
-            if (batchingTime > PERF_BATCHING_THRESHOLD) {
-                log.warnf("Batching Events [%s] took [%s] ms exceeding [%s] ms",
-                        batchEvent.size(), batchingTime, PERF_BATCHING_THRESHOLD);
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debugf("Firing cycle [%s] - with these facts: ", fireCycle);
+            if (log.isTraceEnabled()) {
+                log.tracef("Firing cycle [%s] - with these facts: ", fireCycle);
                 for (FactHandle fact : kSession.getFactHandles()) {
                     Object o = kSession.getObject(fact);
-                    log.debug("Fact:  " + o.toString());
+                    log.tracef("Fact: %s", o);
                 }
             }
 
@@ -238,6 +187,76 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         if (firingTime > PERF_FIRING_THRESHOLD) {
             log.warnf("Firing rules... PendingData [%s] PendingEvents [%s] took [%s] ms exceeding [%s] ms",
                     initialPendingData, initialPendingEvents, firingTime, PERF_FIRING_THRESHOLD);
+        }
+    }
+
+    private void batchData() {
+        long startBatching = System.currentTimeMillis();
+        TreeSet<Data> batchData = pendingData;
+        pendingData = new TreeSet<>();
+
+        // Keep only the least recent datum for any dataId. Remove minReportingInterval violators, defer the rest
+        Data previousData = null;
+        for (Iterator<Data> i = batchData.iterator(); i.hasNext();) {
+            Data d = i.next();
+            if (!d.same(previousData)) {
+                previousData = d;
+                kSession.insert(d);
+
+            } else {
+                if ((d.getTimestamp() - previousData.getTimestamp()) < minReportingInterval) {
+                    log.tracef("MinReportingInterval violation, prev: %s, removed: %s", previousData, d);
+                } else {
+                    pendingData.add(d);
+                    log.tracef("Deferring data, keep: %s, defer: %s", previousData, d);
+                }
+            }
+
+            if (!pendingData.isEmpty()) {
+                log.debugf("Deferring [%d] Datum(s) to next firing !!", pendingData.size());
+            }
+        }
+
+        long batchingTime = System.currentTimeMillis() - startBatching;
+        log.debugf("Batching Data [%s] took [%s]", batchData.size(), batchingTime);
+        if (batchingTime > PERF_BATCHING_THRESHOLD) {
+            log.warnf("Batching Data [%s] took [%s] ms exceeding [%s] ms",
+                    batchData.size(), batchingTime, PERF_BATCHING_THRESHOLD);
+        }
+    }
+
+    private void batchEvents() {
+        long startBatching = System.currentTimeMillis();
+        TreeSet<Event> batchEvents = pendingEvents;
+        pendingEvents = new TreeSet<>();
+
+        // Keep only the least recent datum for any dataId. Remove minReportingInterval violators, defer the rest
+        Event previousEvent = null;
+        for (Iterator<Event> i = batchEvents.iterator(); i.hasNext();) {
+            Event e = i.next();
+            if (!e.same(previousEvent)) {
+                previousEvent = e;
+                kSession.insert(e);
+
+            } else {
+                if ((e.getCtime() - previousEvent.getCtime()) < minReportingInterval) {
+                    log.tracef("MinReportingInterval violation, prev: %s, removed: %s", previousEvent, e);
+                } else {
+                    pendingEvents.add(e);
+                    log.tracef("Deferring event, keep: %s, defer: %s", previousEvent, e);
+                }
+            }
+        }
+
+        if (!pendingEvents.isEmpty()) {
+            log.debugf("Deferring [%d] Event(s) to next firing !!", pendingEvents.size());
+        }
+
+        long batchingTime = System.currentTimeMillis() - startBatching;
+        log.debugf("Batching Events [%s] took [%s]", batchEvents.size(), batchingTime);
+        if (batchingTime > PERF_BATCHING_THRESHOLD) {
+            log.warnf("Batching Events [%s] took [%s] ms exceeding [%s] ms",
+                    batchEvents.size(), batchingTime, PERF_BATCHING_THRESHOLD);
         }
     }
 

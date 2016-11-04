@@ -264,32 +264,12 @@ public class PartitionManagerImpl implements PartitionManager {
     }
 
     @Override
-    public void notifyData(Data data) {
-        if (distributed) {
-            NotifyData nData = new NotifyData(currentNode, data);
-            Integer key = nData.hashCode();
-            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
-                    .putAsync(key, nData, LIFESPAN, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    @Override
     public void notifyData(Collection<Data> data) {
         if (distributed) {
             NotifyData nData = new NotifyData(currentNode, data, Data.class);
             Integer key = nData.hashCode();
             dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                     .putAsync(key, nData, LIFESPAN, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    @Override
-    public void notifyEvent(Event event) {
-        if (distributed) {
-            NotifyData nEvent = new NotifyData(currentNode, event);
-            Integer key = nEvent.hashCode();
-            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
-                    .putAsync(key, nEvent, LIFESPAN, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -712,15 +692,7 @@ public class PartitionManagerImpl implements PartitionManager {
                 Finally invoke listener on non-sender nodes
              */
             if (!dataListeners.isEmpty() && newData.getFromNode() != currentNode) {
-                if (newData.getData() != null) {
-                    dataListeners.stream().forEach(dataListener -> {
-                        dataListener.onNewData(newData.getData());
-                    });
-                } else if (newData.getEvent() != null) {
-                    dataListeners.stream().forEach(dataListener -> {
-                        dataListener.onNewEvent(newData.getEvent());
-                    });
-                } else if (newData.getDataCollection() != null) {
+                if (newData.getDataCollection() != null) {
                     dataListeners.stream().forEach(dataListener -> {
                         dataListener.onNewData(newData.getDataCollection());
                     });

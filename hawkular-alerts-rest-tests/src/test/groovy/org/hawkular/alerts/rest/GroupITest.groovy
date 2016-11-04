@@ -159,12 +159,12 @@ class GroupITest extends AbstractITestBase {
         assertEquals("contextValue2", mt2.context.get("contextName2"));
 
         // Send in avail data to create Source-1 alert
-        jsonData = "[{\"source\":\"Source-1\",\"id\":\"test-ddgroup-avail\",\"timestamp\":" + System.currentTimeMillis() + ",\"value\":\"DOWN\"}]";
+        jsonData = "[{\"source\":\"Source-1\",\"id\":\"test-ddgroup-avail\",\"timestamp\":" + (System.currentTimeMillis() + 1000) + ",\"value\":\"DOWN\"}]";
         resp = client.post(path: "data", body: jsonData);
         assertEquals(200, resp.status)
 
         // Send in avail data to generate Source-2 alert
-        jsonData = "[{\"source\":\"Source-2\",\"id\":\"test-ddgroup-avail\",\"timestamp\":" + System.currentTimeMillis() + ",\"value\":\"DOWN\"}]";
+        jsonData = "[{\"source\":\"Source-2\",\"id\":\"test-ddgroup-avail\",\"timestamp\":" + (System.currentTimeMillis() + 1000) + ",\"value\":\"DOWN\"}]";
         resp = client.post(path: "data", body: jsonData);
         assertEquals(200, resp.status)
 
