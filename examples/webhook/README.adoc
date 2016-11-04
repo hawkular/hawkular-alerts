@@ -33,7 +33,7 @@ Open a new shell to run the webhook example
 
 == create_definitions.groovy
 
-Create a hello world trigger to two conditions to fire an alert everytime that:
+Create a hello world trigger with two conditions to fire an alert everytime that:
 
     . numeric data with id "data-x" is less than 5 and
     . numeric data with id "data-y" is greater than 5

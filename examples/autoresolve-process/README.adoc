@@ -1,4 +1,4 @@
-= autoresolve process
+= Autoresolve Process
 
 This example shows how to use AUTORESOLVE triggers in Hawkular Alerting.
 
@@ -68,7 +68,7 @@ A GUI SMTP server can be set up with these steps:
 
 == create_definitions.groovy
 
-Create a trigger to two conditions to fire an alert when a process is down and update when the process is up:
+Create a trigger with two conditions to fire an alert when a process is down and update when the process is up:
 
     . Firing condition: availability data with id "process-status" is NOT_UP
     . Autoresolve condition: availability data with id "process-status" is UP
