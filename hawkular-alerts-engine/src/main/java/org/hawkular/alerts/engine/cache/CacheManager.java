@@ -16,7 +16,7 @@
  */
 package org.hawkular.alerts.engine.cache;
 
-import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.CONDITION_CHANGE;
+import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_CONDITION_CHANGE;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_REMOVE;
 
 import java.util.Collection;
@@ -60,6 +60,9 @@ public class CacheManager {
     private static final String RESET_PUBLISH_CACHE_PROP = "hawkular-alerts.reset-publish-cache";
     private static final String RESET_PUBLISH_CACHE_ENV = "RESET_PUBLISH_CACHE";
 
+    private volatile boolean updateRequested = false;
+    private volatile boolean updating = false;
+
     @EJB
     PropertiesService properties;
 
@@ -82,64 +85,91 @@ public class CacheManager {
                 publishCache.clear();
             }
             msgLog.infoInitPublishCache();
-            updateActiveIds();
+            requestCacheUpdate();
+
             definitions.registerListener(e -> {
-                updateActiveIds();
-            }, CONDITION_CHANGE, TRIGGER_REMOVE);
+                requestCacheUpdate();
+            }, TRIGGER_CONDITION_CHANGE, TRIGGER_REMOVE);
+
         } else {
             msgLog.warnDisabledPublishCache();
         }
     }
 
-    private synchronized void updateActiveIds() {
+    // Just run updateCache one time if multiple requests come in while an update is already in progress...
+    private void requestCacheUpdate() {
+        log.debug("Cache update requested");
+        if (updateRequested) {
+            log.debug("Cache update, redundant request ignored.");
+            return;
+        }
+
+        updateRequested = true;
+
+        if (!updating) {
+            updateCache();
+        }
+    }
+
+    private synchronized void updateCache() {
         try {
-            CacheSet<CacheKey> currentlyPublished = publishCache.keySet();
+            updating = true;
 
-            log.debugf("Published before update=%s", currentlyPublished.size());
-            if (log.isTraceEnabled()) {
-                publishCache.entrySet().stream().forEach(e -> log.tracef("Published: %s", e.getValue()));
-            }
+            while (updateRequested) {
+                updateRequested = false;
+                log.debug("Cache update in progress..");
 
-            // This will include group trigger conditions, which is OK because for data-driven group triggers the
-            // dataIds will likely be the dataIds from the group level, made distinct by the source.
-            Collection<Condition> conditions = definitions.getAllConditions();
-            final Set<CacheKey> activeKeys = new HashSet<>();
-            for (Condition c : conditions) {
-                CacheKey cacheKey = new CacheKey(c.getTenantId(), c.getDataId());
-                if (!activeKeys.contains(cacheKey)) {
-                    activeKeys.add(cacheKey);
-                    if (!currentlyPublished.contains(cacheKey)) {
-                        publish(cacheKey);
-                    }
+                CacheSet<CacheKey> currentlyPublished = publishCache.keySet();
+
+                log.debugf("Published before update=%s", currentlyPublished.size());
+                if (log.isTraceEnabled()) {
+                    publishCache.entrySet().stream().forEach(e -> log.tracef("Published: %s", e.getValue()));
                 }
-                if (c instanceof CompareCondition) {
-                    String data2Id = ((CompareCondition) c).getData2Id();
-                    CacheKey cacheKey2 = new CacheKey(c.getTenantId(), data2Id);
-                    if (!activeKeys.contains(cacheKey2)) {
-                        activeKeys.add(cacheKey2);
-                        if (!currentlyPublished.contains(cacheKey2)) {
-                            publish(cacheKey2);
+
+                // This will include group trigger conditions, which is OK because for data-driven group triggers the
+                // dataIds will likely be the dataIds from the group level, made distinct by the source.
+                Collection<Condition> conditions = definitions.getAllConditions();
+                final Set<CacheKey> activeKeys = new HashSet<>();
+                for (Condition c : conditions) {
+                    CacheKey cacheKey = new CacheKey(c.getTenantId(), c.getDataId());
+                    if (!activeKeys.contains(cacheKey)) {
+                        activeKeys.add(cacheKey);
+                        if (!currentlyPublished.contains(cacheKey)) {
+                            publish(cacheKey);
                         }
                     }
+                    if (c instanceof CompareCondition) {
+                        String data2Id = ((CompareCondition) c).getData2Id();
+                        CacheKey cacheKey2 = new CacheKey(c.getTenantId(), data2Id);
+                        if (!activeKeys.contains(cacheKey2)) {
+                            activeKeys.add(cacheKey2);
+                            if (!currentlyPublished.contains(cacheKey2)) {
+                                publish(cacheKey2);
+                            }
+                        }
+                    }
+
                 }
 
-            }
+                final Set<CacheKey> doomedKeys = new HashSet<>();
+                if (!currentlyPublished.isEmpty()) {
+                    currentlyPublished.stream()
+                            .filter(k -> !activeKeys.contains(k))
+                            .forEach(k -> doomedKeys.add(k));
+                }
+                unpublish(doomedKeys);
 
-            final Set<CacheKey> doomedKeys = new HashSet<>();
-            if (!currentlyPublished.isEmpty()) {
-                currentlyPublished.stream()
-                .filter(k -> !activeKeys.contains(k))
-                .forEach(k -> doomedKeys.add(k));
-            }
-            unpublish(doomedKeys);
-
-            log.debugf("Published after update=%s", publishCache.size());
-            if (log.isTraceEnabled()) {
-                publishCache.entrySet().stream().forEach(e -> log.tracef("Published: %s", e.getValue()));
+                log.debugf("Published after update=%s", publishCache.size());
+                if (log.isTraceEnabled()) {
+                    publishCache.entrySet().stream().forEach(e -> log.tracef("Published: %s", e.getValue()));
+                }
             }
         } catch (Exception e) {
-            log.error("FAILED to load conditions to create Id filters. All data being forwarded to alerting!", e);
+            log.error("Failed to load conditions to create Id filters. All data being forwarded to alerting!", e);
             return;
+        } finally {
+            log.debug("Cache updates complete.");
+            updating = false;
         }
     }
 
