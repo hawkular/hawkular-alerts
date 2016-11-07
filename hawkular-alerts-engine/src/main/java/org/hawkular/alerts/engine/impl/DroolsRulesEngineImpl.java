@@ -57,7 +57,8 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     private static final long PERF_BATCHING_THRESHOLD = 3000L; // 3 seconds
     private static final long PERF_FIRING_THRESHOLD = 5000L; // 5 seconds
 
-    private int minReportingInterval;
+    private int minReportingIntervalData;
+    private int minReportingIntervalEvents;
 
     private KieServices ks;
     private KieContainer kc;
@@ -77,10 +78,15 @@ public class DroolsRulesEngineImpl implements RulesEngine {
             kSession.addEventListener(new DebugRuleRuntimeEventListener());
         }
 
-        minReportingInterval = new Integer(
-                AlertProperties.getProperty(MIN_REPORTING_INTERVAL,
-                        MIN_REPORTING_INTERVAL_ENV,
-                        MIN_REPORTING_INTERVAL_DEFAULT));
+        minReportingIntervalData = new Integer(
+                AlertProperties.getProperty(MIN_REPORTING_INTERVAL_DATA,
+                        MIN_REPORTING_INTERVAL_DATA_ENV,
+                        MIN_REPORTING_INTERVAL_DATA_DEFAULT));
+
+        minReportingIntervalEvents = new Integer(
+                AlertProperties.getProperty(MIN_REPORTING_INTERVAL_EVENTS,
+                        MIN_REPORTING_INTERVAL_EVENTS_ENV,
+                        MIN_REPORTING_INTERVAL_EVENTS_DEFAULT));
     }
 
     @Override
@@ -204,7 +210,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
                 kSession.insert(d);
 
             } else {
-                if ((d.getTimestamp() - previousData.getTimestamp()) < minReportingInterval) {
+                if ((d.getTimestamp() - previousData.getTimestamp()) < minReportingIntervalData) {
                     log.tracef("MinReportingInterval violation, prev: %s, removed: %s", previousData, d);
                 } else {
                     pendingData.add(d);
@@ -239,7 +245,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
                 kSession.insert(e);
 
             } else {
-                if ((e.getCtime() - previousEvent.getCtime()) < minReportingInterval) {
+                if ((e.getCtime() - previousEvent.getCtime()) < minReportingIntervalEvents) {
                     log.tracef("MinReportingInterval violation, prev: %s, removed: %s", previousEvent, e);
                 } else {
                     pendingEvents.add(e);

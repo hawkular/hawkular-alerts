@@ -32,9 +32,13 @@ import org.hawkular.alerts.api.model.event.Event;
  */
 public interface RulesEngine {
 
-    String MIN_REPORTING_INTERVAL = "hawkular-alerts.min-reporting-interval";
-    String MIN_REPORTING_INTERVAL_ENV = "HAWKULAR_MIN_REPORTING_INTERVAL";
-    String MIN_REPORTING_INTERVAL_DEFAULT = "1000";
+    String MIN_REPORTING_INTERVAL_DATA = "hawkular-alerts.min-reporting-interval-data";
+    String MIN_REPORTING_INTERVAL_DATA_ENV = "HAWKULAR_MIN_REPORTING_INTERVAL_DATA";
+    String MIN_REPORTING_INTERVAL_DATA_DEFAULT = "1000";
+
+    String MIN_REPORTING_INTERVAL_EVENTS = "hawkular-alerts.min-reporting-interval-events";
+    String MIN_REPORTING_INTERVAL_EVENTS_ENV = "HAWKULAR_MIN_REPORTING_INTERVAL_EVENTS";
+    String MIN_REPORTING_INTERVAL_EVENTS_DEFAULT = "0";
 
     void addGlobal(String name, Object global);
 
