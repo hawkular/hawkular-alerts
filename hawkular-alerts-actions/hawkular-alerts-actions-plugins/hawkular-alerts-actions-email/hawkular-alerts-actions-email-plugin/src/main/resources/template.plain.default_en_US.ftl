@@ -5,8 +5,8 @@ HAWKULAR
 ${emailSubject}
 
 Start time:
-<#if alert??>
-${alert.ctime?number_to_datetime}
+<#if event??>
+${event.ctime?number_to_datetime}
 <#if dampeningDescription??>(${dampeningDescription})</#if>
 
 </#if>
@@ -34,7 +34,7 @@ ${alert.currentLifecycle.stime?number_to_datetime}
 by ${alert.currentLifecycle.user}
 </#if>
 </#if>
-<#if alert.notes?has_content>
+<#if alert?? && alert.notes?? && alert.notes?has_content>
 
 Notes:
 

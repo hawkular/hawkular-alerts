@@ -284,7 +284,7 @@ public class EmailPlugin implements ActionPluginListener {
         if (null == props || props.isEmpty()) {
             msgLog.warn("Properties empty on plugin " + PLUGIN_NAME);
         }
-        Event event = msg.getAction() != null ? (Alert) msg.getAction().getEvent() : null;
+        Event event = msg.getAction() != null ? msg.getAction().getEvent() : null;
         Alert alert = null != event && (event instanceof Alert) ? (Alert) event : null;
         Status status = alert != null && alert.getStatus() != null ? alert.getStatus() : Status.OPEN;
         String statusStr = status.name().toLowerCase();

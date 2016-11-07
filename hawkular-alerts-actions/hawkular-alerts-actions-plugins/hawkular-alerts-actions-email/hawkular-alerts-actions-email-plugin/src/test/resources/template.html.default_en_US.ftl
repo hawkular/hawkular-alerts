@@ -135,7 +135,7 @@
                                             </tr>
                                             <tr>
                                                 <td align="center" style="color:#333333; font-family:Open sans,sans-serif; font-size:13px; line-height:21px;">
-                                                    Start time: <span style="font-size:15px;"><#if alert??>${alert.ctime?number_to_datetime}</#if></span>
+                                                    Start time: <span style="font-size:15px;"><#if event??>${event.ctime?number_to_datetime}</#if></span>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -177,7 +177,7 @@
                                                     </tr>
                                                 </#if>
                                             </#if>
-                                            <#if alert.notes?has_content >
+                                            <#if alert?? && alert.notes?? && alert.notes?has_content >
                                                 <#list alert.notes as note>
                                                  <#if note.text?? && note.user??>
                                                     <tr>
