@@ -39,11 +39,6 @@
       <artifactId>hawkular-alerts-rest-api</artifactId>
       <version>${project.version}</version>
       <exclusions>
-        <!-- provided in Hservices -->
-        <exclusion>
-          <groupId>com.datastax.cassandra</groupId>
-          <artifactId>cassandra-driver-core</artifactId>
-        </exclusion>
         <!-- this dependency causes issue when packaged in metrics, and seems unnecessary -->
         <exclusion>
           <groupId>commons-codec</groupId>
