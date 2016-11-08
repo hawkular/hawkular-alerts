@@ -21,17 +21,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
+import javax.ejb.AccessTimeout;
 import javax.ejb.EJB;
 import javax.ejb.Local;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
@@ -167,14 +172,14 @@ public class PartitionManagerImpl implements PartitionManager {
     private Integer currentNode = null;
 
     /**
-     * Listener used to interact with the triggers partition events
+     * Listeners used to interact with the triggers partition events
      */
-    private PartitionTriggerListener triggerListener;
+    private Set<PartitionTriggerListener> triggerListeners = new HashSet<>();
 
     /**
-     * Listener used to interact with the data/events partition events
+     * Listeners used to interact with the data/events partition events
      */
-    private PartitionDataListener dataListener;
+    private Set<PartitionDataListener> dataListeners = new HashSet<>();
 
     private TopologyChangeListener topologyChangeListener = new TopologyChangeListener();
     private PartitionChangeListener partitionChangeListener = new PartitionChangeListener();
@@ -182,6 +187,7 @@ public class PartitionManagerImpl implements PartitionManager {
     private NewDataListener newDataListener = new NewDataListener();
 
     @Override
+    @Lock(LockType.READ)
     public boolean isDistributed() {
         return distributed;
     }
@@ -254,17 +260,7 @@ public class PartitionManagerImpl implements PartitionManager {
 
     @Override
     public void registerTriggerListener(PartitionTriggerListener triggerListener) {
-        this.triggerListener = triggerListener;
-    }
-
-    @Override
-    public void notifyData(Data data) {
-        if (distributed) {
-            NotifyData nData = new NotifyData(currentNode, data);
-            Integer key = nData.hashCode();
-            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
-                    .putAsync(key, nData, LIFESPAN, TimeUnit.MILLISECONDS);
-        }
+        triggerListeners.add(triggerListener);
     }
 
     @Override
@@ -274,16 +270,6 @@ public class PartitionManagerImpl implements PartitionManager {
             Integer key = nData.hashCode();
             dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                     .putAsync(key, nData, LIFESPAN, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    @Override
-    public void notifyEvent(Event event) {
-        if (distributed) {
-            NotifyData nEvent = new NotifyData(currentNode, event);
-            Integer key = nEvent.hashCode();
-            dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
-                    .putAsync(key, nEvent, LIFESPAN, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -299,14 +285,16 @@ public class PartitionManagerImpl implements PartitionManager {
 
     @Override
     public void registerDataListener(PartitionDataListener dataListener) {
-        this.dataListener = dataListener;
+        dataListeners.add(dataListener);
     }
 
     /*
         Calculate a new partition based on the current topology.
         It should be invoked as a result of a topology event and it is executed by the coordinator node.
         It updated the new and old partition state on the "partition" cache.
+        This can take some time, avoid timeouts by allowing longer waits for pending client calls
      */
+    @AccessTimeout(value = 5, unit = TimeUnit.MINUTES)
     private void processTopologyChange() {
         if (distributed && cacheManager.isCoordinator()) {
             /*
@@ -541,7 +529,7 @@ public class PartitionManagerImpl implements PartitionManager {
         Invoke PartitionTriggerListener with local, added and removed partition
      */
     private void invokePartitionChangeListener() {
-        if (triggerListener != null) {
+        if (!triggerListeners.isEmpty()) {
             Map<PartitionEntry, Integer> current = (Map<PartitionEntry, Integer>) partitionCache.get(CURRENT);
             Map<PartitionEntry, Integer> previous = (Map<PartitionEntry, Integer>) partitionCache.get(PREVIOUS);
 
@@ -556,7 +544,9 @@ public class PartitionManagerImpl implements PartitionManager {
                 log.debug("Added: " + addedRemoved.get("added"));
                 log.debug("Removed: " + addedRemoved.get("removed"));
             }
-            triggerListener.onPartitionChange(partition, addedRemoved.get("removed"), addedRemoved.get("added"));
+            triggerListeners.stream().forEach(triggerListener -> {
+                triggerListener.onPartitionChange(partition, addedRemoved.get("removed"), addedRemoved.get("added"));
+            });
         }
     }
 
@@ -649,9 +639,11 @@ public class PartitionManagerImpl implements PartitionManager {
                 /*
                     Finally invoke listener
                  */
-                if (triggerListener != null) {
-                    triggerListener.onTriggerChange(newTrigger.getOperation(), newTrigger.getTenantId(),
-                            newTrigger.getTriggerId());
+                if (!triggerListeners.isEmpty()) {
+                    triggerListeners.stream().forEach(triggerListener -> {
+                        triggerListener.onTriggerChange(newTrigger.getOperation(), newTrigger.getTenantId(),
+                                newTrigger.getTriggerId());
+                    });
                 }
             }
         }
@@ -699,15 +691,15 @@ public class PartitionManagerImpl implements PartitionManager {
             /*
                 Finally invoke listener on non-sender nodes
              */
-            if (dataListener != null && newData.getFromNode() != currentNode) {
-                if (newData.getData() != null) {
-                    dataListener.onNewData(newData.getData());
-                } else if (newData.getEvent() != null) {
-                    dataListener.onNewEvent(newData.getEvent());
-                } else if (newData.getDataCollection() != null) {
-                    dataListener.onNewData(newData.getDataCollection());
+            if (!dataListeners.isEmpty() && newData.getFromNode() != currentNode) {
+                if (newData.getDataCollection() != null) {
+                    dataListeners.stream().forEach(dataListener -> {
+                        dataListener.onNewData(newData.getDataCollection());
+                    });
                 } else if (newData.getEventCollection() != null) {
-                    dataListener.onNewEvents(newData.getEventCollection());
+                    dataListeners.stream().forEach(dataListener -> {
+                        dataListener.onNewEvents(newData.getEventCollection());
+                    });
                 }
             }
         }

@@ -163,7 +163,7 @@ class ActionsITest extends AbstractITestBase {
         // Send in DOWN avail data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<5; i++) {
-            Data avail = new Data("test-email-availability", System.currentTimeMillis(), "DOWN");
+            Data avail = new Data("test-email-availability", System.currentTimeMillis() + (i*1000), "DOWN");
             Collection<Data> datums = new ArrayList<>();
             datums.add(avail);
             resp = client.post(path: "data", body: datums);
@@ -262,7 +262,7 @@ class ActionsITest extends AbstractITestBase {
         // Send in data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<5; i++) {
-            Data threshold = new Data("test-email-threshold", System.currentTimeMillis(), String.valueOf(305.5 + i));
+            Data threshold = new Data("test-email-threshold", System.currentTimeMillis() + (i*1000), String.valueOf(305.5 + i));
             Collection<Data> datums = new ArrayList<>();
             datums.add(threshold);
             resp = client.post(path: "data", body: datums);
@@ -384,7 +384,7 @@ class ActionsITest extends AbstractITestBase {
         // Send in data to fire the trigger
         // Instead of going through the bus, in this test we'll use the alerts rest API directly to send data
         for (int i=0; i<5; i++) {
-            Data threshold = new Data("test-status-threshold", System.currentTimeMillis(), String.valueOf(305.5 + i));
+            Data threshold = new Data("test-status-threshold", System.currentTimeMillis() + (i*1000), String.valueOf(305.5 + i));
             Collection<Data> datums = new ArrayList<>();
             datums.add(threshold);
             resp = client.post(path: "data", body: datums);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +16,15 @@
  */
 package org.hawkular.alerts.engine.service;
 
-import java.util.Collection;
+import java.util.TreeSet;
 
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Interface that allows to send data to the alerts engine and check resulting state.
+ * Interface that allows to send data to the alerts engine and check resulting state. All methods are LockType.WRITE
+ * unless otherwise specified.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -42,38 +43,21 @@ public interface AlertsEngine {
     Trigger getLoadedTrigger(Trigger trigger);
 
     /**
-     * Send data into the alerting system for evaluation.
+     * Send data into the alerting system for evaluation. This method has LockType.READ.
      *
      * @param data Not Null.  The data to be evaluated by the alerting engine.
      * @throws Exception any problem.
      */
-    void sendData(Data data) throws Exception;
+    void sendData(TreeSet<Data> data) throws Exception;
 
     /**
-     * Send data into the alerting system for evaluation.
+     * Send event into the alerting system for evaluation. Events are persisted after inference.
+     * This method has LockType.READ.
      *
-     * @param data Not Null.  The data to be evaluated by the alerting engine.
-     * @throws Exception any problem.
-     */
-    void sendData(Collection<Data> data) throws Exception;
-
-    /**
-     * Send event into the alerting system for evaluation.
-     * Events are persisted after inference.
-     *
-     * @param event Not Null. The events to be avaluated and persisted by the alerting engine.
+     * @param events Not Null. The events to be evaluated and persisted by the alerting engine.
      * @throws Exception any problem
      */
-    void sendEvent(Event event) throws Exception;
-
-    /**
-     * Send event into the alerting system for evaluation.
-     * Events are persisted after inference.
-     *
-     * @param events Not Null. The events to be avaluated and persisted by the alerting engine.
-     * @throws Exception any problem
-     */
-    void sendEvents(Collection<Event> events) throws Exception;
+    void sendEvents(TreeSet<Event> events) throws Exception;
 
     /**
      * Reload all Triggers.

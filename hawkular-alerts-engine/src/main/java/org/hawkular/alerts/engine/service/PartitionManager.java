@@ -102,25 +102,11 @@ public interface PartitionManager {
     void registerTriggerListener(PartitionTriggerListener triggerListener);
 
     /**
-     * Notify partition manager when a new data has been received.
-     *
-     * @param data the new data received by the engine
-     */
-    void notifyData(Data data);
-
-    /**
      * Notify partition manager when a new collection of data has been received.
      *
      * @param data the new data received by the engine
      */
     void notifyData(Collection<Data> data);
-
-    /**
-     * Notify partition manager when a new event has been received.
-     *
-     * @param event the new event received by the engine
-     */
-    void notifyEvent(Event event);
 
     /**
      * Notify partition manager when a new collection of events has been received.
@@ -130,7 +116,7 @@ public interface PartitionManager {
     void notifyEvents(Collection<Event> events);
 
     /**
-     * Register a listener to process patition events linked with data or events.
+     * Register a listener to process partition events linked with data or events.
      *
      * @param dataListener the listener
      */

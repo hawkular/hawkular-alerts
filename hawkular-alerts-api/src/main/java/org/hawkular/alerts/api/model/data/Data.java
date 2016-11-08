@@ -327,6 +327,35 @@ public class Data implements Comparable<Data>, Serializable {
         return Long.compare(this.timestamp, o.timestamp);
     }
 
+    /**
+     * @return true if the two Data objects represent the same data (just different values and/or times)
+     */
+    public boolean same(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Data other = (Data) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        if (source == null) {
+            if (other.source != null)
+                return false;
+        } else if (!source.equals(other.source))
+            return false;
+        if (tenantId == null) {
+            if (other.tenantId != null)
+                return false;
+        } else if (!tenantId.equals(other.tenantId))
+            return false;
+        return true;
+    }
+
     @Override
     public String toString() {
         return "Data [tenantId=" + tenantId + ", id=" + id + ", timestamp=" + timestamp + ", value=" + value

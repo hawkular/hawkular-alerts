@@ -22,9 +22,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
+import javax.ejb.AccessTimeout;
 import javax.ejb.EJB;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
@@ -50,6 +54,11 @@ import org.jboss.logging.Logger;
 public class DataDrivenGroupCacheManager {
     private final Logger log = Logger.getLogger(DataDrivenGroupCacheManager.class);
 
+    private static final String DATA_DRIVEN_TRIGGERS_ENABLED = "hawkular-alerts.data-driven-triggers-enabled";
+    private static final String DATA_DRIVEN_TRIGGERS_ENABLED_DEFAULT = "true";
+
+    private boolean dataDrivenTriggersEnabled;
+
     // The sources with member triggers for the dataId.
     // - null if dataId is not used in a group trigger condition
     // - EmptySet if no source members are yet defined
@@ -57,91 +66,133 @@ public class DataDrivenGroupCacheManager {
     // The group triggerIds relevant to the dataId, null if none
     Map<CacheKey, Set<String>> triggersMap = new HashMap<>();
 
+    private volatile boolean updateRequested = false;
+    private volatile boolean updating = false;
+
     @EJB
     DefinitionsService definitions;
 
     @PostConstruct
     public void init() {
-        updateCache();
+        dataDrivenTriggersEnabled = new Boolean(
+                AlertProperties.getProperty(DATA_DRIVEN_TRIGGERS_ENABLED, DATA_DRIVEN_TRIGGERS_ENABLED_DEFAULT));
 
-        definitions.registerListener(new DefinitionsListener() {
-            @Override
-            public void onChange(DefinitionsEvent event) {
-                updateCache();
-            }
-        }, DefinitionsEvent.Type.CONDITION_CHANGE);
+        log.infof("Data-driven Group Triggers enabled: %s", dataDrivenTriggersEnabled);
+
+        if (dataDrivenTriggersEnabled) {
+
+            requestCacheUpdate();
+
+            definitions.registerListener(new DefinitionsListener() {
+                @Override
+                public void onChange(DefinitionsEvent event) {
+                    requestCacheUpdate();
+                }
+            }, DefinitionsEvent.Type.TRIGGER_CONDITION_CHANGE);
+        }
     }
 
+    // Just run updateCache one time if multiple requests come in while an update is already in progress...
+    private void requestCacheUpdate() {
+        log.debug("Cache update requested");
+        if (updateRequested) {
+            log.debug("Cache update, redundant request ignored.");
+            return;
+        }
+
+        updateRequested = true;
+
+        if (!updating) {
+            updateCache();
+        }
+    }
+
+    // cache update can take some time if the trigger population is large and cross-tenant, avoid
+    // timeouts by allowing longer waits for pending client calls
+    @AccessTimeout(value = 5, unit = TimeUnit.MINUTES)
     private synchronized void updateCache() {
+        log.debug("Updating cache...");
 
         try {
-            Collection<Trigger> allTriggers = definitions.getAllTriggers();
-            Set<Trigger> ddGroupTriggers = new HashSet<>();
-            for (Trigger t : allTriggers) {
-                if (TriggerType.DATA_DRIVEN_GROUP == t.getType()) {
-                    ddGroupTriggers.add(t);
-                }
-            }
-            Collection<Condition> conditions = new HashSet<>();
-            for (Trigger groupTrigger : ddGroupTriggers) {
-                String tenantId = groupTrigger.getTenantId();
-                Set<String> sources = new HashSet<>();
-                for (Trigger memberTrigger : definitions.getMemberTriggers(tenantId, groupTrigger.getId(), false)) {
-                    sources.add(memberTrigger.getSource());
-                }
-                for (Condition c : definitions.getTriggerConditions(tenantId, groupTrigger.getId(), null)) {
-                    CacheKey key = new CacheKey(tenantId, c.getDataId());
-                    sourcesMap.put(key, sources);
-                    Set<String> triggers = triggersMap.get(key);
-                    if (null == triggers) {
-                        triggers = new HashSet<>();
+            updating = true;
+
+            while (updateRequested) {
+                updateRequested = false;
+                log.debug("Cache update in progress..");
+
+                Collection<Trigger> allTriggers = definitions.getAllTriggers();
+                Set<Trigger> ddGroupTriggers = new HashSet<>();
+                for (Trigger t : allTriggers) {
+                    if (TriggerType.DATA_DRIVEN_GROUP == t.getType()) {
+                        ddGroupTriggers.add(t);
                     }
-                    triggers.add(groupTrigger.getId());
-                    triggersMap.put(key, triggers);
+                }
 
-                    if (c instanceof CompareCondition) {
-                        key = new CacheKey(tenantId, ((CompareCondition) c).getData2Id());
+                log.debugf("Updating [%d] data-driven triggers out of [%d] total triggers...", ddGroupTriggers.size(),
+                        allTriggers.size());
+
+                for (Trigger groupTrigger : ddGroupTriggers) {
+                    String tenantId = groupTrigger.getTenantId();
+                    Set<String> sources = new HashSet<>();
+                    for (Trigger memberTrigger : definitions.getMemberTriggers(tenantId, groupTrigger.getId(),
+                            false)) {
+                        sources.add(memberTrigger.getSource());
+                    }
+                    for (Condition c : definitions.getTriggerConditions(tenantId, groupTrigger.getId(), null)) {
+                        CacheKey key = new CacheKey(tenantId, c.getDataId());
                         sourcesMap.put(key, sources);
-
-                        triggers = triggersMap.get(key);
+                        Set<String> triggers = triggersMap.get(key);
                         if (null == triggers) {
                             triggers = new HashSet<>();
                         }
                         triggers.add(groupTrigger.getId());
                         triggersMap.put(key, triggers);
+
+                        if (c instanceof CompareCondition) {
+                            key = new CacheKey(tenantId, ((CompareCondition) c).getData2Id());
+                            sourcesMap.put(key, sources);
+
+                            triggers = triggersMap.get(key);
+                            if (null == triggers) {
+                                triggers = new HashSet<>();
+                            }
+                            triggers.add(groupTrigger.getId());
+                            triggersMap.put(key, triggers);
+                        }
                     }
                 }
             }
         } catch (Exception e) {
             log.error("FAILED to updateCache. Unable to generate data-driven member triggers!", e);
             sourcesMap = new HashMap<>();
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("Updated sourceMap! " + sourcesMap);
+        } finally {
+            log.debugf("Cache updates complete. sourceMap: %s", sourcesMap);
+            updating = false;
         }
     }
 
+    @Lock(LockType.READ)
     public boolean isCacheActive() {
         return !sourcesMap.isEmpty();
     }
 
+    @Lock(LockType.READ)
     public Set<String> needsSourceMember(String tenantId, String dataId, String source) {
         if (isEmpty(source, dataId, tenantId) || Data.SOURCE_NONE.equals(source)) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
 
         CacheKey key = new CacheKey(tenantId, dataId);
 
         // if the dataId is not relevant to any group triggers just return empty set
         if (null == triggersMap.get(key)) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
 
         // if the dataId is relevant to group triggers but the source is already known just return empty set
         Set<String> sources = sourcesMap.get(key);
         if (sources.contains(source)) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
 
         // otherwise, return the triggers that need a member for this source

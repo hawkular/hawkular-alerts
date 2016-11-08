@@ -208,6 +208,9 @@ public class TriggersHandler {
                 } else if (definitions.getTrigger(tenantId, trigger.getId()) != null) {
                     return ResponseUtil.badRequest("Trigger with ID [" + trigger.getId() + "] exists.");
                 }
+                if (!checkTags(trigger)) {
+                    return ResponseUtil.badRequest("Tags " + trigger.getTags() + " must be non empty.");
+                }
                 definitions.addTrigger(tenantId, trigger);
                 log.debug("Trigger: " + trigger.toString());
                 return ResponseUtil.ok(trigger);
@@ -249,6 +252,9 @@ public class TriggersHandler {
                 trigger.setId(Trigger.generateId());
             } else if (definitions.getTrigger(tenantId, trigger.getId()) != null) {
                 return ResponseUtil.badRequest("Trigger with ID [" + trigger.getId() + "] exists.");
+            }
+            if (!checkTags(trigger)) {
+                return ResponseUtil.badRequest("Tags " + trigger.getTags() + " must be non empty.");
             }
             definitions.addTrigger(tenantId, trigger);
             log.debug("Trigger: " + trigger.toString());
@@ -312,6 +318,9 @@ public class TriggersHandler {
                 } else if (definitions.getTrigger(tenantId, groupTrigger.getId()) != null) {
                     return ResponseUtil.badRequest("Trigger with ID [" + groupTrigger.getId() + "] exists.");
                 }
+                if (!checkTags(groupTrigger)) {
+                    return ResponseUtil.badRequest("Tags " + groupTrigger.getTags() + " must be non empty.");
+                }
                 definitions.addGroupTrigger(tenantId, groupTrigger);
                 log.debug("Group Trigger: " + groupTrigger.toString());
                 return ResponseUtil.ok(groupTrigger);
@@ -350,6 +359,9 @@ public class TriggersHandler {
             String groupId = groupMember.getGroupId();
             if (isEmpty(groupId)) {
                 return ResponseUtil.badRequest("MemberTrigger groupId is null");
+            }
+            if (!checkTags(groupMember)) {
+                return ResponseUtil.badRequest("Tags " + groupMember.getMemberTags() + " must be non empty.");
             }
             Trigger child = definitions.addMemberTrigger(tenantId, groupId, groupMember.getMemberId(),
                     groupMember.getMemberName(),
@@ -456,6 +468,9 @@ public class TriggersHandler {
             if (trigger != null && !isEmpty(triggerId)) {
                 trigger.setId(triggerId);
             }
+            if (!checkTags(trigger)) {
+                return ResponseUtil.badRequest("Tags " + trigger.getTags() + " must be non empty.");
+            }
             definitions.updateTrigger(tenantId, trigger);
             if (log.isDebugEnabled()) {
                 log.debug("Trigger: " + trigger);
@@ -493,6 +508,9 @@ public class TriggersHandler {
         try {
             if (groupTrigger != null && !isEmpty(groupId)) {
                 groupTrigger.setId(groupId);
+            }
+            if (!checkTags(groupTrigger)) {
+                return ResponseUtil.badRequest("Tags " + groupTrigger.getTags() + " must be non empty.");
             }
             definitions.updateGroupTrigger(tenantId, groupTrigger);
             if (log.isDebugEnabled()) {
@@ -561,6 +579,9 @@ public class TriggersHandler {
         try {
             if (null == unorphanMemberInfo) {
                 return ResponseUtil.badRequest("MemberTrigger is null");
+            }
+            if (!checkTags(unorphanMemberInfo)) {
+                return ResponseUtil.badRequest("Tags " + unorphanMemberInfo.getMemberTags() + " must be non empty.");
             }
             Trigger child = definitions.unorphanMemberTrigger(tenantId, memberId,
                     unorphanMemberInfo.getMemberContext(),
@@ -1131,4 +1152,31 @@ public class TriggersHandler {
         return collection == null || collection.isEmpty();
     }
 
+    private boolean isEmpty(Map map) {
+        return map == null || map.isEmpty();
+    }
+
+    private boolean checkTags(Trigger trigger) {
+        return checkTags(trigger.getTags());
+    }
+
+    private boolean checkTags(GroupMemberInfo groupMemberInfo) {
+        return checkTags(groupMemberInfo.getMemberTags());
+    }
+
+    private boolean checkTags(UnorphanMemberInfo unorphanMemberInfo) {
+        return checkTags(unorphanMemberInfo.getMemberTags());
+    }
+
+    private boolean checkTags(Map<String, String> tagsMap) {
+        if (isEmpty(tagsMap)) {
+            return true;
+        }
+        for (Map.Entry<String, String> entry : tagsMap.entrySet()) {
+            if (isEmpty(entry.getKey()) || isEmpty(entry.getValue())) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

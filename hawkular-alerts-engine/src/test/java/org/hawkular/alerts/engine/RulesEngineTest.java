@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -82,8 +83,8 @@ public class RulesEngineTest {
     Set<Dampening> pendingTimeouts = new HashSet<>();
     Map<Trigger, List<Set<ConditionEval>>> autoResolvedTriggers = new HashMap<>();
     Set<Trigger> disabledTriggers = new CopyOnWriteArraySet<>();
-    Set<Data> datums = new HashSet<Data>();
-    Set<Event> inputEvents = new HashSet<>();
+    TreeSet<Data> datums = new TreeSet<Data>();
+    TreeSet<Event> inputEvents = new TreeSet<>();
     List<Event> outputEvents = new ArrayList<>();
     Set<MissingState> missingStates = new HashSet<>();
 
@@ -131,9 +132,9 @@ public class RulesEngineTest {
                 "NumericData-01",
                 ThresholdCondition.Operator.GTE, 10.0);
 
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0));
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 2, 5.0));
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 3, 15.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1000, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 2000, 5.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 3000, 15.0));
 
         // default dampening
 
@@ -274,9 +275,9 @@ public class RulesEngineTest {
                 10.0, 15.0,
                 false);
 
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0));
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 2, 5.0));
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 3, 15.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1000, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 2000, 5.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 3000, 15.0));
 
         // default dampening
 
@@ -381,8 +382,8 @@ public class RulesEngineTest {
         // dataId, we need several rule executions to test all of the above triggers.
 
         // Test LT (also LTE)
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0));
-        datums.add(Data.forNumeric("tenant", "NumericData-02", 2, 30.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1000, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 2000, 30.0));
 
         rulesEngine.addData(datums);
 
@@ -428,8 +429,8 @@ public class RulesEngineTest {
         // Test LTE + GTE
         datums.clear();
         alerts.clear();
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 3, 10.0));
-        datums.add(Data.forNumeric("tenant", "NumericData-02", 4, 20.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 3000, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 4000, 20.0));
 
         rulesEngine.addData(datums);
 
@@ -475,8 +476,8 @@ public class RulesEngineTest {
         // Test GT (also GTE)
         datums.clear();
         alerts.clear();
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 5, 15.0));
-        datums.add(Data.forNumeric("tenant", "NumericData-02", 6, 20.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 5000, 15.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 6000, 20.0));
 
         rulesEngine.addData(datums);
 
@@ -537,35 +538,35 @@ public class RulesEngineTest {
         // Test Adding 1 datum at a time, with some repetition
 
         // T1: D1=10, D2 unset : no condition eval
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1000, 10.0));
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         // T2: D1=15, D2 unset : no condition eval
         datums.clear();
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 2, 15.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 2000, 15.0));
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         // T3: D1=15, D2=25 : Eval False, dampening 0 for 1
         datums.clear();
-        datums.add(Data.forNumeric("tenant", "NumericData-02", 3, 25.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 3000, 25.0));
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         // T4: D1=15, D2=50 : Eval True, dampening 1 for 2
         datums.clear();
-        datums.add(Data.forNumeric("tenant", "NumericData-02", 4, 50.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 4000, 50.0));
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         // T5: D1=20, D2=50 : Eval True, dampening 2 for 3 -> fire
         datums.clear();
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 5, 20.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 5000, 20.0));
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 1, alerts.size());
@@ -619,10 +620,10 @@ public class RulesEngineTest {
 
         rulesEngine.addFacts(Arrays.asList(t1, t1c1, t1c2));
 
-        datums.add(Data.forNumeric("tenant", "HeapUsed", 1, 9.0));
-        datums.add(Data.forNumeric("tenant", "HeapUsed", 2, 11.0));
-        datums.add(Data.forNumeric("tenant", "HeapUsed", 3, 21.0));
-        datums.add(Data.forNumeric("tenant", "HeapUsed", 4, 19.0));
+        datums.add(Data.forNumeric("tenant", "HeapUsed", 1000, 9.0));
+        datums.add(Data.forNumeric("tenant", "HeapUsed", 2000, 11.0));
+        datums.add(Data.forNumeric("tenant", "HeapUsed", 3000, 21.0));
+        datums.add(Data.forNumeric("tenant", "HeapUsed", 4000, 19.0));
 
         rulesEngine.addData(datums);
 
@@ -667,10 +668,10 @@ public class RulesEngineTest {
                 "StringData-02", // note
                 StringCondition.Operator.NOT_EQUAL, "Fred", false);
 
-        datums.add(Data.forString("tenant", "StringData-01", 1, "Fred"));
-        datums.add(Data.forString("tenant", "StringData-01", 2, "Fred And Barney"));
+        datums.add(Data.forString("tenant", "StringData-01", 1000, "Fred"));
+        datums.add(Data.forString("tenant", "StringData-01", 2000, "Fred And Barney"));
 
-        datums.add(Data.forString("tenant", "StringData-02", 1, "Barney And Fred"));
+        datums.add(Data.forString("tenant", "StringData-02", 1000, "Barney And Fred"));
 
         // default dampening
 
@@ -836,10 +837,10 @@ public class RulesEngineTest {
                 "StringData-02", // note
                 StringCondition.Operator.NOT_EQUAL, "FRED", true);
 
-        datums.add(Data.forString("tenant", "StringData-01", 1, "Fred"));
-        datums.add(Data.forString("tenant", "StringData-01", 2, "Fred And Barney"));
+        datums.add(Data.forString("tenant", "StringData-01", 1000, "Fred"));
+        datums.add(Data.forString("tenant", "StringData-01", 2000, "Fred And Barney"));
 
-        datums.add(Data.forString("tenant", "StringData-02", 1, "Barney And Fred"));
+        datums.add(Data.forString("tenant", "StringData-02", 1000, "Barney And Fred"));
 
         // default dampening
 
@@ -975,9 +976,9 @@ public class RulesEngineTest {
         AvailabilityCondition t1c1 = new AvailabilityCondition("tenant", "trigger-1", 1, 1,
                 "AvailData-01", AvailabilityCondition.Operator.NOT_UP);
 
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 3, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 1000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 2000, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 3000, AvailabilityType.UP));
 
         // default dampening
 
@@ -1027,7 +1028,7 @@ public class RulesEngineTest {
         ExternalCondition t1c1 = new ExternalCondition("tenant", "trigger-1", Mode.FIRING, 1, 1,
                 "ExternalData-01", "HawkularMetrics", "metric:5:avg(foo > 100.5)");
 
-        datums.add(Data.forString("tenant", "ExternalData-01", 1, "Ignored"));
+        datums.add(Data.forString("tenant", "ExternalData-01", 1000, "Ignored"));
 
         // default dampening
 
@@ -1173,25 +1174,25 @@ public class RulesEngineTest {
         /*
             On multiple conditions timestamps on input events are important.
          */
-        Event appDownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "myapp.war",
+        Event appDownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1000, "myapp.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
-        Event logErrorEvent1 = new Event("tenant", UUID.randomUUID().toString(), 2, "datacenter1",
+        Event logErrorEvent1 = new Event("tenant", UUID.randomUUID().toString(), 2000, "datacenter1",
                 EventCategory.LOG.name(), "ERROR [Time] This is a sample as app logging");
-        Event logWarnEvent1 = new Event("tenant", UUID.randomUUID().toString(), 3, "datacenter2",
+        Event logWarnEvent1 = new Event("tenant", UUID.randomUUID().toString(), 3000, "datacenter2",
                 EventCategory.LOG.name(), "WARN [Time] This is a sample as app logging");
 
-        Event appDownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 4, "myapp.war",
+        Event appDownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 4000, "myapp.war",
                 EventCategory.DEPLOYMENT.name(), "UP");
-        Event logErrorEvent2 = new Event("tenant", UUID.randomUUID().toString(), 5, "datacenter1",
+        Event logErrorEvent2 = new Event("tenant", UUID.randomUUID().toString(), 5000, "datacenter1",
                 EventCategory.LOG.name(), "ERROR [Time] This is a sample as app logging 2");
-        Event logWarnEvent2 = new Event("tenant", UUID.randomUUID().toString(), 6, "datacenter2",
+        Event logWarnEvent2 = new Event("tenant", UUID.randomUUID().toString(), 6000, "datacenter2",
                 EventCategory.LOG.name(), "WARN [Time] This is a sample as app logging 2");
 
-        Event appDownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 7, "myapp.war",
+        Event appDownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 7000, "myapp.war",
                 EventCategory.DEPLOYMENT.name(), "UP");
-        Event logErrorEvent3 = new Event("tenant", UUID.randomUUID().toString(), 8, "datacenter1",
+        Event logErrorEvent3 = new Event("tenant", UUID.randomUUID().toString(), 8000, "datacenter1",
                 EventCategory.LOG.name(), "ERROR [Time] This is a sample as app logging 3");
-        Event logWarnEvent3 = new Event("tenant", UUID.randomUUID().toString(), 9, "datacenter2",
+        Event logWarnEvent3 = new Event("tenant", UUID.randomUUID().toString(), 9000, "datacenter2",
                 EventCategory.LOG.name(), "WARN [Time] This is a sample as app logging 3");
 
         inputEvents.add(appDownEvent1);
@@ -1261,22 +1262,22 @@ public class RulesEngineTest {
         EventCondition t3c1 = new EventCondition("tenant", "trigger-3", Mode.FIRING, 2, 1, "trigger-1");
         EventCondition t3c2 = new EventCondition("tenant", "trigger-3", Mode.FIRING, 2, 2, "trigger-2");
 
-        Event appADownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "A.war",
+        Event appADownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1000, "A.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
 
-        Event appBDownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1, "B.war",
+        Event appBDownEvent1 = new Event("tenant", UUID.randomUUID().toString(), 1000, "B.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
 
-        Event appADownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 2, "A.war",
+        Event appADownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 2000, "A.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
 
-        Event appBDownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 2, "B.war",
+        Event appBDownEvent2 = new Event("tenant", UUID.randomUUID().toString(), 2000, "B.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
 
-        Event appADownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 3, "A.war",
+        Event appADownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 3000, "A.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
 
-        Event appBDownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 3, "B.war",
+        Event appBDownEvent3 = new Event("tenant", UUID.randomUUID().toString(), 3000, "B.war",
                 EventCategory.DEPLOYMENT.name(), "DOWN");
 
         inputEvents.add(appADownEvent1);
@@ -1338,13 +1339,13 @@ public class RulesEngineTest {
 
         Dampening t1d = Dampening.forStrict("tenant", "trigger-1", Mode.FIRING, 3);
 
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 3, AvailabilityType.UP));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 5, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 6, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 7, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 1000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 2000, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 3000, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 4000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 5000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 6000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 7000, AvailabilityType.UP));
 
         t1.setEnabled(true);
 
@@ -1361,7 +1362,7 @@ public class RulesEngineTest {
         Alert a = alerts.get(0);
         assertEquals("trigger-1", a.getTriggerId());
         assertEquals(3, a.getEvalSets().size());
-        long expectedTimestamp = 4;
+        long expectedTimestamp = 4000;
         for (Set<ConditionEval> evalSet : a.getEvalSets()) {
             assertEquals(1, evalSet.size());
             AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
@@ -1369,7 +1370,8 @@ public class RulesEngineTest {
             assertEquals(1, e.getConditionSetSize());
             assertEquals("trigger-1", e.getTriggerId());
             assertTrue(e.isMatch());
-            assertEquals(expectedTimestamp++, e.getDataTimestamp());
+            assertEquals(expectedTimestamp, e.getDataTimestamp());
+            expectedTimestamp += 1000;
             AvailabilityType v = e.getValue();
             assertEquals(AvailabilityType.DOWN, v);
             assertEquals("AvailData-01", e.getCondition().getDataId());
@@ -1384,13 +1386,13 @@ public class RulesEngineTest {
 
         Dampening t1d = Dampening.forRelaxedCount("tenant", "trigger-1", Mode.FIRING, 3, 5);
 
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 3, AvailabilityType.UP));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 5, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 6, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 7, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 1000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 2000, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 3000, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 4000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 5000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 6000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 7000, AvailabilityType.UP));
 
         t1.setEnabled(true);
 
@@ -1408,7 +1410,7 @@ public class RulesEngineTest {
         assertEquals("trigger-1", a.getTriggerId());
         assertEquals(3, a.getEvalSets().size());
         int i = 0;
-        long[] expectedTimestamps = new long[] { 1, 4, 5 };
+        long[] expectedTimestamps = new long[] { 1000, 4000, 5000 };
         for (Set<ConditionEval> evalSet : a.getEvalSets()) {
             assertEquals(1, evalSet.size());
             AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
@@ -1437,7 +1439,7 @@ public class RulesEngineTest {
         rulesEngine.addFact(t1c1);
         rulesEngine.addFact(t1d);
 
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 1000, AvailabilityType.DOWN));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1450,10 +1452,10 @@ public class RulesEngineTest {
         }
 
         datums.clear();
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 3, AvailabilityType.UP));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 5, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 2000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 3000, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 4000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 5000, AvailabilityType.UP));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1464,7 +1466,7 @@ public class RulesEngineTest {
         assertEquals("trigger-1", a.getTriggerId());
         assertEquals(2, a.getEvalSets().size());
         int i = 0;
-        long[] expectedTimestamps = new long[] { 2, 4 };
+        long[] expectedTimestamps = new long[] { 2000, 4000 };
         for (Set<ConditionEval> evalSet : a.getEvalSets()) {
             assertEquals(1, evalSet.size());
             AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
@@ -1496,7 +1498,7 @@ public class RulesEngineTest {
         long start = System.currentTimeMillis();
         int i = 0;
         while ((alerts.size() == 0) && ((System.currentTimeMillis() - start) < 500)) {
-            rulesEngine.addData(Data.forAvailability("tenant", "AvailData-01", ++i, AvailabilityType.DOWN));
+            rulesEngineAddData(Data.forAvailability("tenant", "AvailData-01", i += 1000, AvailabilityType.DOWN));
             rulesEngine.fire();
         }
 
@@ -1519,6 +1521,12 @@ public class RulesEngineTest {
         }
     }
 
+    private void rulesEngineAddData(Data data) {
+        TreeSet<Data> ts = new TreeSet<>();
+        ts.add(data);
+        rulesEngine.addData(ts);
+    }
+
     @Test
     public void dampeningStrictTimeoutTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "Avail-DOWN");
@@ -1536,7 +1544,7 @@ public class RulesEngineTest {
         assertTrue(alerts.isEmpty());
         assertTrue(pendingTimeouts.isEmpty());
 
-        rulesEngine.addData(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
+        rulesEngineAddData(Data.forAvailability("tenant", "AvailData-01", 1000, AvailabilityType.DOWN));
         rulesEngine.fire();
 
         assertTrue(alerts.isEmpty());
@@ -1587,9 +1595,9 @@ public class RulesEngineTest {
         //   1) one datum for a specific dataId will will be processed at a time
         //   2) only the most recent conditionEvals will be used in a condition set tuple for a multi-condition trigger
 
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 1, 10.0)); // eval(d1,t1)=no match,
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 2, 5.0));  // eval(d1,t2)=   match, replaces eval(d1,t1)
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 3, 15.0)); // eval(d1,t3)=no match, replaces eval(d1,t2)
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1000, 10.0)); // eval(d1,t1)=no match,
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 2000, 5.0));  // eval(d1,t2)=   match, replaces eval(d1,t1)
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 3000, 15.0)); // eval(d1,t3)=no match, replaces eval(d1,t2)
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1598,9 +1606,9 @@ public class RulesEngineTest {
 
         datums.clear();
         // eval(d2,t4) = no match, tuple(eval(d1,t3), eval(d2,t4)) = false
-        datums.add(Data.forNumeric("tenant", "NumericData-02", 4, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 4000, 10.0));
         // eval(d2,t5) =    match, tuple(eval(d1,t3), eval(d2,t5)) = false
-        datums.add(Data.forNumeric("tenant", "NumericData-02", 5, 150.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-02", 5000, 150.0));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1609,7 +1617,7 @@ public class RulesEngineTest {
 
         datums.clear();
         // eval(d1,t6) =    match, tuple(eval(d1,t6), eval(d2,t5)) = true
-        datums.add(Data.forNumeric("tenant", "NumericData-01", 6, 8.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 6000, 8.0));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1667,25 +1675,25 @@ public class RulesEngineTest {
 
         // for clarity deliver datums independently
 
-        datums.add(Data.forNumeric("tenant", "X", 1, 125.0));  // match, dampening eval true (X), no alert
+        datums.add(Data.forNumeric("tenant", "X", 1000, 125.0));  // match, dampening eval true (X), no alert
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         datums.clear();
-        datums.add(Data.forNumeric("tenant", "X", 2, 50.0));   // no match, dampening reset
+        datums.add(Data.forNumeric("tenant", "X", 2000, 50.0));   // no match, dampening reset
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         datums.clear();
-        datums.add(Data.forNumeric("tenant", "Y", 3, 300.0));  // match, dampening eval true (Y), no alert
+        datums.add(Data.forNumeric("tenant", "Y", 3000, 300.0));  // match, dampening eval true (Y), no alert
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
 
         datums.clear();
-        datums.add(Data.forNumeric("tenant", "X", 4, 110.0));  // match, dampening eval true (X,Y), alert! damp reset
+        datums.add(Data.forNumeric("tenant", "X", 4000, 110.0));  // match, dampening eval true (X,Y), alert! damp reset
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 1, alerts.size());
@@ -1747,7 +1755,7 @@ public class RulesEngineTest {
 
         alerts.clear();
         datums.clear();
-        datums.add(Data.forNumeric("tenant", "Y", 5, 150.0));  // match, dampening eval true (X), no alert
+        datums.add(Data.forNumeric("tenant", "Y", 5000, 150.0));  // match, dampening eval true (X), no alert
         rulesEngine.addData(datums);
         rulesEngine.fire();
         assertEquals(alerts.toString(), 0, alerts.size());
@@ -1768,14 +1776,14 @@ public class RulesEngineTest {
                 "AvailData-01", AvailabilityCondition.Operator.UP);
         Dampening smt1d = Dampening.forStrict("tenant", "trigger-1", Mode.AUTORESOLVE, 2);
 
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 1, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 2, AvailabilityType.UNAVAILABLE));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 3, AvailabilityType.UP));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 4, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 5, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 6, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 7, AvailabilityType.DOWN));
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 8, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 1000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 2000, AvailabilityType.UNAVAILABLE));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 3000, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 4000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 5000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 6000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 7000, AvailabilityType.DOWN));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 8000, AvailabilityType.UP));
 
         t1.setEnabled(true);
         t1.setAutoDisable(false);
@@ -1803,7 +1811,7 @@ public class RulesEngineTest {
         assertTrue(a.getStatus() == Alert.Status.OPEN);
         assertTrue(a.getTriggerId(), a.getTriggerId().equals("trigger-1"));
         assertTrue(a.getEvalSets().toString(), a.getEvalSets().size() == 2);
-        long expectedTimestamp = 4;
+        long expectedTimestamp = 4000;
         for (Set<ConditionEval> evalSet : a.getEvalSets()) {
             assertEquals(evalSet.toString(), 1, evalSet.size());
             AvailabilityConditionEval e = (AvailabilityConditionEval) evalSet.iterator().next();
@@ -1811,7 +1819,8 @@ public class RulesEngineTest {
             assertEquals(e.toString(), 1, e.getConditionSetSize());
             assertEquals("trigger-1", e.getTriggerId());
             assertTrue(e.isMatch());
-            assertEquals(expectedTimestamp++, e.getDataTimestamp());
+            assertEquals(expectedTimestamp, e.getDataTimestamp());
+            expectedTimestamp += 1000;
             AvailabilityType v = e.getValue();
             assertEquals(AvailabilityType.DOWN, v);
             assertEquals("AvailData-01", e.getCondition().getDataId());
@@ -1821,7 +1830,7 @@ public class RulesEngineTest {
 
         alerts.clear();
         datums.clear();
-        datums.add(Data.forAvailability("tenant", "AvailData-01", 9, AvailabilityType.UP));
+        datums.add(Data.forAvailability("tenant", "AvailData-01", 9000, AvailabilityType.UP));
 
         rulesEngine.addData(datums);
         rulesEngine.fire();
@@ -1962,7 +1971,7 @@ public class RulesEngineTest {
         // We add a data, so it should update the missingState and not fire any alert
 
         Data data = Data.forAvailability("tenant", "data-id", System.currentTimeMillis() + 4001, AvailabilityType.DOWN);
-        rulesEngine.addData(data);
+        rulesEngineAddData(data);
 
         rulesEngine.fire();
 

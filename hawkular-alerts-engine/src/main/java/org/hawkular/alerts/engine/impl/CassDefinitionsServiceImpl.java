@@ -234,7 +234,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.addTrigger(trigger.getTenantId(), trigger.getId());
         }
 
-        notifyListeners(DefinitionsEvent.Type.TRIGGER_CREATE);
+        notifyListeners(new DefinitionsEvent(Type.TRIGGER_CREATE, trigger));
     }
 
     private void insertTriggerActions(Trigger trigger) throws Exception {
@@ -343,7 +343,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.removeTrigger(tenantId, triggerId);
         }
 
-        notifyListeners(DefinitionsEvent.Type.TRIGGER_REMOVE);
+        notifyListeners(new DefinitionsEvent(Type.TRIGGER_REMOVE, tenantId, triggerId));
     }
 
     @Override
@@ -453,7 +453,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(tenantId, triggerId);
         }
 
-        notifyListeners(DefinitionsEvent.Type.TRIGGER_UPDATE);
+        notifyListeners(new DefinitionsEvent(Type.TRIGGER_UPDATE, tenantId, triggerId));
     }
 
     private Trigger copyGroupTrigger(Trigger group, Trigger member, boolean isNewMember) {
@@ -531,7 +531,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(trigger.getTenantId(), trigger.getId());
         }
 
-        notifyListeners(DefinitionsEvent.Type.TRIGGER_UPDATE);
+        notifyListeners(new DefinitionsEvent(Type.TRIGGER_UPDATE, trigger));
 
         return trigger;
     }
@@ -1293,7 +1293,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
-        notifyListeners(DefinitionsEvent.Type.DAMPENING_CHANGE);
+        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
 
         return dampening;
     }
@@ -1389,7 +1389,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
-        notifyListeners(DefinitionsEvent.Type.DAMPENING_CHANGE);
+        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
     }
 
     @Override
@@ -1469,7 +1469,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
         }
 
-        notifyListeners(DefinitionsEvent.Type.DAMPENING_CHANGE);
+        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
 
         return dampening;
     }
@@ -2061,7 +2061,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(tenantId, triggerId);
         }
 
-        notifyListeners(DefinitionsEvent.Type.CONDITION_CHANGE);
+        notifyListeners(new DefinitionsEvent(Type.TRIGGER_CONDITION_CHANGE, tenantId, triggerId));
 
         return conditions;
     }
@@ -2769,20 +2769,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         alertsContext.registerDefinitionListener(listener, eventType, eventTypes);
     }
 
-    private void notifyListeners(Type eventType) {
-        DefinitionsEvent de = new DefinitionsEvent(eventType);
+    private void notifyListeners(DefinitionsEvent de) {
         if (log.isDebugEnabled()) {
-            log.debug("Notifying applicable listeners " + alertsContext.getDefinitionListeners() +
-                    " of event " + eventType.name());
+            log.debugf("Notifying applicable listeners %s of event", alertsContext.getDefinitionListeners(), de);
         }
-        for (Entry<DefinitionsListener, Set<Type>> me : alertsContext.getDefinitionListeners().entrySet()) {
-            if (me.getValue().contains(eventType)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Notified Listener " + eventType.name());
-                }
-                me.getKey().onChange(de);
-            }
-        }
+        alertsContext.getDefinitionListeners().entrySet().stream()
+                .filter(e -> e.getValue().contains(de.getType()))
+                .forEach(e -> {
+                    log.debugf("Notified Listener %s of %s", e.getKey(), de.getType().name());
+                    e.getKey().onChange(de);
+                });
     }
 
     @Override
