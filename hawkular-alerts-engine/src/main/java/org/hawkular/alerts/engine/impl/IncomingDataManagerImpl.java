@@ -53,7 +53,8 @@ import org.jboss.logging.Logger;
 public class IncomingDataManagerImpl implements IncomingDataManager {
     private final Logger log = Logger.getLogger(IncomingDataManagerImpl.class);
 
-    private int minReportingInterval;
+    private int minReportingIntervalData;
+    private int minReportingIntervalEvents;
 
     @Resource
     private ManagedExecutorService executor;
@@ -76,10 +77,15 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
     @PostConstruct
     public void init() {
         try {
-            minReportingInterval = new Integer(
-                    AlertProperties.getProperty(RulesEngine.MIN_REPORTING_INTERVAL,
-                            RulesEngine.MIN_REPORTING_INTERVAL_ENV,
-                            RulesEngine.MIN_REPORTING_INTERVAL_DEFAULT));
+            minReportingIntervalData = new Integer(
+                    AlertProperties.getProperty(RulesEngine.MIN_REPORTING_INTERVAL_DATA,
+                            RulesEngine.MIN_REPORTING_INTERVAL_DATA_ENV,
+                            RulesEngine.MIN_REPORTING_INTERVAL_DATA_DEFAULT));
+
+            minReportingIntervalEvents = new Integer(
+                    AlertProperties.getProperty(RulesEngine.MIN_REPORTING_INTERVAL_EVENTS,
+                            RulesEngine.MIN_REPORTING_INTERVAL_EVENTS_ENV,
+                            RulesEngine.MIN_REPORTING_INTERVAL_EVENTS_DEFAULT));
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
                 t.printStackTrace();
@@ -165,7 +171,7 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
             if (!d.same(prev)) {
                 prev = d;
             } else {
-                if ((d.getTimestamp() - prev.getTimestamp()) < minReportingInterval) {
+                if ((d.getTimestamp() - prev.getTimestamp()) < minReportingIntervalData) {
                     log.tracef("MinReportingInterval violation, prev: %s, removed: %s", prev, d);
                     i.remove();
                 }
@@ -184,7 +190,7 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
             if (!e.same(prev)) {
                 prev = e;
             } else {
-                if ((e.getCtime() - prev.getCtime()) < minReportingInterval) {
+                if ((e.getCtime() - prev.getCtime()) < minReportingIntervalEvents) {
                     log.tracef("MinReportingInterval violation, prev: %s, removed: %s", prev, e);
                     i.remove();
                 }
