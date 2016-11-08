@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts-actions</artifactId>
-    <version>1.3.2.Final</version>
+    <version>1.3.3.Final-SNAPSHOT</version>
   </parent>
 
   <artifactId>hawkular-alerts-actions-api</artifactId>
