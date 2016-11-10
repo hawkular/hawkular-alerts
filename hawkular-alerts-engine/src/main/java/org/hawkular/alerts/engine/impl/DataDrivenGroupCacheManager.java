@@ -39,7 +39,6 @@ import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerType;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
-import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.jboss.logging.Logger;
 
@@ -83,11 +82,8 @@ public class DataDrivenGroupCacheManager {
 
             requestCacheUpdate();
 
-            definitions.registerListener(new DefinitionsListener() {
-                @Override
-                public void onChange(DefinitionsEvent event) {
+            definitions.registerListener(e -> {
                     requestCacheUpdate();
-                }
             }, DefinitionsEvent.Type.TRIGGER_CONDITION_CHANGE);
         }
     }

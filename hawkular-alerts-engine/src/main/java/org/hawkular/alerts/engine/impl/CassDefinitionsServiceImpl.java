@@ -95,6 +95,15 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassDefinitionsServiceImpl.class);
 
+    // Note, the next two variables hold 'state' only for the duration of a single EJB method. This is
+    // a stateless EJB, different method invocations can happen in different bean instances.  The idea here is
+    // that a method (e.g. importDefinitions()) may be an umbrella for multiple updates.  In that case it is
+    // desirable to only send a listener update one time, at the end, because we want listeners to be
+    // efficient (i.e. don't update a cache 100 times in a row for one import of 100 triggers). Methods should not
+    // manipulate these variables directly, instead call deferNotifications() and releaseNotifications().
+    private Set<DefinitionsEvent> deferredNotifications = new HashSet<>();
+    private int deferNotificationsCount = 0;
+
     @EJB
     AlertsEngine alertsEngine;
 
@@ -285,28 +294,52 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("GroupId must be not null");
         }
 
-        Trigger doomedTrigger = getTrigger(tenantId, groupId);
-        if (null == doomedTrigger) {
-            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupId);
-        }
-        if (!doomedTrigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
-        }
+        try {
+            deferNotifications();
 
-        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, true);
-
-        for (Trigger member : memberTriggers) {
-            if ((keepNonOrphans && !member.isOrphan()) || (keepOrphans && member.isOrphan())) {
-                member.setMemberOf(null);
-                member.setType(TriggerType.STANDARD);
-                updateTrigger(member, member.getActions(), member.getTags());
-                continue;
+            Trigger doomedTrigger = getTrigger(tenantId, groupId);
+            if (null == doomedTrigger) {
+                throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupId);
+            }
+            if (!doomedTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
             }
 
-            removeTrigger(member);
-        }
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, true);
 
-        removeTrigger(doomedTrigger);
+            for (Trigger member : memberTriggers) {
+                if ((keepNonOrphans && !member.isOrphan()) || (keepOrphans && member.isOrphan())) {
+                    member.setMemberOf(null);
+                    member.setType(TriggerType.STANDARD);
+                    updateTrigger(member, member.getActions(), member.getTags());
+                    continue;
+                }
+
+                removeTrigger(member);
+            }
+
+            removeTrigger(doomedTrigger);
+
+        } finally {
+            releaseNotifications();
+        }
+    }
+
+    private void deferNotifications() {
+        ++deferNotificationsCount;
+    }
+
+    private void releaseNotifications() {
+        if (deferNotificationsCount > 0) {
+            if (--deferNotificationsCount == 0) {
+                notifyListenersDeferred();
+            }
+        }
+    }
+
+    private boolean isDeferredNotifications() {
+        return deferNotificationsCount > 0;
     }
 
     private void removeTrigger(Trigger trigger) throws Exception {
@@ -389,32 +422,40 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Trigger must be not null");
         }
 
-        checkTenantId(tenantId, groupTrigger);
-        String groupId = groupTrigger.getId();
+        try {
+            deferNotifications();
 
-        Trigger existingGroupTrigger = getTrigger(tenantId, groupId);
-        if (null == existingGroupTrigger) {
-            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupTrigger.getId());
+            checkTenantId(tenantId, groupTrigger);
+            String groupId = groupTrigger.getId();
+
+            Trigger existingGroupTrigger = getTrigger(tenantId, groupId);
+            if (null == existingGroupTrigger) {
+                throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupTrigger.getId());
+            }
+            if (!existingGroupTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
+            }
+
+            // trigger type can not be updated
+            groupTrigger.setType(existingGroupTrigger.getType());
+
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+            // This works for the existing members as well, because they are all the same as the existing group trigger
+            Set<TriggerAction> existingActions = existingGroupTrigger.getActions();
+            Map<String, String> existingTags = existingGroupTrigger.getTags();
+
+            for (Trigger member : memberTriggers) {
+                copyGroupTrigger(groupTrigger, member, false);
+                updateTrigger(member, existingActions, existingTags);
+            }
+
+            return updateTrigger(groupTrigger, existingActions, existingTags);
+
+        } finally {
+            releaseNotifications();
         }
-        if (!existingGroupTrigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
-        }
-
-        // trigger type can not be updated
-        groupTrigger.setType(existingGroupTrigger.getType());
-
-        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
-
-        // This works for the existing members as well, because they are all the same as the existing group trigger
-        Set<TriggerAction> existingActions = existingGroupTrigger.getActions();
-        Map<String, String> existingTags = existingGroupTrigger.getTags();
-
-        for (Trigger member : memberTriggers) {
-            copyGroupTrigger(groupTrigger, member, false);
-            updateTrigger(member, existingActions, existingTags);
-        }
-
-        return updateTrigger(groupTrigger, existingActions, existingTags);
     }
 
     @Override
@@ -986,82 +1027,89 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("DataIdMap must be not null");
         }
 
-        // fetch the group trigger
-        Trigger group = getTrigger(tenantId, groupId);
-        if (group == null) {
-            throw new IllegalArgumentException("Trigger not found for tenantId/triggerId [ " + tenantId + "]/[" +
-                    groupId + "]");
-        }
+        try {
+            deferNotifications();
 
-        // fetch the group conditions
-        // ensure we have a 1-1 mapping for the dataId substitution
-        Set<String> dataIdTokens = new HashSet<>();
-        Collection<Condition> conditions = getTriggerConditions(tenantId, groupId, null);
-        for (Condition c : conditions) {
-            if (Condition.Type.COMPARE == c.getType()) {
-                dataIdTokens.add(c.getDataId());
-                dataIdTokens.add(((CompareCondition) c).getData2Id());
-            } else {
-                dataIdTokens.add(c.getDataId());
+            // fetch the group trigger
+            Trigger group = getTrigger(tenantId, groupId);
+            if (group == null) {
+                throw new IllegalArgumentException("Trigger not found for tenantId/triggerId [ " + tenantId + "]/[" +
+                        groupId + "]");
             }
-        }
-        if (!dataIdTokens.equals(dataIdMap.keySet())) {
-            throw new IllegalArgumentException(
-                    "DataIdMap must contain the exact dataIds (keyset) expected by the condition set. Expected: "
-                            + dataIdTokens + ", dataIdMap: " + dataIdMap.keySet());
-        }
 
-        // create a member trigger like the group trigger
-        memberId = isEmpty(memberId) ? Trigger.generateId() : memberId;
-        memberName = isEmpty(memberName) ? group.getName() : memberName;
-        Trigger member = new Trigger(tenantId, memberId, memberName);
-
-        copyGroupTrigger(group, member, true);
-
-        if (!isEmpty(memberDescription)) {
-            member.setDescription(memberDescription);
-        }
-        if (null != memberContext) {
-            // add additional or override existing context
-            Map<String, String> combinedContext = new HashMap<>();
-            combinedContext.putAll(member.getContext());
-            combinedContext.putAll(memberContext);
-            member.setContext(combinedContext);
-        }
-        if (null != memberTags) {
-            // add additional or override existing tags
-            Map<String, String> combinedTags = new HashMap<>();
-            combinedTags.putAll(member.getTags());
-            combinedTags.putAll(memberTags);
-            member.setTags(combinedTags);
-        }
-
-        // store the dataIdMap so that it can be used for future condition updates (where the mappings are unchanged)
-        member.setDataIdMap(dataIdMap);
-
-        addTrigger(member);
-
-        // add any conditions
-        for (Condition c : conditions) {
-            Condition newCondition = getMemberCondition(member, c, dataIdMap);
-            if (newCondition != null) {
-                addCondition(newCondition);
+            // fetch the group conditions
+            // ensure we have a 1-1 mapping for the dataId substitution
+            Set<String> dataIdTokens = new HashSet<>();
+            Collection<Condition> conditions = getTriggerConditions(tenantId, groupId, null);
+            for (Condition c : conditions) {
+                if (Condition.Type.COMPARE == c.getType()) {
+                    dataIdTokens.add(c.getDataId());
+                    dataIdTokens.add(((CompareCondition) c).getData2Id());
+                } else {
+                    dataIdTokens.add(c.getDataId());
+                }
             }
+            if (!dataIdTokens.equals(dataIdMap.keySet())) {
+                throw new IllegalArgumentException(
+                        "DataIdMap must contain the exact dataIds (keyset) expected by the condition set. Expected: "
+                                + dataIdTokens + ", dataIdMap: " + dataIdMap.keySet());
+            }
+
+            // create a member trigger like the group trigger
+            memberId = isEmpty(memberId) ? Trigger.generateId() : memberId;
+            memberName = isEmpty(memberName) ? group.getName() : memberName;
+            Trigger member = new Trigger(tenantId, memberId, memberName);
+
+            copyGroupTrigger(group, member, true);
+
+            if (!isEmpty(memberDescription)) {
+                member.setDescription(memberDescription);
+            }
+            if (null != memberContext) {
+                // add additional or override existing context
+                Map<String, String> combinedContext = new HashMap<>();
+                combinedContext.putAll(member.getContext());
+                combinedContext.putAll(memberContext);
+                member.setContext(combinedContext);
+            }
+            if (null != memberTags) {
+                // add additional or override existing tags
+                Map<String, String> combinedTags = new HashMap<>();
+                combinedTags.putAll(member.getTags());
+                combinedTags.putAll(memberTags);
+                member.setTags(combinedTags);
+            }
+
+            // store the dataIdMap so that it can be used for future condition updates (where the mappings are unchanged)
+            member.setDataIdMap(dataIdMap);
+
+            addTrigger(member);
+
+            // add any conditions
+            for (Condition c : conditions) {
+                Condition newCondition = getMemberCondition(member, c, dataIdMap);
+                if (newCondition != null) {
+                    addCondition(newCondition);
+                }
+            }
+
+            // add any dampening
+            Collection<Dampening> dampenings = getTriggerDampenings(tenantId, groupId, null);
+
+            for (Dampening d : dampenings) {
+                Dampening newDampening = new Dampening(member.getTenantId(), member.getId(), d.getTriggerMode(),
+                        d.getType(), d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
+                addDampening(newDampening);
+            }
+
+            // add any tags
+            insertTags(tenantId, TagType.TRIGGER, member.getId(), member.getTags());
+
+            return member;
+
+        } finally {
+            releaseNotifications();
         }
-
-        // add any dampening
-        Collection<Dampening> dampenings = getTriggerDampenings(tenantId, groupId, null);
-
-        for (Dampening d : dampenings) {
-            Dampening newDampening = new Dampening(member.getTenantId(), member.getId(), d.getTriggerMode(),
-                    d.getType(), d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
-            addDampening(newDampening);
-        }
-
-        // add any tags
-        insertTags(tenantId, TagType.TRIGGER, member.getId(), member.getTags());
-
-        return member;
     }
 
     private Condition getMemberCondition(Trigger member, Condition groupCondition, Map<String, String> dataIdMap) {
@@ -1164,56 +1212,63 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("source is required (can not be none)");
         }
 
-        // fetch the group trigger
-        Trigger group = getTrigger(tenantId, groupId);
-        if (group == null) {
-            throw new IllegalArgumentException("Trigger not found for tenantId/triggerId [ " + tenantId + "]/[" +
-                    groupId + "]");
-        }
+        try {
+            deferNotifications();
 
-        // fetch the group conditions and generate a dataIdMap that just uses the same tokens as found in the
-        // group conditions. That is what we want in this use case, the source provides the differentiator
-        Map<String, String> dataIdMap = new HashMap<>();
-        Collection<Condition> conditions = getTriggerConditions(tenantId, groupId, null);
-        for (Condition c : conditions) {
-            dataIdMap.put(c.getDataId(), c.getDataId());
-            if (Condition.Type.COMPARE == c.getType()) {
-                dataIdMap.put(((CompareCondition) c).getData2Id(), ((CompareCondition) c).getData2Id());
+            // fetch the group trigger
+            Trigger group = getTrigger(tenantId, groupId);
+            if (group == null) {
+                throw new IllegalArgumentException("Trigger not found for tenantId/triggerId [ " + tenantId + "]/[" +
+                        groupId + "]");
             }
-        }
 
-        // create a member trigger like the group trigger
-        String memberId = group.getId() + "_" + source;
-        Trigger member = new Trigger(tenantId, memberId, group.getName());
-
-        copyGroupTrigger(group, member, true);
-        member.setSource(source);
-
-        addTrigger(member);
-
-        // add any conditions
-        for (Condition c : conditions) {
-            Condition newCondition = getMemberCondition(member, c, dataIdMap);
-            if (newCondition != null) {
-                addCondition(newCondition);
+            // fetch the group conditions and generate a dataIdMap that just uses the same tokens as found in the
+            // group conditions. That is what we want in this use case, the source provides the differentiator
+            Map<String, String> dataIdMap = new HashMap<>();
+            Collection<Condition> conditions = getTriggerConditions(tenantId, groupId, null);
+            for (Condition c : conditions) {
+                dataIdMap.put(c.getDataId(), c.getDataId());
+                if (Condition.Type.COMPARE == c.getType()) {
+                    dataIdMap.put(((CompareCondition) c).getData2Id(), ((CompareCondition) c).getData2Id());
+                }
             }
+
+            // create a member trigger like the group trigger
+            String memberId = group.getId() + "_" + source;
+            Trigger member = new Trigger(tenantId, memberId, group.getName());
+
+            copyGroupTrigger(group, member, true);
+            member.setSource(source);
+
+            addTrigger(member);
+
+            // add any conditions
+            for (Condition c : conditions) {
+                Condition newCondition = getMemberCondition(member, c, dataIdMap);
+                if (newCondition != null) {
+                    addCondition(newCondition);
+                }
+            }
+
+            // add any dampening
+            Collection<Dampening> dampenings = getTriggerDampenings(tenantId, groupId, null);
+
+            for (Dampening d : dampenings) {
+                Dampening newDampening = new Dampening(member.getTenantId(), member.getId(), d.getTriggerMode(),
+                        d.getType(), d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
+                addDampening(newDampening);
+            }
+
+            // add any tags
+            Map<String, String> updatedTags = new HashMap<>(member.getTags());
+            updatedTags.put("source", source); //TODO do we need this? Should we index source instead?
+            insertTags(tenantId, TagType.TRIGGER, member.getId(), member.getTags());
+
+            return member;
+
+        } finally {
+            releaseNotifications();
         }
-
-        // add any dampening
-        Collection<Dampening> dampenings = getTriggerDampenings(tenantId, groupId, null);
-
-        for (Dampening d : dampenings) {
-            Dampening newDampening = new Dampening(member.getTenantId(), member.getId(), d.getTriggerMode(),
-                    d.getType(), d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
-            addDampening(newDampening);
-        }
-
-        // add any tags
-        Map<String, String> updatedTags = new HashMap<>(member.getTags());
-        updatedTags.put("source", source); //TODO do we need this? Should we index source instead?
-        insertTags(tenantId, TagType.TRIGGER, member.getId(), member.getTags());
-
-        return member;
     }
 
     @Override
@@ -1252,26 +1307,34 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
 
-        checkTenantId(tenantId, dampening);
+        try {
+            deferNotifications();
 
-        String groupId = dampening.getTriggerId();
-        Trigger groupTrigger = getTrigger(tenantId, groupId);
-        if (null == groupTrigger) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
+            checkTenantId(tenantId, dampening);
+
+            String groupId = dampening.getTriggerId();
+            Trigger groupTrigger = getTrigger(tenantId, groupId);
+            if (null == groupTrigger) {
+                throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
+            }
+            if (!groupTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+            }
+
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+            for (Trigger member : memberTriggers) {
+                dampening.setTriggerId(member.getId());
+                addDampening(dampening);
+            }
+
+            dampening.setTriggerId(groupTrigger.getId());
+            return addDampening(dampening);
+
+        } finally {
+            releaseNotifications();
         }
-        if (!groupTrigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
-        }
-
-        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
-
-        for (Trigger member : memberTriggers) {
-            dampening.setTriggerId(member.getId());
-            addDampening(dampening);
-        }
-
-        dampening.setTriggerId(groupTrigger.getId());
-        return addDampening(dampening);
     }
 
     private Dampening addDampening(Dampening dampening) throws Exception {
@@ -1340,35 +1403,43 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("dampeningId must be not null");
         }
 
-        Dampening dampening = getDampening(tenantId, dampeningId);
-        if (null == dampening) {
-            if (log.isDebugEnabled()) {
-                log.debug("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
+        try {
+            deferNotifications();
+
+            Dampening dampening = getDampening(tenantId, dampeningId);
+            if (null == dampening) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
+                }
+                return;
             }
-            return;
-        }
 
-        String groupId = dampening.getTriggerId();
-        Trigger groupTrigger = getTrigger(tenantId, groupId);
-        if (null == groupTrigger) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
-        }
-        if (!groupTrigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
-        }
-
-        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
-
-        for (Trigger member : memberTriggers) {
-            Collection<Dampening> dampenings = getTriggerDampenings(tenantId, member.getId(),
-                    dampening.getTriggerMode());
-            if (dampenings.isEmpty()) {
-                continue;
+            String groupId = dampening.getTriggerId();
+            Trigger groupTrigger = getTrigger(tenantId, groupId);
+            if (null == groupTrigger) {
+                throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
             }
-            removeDampening(dampenings.iterator().next());
-        }
+            if (!groupTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+            }
 
-        removeDampening(dampening);
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+            for (Trigger member : memberTriggers) {
+                Collection<Dampening> dampenings = getTriggerDampenings(tenantId, member.getId(),
+                        dampening.getTriggerMode());
+                if (dampenings.isEmpty()) {
+                    continue;
+                }
+                removeDampening(dampenings.iterator().next());
+            }
+
+            removeDampening(dampening);
+
+        } finally {
+            releaseNotifications();
+        }
     }
 
     private void removeDampening(Dampening dampening) throws Exception {
@@ -1428,26 +1499,34 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("DampeningId must be not null");
         }
 
-        checkTenantId(tenantId, dampening);
+        try {
+            deferNotifications();
 
-        String groupId = dampening.getTriggerId();
-        Trigger groupTrigger = getTrigger(tenantId, groupId);
-        if (null == groupTrigger) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
+            checkTenantId(tenantId, dampening);
+
+            String groupId = dampening.getTriggerId();
+            Trigger groupTrigger = getTrigger(tenantId, groupId);
+            if (null == groupTrigger) {
+                throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] does not exist.");
+            }
+            if (!groupTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+            }
+
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+            for (Trigger member : memberTriggers) {
+                dampening.setTriggerId(member.getId());
+                updateDampening(dampening);
+            }
+
+            dampening.setTriggerId(groupTrigger.getId());
+            return updateDampening(dampening);
+
+        } finally {
+            releaseNotifications();
         }
-        if (!groupTrigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
-        }
-
-        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
-
-        for (Trigger member : memberTriggers) {
-            dampening.setTriggerId(member.getId());
-            updateDampening(dampening);
-        }
-
-        dampening.setTriggerId(groupTrigger.getId());
-        return updateDampening(dampening);
     }
 
     private Dampening updateDampening(Dampening dampening) throws Exception {
@@ -1645,121 +1724,130 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("GroupConditions must be not null");
         }
 
-        Trigger group = getTrigger(tenantId, groupId);
-        if (null == group) {
-            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupId);
-        }
-        if (!group.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
-        }
+        try {
+            deferNotifications();
 
-        Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
-
-        // for data-driven groups a change to group conditions invalidates the previously generated members
-        // Note: if the new set of conditions uses the same set of dataIds we probably don't need to invalidate
-        // the current members but the work of maintaining them may not add much, if any, benefit.
-        if (TriggerType.DATA_DRIVEN_GROUP == group.getType()) {
-            for (Trigger member : memberTriggers) {
-                removeTrigger(member);
+            Trigger group = getTrigger(tenantId, groupId);
+            if (null == group) {
+                throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupId);
             }
-            memberTriggers.clear();
-        }
-
-        if (!memberTriggers.isEmpty()) {
-            // fill in dataIdMap entries not supplied using the most recently supplied mapping
-            if (null == dataIdMemberMap) {
-                dataIdMemberMap = new HashMap<>();
+            if (!group.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
             }
-            for (Trigger member : memberTriggers) {
-                String memberId = member.getId();
 
-                for (Entry<String, String> entry : member.getDataIdMap().entrySet()) {
-                    String groupDataId = entry.getKey();
-                    String memberDataId = entry.getValue();
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
 
-                    Map<String, String> memberIdMap = dataIdMemberMap.get(groupDataId);
-                    if (null == memberIdMap) {
-                        memberIdMap = new HashMap<>(memberTriggers.size());
-                        dataIdMemberMap.put(groupDataId, memberIdMap);
-                    }
-                    if (memberIdMap.containsKey(memberId)) {
-                        // supplied mapping has a mapping for this groupDataId and member. If it is
-                        // a new mapping for this member then update the member's dataIdMap
-                        if (!memberIdMap.get(memberId).equals(member.getDataIdMap().get(groupDataId))) {
-                            Map<String, String> updatedDataIdMap = new HashMap<>(member.getDataIdMap());
-                            updatedDataIdMap.put(groupDataId, memberIdMap.get(memberId));
-                            updateMemberTriggerDataIdMap(tenantId, memberId, updatedDataIdMap);
+            // for data-driven groups a change to group conditions invalidates the previously generated members
+            // Note: if the new set of conditions uses the same set of dataIds we probably don't need to invalidate
+            // the current members but the work of maintaining them may not add much, if any, benefit.
+            if (TriggerType.DATA_DRIVEN_GROUP == group.getType()) {
+                for (Trigger member : memberTriggers) {
+                    removeTrigger(member);
+                }
+                memberTriggers.clear();
+            }
+
+            if (!memberTriggers.isEmpty()) {
+                // fill in dataIdMap entries not supplied using the most recently supplied mapping
+                if (null == dataIdMemberMap) {
+                    dataIdMemberMap = new HashMap<>();
+                }
+                for (Trigger member : memberTriggers) {
+                    String memberId = member.getId();
+
+                    for (Entry<String, String> entry : member.getDataIdMap().entrySet()) {
+                        String groupDataId = entry.getKey();
+                        String memberDataId = entry.getValue();
+
+                        Map<String, String> memberIdMap = dataIdMemberMap.get(groupDataId);
+                        if (null == memberIdMap) {
+                            memberIdMap = new HashMap<>(memberTriggers.size());
+                            dataIdMemberMap.put(groupDataId, memberIdMap);
                         }
-                    } else {
-                        // supplied map did not have the previously stored mapping, use the existing mapping
-                        memberIdMap.put(memberId, memberDataId);
+                        if (memberIdMap.containsKey(memberId)) {
+                            // supplied mapping has a mapping for this groupDataId and member. If it is
+                            // a new mapping for this member then update the member's dataIdMap
+                            if (!memberIdMap.get(memberId).equals(member.getDataIdMap().get(groupDataId))) {
+                                Map<String, String> updatedDataIdMap = new HashMap<>(member.getDataIdMap());
+                                updatedDataIdMap.put(groupDataId, memberIdMap.get(memberId));
+                                updateMemberTriggerDataIdMap(tenantId, memberId, updatedDataIdMap);
+                            }
+                        } else {
+                            // supplied map did not have the previously stored mapping, use the existing mapping
+                            memberIdMap.put(memberId, memberDataId);
+                        }
                     }
                 }
-            }
 
-            // validate the dataIdMemberMap
-            for (Condition groupCondition : groupConditions) {
-                if (!dataIdMemberMap.containsKey(groupCondition.getDataId())) {
-                    throw new IllegalArgumentException("Missing dataIdMap entry for dataId token ["
-                            + groupCondition.getDataId() + "]");
-                }
-                if (Condition.Type.COMPARE == groupCondition.getType()) {
-                    CompareCondition cc = (CompareCondition) groupCondition;
-                    if (!dataIdMemberMap.containsKey(cc.getData2Id())) {
-                        throw new IllegalArgumentException(
-                                "Missing dataIdMap entry for CompareCondition data2Id token ["
-                                        + cc.getData2Id() + "]");
+                // validate the dataIdMemberMap
+                for (Condition groupCondition : groupConditions) {
+                    if (!dataIdMemberMap.containsKey(groupCondition.getDataId())) {
+                        throw new IllegalArgumentException("Missing dataIdMap entry for dataId token ["
+                                + groupCondition.getDataId() + "]");
                     }
-                }
-                for (Entry<String, Map<String, String>> entry : dataIdMemberMap.entrySet()) {
-                    String dataId = entry.getKey();
-                    Map<String, String> memberMap = entry.getValue();
-                    if (memberMap.size() != memberTriggers.size()) {
-                        throw new IllegalArgumentException("memberMap size [" + memberMap.size() + "] for dataId ["
-                                + dataId + "] must equal number of member triggers [" + memberTriggers.size() + "]");
-                    }
-                    for (Trigger member : memberTriggers) {
-                        String value = memberMap.get(member.getId());
-                        if (isEmpty(value)) {
+                    if (Condition.Type.COMPARE == groupCondition.getType()) {
+                        CompareCondition cc = (CompareCondition) groupCondition;
+                        if (!dataIdMemberMap.containsKey(cc.getData2Id())) {
                             throw new IllegalArgumentException(
-                                    "Invalid mapping. DataId=[" + dataId + "], Member=[" + member.getId()
-                                            + "], value=[" + value + "]");
+                                    "Missing dataIdMap entry for CompareCondition data2Id token ["
+                                            + cc.getData2Id() + "]");
+                        }
+                    }
+                    for (Entry<String, Map<String, String>> entry : dataIdMemberMap.entrySet()) {
+                        String dataId = entry.getKey();
+                        Map<String, String> memberMap = entry.getValue();
+                        if (memberMap.size() != memberTriggers.size()) {
+                            throw new IllegalArgumentException("memberMap size [" + memberMap.size() + "] for dataId ["
+                                    + dataId + "] must equal number of member triggers [" + memberTriggers.size()
+                                    + "]");
+                        }
+                        for (Trigger member : memberTriggers) {
+                            String value = memberMap.get(member.getId());
+                            if (isEmpty(value)) {
+                                throw new IllegalArgumentException(
+                                        "Invalid mapping. DataId=[" + dataId + "], Member=[" + member.getId()
+                                                + "], value=[" + value + "]");
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // ensure conditions are set properly
-        for (Condition groupCondition : groupConditions) {
-            groupCondition.setTenantId(group.getTenantId());
-            groupCondition.setTriggerId(group.getId());
-            groupCondition.setTriggerMode(triggerMode);
-        }
-
-        // set conditions on the members
-        Map<String, String> dataIdMap = new HashMap<>();
-        Collection<Condition> memberConditions = new ArrayList<>(groupConditions.size());
-        for (Trigger member : memberTriggers) {
-            dataIdMap.clear();
-            memberConditions.clear();
-            for (Entry<String, Map<String, String>> entry : dataIdMemberMap.entrySet()) {
-                dataIdMap.put(entry.getKey(), entry.getValue().get(member.getId()));
-            }
-
+            // ensure conditions are set properly
             for (Condition groupCondition : groupConditions) {
-                Condition memberCondition = getMemberCondition(member, groupCondition, dataIdMap);
-                memberConditions.add(memberCondition);
+                groupCondition.setTenantId(group.getTenantId());
+                groupCondition.setTriggerId(group.getId());
+                groupCondition.setTriggerMode(triggerMode);
             }
-            Collection<Condition> memberConditionSet = setConditions(tenantId, member.getId(), triggerMode,
-                    memberConditions);
-            if (log.isDebugEnabled()) {
-                log.debug("Member condition set: " + memberConditionSet);
-            }
-        }
 
-        // set conditions on the group trigger
-        return setConditions(tenantId, groupId, triggerMode, groupConditions);
+            // set conditions on the members
+            Map<String, String> dataIdMap = new HashMap<>();
+            Collection<Condition> memberConditions = new ArrayList<>(groupConditions.size());
+            for (Trigger member : memberTriggers) {
+                dataIdMap.clear();
+                memberConditions.clear();
+                for (Entry<String, Map<String, String>> entry : dataIdMemberMap.entrySet()) {
+                    dataIdMap.put(entry.getKey(), entry.getValue().get(member.getId()));
+                }
+
+                for (Condition groupCondition : groupConditions) {
+                    Condition memberCondition = getMemberCondition(member, groupCondition, dataIdMap);
+                    memberConditions.add(memberCondition);
+                }
+                Collection<Condition> memberConditionSet = setConditions(tenantId, member.getId(), triggerMode,
+                        memberConditions);
+                if (log.isDebugEnabled()) {
+                    log.debug("Member condition set: " + memberConditionSet);
+                }
+            }
+
+            // set conditions on the group trigger
+            return setConditions(tenantId, groupId, triggerMode, groupConditions);
+
+        } finally {
+            releaseNotifications();
+        }
     }
 
     private void updateMemberTriggerDataIdMap(String tenantId, String memberTriggerId, Map<String, String> dataIdMap)
@@ -2770,15 +2858,50 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void notifyListeners(DefinitionsEvent de) {
+        if (isDeferredNotifications()) {
+            deferredNotifications.add(de);
+            return;
+        }
+
         if (log.isDebugEnabled()) {
-            log.debugf("Notifying applicable listeners %s of event", alertsContext.getDefinitionListeners(), de);
+            log.debugf("Notifying applicable listeners %s of event %s", alertsContext.getDefinitionListeners(), de);
         }
         alertsContext.getDefinitionListeners().entrySet().stream()
                 .filter(e -> e.getValue().contains(de.getType()))
                 .forEach(e -> {
                     log.debugf("Notified Listener %s of %s", e.getKey(), de.getType().name());
-                    e.getKey().onChange(de);
+                    e.getKey().onChange(Collections.singleton(de));
                 });
+    }
+
+    private void notifyListenersDeferred() {
+        if (deferredNotifications.isEmpty()) {
+            return;
+        }
+
+        Set<DefinitionsEvent> notifications = deferredNotifications;
+        deferredNotifications = new HashSet<>();
+
+        Set<DefinitionsEvent.Type> notificationTypes = notifications.stream()
+                .map(n -> n.getType())
+                .collect(Collectors.toSet());
+
+        if (log.isDebugEnabled()) {
+            log.debugf("Notifying applicable listeners %s of deferred events %s",
+                    alertsContext.getDefinitionListeners(), notifications);
+        }
+        alertsContext.getDefinitionListeners().entrySet().stream()
+                .filter(e -> shouldNotify(e.getValue(), notificationTypes))
+                .forEach(e -> {
+                    log.debugf("Notified Listener %s of %s", e.getKey(), notificationTypes);
+                    e.getKey().onChange(notifications);
+                });
+    }
+
+    private boolean shouldNotify(Set<DefinitionsEvent.Type> listenerTypes, Set<DefinitionsEvent.Type> eventTypes) {
+        HashSet<DefinitionsEvent.Type> intersection = new HashSet<>(listenerTypes);
+        intersection.retainAll(eventTypes);
+        return !intersection.isEmpty();
     }
 
     @Override
@@ -2809,17 +2932,21 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (null == strategy) {
             throw new IllegalArgumentException("ImportType startegy must be not null");
         }
+
         definitions.updateTenant(tenantId);
         Definitions imported = new Definitions();
+
         try {
+            deferNotifications();
+
             Collection<Trigger> existingTriggers = selectTriggers(tenantId);
-            Map<String, Set<String>> existingDefinitions = getActionDefinitionIds(tenantId);
+            Map<String, Set<String>> existingActionDefinitions = getActionDefinitionIds(tenantId);
             if (strategy.equals(ImportType.DELETE)) {
                 msgLog.warningDeleteDefinitionsTenant(tenantId);
                 for (Trigger t : existingTriggers) {
                     removeTrigger(t);
                 }
-                for (Entry<String, Set<String>> entry : existingDefinitions.entrySet()) {
+                for (Entry<String, Set<String>> entry : existingActionDefinitions.entrySet()) {
                     String actionPlugin = entry.getKey();
                     for (String actionId : entry.getValue()) {
                         removeActionDefinition(tenantId, actionPlugin, actionId);
@@ -2831,8 +2958,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 for (ActionDefinition a : definitions.getActions()) {
                     a.setTenantId(tenantId);
                     if (!isEmpty(a)) {
-                        boolean existing = existingDefinitions.containsKey(a.getActionPlugin()) &&
-                                existingDefinitions.get(a.getActionPlugin()).contains(a.getActionId());
+                        boolean existing = existingActionDefinitions.containsKey(a.getActionPlugin()) &&
+                                existingActionDefinitions.get(a.getActionPlugin()).contains(a.getActionId());
                         switch (strategy) {
                             case DELETE:
                                 addActionDefinition(tenantId, a);
@@ -2909,7 +3036,10 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
+        } finally {
+            releaseNotifications();
         }
+
         return imported;
     }
 
