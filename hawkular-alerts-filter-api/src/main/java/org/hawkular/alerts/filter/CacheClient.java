@@ -40,9 +40,10 @@ import org.infinispan.Cache;
 @ApplicationScoped
 public class CacheClient {
 
-    /** key=CacheKey, value="" */
+    // It stores a list of triggerIds used per key (tenantId, dataId).
+    // This cache is used by CacheClient to check wich dataIds are published and forwarded from metrics.
     @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/publish")
-    private Cache<CacheKey, String> cache;
+    private Cache<CacheKey, Set<String>> cache;
 
     public Set<CacheKey> keySet() {
         return cache.keySet();
@@ -52,7 +53,7 @@ public class CacheClient {
         return cache.containsKey(key);
     }
 
-    public String get(CacheKey key) {
+    public Set<String> get(CacheKey key) {
         return cache.get(key);
     }
 
@@ -85,7 +86,7 @@ public class CacheClient {
     /**
      *  This is here for testing purposes only and should not be called in production code.
      */
-    public void addTestKey(CacheKey key, String value) {
+    public void addTestKey(CacheKey key, Set<String> value) {
         cache.put(key, value);
     }
 }

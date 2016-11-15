@@ -226,6 +226,7 @@
               <excludes>
                 <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
                 <excludeFile>org/hawkular/alerts/rest/PerfCrudITest.class</excludeFile>
+                <excludeFile>org/hawkular/alerts/rest/PerfImportITest.class</excludeFile>
                 <excludeFile>org/hawkular/alerts/rest/CORSITest.class</excludeFile>
                 <exclude>${hawkular.itest-exclude}</exclude>
               </excludes>
@@ -497,6 +498,7 @@
                     <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
                     <excludeFile>org/hawkular/alerts/rest/PerfCrudITest.class</excludeFile>
                     <excludeFile>org/hawkular/alerts/rest/PerfSendITest.class</excludeFile>
+                    <excludeFile>org/hawkular/alerts/rest/PerfImportITest.class</excludeFile>
                     <exclude>${hawkular.itest-exclude}</exclude>
                   </excludes>
                 </configuration>
@@ -761,6 +763,7 @@
                   <includes>
                     <include>org/hawkular/alerts/rest/PerfCrudITest.class</include>
                     <include>org/hawkular/alerts/rest/PerfSendITest.class</include>
+                    <include>org/hawkular/alerts/rest/PerfImportITest.class</include>
                   </includes>
                   <excludes>
                     <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>

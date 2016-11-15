@@ -40,6 +40,7 @@
       <local-cache name="triggers"/>
       <local-cache name="data"/>
       <local-cache name="publish"/>
+      <local-cache name="dataIds" />
       <local-cache name="schema"/>
     </cache-container>
   </xsl:template>

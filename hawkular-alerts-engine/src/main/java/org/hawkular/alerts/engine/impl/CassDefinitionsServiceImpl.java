@@ -2052,6 +2052,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         // Get rid of the prior condition set
         removeConditions(tenantId, triggerId, triggerMode);
 
+
+        Set<String> dataIds = new HashSet<>();
         // Now add the new condition set
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
@@ -2071,6 +2073,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 aCond.getTriggerId(), aCond.getTriggerMode().name(), aCond.getContext(),
                                 aCond.getConditionSetSize(), aCond.getConditionSetIndex(),
                                 aCond.getConditionId(), aCond.getDataId(), aCond.getOperator().name())));
+                        dataIds.add(aCond.getDataId());
                         break;
                     case COMPARE:
                         CompareCondition cCond = (CompareCondition) cond;
@@ -2080,6 +2083,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 cCond.getConditionId(), cCond.getDataId(), cCond.getOperator().name(),
                                 cCond.getData2Id(),
                                 cCond.getData2Multiplier())));
+                        dataIds.add(cCond.getDataId());
+                        dataIds.add(cCond.getData2Id());
                         break;
                     case EVENT:
                         EventCondition evCond = (EventCondition) cond;
@@ -2087,6 +2092,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 evCond.getTriggerId(), evCond.getTriggerMode().name(), evCond.getContext(),
                                 evCond.getConditionSetSize(), evCond.getConditionSetIndex(), evCond.getConditionId(),
                                 evCond.getDataId(), evCond.getExpression())));
+                        dataIds.add(evCond.getDataId());
                         break;
                     case EXTERNAL:
                         ExternalCondition eCond = (ExternalCondition) cond;
@@ -2094,6 +2100,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 eCond.getTriggerId(), eCond.getTriggerMode().name(), eCond.getContext(),
                                 eCond.getConditionSetSize(), eCond.getConditionSetIndex(), eCond.getConditionId(),
                                 eCond.getDataId(), eCond.getAlerterId(), eCond.getExpression())));
+                        dataIds.add(eCond.getDataId());
                         break;
                     case MISSING:
                         MissingCondition mCond = (MissingCondition) cond;
@@ -2101,6 +2108,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 mCond.getTriggerId(), mCond.getTriggerMode().name(), mCond.getContext(),
                                 mCond.getConditionSetSize(), mCond.getConditionSetIndex(), mCond.getConditionId(),
                                 mCond.getDataId(), mCond.getInterval())));
+                        dataIds.add(mCond.getDataId());
                         break;
                     case RANGE:
                         ThresholdRangeCondition rCond = (ThresholdRangeCondition) cond;
@@ -2109,6 +2117,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 rCond.getConditionSetSize(), rCond.getConditionSetIndex(), rCond.getConditionId(),
                                 rCond.getDataId(), rCond.getOperatorLow().name(), rCond.getOperatorHigh().name(),
                                 rCond.getThresholdLow(), rCond.getThresholdHigh(), rCond.isInRange())));
+                        dataIds.add(rCond.getDataId());
                         break;
                     case RATE:
                         RateCondition rateCond = (RateCondition) cond;
@@ -2117,6 +2126,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 rateCond.getConditionSetSize(), rateCond.getConditionSetIndex(),
                                 rateCond.getConditionId(), rateCond.getDataId(), rateCond.getDirection().name(),
                                 rateCond.getPeriod().name(), rateCond.getOperator().name(), rateCond.getThreshold())));
+                        dataIds.add(rateCond.getDataId());
                         break;
                     case STRING:
                         StringCondition sCond = (StringCondition) cond;
@@ -2125,6 +2135,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 sCond.getConditionSetSize(), sCond.getConditionSetIndex(), sCond.getConditionId(),
                                 sCond.getDataId(), sCond.getOperator().name(), sCond.getPattern(),
                                 sCond.isIgnoreCase())));
+                        dataIds.add(sCond.getDataId());
                         break;
                     case THRESHOLD:
                         ThresholdCondition tCond = (ThresholdCondition) cond;
@@ -2133,6 +2144,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 tCond.getConditionSetSize(), tCond.getConditionSetIndex(),
                                 tCond.getConditionId(), tCond.getDataId(), tCond.getOperator().name(),
                                 tCond.getThreshold())));
+                        dataIds.add(tCond.getDataId());
                         break;
                     default:
                         throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
@@ -2149,7 +2161,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.reloadTrigger(tenantId, triggerId);
         }
 
-        notifyListeners(new DefinitionsEvent(Type.TRIGGER_CONDITION_CHANGE, tenantId, triggerId));
+        notifyListeners(new DefinitionsEvent(Type.TRIGGER_CONDITION_CHANGE, tenantId, triggerId, dataIds));
 
         return conditions;
     }
@@ -2857,12 +2869,11 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         alertsContext.registerDefinitionListener(listener, eventType, eventTypes);
     }
 
-    private void notifyListeners(DefinitionsEvent de) {
+    private void notifyListeners(final DefinitionsEvent de) {
         if (isDeferredNotifications()) {
             deferredNotifications.add(de);
             return;
         }
-
         if (log.isDebugEnabled()) {
             log.debugf("Notifying applicable listeners %s of event %s", alertsContext.getDefinitionListeners(), de);
         }

@@ -51,6 +51,12 @@ class PerfCrudITest extends AbstractITestBase {
 
         int numTriggers = 2000;
         long startCall, endCall, timeCall, numCalls = 0, totalTimeCalls = 0, more1sec = 0;
+        long numPostTrigger = 0, numDeleteTrigger = 0;
+        long totalPostTrigger = 0, totalDeleteTrigger = 0;
+        long numPostDampening = 0, numGetDampening = 0, numPutDampening = 0, numDeleteDampening = 0;
+        long totalPostDampening = 0, totalGetDampening = 0, totalPutDampening = 0, totalDeleteDampening = 0;
+        long numPutConditions = 0, numGetConditions = 0;
+        long totalPutConditions = 0, totalGetConditions = 0;
 
         for (int i = 0; i < numTriggers; i++) {
 
@@ -61,6 +67,8 @@ class PerfCrudITest extends AbstractITestBase {
             endCall = System.currentTimeMillis();
             numCalls++;
             timeCall = (endCall - startCall);
+            numDeleteTrigger++;
+            totalDeleteTrigger += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -74,6 +82,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(200, resp.status)
             numCalls++;
             timeCall = (endCall - startCall);
+            numPostTrigger++;
+            totalPostTrigger += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -90,6 +100,8 @@ class PerfCrudITest extends AbstractITestBase {
             d = resp.data // get the assigned dampeningId
             numCalls++;
             timeCall = (endCall - startCall);
+            numPostDampening++;
+            totalPostDampening += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -102,6 +114,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals("RELAXED_COUNT", resp.data.type)
             numCalls++;
             timeCall = (endCall - startCall);
+            numGetDampening++;
+            totalGetDampening += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -114,6 +128,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(200, resp.status)
             numCalls++;
             timeCall = (endCall - startCall);
+            numPutDampening++;
+            totalPutDampening += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -126,6 +142,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals("STRICT", resp.data.type)
             numCalls++;
             timeCall = (endCall - startCall);
+            numGetDampening++;
+            totalGetDampening += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -138,6 +156,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(1, resp.data.size())
             numCalls++;
             timeCall = (endCall - startCall);
+            numGetDampening++;
+            totalGetDampening += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -151,17 +171,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals("test-crud-" + i, resp.data[0].triggerId)
             numCalls++;
             timeCall = (endCall - startCall);
-            if (timeCall > 1000) {
-                more1sec++;
-            }
-            totalTimeCalls += timeCall;
-
-            startCall = System.currentTimeMillis();
-            resp = client.delete(path: "triggers/test-crud-" + i + "/dampenings/" + d.getDampeningId())
-            endCall = System.currentTimeMillis();
-            assertEquals(200, resp.status)
-            numCalls++;
-            timeCall = (endCall - startCall);
+            numGetDampening++;
+            totalGetDampening += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -183,6 +194,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(2, resp.data.size())
             numCalls++;
             timeCall = (endCall - startCall);
+            numPutConditions++;
+            totalPutConditions += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -195,6 +208,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(2, resp.data.size())
             numCalls++;
             timeCall = (endCall - startCall);
+            numGetConditions++;
+            totalGetConditions += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -208,6 +223,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(200, resp.status)
             numCalls++;
             timeCall = (endCall - startCall);
+            numPutConditions++;
+            totalPutConditions += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -220,6 +237,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals("LTE", resp.data[0].operator)
             numCalls++;
             timeCall = (endCall - startCall);
+            numGetConditions++;
+            totalGetConditions += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -234,17 +253,33 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(200, resp.status)
             numCalls++;
             timeCall = (endCall - startCall);
+            numPutConditions++;
+            totalPutConditions += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
             totalTimeCalls += timeCall;
-
             startCall = System.currentTimeMillis();
             resp = client.get(path: "triggers/test-crud-" + i + "/conditions")
             endCall = System.currentTimeMillis();
             assertEquals(1, resp.data.size())
             numCalls++;
             timeCall = (endCall - startCall);
+            numGetConditions++;
+            totalGetConditions += timeCall;
+            if (timeCall > 1000) {
+                more1sec++;
+            }
+            totalTimeCalls += timeCall;
+
+            startCall = System.currentTimeMillis();
+            resp = client.delete(path: "triggers/test-crud-" + i + "/dampenings/" + d.getDampeningId())
+            endCall = System.currentTimeMillis();
+            assertEquals(200, resp.status)
+            numCalls++;
+            timeCall = (endCall - startCall);
+            numDeleteDampening++;
+            totalDeleteDampening += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -256,6 +291,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(200, resp.status)
             numCalls++;
             timeCall = (endCall - startCall);
+            numDeleteTrigger++;
+            totalDeleteTrigger += timeCall;
             if (timeCall > 1000) {
                 more1sec++;
             }
@@ -265,7 +302,22 @@ class PerfCrudITest extends AbstractITestBase {
             logger.info("Total calls: " + numCalls);
             logger.info("Avg: " + ((double)totalTimeCalls / (double)numCalls) + " ms");
             logger.info("> 1 sec: " + more1sec);
-
+            logger.info("POST   Trigger #: " + numPostTrigger);
+            logger.info("POST   Trigger Avg: " + ((double)totalPostTrigger / (double)numPostTrigger) + " ms");
+            logger.info("DELETE Trigger #: " + numDeleteTrigger);
+            logger.info("DELETE Trigger Avg: " + ((double)totalDeleteTrigger / (double)numDeleteTrigger) + " ms");
+            logger.info("GET    Dampening #: " + numGetDampening);
+            logger.info("GET    Dampening Avg: " + ((double)totalGetDampening / (double)numGetDampening) + " ms");
+            logger.info("POST   Dampening #: " + numPostDampening);
+            logger.info("POST   Dampening Avg: " + ((double)totalPostDampening / (double)numPostDampening) + " ms");
+            logger.info("PUT    Dampening #: " + numPutDampening);
+            logger.info("PUT    Dampening Avg: " + ((double)totalPutDampening / (double)numPutDampening) + " ms");
+            logger.info("DELETE Dampening #: " + numDeleteDampening);
+            logger.info("DELETE Dampening Avg: " + ((double)totalDeleteDampening / (double)numDeleteDampening) + " ms");
+            logger.info("GET    Conditions #: " + numGetConditions);
+            logger.info("GET    Conditions Avg: " + ((double)totalGetConditions / (double)numGetConditions) + " ms");
+            logger.info("PUT    Conditions #: " + numPutConditions);
+            logger.info("PUT    Conditions Avg: " + ((double)totalPutConditions / (double)numPutConditions) + " ms");
         }
 
     }
@@ -279,6 +331,12 @@ class PerfCrudITest extends AbstractITestBase {
 
         int numTriggers = 2000;
         long startCall, endCall, timeCall, numCalls = 0, totalTimeCalls = 0, more1sec = 0;
+        long numPostTrigger = 0, numDeleteTrigger = 0;
+        long totalPostTrigger = 0, totalDeleteTrigger = 0;
+        long numPostDampening = 0;
+        long totalPostDampening = 0;
+        long numPutConditionsFiring = 0, numPutConditionsAutoresolve = 0;
+        long totalPutConditionsFiring = 0, totalPutConditionsAutoresolve = 0;
 
         for (int i = 0; i < numTriggers; i++) {
 
@@ -289,6 +347,8 @@ class PerfCrudITest extends AbstractITestBase {
             endCall = System.currentTimeMillis();
             numCalls++;
             timeCall = (endCall - startCall);
+            numDeleteTrigger++;
+            totalDeleteTrigger += timeCall;
             if (timeCall > 1000) {
                 logger.warn("WARNING: >1s call with " + timeCall + " ms (delete)")
                 more1sec++;
@@ -303,6 +363,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(200, resp.status)
             numCalls++;
             timeCall = (endCall - startCall);
+            numPostTrigger++;
+            totalPostTrigger += timeCall;
             if (timeCall > 1000) {
                 logger.warn("WARNING: >1s call with " + timeCall + " ms (trigger)")
                 more1sec++;
@@ -319,6 +381,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(200, resp.status)
             numCalls++;
             timeCall = (endCall - startCall);
+            numPostDampening++;
+            totalPostDampening += timeCall;
             if (timeCall > 1000) {
                 logger.warn("WARNING: >1s call with " + timeCall + " ms (dampenings)")
                 more1sec++;
@@ -342,6 +406,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(2, resp.data.size())
             numCalls++;
             timeCall = (endCall - startCall);
+            numPutConditionsFiring++;
+            totalPutConditionsFiring += timeCall;
             if (timeCall > 1000) {
                 logger.warn("WARNING: >1s call with " + timeCall + " ms (firing)")
                 more1sec++;
@@ -350,9 +416,9 @@ class PerfCrudITest extends AbstractITestBase {
 
             // Autoresolve Conditions
 
-            ThresholdCondition testAutoCond1 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
+            ThresholdCondition testAutoCond1 = new ThresholdCondition("test-crud-" + i, Mode.AUTORESOLVE,
                     "No-Metric", ThresholdCondition.Operator.LTE, 10.12);
-            ThresholdCondition testAutoCond2 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
+            ThresholdCondition testAutoCond2 = new ThresholdCondition("test-crud-" + i, Mode.AUTORESOLVE,
                     "No-Metric", ThresholdCondition.Operator.GTE, 4.10);
             Collection<Condition> autoConditions = new ArrayList<>(2);
             autoConditions.add( testAutoCond1 );
@@ -364,6 +430,8 @@ class PerfCrudITest extends AbstractITestBase {
             assertEquals(2, resp.data.size())
             numCalls++;
             timeCall = (endCall - startCall);
+            numPutConditionsAutoresolve++;
+            totalPutConditionsAutoresolve += timeCall;
             if (timeCall > 1000) {
                 logger.warn("WARNING: >1s call with " + timeCall + " ms (autoresolve)")
                 more1sec++;
@@ -374,6 +442,18 @@ class PerfCrudITest extends AbstractITestBase {
             logger.info("Total calls: " + numCalls);
             logger.info("Avg: " + ((double)totalTimeCalls / (double)numCalls) + " ms");
             logger.info("> 1 sec: " + more1sec);
+            logger.info("POST   Trigger #: " + numPostTrigger);
+            logger.info("POST   Trigger Avg: " + ((double)totalPostTrigger / (double)numPostTrigger) + " ms");
+            logger.info("DELETE Trigger #: " + numDeleteTrigger);
+            logger.info("DELETE Trigger Avg: " + ((double)totalDeleteTrigger / (double)numDeleteTrigger) + " ms");
+            logger.info("POST   Dampening #: " + numPostDampening);
+            logger.info("POST   Dampening Avg: " + ((double)totalPostDampening / (double)numPostDampening) + " ms");
+            logger.info("PUT    Conditions Firing #: " + numPutConditionsFiring);
+            logger.info("PUT    Conditions Firing Avg: "
+                    + ((double)totalPutConditionsFiring / (double)numPutConditionsFiring) + " ms");
+            logger.info("PUT    Conditions Autoresolve #: " + numPutConditionsFiring);
+            logger.info("PUT    Conditions Autoresolve Avg: "
+                    + ((double)totalPutConditionsAutoresolve / (double)numPutConditionsAutoresolve) + " ms");
 
         }
 
@@ -382,9 +462,10 @@ class PerfCrudITest extends AbstractITestBase {
     /*
         This test is designed to study performance on REST endpoints.
         This is a concurrent version where dampening and conditions are called concurrently.
+
+        This is a pure experimental test.
      */
-    @Test
-    void concurrentlWithAutoResolve() {
+    void concurrentWithAutoResolve() {
 
         def numTriggers = 2000;
         def numCalls = 0

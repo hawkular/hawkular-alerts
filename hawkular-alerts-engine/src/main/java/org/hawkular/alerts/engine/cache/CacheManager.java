@@ -19,6 +19,7 @@ package org.hawkular.alerts.engine.cache;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_CONDITION_CHANGE;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_REMOVE;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -38,12 +39,17 @@ import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.filter.CacheKey;
 import org.infinispan.Cache;
-import org.infinispan.CacheSet;
 import org.jboss.logging.Logger;
 
 /**
  * Manages the cache of globally active dataIds. Incoming Data and Events with Ids not in the cache will be filtered
  * away.  Only Data and Events with active Ids will be forwarded (published) to the engine for evaluation.
+ *
+ * This implementation design initialize the cache on each new node.
+ * Definitions events are not propagated into the cluster as there is not a real use case for them and
+ * it can overload the clustering traffic.
+ * A coordinator strategy to initialize will not help either as each new node can became coordinator.
+ * So, it is tradeoff to maintain an extra state or let each node initialize the publish* caches.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -60,18 +66,20 @@ public class CacheManager {
     private static final String RESET_PUBLISH_CACHE_PROP = "hawkular-alerts.reset-publish-cache";
     private static final String RESET_PUBLISH_CACHE_ENV = "RESET_PUBLISH_CACHE";
 
-    private volatile boolean updateRequested = false;
-    private volatile boolean updating = false;
-
     @EJB
     PropertiesService properties;
 
     @EJB
     DefinitionsService definitions;
 
-    // Note, Only the cache key is being used to today. The values are currently set to "" and reserved for future use.
+    // It stores a list of dataIds used per key (tenantId, triggerId).
+    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/dataIds")
+    private Cache<TriggerKey, Set<String>> publishDataIdsCache;
+
+    // It stores a list of triggerIds used per key (tenantId, dataId).
+    // This cache is used by CacheClient to check wich dataIds are published and forwarded from metrics.
     @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/publish")
-    private Cache<CacheKey, String> publishCache;
+    private Cache<CacheKey, Set<String>> publishCache;
 
     @PostConstruct
     public void init() {
@@ -83,143 +91,158 @@ public class CacheManager {
             if (resetCache) {
                 msgLog.warnClearPublishCache();
                 publishCache.clear();
+                publishDataIdsCache.clear();
             }
             msgLog.infoInitPublishCache();
-            requestCacheUpdate();
 
-            definitions.registerListener(e -> {
-                requestCacheUpdate();
+            initialCacheUpdate();
+
+            definitions.registerListener(events -> {
+                events.stream().forEach(e -> {
+                    String tenantId = e.getTargetTenantId();
+                    String triggerId = e.getTargetId();
+                    TriggerKey triggerKey = new TriggerKey(tenantId, triggerId);
+                    Set<String> oldDataIds = publishDataIdsCache.get(triggerKey);
+                    removePublishCache(tenantId, triggerId, oldDataIds);
+                    if (e.getType().equals(TRIGGER_CONDITION_CHANGE)) {
+                        Set<String> newDataIds = e.getDataIds();
+                        publishDataIdsCache.put(triggerKey, newDataIds);
+                        addPublishCache(tenantId, triggerId, newDataIds);
+                    }
+                });
             }, TRIGGER_CONDITION_CHANGE, TRIGGER_REMOVE);
+
 
         } else {
             msgLog.warnDisabledPublishCache();
         }
     }
 
-    // Just run updateCache one time if multiple requests come in while an update is already in progress...
-    private void requestCacheUpdate() {
-        log.debug("Cache update requested");
-        if (updateRequested) {
-            log.debug("Cache update, redundant request ignored.");
-            return;
-        }
-
-        updateRequested = true;
-
-        if (!updating) {
-            updateCache();
+    private void removePublishCache(String tenantId, String triggerId, Set<String> dataIds) {
+        if (!isEmpty(dataIds)) {
+            dataIds.stream().forEach(dataId -> {
+                CacheKey cacheKey = new CacheKey(tenantId, dataId);
+                Set<String> triggerIds = publishCache.get(cacheKey);
+                if (!isEmpty(triggerIds)) {
+                    triggerIds.remove(triggerId);
+                    if (triggerIds.isEmpty()) {
+                        publishCache.remove(cacheKey);
+                    } else {
+                        publishCache.put(cacheKey, triggerIds);
+                    }
+                }
+            });
         }
     }
 
-    private synchronized void updateCache() {
+    private void addPublishCache(String tenantId, String triggerId, Set<String> dataIds) {
+        if (!isEmpty(dataIds)) {
+            dataIds.stream().forEach(dataId -> {
+                CacheKey cacheKey = new CacheKey(tenantId, dataId);
+                Set<String> triggerIds = publishCache.get(cacheKey);
+                if (triggerIds == null) {
+                    triggerIds = new HashSet<>();
+                }
+                triggerIds.add(triggerId);
+                publishCache.put(cacheKey, triggerIds);
+            });
+        }
+    }
+
+    private void initialCacheUpdate() {
         try {
-            updating = true;
+            log.debug("Initial Cache update in progress..");
 
-            while (updateRequested) {
-                updateRequested = false;
-                log.debug("Cache update in progress..");
-
-                CacheSet<CacheKey> currentlyPublished = publishCache.keySet();
-
-                log.debugf("Published before update=%s", currentlyPublished.size());
-                if (log.isTraceEnabled()) {
-                    publishCache.entrySet().stream().forEach(e -> log.tracef("Published: %s", e.getValue()));
+            publishCache.startBatch();
+            publishDataIdsCache.startBatch();
+            // This will include group trigger conditions, which is OK because for data-driven group triggers the
+            // dataIds will likely be the dataIds from the group level, made distinct by the source.
+            Collection<Condition> conditions = definitions.getAllConditions();
+            for (Condition c : conditions) {
+                String triggerId = c.getTriggerId();
+                TriggerKey triggerKey = new TriggerKey(c.getTenantId(), triggerId);
+                Set<String> dataIds = new HashSet<>();
+                dataIds.add(c.getDataId());
+                if (c instanceof CompareCondition) {
+                    String data2Id = ((CompareCondition) c).getData2Id();
+                    dataIds.add(data2Id);
                 }
-
-                // This will include group trigger conditions, which is OK because for data-driven group triggers the
-                // dataIds will likely be the dataIds from the group level, made distinct by the source.
-                Collection<Condition> conditions = definitions.getAllConditions();
-                final Set<CacheKey> activeKeys = new HashSet<>();
-                for (Condition c : conditions) {
-                    CacheKey cacheKey = new CacheKey(c.getTenantId(), c.getDataId());
-                    if (!activeKeys.contains(cacheKey)) {
-                        activeKeys.add(cacheKey);
-                        if (!currentlyPublished.contains(cacheKey)) {
-                            publish(cacheKey);
-                        }
-                    }
-                    if (c instanceof CompareCondition) {
-                        String data2Id = ((CompareCondition) c).getData2Id();
-                        CacheKey cacheKey2 = new CacheKey(c.getTenantId(), data2Id);
-                        if (!activeKeys.contains(cacheKey2)) {
-                            activeKeys.add(cacheKey2);
-                            if (!currentlyPublished.contains(cacheKey2)) {
-                                publish(cacheKey2);
-                            }
-                        }
-                    }
-
+                Set<String> prevDataIds = publishDataIdsCache.get(triggerKey);
+                if (prevDataIds == null) {
+                    prevDataIds = new HashSet<>();
                 }
-
-                final Set<CacheKey> doomedKeys = new HashSet<>();
-                if (!currentlyPublished.isEmpty()) {
-                    currentlyPublished.stream()
-                            .filter(k -> !activeKeys.contains(k))
-                            .forEach(k -> doomedKeys.add(k));
-                }
-                unpublish(doomedKeys);
-
-                log.debugf("Published after update=%s", publishCache.size());
-                if (log.isTraceEnabled()) {
-                    publishCache.entrySet().stream().forEach(e -> log.tracef("Published: %s", e.getValue()));
-                }
+                prevDataIds.addAll(dataIds);
+                publishDataIdsCache.put(triggerKey, prevDataIds);
+                addPublishCache(c.getTenantId(), triggerId, dataIds);
             }
+            log.debugf("Published after update=%s", publishCache.size());
+            if (log.isTraceEnabled()) {
+                publishCache.entrySet().stream().forEach(e -> log.tracef("Published: %s", e.getValue()));
+            }
+            publishDataIdsCache.endBatch(true);
+            publishCache.endBatch(true);
         } catch (Exception e) {
             log.error("Failed to load conditions to create Id filters. All data being forwarded to alerting!", e);
+            publishDataIdsCache.endBatch(false);
+            publishCache.endBatch(false);
             return;
-        } finally {
-            log.debug("Cache updates complete.");
-            updating = false;
         }
     }
 
-    private void publish(CacheKey cacheKey) {
-        if (cacheKey != null && publishCache != null) {
-            // This logic assumes that alerting is the only writer for the shared publishCache
-            log.debugf("Publishing:%s ", cacheKey);
-            publishCache.put(cacheKey, "");
-
-            //            This alternative logic assumes that more writers can add/remove entries into the shared publishCache.
-            //
-            //            Set<String> updatedSubscribers;
-            //            if (publishCache.containsKey(metricId)) {
-            //                Set<String> subscribers = (Set<String>) publishCache.get(metricId);
-            //                if (!subscribers.contains(ALERTING)) {
-            //                    updatedSubscribers = new HashSet<>(subscribers);
-            //                    updatedSubscribers.add(ALERTING);
-            //                    publishCache.put(metricId, updatedSubscribers);
-            //                }
-            //            } else {
-            //                updatedSubscribers = new HashSet<>();
-            //                updatedSubscribers.add(ALERTING);
-            //                publishCache.put(metricId, updatedSubscribers);
-            //            }
-        }
+    private boolean isEmpty(Collection c) {
+        return c == null || c.isEmpty();
     }
 
-    private void unpublish(Set<CacheKey> cacheKeys) {
-        for (CacheKey cacheKey : cacheKeys) {
-            if (cacheKey != null && publishCache != null) {
-                //This logic assumes that alerting is the only writer for the shared publishCache
-                log.debugf("UN-Publishing:%s ", cacheKey);
-                publishCache.remove(cacheKey);
+    public static class TriggerKey implements Serializable {
+        private String tenantId;
+        private String triggerId;
 
-                //                This alternative logic assumes that more writers can add/remove entries into the shared publishCache.
-                //
-                //                if (publishCache.containsKey(metricId)) {
-                //                    Set<String> updatedSubscribers;
-                //                    Set<String> subscribers = (Set<String>) publishCache.get(metricId);
-                //                    if (subscribers.contains(ALERTING)) {
-                //                        updatedSubscribers = new HashSet<>(subscribers);
-                //                        updatedSubscribers.remove(ALERTING);
-                //                        if (updatedSubscribers.isEmpty()) {
-                //                            publishCache.remove(metricId);
-                //                        } else {
-                //                            publishCache.put(metricId, updatedSubscribers);
-                //                        }
-                //                    }
-                //                }
-            }
+        public TriggerKey(String tenantId, String triggerId) {
+            this.tenantId = tenantId;
+            this.triggerId = triggerId;
+        }
+
+        public String getTenantId() {
+            return tenantId;
+        }
+
+        public void setTenantId(String tenantId) {
+            this.tenantId = tenantId;
+        }
+
+        public String getTriggerId() {
+            return triggerId;
+        }
+
+        public void setTriggerId(String triggerId) {
+            this.triggerId = triggerId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            TriggerKey that = (TriggerKey) o;
+
+            if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
+            return triggerId != null ? triggerId.equals(that.triggerId) : that.triggerId == null;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = tenantId != null ? tenantId.hashCode() : 0;
+            result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "TriggerKey{" +
+                    "tenantId='" + tenantId + '\'' +
+                    ", triggerId='" + triggerId + '\'' +
+                    '}';
         }
     }
 }

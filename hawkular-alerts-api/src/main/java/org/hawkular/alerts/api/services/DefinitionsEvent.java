@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.services;
 
+import java.util.Set;
+
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
@@ -38,20 +40,26 @@ public class DefinitionsEvent {
     private Type type;
     private String targetTenantId;
     private String targetId;
+    private Set<String> dataIds;
 
     public DefinitionsEvent(Type type, Dampening dampening) {
-        this(type, dampening.getTenantId(), dampening.getDampeningId());
+        this(type, dampening.getTenantId(), dampening.getDampeningId(), null);
     }
 
     public DefinitionsEvent(Type type, Trigger trigger) {
-        this(type, trigger.getTenantId(), trigger.getId());
+        this(type, trigger.getTenantId(), trigger.getId(), null);
     }
 
     public DefinitionsEvent(Type type, String targetTenantId, String targetId) {
+        this(type, targetTenantId, targetId, null);
+    }
+
+    public DefinitionsEvent(Type type, String targetTenantId, String targetId, Set<String> dataIds) {
         super();
         this.type = type;
         this.targetTenantId = targetTenantId;
         this.targetId = targetId;
+        this.dataIds = dataIds;
     }
 
     public Type getType() {
@@ -66,10 +74,41 @@ public class DefinitionsEvent {
         return targetId;
     }
 
-    @Override
-    public String toString() {
-        return "DefinitionsEvent [type=" + type + ", targetTenantId=" + targetTenantId + ", targetId=" + targetId
-                + "]";
+    public Set<String> getDataIds() {
+        return dataIds;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DefinitionsEvent that = (DefinitionsEvent) o;
+
+        if (type != that.type) return false;
+        if (targetTenantId != null ? !targetTenantId.equals(that.targetTenantId) : that.targetTenantId != null)
+            return false;
+        if (targetId != null ? !targetId.equals(that.targetId) : that.targetId != null) return false;
+        return dataIds != null ? dataIds.equals(that.dataIds) : that.dataIds == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = type != null ? type.hashCode() : 0;
+        result = 31 * result + (targetTenantId != null ? targetTenantId.hashCode() : 0);
+        result = 31 * result + (targetId != null ? targetId.hashCode() : 0);
+        result = 31 * result + (dataIds != null ? dataIds.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "DefinitionsEvent{" +
+                "type=" + type +
+                ", targetTenantId='" + targetTenantId + '\'' +
+                ", targetId='" + targetId + '\'' +
+                ", dataIds=" + dataIds +
+                '}';
+    }
 }

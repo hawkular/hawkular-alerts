@@ -1060,7 +1060,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // ADD AutoResolve condition
         AvailabilityCondition autoResolveCond = new AvailabilityCondition("test-manual-autoresolve-trigger",
-                Mode.AUTORESOLVE, "test-autoresolve-avail", Operator.UP);
+                Mode.AUTORESOLVE, "test-manual-autoresolve-avail", Operator.UP);
 
         conditions.clear();
         conditions.add( autoResolveCond );
