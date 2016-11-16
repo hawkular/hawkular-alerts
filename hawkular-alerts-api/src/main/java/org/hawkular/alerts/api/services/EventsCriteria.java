@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,6 +36,7 @@ public class EventsCriteria {
     Collection<String> triggerIds = null;
     Map<String, String> tags = null;
     boolean thin = false;
+    Integer criteriaNoQuerySize = null;
 
     public EventsCriteria() {
         super();
@@ -144,6 +145,14 @@ public class EventsCriteria {
         this.thin = thin;
     }
 
+    public Integer getCriteriaNoQuerySize() {
+        return criteriaNoQuerySize;
+    }
+
+    public void setCriteriaNoQuerySize(Integer criteriaNoQuerySize) {
+        this.criteriaNoQuerySize = criteriaNoQuerySize;
+    }
+
     public boolean hasEventIdCriteria() {
         return null != eventId
                 || (null != eventIds && !eventIds.isEmpty());
@@ -179,7 +188,8 @@ public class EventsCriteria {
     public String toString() {
         return "EventsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", eventId=" + eventId
                 + ", eventIds=" + eventIds + ", category=" + category + ", categories=" + categories + ", triggerId="
-                + triggerId + ", triggerIds=" + triggerIds + ", tags=" + tags + ", thin=" + thin + "]";
+                + triggerId + ", triggerIds=" + triggerIds + ", tags=" + tags + ", thin=" + thin
+                + ", criteriaNoQuerySize=" + criteriaNoQuerySize + "]";
     }
 
 }

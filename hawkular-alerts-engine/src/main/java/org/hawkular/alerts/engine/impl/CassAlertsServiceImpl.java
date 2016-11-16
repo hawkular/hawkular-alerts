@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Local;
 import javax.ejb.Stateless;
@@ -54,6 +55,7 @@ import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
+import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl.IncomingData;
 import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl.IncomingEvents;
 import org.hawkular.alerts.engine.log.MsgLogger;
@@ -80,8 +82,14 @@ import com.google.common.util.concurrent.Futures;
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class CassAlertsServiceImpl implements AlertsService {
 
+    private static final String CRITERIA_NO_QUERY_SIZE = "hawkular-alerts.criteria-no-query-size";
+    private static final String CRITERIA_NO_QUERY_SIZE_ENV = "CRITERIA_NO_QUERY_SIZE";
+    private static final String CRITERIA_NO_QUERY_SIZE_DEFAULT = "200";
+
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassAlertsServiceImpl.class);
+
+    private int criteriaNoQuerySize;
 
     @EJB
     AlertsEngine alertsEngine;
@@ -95,9 +103,18 @@ public class CassAlertsServiceImpl implements AlertsService {
     @EJB
     IncomingDataManager incomingDataManager;
 
+    @EJB
+    PropertiesService properties;
+
     @Inject
     @CassClusterSession
     Session session;
+
+    @PostConstruct
+    public void init() {
+        criteriaNoQuerySize = Integer.valueOf(properties.getProperty(CRITERIA_NO_QUERY_SIZE,
+                CRITERIA_NO_QUERY_SIZE_ENV, CRITERIA_NO_QUERY_SIZE_DEFAULT));
+    }
 
     public CassAlertsServiceImpl() {
     }
@@ -120,8 +137,6 @@ public class CassAlertsServiceImpl implements AlertsService {
         PreparedStatement insertAlert = CassStatement.get(session, CassStatement.INSERT_ALERT);
         PreparedStatement insertAlertTrigger = CassStatement.get(session, CassStatement.INSERT_ALERT_TRIGGER);
         PreparedStatement insertAlertCtime = CassStatement.get(session, CassStatement.INSERT_ALERT_CTIME);
-        PreparedStatement insertAlertStatus = CassStatement.get(session, CassStatement.INSERT_ALERT_STATUS);
-        PreparedStatement insertAlertSeverity = CassStatement.get(session, CassStatement.INSERT_ALERT_SEVERITY);
         PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
 
         try {
@@ -134,12 +149,6 @@ public class CassAlertsServiceImpl implements AlertsService {
                         a.getTriggerId())));
                 futures.add(session.executeAsync(insertAlertCtime.bind(a.getTenantId(),
                         a.getAlertId(), a.getCtime())));
-                futures.add(session.executeAsync(insertAlertStatus.bind(a.getTenantId(),
-                        a.getAlertId(),
-                        a.getStatus().name())));
-                futures.add(session.executeAsync(insertAlertSeverity.bind(a.getTenantId(),
-                        a.getAlertId(),
-                        a.getSeverity().name())));
 
                 a.getTags().entrySet().stream().forEach(tag -> {
                     futures.add(session.executeAsync(insertTag.bind(a.getTenantId(), TagType.ALERT.name(),
@@ -464,16 +473,12 @@ public class CassAlertsServiceImpl implements AlertsService {
         return event;
     }
 
-    // TODO (jshaughn) The DB-Level filtering approach implemented below is a best-practice for dealing
+    // The DB-Level filtering approach implemented below is a best-practice for dealing
     // with Cassandra.  It's basically a series of queries, one for each filter, with a progressive
-    // intersection of the resulting ID set.  This will work well in most cases but we may want to consider
-    // an optimization for dealing with large Alert populations.  Certain filters dealing with low-cardinality
-    // values, like status and severity, could start pulling a large number if alert ids.  If we have reduced the
-    // result set to a small number, via the more narrowing filters, (TBD via perf tests, a threshold that makes
-    // sense), we may want to pull the resulting alerts and apply the low-cardinality filters here in the code,
-    // in a post-fetch step. For example, if we have filters "ctime > 123" and "status == Resolved", and the ctime
-    // filter returns 10 alertIds. We may want to pull the 10 alerts and apply the status filter in the code. For
-    // large Alert history, the status filter applied to the DB could return a huge set of ids.
+    // intersection of the resulting ID set.  This works well in most cases but not when filtering on
+    // low-cardinality fields, where the indexing is poor and the number of returned IDs could be vast for
+    // a single one, or set, of those few field values.  So, we leave those filters (status, severity) to the end,
+    // and then filter manually on the fetched set of Alerts.
     @Override
     public Page<Alert> getAlerts(String tenantId, AlertsCriteria criteria, Pager pager) throws Exception {
         if (isEmpty(tenantId)) {
@@ -499,11 +504,11 @@ public class CassAlertsServiceImpl implements AlertsService {
                     Set<String> alertIdsFilteredByAlerts = filterByAlerts(criteria);
                     if (activeFilter) {
                         alertIds.retainAll(alertIdsFilteredByAlerts);
-                        if (alertIds.isEmpty()) {
-                            return new Page<>(alerts, pager, 0);
-                        }
                     } else {
                         alertIds.addAll(alertIdsFilteredByAlerts);
+                    }
+                    if (alertIds.isEmpty()) {
+                        return new Page<>(alerts, pager, 0);
                     }
                     activeFilter = true;
                 }
@@ -515,11 +520,11 @@ public class CassAlertsServiceImpl implements AlertsService {
                     Set<String> alertIdsFilteredByTags = getIdsByTags(tenantId, TagType.ALERT, criteria.getTags());
                     if (activeFilter) {
                         alertIds.retainAll(alertIdsFilteredByTags);
-                        if (alertIds.isEmpty()) {
-                            return new Page<>(alerts, pager, 0);
-                        }
                     } else {
                         alertIds.addAll(alertIdsFilteredByTags);
+                    }
+                    if (alertIds.isEmpty()) {
+                        return new Page<>(alerts, pager, 0);
                     }
                     activeFilter = true;
                 }
@@ -531,125 +536,114 @@ public class CassAlertsServiceImpl implements AlertsService {
                     Set<String> alertIdsFilteredByTriggers = filterByTriggers(tenantId, criteria);
                     if (activeFilter) {
                         alertIds.retainAll(alertIdsFilteredByTriggers);
-                        if (alertIds.isEmpty()) {
-                            return new Page<>(alerts, pager, 0);
-                        }
                     } else {
                         alertIds.addAll(alertIdsFilteredByTriggers);
+                    }
+                    if (alertIds.isEmpty()) {
+                        return new Page<>(alerts, pager, 0);
                     }
                     activeFilter = true;
                 }
 
                 /*
-                    Get alertsIds filtered by time clause
+                    Get alertIds filtered by time clause
                  */
                 if (criteria.hasCTimeCriteria()) {
                     Set<String> alertIdsFilteredByTime = filterByCTime(tenantId, criteria);
                     if (activeFilter) {
                         alertIds.retainAll(alertIdsFilteredByTime);
-                        if (alertIds.isEmpty()) {
-                            return new Page<>(alerts, pager, 0);
-                        }
                     } else {
                         alertIds.addAll(alertIdsFilteredByTime);
+                    }
+                    if (alertIds.isEmpty()) {
+                        return new Page<>(alerts, pager, 0);
                     }
                     activeFilter = true;
                 }
 
                 /*
-                    Get alertsIds filtered by resolved time clause
+                    Get alertIds filtered by resolved time clause
                  */
                 if (criteria.hasResolvedTimeCriteria()) {
                     Set<String> alertIdsFilteredByResolvedTime = filterByResolvedTime(tenantId, criteria);
                     if (activeFilter) {
                         alertIds.retainAll(alertIdsFilteredByResolvedTime);
-                        if (alertIds.isEmpty()) {
-                            return new Page<>(alerts, pager, 0);
-                        }
                     } else {
                         alertIds.addAll(alertIdsFilteredByResolvedTime);
+                    }
+                    if (alertIds.isEmpty()) {
+                        return new Page<>(alerts, pager, 0);
                     }
                     activeFilter = true;
                 }
 
                 /*
-                    Get alertsIds filtered by ack time clause
+                    Get alertIds filtered by ack time clause
                  */
                 if (criteria.hasAckTimeCriteria()) {
                     Set<String> alertIdsFilteredByAckTime = filterByAckTime(tenantId, criteria);
                     if (activeFilter) {
                         alertIds.retainAll(alertIdsFilteredByAckTime);
-                        if (alertIds.isEmpty()) {
-                            return new Page<>(alerts, pager, 0);
-                        }
                     } else {
                         alertIds.addAll(alertIdsFilteredByAckTime);
                     }
+                    if (alertIds.isEmpty()) {
+                        return new Page<>(alerts, pager, 0);
+                    }
                     activeFilter = true;
                 }
 
                 /*
-                     Get alertsIds filtered by severities clause
+                    Below this point we filter manually  because the remaining filters have a low cardinality of
+                    values, and are not efficiently handled with database indexes and the intersection-based approach.
+                    Fetch the alerts now and proceed.
+                 */
+                if (activeFilter) {
+                    PreparedStatement selectAlertsByTenantAndAlert = CassStatement
+                            .get(session, CassStatement.SELECT_ALERT);
+                    List<ResultSetFuture> futures = alertIds.stream()
+                            .map(alertId -> session.executeAsync(selectAlertsByTenantAndAlert.bind(tenantId, alertId)))
+                            .collect(Collectors.toList());
+                    List<ResultSet> rsAlerts = Futures.allAsList(futures).get();
+                    rsAlerts.stream().forEach(r -> {
+                        for (Row row : r) {
+                            String payload = row.getString("payload");
+                            Alert alert = JsonUtil.fromJson(payload, Alert.class, thin);
+                            alerts.add(alert);
+                        }
+                    });
+                } else {
+                    // This is the worst-case scenario of criteria featuring only manual filtering.  Generate a
+                    // warning because clients should be discouraged from using such vague criteria.
+                    log.warnf("Only supplying Severity and/or Status can be slow and return large Sets: %s",
+                            criteria);
+                    fetchAllAlerts(tenantId, thin, alerts);
+                }
+
+                /*
+                     filter by severities
                  */
                 if (criteria.hasSeverityCriteria()) {
-                    Set<String> alertIdsFilteredBySeverity = filterBySeverities(tenantId, criteria);
-                    if (activeFilter) {
-                        alertIds.retainAll(alertIdsFilteredBySeverity);
-                        if (alertIds.isEmpty()) {
-                            return new Page<>(alerts, pager, 0);
-                        }
-                    } else {
-                        alertIds.addAll(alertIdsFilteredBySeverity);
+                    filterBySeverities(tenantId, criteria, alerts);
+                    if (alerts.isEmpty()) {
+                        return new Page<>(alerts, pager, 0);
                     }
-                    activeFilter = true;
                 }
 
                 /*
-                    Get alertsIds filtered by statuses clause
+                    filter by statuses
                  */
                 if (criteria.hasStatusCriteria()) {
-                    Set<String> alertIdsFilteredByStatus = filterByStatuses(tenantId, criteria);
-                    if (activeFilter) {
-                        alertIds.retainAll(alertIdsFilteredByStatus);
-                        if (alertIds.isEmpty()) {
-                            return new Page<>(alerts, pager, 0);
-                        }
-                    } else {
-                        alertIds.addAll(alertIdsFilteredByStatus);
+                    filterByStatuses(tenantId, criteria, alerts);
+                    if (alerts.isEmpty()) {
+                        return new Page<>(alerts, pager, 0);
                     }
-                    activeFilter = true;
                 }
-
-                /*
-                    If we have reached this point then we have at least 1 filtered alertId, so now
-                    get the resulting Alerts...
-                 */
-                PreparedStatement selectAlertsByTenantAndAlert = CassStatement
-                        .get(session, CassStatement.SELECT_ALERT);
-                List<ResultSetFuture> futures = alertIds.stream()
-                        .map(alertId -> session.executeAsync(selectAlertsByTenantAndAlert.bind(tenantId, alertId)))
-                        .collect(Collectors.toList());
-                List<ResultSet> rsAlerts = Futures.allAsList(futures).get();
-                rsAlerts.stream().forEach(r -> {
-                    for (Row row : r) {
-                        String payload = row.getString("payload");
-                        Alert alert = JsonUtil.fromJson(payload, Alert.class, thin);
-                        alerts.add(alert);
-                    }
-                });
-
             } else {
                 /*
                     Get all alerts - Single query
                  */
-                PreparedStatement selectAlertsByTenant = CassStatement.get(session,
-                        CassStatement.SELECT_ALERTS_BY_TENANT);
-                ResultSet rsAlerts = session.execute(selectAlertsByTenant.bind(tenantId));
-                for (Row row : rsAlerts) {
-                    String payload = row.getString("payload");
-                    Alert alert = JsonUtil.fromJson(payload, Alert.class, thin);
-                    alerts.add(alert);
-                }
+                fetchAllAlerts(tenantId, thin, alerts);
             }
 
         } catch (Exception e) {
@@ -658,6 +652,17 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
 
         return preparePage(alerts, pager);
+    }
+
+    private void fetchAllAlerts(String tenantId, boolean thin, Collection<Alert> alerts) {
+        PreparedStatement selectAlertsByTenant = CassStatement.get(session,
+                CassStatement.SELECT_ALERTS_BY_TENANT);
+        ResultSet rsAlerts = session.execute(selectAlertsByTenant.bind(tenantId));
+        for (Row row : rsAlerts) {
+            String payload = row.getString("payload");
+            Alert alert = JsonUtil.fromJson(payload, Alert.class, thin);
+            alerts.add(alert);
+        }
     }
 
     private Page<Alert> preparePage(List<Alert> alerts, Pager pager) {
@@ -787,44 +792,8 @@ public class CassAlertsServiceImpl implements AlertsService {
         return result;
     }
 
-    private Set<String> filterByStatuses(String tenantId, AlertsCriteria criteria) throws Exception {
-        Set<String> result = Collections.emptySet();
-
-        Set<Status> statuses = new HashSet<>();
-        if (isEmpty(criteria.getStatusSet())) {
-            if (criteria.getStatus() != null) {
-                statuses.add(criteria.getStatus());
-            }
-        } else {
-            statuses.addAll(criteria.getStatusSet());
-        }
-
-        if (statuses.size() > 0) {
-            PreparedStatement selectAlertStatusByTenantAndStatus = CassStatement.get(session,
-                    CassStatement.SELECT_ALERT_STATUS);
-            List<ResultSetFuture> futures = statuses.stream()
-                    .map(status -> session.executeAsync(selectAlertStatusByTenantAndStatus.bind(
-                            tenantId, status.name())))
-                    .collect(Collectors.toList());
-            List<ResultSet> rsAlertStatuses = Futures.allAsList(futures).get();
-
-            Set<String> alertIds = new HashSet<>();
-            rsAlertStatuses.stream().forEach(r -> {
-                for (Row row : r) {
-                    String alertId = row.getString("alertId");
-                    alertIds.add(alertId);
-                }
-            });
-            result = alertIds;
-        }
-        return result;
-    }
-
-    private Set<String> filterBySeverities(String tenantId, AlertsCriteria criteria)
+    private void filterBySeverities(String tenantId, AlertsCriteria criteria, Collection<Alert> alerts)
             throws Exception {
-
-        Set<String> result = Collections.emptySet();
-
         Set<Severity> severities = new HashSet<>();
         if (isEmpty(criteria.getSeverities())) {
             if (criteria.getSeverity() != null) {
@@ -835,25 +804,34 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
 
         if (severities.size() > 0) {
-            PreparedStatement selectAlertSeverityByTenantAndSeverity = CassStatement.get(session,
-                    CassStatement.SELECT_ALERT_SEVERITY);
-            List<ResultSetFuture> futures = severities.stream()
-                    .map(severity -> session.executeAsync(selectAlertSeverityByTenantAndSeverity.bind(
-                            tenantId, severity.name())))
-                    .collect(Collectors.toList());
-            List<ResultSet> rsAlertSeverities = Futures.allAsList(futures).get();
-
-            Set<String> alertIds = new HashSet<>();
-            rsAlertSeverities.stream().forEach(r -> {
-                for (Row row : r) {
-                    String alertId = row.getString("alertId");
-                    alertIds.add(alertId);
+            for (Iterator<Alert> i = alerts.iterator(); i.hasNext();) {
+                Alert a = i.next();
+                if (!severities.contains(a.getSeverity())) {
+                    i.remove();
                 }
-            });
-            result = alertIds;
+            }
+        }
+    }
+
+    private void filterByStatuses(String tenantId, AlertsCriteria criteria, Collection<Alert> alerts)
+            throws Exception {
+        Set<Status> statusSet = new HashSet<>();
+        if (isEmpty(criteria.getStatusSet())) {
+            if (criteria.getStatus() != null) {
+                statusSet.add(criteria.getStatus());
+            }
+        } else {
+            statusSet.addAll(criteria.getStatusSet());
         }
 
-        return result;
+        if (statusSet.size() > 0) {
+            for (Iterator<Alert> i = alerts.iterator(); i.hasNext();) {
+                Alert a = i.next();
+                if (!statusSet.contains(a.getStatus())) {
+                    i.remove();
+                }
+            }
+        }
     }
 
     private Set<String> filterByEvents(EventsCriteria criteria) {
@@ -957,16 +935,13 @@ public class CassAlertsServiceImpl implements AlertsService {
         return ids;
     }
 
-    // TODO (jshaughn) The DB-Level filtering approach implemented below is a best-practice for dealing
+    // The DB-Level filtering approach implemented below is a best-practice for dealing
     // with Cassandra.  It's basically a series of queries, one for each filter, with a progressive
-    // intersection of the resulting ID set.  This will work well in most cases but we may want to consider
-    // an optimization for dealing with large Event populations.  Certain filters dealing with low-cardinality
-    // values, like category, could start pulling a large number of event ids.  If we have reduced the
-    // result set to a small number, via the more narrowing filters, (TBD via perf tests, a threshold that makes
-    // sense), we may want to pull the resulting events and apply the low-cardinality filters here in the code,
-    // in a post-fetch step. For example, if we have filters "ctime > 123" and "category == Alert", and the ctime
-    // filter returns 10 eventIds. We may want to pull the 10 events and apply the category filter in the code. For
-    // large Event history, the category filter applied to the DB could return a huge set of ids.
+    // intersection of the resulting ID set.  This works well in most cases but not when filtering on
+    // low-cardinality fields, where the indexing is poor and the number of returned IDs could be vast for
+    // a single one, or set, of those few field values.  Event.category *may* have low cardinality, so
+    // although it is indexed, we leave it to the end and then optionally filter it manually depending on
+    // the current result set size.
     @Override
     public Page<Event> getEvents(String tenantId, EventsCriteria criteria, Pager pager) throws Exception {
         if (isEmpty(tenantId)) {
@@ -974,6 +949,8 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
+        int noQuerySize = (null == criteria || null == criteria.getCriteriaNoQuerySize()) ? criteriaNoQuerySize
+                : criteria.getCriteriaNoQuerySize().intValue();
 
         if (filter && log.isDebugEnabled()) {
             log.debug("getEvents criteria: " + criteria.toString());
@@ -992,11 +969,11 @@ public class CassAlertsServiceImpl implements AlertsService {
                     Set<String> idsFilteredByEvents = filterByEvents(criteria);
                     if (activeFilter) {
                         eventIds.retainAll(idsFilteredByEvents);
-                        if (eventIds.isEmpty()) {
-                            return new Page<>(events, pager, 0);
-                        }
                     } else {
                         eventIds.addAll(idsFilteredByEvents);
+                    }
+                    if (eventIds.isEmpty()) {
+                        return new Page<>(events, pager, 0);
                     }
                     activeFilter = true;
                 }
@@ -1008,11 +985,11 @@ public class CassAlertsServiceImpl implements AlertsService {
                     Set<String> idsFilteredByTags = getIdsByTags(tenantId, TagType.EVENT, criteria.getTags());
                     if (activeFilter) {
                         eventIds.retainAll(idsFilteredByTags);
-                        if (eventIds.isEmpty()) {
-                            return new Page<>(events, pager, 0);
-                        }
                     } else {
                         eventIds.addAll(idsFilteredByTags);
+                    }
+                    if (eventIds.isEmpty()) {
+                        return new Page<>(events, pager, 0);
                     }
                     activeFilter = true;
                 }
@@ -1024,64 +1001,69 @@ public class CassAlertsServiceImpl implements AlertsService {
                     Set<String> idsFilteredByTriggers = filterByTriggers(tenantId, criteria);
                     if (activeFilter) {
                         eventIds.retainAll(idsFilteredByTriggers);
-                        if (eventIds.isEmpty()) {
-                            return new Page<>(events, pager, 0);
-                        }
                     } else {
                         eventIds.addAll(idsFilteredByTriggers);
+                    }
+                    if (eventIds.isEmpty()) {
+                        return new Page<>(events, pager, 0);
                     }
                     activeFilter = true;
                 }
 
                 /*
-                    Get alertsIds filtered by time clause
+                    Get eventtIds filtered by time clause
                  */
                 if (criteria.hasCTimeCriteria()) {
                     Set<String> idsFilteredByTime = filterByCTime(tenantId, criteria);
                     if (activeFilter) {
                         eventIds.retainAll(idsFilteredByTime);
-                        if (eventIds.isEmpty()) {
-                            return new Page<>(events, pager, 0);
-                        }
                     } else {
                         eventIds.addAll(idsFilteredByTime);
                     }
+                    if (eventIds.isEmpty()) {
+                        return new Page<>(events, pager, 0);
+                    }
                     activeFilter = true;
                 }
 
                 /*
-                     Get alertsIds filtered by categories clause
-                 */
+                   Below this point we prefer manual filtering if the result set is small enough. If so, fetch the
+                   events now and filter manually. Otherwise, don't fetch and perform further filtering by query.
+                */
+                if (activeFilter && (eventIds.size() <= noQuerySize)) {
+                    fetchEvents(tenantId, eventIds, thin, events);
+                }
+
                 if (criteria.hasCategoryCriteria()) {
-                    Set<String> idsFilteredByCategory = filterByCategories(tenantId, criteria);
-                    if (activeFilter) {
-                        eventIds.retainAll(idsFilteredByCategory);
+                    if (events.isEmpty()) {
+                        // filter by query and intersection
+                        Set<String> idsFilteredByCategory = filterByCategories(tenantId, criteria);
+                        if (activeFilter) {
+                            eventIds.retainAll(idsFilteredByCategory);
+                        } else {
+                            eventIds.addAll(idsFilteredByCategory);
+                        }
                         if (eventIds.isEmpty()) {
                             return new Page<>(events, pager, 0);
                         }
+                        activeFilter = true;
+
                     } else {
-                        eventIds.addAll(idsFilteredByCategory);
+                        // filter manually
+                        filterByCategories(tenantId, criteria, events);
+                        if (events.isEmpty()) {
+                            return new Page<>(events, pager, 0);
+                        }
                     }
-                    activeFilter = true;
                 }
 
                 /*
-                    If we have reached this point then we have at least 1 filtered alertId, so now
-                    get the resulting Alerts...
+                    If we have reached this point then we have at least 1 filtered eventId. If we have
+                    not already fetched the resulting events, do so now.
                  */
-                PreparedStatement selectEvent = CassStatement
-                        .get(session, CassStatement.SELECT_EVENT);
-                List<ResultSetFuture> futures = eventIds.stream()
-                        .map(id -> session.executeAsync(selectEvent.bind(tenantId, id)))
-                        .collect(Collectors.toList());
-                List<ResultSet> rsEvents = Futures.allAsList(futures).get();
-                rsEvents.stream().forEach(r -> {
-                    for (Row row : r) {
-                        String payload = row.getString("payload");
-                        Event event = JsonUtil.fromJson(payload, Event.class, thin);
-                        events.add(event);
-                    }
-                });
+                if (events.isEmpty()) {
+                    fetchEvents(tenantId, eventIds, thin, events);
+                }
 
             } else {
                 /*
@@ -1133,6 +1115,23 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
 
         return prepareEventsPage(events, pager);
+    }
+
+    private void fetchEvents(String tenantId, Set<String> eventIds, boolean thin, List<Event> events)
+            throws Exception {
+        PreparedStatement selectEvent = CassStatement
+                .get(session, CassStatement.SELECT_EVENT);
+        List<ResultSetFuture> futures = eventIds.stream()
+                .map(id -> session.executeAsync(selectEvent.bind(tenantId, id)))
+                .collect(Collectors.toList());
+        List<ResultSet> rsEvents = Futures.allAsList(futures).get();
+        rsEvents.stream().forEach(r -> {
+            for (Row row : r) {
+                String payload = row.getString("payload");
+                Event event = JsonUtil.fromJson(payload, Event.class, thin);
+                events.add(event);
+            }
+        });
     }
 
     private Page<Event> prepareEventsPage(List<Event> events, Pager pager) {
@@ -1285,6 +1284,27 @@ public class CassAlertsServiceImpl implements AlertsService {
         return result;
     }
 
+    private void filterByCategories(String tenantId, EventsCriteria criteria, Collection<Event> events)
+            throws Exception {
+        Set<String> categories = new HashSet<>();
+        if (isEmpty(criteria.getCategories())) {
+            if (criteria.getCategory() != null) {
+                categories.add(criteria.getCategory());
+            }
+        } else {
+            categories.addAll(criteria.getCategories());
+        }
+
+        if (categories.size() > 0) {
+            for (Iterator<Event> i = events.iterator(); i.hasNext();) {
+                Event e = i.next();
+                if (!categories.contains(e.getCategory())) {
+                    i.remove();
+                }
+            }
+        }
+    }
+
     @Override
     public void ackAlerts(String tenantId, Collection<String> alertIds, String ackBy, String ackNotes)
             throws Exception {
@@ -1332,12 +1352,10 @@ public class CassAlertsServiceImpl implements AlertsService {
         }
         PreparedStatement deleteAlert = CassStatement.get(session, CassStatement.DELETE_ALERT);
         PreparedStatement deleteAlertCtime = CassStatement.get(session, CassStatement.DELETE_ALERT_CTIME);
-        PreparedStatement deleteAlertSeverity = CassStatement.get(session, CassStatement.DELETE_ALERT_SEVERITY);
-        PreparedStatement deleteAlertStatus = CassStatement.get(session, CassStatement.DELETE_ALERT_STATUS);
         PreparedStatement deleteAlertTrigger = CassStatement.get(session, CassStatement.DELETE_ALERT_TRIGGER);
         PreparedStatement deleteAlertLifecycle = CassStatement.get(session, CassStatement.DELETE_ALERT_LIFECYCLE);
-        if (deleteAlert == null || deleteAlertCtime == null || deleteAlertSeverity == null
-                || deleteAlertStatus == null || deleteAlertTrigger == null || deleteAlertLifecycle == null) {
+        if (deleteAlert == null || deleteAlertCtime == null || deleteAlertTrigger == null
+                || deleteAlertLifecycle == null) {
             throw new RuntimeException("delete*Alerts PreparedStatement is null");
         }
 
@@ -1346,8 +1364,6 @@ public class CassAlertsServiceImpl implements AlertsService {
             List<ResultSetFuture> futures = new ArrayList<>();
             futures.add(session.executeAsync(deleteAlert.bind(tenantId, id)));
             futures.add(session.executeAsync(deleteAlertCtime.bind(tenantId, a.getCtime(), id)));
-            futures.add(session.executeAsync(deleteAlertSeverity.bind(tenantId, a.getSeverity().name(), id)));
-            futures.add(session.executeAsync(deleteAlertStatus.bind(tenantId, a.getStatus().name(), id)));
             futures.add(session.executeAsync(deleteAlertTrigger.bind(tenantId, a.getTriggerId(), id)));
             a.getLifecycle().stream().forEach(l -> {
                 futures.add(
@@ -1478,24 +1494,12 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new IllegalArgumentException("AlertId must be not null");
         }
         try {
-            // we need to delete the current status index entry, and enter the new one. And update the
-            // alert.  We can do all of this concurrently/async because each call operates on a different key;
-            PreparedStatement deleteAlertStatus = CassStatement.get(session,
-                    CassStatement.DELETE_ALERT_STATUS);
-            PreparedStatement insertAlertStatus = CassStatement.get(session,
-                    CassStatement.INSERT_ALERT_STATUS);
             PreparedStatement insertAlertLifecycle = CassStatement.get(session,
                     CassStatement.INSERT_ALERT_LIFECYCLE);
             PreparedStatement updateAlert = CassStatement.get(session,
                     CassStatement.UPDATE_ALERT);
 
             List<ResultSetFuture> futures = new ArrayList<>();
-            for (Status statusToDelete : EnumSet.complementOf(EnumSet.of(alert.getStatus()))) {
-                futures.add(session.executeAsync(deleteAlertStatus.bind(alert.getTenantId(), statusToDelete.name(),
-                        alert.getAlertId())));
-            }
-            futures.add(session.executeAsync(insertAlertStatus.bind(alert.getTenantId(), alert.getAlertId(), alert
-                    .getStatus().name())));
             Alert.LifeCycle lifecycle = alert.getCurrentLifecycle();
             if (lifecycle != null) {
                 futures.add(session.executeAsync(insertAlertLifecycle.bind(alert.getTenantId(), alert.getAlertId(),

@@ -112,16 +112,6 @@ WHERE keyspace_name='${keyspace}' AND table_name = 'alerts_ctimes';
 -- #
 
 SELECT table_name FROM system_schema.tables
-WHERE keyspace_name='${keyspace}' AND table_name = 'alerts_statuses';
-
--- #
-
-SELECT table_name FROM system_schema.tables
-WHERE keyspace_name='${keyspace}' AND table_name = 'alerts_severities';
-
--- #
-
-SELECT table_name FROM system_schema.tables
 WHERE keyspace_name='${keyspace}' AND table_name = 'alerts_lifecycle';
 
 -- #

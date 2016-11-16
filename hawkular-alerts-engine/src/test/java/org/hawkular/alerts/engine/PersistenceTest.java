@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -67,11 +68,11 @@ import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.api.services.TriggersCriteria;
+import org.jboss.logging.Logger;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 /**
  *
@@ -80,7 +81,7 @@ import org.slf4j.LoggerFactory;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class PersistenceTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(PersistenceTest.class);
+    private static final Logger log = Logger.getLogger(PersistenceTest.class);
 
     /*
         TenantId = 28026b36-8fe4-4332-84c8-524e173a68bf
@@ -93,7 +94,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test000InitScheme() throws Exception {
-        logger.info("test000InitScheme...");
+        log.info("test000InitScheme...");
 
         assertTrue(definitionsService.getAllTriggers().size() > 0);
         assertTrue(definitionsService.getAllConditions().size() > 0);
@@ -103,7 +104,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test001ExportImport() throws Exception {
-        logger.info("test001ExportDefinitions");
+        log.info("test001ExportDefinitions");
 
         Definitions exported = definitionsService.exportDefinitions(TENANT);
         int exportedTriggers = exported.getTriggers().size();
@@ -119,7 +120,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0010GroupTrigger() throws Exception {
-        logger.info("test0010GroupTrigger...");
+        log.info("test0010GroupTrigger...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
@@ -328,7 +329,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0020GroupTriggerUpdate() throws Exception {
-        logger.info("test0020GroupTriggerUpdate...");
+        log.info("test0020GroupTriggerUpdate...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
@@ -423,7 +424,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0021GroupCondition() throws Exception {
-        logger.info("test0021GroupCondition...");
+        log.info("test0021GroupCondition...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
@@ -589,7 +590,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0022GroupDampening() throws Exception {
-        logger.info("test0022GroupDampening...");
+        log.info("test0022GroupDampening...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
@@ -685,19 +686,17 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0030BasicTags() throws Exception {
-        logger.info("test0030BasicTags...");
+        log.info("test0030BasicTags...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-1");
         assertNotNull(t);
 
         Collection<Condition> cs = definitionsService.getTriggerConditions(TENANT, t.getId(), null);
         assertTrue(cs.toString(), cs.size() == 1);
-        Condition c = cs.iterator().next();
 
         Map<String, String> tags = new HashMap<>(t.getTags());
         tags.put("testname", "testvalue");
         t.setTags(tags);
-        Map<String, String> newTag = new HashMap<>(1);
         definitionsService.updateTrigger(TENANT, t);
 
         t = definitionsService.getTrigger(TENANT, "trigger-1");
@@ -728,7 +727,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0035PagingTriggers() throws Exception {
-        logger.info("test0035PagingTriggers...");
+        log.info("test0035PagingTriggers...");
 
         List<Trigger> result = definitionsService.getTriggers(TENANT, null, null);
         assertEquals(9, result.size());
@@ -839,7 +838,7 @@ public abstract class PersistenceTest {
             pager = pager.nextPage();
             //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
             page = definitionsService.getTriggers(TENANT, null, pager);
-            logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
+            log.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
         }
 
         assertEquals(4, page.size());
@@ -910,7 +909,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0040BasicAlert() throws Exception {
-        logger.info("test0040BasicAlert...");
+        log.info("test0040BasicAlert...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-1");
         assertNotNull(t);
@@ -1042,7 +1041,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0050PagingAlerts() throws Exception {
-        logger.info("test0050PagingAlerts...");
+        log.info("test0050PagingAlerts...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-6");
         assertNotNull(t);
@@ -1398,7 +1397,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0060BasicEvent() throws Exception {
-        logger.info("test0060BasicEvent...");
+        log.info("test0060BasicEvent...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-8");
         assertNotNull(t);
@@ -1535,7 +1534,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0070PagingEvents() throws Exception {
-        logger.info("test0070PagingEvents...");
+        log.info("test0070PagingEvents...");
 
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-8");
         assertNotNull(t);
@@ -1832,7 +1831,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0090SearchActionsHistory() throws Exception {
-        logger.info("test0090SearchActionsHistory...");
+        log.info("test0090SearchActionsHistory...");
 
         for (int i = 0; i < 10; i++) {
             Alert testAlert = new Alert();
@@ -1863,7 +1862,7 @@ public abstract class PersistenceTest {
             actionsService.updateResult(action4);
         }
 
-        logger.info("Actions are asynchronous. Give them some time.");
+        log.info("Actions are asynchronous. Give them some time.");
 
         int tries = 10;
         List<Action> actions = actionsService.getActions(TENANT, null, null);
@@ -1938,7 +1937,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test00100PaginationActionsHistory() throws Exception {
-        logger.info(" test00100PaginationActionsHistory...");
+        log.info(" test00100PaginationActionsHistory...");
 
         for (int i = 0; i < 103; i++) {
             Alert testAlert = new Alert();
@@ -1965,7 +1964,7 @@ public abstract class PersistenceTest {
             actionsService.updateResult(action4);
         }
 
-        logger.info("Actions are asynchronous. Give them some time.");
+        log.info("Actions are asynchronous. Give them some time.");
 
         int tries = 10;
         List<Action> actions = actionsService.getActions(TENANT, null, null);
@@ -2029,7 +2028,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0110ThinActionsHistory() throws Exception {
-        logger.info("test0110ThinActionsHistory...");
+        log.info("test0110ThinActionsHistory...");
 
         for (int i = 0; i < 103; i++) {
             Alert testAlert = new Alert();
@@ -2056,7 +2055,7 @@ public abstract class PersistenceTest {
             actionsService.updateResult(action4);
         }
 
-        logger.info("Actions are asynchronous. Give them some time.");
+        log.info("Actions are asynchronous. Give them some time.");
 
         ActionsCriteria criteria = new ActionsCriteria();
         criteria.setThin(true);
@@ -2077,7 +2076,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0120BasicNotesOnAlert() throws Exception {
-        logger.info(" test0120BasicNotesOnAlert...");
+        log.info(" test0120BasicNotesOnAlert...");
 
         Trigger t = new Trigger("non-existence-trigger", "non-existence-trigger");
         Alert testAlert = new Alert(TENANT, t, null);
@@ -2104,7 +2103,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0130AlertTags() throws Exception {
-        logger.info(" test0130Tags...");
+        log.info(" test0130Tags...");
 
         Trigger t = new Trigger("non-existence-trigger", "non-existence-trigger");
         t.addTag("TriggerTag1Name", "TriggerTag1Value");
@@ -2243,7 +2242,7 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0140EventTags() throws Exception {
-        logger.info(" test0130Tags...");
+        log.info(" test0130Tags...");
 
         Trigger t = new Trigger("non-existence-trigger", "non-existence-trigger");
         t.addTag("TriggerTag1Name", "TriggerTag1Value");
@@ -2378,6 +2377,110 @@ public abstract class PersistenceTest {
         assertEquals(2, event.getTags().size());
         assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
         assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
+    }
+
+    // These tests would be nice in a separate class but I couldn't figure how to get multiple test classes
+    // running together without hitting Cassandra life-cycle issues.
+
+    private long nqs100Time = 0L;
+
+    @Test
+    public void test0200GetEventsNQS100() throws Exception {
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setEndTime(50L);
+        criteria.setCategory("category-a");
+        criteria.setCriteriaNoQuerySize(100);
+        nqs100Time = perfGetEvents(10000, 200, criteria, 25);
+        log.infof("Time for perf010GetEventsNQS100 = %s ms", nqs100Time);
+        assertTrue(nqs100Time > 0);
+    }
+
+    @Test
+    public void test0210GetEventsNQS0() throws Exception {
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setEndTime(50L);
+        criteria.setCategory("category-a");
+        criteria.setCriteriaNoQuerySize(0);
+
+        long nqs0Time = perfGetEvents(10000, 200, criteria, 25);
+        log.infof("Time for perf020GetEventsNQS0 = %s ms", nqs0Time);
+        assertTrue(nqs0Time > 0);
+
+        // It should always be the case that we see at least a 25% gain for noQuery vs query, in these tests
+        assertTrue((nqs0Time * 0.75) > nqs100Time);
+    }
+
+    @Test
+    public void test0220GetAlerts() throws Exception {
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setEndTime(120L);
+        criteria.setSeverities(EnumSet.of(Severity.HIGH, Severity.CRITICAL)); // 50% -> 60
+        criteria.setStatusSet(EnumSet.of(Alert.Status.OPEN, Alert.Status.ACKNOWLEDGED)); // 66% -> 40
+        criteria.setThin(true);
+
+        long time = perfGetAlerts(10000, 200, criteria, 40);
+        log.infof("Time for perf030GetAlerts = %s ms", time);
+        assertTrue(time > 0);
+        // This test averages around 4000ms on my box, so hopefully this is a reasonable fail time
+        assertTrue(time < 6000);
+    }
+
+    private long perfGetEvents(int numEvents, int numGets, EventsCriteria criteria, int expected) throws Exception {
+        Collection<Event> events = new ArrayList<>(numEvents);
+        String categoryPrefix = "category-";
+        for (int i = 1; i <= numEvents; ++i) {
+            String category = categoryPrefix + ((i % 2 == 1) ? "a" : "b");
+            Event e = new Event(TENANT, "test-event-" + i, i, category, "text", (Map<String, String>) null);
+            events.add(e);
+            if (i % 100 == 0) {
+                alertsService.persistEvents(events);
+                events.clear();
+            }
+        }
+        alertsService.persistEvents(events);
+
+        Collection<Event> result = null;
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < numGets; ++i) {
+            result = alertsService.getEvents(TENANT, criteria, null);
+        }
+        long end = System.currentTimeMillis();
+
+        assertEquals(expected, result.size());
+
+        return end - start;
+    }
+
+    private long perfGetAlerts(int numAlerts, int numGets, AlertsCriteria criteria, int expected) throws Exception {
+        long alertCreateStart = System.currentTimeMillis();
+        Trigger t = new Trigger(TENANT, this.getClass().getSimpleName());
+        Collection<Alert> alerts = new ArrayList<>(numAlerts);
+        for (int i = 1; i <= numAlerts; ++i) {
+            t.setSeverity(Severity.values()[i % Severity.values().length]);
+            Alert.Status status = Alert.Status.values()[i % Alert.Status.values().length];
+            Alert a = new Alert(TENANT, t, null);
+            a.setCtime(i);
+            a.setStatus(status);
+            alerts.add(a);
+            if (i % 100 == 0) {
+                alertsService.addAlerts(alerts);
+                alerts.clear();
+            }
+        }
+        alertsService.addAlerts(alerts);
+        long alertCreateTime = System.currentTimeMillis() - alertCreateStart;
+        log.warnf("Created %d Alerts in %d ms", numAlerts, alertCreateTime);
+
+        Collection<Alert> result = null;
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < numGets; ++i) {
+            result = alertsService.getAlerts(TENANT, criteria, null);
+        }
+        long end = System.currentTimeMillis();
+
+        assertEquals(expected, result.size());
+
+        return end - start;
     }
 
 }

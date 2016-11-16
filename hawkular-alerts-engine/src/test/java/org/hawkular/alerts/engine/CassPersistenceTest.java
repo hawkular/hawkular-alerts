@@ -119,6 +119,8 @@ public class CassPersistenceTest extends PersistenceTest {
         try {
             Session session = cluster.getSession();
             session.execute("DROP KEYSPACE " + keyspace);
+            session.close();
+            cluster.shutdown();
         } catch (Throwable t) {
             // never mind, don't prevent further cleanup
         }
