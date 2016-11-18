@@ -446,8 +446,8 @@ public class Event implements Comparable<Event>, Serializable {
     }
 
     /* (non-Javadoc)
-     * Natural Ordering provided: dataId asc, Timestamp asc, id asc. This is important to ensure that the engine
-     * naturally processes events for the same dataId is ascending time order.
+     * Natural Ordering provided: dataId asc, tenantId asc, dataSource asc, Timestamp asc, id asc. This is important
+     * to ensure that the engine naturally processes events for the same dataId is ascending time order.
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
@@ -458,13 +458,24 @@ public class Event implements Comparable<Event>, Serializable {
         if (this.dataId == null) {
             return this.id.compareTo(o.id);
         }
+
         int c = this.dataId.compareTo(o.dataId);
         if (0 != c)
             return c;
+
+        c = this.tenantId.compareTo(o.tenantId);
+        if (0 != c)
+            return c;
+
+        c = this.dataSource.compareTo(o.dataSource);
+        if (0 != c)
+            return c;
+
         c = Long.compare(this.ctime, o.ctime);
         if (0 != c) {
             return c;
         }
+
         return this.id.compareTo(o.id);
     }
 

@@ -332,21 +332,21 @@ public class Data implements Comparable<Data>, Serializable {
     }
 
     /* (non-Javadoc)
-     * Natural Ordering provided: TenantId asc, Id asc, Timestamp asc. This is important to ensure that the engine
-     * naturally processes datums for the same dataId is ascending time order.
+     * Natural Ordering provided: Id asc, TenantId asc, Source asc, Timestamp asc. This is important to ensure
+     * that the engine naturally processes datums for the same dataId is ascending time order.
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
     public int compareTo(Data o) {
-        int c = this.tenantId.compareTo(o.tenantId);
+        int c = this.id.compareTo(o.id);
+        if (0 != c)
+            return c;
+
+        c = this.tenantId.compareTo(o.tenantId);
         if (0 != c)
             return c;
 
         c = this.source.compareTo(o.source);
-        if (0 != c)
-            return c;
-
-        c = this.id.compareTo(o.id);
         if (0 != c)
             return c;
 
@@ -369,15 +369,15 @@ public class Data implements Comparable<Data>, Serializable {
                 return false;
         } else if (!id.equals(other.id))
             return false;
-        if (source == null) {
-            if (other.source != null)
-                return false;
-        } else if (!source.equals(other.source))
-            return false;
         if (tenantId == null) {
             if (other.tenantId != null)
                 return false;
         } else if (!tenantId.equals(other.tenantId))
+            return false;
+        if (source == null) {
+            if (other.source != null)
+                return false;
+        } else if (!source.equals(other.source))
             return false;
         return true;
     }
