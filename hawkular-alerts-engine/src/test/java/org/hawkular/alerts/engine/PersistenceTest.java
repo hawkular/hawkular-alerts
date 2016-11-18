@@ -2483,4 +2483,73 @@ public abstract class PersistenceTest {
         return end - start;
     }
 
+    @Test
+    public void test0300GetAlertsMultipleTenants() throws Exception {
+        Set<String> tenantIds = new HashSet<>(Arrays.asList("tenant4", "tenant2", "tenant1", "tenant3"));
+        List<String> orderedTenantIds = Arrays.asList("tenant1", "tenant2", "tenant3", "tenant4");
+
+        int numAlerts = 100;
+
+        for (String tenantId : tenantIds) {
+            Trigger t = new Trigger(tenantId, "test0300GetAlertsMultipleTenants");
+            Collection<Alert> alerts = new ArrayList<>(numAlerts);
+            for (int i = 0; i < numAlerts; ++i) {
+                Alert a = new Alert(tenantId, t, null);
+                a.setCtime(i);
+                alerts.add(a);
+            }
+            alertsService.addAlerts(alerts);
+        }
+
+        AlertsCriteria alertsCriteria = new AlertsCriteria();
+        Collection<Alert> resultAlerts = alertsService.getAlerts(tenantIds, alertsCriteria, null);
+
+        assertEquals(numAlerts * tenantIds.size(), resultAlerts.size());
+        int i = 0;
+        Iterator<Alert> itAlerts = resultAlerts.iterator();
+        while (itAlerts.hasNext()) {
+            String tenantId = orderedTenantIds.get(i / numAlerts);
+            Alert a = itAlerts.next();
+            assertEquals(tenantId, a.getTenantId());
+            i++;
+        }
+
+        EventsCriteria eventsCriteria = new EventsCriteria();
+        Collection<Event> resultEvents = alertsService.getEvents(tenantIds, eventsCriteria, null);
+
+        assertEquals(numAlerts * tenantIds.size(), resultEvents.size());
+        i = 0;
+        Iterator<Event> itEvents = resultEvents.iterator();
+        while (itEvents.hasNext()) {
+            String tenantId = orderedTenantIds.get(i / numAlerts);
+            Event e = itEvents.next();
+            assertEquals(tenantId, e.getTenantId());
+            i++;
+        }
+
+        tenantIds.remove("tenant4");
+
+        resultAlerts = alertsService.getAlerts(tenantIds, alertsCriteria, null);
+        assertEquals(numAlerts * tenantIds.size(), resultAlerts.size());
+
+        resultEvents = alertsService.getEvents(tenantIds, eventsCriteria, null);
+        assertEquals(numAlerts * tenantIds.size(), resultEvents.size());
+
+        tenantIds.remove("tenant3");
+
+        resultAlerts = alertsService.getAlerts(tenantIds, alertsCriteria, null);
+        assertEquals(numAlerts * tenantIds.size(), resultAlerts.size());
+
+        resultEvents = alertsService.getEvents(tenantIds, eventsCriteria, null);
+        assertEquals(numAlerts * tenantIds.size(), resultEvents.size());
+
+        tenantIds.remove("tenant2");
+
+        resultAlerts = alertsService.getAlerts(tenantIds, alertsCriteria, null);
+        assertEquals(numAlerts * tenantIds.size(), resultAlerts.size());
+
+        resultEvents = alertsService.getEvents(tenantIds, eventsCriteria, null);
+        assertEquals(numAlerts * tenantIds.size(), resultEvents.size());
+    }
+
 }

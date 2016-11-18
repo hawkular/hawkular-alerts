@@ -60,6 +60,7 @@ public class StandaloneAlerts {
     private CassDefinitionsServiceImpl definitions = null;
     private AlertsEngineImpl engine = null;
     private DroolsRulesEngineImpl rules = null;
+    private StandaloneExecutorService executor = new StandaloneExecutorService();
 
     private StandaloneAlerts(Session session) {
         actions = new CassActionsServiceImpl();
@@ -68,6 +69,7 @@ public class StandaloneAlerts {
         definitions = new CassDefinitionsServiceImpl();
         alerts = new CassAlertsServiceImpl();
         alerts.setSession(session);
+        alerts.setExecutor(executor);
         alertsContext = new AlertsContext();
 
         definitions.setSession(session);
@@ -77,7 +79,7 @@ public class StandaloneAlerts {
         actions.setSession(session);
         actions.setAlertsContext(alertsContext);
         actions.setDefinitions(definitions);
-        actions.setExecutor(new StandaloneExecutorService());
+        actions.setExecutor(executor);
 
         engine.setDefinitions(definitions);
         engine.setActions(actions);

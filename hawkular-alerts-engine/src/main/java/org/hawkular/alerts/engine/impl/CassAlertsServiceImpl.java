@@ -25,14 +25,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Local;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 
 import org.hawkular.alerts.api.json.JsonUtil;
@@ -110,6 +114,9 @@ public class CassAlertsServiceImpl implements AlertsService {
     @CassClusterSession
     Session session;
 
+    @Resource
+    private ManagedExecutorService executor;
+
     @PostConstruct
     public void init() {
         criteriaNoQuerySize = Integer.valueOf(properties.getProperty(CRITERIA_NO_QUERY_SIZE,
@@ -121,6 +128,10 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     public void setSession(Session session) {
         this.session = session;
+    }
+
+    public void setExecutor(ManagedExecutorService executor) {
+        this.executor = executor;
     }
 
     @Override
@@ -481,9 +492,53 @@ public class CassAlertsServiceImpl implements AlertsService {
     // and then filter manually on the fetched set of Alerts.
     @Override
     public Page<Alert> getAlerts(String tenantId, AlertsCriteria criteria, Pager pager) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
+        return getAlerts(Collections.singleton(tenantId), criteria, pager);
+    }
+
+    /*
+        TODO (lponce)
+        This is a convenience method to have a first cross-tenant query.
+        First implementation is sequential.
+        Probably we could use an executor to send parallel tasks but we need to count with synchronization and
+        ordering to be deterministic.
+        So there are some space for future improvements here.
+        The goal of this first implementation is to offer the feature.
+     */
+    @Override
+    public Page<Alert> getAlerts(Set<String> tenantIds, AlertsCriteria criteria, Pager pager) throws Exception {
+        if (isEmpty(tenantIds)) {
+            throw new IllegalArgumentException("TenantIds must be not null");
         }
+        TreeSet<String> orderedTenantsIds = new TreeSet<>(tenantIds);
+        List<Alert> alerts = new ArrayList<>();
+        List<Future> futures = new ArrayList<>();
+        orderedTenantsIds.stream().forEach(tenantId -> {
+            futures.add(executor.submit(() -> {
+                try {
+                    List<Alert> tenantAlerts = getAlerts(tenantId, criteria);
+                    synchronized (alerts) {
+                        alerts.addAll(tenantAlerts);
+                    }
+                } catch (Exception e) {
+                    msgLog.errorDatabaseException(e.getMessage());
+                }
+            }));
+        });
+        futures.stream().forEach(f -> {
+            try {
+                f.get();
+            } catch (Exception e) {
+                msgLog.errorDatabaseException(e.getMessage());
+            }
+        });
+        if (alerts.isEmpty()) {
+            return new Page<>(alerts, pager, 0);
+        } else {
+            return preparePage(alerts, pager);
+        }
+    }
+
+    private List<Alert> getAlerts(String tenantId, AlertsCriteria criteria) throws Exception {
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
 
@@ -508,7 +563,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         alertIds.addAll(alertIdsFilteredByAlerts);
                     }
                     if (alertIds.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
+                        return alerts;
                     }
                     activeFilter = true;
                 }
@@ -524,7 +579,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         alertIds.addAll(alertIdsFilteredByTags);
                     }
                     if (alertIds.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
+                        return alerts;
                     }
                     activeFilter = true;
                 }
@@ -540,7 +595,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         alertIds.addAll(alertIdsFilteredByTriggers);
                     }
                     if (alertIds.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
+                        return alerts;
                     }
                     activeFilter = true;
                 }
@@ -556,7 +611,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         alertIds.addAll(alertIdsFilteredByTime);
                     }
                     if (alertIds.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
+                        return alerts;
                     }
                     activeFilter = true;
                 }
@@ -572,7 +627,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         alertIds.addAll(alertIdsFilteredByResolvedTime);
                     }
                     if (alertIds.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
+                        return alerts;
                     }
                     activeFilter = true;
                 }
@@ -588,7 +643,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         alertIds.addAll(alertIdsFilteredByAckTime);
                     }
                     if (alertIds.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
+                        return alerts;
                     }
                     activeFilter = true;
                 }
@@ -626,7 +681,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 if (criteria.hasSeverityCriteria()) {
                     filterBySeverities(tenantId, criteria, alerts);
                     if (alerts.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
+                        return alerts;
                     }
                 }
 
@@ -636,7 +691,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 if (criteria.hasStatusCriteria()) {
                     filterByStatuses(tenantId, criteria, alerts);
                     if (alerts.isEmpty()) {
-                        return new Page<>(alerts, pager, 0);
+                        return alerts;
                     }
                 }
             } else {
@@ -651,7 +706,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw e;
         }
 
-        return preparePage(alerts, pager);
+        return alerts;
     }
 
     private void fetchAllAlerts(String tenantId, boolean thin, Collection<Alert> alerts) {
@@ -944,9 +999,44 @@ public class CassAlertsServiceImpl implements AlertsService {
     // the current result set size.
     @Override
     public Page<Event> getEvents(String tenantId, EventsCriteria criteria, Pager pager) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
+        return getEvents(Collections.singleton(tenantId), criteria, pager);
+    }
+
+    @Override
+    public Page<Event> getEvents(Set<String> tenantIds, EventsCriteria criteria, Pager pager) throws Exception {
+        if (isEmpty(tenantIds)) {
+            throw new IllegalArgumentException("TenantIds must be not null");
         }
+        TreeSet<String> orderedTenantsIds = new TreeSet<>(tenantIds);
+        List<Event> events = new ArrayList<>();
+        List<Future> futures = new ArrayList<>();
+        orderedTenantsIds.stream().forEach(tenantId -> {
+            futures.add(executor.submit(() -> {
+                try {
+                    List<Event> tenantEvents = getEvents(tenantId, criteria);
+                    synchronized (events) {
+                        events.addAll(tenantEvents);
+                    }
+                } catch (Exception e) {
+                    msgLog.errorDatabaseException(e.getMessage());
+                }
+            }));
+        });
+        futures.stream().forEach(f -> {
+            try {
+                f.get();
+            } catch (Exception e) {
+                msgLog.errorDatabaseException(e.getMessage());
+            }
+        });
+        if (events.isEmpty()) {
+            return new Page<>(events, pager, 0);
+        } else {
+            return prepareEventsPage(events, pager);
+        }
+    }
+
+    private List<Event> getEvents(String tenantId, EventsCriteria criteria) throws Exception {
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
         int noQuerySize = (null == criteria || null == criteria.getCriteriaNoQuerySize()) ? criteriaNoQuerySize
@@ -973,7 +1063,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         eventIds.addAll(idsFilteredByEvents);
                     }
                     if (eventIds.isEmpty()) {
-                        return new Page<>(events, pager, 0);
+                        return events;
                     }
                     activeFilter = true;
                 }
@@ -989,7 +1079,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         eventIds.addAll(idsFilteredByTags);
                     }
                     if (eventIds.isEmpty()) {
-                        return new Page<>(events, pager, 0);
+                        return events;
                     }
                     activeFilter = true;
                 }
@@ -1005,7 +1095,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         eventIds.addAll(idsFilteredByTriggers);
                     }
                     if (eventIds.isEmpty()) {
-                        return new Page<>(events, pager, 0);
+                        return events;
                     }
                     activeFilter = true;
                 }
@@ -1021,7 +1111,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         eventIds.addAll(idsFilteredByTime);
                     }
                     if (eventIds.isEmpty()) {
-                        return new Page<>(events, pager, 0);
+                        return events;
                     }
                     activeFilter = true;
                 }
@@ -1044,7 +1134,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                             eventIds.addAll(idsFilteredByCategory);
                         }
                         if (eventIds.isEmpty()) {
-                            return new Page<>(events, pager, 0);
+                            return events;
                         }
                         activeFilter = true;
 
@@ -1052,7 +1142,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                         // filter manually
                         filterByCategories(tenantId, criteria, events);
                         if (events.isEmpty()) {
-                            return new Page<>(events, pager, 0);
+                            return events;
                         }
                     }
                 }
@@ -1114,7 +1204,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw e;
         }
 
-        return prepareEventsPage(events, pager);
+        return events;
     }
 
     private void fetchEvents(String tenantId, Set<String> eventIds, boolean thin, List<Event> events)

@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.services;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +41,37 @@ public class EventsCriteria {
 
     public EventsCriteria() {
         super();
+    }
+
+    public EventsCriteria(Long startTime, Long endTime, String eventIds, String triggerIds, String categories,
+           String tags, Boolean thin) {
+        setStartTime(startTime);
+        setEndTime(endTime);
+        if (!isEmpty(eventIds)) {
+            setEventIds(Arrays.asList(eventIds.split(",")));
+        }
+        if (!isEmpty(triggerIds)) {
+            setTriggerIds(Arrays.asList(triggerIds.split(",")));
+        }
+        if (!isEmpty(categories)) {
+            setCategories(Arrays.asList(categories.split(",")));
+        }
+        if (!isEmpty(tags)) {
+            String[] tagTokens = tags.split(",");
+            Map<String, String> tagsMap = new HashMap<>(tagTokens.length);
+            for (String tagToken : tagTokens) {
+                String[] fields = tagToken.split("\\|");
+                if (fields.length == 2) {
+                    tagsMap.put(fields[0], fields[1]);
+                } else {
+                    throw new IllegalArgumentException("Invalid Tag Criteria " + Arrays.toString(fields));
+                }
+            }
+            setTags(tagsMap);
+        }
+        if (null != thin) {
+            setThin(thin.booleanValue());
+        }
     }
 
     public Long getStartTime() {
@@ -190,6 +222,10 @@ public class EventsCriteria {
                 + ", eventIds=" + eventIds + ", category=" + category + ", categories=" + categories + ", triggerId="
                 + triggerId + ", triggerIds=" + triggerIds + ", tags=" + tags + ", thin=" + thin
                 + ", criteriaNoQuerySize=" + criteriaNoQuerySize + "]";
+    }
+
+    private static boolean isEmpty(String s) {
+        return s == null || s.trim().isEmpty();
     }
 
 }

@@ -23,7 +23,6 @@ import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.ejb.EJB;
@@ -189,7 +188,7 @@ public class EventsHandler {
         try {
             if (!isEmpty(eventIds) || isEmpty(tags)) {
                 // criteria just used for convenient type translation
-                EventsCriteria c = buildCriteria(null, null, eventIds, null, null, tags, false);
+                EventsCriteria c = new EventsCriteria(null, null, eventIds, null, null, tags, false);
                 alertsService.addEventTags(tenantId, c.getEventIds(), c.getTags());
                 if (log.isDebugEnabled()) {
                     log.debugf("Tagged alertIds:%s, %s", c.getEventIds(), c.getTags());
@@ -289,7 +288,7 @@ public class EventsHandler {
             final UriInfo uri) {
         Pager pager = RequestUtil.extractPaging(uri);
         try {
-            EventsCriteria criteria = buildCriteria(startTime, endTime, eventIds, triggerIds, categories, tags, thin);
+            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories, tags, thin);
             Page<Event> eventPage = alertsService.getEvents(tenantId, criteria, pager);
             if (log.isDebugEnabled()) {
                 log.debug("Events: " + eventPage);
@@ -378,7 +377,7 @@ public class EventsHandler {
             final String tags
             ) {
         try {
-            EventsCriteria criteria = buildCriteria(startTime, endTime, eventIds, triggerIds, categories, tags, null);
+            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories, tags, null);
             int numDeleted = alertsService.deleteEvents(tenantId, criteria);
             if (log.isDebugEnabled()) {
                 log.debug("Events deleted: " + numDeleted);
@@ -391,42 +390,6 @@ public class EventsHandler {
             }
             return ResponseUtil.internalError(e);
         }
-    }
-
-    private EventsCriteria buildCriteria(Long startTime, Long endTime, String eventIds, String triggerIds,
-            String categories, String tags, Boolean thin) {
-        EventsCriteria criteria = new EventsCriteria();
-        criteria.setStartTime(startTime);
-        criteria.setEndTime(endTime);
-        if (!isEmpty(eventIds)) {
-            criteria.setEventIds(Arrays.asList(eventIds.split(",")));
-        }
-        if (!isEmpty(triggerIds)) {
-            criteria.setTriggerIds(Arrays.asList(triggerIds.split(",")));
-        }
-        if (!isEmpty(categories)) {
-            criteria.setCategories(Arrays.asList(categories.split(",")));
-        }
-        if (!isEmpty(tags)) {
-            String[] tagTokens = tags.split(",");
-            Map<String, String> tagsMap = new HashMap<>(tagTokens.length);
-            for (String tagToken : tagTokens) {
-                String[] fields = tagToken.split("\\|");
-                if (fields.length == 2) {
-                    tagsMap.put(fields[0], fields[1]);
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Invalid Tag Criteria " + Arrays.toString(fields));
-                    }
-                }
-            }
-            criteria.setTags(tagsMap);
-        }
-        if (null != thin) {
-            criteria.setThin(thin.booleanValue());
-        }
-
-        return criteria;
     }
 
     @GET

@@ -16,9 +16,12 @@
  */
 package org.hawkular.alerts.api.services;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.event.Alert;
@@ -48,6 +51,53 @@ public class AlertsCriteria {
 
     public AlertsCriteria() {
         super();
+    }
+
+    public AlertsCriteria(Long startTime, Long endTime, String alertIds, String triggerIds,
+           String statuses, String severities, String tags, Long startResolvedTime, Long endResolvedTime,
+           Long startAckTime, Long endAckTime, Boolean thin) {
+        setStartTime(startTime);
+        setEndTime(endTime);
+        if (!isEmpty(alertIds)) {
+            setAlertIds(Arrays.asList(alertIds.split(",")));
+        }
+        if (!isEmpty(triggerIds)) {
+            setTriggerIds(Arrays.asList(triggerIds.split(",")));
+        }
+        if (!isEmpty(statuses)) {
+            Set<Alert.Status> statusSet = new HashSet<>();
+            for (String s : statuses.split(",")) {
+                statusSet.add(Alert.Status.valueOf(s));
+            }
+            setStatusSet(statusSet);
+        }
+        if (null != severities && !severities.trim().isEmpty()) {
+            Set<Severity> severitySet = new HashSet<>();
+            for (String s : severities.split(",")) {
+                severitySet.add(Severity.valueOf(s));
+            }
+            setSeverities(severitySet);
+        }
+        if (!isEmpty(tags)) {
+            String[] tagTokens = tags.split(",");
+            Map<String, String> tagsMap = new HashMap<>(tagTokens.length);
+            for (String tagToken : tagTokens) {
+                String[] fields = tagToken.split("\\|");
+                if (fields.length == 2) {
+                    tagsMap.put(fields[0], fields[1]);
+                } else {
+                    throw new IllegalArgumentException("Invalid Tag Criteria " + Arrays.toString(fields));
+                }
+            }
+            setTags(tagsMap);
+        }
+        setStartResolvedTime(startResolvedTime);
+        setEndResolvedTime(endResolvedTime);
+        setStartAckTime(startAckTime);
+        setEndAckTime(endAckTime);
+        if (null != thin) {
+            setThin(thin.booleanValue());
+        }
     }
 
     public Long getStartTime() {
@@ -278,4 +328,9 @@ public class AlertsCriteria {
                 "startResolvedTime=" + startResolvedTime + ", endResolvedTime=" + endResolvedTime + ", " +
                 "thin=" + thin + "]";
     }
+
+    private static boolean isEmpty(String s) {
+        return s == null || s.trim().isEmpty();
+    }
+
 }

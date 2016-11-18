@@ -98,6 +98,13 @@ public class EventComparator implements Comparator<Event> {
             return -1;
         }
         int iOrder = direction == Order.Direction.ASCENDING ? 1 : -1;
+        /*
+            Using tenant comparator first
+         */
+        int tenantComparator = o1.getTenantId().compareTo(o2.getTenantId());
+        if (tenantComparator != 0) {
+            return tenantComparator * iOrder;
+        }
         switch (field) {
             case ID:
                 return o1.getId().compareTo(o2.getId()) * iOrder;

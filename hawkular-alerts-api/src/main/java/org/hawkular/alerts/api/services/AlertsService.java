@@ -136,6 +136,15 @@ public interface AlertsService {
     Page<Alert> getAlerts(String tenantId, AlertsCriteria criteria, Pager pager) throws Exception;
 
     /**
+     * @param tenantIds Collection of tenants where alerts are stored
+     * @param criteria If null returns all alerts (not recommended)
+     * @param pager Paging requirement for fetching alerts. Optional. Return all if null.
+     * @return NotNull, can be empty.
+     * @throws Exception any problem
+     */
+    Page<Alert> getAlerts(Set<String> tenantIds, AlertsCriteria criteria, Pager pager) throws Exception;
+
+    /**
      * @param tenantId Tenant where events are stored
      * @param eventId the Event to get.
      * @param thin If true don't include evalSets in the returned Event
@@ -152,6 +161,15 @@ public interface AlertsService {
      * @throws Exception any problem
      */
     Page<Event> getEvents(String tenantId, EventsCriteria criteria, Pager pager) throws Exception;
+
+    /**
+     * @param tenantIds Collection of tenants where alerts are stored
+     * @param criteria If null returns all events (not recommended)
+     * @param pager Paging requirement for fetching events. Optional. Return all if null.
+     * @return NotNull, can be empty.
+     * @throws Exception any problem
+     */
+    Page<Event> getEvents(Set<String> tenantIds, EventsCriteria criteria, Pager pager) throws Exception;
 
     /**
      * Remove the provided tags from the specified alerts.

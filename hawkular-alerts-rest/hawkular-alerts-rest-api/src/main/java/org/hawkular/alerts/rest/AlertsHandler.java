@@ -22,10 +22,6 @@ import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -42,7 +38,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.paging.Page;
@@ -148,7 +143,7 @@ public class AlertsHandler {
             final UriInfo uri) {
         Pager pager = RequestUtil.extractPaging(uri);
         try {
-            AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
+            AlertsCriteria criteria = new AlertsCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
                     tags, startResolvedTime, endResolvedTime, startAckTime, endAckTime, thin);
             Page<Alert> alertPage = alertsService.getAlerts(tenantId, criteria, pager);
             if (log.isDebugEnabled()) {
@@ -267,7 +262,7 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertIds) || isEmpty(tags)) {
                 // criteria just used for convenient type translation
-                AlertsCriteria c = buildCriteria(null, null, alertIds, null, null, null, tags, null, null, null,
+                AlertsCriteria c = new AlertsCriteria(null, null, alertIds, null, null, null, tags, null, null, null,
                         null, false);
                 alertsService.addAlertTags(tenantId, c.getAlertIds(), c.getTags());
                 if (log.isDebugEnabled()) {
@@ -458,7 +453,7 @@ public class AlertsHandler {
             final Long endAckTime
             ) {
         try {
-            AlertsCriteria criteria = buildCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
+            AlertsCriteria criteria = new AlertsCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
                     tags, startResolvedTime, endResolvedTime, startAckTime, endAckTime, null);
             int numDeleted = alertsService.deleteAlerts(tenantId, criteria);
             if (log.isDebugEnabled()) {
@@ -472,59 +467,6 @@ public class AlertsHandler {
             }
             return ResponseUtil.internalError(e);
         }
-    }
-
-    private AlertsCriteria buildCriteria(Long startTime, Long endTime, String alertIds, String triggerIds,
-            String statuses, String severities, String tags, Long startResolvedTime, Long endResolvedTime,
-            Long startAckTime, Long endAckTime, Boolean thin) {
-        AlertsCriteria criteria = new AlertsCriteria();
-        criteria.setStartTime(startTime);
-        criteria.setEndTime(endTime);
-        if (!isEmpty(alertIds)) {
-            criteria.setAlertIds(Arrays.asList(alertIds.split(",")));
-        }
-        if (!isEmpty(triggerIds)) {
-            criteria.setTriggerIds(Arrays.asList(triggerIds.split(",")));
-        }
-        if (!isEmpty(statuses)) {
-            Set<Alert.Status> statusSet = new HashSet<>();
-            for (String s : statuses.split(",")) {
-                statusSet.add(Alert.Status.valueOf(s));
-            }
-            criteria.setStatusSet(statusSet);
-        }
-        if (null != severities && !severities.trim().isEmpty()) {
-            Set<Severity> severitySet = new HashSet<>();
-            for (String s : severities.split(",")) {
-                severitySet.add(Severity.valueOf(s));
-            }
-            criteria.setSeverities(severitySet);
-        }
-        if (!isEmpty(tags)) {
-            String[] tagTokens = tags.split(",");
-            Map<String, String> tagsMap = new HashMap<>(tagTokens.length);
-            for (String tagToken : tagTokens) {
-                String[] fields = tagToken.split("\\|");
-                if (fields.length == 2) {
-                    tagsMap.put(fields[0], fields[1]);
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Invalid Tag Criteria " + Arrays.toString(fields));
-                    }
-                    throw new IllegalArgumentException("Invalid Tag Criteria " + Arrays.toString(fields));
-                }
-            }
-            criteria.setTags(tagsMap);
-        }
-        criteria.setStartResolvedTime(startResolvedTime);
-        criteria.setEndResolvedTime(endResolvedTime);
-        criteria.setStartAckTime(startAckTime);
-        criteria.setEndAckTime(endAckTime);
-        if (null != thin) {
-            criteria.setThin(thin.booleanValue());
-        }
-
-        return criteria;
     }
 
     @GET
