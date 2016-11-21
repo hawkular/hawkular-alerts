@@ -102,6 +102,8 @@ public class CacheManager {
                     String tenantId = e.getTargetTenantId();
                     String triggerId = e.getTargetId();
                     TriggerKey triggerKey = new TriggerKey(tenantId, triggerId);
+                    publishCache.startBatch();
+                    publishDataIdsCache.startBatch();
                     Set<String> oldDataIds = publishDataIdsCache.get(triggerKey);
                     removePublishCache(tenantId, triggerId, oldDataIds);
                     if (e.getType().equals(TRIGGER_CONDITION_CHANGE)) {
@@ -109,6 +111,8 @@ public class CacheManager {
                         publishDataIdsCache.put(triggerKey, newDataIds);
                         addPublishCache(tenantId, triggerId, newDataIds);
                     }
+                    publishDataIdsCache.endBatch(true);
+                    publishCache.endBatch(true);
                 });
             }, TRIGGER_CONDITION_CHANGE, TRIGGER_REMOVE);
 

@@ -2905,7 +2905,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 .filter(e -> shouldNotify(e.getValue(), notificationTypes))
                 .forEach(e -> {
                     log.debugf("Notified Listener %s of %s", e.getKey(), notificationTypes);
-                    e.getKey().onChange(notifications);
+                    e.getKey().onChange(notifications.stream()
+                                                     .filter(de -> e.getValue().contains(de.getType()))
+                                                     .collect(Collectors.toSet()));
                 });
     }
 
