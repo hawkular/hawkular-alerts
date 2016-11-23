@@ -2428,6 +2428,7 @@ public abstract class PersistenceTest {
     private long perfGetEvents(int numEvents, int numGets, EventsCriteria criteria, int expected) throws Exception {
         Collection<Event> events = new ArrayList<>(numEvents);
         String categoryPrefix = "category-";
+        long startPersist = System.currentTimeMillis();
         for (int i = 1; i <= numEvents; ++i) {
             String category = categoryPrefix + ((i % 2 == 1) ? "a" : "b");
             Event e = new Event(TENANT, "test-event-" + i, i, category, "text", (Map<String, String>) null);
@@ -2438,6 +2439,8 @@ public abstract class PersistenceTest {
             }
         }
         alertsService.persistEvents(events);
+        long endPersist = System.currentTimeMillis();
+        log.infof("Persisting [%s] events. Took: %s ms", numEvents, (endPersist - startPersist));
 
         Collection<Event> result = null;
         long start = System.currentTimeMillis();

@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.AccessTimeout;
 import javax.ejb.EJB;
 import javax.ejb.Local;
@@ -69,12 +70,14 @@ import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.alerts.engine.exception.NotFoundApplicationException;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.jboss.logging.Logger;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
@@ -92,6 +95,17 @@ import com.google.common.util.concurrent.Futures;
 @Stateless
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class CassDefinitionsServiceImpl implements DefinitionsService {
+
+    /*
+        These parameters control the number of statements used for a batch.
+        Batches are used for queries on same partition only.
+        The real size of the batch may vary as it depends of the size in bytes of the whole query.
+        But on our case and for simplifying we are counting the number of statements.
+    */
+    private static final String BATCH_SIZE = "hawkular-alerts.batch-size";
+    private static final String BATCH_SIZE_ENV = "BATCH_SIZE";
+    private static final String BATCH_SIZE_DEFAULT = "10";
+
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassDefinitionsServiceImpl.class);
 
@@ -103,6 +117,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     // manipulate these variables directly, instead call deferNotifications() and releaseNotifications().
     private Set<DefinitionsEvent> deferredNotifications = new HashSet<>();
     private int deferNotificationsCount = 0;
+    private int batchSize;
+    private final BatchStatement.Type batchType = BatchStatement.Type.LOGGED;
 
     @EJB
     AlertsEngine alertsEngine;
@@ -110,11 +126,20 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     @EJB
     AlertsContext alertsContext;
 
+    @EJB
+    PropertiesService properties;
+
     @Inject
     @CassClusterSession
     Session session;
 
     public CassDefinitionsServiceImpl() {
+    }
+
+    @PostConstruct
+    public void init() {
+        batchSize = Integer.valueOf(properties.getProperty(BATCH_SIZE,
+                BATCH_SIZE_ENV, BATCH_SIZE_DEFAULT));
     }
 
     public void setAlertsEngine(AlertsEngine alertsEngine) {
@@ -127,6 +152,10 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     public void setSession(Session session) {
         this.session = session;
+    }
+
+    public void setProperties(PropertiesService properties) {
+        this.properties = properties;
     }
 
     @Override
@@ -255,11 +284,23 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             trigger.getActions().forEach(triggerAction -> {
                 triggerAction.setTenantId(trigger.getTenantId());
             });
-            List<ResultSetFuture> futures = trigger.getActions().stream().map(triggerAction -> session
-                    .executeAsync(insertTriggerActions.bind(trigger.getTenantId(), trigger.getId(),
-                            triggerAction.getActionPlugin(), triggerAction.getActionId(),
-                            JsonUtil.toJson(triggerAction))))
-                    .collect(Collectors.toList());
+            List<ResultSetFuture> futures = new ArrayList<>();
+            BatchStatement batch = new BatchStatement(batchType);
+            int i = 0;
+            for (TriggerAction triggerAction : trigger.getActions()) {
+                batch.add(insertTriggerActions.bind(trigger.getTenantId(), trigger.getId(),
+                        triggerAction.getActionPlugin(), triggerAction.getActionId(),
+                        JsonUtil.toJson(triggerAction)));
+                i += batch.size();
+                if (i > batchSize) {
+                    futures.add(session.executeAsync(batch));
+                    batch.clear();
+                    i = 0;
+                }
+            }
+            if (batch.size() > 0) {
+                futures.add(session.executeAsync(batch));
+            }
             Futures.allAsList(futures).get();
         }
     }
@@ -350,7 +391,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         PreparedStatement deleteConditions = CassStatement.get(session, CassStatement.DELETE_CONDITIONS);
         PreparedStatement deleteActions = CassStatement.get(session, CassStatement.DELETE_TRIGGER_ACTIONS);
         PreparedStatement deleteTrigger = CassStatement.get(session, CassStatement.DELETE_TRIGGER);
-        session.execute(deleteActions.bind(trigger.getTenantId(), trigger.getId()));
+
         if (deleteDampenings == null || deleteConditions == null || deleteActions == null || deleteTrigger == null) {
             throw new RuntimeException("delete*Triggers PreparedStatement is null");
         }
@@ -2057,98 +2098,108 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         // Now add the new condition set
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
-
+            BatchStatement batch = new BatchStatement(batchType);
             int i = 0;
+            int indexCondition = 0;
             for (Condition cond : conditions) {
                 cond.setTenantId(tenantId);
                 cond.setTriggerId(triggerId);
                 cond.setTriggerMode(triggerMode);
                 cond.setConditionSetSize(conditions.size());
-                cond.setConditionSetIndex(++i);
+                cond.setConditionSetIndex(++indexCondition);
 
                 switch (cond.getType()) {
                     case AVAILABILITY:
                         AvailabilityCondition aCond = (AvailabilityCondition) cond;
-                        futures.add(session.executeAsync(insertConditionAvailability.bind(aCond.getTenantId(),
+                        batch.add(insertConditionAvailability.bind(aCond.getTenantId(),
                                 aCond.getTriggerId(), aCond.getTriggerMode().name(), aCond.getContext(),
                                 aCond.getConditionSetSize(), aCond.getConditionSetIndex(),
-                                aCond.getConditionId(), aCond.getDataId(), aCond.getOperator().name())));
+                                aCond.getConditionId(), aCond.getDataId(), aCond.getOperator().name()));
                         dataIds.add(aCond.getDataId());
                         break;
                     case COMPARE:
                         CompareCondition cCond = (CompareCondition) cond;
-                        futures.add(session.executeAsync(insertConditionCompare.bind(cCond.getTenantId(),
+                        batch.add(insertConditionCompare.bind(cCond.getTenantId(),
                                 cCond.getTriggerId(), cCond.getTriggerMode().name(), cCond.getContext(),
                                 cCond.getConditionSetSize(), cCond.getConditionSetIndex(),
                                 cCond.getConditionId(), cCond.getDataId(), cCond.getOperator().name(),
                                 cCond.getData2Id(),
-                                cCond.getData2Multiplier())));
+                                cCond.getData2Multiplier()));
                         dataIds.add(cCond.getDataId());
                         dataIds.add(cCond.getData2Id());
                         break;
                     case EVENT:
                         EventCondition evCond = (EventCondition) cond;
-                        futures.add(session.executeAsync(insertConditionEvent.bind(evCond.getTenantId(),
+                        batch.add(insertConditionEvent.bind(evCond.getTenantId(),
                                 evCond.getTriggerId(), evCond.getTriggerMode().name(), evCond.getContext(),
                                 evCond.getConditionSetSize(), evCond.getConditionSetIndex(), evCond.getConditionId(),
-                                evCond.getDataId(), evCond.getExpression())));
+                                evCond.getDataId(), evCond.getExpression()));
                         dataIds.add(evCond.getDataId());
                         break;
                     case EXTERNAL:
                         ExternalCondition eCond = (ExternalCondition) cond;
-                        futures.add(session.executeAsync(insertConditionExternal.bind(eCond.getTenantId(),
+                        batch.add(insertConditionExternal.bind(eCond.getTenantId(),
                                 eCond.getTriggerId(), eCond.getTriggerMode().name(), eCond.getContext(),
                                 eCond.getConditionSetSize(), eCond.getConditionSetIndex(), eCond.getConditionId(),
-                                eCond.getDataId(), eCond.getAlerterId(), eCond.getExpression())));
+                                eCond.getDataId(), eCond.getAlerterId(), eCond.getExpression()));
                         dataIds.add(eCond.getDataId());
                         break;
                     case MISSING:
                         MissingCondition mCond = (MissingCondition) cond;
-                        futures.add(session.executeAsync(insertConditionMissing.bind(mCond.getTenantId(),
+                        batch.add(insertConditionMissing.bind(mCond.getTenantId(),
                                 mCond.getTriggerId(), mCond.getTriggerMode().name(), mCond.getContext(),
                                 mCond.getConditionSetSize(), mCond.getConditionSetIndex(), mCond.getConditionId(),
-                                mCond.getDataId(), mCond.getInterval())));
+                                mCond.getDataId(), mCond.getInterval()));
                         dataIds.add(mCond.getDataId());
                         break;
                     case RANGE:
                         ThresholdRangeCondition rCond = (ThresholdRangeCondition) cond;
-                        futures.add(session.executeAsync(insertConditionThresholdRange.bind(rCond.getTenantId(),
+                        batch.add(insertConditionThresholdRange.bind(rCond.getTenantId(),
                                 rCond.getTriggerId(), rCond.getTriggerMode().name(), rCond.getContext(),
                                 rCond.getConditionSetSize(), rCond.getConditionSetIndex(), rCond.getConditionId(),
                                 rCond.getDataId(), rCond.getOperatorLow().name(), rCond.getOperatorHigh().name(),
-                                rCond.getThresholdLow(), rCond.getThresholdHigh(), rCond.isInRange())));
+                                rCond.getThresholdLow(), rCond.getThresholdHigh(), rCond.isInRange()));
                         dataIds.add(rCond.getDataId());
                         break;
                     case RATE:
                         RateCondition rateCond = (RateCondition) cond;
-                        futures.add(session.executeAsync(insertConditionRate.bind(rateCond.getTenantId(),
+                        batch.add(insertConditionRate.bind(rateCond.getTenantId(),
                                 rateCond.getTriggerId(), rateCond.getTriggerMode().name(), rateCond.getContext(),
                                 rateCond.getConditionSetSize(), rateCond.getConditionSetIndex(),
                                 rateCond.getConditionId(), rateCond.getDataId(), rateCond.getDirection().name(),
-                                rateCond.getPeriod().name(), rateCond.getOperator().name(), rateCond.getThreshold())));
+                                rateCond.getPeriod().name(), rateCond.getOperator().name(), rateCond.getThreshold()));
                         dataIds.add(rateCond.getDataId());
                         break;
                     case STRING:
                         StringCondition sCond = (StringCondition) cond;
-                        futures.add(session.executeAsync(insertConditionString.bind(sCond.getTenantId(),
+                        batch.add(insertConditionString.bind(sCond.getTenantId(),
                                 sCond.getTriggerId(), sCond.getTriggerMode().name(), sCond.getContext(),
                                 sCond.getConditionSetSize(), sCond.getConditionSetIndex(), sCond.getConditionId(),
                                 sCond.getDataId(), sCond.getOperator().name(), sCond.getPattern(),
-                                sCond.isIgnoreCase())));
+                                sCond.isIgnoreCase()));
                         dataIds.add(sCond.getDataId());
                         break;
                     case THRESHOLD:
                         ThresholdCondition tCond = (ThresholdCondition) cond;
-                        futures.add(session.executeAsync(insertConditionThreshold.bind(tCond.getTenantId(),
+                        batch.add(insertConditionThreshold.bind(tCond.getTenantId(),
                                 tCond.getTriggerId(), tCond.getTriggerMode().name(), tCond.getContext(),
                                 tCond.getConditionSetSize(), tCond.getConditionSetIndex(),
                                 tCond.getConditionId(), tCond.getDataId(), tCond.getOperator().name(),
-                                tCond.getThreshold())));
+                                tCond.getThreshold()));
                         dataIds.add(tCond.getDataId());
                         break;
                     default:
                         throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
                 }
+                i += batch.size();
+                if (i > batchSize) {
+                    futures.add(session.executeAsync(batch));
+                    batch.clear();
+                    i = 0;
+                }
+            }
+            if (batch.size() > 0) {
+                futures.add(session.executeAsync(batch));
             }
             Futures.allAsList(futures).get();
 
@@ -2177,8 +2228,19 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         List<ResultSetFuture> futures = new ArrayList<>(tags.size());
+        BatchStatement batch = new BatchStatement(batchType);
+        int i = 0;
         for (Entry<String, String> tag : tags.entrySet()) {
-            futures.add(session.executeAsync(insertTag.bind(tenantId, type.name(), tag.getKey(), tag.getValue(), id)));
+            batch.add(insertTag.bind(tenantId, type.name(), tag.getKey(), tag.getValue(), id));
+            i += batch.size();
+            if (i > batchSize) {
+                futures.add(session.executeAsync(batch));
+                batch.clear();
+                i = 0;
+            }
+        }
+        if (batch.size() > 0) {
+            futures.add(session.executeAsync(batch));
         }
         Futures.allAsList(futures).get();
     }
@@ -2214,8 +2276,19 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         PreparedStatement deleteTag = CassStatement.get(session, CassStatement.DELETE_TAG);
 
         List<ResultSetFuture> futures = new ArrayList<>(tags.size());
+        BatchStatement batch = new BatchStatement(batchType);
+        int i = 0;
         for (Entry<String, String> tag : tags.entrySet()) {
-            futures.add(session.executeAsync(deleteTag.bind(tenantId, type.name(), tag.getKey(), tag.getValue(), id)));
+            batch.add(deleteTag.bind(tenantId, type.name(), tag.getKey(), tag.getValue(), id));
+            i += batch.size();
+            if (i > batchSize) {
+                futures.add(session.executeAsync(batch));
+                batch.clear();
+                i = 0;
+            }
+        }
+        if (batch.size() > 0) {
+            futures.add(session.executeAsync(batch));
         }
         Futures.allAsList(futures).get();
     }

@@ -67,6 +67,7 @@ import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.jboss.logging.Logger;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
@@ -90,10 +91,22 @@ public class CassAlertsServiceImpl implements AlertsService {
     private static final String CRITERIA_NO_QUERY_SIZE_ENV = "CRITERIA_NO_QUERY_SIZE";
     private static final String CRITERIA_NO_QUERY_SIZE_DEFAULT = "200";
 
+    /*
+        These parameters control the number of statements used for a batch.
+        Batches are used for queries on same partition only.
+        The real size of the batch may vary as it depends of the size in bytes of the whole query.
+        But on our case and for simplifying we are counting the number of statements.
+     */
+    private static final String BATCH_SIZE = "hawkular-alerts.batch-size";
+    private static final String BATCH_SIZE_ENV = "BATCH_SIZE";
+    private static final String BATCH_SIZE_DEFAULT = "10";
+
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassAlertsServiceImpl.class);
 
     private int criteriaNoQuerySize;
+    private int batchSize;
+    private final BatchStatement.Type batchType = BatchStatement.Type.LOGGED;
 
     @EJB
     AlertsEngine alertsEngine;
@@ -117,13 +130,15 @@ public class CassAlertsServiceImpl implements AlertsService {
     @Resource
     private ManagedExecutorService executor;
 
+    public CassAlertsServiceImpl() {
+    }
+
     @PostConstruct
     public void init() {
         criteriaNoQuerySize = Integer.valueOf(properties.getProperty(CRITERIA_NO_QUERY_SIZE,
                 CRITERIA_NO_QUERY_SIZE_ENV, CRITERIA_NO_QUERY_SIZE_DEFAULT));
-    }
-
-    public CassAlertsServiceImpl() {
+        batchSize = Integer.valueOf(properties.getProperty(BATCH_SIZE,
+                BATCH_SIZE_ENV, BATCH_SIZE_DEFAULT));
     }
 
     public void setSession(Session session) {
@@ -132,6 +147,10 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     public void setExecutor(ManagedExecutorService executor) {
         this.executor = executor;
+    }
+
+    public void setProperties(PropertiesService properties) {
+        this.properties = properties;
     }
 
     @Override
@@ -152,23 +171,27 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
-            alerts.stream().forEach(a -> {
-                futures.add(session.executeAsync(insertAlert.bind(a.getTenantId(), a.getAlertId(),
-                        JsonUtil.toJson(a))));
-                futures.add(session.executeAsync(insertAlertTrigger.bind(a.getTenantId(),
-                        a.getAlertId(),
-                        a.getTriggerId())));
-                futures.add(session.executeAsync(insertAlertCtime.bind(a.getTenantId(),
-                        a.getAlertId(), a.getCtime())));
+            BatchStatement batch = new BatchStatement(batchType);
+            int i = 0;
+            for(Alert a : alerts) {
+                batch.add(insertAlert.bind(a.getTenantId(), a.getAlertId(), JsonUtil.toJson(a)));
+                batch.add(insertAlertTrigger.bind(a.getTenantId(), a.getAlertId(), a.getTriggerId()));
+                batch.add(insertAlertCtime.bind(a.getTenantId(), a.getAlertId(), a.getCtime()));
 
                 a.getTags().entrySet().stream().forEach(tag -> {
-                    futures.add(session.executeAsync(insertTag.bind(a.getTenantId(), TagType.ALERT.name(),
-                            tag.getKey(), tag.getValue(), a.getId())));
+                    batch.add(insertTag.bind(a.getTenantId(), TagType.ALERT.name(),
+                            tag.getKey(), tag.getValue(), a.getId()));
                 });
-            });
-            /*
-                main method is synchronous so we need to wait until futures are completed
-             */
+                i += batch.size();
+                if (i > batchSize) {
+                    futures.add(session.executeAsync(batch));
+                    batch.clear();
+                    i = 0;
+                }
+            }
+            if (batch.size() > 0) {
+                futures.add(session.executeAsync(batch));
+            }
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
@@ -202,25 +225,29 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
-            events.stream().forEach(e -> {
-                futures.add(session.executeAsync(insertEvent.bind(e.getTenantId(), e.getId(),
-                        JsonUtil.toJson(e))));
-                futures.add(session.executeAsync(insertEventCategory.bind(e.getTenantId(), e.getCategory(),
-                        e.getId())));
-                futures.add(session.executeAsync(insertEventCtime.bind(e.getTenantId(), e.getCtime(),
-                        e.getId())));
+            BatchStatement batch = new BatchStatement(batchType);
+            int i = 0;
+            for (Event e : events) {
+                batch.add(insertEvent.bind(e.getTenantId(), e.getId(), JsonUtil.toJson(e)));
+                batch.add(insertEventCategory.bind(e.getTenantId(), e.getCategory(), e.getId()));
+                batch.add(insertEventCtime.bind(e.getTenantId(), e.getCtime(), e.getId()));
                 if (null != e.getTrigger()) {
-                    futures.add(session.executeAsync(insertEventTrigger.bind(e.getTenantId(), e.getTrigger().getId(),
-                            e.getId())));
+                    batch.add(insertEventTrigger.bind(e.getTenantId(), e.getTrigger().getId(), e.getId()));
                 }
                 e.getTags().entrySet().stream().forEach(tag -> {
-                    futures.add(session.executeAsync(insertTag.bind(e.getTenantId(), TagType.EVENT.name(),
-                            tag.getKey(), tag.getValue(), e.getId())));
+                    batch.add(insertTag.bind(e.getTenantId(), TagType.EVENT.name(), tag.getKey(), tag.getValue(),
+                            e.getId()));
                 });
-            });
-            /*
-                main method is synchronous so we need to wait until futures are completed
-             */
+                i += batch.size();
+                if (i > batchSize) {
+                    futures.add(session.executeAsync(batch));
+                    batch.clear();
+                    i = 0;
+                }
+            }
+            if (batch.size() > 0) {
+                futures.add(session.executeAsync(batch));
+            }
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
@@ -282,17 +309,24 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
-            existingAlerts.stream().forEach(a -> {
+            BatchStatement batch = new BatchStatement(batchType);
+            int i = 0;
+            for (Alert a : existingAlerts) {
                 tags.entrySet().stream().forEach(tag -> {
                     a.addTag(tag.getKey(), tag.getValue());
-                    futures.add(session.executeAsync(insertTag.bind(tenantId, TagType.ALERT.name(),
-                            tag.getKey(), tag.getValue(), a.getId())));
+                    batch.add(insertTag.bind(tenantId, TagType.ALERT.name(), tag.getKey(), tag.getValue(), a.getId()));
                 });
-                futures.add(session.executeAsync(updateAlert.bind(JsonUtil.toJson(a), tenantId, a.getAlertId())));
-            });
-            /*
-                main method is synchronous so we need to wait until futures are completed
-             */
+                batch.add(updateAlert.bind(JsonUtil.toJson(a), tenantId, a.getAlertId()));
+                i += batch.size();
+                if (i > batchSize) {
+                    futures.add(session.executeAsync(batch));
+                    batch.clear();
+                    i = 0;
+                }
+            }
+            if (batch.size() > 0) {
+                futures.add(session.executeAsync(batch));
+            }
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
@@ -323,17 +357,19 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
-            existingEvents.stream().forEach(a -> {
+            BatchStatement batch = new BatchStatement(batchType);
+            int i = 0;
+            for (Event e : existingEvents) {
                 tags.entrySet().stream().forEach(tag -> {
-                    a.addTag(tag.getKey(), tag.getValue());
-                    futures.add(session.executeAsync(insertTag.bind(tenantId, TagType.EVENT.name(),
-                            tag.getKey(), tag.getValue(), a.getId())));
+                    e.addTag(tag.getKey(), tag.getValue());
+                    batch.add(insertTag.bind(tenantId, TagType.EVENT.name(), tag.getKey(), tag.getValue(), e.getId()));
                 });
-                futures.add(session.executeAsync(updateEvent.bind(JsonUtil.toJson(a), tenantId, a.getId())));
-            });
-            /*
-                main method is synchronous so we need to wait until futures are completed
-             */
+                batch.add(updateEvent.bind(JsonUtil.toJson(e), tenantId, e.getId()));
+
+            }
+            if (batch.size() > 0) {
+                futures.add(session.executeAsync(batch));
+            }
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
@@ -365,19 +401,26 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
-            existingAlerts.stream().forEach(a -> {
+            BatchStatement batch = new BatchStatement(batchType);
+            int i = 0;
+            for (Alert a : existingAlerts) {
                 tags.stream().forEach(tag -> {
                     if (a.getTags().containsKey(tag)) {
-                        futures.add(session.executeAsync(deleteTag.bind(tenantId, TagType.ALERT.name(),
-                                tag, a.getTags().get(tag), a.getId())));
+                        batch.add(deleteTag.bind(tenantId, TagType.ALERT.name(), tag, a.getTags().get(tag), a.getId()));
                         a.removeTag(tag);
                     }
                 });
-                futures.add(session.executeAsync(updateAlert.bind(JsonUtil.toJson(a), tenantId, a.getAlertId())));
-            });
-            /*
-                main method is synchronous so we need to wait until futures are completed
-             */
+                batch.add(updateAlert.bind(JsonUtil.toJson(a), tenantId, a.getAlertId()));
+                i += batch.size();
+                if (i > batchSize) {
+                    futures.add(session.executeAsync(batch));
+                    batch.clear();
+                    i = 0;
+                }
+            }
+            if (batch.size() > 0) {
+                futures.add(session.executeAsync(batch));
+            }
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
@@ -409,19 +452,26 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
-            existingEvents.stream().forEach(e -> {
+            BatchStatement batch = new BatchStatement(batchType);
+            int i = 0;
+            for (Event e : existingEvents) {
                 tags.stream().forEach(tag -> {
                     if (e.getTags().containsKey(tag)) {
-                        futures.add(session.executeAsync(deleteTag.bind(tenantId, TagType.EVENT.name(),
-                                tag, e.getTags().get(tag), e.getId())));
+                        batch.add(deleteTag.bind(tenantId, TagType.EVENT.name(), tag, e.getTags().get(tag), e.getId()));
                         e.removeTag(tag);
                     }
                 });
-                futures.add(session.executeAsync(updateEvent.bind(JsonUtil.toJson(e), tenantId, e.getId())));
-            });
-            /*
-                main method is synchronous so we need to wait until futures are completed
-             */
+                batch.add(updateEvent.bind(JsonUtil.toJson(e), tenantId, e.getId()));
+                i += batch.size();
+                if (i > batchSize) {
+                    futures.add(session.executeAsync(batch));
+                    batch.clear();
+                    i = 0;
+                }
+            }
+            if (batch.size() > 0) {
+                futures.add(session.executeAsync(batch));
+            }
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
@@ -509,28 +559,32 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (isEmpty(tenantIds)) {
             throw new IllegalArgumentException("TenantIds must be not null");
         }
-        TreeSet<String> orderedTenantsIds = new TreeSet<>(tenantIds);
         List<Alert> alerts = new ArrayList<>();
-        List<Future> futures = new ArrayList<>();
-        orderedTenantsIds.stream().forEach(tenantId -> {
-            futures.add(executor.submit(() -> {
-                try {
-                    List<Alert> tenantAlerts = getAlerts(tenantId, criteria);
-                    synchronized (alerts) {
-                        alerts.addAll(tenantAlerts);
+        if (tenantIds.size() == 1) {
+            alerts.addAll(getAlerts(tenantIds.iterator().next(), criteria));
+        } else {
+            TreeSet<String> orderedTenantIds = new TreeSet<>(tenantIds);
+            List<Future> futures = new ArrayList<>();
+            orderedTenantIds.stream().forEach(tenantId -> {
+                futures.add(executor.submit(() -> {
+                    try {
+                        List<Alert> tenantAlerts = getAlerts(tenantId, criteria);
+                        synchronized (alerts) {
+                            alerts.addAll(tenantAlerts);
+                        }
+                    } catch (Exception e) {
+                        msgLog.errorDatabaseException(e.getMessage());
                     }
+                }));
+            });
+            futures.stream().forEach(f -> {
+                try {
+                    f.get();
                 } catch (Exception e) {
                     msgLog.errorDatabaseException(e.getMessage());
                 }
-            }));
-        });
-        futures.stream().forEach(f -> {
-            try {
-                f.get();
-            } catch (Exception e) {
-                msgLog.errorDatabaseException(e.getMessage());
-            }
-        });
+            });
+        }
         if (alerts.isEmpty()) {
             return new Page<>(alerts, pager, 0);
         } else {
@@ -774,7 +828,6 @@ public class CassAlertsServiceImpl implements AlertsService {
 
         if (triggerIds.size() > 0) {
             PreparedStatement selectAlertsTriggers = CassStatement.get(session, CassStatement.SELECT_ALERT_TRIGGER);
-
             List<ResultSetFuture> futures = triggerIds.stream()
                     .map(triggerId -> session.executeAsync(selectAlertsTriggers.bind(tenantId, triggerId)))
                     .collect(Collectors.toList());
@@ -1007,28 +1060,32 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (isEmpty(tenantIds)) {
             throw new IllegalArgumentException("TenantIds must be not null");
         }
-        TreeSet<String> orderedTenantsIds = new TreeSet<>(tenantIds);
         List<Event> events = new ArrayList<>();
-        List<Future> futures = new ArrayList<>();
-        orderedTenantsIds.stream().forEach(tenantId -> {
-            futures.add(executor.submit(() -> {
-                try {
-                    List<Event> tenantEvents = getEvents(tenantId, criteria);
-                    synchronized (events) {
-                        events.addAll(tenantEvents);
+        if (tenantIds.size() == 1) {
+            events.addAll(getEvents(tenantIds.iterator().next(), criteria));
+        } else {
+            TreeSet<String> orderedTenantIds = new TreeSet<>(tenantIds);
+            List<Future> futures = new ArrayList<>();
+            orderedTenantIds.stream().forEach(tenantId -> {
+                futures.add(executor.submit(() -> {
+                    try {
+                        List<Event> tenantEvents = getEvents(tenantId, criteria);
+                        synchronized (events) {
+                            events.addAll(tenantEvents);
+                        }
+                    } catch (Exception e) {
+                        msgLog.errorDatabaseException(e.getMessage());
                     }
+                }));
+            });
+            futures.stream().forEach(f -> {
+                try {
+                    f.get();
                 } catch (Exception e) {
                     msgLog.errorDatabaseException(e.getMessage());
                 }
-            }));
-        });
-        futures.stream().forEach(f -> {
-            try {
-                f.get();
-            } catch (Exception e) {
-                msgLog.errorDatabaseException(e.getMessage());
-            }
-        });
+            });
+        }
         if (events.isEmpty()) {
             return new Page<>(events, pager, 0);
         } else {
@@ -1264,15 +1321,16 @@ public class CassAlertsServiceImpl implements AlertsService {
         Set<String> triggerIds = extractTriggerIds(tenantId, criteria);
 
         if (triggerIds.size() > 0) {
-            List<ResultSetFuture> futures = new ArrayList<>();
             PreparedStatement selectEventsTriggers = CassStatement.get(session, CassStatement.SELECT_EVENT_TRIGGER);
 
+            List<ResultSetFuture> futures = new ArrayList<>();
             for (String triggerId : triggerIds) {
                 if (isEmpty(triggerId)) {
                     continue;
                 }
                 futures.add(session.executeAsync(selectEventsTriggers.bind(tenantId, triggerId)));
             }
+
             List<ResultSet> rsIdsByTriggerIds = Futures.allAsList(futures).get();
 
             Set<String> eventIds = new HashSet<>();
@@ -1449,19 +1507,28 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new RuntimeException("delete*Alerts PreparedStatement is null");
         }
 
+        List<ResultSetFuture> futures = new ArrayList<>();
+        int i = 0;
+        BatchStatement batch = new BatchStatement(batchType);
         for (Alert a : alertsToDelete) {
             String id = a.getAlertId();
-            List<ResultSetFuture> futures = new ArrayList<>();
-            futures.add(session.executeAsync(deleteAlert.bind(tenantId, id)));
-            futures.add(session.executeAsync(deleteAlertCtime.bind(tenantId, a.getCtime(), id)));
-            futures.add(session.executeAsync(deleteAlertTrigger.bind(tenantId, a.getTriggerId(), id)));
+            batch.add(deleteAlert.bind(tenantId, id));
+            batch.add(deleteAlertCtime.bind(tenantId, a.getCtime(), id));
+            batch.add(deleteAlertTrigger.bind(tenantId, a.getTriggerId(), id));
             a.getLifecycle().stream().forEach(l -> {
-                futures.add(
-                        session.executeAsync(deleteAlertLifecycle.bind(tenantId, l.getStatus().name(), l.getStime(),
-                                a.getAlertId())));
+                batch.add(deleteAlertLifecycle.bind(tenantId, l.getStatus().name(), l.getStime(), a.getAlertId()));
             });
-            Futures.allAsList(futures).get();
+            i += batch.size();
+            if (i > batchSize) {
+                futures.add(session.executeAsync(batch));
+                batch.clear();
+                i = 0;
+            }
         }
+        if (batch.size() > 0) {
+            futures.add(session.executeAsync(batch));
+        }
+        Futures.allAsList(futures).get();
 
         return alertsToDelete.size();
     }
@@ -1492,17 +1559,28 @@ public class CassAlertsServiceImpl implements AlertsService {
             throw new RuntimeException("delete*Events PreparedStatement is null");
         }
 
+        List<ResultSetFuture> futures = new ArrayList<>();
+        int i = 0;
+        BatchStatement batch = new BatchStatement(batchType);
         for (Event e : eventsToDelete) {
             String id = e.getId();
-            List<ResultSetFuture> futures = new ArrayList<>();
-            futures.add(session.executeAsync(deleteEvent.bind(tenantId, id)));
-            futures.add(session.executeAsync(deleteEventCategory.bind(tenantId, e.getCategory(), id)));
-            futures.add(session.executeAsync(deleteEventCTime.bind(tenantId, e.getCtime(), id)));
+            batch.add(deleteEvent.bind(tenantId, id));
+            batch.add(deleteEventCategory.bind(tenantId, e.getCategory(), id));
+            batch.add(deleteEventCTime.bind(tenantId, e.getCtime(), id));
             if (null != e.getTrigger()) {
-                futures.add(session.executeAsync(deleteEventTrigger.bind(tenantId, e.getTrigger().getId(), id)));
+                batch.add(deleteEventTrigger.bind(tenantId, e.getTrigger().getId(), id));
             }
-            Futures.allAsList(futures).get();
+            i += batch.size();
+            if (i > batchSize) {
+                futures.add(session.executeAsync(batch));
+                batch.clear();
+                i = 0;
+            }
         }
+        if (batch.size() > 0) {
+            futures.add(session.executeAsync(batch));
+        }
+        Futures.allAsList(futures).get();
 
         return eventsToDelete.size();
     }

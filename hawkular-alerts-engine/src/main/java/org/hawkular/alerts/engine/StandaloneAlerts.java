@@ -37,6 +37,7 @@ import org.hawkular.alerts.engine.impl.CassActionsServiceImpl;
 import org.hawkular.alerts.engine.impl.CassAlertsServiceImpl;
 import org.hawkular.alerts.engine.impl.CassDefinitionsServiceImpl;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
+import org.hawkular.alerts.engine.impl.PropertiesServiceImpl;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.Session;
@@ -54,6 +55,7 @@ public class StandaloneAlerts {
 
     private static StandaloneAlerts instance = null;
 
+    private PropertiesServiceImpl propertiesService = null;
     private AlertsContext alertsContext = null;
     private CassActionsServiceImpl actions = null;
     private CassAlertsServiceImpl alerts = null;
@@ -67,14 +69,19 @@ public class StandaloneAlerts {
         rules = new DroolsRulesEngineImpl();
         engine = new AlertsEngineImpl();
         definitions = new CassDefinitionsServiceImpl();
+        propertiesService = new PropertiesServiceImpl();
         alerts = new CassAlertsServiceImpl();
         alerts.setSession(session);
         alerts.setExecutor(executor);
+        alerts.setProperties(propertiesService);
+        alerts.init();
         alertsContext = new AlertsContext();
 
         definitions.setSession(session);
         definitions.setAlertsEngine(engine);
         definitions.setAlertsContext(alertsContext);
+        definitions.setProperties(propertiesService);
+        definitions.init();
 
         actions.setSession(session);
         actions.setAlertsContext(alertsContext);

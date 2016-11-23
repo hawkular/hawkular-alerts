@@ -48,6 +48,7 @@ import org.jboss.logging.Logger;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.JdkSSLOptions;
 import com.datastax.driver.core.KeyspaceMetadata;
+import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.ResultSet;
@@ -72,27 +73,32 @@ public class CassCluster {
      */
     private static final String ALERTS_CASSANDRA_PORT = "hawkular-alerts.cassandra-cql-port";
     private static final String ALERTS_CASSANDRA_PORT_ENV = "CASSANDRA_CQL_PORT";
+    private static final String ALERTS_CASSANDRA_PORT_ENV_DEFAULT = "9042";
 
     /*
         List of nodes defined on the Cassandra cluster
      */
     private static final String ALERTS_CASSANDRA_NODES = "hawkular-alerts.cassandra-nodes";
     private static final String ALERTS_CASSANDRA_NODES_ENV = "CASSANDRA_NODES";
+    private static final String ALERTS_CASSANDRA_NODES_ENV_DEFAULT = "127.0.0.1";
 
     /*
         Hawkular Alerts keyspace name used on Cassandra cluster
      */
     private static final String ALERTS_CASSANDRA_KEYSPACE = "hawkular-alerts.cassandra-keyspace";
+    private static final String ALERTS_CASSANDRA_KEYSPACE_DEFAULT = "hawkular_alerts";
 
     /*
         Number of attempts when Hawkular Alerts cannot connect with Cassandra cluster to retry
      */
     private static final String ALERTS_CASSANDRA_RETRY_ATTEMPTS = "hawkular-alerts.cassandra-retry-attempts";
+    private static final String ALERTS_CASSANDRA_RETRY_ATTEMPTS_DEFAULT = "5";
 
     /*
         ALERTS_CASSANDRA_RETRY_TIMEOUT defined in milliseconds
      */
     private static final String ALERTS_CASSANDRA_RETRY_TIMEOUT = "hawkular-alerts.cassandra-retry-timeout";
+    private static final String ALERTS_CASSANDRA_RETRY_TIMEOUT_DEFAULT = "2000";
 
     /*
         ALERTS_CASSANDRA_CONNECT_TIMEOUT and ALERTS_CASSANDRA_CONNECT_TIMEOUT_ENV defined in milliseconds
@@ -111,12 +117,19 @@ public class CassCluster {
      */
     private static final String ALERTS_CASSANDRA_OVERWRITE = "hawkular-alerts.cassandra-overwrite";
     private static final String ALERTS_CASSANDRA_OVERWRITE_ENV = "CASSANDRA_OVERWRITE";
+    private static final String ALERTS_CASSANDRA_OVERWRITE_ENV_DEFAULT = "false";
 
     /*
        True/false flag to use SSL communication with Cassandra cluster
      */
     private static final String ALERTS_CASSANDRA_USESSL = "hawkular-alerts.cassandra-use-ssl";
     private static final String ALERTS_CASSANDRA_USESSL_ENV = "CASSANDRA_USESSL";
+    private static final String ALERTS_CASSANDRA_USESSL_ENV_DEFAULT = "false";
+
+    private static final String ALERTS_CASSANDRA_MAX_QUEUE = "hawkular-alerts.cassandra-max-queue";
+    private static final String ALERTS_CASSANDRA_MAX_QUEUE_ENV = "CASSANDRA_MAX_QUEUE";
+    private static final String ALERTS_CASSANDRA_MAX_QUEUE_ENV_DEFAULT = "9182";
+
 
     private int attempts;
     private int timeout;
@@ -127,6 +140,7 @@ public class CassCluster {
     private boolean overwrite = false;
     private String keyspace;
     private boolean cassandraUseSSL;
+    private int maxQueue;
 
     private Cluster cluster = null;
 
@@ -151,19 +165,25 @@ public class CassCluster {
     private Cache schemaCache;
 
     private void readProperties() {
-        attempts = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_ATTEMPTS, "5"));
-        timeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_TIMEOUT, "2000"));
-        cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, ALERTS_CASSANDRA_PORT_ENV, "9042");
-        nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, ALERTS_CASSANDRA_NODES_ENV, "127.0.0.1");
+        attempts = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_ATTEMPTS,
+                ALERTS_CASSANDRA_RETRY_ATTEMPTS_DEFAULT));
+        timeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_TIMEOUT,
+                ALERTS_CASSANDRA_RETRY_TIMEOUT_DEFAULT));
+        cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, ALERTS_CASSANDRA_PORT_ENV,
+                ALERTS_CASSANDRA_PORT_ENV_DEFAULT);
+        nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, ALERTS_CASSANDRA_NODES_ENV,
+                ALERTS_CASSANDRA_NODES_ENV_DEFAULT);
         connTimeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_CONNECT_TIMEOUT,
                 ALERTS_CASSANDRA_CONNECT_TIMEOUT_ENV, String.valueOf(SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS)));
         readTimeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_READ_TIMEOUT,
                 ALERTS_CASSANDRA_READ_TIMEOUT_ENV, String.valueOf(SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS)));
         overwrite = Boolean.parseBoolean(AlertProperties.getProperty(ALERTS_CASSANDRA_OVERWRITE,
-                ALERTS_CASSANDRA_OVERWRITE_ENV, "false"));
-        keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, "hawkular_alerts");
+                ALERTS_CASSANDRA_OVERWRITE_ENV, ALERTS_CASSANDRA_OVERWRITE_ENV_DEFAULT));
+        keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, ALERTS_CASSANDRA_KEYSPACE_DEFAULT);
         cassandraUseSSL = Boolean.parseBoolean(AlertProperties.getProperty(ALERTS_CASSANDRA_USESSL,
-                ALERTS_CASSANDRA_USESSL_ENV, "false"));
+                ALERTS_CASSANDRA_USESSL_ENV, ALERTS_CASSANDRA_USESSL_ENV_DEFAULT));
+        maxQueue = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_MAX_QUEUE,
+                ALERTS_CASSANDRA_MAX_QUEUE_ENV, ALERTS_CASSANDRA_MAX_QUEUE_ENV_DEFAULT));
     }
 
     @PostConstruct
@@ -191,6 +211,7 @@ public class CassCluster {
         Cluster.Builder clusterBuilder = new Cluster.Builder()
                 .addContactPoints(nodes.split(","))
                 .withPort(new Integer(cqlPort))
+                .withPoolingOptions(new PoolingOptions().setMaxQueueSize(maxQueue))
                 .withProtocolVersion(ProtocolVersion.V3)
                 .withQueryOptions(new QueryOptions().setRefreshSchemaIntervalMillis(0));
 
