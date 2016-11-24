@@ -14,7 +14,9 @@ Hawkular is a modular systems monitoring suite, that consists of several sub-pro
 storing of metrics, alerting on incoming events and more. Those projects are developed
 in their own GitHub repositories and integrated in this project.
 
-== About Alerts
+link:http://www.slideshare.net/ponceballesteros/hawkular-alerting[Hawkular Alerting Introduction].
+
+== Project layout
 
 The project is divided into several modules
 
@@ -30,25 +32,23 @@ It includes a rules engine as part of the implementation details.
 | hawkular-alerts-rest |
 This is a public REST API for alerts component. +
 It is a wrapper of the main *hawkular-alerts-api*.
-| hawkular-alerts-bus |
-This component is responsible for the communication between the alerts engine and the bus. +
-*hawkular-alerts-engine* is decoupled from the bus, so it can be used in other scenarios +
-(i.e. standalone, third party alerts system).
-| hawkular-alerts-bus-api |
-This is the public API for message objects used in *hawkular-alerts-bus*. +
-| hawkular-alerts-actions-api |
+| hawkular-alerts-actions |
 Common API for action plugins. +
 An action plugin will be deployed as a .war artifact.
-| hawkular-alerts-actions-impl |
-Component responsible of the communication of the plugins with the engine directly using Java API +
-It is used on standalone deployments.
 | hawkular-alerts-actions-plugins |
 Alert actions plugins. +
 Main responsabilities are: +
 - Publish supported properties. +
 - Process actions messages.
-| hawkular-alerter-metrics |
-Optional component used to offer advance evaluation of complex Metrics expressions that interact with the Alerts system.
+| hawkular-alerts-filter-api |
+Filter API to query which dataIds are published from triggers defined. +
+This info helps to filter and send only the relevant data needed for triggers evaluation.
+| hawkular-alerts-bus |
+This component is responsible for the communication between the alerts engine and the bus. +
+*hawkular-alerts-engine* is decoupled from the bus, so it can be used in other scenarios +
+(i.e. standalone, third party alerts system).
+| hawkular-alerts-bus-api |
+This is the public API for message objects used in *hawkular-alerts-bus*.
 |=======================
 
 == Getting started
@@ -60,6 +60,26 @@ Optional component used to offer advance evaluation of complex Metrics expressio
     cd hawkular-alerts
     mvn clean install
 ```
+
+== Run examples
+
+* link:https://github.com/hawkular/hawkular-alerts/blob/master/examples/hello-world/README.adoc[Hello World] +
+A mandatory Hello World to show basic features of Alerting.
+
+* link:https://github.com/hawkular/hawkular-alerts/blob/master/examples/autoresolve-process/README.adoc[Auto Resolve Process] +
+Show how to use AUTORESOLVE conditions to automatically resolve alerts.
+
+* link:https://github.com/hawkular/hawkular-alerts/blob/master/examples/events/README.adoc[Events] +
+Tutorial about how to model Events and define conditions for Events evaluation.
+
+* link:https://github.com/hawkular/hawkular-alerts/blob/master/examples/group-triggers/README.adoc[Group Triggers] +
+Example about how to manage similar definitions using GroupTriggers as a template.
+
+* link:https://github.com/hawkular/hawkular-alerts/blob/master/examples/webhook/README.adoc[Webhook] +
+Hello World example using Webhooks as preferred action.
+
+* link:https://github.com/lucasponce/hawkular-alerts-demo[Monitored Wildfly Server Demo] +
+A composite demo where it shows how a Wildfly Server can be monitored at several levels (availability, deployments, application logs) using previous examples in a specific scenario.
 
 == Integration tests
 
