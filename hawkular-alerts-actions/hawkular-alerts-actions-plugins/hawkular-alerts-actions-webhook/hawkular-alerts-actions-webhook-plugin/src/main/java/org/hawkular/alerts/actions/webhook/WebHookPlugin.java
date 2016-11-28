@@ -35,6 +35,8 @@ import org.hawkular.alerts.api.model.action.Action;
 import org.jboss.logging.Logger;
 
 /**
+ * Action Webhook plugin.
+ *
  * An example of listener for basic webhook processing.
  *
  * @author Jay Shaughnessy
@@ -49,6 +51,28 @@ public class WebHookPlugin implements ActionPluginListener {
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String APPLICATION_JSON = "application/json";
 
+    /*
+        This is the list of properties supported for the WebHook plugin.
+        Properties are personalized per action.
+        If not properties found per action, then plugin looks into default properties set at plugin level.
+        If not default properties found at plugin level, then it takes to default ones defined inside plugin.
+     */
+
+    /**
+     * "url" property defines the url of the webhook to invoke.
+     */
+    public static final String PROP_URL = "url";
+
+    /**
+     * "method" property defines the HTTP method used with the webhook url to invoke.
+     */
+    public static final String PROP_METHOD = "method";
+
+    /**
+     * "timeout" property defines the connection timeout for the webhook url to invoke.
+     */
+    public static final String PROP_TIMEOUT = "timeout";
+
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private static final Logger log = Logger.getLogger(WebHookPlugin.class);
     Map<String, String> defaultProperties = new HashMap<>();
@@ -60,9 +84,9 @@ public class WebHookPlugin implements ActionPluginListener {
     private static final String MESSAGE_FAILED = "FAILED";
 
     public WebHookPlugin() {
-        defaultProperties.put("url", DEFAULT_URL);
-        defaultProperties.put("method", DEFAULT_METHOD);
-        defaultProperties.put("timeout", DEFAULT_TIMEOUT);
+        defaultProperties.put(PROP_URL, DEFAULT_URL);
+        defaultProperties.put(PROP_METHOD, DEFAULT_METHOD);
+        defaultProperties.put(PROP_TIMEOUT, DEFAULT_TIMEOUT);
     }
 
     @Override
@@ -93,11 +117,11 @@ public class WebHookPlugin implements ActionPluginListener {
         if (action.getProperties() == null) {
             throw new IllegalArgumentException("Received action without properties");
         }
-        String url = isEmpty(action.getProperties().get("url")) ? DEFAULT_URL : action.getProperties().get("url");
-        String method = isEmpty(action.getProperties().get("method")) ? DEFAULT_METHOD :
-                action.getProperties().get("method");
-        int timeout = isEmpty(action.getProperties().get("timeout")) ? Integer.parseInt(DEFAULT_TIMEOUT) :
-                Integer.parseInt(action.getProperties().get("timeout"));
+        String url = isEmpty(action.getProperties().get(PROP_URL)) ? DEFAULT_URL : action.getProperties().get(PROP_URL);
+        String method = isEmpty(action.getProperties().get(PROP_METHOD)) ? DEFAULT_METHOD :
+                action.getProperties().get(PROP_METHOD);
+        int timeout = isEmpty(action.getProperties().get(PROP_TIMEOUT)) ? Integer.parseInt(DEFAULT_TIMEOUT) :
+                Integer.parseInt(action.getProperties().get(PROP_TIMEOUT));
 
         String jsonEvent = JsonUtil.toJson(action.getEvent());
         URL webHookUrl = new URL(url);

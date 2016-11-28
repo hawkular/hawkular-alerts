@@ -183,7 +183,14 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
         Set<String> pluginProperties = getActionPlugin(plugin);
         actionDefinition.getProperties().keySet().stream().forEach(property -> {
-            if (!pluginProperties.contains(property)) {
+            boolean isPluginProperty = false;
+            for (String pluginProperty : pluginProperties) {
+                if (property.startsWith(pluginProperty)) {
+                    isPluginProperty = true;
+                    break;
+                }
+            }
+            if (!isPluginProperty) {
                 throw new IllegalArgumentException("Property: " + property + " is not valid on plugin: " + plugin);
             }
         });
@@ -2753,7 +2760,20 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionDefinition.getProperties())) {
             throw new IllegalArgumentException("Properties must be not null");
         }
-
+        Set<String> pluginProperties = getActionPlugin(actionDefinition.getActionPlugin());
+        actionDefinition.getProperties().keySet().stream().forEach(property -> {
+            boolean isPluginProperty = false;
+            for (String pluginProperty : pluginProperties) {
+                if (property.startsWith(pluginProperty)) {
+                    isPluginProperty = true;
+                    break;
+                }
+            }
+            if (!isPluginProperty) {
+                throw new IllegalArgumentException("Property: " + property + " is not valid on plugin: " +
+                        actionDefinition.getActionPlugin());
+            }
+        });
         PreparedStatement updateAction = CassStatement.get(session, CassStatement.UPDATE_ACTION_DEFINITION);
         if (updateAction == null) {
             throw new RuntimeException("updateAction PreparedStatement is null");

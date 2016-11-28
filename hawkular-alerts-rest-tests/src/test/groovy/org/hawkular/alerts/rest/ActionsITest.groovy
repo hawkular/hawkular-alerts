@@ -93,6 +93,98 @@ class ActionsITest extends AbstractITestBase {
     }
 
     @Test
+    void createComplexAction() {
+        String actionPlugin = "email"
+        String actionId = "test-action";
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("from", "from-default@company.org");
+        actionProperties.put("from.resolved", "from-resolved@company.org");
+        actionProperties.put("from.acknowledged", "from-acknowledged@company.org");
+        actionProperties.put("to", "to-default@company.org");
+        actionProperties.put("to.acknowledged", "to-acknowledged@company.org");
+        actionProperties.put("cc", "cc-email@company.org");
+
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        def resp = client.post(path: "actions", body: actionDefinition)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "actions/" + actionPlugin + "/" + actionId);
+        assertEquals(200, resp.status)
+        assertEquals("from-default@company.org", resp.data.properties["from"])
+        assertEquals("from-resolved@company.org", resp.data.properties["from.resolved"])
+        assertEquals("from-acknowledged@company.org", resp.data.properties["from.acknowledged"])
+
+        actionDefinition.getProperties().put("cc", "cc-modified@company.org")
+        resp = client.put(path: "actions", body: actionDefinition)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "actions/" + actionPlugin + "/" + actionId)
+        assertEquals(200, resp.status)
+        assertEquals("cc-modified@company.org", resp.data.properties.cc)
+
+        resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
+        assertEquals(200, resp.status)
+    }
+
+    @Test
+    void failWithUnknownPropertyOnPlugin() {
+        // CREATE the action definition
+        String actionPlugin = "email"
+        String actionId = "email-to-admin";
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("from", "from-alerts@company.org");
+        actionProperties.put("to", "to-admin@company.org");
+        actionProperties.put("cc", "cc-developers@company.org");
+        actionProperties.put("bad-property", "cc-developers@company.org");
+
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        def resp = client.post(path: "actions", body: actionDefinition)
+        assert(400 == resp.status)
+    }
+
+    @Test
+    void createExplicitEmailPropertiesAction() {
+        String actionPlugin = "email"
+        String actionId = "test-action";
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("from", "from-default@company.org");
+        actionProperties.put("from.resolved", "from-resolved@company.org");
+        actionProperties.put("from.acknowledged", "from-acknowledged@company.org");
+        actionProperties.put("to", "to-default@company.org");
+        actionProperties.put("to.acknowledged", "to-acknowledged@company.org");
+        actionProperties.put("cc", "cc-email@company.org");
+        actionProperties.put("mail.smtp.host", "localhost");
+        actionProperties.put("mail.smtp.port", "25");
+
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        def resp = client.post(path: "actions", body: actionDefinition)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "actions/" + actionPlugin + "/" + actionId);
+        assertEquals(200, resp.status)
+        assertEquals("from-default@company.org", resp.data.properties["from"])
+        assertEquals("from-resolved@company.org", resp.data.properties["from.resolved"])
+        assertEquals("from-acknowledged@company.org", resp.data.properties["from.acknowledged"])
+
+        actionDefinition.getProperties().put("cc", "cc-modified@company.org")
+        resp = client.put(path: "actions", body: actionDefinition)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "actions/" + actionPlugin + "/" + actionId)
+        assertEquals(200, resp.status)
+        assertEquals("cc-modified@company.org", resp.data.properties.cc)
+
+        resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
+        assertEquals(200, resp.status)
+    }
+
+    @Test
     void availabilityTest() {
         String start = String.valueOf(System.currentTimeMillis());
 

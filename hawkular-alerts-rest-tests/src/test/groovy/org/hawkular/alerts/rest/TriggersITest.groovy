@@ -631,23 +631,4 @@ class TriggersITest extends AbstractITestBase {
         resp = client.post(path: "triggers/trigger", body: jsonTrigger)
         assertEquals(400, resp.status)
     }
-
-    @Test
-    void failWithUnknownPropertyOnPlugin() {
-        // CREATE the action definition
-        String actionPlugin = "email"
-        String actionId = "email-to-admin";
-
-        Map<String, String> actionProperties = new HashMap<>();
-        actionProperties.put("from", "from-alerts@company.org");
-        actionProperties.put("to", "to-admin@company.org");
-        actionProperties.put("cc", "cc-developers@company.org");
-        actionProperties.put("bad-property", "cc-developers@company.org");
-
-        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
-
-        def resp = client.post(path: "actions", body: actionDefinition)
-        assert(400 == resp.status)
-    }
-
 }
