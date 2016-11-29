@@ -58,7 +58,7 @@ This is the public API for message objects used in *hawkular-alerts-bus*.
 ```shell
     git clone https://github.com/hawkular/hawkular-alerts.git
     cd hawkular-alerts
-    mvn clean install
+    ./mvnw clean install
 ```
 
 == Run examples
@@ -88,7 +88,7 @@ cassandra service.
 These integration tests can be executed using *-Pitest* profile:
 
 ```shell
-mvn clean install -Pitest
+./mvnw clean install -Pitest
 ```
 
 == Performance tests
@@ -97,7 +97,7 @@ There is a performance test suite focus in the *hawkular-alerts-engine* project.
 These tests are not active by default, they can be run using *-Dtest-env=perf* variable:
 
 ```shell
-mvn clean install -Dtest-env=perf
+./mvnw clean install -Dtest-env=perf
 ```
 
 == Clustering tests
@@ -107,7 +107,7 @@ a topology of nodes.
 These test are not active by default, they can be run using *-Denv=cluster* variable:
 
 ```shell
-mvn clean install -Denv=cluster
+./mvnw clean install -Denv=cluster
 ```
 
 == Building REST API documentation
@@ -116,7 +116,7 @@ REST API documentation can be generated using *-Pdocgen* profile. +
 The doc is generated under *hawkular-alerts-rest/target* folder.
 
 ```shell
-mvn clean install -Pdocgen
+./mvnw clean install -Pdocgen
 ```
 
 == Hawkular Alerting Documentation
