@@ -20,7 +20,7 @@ import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
-import org.hawkular.alerts.api.model.trigger.TriggerAction;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
  * A interface used to send actions.
@@ -35,10 +35,10 @@ public interface ActionsService {
     /**
      * Generate and send an action to be processed by the plugins architecture.
      *
-     * @param triggerAction Link between a trigger and an action used to generate the action
+     * @param trigger Trigger generating the action
      * @param event Event payload of the action
      */
-    void send(final TriggerAction triggerAction, final Event event);
+    void send(final Trigger trigger, final Event event);
 
     /**
      * Update the result of an action.

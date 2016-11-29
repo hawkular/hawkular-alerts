@@ -16,6 +16,10 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_CREATE;
+import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_REMOVE;
+import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_UPDATE;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -206,6 +210,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
+
+        notifyListeners(new DefinitionsEvent(ACTION_DEFINITION_CREATE, actionDefinition));
     }
 
     @Override
@@ -2741,6 +2747,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
+
+        notifyListeners(new DefinitionsEvent(ACTION_DEFINITION_REMOVE, tenantId, actionPlugin, actionId));
     }
 
     @Override
@@ -2785,6 +2793,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
         }
+
+        notifyListeners(new DefinitionsEvent(ACTION_DEFINITION_UPDATE, actionDefinition));
     }
 
     // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
@@ -2814,6 +2824,25 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw e;
         }
         return actions;
+    }
+
+    @Override
+    public Collection<ActionDefinition> getAllActionDefinitions() throws Exception {
+        PreparedStatement selectActionsAll = CassStatement.get(session, CassStatement.SELECT_ACTION_DEFINITION_ALL);
+        if (selectActionsAll == null) {
+            throw new RuntimeException("selectActionsAll PreparedStatement is null");
+        }
+        List<ActionDefinition> actionDefinitions = new ArrayList<>();
+        try {
+            ResultSet rsActions = session.execute(selectActionsAll.bind());
+            for (Row row : rsActions) {
+                actionDefinitions.add(JsonUtil.fromJson(row.getString("payload"), ActionDefinition.class));
+            }
+        } catch (Exception e) {
+            msgLog.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return actionDefinitions;
     }
 
     @Override

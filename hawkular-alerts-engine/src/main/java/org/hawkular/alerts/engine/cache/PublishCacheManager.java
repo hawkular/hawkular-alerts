@@ -57,8 +57,8 @@ import org.jboss.logging.Logger;
 @Singleton
 @Startup
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
-public class CacheManager {
-    private final Logger log = Logger.getLogger(CacheManager.class);
+public class PublishCacheManager {
+    private final Logger log = Logger.getLogger(PublishCacheManager.class);
     private final MsgLogger msgLog = MsgLogger.LOGGER;
 
     private static final String DISABLE_PUBLISH_FILTERING_PROP = "hawkular-alerts.disable-publish-filtering";
@@ -155,7 +155,7 @@ public class CacheManager {
 
     private void initialCacheUpdate() {
         try {
-            log.debug("Initial Cache update in progress..");
+            log.debug("Initial PublishCacheManager update in progress..");
 
             publishCache.startBatch();
             publishDataIdsCache.startBatch();

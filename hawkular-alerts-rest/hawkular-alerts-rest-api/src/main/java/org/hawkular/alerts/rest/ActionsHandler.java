@@ -415,7 +415,7 @@ public class ActionsHandler {
             criteria.setActionPlugins(Arrays.asList(actionPlugins.split(",")));
         }
         if (!isEmpty(actionIds)) {
-            criteria.setActionIds(Arrays.asList(actionPlugins.split(",")));
+            criteria.setActionIds(Arrays.asList(actionIds.split(",")));
         }
         if (!isEmpty(alertIds)) {
             criteria.setAlertIds(Arrays.asList(alertIds.split(",")));

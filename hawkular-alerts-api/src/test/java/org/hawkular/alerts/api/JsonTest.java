@@ -83,7 +83,7 @@ public class JsonTest {
     @Test
     public void jsonActionTest() throws Exception {
         String str = "{\"tenantId\":\"tenantTest\",\"actionPlugin\":\"plugin\"," +
-                "\"actionId\":\"test\",\"eventId\":\"testAlert\",\"ctime\":123}";
+                "\"actionId\":\"test\",\"global\":false,\"eventId\":\"testAlert\",\"ctime\":123}";
         Action action = objectMapper.readValue(str, Action.class);
 
         assertEquals("tenantTest", action.getTenantId());

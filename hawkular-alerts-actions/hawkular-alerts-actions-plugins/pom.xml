@@ -119,7 +119,6 @@
         <module>hawkular-alerts-actions-aerogear</module>
         <module>hawkular-alerts-actions-email</module>
         <module>hawkular-alerts-actions-file</module>
-        <module>hawkular-alerts-actions-file-global</module>
         <module>hawkular-alerts-actions-generic</module>
         <module>hawkular-alerts-actions-irc</module>
         <module>hawkular-alerts-actions-pagerduty</module>

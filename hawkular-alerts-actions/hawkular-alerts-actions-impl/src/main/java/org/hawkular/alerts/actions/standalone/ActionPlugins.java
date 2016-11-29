@@ -26,17 +26,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.ActionPluginSender;
-import org.hawkular.alerts.actions.api.Global;
 import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.actions.api.Sender;
 import org.hawkular.alerts.api.services.ActionsService;
@@ -52,7 +49,6 @@ public class ActionPlugins {
     private ActionsService actions;
     private static ActionPlugins instance;
     private Map<String, ActionPluginListener> plugins;
-    private Set<String> globals;
     private Map<String, ActionPluginSender> senders;
 
     public static synchronized Map<String, ActionPluginListener> getPlugins() {
@@ -60,13 +56,6 @@ public class ActionPlugins {
             instance = new ActionPlugins();
         }
         return Collections.unmodifiableMap(instance.plugins);
-    }
-
-    public static synchronized Set<String> getGlobals() {
-        if (instance == null) {
-            instance = new ActionPlugins();
-        }
-        return Collections.unmodifiableSet(instance.globals);
     }
 
     public static synchronized Map<String, ActionPluginSender> getSenders() {
@@ -79,7 +68,6 @@ public class ActionPlugins {
     private ActionPlugins() {
         try {
             plugins = new HashMap<>();
-            globals = new HashSet<>();
             senders = new HashMap<>();
             init();
             List<URL> webInfUrls = getWebInfUrls();
@@ -94,9 +82,6 @@ public class ActionPlugins {
                             ActionPluginListener pluginInstance = (ActionPluginListener)newInstance;
                             injectActionPluginSender(name, pluginInstance);
                             plugins.put(name, pluginInstance);
-                            if (pluginClass.isAnnotationPresent(Global.class)) {
-                                globals.add(name);
-                            }
                         } else {
                             throw new IllegalStateException("Plugin [" + name + "] is not instance of " +
                                     "ActionPluginListener");

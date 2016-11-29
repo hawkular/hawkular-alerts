@@ -1786,10 +1786,8 @@ public class CassAlertsServiceImpl implements AlertsService {
     }
 
     private void sendAction(Alert a) {
-        if (actionsService != null && a != null && a.getTrigger() != null && a.getTrigger().getActions() != null) {
-            a.getTrigger().getActions().stream().forEach(triggerAction -> {
-                actionsService.send(triggerAction, a);
-            });
+        if (actionsService != null && a != null && a.getTrigger() != null) {
+            actionsService.send(a.getTrigger(), a);
         }
     }
 

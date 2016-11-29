@@ -45,11 +45,13 @@ import org.hawkular.alerts.api.model.paging.ActionComparator.Field;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.engine.cache.ActionsCacheManager;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.util.ActionsValidator;
 import org.jboss.logging.Logger;
@@ -84,6 +86,9 @@ public class CassActionsServiceImpl implements ActionsService {
     @EJB
     DefinitionsService definitions;
 
+    @EJB
+    ActionsCacheManager actionsCacheManager;
+
     @Resource
     private ManagedExecutorService executor;
 
@@ -112,7 +117,24 @@ public class CassActionsServiceImpl implements ActionsService {
     }
 
     @Override
-    public void send(final TriggerAction triggerAction, final Event event) {
+    public void send(Trigger trigger, Event event) {
+        if (trigger == null) {
+            throw new IllegalArgumentException("Trigger must be not null");
+        }
+        if (!isEmpty(trigger.getActions())) {
+            for (TriggerAction triggerAction : trigger.getActions()) {
+                send(triggerAction, event);
+            }
+        }
+        if (actionsCacheManager.hasGlobalActions()) {
+            Collection<ActionDefinition> globalActions = actionsCacheManager.getGlobalActions(trigger.getTenantId());
+            for (ActionDefinition globalAction : globalActions) {
+                send(globalAction, event);
+            }
+        }
+    }
+
+    private void send(final TriggerAction triggerAction, final Event event) {
         if (triggerAction == null || isEmpty(triggerAction.getTenantId()) ||
                 isEmpty(triggerAction.getActionPlugin()) || isEmpty(triggerAction.getActionId())) {
             throw new IllegalArgumentException("TriggerAction must be not null");
@@ -148,6 +170,45 @@ public class CassActionsServiceImpl implements ActionsService {
                     }
                 }
                 if (ActionsValidator.validate(triggerAction, event)) {
+                    for (ActionListener listener : alertsContext.getActionsListeners()) {
+                        listener.process(action);
+                    }
+                    insertActionHistory(action);
+                }
+            } catch (Exception e) {
+                log.debug(e.getMessage(), e);
+                msgLog.errorCannotUpdateAction(e.getMessage());
+            }
+        });
+    }
+
+    private void send(final ActionDefinition globalActionDefinition, final Event event) {
+        if (globalActionDefinition == null || isEmpty(globalActionDefinition.getTenantId()) ||
+                isEmpty(globalActionDefinition.getActionPlugin()) || isEmpty(globalActionDefinition.getActionId())) {
+            throw new IllegalArgumentException("ActionDefinition must be not null");
+        }
+        if (event == null || isEmpty(event.getTenantId())) {
+            throw new IllegalArgumentException("Event must be not null");
+        }
+        if (!globalActionDefinition.getTenantId().equals(event.getTenantId())) {
+            throw new IllegalArgumentException("ActionDefinition and Event must have same tenantId");
+        }
+        executor.submit(() -> {
+            TriggerAction globalTriggerAction = new TriggerAction(globalActionDefinition.getTenantId(),
+                    globalActionDefinition.getActionPlugin(), globalActionDefinition.getActionId());
+            Action action = new Action(globalTriggerAction.getTenantId(), globalTriggerAction.getActionPlugin(),
+                    globalTriggerAction.getActionId(), event);
+            try {
+                Map<String, String> defaultProperties =
+                        definitions.getDefaultActionPlugin(globalTriggerAction.getActionPlugin());
+                if (defaultProperties != null) {
+                    Map<String, String> mixedProps = mixProperties(globalActionDefinition.getProperties(),
+                            defaultProperties);
+                    action.setProperties(mixedProps);
+                }
+                globalTriggerAction.setStates(globalActionDefinition.getStates());
+                globalTriggerAction.setCalendar(globalActionDefinition.getCalendar());
+                if (ActionsValidator.validate(globalTriggerAction, event)) {
                     for (ActionListener listener : alertsContext.getActionsListeners()) {
                         listener.process(action);
                     }

@@ -42,6 +42,7 @@
       <local-cache name="publish"/>
       <local-cache name="dataIds" />
       <local-cache name="schema"/>
+      <local-cache name="globalActions" />
     </cache-container>
   </xsl:template>
 

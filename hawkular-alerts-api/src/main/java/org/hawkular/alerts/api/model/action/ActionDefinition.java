@@ -82,44 +82,51 @@ public class ActionDefinition implements Serializable {
     @JsonInclude
     private String actionId;
 
+    @ApiModelProperty(value = "Flag to indicate this is a global action.",
+            position = 3,
+            required = false)
+    @JsonInclude
+    private boolean global;
+
     @ApiModelProperty(value = "Plugin properties. Each plugin defines its own specific properties that can be " +
             "supplied at action definition level.",
-            position = 3,
+            position = 4,
             required = true)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, String> properties;
 
     @ApiModelProperty(value = "A list of Alert.Status where this action is linked. <<TriggerAction>> constraints " +
             "take precedence.",
-            position = 4,
+            position = 5,
             allowableValues = "OPEN, ACKNOWLEDGED, RESOLVED")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<String> states;
 
     @ApiModelProperty(value = "A list of TimeConstraint where this action is linked. <<TriggerAction>> constraints " +
             "take precedence.",
-            position = 5)
+            position = 6)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private TimeConstraint calendar;
 
     public ActionDefinition() {
-        this(null, null, null, new HashMap<>(), null, null);
+        this(null, null, null, false, new HashMap<>(), null, null);
     }
 
     public ActionDefinition(String tenantId, String actionPlugin, String actionId) {
-        this(tenantId, actionPlugin, actionId, new HashMap<>(), null, null);
+        this(tenantId, actionPlugin, actionId, false, new HashMap<>(), null, null);
     }
 
     public ActionDefinition(String tenantId, String actionPlugin, String actionId,
                             Map<String, String> properties) {
-        this(tenantId, actionPlugin, actionId, properties, null, null);
+        this(tenantId, actionPlugin, actionId, false, properties, null, null);
     }
 
-    public ActionDefinition(String tenantId, String actionPlugin, String actionId,
+    public ActionDefinition(String tenantId, String actionPlugin, String actionId, boolean global,
                             Map<String, String> properties, Set<String> states, TimeConstraint calendar) {
         this.tenantId = tenantId;
         this.actionPlugin = actionPlugin;
         this.actionId = actionId;
+        this.global = global;
         this.properties = properties != null ? new HashMap<>(properties) : new HashMap<>();
         this.states = states != null ? new HashSet<>(states) : new HashSet<>();
         this.calendar = calendar;
@@ -147,6 +154,14 @@ public class ActionDefinition implements Serializable {
 
     public void setActionId(String actionId) {
         this.actionId = actionId;
+    }
+
+    public boolean isGlobal() {
+        return global;
+    }
+
+    public void setGlobal(boolean global) {
+        this.global = global;
     }
 
     public Map<String, String> getProperties() {
@@ -187,13 +202,13 @@ public class ActionDefinition implements Serializable {
 
         ActionDefinition that = (ActionDefinition) o;
 
+        if (global != that.global) return false;
         if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
         if (actionPlugin != null ? !actionPlugin.equals(that.actionPlugin) : that.actionPlugin != null) return false;
         if (actionId != null ? !actionId.equals(that.actionId) : that.actionId != null) return false;
         if (properties != null ? !properties.equals(that.properties) : that.properties != null) return false;
         if (states != null ? !states.equals(that.states) : that.states != null) return false;
         return calendar != null ? calendar.equals(that.calendar) : that.calendar == null;
-
     }
 
     @Override
@@ -201,9 +216,23 @@ public class ActionDefinition implements Serializable {
         int result = tenantId != null ? tenantId.hashCode() : 0;
         result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
         result = 31 * result + (actionId != null ? actionId.hashCode() : 0);
+        result = 31 * result + (global ? 1 : 0);
         result = 31 * result + (properties != null ? properties.hashCode() : 0);
         result = 31 * result + (states != null ? states.hashCode() : 0);
         result = 31 * result + (calendar != null ? calendar.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ActionDefinition{" +
+                "tenantId='" + tenantId + '\'' +
+                ", actionPlugin='" + actionPlugin + '\'' +
+                ", actionId='" + actionId + '\'' +
+                ", global=" + global +
+                ", properties=" + properties +
+                ", states=" + states +
+                ", calendar=" + calendar +
+                '}';
     }
 }

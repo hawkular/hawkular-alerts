@@ -510,9 +510,7 @@ rule AlertOnSatisfiedDampening
         insert( newEvent );
 
         if (actions != null) {
-            for (TriggerAction triggerAction : $t.getActions()) {
-                actions.send(triggerAction, newEvent);
-            }
+            actions.send($t, newEvent);
         }
 
         retract( $d );

@@ -109,4 +109,7 @@ public interface MsgLogger extends BasicLogger {
     @Message(id = 220022, value = "Publish Cache is disabled")
     void warnDisabledPublishCache();
 
+    @LogMessage(level = Logger.Level.INFO)
+    @Message(id = 220023, value = "Init Actions Cache")
+    void infoInitActionsCache();
 }

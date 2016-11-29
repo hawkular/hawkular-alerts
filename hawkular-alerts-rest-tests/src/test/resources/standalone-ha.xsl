@@ -73,6 +73,9 @@
       <replicated-cache name="schema" mode="SYNC">
         <transaction mode="NON_XA"/>
       </replicated-cache>
+      <replicated-cache name="globalActions" mode="ASYNC">
+        <transaction mode="BATCH"/>
+      </replicated-cache>
     </cache-container>
   </xsl:template>
 

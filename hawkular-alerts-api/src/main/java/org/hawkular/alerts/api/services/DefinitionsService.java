@@ -587,7 +587,7 @@ public interface DefinitionsService {
      * Get all list of plugins configured on the system.
      *
      * @return List of plugins configured on the definitions service
-     * @throws Exception on an problem
+     * @throws Exception on any problem
      */
     Collection<String> getActionPlugins() throws Exception;
 
@@ -634,6 +634,14 @@ public interface DefinitionsService {
      * @throws Exception on any problem
      */
     Map<String, Map<String, Set<String>>> getAllActionDefinitionIds() throws Exception;
+
+    /**
+     * Get all action definitions configured in the system.
+     *
+     * @return The existing action definitions stored in the system. Not null.
+     * @throws Exception on any problem
+     */
+    Collection<ActionDefinition> getAllActionDefinitions() throws Exception;
 
     /**
      * @param tenantId Tenant where actions are stored.

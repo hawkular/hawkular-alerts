@@ -90,6 +90,7 @@ public class CassStatement {
     public static final String INSERT_TRIGGER_ACTIONS;
 
     public static final String SELECT_ACTION_DEFINITION;
+    public static final String SELECT_ACTION_DEFINITION_ALL;
     public static final String SELECT_ACTION_DEFINITIONS_BY_TENANT;
     public static final String SELECT_ACTION_HISTORY;
     public static final String SELECT_ACTION_HISTORY_ACTION_ID;
@@ -326,6 +327,8 @@ public class CassStatement {
 
         SELECT_ACTION_DEFINITION = "SELECT payload FROM " + keyspace + ".actions_definitions "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";
+
+        SELECT_ACTION_DEFINITION_ALL = "SELECT payload FROM " + keyspace + ".actions_definitions ";
 
         SELECT_ACTION_DEFINITIONS_BY_TENANT = "SELECT payload FROM " + keyspace + ".actions_definitions "
                 + "WHERE tenantId = ? ";
