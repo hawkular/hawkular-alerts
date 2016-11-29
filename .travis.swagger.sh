@@ -19,7 +19,7 @@
 set -x
 
 # generate the docs
-mvn clean compile -Pdocgen -DskipTests -Dcheckstyle.skip -Dlicense.skip
+./mvnw clean compile -Pdocgen -DskipTests -Dcheckstyle.skip -Dlicense.skip
 
 FILE_NAME="rest-alerts.adoc"
 FILE_PATH="hawkular-alerts-rest/hawkular-alerts-rest-api/target/generated/$FILE_NAME"
