@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts-actions-aerogear</artifactId>
-    <version>1.4.0.Final</version>
+    <version>1.5.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>hawkular-alerts-actions-aerogear-plugin</artifactId>
