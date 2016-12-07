@@ -230,13 +230,9 @@ public class Alert extends Event {
 
     @Override
     public String toString() {
-        return "Alert{" +
-                "severity=" + severity +
-                ", status=" + status +
-                ", notes=" + notes +
-                ", lifecycle=" + lifecycle +
-                ", resolvedEvalSets=" + resolvedEvalSets +
-                '}';
+        return "Alert [tenantId=" + tenantId + ", triggerId=" + getTriggerId() + ", severity=" + severity
+                + ", status=" + status + ", ctime=" + ctime + ", lifecycle=" + lifecycle
+                + ", resolvedEvalSets=" + resolvedEvalSets + "]";
     }
 
     @ApiModel(description = "A simple note representation.")

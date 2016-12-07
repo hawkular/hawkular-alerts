@@ -37,6 +37,12 @@ import org.hawkular.alerts.api.model.condition.EventCondition;
 import org.hawkular.alerts.api.model.condition.EventConditionEval;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
+import org.hawkular.alerts.api.model.condition.MissingCondition;
+import org.hawkular.alerts.api.model.condition.MissingConditionEval;
+import org.hawkular.alerts.api.model.condition.NelsonCondition;
+import org.hawkular.alerts.api.model.condition.NelsonConditionEval;
+import org.hawkular.alerts.api.model.condition.RateCondition;
+import org.hawkular.alerts.api.model.condition.RateConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.StringConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -336,12 +342,18 @@ public class PluginMessageDescription {
                 return ((ExternalConditionEval) conditionEval).getCondition();
             case EVENT:
                 return ((EventConditionEval) conditionEval).getCondition();
+            case MISSING:
+                return ((MissingConditionEval) conditionEval).getCondition();
+            case NELSON:
+                return ((NelsonConditionEval) conditionEval).getCondition();
+            case RANGE:
+                return ((ThresholdRangeConditionEval) conditionEval).getCondition();
+            case RATE:
+                return ((RateConditionEval) conditionEval).getCondition();
             case STRING:
                 return ((StringConditionEval) conditionEval).getCondition();
             case THRESHOLD:
                 return ((ThresholdConditionEval) conditionEval).getCondition();
-            case RANGE:
-                return ((ThresholdRangeConditionEval) conditionEval).getCondition();
             default:
                 return null;
         }
@@ -372,12 +384,18 @@ public class PluginMessageDescription {
                 return external((ExternalCondition) condition);
             case EVENT:
                 return events((EventCondition) condition);
+            case MISSING:
+                return missing((MissingCondition) condition);
+            case NELSON:
+                return nelson((NelsonCondition) condition);
+            case RANGE:
+                return range((ThresholdRangeCondition) condition);
+            case RATE:
+                return rate((RateCondition) condition);
             case STRING:
                 return string((StringCondition) condition);
             case THRESHOLD:
                 return threshold((ThresholdCondition) condition);
-            case RANGE:
-                return range((ThresholdRangeCondition) condition);
             default:
                 return null;
         }
@@ -492,6 +510,107 @@ public class PluginMessageDescription {
         String description = "event on: " + condition.getDataId();
         if (condition.getExpression() != null) {
             description += " [" + condition.getExpression() + "]";
+        }
+        return description;
+    }
+
+    /**
+     * Create a description for a MissingCondition object.
+     *
+     * @param condition the condition
+     * @return a description to be used on email templates
+     */
+    public String missing(MissingCondition condition) {
+        String description;
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION) != null) {
+            description = condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION);
+        } else {
+            description = condition.getDataId();
+        }
+        description += " not reported for " + condition.getInterval() + "ms";
+        return description;
+    }
+
+    /**
+     * Create a description for a NelsonCondition object.
+     *
+     * @param condition the condition
+     * @return a description to be used on email templates
+     */
+    public String nelson(NelsonCondition condition) {
+        String description;
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION) != null) {
+            description = condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION);
+        } else {
+            description = condition.getDataId();
+        }
+        description += " violates one or the following Nelson rules: " + condition.getActiveRules();
+        return description;
+    }
+
+    /**
+     * Create a description for a RateCondition object.
+     *
+     * @param condition the condition
+     * @return a description to be used on email templates
+     */
+    public String rate(RateCondition condition) {
+        String description;
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION) != null) {
+            description = condition.getContext().get(CONTEXT_PROPERTY_DESCRIPTION);
+        } else {
+            description = condition.getDataId();
+        }
+        switch (condition.getDirection()) {
+            case DECREASING:
+                description += " decreasing ";
+                break;
+            case INCREASING:
+                description += " increasing ";
+                break;
+            case NA:
+                break;
+            default:
+                throw new IllegalArgumentException(condition.getDirection().name());
+        }
+        switch (condition.getOperator()) {
+            case GT:
+                description += " greater than ";
+                break;
+            case GTE:
+                description += " greater or equal than ";
+                break;
+            case LT:
+                description += " less than ";
+                break;
+            case LTE:
+                description += " less or equal than ";
+                break;
+            default:
+                throw new IllegalArgumentException(condition.getOperator().name());
+        }
+        description += decimalFormat.format(condition.getThreshold());
+        if (condition.getContext() != null && condition.getContext().get(CONTEXT_PROPERTY_UNIT) != null) {
+            description += " " + condition.getContext().get(CONTEXT_PROPERTY_UNIT);
+        }
+        switch (condition.getPeriod()) {
+            case DAY:
+                description = " per day ";
+                break;
+            case HOUR:
+                description = " per hour ";
+                break;
+            case MINUTE:
+                description = " per minute ";
+                break;
+            case SECOND:
+                description = " per second ";
+                break;
+            case WEEK:
+                description = " per week ";
+                break;
+            default:
+                throw new IllegalArgumentException(condition.getOperator().name());
         }
         return description;
     }
