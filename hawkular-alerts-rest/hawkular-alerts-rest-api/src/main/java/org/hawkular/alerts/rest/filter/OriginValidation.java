@@ -16,34 +16,33 @@
  */
 package org.hawkular.alerts.rest.filter;
 
+import java.util.function.Predicate;
+
 import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
 
 import org.hawkular.alerts.engine.impl.AlertProperties;
-import org.hawkular.jaxrs.filter.cors.AbstractOriginValidation;
+import org.hawkular.jaxrs.filter.cors.OriginPredicate;
 
 /**
  * @author Jay Shaughnessy
  */
 @Singleton
-public class OriginValidation extends AbstractOriginValidation {
+public class OriginValidation {
 
     // Note, this is prefixed as 'hawkular,' because eventually this may become a hawkular-wide setting.
     private static final String ALLOWED_CORS_ORIGINS_PROP = "hawkular.allowed-cors-origins";
     private static final String ALLOWED_CORS_ORIGINS_ENV = "ALLOWED_CORS_ORIGINS";
 
-    private String allowedCorsOrigins;
+    private Predicate<String> predicate;
 
     @PostConstruct
-    @Override
     protected void init() {
-        allowedCorsOrigins = AlertProperties.getProperty(ALLOWED_CORS_ORIGINS_PROP, ALLOWED_CORS_ORIGINS_ENV, "*");
-
-        super.init();
+        String allowedCorsOrigins = AlertProperties.getProperty(ALLOWED_CORS_ORIGINS_PROP, ALLOWED_CORS_ORIGINS_ENV, "*");
+        predicate = new OriginPredicate(allowedCorsOrigins);
     }
 
-    @Override
-    protected String getAllowedCorsOrigins() {
-        return allowedCorsOrigins;
+    public Predicate<String> getPredicate() {
+        return predicate;
     }
 }
