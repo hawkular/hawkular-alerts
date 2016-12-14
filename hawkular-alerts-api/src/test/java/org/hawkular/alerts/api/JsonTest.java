@@ -768,6 +768,18 @@ public class JsonTest {
         assertTrue(eval.getContext().size() == 2);
         assertTrue(eval.getContext().get("n1").equals("v1"));
         assertTrue(eval.getContext().get("n2").equals("v2"));
+
+        // Test with event
+        str = "{\"evalTimestamp\":1,\"dataTimestamp\":1,\"type\":\"EXTERNAL\"," +
+                "\"condition\":" +
+                "{\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"EXTERNAL\"," +
+                "\"dataId\":\"Default\",\"alerterId\":\"HawkularMetrics\"," +
+                "\"expression\":\"event:test\"}," +
+                "\"event\":{\"id\":\"test-event\",\"text\":\"text-value\"},\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
+        eval = objectMapper.readValue(str, ExternalConditionEval.class);
+        assertNotNull(eval.getEvent());
+        assertEquals("test-event", eval.getEvent().getId());
+        assertEquals("text-value", eval.getEvent().getText());
     }
 
     @Test

@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -146,6 +147,10 @@ public class ExternalCondition extends Condition {
 
     public String getLog(String value) {
         return triggerId + " : " + value + " " + expression;
+    }
+
+    public String getLog(Event event) {
+        return triggerId + " : " + event + " " + expression;
     }
 
     /**

@@ -18,21 +18,23 @@ package org.hawkular.alerts.api.model.condition;
 
 import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.data.Data;
+import org.hawkular.alerts.api.model.event.Event;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+
 /**
- * An evaluation state for an external condition.  Note that external conditions report values as
- * <code>StringData</code>.
+ * An evaluation state for an external condition.  Note that external conditions may report a <code>Data</code> value
+ * or an <code>Event</code>.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 @ApiModel(description = "An evaluation state for an external condition. + \n" +
-        "Note that external conditions report values as StringData.")
+        "Note that external conditions may report a Data value or an Event.")
 public class ExternalConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
@@ -47,10 +49,22 @@ public class ExternalConditionEval extends ConditionEval {
     @JsonInclude(Include.NON_NULL)
     private String value;
 
+    @ApiModelProperty(value = "Event value used for dataId.",
+            position = 2)
+    @JsonInclude(Include.NON_NULL)
+    private Event event;
+
     public ExternalConditionEval() {
         super(Type.EXTERNAL, false, 0, null);
         this.condition = null;
         this.value = null;
+        this.event = null;
+    }
+
+    public ExternalConditionEval(ExternalCondition condition, Event event) {
+        super(Type.EXTERNAL, condition.match(event.getText()), event.getCtime(), event.getContext());
+        this.condition = condition;
+        this.event = event;
     }
 
     public ExternalConditionEval(ExternalCondition condition, Data data) {
@@ -75,6 +89,14 @@ public class ExternalConditionEval extends ConditionEval {
         this.value = value;
     }
 
+    public Event getEvent() {
+        return event;
+    }
+
+    public void setEvent(Event event) {
+        this.event = event;
+    }
+
     @Override
     public String getTenantId() {
         return condition.getTenantId();
@@ -97,26 +119,26 @@ public class ExternalConditionEval extends ConditionEval {
 
     @Override
     public String getLog() {
-        return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp;
+        if (value != null) {
+            return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp +
+                    ", dataTimestamp=" + dataTimestamp;
+        } else {
+            return condition.getLog(event) + ", evalTimestamp=" + evalTimestamp +
+                    ", dataTimestamp=" + dataTimestamp;
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        if (!super.equals(o))
-            return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
 
         ExternalConditionEval that = (ExternalConditionEval) o;
 
-        if (condition != null ? !condition.equals(that.condition) : that.condition != null)
-            return false;
-        if (value != null ? !value.equals(that.value) : that.value != null)
-            return false;
-
-        return true;
+        if (condition != null ? !condition.equals(that.condition) : that.condition != null) return false;
+        if (value != null ? !value.equals(that.value) : that.value != null) return false;
+        return event != null ? event.equals(that.event) : that.event == null;
     }
 
     @Override
@@ -124,15 +146,16 @@ public class ExternalConditionEval extends ConditionEval {
         int result = super.hashCode();
         result = 31 * result + (condition != null ? condition.hashCode() : 0);
         result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + (event != null ? event.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "StringConditionEval [evalTimestamp=" + evalTimestamp + ", " +
-                "dataTimestamp=" + dataTimestamp + ", " +
-                "condition=" + condition + ", " +
-                "value=" + value + "]";
+        return "ExternalConditionEval{" +
+                "condition=" + condition +
+                ", value='" + value + '\'' +
+                ", event=" + event +
+                '}';
     }
-
 }

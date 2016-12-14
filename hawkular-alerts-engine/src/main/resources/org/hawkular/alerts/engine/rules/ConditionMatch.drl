@@ -207,7 +207,7 @@ rule String
         insert( ce );
 end
 
-rule External
+rule ExternalData
     when 
         $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
         $c : ExternalCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId )
@@ -215,7 +215,20 @@ rule External
     then
         ExternalConditionEval ce = new ExternalConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("External Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debugf("ExternalData Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+        }
+        insert( ce );
+end
+
+rule ExternalEvent
+    when
+        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
+        $c : ExternalCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId  )
+        $d : Event( tenantId == $tenantId, dataSource == $tsource, dataId == $did )
+    then
+        ExternalConditionEval ce = new ExternalConditionEval($c, $d);
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("ExternalEvent Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end

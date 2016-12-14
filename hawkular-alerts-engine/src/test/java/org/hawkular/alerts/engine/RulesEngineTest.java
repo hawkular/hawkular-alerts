@@ -1028,7 +1028,7 @@ public class RulesEngineTest {
     }
 
     @Test
-    public void externalTest() {
+    public void externalDataTest() {
         Trigger t1 = new Trigger("tenant", "trigger-1", "External-Metrics");
         ExternalCondition t1c1 = new ExternalCondition("tenant", "trigger-1", Mode.FIRING, 1, 1,
                 "ExternalData-01", "HawkularMetrics", "metric:5:avg(foo > 100.5)");
@@ -1060,6 +1060,44 @@ public class RulesEngineTest {
         assertTrue(e.isMatch());
         String v = e.getValue();
         assertEquals("Ignored", v);
+        assertEquals("ExternalData-01", e.getCondition().getDataId());
+    }
+
+    @Test
+    public void externalEventTest() {
+        Trigger t1 = new Trigger("tenant", "trigger-1", "External-Metrics");
+        ExternalCondition t1c1 = new ExternalCondition("tenant", "trigger-1", Mode.FIRING, 1, 1,
+                "ExternalData-01", "HawkularMetrics", "event:groupBy(tags.accountId):having(count > 1)");
+        Event appDownEvent = new Event("tenant", UUID.randomUUID().toString(), "ExternalData-01",
+                EventCategory.DEPLOYMENT.name(), "DOWN");
+
+        inputEvents.add(appDownEvent);
+
+        // default dampening
+
+        t1.setEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+
+        rulesEngine.addEvents(inputEvents);
+
+        rulesEngine.fire();
+
+        assertEquals(alerts.toString(), 1, alerts.size());
+
+        Alert a = alerts.get(0);
+        assertEquals("trigger-1", a.getTriggerId());
+        assertEquals(1, a.getEvalSets().size());
+        Set<ConditionEval> evals = a.getEvalSets().get(0);
+        assertEquals(1, evals.size());
+        ExternalConditionEval e = (ExternalConditionEval) evals.iterator().next();
+        assertEquals(1, e.getConditionSetIndex());
+        assertEquals(1, e.getConditionSetSize());
+        assertEquals("trigger-1", e.getTriggerId());
+        assertTrue(e.isMatch());
+        Event event = e.getEvent();
+        assertEquals("DOWN", event.getText());
         assertEquals("ExternalData-01", e.getCondition().getDataId());
     }
 

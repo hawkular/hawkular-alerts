@@ -161,6 +161,9 @@ public class JacksonDeserializer {
                         if (node.get("value") != null) {
                             eConditionEval.setValue(node.get("value").textValue());
                         }
+                        if (node.get("event") != null) {
+                            eConditionEval.setEvent(node.get("event").traverse(objectCodec).readValueAs(Event.class));
+                        }
                     } catch (Exception e) {
                         throw new ConditionEvalException(e);
                     }
