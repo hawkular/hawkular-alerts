@@ -46,7 +46,7 @@ public abstract class Condition implements Serializable {
     private static final long serialVersionUID = 1L;
 
     public enum Type {
-        AVAILABILITY, COMPARE, STRING, THRESHOLD, RANGE, EXTERNAL, EVENT, RATE, MISSING
+        AVAILABILITY, COMPARE, STRING, THRESHOLD, RANGE, EXTERNAL, EVENT, RATE, MISSING, NELSON
     }
 
     @ApiModelProperty(value = "Tenant id owner of this condition.",

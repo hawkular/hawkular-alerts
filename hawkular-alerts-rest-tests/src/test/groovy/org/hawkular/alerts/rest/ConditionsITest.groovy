@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +17,18 @@
 package org.hawkular.alerts.rest
 
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
+import static org.hawkular.alerts.api.model.condition.NelsonCondition.NelsonRule
+import static org.hawkular.alerts.api.model.condition.RateCondition.Direction
+import static org.hawkular.alerts.api.model.condition.RateCondition.Period
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
 
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.CompareCondition
 import org.hawkular.alerts.api.model.condition.Condition
+import org.hawkular.alerts.api.model.condition.MissingCondition
+import org.hawkular.alerts.api.model.condition.NelsonCondition
+import org.hawkular.alerts.api.model.condition.RateCondition
 import org.hawkular.alerts.api.model.condition.StringCondition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition
@@ -224,6 +231,136 @@ class ConditionsITest extends AbstractITestBase {
         assertEquals(0, resp.data.size())
 
         resp = client.delete(path: "triggers/test-trigger-5")
+        assertEquals(200, resp.status)
+    }
+
+    @Test
+    void createMissingCondition() {
+        Trigger testTrigger = new Trigger("test-trigger-6", "No-Metric");
+
+        // make sure clean test trigger exists
+        client.delete(path: "triggers/test-trigger-6")
+        def resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        MissingCondition testCond = new MissingCondition("test-trigger-6", Mode.FIRING,
+                "No-Metric-1", 1234);
+
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( testCond );
+        resp = client.put(path: "triggers/test-trigger-6/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        testCond.setInterval(5432)
+        resp = client.put(path: "triggers/test-trigger-6/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-6/conditions")
+        assertEquals(1, resp.data.size())
+        assertEquals(5432, resp.data[0].interval)
+
+        conditions.clear();
+        resp = client.put(path: "triggers/test-trigger-6/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-6/conditions")
+        assertEquals(0, resp.data.size())
+
+        resp = client.delete(path: "triggers/test-trigger-6")
+        assertEquals(200, resp.status)
+    }
+
+    @Test
+    void createNelsonCondition() {
+        Trigger testTrigger = new Trigger("test-trigger-7", "No-Metric");
+
+        // make sure clean test trigger exists
+        client.delete(path: "triggers/test-trigger-7")
+        def resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        Set<NelsonRule> activeRules = new HashSet<>(3);
+        activeRules.add(NelsonRule.Rule3);
+        activeRules.add(NelsonRule.Rule5);
+        activeRules.add(NelsonRule.Rule7);
+        NelsonCondition testCond = new NelsonCondition("test-trigger-7", Mode.FIRING, 1, 1,
+            "No-Metric-1", activeRules, 10);
+
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( testCond );
+        resp = client.put(path: "triggers/test-trigger-7/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        resp = client.get(path: "triggers/test-trigger-7/conditions")
+        assertEquals(1, resp.data.size())
+        assertTrue(resp.data[0].activeRules.contains("Rule3"))
+        assertTrue(resp.data[0].activeRules.contains("Rule5"))
+        assertTrue(resp.data[0].activeRules.contains("Rule7"))
+        assertEquals(10, resp.data[0].sampleSize)
+
+        activeRules.remove(NelsonRule.Rule5)
+        testCond.setActiveRules(activeRules)
+        testCond.setSampleSize(20)
+        resp = client.put(path: "triggers/test-trigger-7/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-7/conditions")
+        assertEquals(1, resp.data.size())
+        assertEquals(2, resp.data[0].activeRules.size())
+        assertTrue(resp.data[0].activeRules.contains("Rule3"))
+        assertTrue(resp.data[0].activeRules.contains("Rule7"))
+        assertEquals(20, resp.data[0].sampleSize)
+
+        conditions.clear();
+        resp = client.put(path: "triggers/test-trigger-7/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-7/conditions")
+        assertEquals(0, resp.data.size())
+
+        resp = client.delete(path: "triggers/test-trigger-7")
+        assertEquals(200, resp.status)
+    }
+
+    @Test
+    void createRateCondition() {
+        Trigger testTrigger = new Trigger("test-trigger-8", "No-Metric");
+
+        // make sure clean test trigger exists
+        client.delete(path: "triggers/test-trigger-8")
+        def resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        RateCondition testCond = new RateCondition("test-trigger-8", Mode.FIRING,
+                "No-Metric-1", Direction.DECREASING, Period.WEEK, RateCondition.Operator.GT, 10.0);
+
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( testCond );
+        resp = client.put(path: "triggers/test-trigger-8/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals("DECREASING", resp.data[0].direction)
+        assertEquals("WEEK", resp.data[0].period)
+        assertEquals("GT", resp.data[0].operator)
+
+        testCond.setDirection(Direction.INCREASING)
+        resp = client.put(path: "triggers/test-trigger-8/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-8/conditions")
+        assertEquals(1, resp.data.size())
+        assertEquals("INCREASING", resp.data[0].direction)
+
+        conditions.clear();
+        resp = client.put(path: "triggers/test-trigger-8/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-trigger-8/conditions")
+        assertEquals(0, resp.data.size())
+
+        resp = client.delete(path: "triggers/test-trigger-8")
         assertEquals(200, resp.status)
     }
 

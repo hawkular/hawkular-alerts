@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,6 +39,11 @@ import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
+import org.hawkular.alerts.api.model.condition.MissingCondition;
+import org.hawkular.alerts.api.model.condition.MissingConditionEval;
+import org.hawkular.alerts.api.model.condition.NelsonCondition;
+import org.hawkular.alerts.api.model.condition.NelsonCondition.NelsonRule;
+import org.hawkular.alerts.api.model.condition.NelsonConditionEval;
 import org.hawkular.alerts.api.model.condition.RateCondition;
 import org.hawkular.alerts.api.model.condition.RateCondition.Direction;
 import org.hawkular.alerts.api.model.condition.RateCondition.Period;
@@ -762,6 +768,154 @@ public class JsonTest {
         assertTrue(eval.getContext().size() == 2);
         assertTrue(eval.getContext().get("n1").equals("v1"));
         assertTrue(eval.getContext().get("n2").equals("v2"));
+    }
+
+    @Test
+    public void jsonMissingConditionTest() throws Exception {
+        String str = "{" //
+                + "\"tenantId\":\"test\"," //
+                + "\"triggerId\":\"test\"," //
+                + "\"triggerMode\":\"FIRING\"," //
+                + "\"type\":\"MISSING\"," //
+                + "\"conditionSetSize\":1," //
+                + "\"conditionSetIndex\":1," //
+                + "\"conditionId\":\"test-test-FIRING-1-1\"," //
+                + "\"dataId\":\"Default\"," //
+                + "\"interval\":123}";
+        MissingCondition condition = objectMapper.readValue(str, MissingCondition.class);
+
+        assertTrue(condition.getTenantId().equals("test"));
+        assertTrue(condition.getTriggerId().equals("test"));
+        assertTrue(condition.getTriggerMode().equals(Mode.FIRING));
+        assertTrue(condition.getDataId().equals("Default"));
+        assertTrue(condition.getInterval() == 123L);
+
+        String output = objectMapper.writeValueAsString(condition);
+
+        assertTrue(output, str.equals(output));
+    }
+
+    @Test
+    public void jsonMissingConditionEvalTest() throws Exception {
+        String str = "{" //
+                + "\"evalTimestamp\":1," //
+                + "\"dataTimestamp\":1," //
+                + "\"condition\":{" //
+                + "  \"triggerId\":\"test\"," //
+                + "  \"triggerMode\":\"FIRING\"," //
+                + "  \"type\":\"MISSING\"," //
+                + "  \"dataId\":\"Default\"," //
+                + "  \"interval\":123}," //
+                + "\"time\":2,"
+                + "\"previousTime\":1"
+                + "}";
+        MissingConditionEval eval = objectMapper.readValue(str, MissingConditionEval.class);
+
+        assertTrue(eval.getEvalTimestamp() == 1);
+        assertTrue(eval.getDataTimestamp() == 1);
+        assertTrue(eval.getCondition().getType().equals(Condition.Type.MISSING));
+        assertTrue(eval.getCondition().getTriggerId().equals("test"));
+        assertTrue(eval.getCondition().getTriggerMode().equals(Mode.FIRING));
+        assertTrue(eval.getCondition().getDataId().equals("Default"));
+        assertTrue(eval.getCondition().getInterval() == 123L);
+        assertTrue(eval.getTime() == 2);
+        assertTrue(eval.getPreviousTime() == 1);
+    }
+
+    @Test
+    public void jsonNelsonConditionTest() throws Exception {
+        String str = "{" //
+                + "\"tenantId\":\"test\"," //
+                + "\"triggerId\":\"test\"," //
+                + "\"triggerMode\":\"FIRING\"," //
+                + "\"type\":\"NELSON\"," //
+                + "\"conditionSetSize\":1," //
+                + "\"conditionSetIndex\":1," //
+                + "\"conditionId\":\"test-test-FIRING-1-1\"," //
+                + "\"dataId\":\"Default\"," //
+                + "\"activeRules\":[\"Rule6\"]," //
+                + "\"sampleSize\":100}";
+        NelsonCondition condition = objectMapper.readValue(str, NelsonCondition.class);
+
+        assertTrue(condition.getTenantId().equals("test"));
+        assertTrue(condition.getTriggerId().equals("test"));
+        assertTrue(condition.getTriggerMode().equals(Mode.FIRING));
+        assertTrue(condition.getDataId().equals("Default"));
+        assertTrue(condition.getSampleSize() == 100);
+        assertTrue(condition.getActiveRules().equals(EnumSet.of(NelsonRule.Rule6)));
+
+
+        String output = objectMapper.writeValueAsString(condition);
+
+        assertTrue(output, str.equals(output));
+
+        str = "{" //
+                + "\"tenantId\":\"test\"," //
+                + "\"triggerId\":\"test\"," //
+                + "\"triggerMode\":\"FIRING\"," //
+                + "\"type\":\"NELSON\"," //
+                + "\"conditionSetSize\":1," //
+                + "\"conditionSetIndex\":1," //
+                + "\"conditionId\":\"test-test-FIRING-1-1\"," //
+                + "\"dataId\":\"Default\"}";
+        condition = objectMapper.readValue(str, NelsonCondition.class);
+
+        assertTrue(condition.getActiveRules().equals(EnumSet.allOf(NelsonRule.class)));
+        assertTrue(condition.getSampleSize() == 50);
+
+        // check bogus value
+        str = "{" //
+                + "\"tenantId\":\"test\"," //
+                + "\"triggerId\":\"test\"," //
+                + "\"triggerMode\":\"FIRING\"," //
+                + "\"type\":\"NELSON\"," //
+                + "\"conditionSetSize\":1," //
+                + "\"conditionSetIndex\":1," //
+                + "\"conditionId\":\"test-test-FIRING-1-1\"," //
+                + "\"dataId\":\"Default\"," //
+                + "\"activeRules\":[\"Rule10\"]";
+        try {
+            objectMapper.readValue(str, NelsonCondition.class);
+            throw new Exception("It should throw an JsonProcessingException");
+        } catch (JsonProcessingException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void jsonNelsonConditionEvalTest() throws Exception {
+        String str = "{" //
+                + "\"evalTimestamp\":1," //
+                + "\"dataTimestamp\":1," //
+                + "\"condition\":{" //
+                + "  \"triggerId\":\"test\"," //
+                + "  \"triggerMode\":\"FIRING\"," //
+                + "  \"type\":\"NELSON\"," //
+                + "  \"dataId\":\"Default\"," //
+                + "  \"activeRules\":[\"Rule1\",\"Rule6\"]},"
+                + "\"mean\":10.0,"
+                + "\"standardDeviation\":2.50,"
+                + "\"violationsData\":[{\"tenantId\":\"test\",\"id\":\"data-id\",\"timestamp\":1234,\"value\":\"10.0\"}],"
+                + "\"violations\":[\"Rule1\"]"
+                + "}";
+        NelsonConditionEval eval = objectMapper.readValue(str, NelsonConditionEval.class);
+
+        assertTrue(eval.getEvalTimestamp() == 1);
+        assertTrue(eval.getDataTimestamp() == 1);
+        assertTrue(eval.getCondition().getType().equals(Condition.Type.NELSON));
+        assertTrue(eval.getCondition().getTriggerId().equals("test"));
+        assertTrue(eval.getCondition().getTriggerMode().equals(Mode.FIRING));
+        assertTrue(eval.getCondition().getDataId().equals("Default"));
+        assertTrue(eval.getCondition().getActiveRules().equals(EnumSet.of(NelsonRule.Rule1, NelsonRule.Rule6)));
+        assertTrue(eval.getMean() == 10.0);
+        assertTrue(eval.getStandardDeviation() == 2.5);
+        assertTrue(eval.getViolationsData().size() == 1);
+        assertTrue(eval.getViolationsData().get(0).getTenantId().equals("test"));
+        assertTrue(eval.getViolationsData().get(0).getId().equals("data-id"));
+        assertTrue(eval.getViolationsData().get(0).getTimestamp() == 1234);
+        assertTrue(eval.getViolationsData().get(0).getValue().equals("10.0"));
+        assertTrue(eval.getViolations().size() == 1);
+        assertTrue(eval.getViolations().get(0) == NelsonRule.Rule1);
     }
 
     @Test

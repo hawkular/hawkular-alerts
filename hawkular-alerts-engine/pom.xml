@@ -88,6 +88,12 @@
       <version>${version.com.google.guava}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-math3</artifactId>
+      <version>${version.org.apache.commons.commons-math3}</version>
+    </dependency>
+
     <!-- Wildfly dependencies -->
     <dependency>
       <groupId>org.jboss.logging</groupId>

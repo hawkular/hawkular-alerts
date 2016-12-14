@@ -14,14 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.schema
-
-include '/org/hawkular/alerts/schema/bootstrap.groovy'
 
 setKeyspace keyspace
 
-// Upgrade scripts are defined here:
-include '/org/hawkular/alerts/schema/updates/schema-1.2.1.groovy'
-include '/org/hawkular/alerts/schema/updates/schema-1.2.3.groovy'
-include '/org/hawkular/alerts/schema/updates/schema-1.4.0.groovy'
-include '/org/hawkular/alerts/schema/updates/schema-1.5.0.groovy'
+schemaChange {
+  version '4.0'
+  author 'jshaughn'
+  tags '1.5.x'
+  cql "ALTER TABLE conditions ADD activeRules set<text>"
+}
+
+schemaChange {
+  version '4.1'
+  author 'jshaughn'
+  tags '1.5.x'
+  cql "ALTER TABLE conditions ADD sampleSize int"
+}

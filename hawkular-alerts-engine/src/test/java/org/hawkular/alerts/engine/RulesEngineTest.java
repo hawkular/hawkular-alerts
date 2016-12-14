@@ -19,9 +19,11 @@ package org.hawkular.alerts.engine;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -43,6 +45,9 @@ import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
 import org.hawkular.alerts.api.model.condition.MissingCondition;
 import org.hawkular.alerts.api.model.condition.MissingConditionEval;
+import org.hawkular.alerts.api.model.condition.NelsonCondition;
+import org.hawkular.alerts.api.model.condition.NelsonCondition.NelsonRule;
+import org.hawkular.alerts.api.model.condition.NelsonConditionEval;
 import org.hawkular.alerts.api.model.condition.RateCondition;
 import org.hawkular.alerts.api.model.condition.RateConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
@@ -1981,4 +1986,275 @@ public class RulesEngineTest {
 
         assertEquals(0, alerts.size());
     }
+
+    @Test
+    public void nelsonTest() {
+        // all rules
+        Trigger t1 = new Trigger("tenant", "trigger-1", "Nelson-all");
+        NelsonCondition t1c1 = new NelsonCondition("tenant", "trigger-1", "NumericData-01",
+                EnumSet.allOf(NelsonRule.class), 10);
+        // only active rule: rule 2
+        Trigger t2 = new Trigger("tenant", "trigger-2", "Nelson-rule1");
+        NelsonCondition t2c1 = new NelsonCondition("tenant", "trigger-2", "NumericData-01",
+                EnumSet.of(NelsonRule.Rule2), 10);
+
+        // first 10 datums to establish mean (10) and std dev 2.58199
+        // 14, 13, 12, 11, 10, 10, 9, 8, 7, 6
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 100000, 6.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 101000, 7.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 102000, 8.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 103000, 9.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 104000, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 105000, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 106000, 11.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 107000, 12.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 108000, 13.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 109000, 14.0));
+
+        // default dampening
+
+        t1.setEnabled(true);
+        t2.setEnabled(true);
+
+        rulesEngine.addFact(t1);
+        rulesEngine.addFact(t1c1);
+        rulesEngine.addFact(t2);
+        rulesEngine.addFact(t2c1);
+
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        assertEquals(alerts.toString(), 0, alerts.size());
+
+        // violate rule 1 : One point is more than 3 standard deviations from the mean
+        // [ 18 ], 14, 13, 12, 11, 10, 10, 9, 8, 7, 6
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 200000, 18.0));
+
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        // trigger1 should fire, trigger 2 should not
+        assertEquals(alerts.toString(), 1, alerts.size());
+        Alert a = alerts.get(0);
+        Set<ConditionEval> eval = a.getEvalSets().get(0);
+        NelsonConditionEval e = (NelsonConditionEval) eval.iterator().next();
+        assertTrue(e.getViolations().toString(), e.getViolations().contains(NelsonRule.Rule1));
+        assertEquals(e.getMean().toString(), Double.valueOf(10.0), e.getMean());
+        assertEquals(e.getStandardDeviation().toString(), "2.58199",
+                new DecimalFormat("#0.#####").format(e.getStandardDeviation()));
+        assertEquals(e.getViolations().toString(), 1, e.getViolations().size());
+
+        // violate rule 2: nine (or more) points in a row are on the same side of the mean
+        // [ 11, 11, 11, 11, 11, 11, 11, 18, 14 ],13, 12, 11, 10, 10, 9
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 300000, 11.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 301000, 11.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 302000, 11.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 303000, 11.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 304000, 11.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 305000, 11.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 306000, 11.0));
+
+        alerts.clear();
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        // trigger1 and 2 should fire
+        assertEquals(alerts.toString(), 2, alerts.size());
+        Collections.sort(alerts, (Alert a1, Alert a2) -> a1.getTriggerId().compareTo(a2.getTriggerId()));
+
+        a = alerts.get(0);
+        assertEquals(a.getTriggerId(), "trigger-1", a.getTriggerId());
+        eval = a.getEvalSets().get(0);
+        e = (NelsonConditionEval) eval.iterator().next();
+        assertTrue(e.getViolations().toString(), e.getViolations().contains(NelsonRule.Rule2));
+        assertEquals(e.getViolations().toString(), 1, e.getViolations().size());
+
+        a = alerts.get(1);
+        assertEquals(a.getTriggerId(), "trigger-2", a.getTriggerId());
+        eval = alerts.get(1).getEvalSets().get(0);
+        e = (NelsonConditionEval) eval.iterator().next();
+        assertTrue(e.getViolations().toString(), e.getViolations().contains(NelsonRule.Rule2));
+        assertEquals(e.getViolations().toString(), 1, e.getViolations().size());
+
+        // violate rule 3: Six (or more) points in a row are continually increasing
+        // [ 10.4, 10.3, 10.2, 10.1, 10, 9.9, 7.4 ], 11, 11, 11, 11, 11, 11, 11, 18
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 400000, 7.4)); // break rules 2, 7
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 401000, 9.9));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 402000, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 403000, 10.1));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 404000, 10.2));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 405000, 10.3));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 406000, 10.4));
+
+        alerts.clear();
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        // trigger1 should fire, trigger 2 should not
+        assertEquals(alerts.toString(), 1, alerts.size());
+        a = alerts.get(0);
+        eval = a.getEvalSets().get(0);
+        e = (NelsonConditionEval) eval.iterator().next();
+        assertTrue(e.getViolations().toString(), e.getViolations().contains(NelsonRule.Rule3));
+        assertEquals(e.getViolations().toString(), 1, e.getViolations().size());
+
+        // violate rule 3: Six (or more) points in a row are continually decreasing
+        // [ 9.8, 9.9, 10, 10.1, 10.2, 10.3 ], 10.4, 10.3, 10.2, 10.1, 10, 9.9, 7.4, 11, 11
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 500000, 10.3));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 501000, 10.2));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 502000, 10.1));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 503000, 10.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 504000, 9.9));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 505000, 9.8));
+
+        alerts.clear();
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        // trigger1 should fire, trigger 2 should not
+        assertEquals(alerts.toString(), 1, alerts.size());
+        a = alerts.get(0);
+        eval = a.getEvalSets().get(0);
+        e = (NelsonConditionEval) eval.iterator().next();
+        assertTrue(e.getViolations().toString(), e.getViolations().contains(NelsonRule.Rule3));
+        assertEquals(e.getViolations().toString(), 1, e.getViolations().size());
+
+        // violate rule 4: Fourteen (or more) points in a row alternate in direction, increasing then decreasing.
+        // [ 9.5, 12.6, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5, 9.8 ]
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 600000, 10.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 601000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 602000, 10.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 603000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 604000, 10.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 605000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 606000, 10.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 607000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 608000, 10.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 609000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 610000, 10.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 611000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 612000, 12.6)); // break rule 7
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 613000, 9.5));
+
+        alerts.clear();
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        // trigger1 should fire, trigger 2 should not
+        assertEquals(alerts.toString(), 1, alerts.size());
+        a = alerts.get(0);
+        eval = a.getEvalSets().get(0);
+        e = (NelsonConditionEval) eval.iterator().next();
+        assertTrue(e.getViolations().toString(), e.getViolations().contains(NelsonRule.Rule4));
+        assertEquals(e.getViolations().toString(), 1, e.getViolations().size());
+
+        // violate rule 5: At least 2 of 3 points in a row are > 2 deviations from the mean, in the same direction.
+        // 16, 4, 9.5, 12.6, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5, 9.5
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 700000, 4.0)); // break rule 4
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 701000, 16.0));
+
+        alerts.clear();
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        // no trigger should fire yet, have 1 of 2, need 2 of 3
+        assertEquals(alerts.toString(), 0, alerts.size());
+
+        // [ 4, 16, 4 ], 9.5, 12.6, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 702000, 4.0));
+
+        alerts.clear();
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        // trigger1 should fire, trigger 2 should not
+        assertEquals(alerts.toString(), 1, alerts.size());
+        a = alerts.get(0);
+        eval = a.getEvalSets().get(0);
+        e = (NelsonConditionEval) eval.iterator().next();
+        assertTrue(e.getViolations().toString(), e.getViolations().contains(NelsonRule.Rule5));
+        assertEquals(e.getViolations().toString(), 1, e.getViolations().size());
+
+        // violate rule 6: At least 4 of 5 points in a row are > 1 deviation from the mean in the same direction.
+        // [ 7, 7, 4, 16, 4 ], 9.5, 12.6, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5, 9.5, 10.5
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 800000, 7.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 801000, 7.0));
+
+        alerts.clear();
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        // trigger1 should fire, trigger 2 should not
+        assertEquals(alerts.toString(), 1, alerts.size());
+        a = alerts.get(0);
+        eval = a.getEvalSets().get(0);
+        e = (NelsonConditionEval) eval.iterator().next();
+        assertTrue(e.getViolations().toString(), e.getViolations().contains(NelsonRule.Rule6));
+        assertEquals(e.getViolations().toString(), 1, e.getViolations().size());
+
+        // violate rule 7: Fifteen points in a row are all within 1 deviation of the mean on either side of the mean.
+        // 9.5, 11.5, 11.5, 9.5, 9.5, 11.5, 11.5, 9.5, 9.5, 11.5, 11.5, 9.5, 9.5, 11.5, 11.5
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 900000, 11.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 901000, 11.5)); // break rule 4
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 902000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 903000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 904000, 11.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 905000, 11.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 906000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 907000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 908000, 11.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 909000, 11.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 910000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 911000, 9.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 912000, 11.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 913000, 11.5));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 914000, 9.5));
+
+        alerts.clear();
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        // trigger1 should fire, trigger 2 should not
+        assertEquals(alerts.toString(), 1, alerts.size());
+        a = alerts.get(0);
+        eval = a.getEvalSets().get(0);
+        e = (NelsonConditionEval) eval.iterator().next();
+        assertTrue(e.getViolations().toString(), e.getViolations().contains(NelsonRule.Rule7));
+        assertEquals(e.getViolations().toString(), 1, e.getViolations().size());
+
+        // violate rule 8: Eight points in a row exist, but none within 1 standard deviation of the mean,
+        //                 and the points are in both directions from the mean.
+        // 7, 13, 7, 13, 7, 13, 7, 13, 9.5, 11.5, 11.5, 9.5, 9.5, 11.5, 11.5
+        datums.clear();
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1000000, 13.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1001000, 7.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1002000, 13.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1003000, 7.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1004000, 13.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1005000, 7.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1006000, 13.0));
+        datums.add(Data.forNumeric("tenant", "NumericData-01", 1007000, 7.0));
+
+        alerts.clear();
+        rulesEngine.addData(datums);
+        rulesEngine.fire();
+
+        // trigger1 should fire, trigger 2 should not
+        assertEquals(alerts.toString(), 1, alerts.size());
+        a = alerts.get(0);
+        eval = a.getEvalSets().get(0);
+        e = (NelsonConditionEval) eval.iterator().next();
+        assertTrue(e.getViolations().toString(), e.getViolations().contains(NelsonRule.Rule8));
+        assertEquals(e.getViolations().toString(), 1, e.getViolations().size());
+    }
+
 }

@@ -28,6 +28,8 @@ import org.hawkular.alerts.api.model.condition.EventCondition;
 import org.hawkular.alerts.api.model.condition.EventConditionEval;
 import org.hawkular.alerts.api.model.condition.MissingCondition;
 import org.hawkular.alerts.api.model.condition.MissingConditionEval;
+import org.hawkular.alerts.api.model.condition.NelsonCondition;
+import org.hawkular.alerts.api.model.condition.NelsonConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.StringConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -49,6 +51,7 @@ import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.engine.util.CompareData;
 import org.hawkular.alerts.engine.util.MissingState;
+import org.hawkular.alerts.engine.util.NelsonData;
 import org.hawkular.alerts.engine.util.RateData;
 
 import org.jboss.logging.Logger;
@@ -194,7 +197,7 @@ end
 rule String
     when 
         $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
-        $c : StringCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId  )
+        $c : StringCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId )
         $d : Data( tenantId == $tenantId, source == $tsource, id == $did )
     then
         StringConditionEval ce = new StringConditionEval($c, $d);
@@ -207,7 +210,7 @@ end
 rule External
     when 
         $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
-        $c : ExternalCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId  )
+        $c : ExternalCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId )
         $d : Data( tenantId == $tenantId, source == $tsource, id == $did )
     then
         ExternalConditionEval ce = new ExternalConditionEval($c, $d);
@@ -251,7 +254,7 @@ end
 // Given previous and current data for a given dataId, perform a RateCondition evaluation.
 rule Rate
     when
-        $t : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
+        $t  : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
         $c  : RateCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId )
         $d  : Data( tenantId == $tenantId, source == $tsource, id == $did, $dt : timestamp )
         $rd : RateData( data.tenantId == $tenantId, data.source == $tsource, data.id == $did, data.timestamp < $dt )
@@ -261,6 +264,54 @@ rule Rate
             log.debugf("Rate Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
+end
+
+// NelsonCondition is a bit different (but somewhat like RateCondition) in that it looks for violations
+// of NelsonRules (https://en.wikipedia.org/wiki/Nelson_rules), as configured by the NelsonCondition.  To do this each
+// NelsonCondition has an associated NelsonData that updates the NelsonRules as data comes in. This rule creates the
+// NelsonData for the NelsonCondition. Note that if the same dataId is used in multiple NelsonConditions we do
+// potentially duplicate the tracking, but this is anticipated to be a corner case and in return we gain the ability
+// to configure sample size on the condition, and we can tie the NelsonData life-cycle to its NelsonCondition.
+rule ProvideInitialNelsonData
+    when
+        $c : NelsonCondition ( $cid : conditionId )
+        not  NelsonData( condition.conditionId == $cid )
+    then
+        NelsonData nelsonData = new NelsonData($c);
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("ProvideInitialNelsonData: %s", nelsonData);
+        }
+        insert( nelsonData );
+end
+
+// Given current data and a NelsonData for a given dataId, perform a NelsonCondition evaluation.
+rule Nelson
+    when
+        $t  : Trigger( $tenantId : tenantId, $tid : id, $tmode : mode, $tsource : source )
+        $c  : NelsonCondition ( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode, $did : dataId,
+                                $cid : conditionId )
+        $d  : Data( tenantId == $tenantId, source == $tsource, id == $did )
+        $nd : NelsonData( condition.conditionId == $cid )
+    then
+        $nd.addData($d);
+        NelsonConditionEval ce = new NelsonConditionEval($c, $d, $nd.getViolations(), $nd.getMeanResult(),
+            $nd.getStandardDeviationResult(), $nd.getViolationsData());
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("Nelson Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+        }
+        insert( ce );
+end
+
+// Remove the NelsonData for a NelsonCondition which has been removed from working memory
+rule RetractNelsonData
+    when
+        $nd : NelsonData( $cid : condition.conditionId )
+        not   NelsonCondition ( conditionId == $cid )
+    then
+        retract( $nd )
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("RetractNelsonData: %s", $nd);
+        }
 end
 
 rule UpdateMissingStateFromData

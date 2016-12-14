@@ -51,6 +51,8 @@ import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.EventCondition;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.MissingCondition;
+import org.hawkular.alerts.api.model.condition.NelsonCondition;
+import org.hawkular.alerts.api.model.condition.NelsonCondition.NelsonRule;
 import org.hawkular.alerts.api.model.condition.RateCondition;
 import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
@@ -1205,6 +1207,19 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         ((ExternalCondition) groupCondition).getAlerterId(),
                         memberExpression);
                 break;
+            case MISSING:
+                newCondition = new MissingCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((MissingCondition) groupCondition).getInterval());
+            case NELSON:
+                newCondition = new NelsonCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((NelsonCondition) groupCondition).getActiveRules(),
+                        ((NelsonCondition) groupCondition).getSampleSize());
             case RANGE:
                 newCondition = new ThresholdRangeCondition(member.getTenantId(), member.getId(),
                         groupCondition.getTriggerMode(),
@@ -2085,6 +2100,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 .get(session, CassStatement.INSERT_CONDITION_EXTERNAL);
         PreparedStatement insertConditionMissing = CassStatement
                 .get(session, CassStatement.INSERT_CONDITION_MISSING);
+        PreparedStatement insertConditionNelson = CassStatement
+                .get(session, CassStatement.INSERT_CONDITION_NELSON);
         PreparedStatement insertConditionRate = CassStatement
                 .get(session, CassStatement.INSERT_CONDITION_RATE);
         PreparedStatement insertConditionString = CassStatement.get(session, CassStatement.INSERT_CONDITION_STRING);
@@ -2164,6 +2181,16 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 mCond.getConditionSetSize(), mCond.getConditionSetIndex(), mCond.getConditionId(),
                                 mCond.getDataId(), mCond.getInterval()));
                         dataIds.add(mCond.getDataId());
+                        break;
+                    case NELSON:
+                        NelsonCondition nCond = (NelsonCondition) cond;
+                        batch.add(insertConditionNelson.bind(nCond.getTenantId(),
+                                nCond.getTriggerId(), nCond.getTriggerMode().name(), nCond.getContext(),
+                                nCond.getConditionSetSize(), nCond.getConditionSetIndex(), nCond.getConditionId(),
+                                nCond.getDataId(),
+                                nCond.getActiveRules().stream().map(e -> e.name()).collect(Collectors.toSet()),
+                                nCond.getSampleSize()));
+                        dataIds.add(nCond.getDataId());
                         break;
                     case RANGE:
                         ThresholdRangeCondition rCond = (ThresholdRangeCondition) cond;
@@ -2484,6 +2511,21 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     mCondition.setInterval(row.getLong("interval"));
                     mCondition.setContext(row.getMap("context", String.class, String.class));
                     condition = mCondition;
+                    break;
+                case NELSON:
+                    NelsonCondition nCondition = new NelsonCondition();
+                    nCondition.setTenantId(row.getString("tenantId"));
+                    nCondition.setTriggerId(row.getString("triggerId"));
+                    nCondition.setTriggerMode(Mode.valueOf(row.getString("triggerMode")));
+                    nCondition.setConditionSetSize(row.getInt("conditionSetSize"));
+                    nCondition.setConditionSetIndex(row.getInt("conditionSetIndex"));
+                    nCondition.setDataId(row.getString("dataId"));
+                    nCondition.setActiveRules(row.getSet("activeRules", String.class).stream()
+                            .map(s -> NelsonRule.valueOf(s))
+                            .collect(Collectors.toSet()));
+                    nCondition.setSampleSize(row.getInt("sampleSize"));
+                    nCondition.setContext(row.getMap("context", String.class, String.class));
+                    condition = nCondition;
                     break;
                 case RANGE:
                     ThresholdRangeCondition rCondition = new ThresholdRangeCondition();

@@ -20,9 +20,11 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
@@ -37,6 +39,9 @@ import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.condition.ExternalConditionEval;
 import org.hawkular.alerts.api.model.condition.MissingCondition;
 import org.hawkular.alerts.api.model.condition.MissingConditionEval;
+import org.hawkular.alerts.api.model.condition.NelsonCondition;
+import org.hawkular.alerts.api.model.condition.NelsonCondition.NelsonRule;
+import org.hawkular.alerts.api.model.condition.NelsonConditionEval;
 import org.hawkular.alerts.api.model.condition.RateCondition;
 import org.hawkular.alerts.api.model.condition.RateConditionEval;
 import org.hawkular.alerts.api.model.condition.StringCondition;
@@ -46,6 +51,7 @@ import org.hawkular.alerts.api.model.condition.ThresholdConditionEval;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeConditionEval;
 import org.hawkular.alerts.api.model.data.AvailabilityType;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.event.Thin;
@@ -176,6 +182,54 @@ public class JacksonDeserializer {
                     }
                     break;
                 }
+                case NELSON: {
+                    try {
+                        conditionEval = new NelsonConditionEval();
+                        NelsonConditionEval nConditionEval = (NelsonConditionEval) conditionEval;
+                        nConditionEval.setCondition((NelsonCondition) condition);
+                        if (node.get("mean") != null) {
+                            nConditionEval.setMean(node.get("mean").asDouble());
+                        }
+                        if (node.get("standardDeviation") != null) {
+                            nConditionEval.setStandardDeviation(node.get("standardDeviation").asDouble());
+                        }
+                        if (node.get("violations") != null) {
+                            List<NelsonRule> violations = new ArrayList<>();
+                            Iterator<JsonNode> nodes = node.get("violations").elements();
+                            while (nodes.hasNext()) {
+                                violations.add(NelsonRule.valueOf(nodes.next().textValue()));
+                            }
+                            nConditionEval.setViolations(violations);
+                        }
+                        if (node.get("violationsData") != null) {
+                            List<Data> violationsData = new ArrayList<>();
+                            Iterator<JsonNode> nodes = node.get("violationsData").elements();
+                            while (nodes.hasNext()) {
+                                violationsData.add(nodes.next().traverse(objectCodec).readValueAs(Data.class));
+                                //violations.add(NelsonRule.valueOf(nodes.next().textValue()));
+                            }
+                            nConditionEval.setViolationsData(violationsData);
+                        }
+
+                        // TODO ViolationsData?
+                    } catch (Exception e) {
+                        throw new ConditionEvalException(e);
+                    }
+                    break;
+                }
+                case RANGE: {
+                    try {
+                        conditionEval = new ThresholdRangeConditionEval();
+                        ThresholdRangeConditionEval rConditionEval = (ThresholdRangeConditionEval) conditionEval;
+                        rConditionEval.setCondition((ThresholdRangeCondition) condition);
+                        if (node.get("value") != null) {
+                            rConditionEval.setValue(node.get("value").doubleValue());
+                        }
+                    } catch (Exception e) {
+                        throw new ConditionEvalException(e);
+                    }
+                    break;
+                }
                 case RATE: {
                     try {
                         conditionEval = new RateConditionEval();
@@ -195,19 +249,6 @@ public class JacksonDeserializer {
                         }
                         if (node.get("rate") != null) {
                             rConditionEval.setRate(node.get("rate").doubleValue());
-                        }
-                    } catch (Exception e) {
-                        throw new ConditionEvalException(e);
-                    }
-                    break;
-                }
-                case RANGE: {
-                    try {
-                        conditionEval = new ThresholdRangeConditionEval();
-                        ThresholdRangeConditionEval rConditionEval = (ThresholdRangeConditionEval) conditionEval;
-                        rConditionEval.setCondition((ThresholdRangeCondition) condition);
-                        if (node.get("value") != null) {
-                            rConditionEval.setValue(node.get("value").doubleValue());
                         }
                     } catch (Exception e) {
                         throw new ConditionEvalException(e);
@@ -454,6 +495,29 @@ public class JacksonDeserializer {
                     }
                     if (node.get("threshold") != null) {
                         rCondition.setThreshold(node.get("threshold").doubleValue());
+                    }
+                } catch (Exception e) {
+                    throw new ConditionException(e);
+                }
+                break;
+            }
+            case NELSON: {
+                try {
+                    condition = new NelsonCondition();
+                    NelsonCondition nCondition = (NelsonCondition) condition;
+                    if (node.get("dataId") != null) {
+                        nCondition.setDataId(node.get("dataId").textValue());
+                    }
+                    if (node.get("activeRules") != null) {
+                        Set<NelsonRule> activeRules = new HashSet<>();
+                        Iterator<JsonNode> nodes = node.get("activeRules").elements();
+                        while (nodes.hasNext()) {
+                            activeRules.add(NelsonRule.valueOf(nodes.next().textValue()));
+                        }
+                        nCondition.setActiveRules(activeRules);
+                    }
+                    if (node.get("sampleSize") != null) {
+                        nCondition.setSampleSize(node.get("sampleSize").intValue());
                     }
                 } catch (Exception e) {
                     throw new ConditionException(e);
