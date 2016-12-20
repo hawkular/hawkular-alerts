@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.org.hawkular.alerts.rest
+package org.hawkular.alerts.rest
 
 import groovyx.gpars.dataflow.Promise
 import groovyx.net.http.ContentType
@@ -88,31 +88,126 @@ class PerfImportITest extends AbstractITestBase {
 
     @Test
     void import1000() {
+        logger.info("Test import1000");
         importTest("import1000", 1000);
     }
 
     @Test
     void import2000() {
+        logger.info("Test import2000");
         importTest("import2000", 2000);
     }
 
     @Test
     void import3000() {
+        logger.info("Test import3000");
         importTest("import3000", 3000);
     }
 
     @Test
     void import4000() {
+        logger.info("Test import4000");
         importTest("import4000", 4000);
     }
 
     @Test
     void import5000() {
+        logger.info("Test import5000");
         importTest("import5000", 5000);
     }
 
     @Test
     void import6000() {
+        logger.info("Test import6000");
         importTest("import6000", 6000);
     }
+
+    void importSequentialTest(String prefix, numTriggers, numConditions) {
+        long startCall, endCall, timeCall;
+        startCall = System.currentTimeMillis();
+        for (int i = 0; i < numTriggers; i++) {
+            client.delete(path: "triggers/" + prefix + "-Test-Import-Seq-" + i);
+            Trigger importTrigger = new Trigger(prefix + "-Test-Import-Seq-" + i, "No-MetricX");
+            def resp = client.post(path: "triggers", body: importTrigger);
+            assertEquals(200, resp.status)
+            Collection<Condition> conditions = new ArrayList<>(numConditions);
+            for (int j = 0; j < numConditions; j ++) {
+                ThresholdCondition testCond = new ThresholdCondition(prefix + "-Test-Import-Seq-" + i, Mode.FIRING,
+                        "No-Metric-" + j, ThresholdCondition.Operator.GT, 10);
+                conditions.add(testCond);
+            }
+            resp = client.put(path: "triggers/" + prefix + "-Test-Import-Seq-" + i + "/conditions/firing",
+                    body: conditions)
+            assertEquals(200, resp.status)
+            if (i % 100 == 0) {
+                endCall = System.currentTimeMillis();
+                timeCall = (endCall - startCall);
+                logger.info("Import " + i + " took " + timeCall + " ms")
+            }
+        }
+        endCall = System.currentTimeMillis();
+        timeCall = (endCall - startCall);
+        logger.info("Import " + numTriggers + " took " + timeCall + " ms")
+    }
+
+    @Test
+    void importSeq1000() {
+        logger.info("Test importSeq1000");
+        importSequentialTest("importSeq1000", 1000, 10);
+    }
+
+    @Test
+    void importSeq2000() {
+        logger.info("Test importSeq2000");
+        importSequentialTest("importSeq2000", 2000, 10);
+    }
+
+    @Test
+    void importSeq3000() {
+        logger.info("Test importSeq3000");
+        importSequentialTest("importSeq3000", 3000, 10);
+    }
+
+    @Test
+    void importSeq4000() {
+        logger.info("Test importSeq4000");
+        importSequentialTest("importSeq4000", 4000, 10);
+    }
+
+    @Test
+    void importSeq5000() {
+        logger.info("Test importSeq5000");
+        importSequentialTest("importSeq5000", 5000, 10);
+    }
+
+    @Test
+    void importSeq6000() {
+        logger.info("Test importSeq6000");
+        importSequentialTest("importSeq6000", 6000, 10);
+    }
+
+    @Test
+    void importSeq7000() {
+        logger.info("Test importSeq7000");
+        importSequentialTest("importSeq7000", 7000, 10);
+    }
+
+    @Test
+    void importSeq8000() {
+        logger.info("Test importSeq8000");
+        importSequentialTest("importSeq8000", 8000, 10);
+    }
+
+    @Test
+    void importSeq9000() {
+        logger.info("Test importSeq9000");
+        importSequentialTest("importSeq9000", 9000, 10);
+    }
+
+    @Test
+    void importSeq10000() {
+        logger.info("Test importSeq10000");
+        importSequentialTest("importSeq10000", 10000, 10);
+    }
+
 }
