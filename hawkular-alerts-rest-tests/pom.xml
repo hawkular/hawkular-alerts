@@ -41,13 +41,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-bus-api</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.hawkular.commons</groupId>
       <artifactId>hawkular-bus-common</artifactId>
       <version>${version.org.hawkular.commons}</version>

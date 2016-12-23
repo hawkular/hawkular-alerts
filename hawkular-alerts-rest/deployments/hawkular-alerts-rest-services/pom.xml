@@ -52,12 +52,6 @@
       </exclusions>
     </dependency>
 
-    <dependency>
-      <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-bus</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
   </dependencies>
 
   <build>
