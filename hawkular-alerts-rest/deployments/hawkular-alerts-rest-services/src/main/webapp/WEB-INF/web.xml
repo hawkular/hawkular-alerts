@@ -80,4 +80,14 @@
     <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/dataIds</lookup-name>
   </resource-env-ref>
 
+  <resource-env-ref>
+    <resource-env-ref-name>cache/schema</resource-env-ref-name>
+    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/schema</lookup-name>
+  </resource-env-ref>
+
+  <resource-env-ref>
+    <resource-env-ref-name>cache/globalActions</resource-env-ref-name>
+    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/globalActions</lookup-name>
+  </resource-env-ref>
+
 </web-app>
