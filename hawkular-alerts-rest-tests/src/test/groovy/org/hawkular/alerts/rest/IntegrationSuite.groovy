@@ -18,20 +18,6 @@ package org.hawkular.alerts.rest
 
 import com.icegreen.greenmail.util.GreenMail
 import com.icegreen.greenmail.util.ServerSetup
-
-import org.hawkular.alerts.rest.ActionsITest
-import org.hawkular.alerts.rest.AlertsITest
-import org.hawkular.alerts.rest.CrossTenantITest
-import org.hawkular.alerts.rest.ConditionsITest
-import org.hawkular.alerts.rest.CORSITest
-import org.hawkular.alerts.rest.DampeningITest
-import org.hawkular.alerts.rest.EventsITest
-import org.hawkular.alerts.rest.EventsLifecycleITest
-import org.hawkular.alerts.rest.GroupITest
-import org.hawkular.alerts.rest.ImportExportITest
-import org.hawkular.alerts.rest.LifecycleITest
-import org.hawkular.alerts.rest.TenantITest
-import org.hawkular.alerts.rest.TriggersITest
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.runner.RunWith
@@ -53,6 +39,7 @@ import org.junit.runners.Suite;
         DampeningITest.class,
         EventsITest.class,
         EventsLifecycleITest.class,
+        EventsAggregationExtensionITest.class,
         GroupITest.class,
         ImportExportITest.class,
         LifecycleITest.class,

@@ -54,7 +54,10 @@ import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsService;
+import org.hawkular.alerts.api.services.DataExtension;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.services.EventExtension;
+import org.hawkular.alerts.api.services.ExtensionsService;
 import org.hawkular.alerts.engine.impl.AlertsEngineCache.DataEntry;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
@@ -119,6 +122,11 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     private AlertsEngineCache alertsEngineCache = null;
     boolean distributed = false;
 
+    private static final String ENGINE_EXTENSIONS = "hawkular-alerts.engine-extensions";
+    private static final String ENGINE_EXTENSIONS_ENV = "ENGINE_EXTENSIONS";
+    private static final String ENGINE_EXTENSIONS_DEFAULT = "true";
+    private boolean engineExtensions;
+
     @EJB
     RulesEngine rules;
 
@@ -133,6 +141,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
     @EJB
     PartitionManager partitionManager;
+
+    @EJB
+    ExtensionsService extensionsService;
 
     @Resource
     private ManagedExecutorService executor;
@@ -151,6 +162,8 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
         delay = new Integer(AlertProperties.getProperty(ENGINE_DELAY, "1000"));
         period = new Integer(AlertProperties.getProperty(ENGINE_PERIOD, "2000"));
+        engineExtensions = Boolean.parseBoolean(AlertProperties.getProperty(ENGINE_EXTENSIONS, ENGINE_EXTENSIONS_ENV,
+                ENGINE_EXTENSIONS_DEFAULT));
     }
 
     public RulesEngine getRules() {
@@ -501,6 +514,10 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             data = filterIncomingDataForNode(data);
         }
 
+        if (engineExtensions) {
+            data = processDataExtensions(data);
+        }
+
         synchronized (pendingData) {
             pendingData.addAll(data);
         }
@@ -515,6 +532,16 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             }
         }
         return filteredData;
+    }
+
+    private TreeSet<Data> processDataExtensions(TreeSet<Data> data) {
+        Set<DataExtension> extensions = extensionsService.getDataExtensions();
+        if (!extensions.isEmpty()) {
+            for (DataExtension extension : extensions) {
+                data = extension.processData(data);
+            }
+        }
+        return data;
     }
 
     // We allow concurrent threads to make this call in order to process distributed data in parallel. We
@@ -541,6 +568,10 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             events = filterIncomingEventsForNode(events);
         }
 
+        if (engineExtensions) {
+            events = processEventsExtensions(events);
+        }
+
         synchronized (pendingEvents) {
             pendingEvents.addAll(events);
         }
@@ -555,6 +586,16 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             }
         }
         return filteredEvents;
+    }
+
+    private TreeSet<Event> processEventsExtensions(TreeSet<Event> events) {
+        Set<EventExtension> extensions = extensionsService.getEventExtensions();
+        if (!extensions.isEmpty()) {
+            for (EventExtension extension : extensions) {
+                events = extension.processEvents(events);
+            }
+        }
+        return events;
     }
 
     private TreeSet<Data> getAndClearPendingData() {

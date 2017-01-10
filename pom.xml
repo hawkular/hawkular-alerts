@@ -127,6 +127,7 @@
         <module>hawkular-alerts-api</module>
         <module>hawkular-alerts-filter-api</module>
         <module>hawkular-alerts-engine</module>
+        <module>hawkular-alerts-engine-extensions</module>
         <module>hawkular-alerts-rest</module>
         <module>hawkular-alerts-rest-tests</module>
       </modules>
@@ -151,6 +152,7 @@
         <module>hawkular-alerts-api</module>
         <module>hawkular-alerts-filter-api</module>
         <module>hawkular-alerts-engine</module>
+        <module>hawkular-alerts-engine-extensions</module>
         <module>hawkular-alerts-rest</module>
         <module>hawkular-alerts-actions</module>
       </modules>

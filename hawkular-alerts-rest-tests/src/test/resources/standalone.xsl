@@ -50,7 +50,7 @@
     <xsl:copy>
       <xsl:copy-of select="node()|@*"/>
     </xsl:copy>
-    <logger category="org.hawkular.alerts.engine.impl">
+    <logger category="org.hawkular.alerts">
       <level name="DEBUG"/>
     </logger>
   </xsl:template>

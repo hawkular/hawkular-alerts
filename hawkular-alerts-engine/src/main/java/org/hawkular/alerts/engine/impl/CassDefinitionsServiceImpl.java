@@ -432,7 +432,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.removeTrigger(tenantId, triggerId);
         }
 
-        notifyListeners(new DefinitionsEvent(Type.TRIGGER_REMOVE, tenantId, triggerId));
+        notifyListeners(new DefinitionsEvent(Type.TRIGGER_REMOVE, tenantId, triggerId, trigger.getTags()));
     }
 
     @Override

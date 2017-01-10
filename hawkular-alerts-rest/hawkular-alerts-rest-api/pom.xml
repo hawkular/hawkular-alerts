@@ -53,6 +53,12 @@
     </dependency>
 
     <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-events-aggregation</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.hawkular.commons</groupId>
       <artifactId>hawkular-tenant-jaxrs-filter</artifactId>
       <version>${version.org.hawkular.commons}</version>

@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.services;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.action.ActionDefinition;
@@ -47,35 +48,39 @@ public class DefinitionsEvent {
     private Set<String> dataIds;
     private String actionPlugin;
     private ActionDefinition actionDefinition;
+    private Map<String, String> tags;
 
     public DefinitionsEvent(Type type, ActionDefinition actionDefinition) {
         this(type, actionDefinition.getTenantId(), actionDefinition.getActionId(), null,
-                actionDefinition.getActionPlugin(), actionDefinition);
+                actionDefinition.getActionPlugin(), actionDefinition, null);
     }
 
     public DefinitionsEvent(Type type, String targetTenantId, String targetActionPlugin, String targetActionId) {
-        this(type, targetTenantId, targetActionId, null, targetActionPlugin, null);
+        this(type, targetTenantId, targetActionId, null, targetActionPlugin, null, null);
     }
 
     public DefinitionsEvent(Type type, Dampening dampening) {
-        this(type, dampening.getTenantId(), dampening.getDampeningId(), null, null, null);
+        this(type, dampening.getTenantId(), dampening.getDampeningId(), null, null, null, null);
     }
 
     public DefinitionsEvent(Type type, Trigger trigger) {
-        this(type, trigger.getTenantId(), trigger.getId(), null, null, null);
+        this(type, trigger.getTenantId(), trigger.getId(), null, null, null, trigger.getTags());
     }
 
     public DefinitionsEvent(Type type, String targetTenantId, String targetId) {
-        this(type, targetTenantId, targetId, null, null, null);
+        this(type, targetTenantId, targetId, null, null, null, null);
+    }
+
+    public DefinitionsEvent(Type type, String targetTenantId, String targetId, Map<String, String> tags) {
+        this(type, targetTenantId, targetId, null, null, null, tags);
     }
 
     public DefinitionsEvent(Type type, String targetTenantId, String targetId, Set<String> dataIds) {
-        this(type, targetTenantId, targetId, dataIds, null, null);
+        this(type, targetTenantId, targetId, dataIds, null, null, null);
     }
 
     public DefinitionsEvent(Type type, String targetTenantId, String targetId, Set<String> dataIds,
-                            String actionPlugin,
-                            ActionDefinition actionDefinition) {
+                            String actionPlugin, ActionDefinition actionDefinition, Map<String, String> tags) {
         super();
         this.type = type;
         this.targetTenantId = targetTenantId;
@@ -83,6 +88,7 @@ public class DefinitionsEvent {
         this.dataIds = dataIds;
         this.actionPlugin = actionPlugin;
         this.actionDefinition = actionDefinition;
+        this.tags = tags;
     }
 
     public Type getType() {
@@ -117,6 +123,10 @@ public class DefinitionsEvent {
         this.actionDefinition = actionDefinition;
     }
 
+    public Map<String, String> getTags() {
+        return tags;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -130,7 +140,9 @@ public class DefinitionsEvent {
         if (targetId != null ? !targetId.equals(that.targetId) : that.targetId != null) return false;
         if (dataIds != null ? !dataIds.equals(that.dataIds) : that.dataIds != null) return false;
         if (actionPlugin != null ? !actionPlugin.equals(that.actionPlugin) : that.actionPlugin != null) return false;
-        return actionDefinition != null ? actionDefinition.equals(that.actionDefinition) : that.actionDefinition == null;
+        if (actionDefinition != null ? !actionDefinition.equals(that.actionDefinition) : that.actionDefinition != null)
+            return false;
+        return tags != null ? tags.equals(that.tags) : that.tags == null;
     }
 
     @Override
@@ -141,6 +153,7 @@ public class DefinitionsEvent {
         result = 31 * result + (dataIds != null ? dataIds.hashCode() : 0);
         result = 31 * result + (actionPlugin != null ? actionPlugin.hashCode() : 0);
         result = 31 * result + (actionDefinition != null ? actionDefinition.hashCode() : 0);
+        result = 31 * result + (tags != null ? tags.hashCode() : 0);
         return result;
     }
 
@@ -153,6 +166,7 @@ public class DefinitionsEvent {
                 ", dataIds=" + dataIds +
                 ", actionPlugin='" + actionPlugin + '\'' +
                 ", actionDefinition=" + actionDefinition +
+                ", tags=" + tags +
                 '}';
     }
 }
