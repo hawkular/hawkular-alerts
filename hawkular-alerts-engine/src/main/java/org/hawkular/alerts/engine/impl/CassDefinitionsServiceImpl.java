@@ -1538,7 +1538,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TenantId must be not null");
         }
         if (isEmpty(dampening)) {
-            throw new IllegalArgumentException("DampeningId must be not null");
+            throw new IllegalArgumentException("DampeningId and TriggerId must be not null");
         }
 
         checkTenantId(tenantId, dampening);
@@ -1565,7 +1565,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TenantId must be not null");
         }
         if (isEmpty(dampening)) {
-            throw new IllegalArgumentException("DampeningId must be not null");
+            throw new IllegalArgumentException("DampeningId and TriggerId must be not null");
         }
 
         try {
