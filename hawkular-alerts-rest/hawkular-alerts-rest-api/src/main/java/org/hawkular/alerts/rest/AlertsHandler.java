@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,10 +18,15 @@ package org.hawkular.alerts.rest;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
+import static org.hawkular.alerts.rest.CommonUtil.isEmpty;
+import static org.hawkular.alerts.rest.CommonUtil.parseTagQuery;
+import static org.hawkular.alerts.rest.CommonUtil.parseTags;
 import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -83,7 +88,26 @@ public class AlertsHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get alerts with optional filtering",
-            notes = "If not criteria defined, it fetches all alerts available in the system.",
+            notes = "If not criteria defined, it fetches all alerts available in the system. + \n" +
+                    "Tags Query language (BNF): + \n" +
+                    "[source] \n" +
+                    "---- \n" +
+                    "<tag_query> ::= ( <expression> | \"(\" <object> \")\" " +
+                    "| <object> <logical_operator> <object> ) \n" +
+                    "<expression> ::= ( <tag_name> | <not> <tag_name> " +
+                    "| <tag_name> <boolean_operator> <tag_value> | " +
+                    "<tag_name> <array_operator> <array> ) \n" +
+                    "<not> ::= [ \"NOT\" | \"not\" ] \n" +
+                    "<logical_operator> ::= [ \"AND\" | \"OR\" | \"and\" | \"or\" ] \n" +
+                    "<boolean_operator> ::= [ \"==\" | \"!=\" ] \n" +
+                    "<array_operator> ::= [ \"IN\" | \"NOT IN\" | \"in\" | \"not in\" ] \n" +
+                    "<array> ::= ( \"[\" \"]\" | \"[\" ( \",\" <tag_value> )* ) \n" +
+                    "<tag_name> ::= <identifier> \n" +
+                    "<tag_value> ::= ( \"'\" <regexp> \"'\" | <simple_value> ) \n" +
+                    "; \n" +
+                    "; <identifier> and <simple_value> follow pattern [a-zA-Z_0-9][\\-a-zA-Z_0-9]* \n" +
+                    "; <regexp> follows any valid Java Regular Expression format \n" +
+                    "---- \n",
             response = Alert.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of alerts."),
@@ -115,11 +139,15 @@ public class AlertsHandler {
                 allowableValues = "Comma separated list of [LOW, MEDIUM, HIGH, CRITICAL]")
             @QueryParam("severities")
             final String severities,
-            @ApiParam(required = false, value = "Filter out events for unspecified tags.",
+            @ApiParam(required = false, value = "[DEPRECATED] Filter out alerts for unspecified tags.",
                 allowableValues = "Comma separated list of tags, each tag of format 'name\\|value'. + \n" +
                         "Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
+            @ApiParam(required = false, value = "Filter out alerts for unspecified tags.",
+                allowableValues = "A tag query expression.")
+            @QueryParam("tagQuery")
+            final String tagQuery,
             @ApiParam(required = false, value = "Filter out alerts resolved before this time.",
                 allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("startResolvedTime")
@@ -143,8 +171,18 @@ public class AlertsHandler {
             final UriInfo uri) {
         Pager pager = RequestUtil.extractPaging(uri);
         try {
+            /*
+                We maintain old tags criteria as deprecated (it can be removed in a next major version).
+                If present, the tags criteria has precedence over tagQuery parameter.
+             */
+            String unifiedTagQuery;
+            if (!isEmpty(tags)) {
+                unifiedTagQuery = parseTagQuery(parseTags(tags));
+            } else {
+                unifiedTagQuery = tagQuery;
+            }
             AlertsCriteria criteria = new AlertsCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
-                    tags, startResolvedTime, endResolvedTime, startAckTime, endAckTime, thin);
+                    unifiedTagQuery, startResolvedTime, endResolvedTime, startAckTime, endAckTime, thin);
             Page<Alert> alertPage = alertsService.getAlerts(tenantId, criteria, pager);
             if (log.isDebugEnabled()) {
                 log.debug("Alerts: " + alertPage);
@@ -261,12 +299,11 @@ public class AlertsHandler {
             final String tags) {
         try {
             if (!isEmpty(alertIds) || isEmpty(tags)) {
-                // criteria just used for convenient type translation
-                AlertsCriteria c = new AlertsCriteria(null, null, alertIds, null, null, null, tags, null, null, null,
-                        null, false);
-                alertsService.addAlertTags(tenantId, c.getAlertIds(), c.getTags());
+                List<String> alertIdList = Arrays.asList(alertIds.split(","));
+                Map<String, String> tagsMap = parseTags(tags);
+                alertsService.addAlertTags(tenantId, alertIdList, tagsMap);
                 if (log.isDebugEnabled()) {
-                    log.debugf("Tagged alertIds:%s, %s", c.getAlertIds(), c.getTags());
+                    log.debugf("Tagged alertIds:%s, %s", alertIdList, tagsMap);
                 }
                 return ResponseUtil.ok();
             } else {
@@ -398,7 +435,26 @@ public class AlertsHandler {
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Delete alerts with optional filtering.",
             notes = "Return number of alerts deleted. + \n" +
-                    "WARNING: If not criteria defined, it deletes all alerts stored in the system.",
+                    "WARNING: If not criteria defined, it deletes all alerts stored in the system. + \n" +
+                    "Tags Query language (BNF): + \n" +
+                    "[source] \n" +
+                    "---- \n" +
+                    "<tag_query> ::= ( <expression> | \"(\" <object> \")\" " +
+                    "| <object> <logical_operator> <object> ) \n" +
+                    "<expression> ::= ( <tag_name> | <not> <tag_name> " +
+                    "| <tag_name> <boolean_operator> <tag_value> | " +
+                    "<tag_name> <array_operator> <array> ) \n" +
+                    "<not> ::= [ \"NOT\" | \"not\" ] \n" +
+                    "<logical_operator> ::= [ \"AND\" | \"OR\" | \"and\" | \"or\" ] \n" +
+                    "<boolean_operator> ::= [ \"==\" | \"!=\" ] \n" +
+                    "<array_operator> ::= [ \"IN\" | \"NOT IN\" | \"in\" | \"not in\" ] \n" +
+                    "<array> ::= ( \"[\" \"]\" | \"[\" ( \",\" <tag_value> )* ) \n" +
+                    "<tag_name> ::= <identifier> \n" +
+                    "<tag_value> ::= ( \"'\" <regexp> \"'\" | <simple_value> ) \n" +
+                    "; \n" +
+                    "; <identifier> and <simple_value> follow pattern [a-zA-Z_0-9][\\-a-zA-Z_0-9]* \n" +
+                    "; <regexp> follows any valid Java Regular Expression format \n" +
+                    "---- \n",
             response = ApiDeleted.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alerts deleted."),
@@ -430,11 +486,15 @@ public class AlertsHandler {
                 allowableValues = "Comma separated list of [LOW, MEDIUM, HIGH, CRITICAL]")
             @QueryParam("severities")
             final String severities,
-            @ApiParam(required = false, value = "Filter out alerts for unspecified tags.",
+            @ApiParam(required = false, value = "[DEPRECATED] Filter out alerts for unspecified tags.",
                 allowableValues = "Comma separated list of tags, each tag of format 'name\\|value'. + \n" +
                     "Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
+            @ApiParam(required = false, value = "Filter out alerts for unspecified tags.",
+                    allowableValues = "A tag query expression.")
+            @QueryParam("tagQuery")
+            final String tagQuery,
             @ApiParam(required = false, value = "Filter out alerts resolved before this time.",
                 allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("startResolvedTime")
@@ -453,8 +513,18 @@ public class AlertsHandler {
             final Long endAckTime
             ) {
         try {
+            /*
+                We maintain old tags criteria as deprecated (it can be removed in a next major version).
+                If present, the tags criteria has precedence over tagQuery parameter.
+             */
+            String unifiedTagQuery;
+            if (!isEmpty(tags)) {
+                unifiedTagQuery = parseTagQuery(parseTags(tags));
+            } else {
+                unifiedTagQuery = tagQuery;
+            }
             AlertsCriteria criteria = new AlertsCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
-                    tags, startResolvedTime, endResolvedTime, startAckTime, endAckTime, null);
+                    unifiedTagQuery, startResolvedTime, endResolvedTime, startAckTime, endAckTime, null);
             int numDeleted = alertsService.deleteAlerts(tenantId, criteria);
             if (log.isDebugEnabled()) {
                 log.debug("Alerts deleted: " + numDeleted);
@@ -613,13 +683,5 @@ public class AlertsHandler {
             }
             return ResponseUtil.internalError(e);
         }
-    }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.trim().isEmpty();
-    }
-
-    private boolean isEmpty(Collection collection) {
-        return collection == null || collection.isEmpty();
     }
 }

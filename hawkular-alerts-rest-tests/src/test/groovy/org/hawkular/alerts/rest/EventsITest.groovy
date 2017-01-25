@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,6 +58,9 @@ class EventsITest extends AbstractITestBase {
 
         resp = client.get(path: "events", query: [tags:"tag-01|value-01,tag-02|value-02",thin:true] )
         assertEquals(200, resp.status)
+
+        resp = client.get(path: "events", query: [tagQuery:"tagA or (tagB and tagC in ['e.*', 'f.*'])"] )
+        assertEquals(200, resp.status)
     }
 
     @Test
@@ -83,6 +86,9 @@ class EventsITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         resp = client.put(path: "events/delete", query: [tags:"tag-01|value-01,tag-02|value-02"] )
+        assertEquals(200, resp.status)
+
+        resp = client.put(path: "events/delete", query: [tagQuery:"tagA or (tagB and tagC in ['e.*', 'f.*'])"] )
         assertEquals(200, resp.status)
     }
 

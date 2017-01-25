@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,15 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.EQ;
+import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.IN;
+import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NEQ;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -65,6 +70,7 @@ import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl.IncomingEvents;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.IncomingDataManager;
+import org.hawkular.alerts.engine.tags.ExpressionTagQueryParser;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BatchStatement;
@@ -101,8 +107,8 @@ public class CassAlertsServiceImpl implements AlertsService {
     private static final String BATCH_SIZE_ENV = "BATCH_SIZE";
     private static final String BATCH_SIZE_DEFAULT = "10";
 
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(CassAlertsServiceImpl.class);
+    private static final MsgLogger msgLog = MsgLogger.LOGGER;
+    private static final Logger log = Logger.getLogger(CassAlertsServiceImpl.class);
 
     private int criteriaNoQuerySize;
     private int batchSize;
@@ -607,7 +613,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         try {
             if (filter) {
                 /*
-                    Get alertsIds explicitly added into the criteria. Start with these as there is no query involved
+                    Get alertIds explicitly added into the criteria. Start with these as there is no query involved
                  */
                 if (criteria.hasAlertIdCriteria()) {
                     Set<String> alertIdsFilteredByAlerts = filterByAlerts(criteria);
@@ -623,14 +629,15 @@ public class CassAlertsServiceImpl implements AlertsService {
                 }
 
                 /*
-                    Get alertIds via tags
+                    Get alertIds via tagQuery
                  */
-                if (criteria.hasTagCriteria()) {
-                    Set<String> alertIdsFilteredByTags = getIdsByTags(tenantId, TagType.ALERT, criteria.getTags());
+                if (criteria.hasTagQueryCriteria()) {
+                    Set<String> alertIdsFilteredByTagQuery = getIdsByTagQuery(tenantId, TagType.ALERT,
+                            criteria.getTagQuery());
                     if (activeFilter) {
-                        alertIds.retainAll(alertIdsFilteredByTags);
+                        alertIds.retainAll(alertIdsFilteredByTagQuery);
                     } else {
-                        alertIds.addAll(alertIdsFilteredByTags);
+                        alertIds.addAll(alertIdsFilteredByTagQuery);
                     }
                     if (alertIds.isEmpty()) {
                         return alerts;
@@ -1043,6 +1050,164 @@ public class CassAlertsServiceImpl implements AlertsService {
         return ids;
     }
 
+    private static class TagValue {
+        private String tenantId;
+        private String tag;
+        private String value;
+        private String id;
+
+        public TagValue(String tenantId, String tag, String value, String id) {
+            this.tenantId = tenantId;
+            this.tag = tag;
+            this.value = value;
+            this.id = id;
+        }
+
+        public String getTenantId() {
+            return tenantId;
+        }
+
+        public String getTag() {
+            return tag;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            TagValue tagValue = (TagValue) o;
+
+            if (tenantId != null ? !tenantId.equals(tagValue.tenantId) : tagValue.tenantId != null) return false;
+            if (tag != null ? !tag.equals(tagValue.tag) : tagValue.tag != null) return false;
+            if (value != null ? !value.equals(tagValue.value) : tagValue.value != null) return false;
+            return id != null ? id.equals(tagValue.id) : tagValue.id == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = tenantId != null ? tenantId.hashCode() : 0;
+            result = 31 * result + (tag != null ? tag.hashCode() : 0);
+            result = 31 * result + (value != null ? value.hashCode() : 0);
+            result = 31 * result + (id != null ? id.hashCode() : 0);
+            return result;
+        }
+    }
+
+    private Set<TagValue> getTagValueByTagName(String tenantId, TagType tagType, String tagName)
+        throws Exception {
+        Set<TagValue> tagValues = new HashSet<>();
+        PreparedStatement selectTagsByName = CassStatement.get(session, CassStatement.SELECT_TAGS_BY_NAME);
+        session.executeAsync(selectTagsByName.bind(tenantId, tagType.name(), tagName)).get().all() .forEach(r -> {
+            tagValues.add(new TagValue(tenantId, tagName, r.getString("value"), r.getString("id")));
+        });
+        return tagValues;
+    }
+
+    private boolean filterTagValue(String op, String regexps, String value) {
+        if (op.equals(EQ) || op.equals(NEQ)) {
+            boolean matches;
+            String regexp;
+            if (regexps.equals("'*'")) {
+                matches = true;
+            } else if (regexps.charAt(0) == '\'') {
+                regexp = regexps.substring(1, regexps.length() - 1);
+                matches = value.matches(regexp);
+            } else {
+                regexp = regexps;
+                matches = value.equals(regexp);
+            }
+            return op.equals(EQ) ? matches : !matches;
+        } else {
+            String array = regexps.substring(1, regexps.length() - 1);
+            String[] items = array.split(",");
+            for (String item : items) {
+                if (item.equals("'*'")) {
+                    return op.equals(IN) ? true : false;
+                }
+                String regexp = item.charAt(0) == '\'' ? item.substring(1, item.length() - 1) : item;
+                if (value.matches(regexp)) {
+                    return op.equals(IN) ? true : false;
+                }
+            }
+            return op.equals(IN) ? false : true;
+        }
+    }
+
+    private Set<String> getIdsByTagQuery(String tenantId, TagType tagType, String tagQuery)
+            throws Exception {
+        ExpressionTagQueryParser parser = new ExpressionTagQueryParser(tokens -> {
+            Set<String> result = new HashSet<>();
+            if (tokens != null) {
+                String tag;
+                Map<String, String> map = new HashMap<>();
+                if (tokens.size() == 1) {
+                    // tag
+                    tag = tokens.get(0);
+                    map.put(tag, "*");
+                    Set<String> idsByTag = getIdsByTags(tenantId, tagType, map);
+                    result = idsByTag;
+                } else if (tokens.size() == 2) {
+                    // not tag
+                    tag = tokens.get(1);
+                    Set<String> allIds;
+                    if (TagType.ALERT.equals(tagType)) {
+                        allIds = getAllAlertIds(tenantId);
+                    } else {
+                        allIds = getAllEventIds(tenantId);
+                    }
+                    map.put(tag, "*");
+                    Set<String> idsByTag = getIdsByTags(tenantId, tagType, map);
+                    allIds.removeAll(idsByTag);
+                    result = allIds;
+                } else {
+                    tag = tokens.get(0);
+                    String op;
+                    String regexp;
+                    if (tokens.size() == 3) {
+                        op = tokens.get(1);
+                        regexp = tokens.get(2);
+                    } else {
+                        // not in [array]
+                        op = tokens.get(1) + tokens.get(2);
+                        regexp = tokens.get(3);
+                    }
+                    Set<TagValue> tagValues = getTagValueByTagName(tenantId, tagType, tag);
+                    result = tagValues.stream()
+                            .filter(tagValue -> filterTagValue(op, regexp, tagValue.getValue()))
+                            .map(tagValue -> tagValue.getId())
+                            .collect(Collectors.toSet());
+                }
+            }
+            return result;
+        });
+        return parser.resolve(tagQuery);
+    }
+
+    private Set<String> getAllAlertIds(String tenantId) throws Exception {
+        Set<String> ids = new HashSet<>();
+        PreparedStatement selectAlertIdsByTenant = CassStatement.get(session, CassStatement.SELECT_ALERT_IDS_BY_TENANT);
+        ResultSetFuture future = session.executeAsync(selectAlertIdsByTenant.bind(tenantId));
+        future.get().all().stream().forEach(r -> ids.add(r.getString("alertId")));
+        return ids;
+    }
+
+    private Set<String> getAllEventIds(String tenantId) throws Exception {
+        Set<String> ids = new HashSet<>();
+        PreparedStatement selectEventIdsByTenant = CassStatement.get(session, CassStatement.SELECT_EVENT_IDS_BY_TENANT);
+        ResultSetFuture future = session.executeAsync(selectEventIdsByTenant.bind(tenantId));
+        future.get().all().stream().forEach(r -> ids.add(r.getString("id")));
+        return ids;
+    }
+
     // The DB-Level filtering approach implemented below is a best-practice for dealing
     // with Cassandra.  It's basically a series of queries, one for each filter, with a progressive
     // intersection of the resulting ID set.  This works well in most cases but not when filtering on
@@ -1126,14 +1291,15 @@ public class CassAlertsServiceImpl implements AlertsService {
                 }
 
                 /*
-                    Get eventIds via tags
+                    Get eventIds via tagQuery
                  */
-                if (criteria.hasTagCriteria()) {
-                    Set<String> idsFilteredByTags = getIdsByTags(tenantId, TagType.EVENT, criteria.getTags());
+                if (criteria.hasTagQueryCriteria()) {
+                    Set<String> idsFilteredByTagQuery = getIdsByTagQuery(tenantId, TagType.EVENT,
+                            criteria.getTagQuery());
                     if (activeFilter) {
-                        eventIds.retainAll(idsFilteredByTags);
+                        eventIds.retainAll(idsFilteredByTagQuery);
                     } else {
-                        eventIds.addAll(idsFilteredByTags);
+                        eventIds.addAll(idsFilteredByTagQuery);
                     }
                     if (eventIds.isEmpty()) {
                         return events;

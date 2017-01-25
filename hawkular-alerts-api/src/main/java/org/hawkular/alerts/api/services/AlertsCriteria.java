@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +18,7 @@ package org.hawkular.alerts.api.services;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
@@ -46,7 +44,7 @@ public class AlertsCriteria {
     Collection<Severity> severities = null;
     String triggerId = null;
     Collection<String> triggerIds = null;
-    Map<String, String> tags = null;
+    String tagQuery = null;
     boolean thin = false;
 
     public AlertsCriteria() {
@@ -54,8 +52,8 @@ public class AlertsCriteria {
     }
 
     public AlertsCriteria(Long startTime, Long endTime, String alertIds, String triggerIds,
-           String statuses, String severities, String tags, Long startResolvedTime, Long endResolvedTime,
-           Long startAckTime, Long endAckTime, Boolean thin) {
+                          String statuses, String severities, String tagQuery, Long startResolvedTime,
+                          Long endResolvedTime, Long startAckTime, Long endAckTime, Boolean thin) {
         setStartTime(startTime);
         setEndTime(endTime);
         if (!isEmpty(alertIds)) {
@@ -78,19 +76,7 @@ public class AlertsCriteria {
             }
             setSeverities(severitySet);
         }
-        if (!isEmpty(tags)) {
-            String[] tagTokens = tags.split(",");
-            Map<String, String> tagsMap = new HashMap<>(tagTokens.length);
-            for (String tagToken : tagTokens) {
-                String[] fields = tagToken.split("\\|");
-                if (fields.length == 2) {
-                    tagsMap.put(fields[0], fields[1]);
-                } else {
-                    throw new IllegalArgumentException("Invalid Tag Criteria " + Arrays.toString(fields));
-                }
-            }
-            setTags(tagsMap);
-        }
+        setTagQuery(tagQuery);
         setStartResolvedTime(startResolvedTime);
         setEndResolvedTime(endResolvedTime);
         setStartAckTime(startAckTime);
@@ -229,23 +215,28 @@ public class AlertsCriteria {
         this.triggerIds = triggerIds;
     }
 
-    public Map<String, String> getTags() {
-        return tags;
+    public String getTagQuery() {
+        return tagQuery;
     }
 
     /**
-     * @param tags return alerts with *any* of these tags, it does not have to have all of the tags). Specify '*' for
-     * the value if you only want to match the name portion of the tag.
+     * @param tagQuery return alerts with *any* of the tags specified by the tag expression language:
+     *
+     * <pre>
+     *        <tag_query> ::= ( <expression> | "(" <object> ")" | <object> <logical_operator> <object> )
+     *        <expression> ::= ( <tag_name> | <not> <tag_name> | <tag_name> <boolean_operator> <tag_value> |
+     *               <tag_key> <array_operator> <array> )
+     *        <not> ::= [ "NOT" | "not" ]
+     *        <logical_operator> ::= [ "AND" | "OR" | "and" | "or" ]
+     *        <boolean_operator> ::= [ "==" | "!=" ]
+     *        <array_operator> ::= [ "IN" | "NOT IN" | "in" | "not in" ]
+     *        <array> ::= ( "[" "]" | "[" ( "," <tag_value> )* )
+     *        <tag_name> ::= <identifier>                                // Tag identifier
+     *        <tag_value> ::= ( "'" <regexp> "'" | <simple_value> )      // Regular expression used with quotes
+     * </pre>
      */
-    public void setTags(Map<String, String> tags) {
-        this.tags = tags;
-    }
-
-    public void addTag(String name, String value) {
-        if (null == tags) {
-            tags = new HashMap<>();
-        }
-        tags.put(name, value);
+    public void setTagQuery(String tagQuery) {
+        this.tagQuery = tagQuery;
     }
 
     public Severity getSeverity() {
@@ -287,8 +278,8 @@ public class AlertsCriteria {
                 || (null != statusSet && !statusSet.isEmpty());
     }
 
-    public boolean hasTagCriteria() {
-        return (null != tags && !tags.isEmpty());
+    public boolean hasTagQueryCriteria() {
+        return (null != tagQuery && !isEmpty(tagQuery));
     }
 
     public boolean hasCTimeCriteria() {
@@ -312,7 +303,7 @@ public class AlertsCriteria {
         return hasAlertIdCriteria()
                 || hasStatusCriteria()
                 || hasSeverityCriteria()
-                || hasTagCriteria()
+                || hasTagQueryCriteria()
                 || hasCTimeCriteria()
                 || hasTriggerIdCriteria()
                 || hasResolvedTimeCriteria()
@@ -324,9 +315,9 @@ public class AlertsCriteria {
         return "AlertsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", alertId=" + alertId
                 + ", alertIds=" + alertIds + ", status=" + status + ", statusSet=" + statusSet + ", severity="
                 + severity + ", severities=" + severities + ", triggerId=" + triggerId + ", triggerIds=" + triggerIds
-                + ", tags=" + tags + ", startAckTime=" + startAckTime + ", endAckTime=" + endAckTime + ", " +
-                "startResolvedTime=" + startResolvedTime + ", endResolvedTime=" + endResolvedTime + ", " +
-                "thin=" + thin + "]";
+                + ", tagQuery=" + tagQuery + ", startAckTime=" + startAckTime
+                + ", endAckTime=" + endAckTime + ", " + "startResolvedTime=" + startResolvedTime
+                + ", endResolvedTime=" + endResolvedTime + ", " + "thin=" + thin + "]";
     }
 
     private static boolean isEmpty(String s) {
