@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -112,6 +112,7 @@ public class CassStatement {
     public static final String SELECT_ALERT_CTIME_END;
     public static final String SELECT_ALERT_CTIME_START;
     public static final String SELECT_ALERT_CTIME_START_END;
+    public static final String SELECT_ALERT_IDS_BY_TENANT;
     public static final String SELECT_ALERT_LIFECYCLE_END;
     public static final String SELECT_ALERT_LIFECYCLE_START;
     public static final String SELECT_ALERT_LIFECYCLE_START_END;
@@ -128,6 +129,7 @@ public class CassStatement {
     public static final String SELECT_EVENT_CTIME_END;
     public static final String SELECT_EVENT_CTIME_START;
     public static final String SELECT_EVENT_CTIME_START_END;
+    public static final String SELECT_EVENT_IDS_BY_TENANT;
     public static final String SELECT_EVENT_TRIGGER;
     public static final String SELECT_EVENTS_BY_TENANT;
     //public static final String SELECT_EVENTS_BY_PARTITION;
@@ -393,6 +395,8 @@ public class CassStatement {
         SELECT_ALERT_CTIME_START_END = "SELECT alertId FROM " + keyspace + ".alerts_ctimes "
                 + "WHERE tenantId = ? AND ctime >= ? AND ctime <= ? ";
 
+        SELECT_ALERT_IDS_BY_TENANT = "SELECT alertId FROM " + keyspace + ".alerts " + "WHERE tenantId = ? ";
+
         SELECT_ALERT_LIFECYCLE_END = "SELECT alertId FROM " + keyspace + ".alerts_lifecycle "
                 + "WHERE tenantId = ? AND status = ? AND stime <= ? ";
 
@@ -455,6 +459,9 @@ public class CassStatement {
 
         SELECT_EVENT_CTIME_START_END = "SELECT id FROM " + keyspace + ".events_ctimes "
                 + "WHERE tenantId = ? AND ctime >= ? AND ctime <= ? ";
+
+        SELECT_EVENT_IDS_BY_TENANT = "SELECT id FROM " + keyspace + ".events " +
+                "WHERE tenantId = ? ";
 
         SELECT_EVENT_TRIGGER = "SELECT id FROM " + keyspace + ".events_triggers "
                 + "WHERE tenantId = ? AND triggerId = ? ";

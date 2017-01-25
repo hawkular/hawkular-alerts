@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,11 +18,15 @@ package org.hawkular.alerts.rest;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
+import static org.hawkular.alerts.rest.CommonUtil.isEmpty;
+import static org.hawkular.alerts.rest.CommonUtil.parseTagQuery;
+import static org.hawkular.alerts.rest.CommonUtil.parseTags;
 import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.EJB;
@@ -187,11 +191,11 @@ public class EventsHandler {
             final String tags) {
         try {
             if (!isEmpty(eventIds) || isEmpty(tags)) {
-                // criteria just used for convenient type translation
-                EventsCriteria c = new EventsCriteria(null, null, eventIds, null, null, tags, false);
-                alertsService.addEventTags(tenantId, c.getEventIds(), c.getTags());
+                List<String> eventIdList = Arrays.asList(eventIds.split(","));
+                Map<String, String> tagsMap = parseTags(tags);
+                alertsService.addEventTags(tenantId, eventIdList, tagsMap);
                 if (log.isDebugEnabled()) {
-                    log.debugf("Tagged alertIds:%s, %s", c.getEventIds(), c.getTags());
+                    log.debugf("Tagged alertIds:%s, %s", eventIdList, tagsMap);
                 }
                 return ResponseUtil.ok();
             } else {
@@ -249,7 +253,26 @@ public class EventsHandler {
     @Path("/")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get events with optional filtering.",
-            notes = "If not criteria defined, it fetches all events stored in the system.",
+            notes = "If not criteria defined, it fetches all events stored in the system. + \n" +
+                    "Tags Query language (BNF): + \n" +
+                    "[source] \n" +
+                    "---- \n" +
+                    "<tag_query> ::= ( <expression> | \"(\" <object> \")\" " +
+                    "| <object> <logical_operator> <object> ) \n" +
+                    "<expression> ::= ( <tag_name> | <not> <tag_name> " +
+                    "| <tag_name> <boolean_operator> <tag_value> | " +
+                    "<tag_name> <array_operator> <array> ) \n" +
+                    "<not> ::= [ \"NOT\" | \"not\" ] \n" +
+                    "<logical_operator> ::= [ \"AND\" | \"OR\" | \"and\" | \"or\" ] \n" +
+                    "<boolean_operator> ::= [ \"==\" | \"!=\" ] \n" +
+                    "<array_operator> ::= [ \"IN\" | \"NOT IN\" | \"in\" | \"not in\" ] \n" +
+                    "<array> ::= ( \"[\" \"]\" | \"[\" ( \",\" <tag_value> )* ) \n" +
+                    "<tag_name> ::= <identifier> \n" +
+                    "<tag_value> ::= ( \"'\" <regexp> \"'\" | <simple_value> ) \n" +
+                    "; \n" +
+                    "; <identifier> and <simple_value> follow pattern [a-zA-Z_0-9][\\-a-zA-Z_0-9]* \n" +
+                    "; <regexp> follows any valid Java Regular Expression format \n" +
+                    "---- \n",
             response = Event.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of events."),
@@ -276,11 +299,15 @@ public class EventsHandler {
                 allowableValues = "Comma separated list of category values.")
             @QueryParam("categories")
             final String categories,
-            @ApiParam(required = false, value = "Filter out events for unspecified tags.",
+            @ApiParam(required = false, value = "[DEPRECATED] Filter out events for unspecified tags.",
                     allowableValues = "Comma separated list of tags, each tag of format 'name\\|value'. + \n" +
                             "Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
+            @ApiParam(required = false, value = "Filter out events for unspecified tags.",
+                    allowableValues = "A tag query expression.")
+            @QueryParam("tagQuery")
+            final String tagQuery,
             @ApiParam(required = false, value = "Return only thin events, do not include: evalSets.")
             @QueryParam("thin")
             final Boolean thin,
@@ -288,7 +315,18 @@ public class EventsHandler {
             final UriInfo uri) {
         Pager pager = RequestUtil.extractPaging(uri);
         try {
-            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories, tags, thin);
+            /*
+                We maintain old tags criteria as deprecated (it can be removed in a next major version).
+                If present, the tags criteria has precedence over tagQuery parameter.
+             */
+            String unifiedTagQuery;
+            if (!isEmpty(tags)) {
+                unifiedTagQuery = parseTagQuery(parseTags(tags));
+            } else {
+                unifiedTagQuery = tagQuery;
+            }
+            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
+                    unifiedTagQuery, thin);
             Page<Event> eventPage = alertsService.getEvents(tenantId, criteria, pager);
             if (log.isDebugEnabled()) {
                 log.debug("Events: " + eventPage);
@@ -342,7 +380,26 @@ public class EventsHandler {
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Delete events with optional filtering.",
             notes = "Return number of events deleted. + \n" +
-                    "WARNING: If not criteria defined, it deletes all events stored in the system.",
+                    "WARNING: If not criteria defined, it deletes all events stored in the system. + \n" +
+                    "Tags Query language (BNF): + \n" +
+                    "[source] \n" +
+                    "---- \n" +
+                    "<tag_query> ::= ( <expression> | \"(\" <object> \")\" " +
+                    "| <object> <logical_operator> <object> ) \n" +
+                    "<expression> ::= ( <tag_name> | <not> <tag_name> " +
+                    "| <tag_name> <boolean_operator> <tag_value> | " +
+                    "<tag_name> <array_operator> <array> ) \n" +
+                    "<not> ::= [ \"NOT\" | \"not\" ] \n" +
+                    "<logical_operator> ::= [ \"AND\" | \"OR\" | \"and\" | \"or\" ] \n" +
+                    "<boolean_operator> ::= [ \"==\" | \"!=\" ] \n" +
+                    "<array_operator> ::= [ \"IN\" | \"NOT IN\" | \"in\" | \"not in\" ] \n" +
+                    "<array> ::= ( \"[\" \"]\" | \"[\" ( \",\" <tag_value> )* ) +\n" +
+                    "<tag_name> ::= <identifier> \n" +
+                    "<tag_value> ::= ( \"'\" <regexp> \"'\" | <simple_value> ) \n" +
+                    "; \n " +
+                    "; <identifier> and <simple_value> follow pattern [a-zA-Z_0-9][\\-a-zA-Z_0-9]* \n" +
+                    "; <regexp> follows any valid Java Regular Expression format \n" +
+                    "---- \n",
             response = ApiDeleted.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success."),
@@ -370,14 +427,29 @@ public class EventsHandler {
                 allowableValues = "Comma separated list of category values.")
             @QueryParam("categories")
             final String categories,
-            @ApiParam(required = false, value = "Filter out alerts for unspecified tags.",
+            @ApiParam(required = false, value = "[DEPRECATED] Filter out events for unspecified tags.",
                     allowableValues = "Comma separated list of tags, each tag of format 'name\\|value'. + \n" +
                             "Specify '*' for value to match all values.")
             @QueryParam("tags")
-            final String tags
+            final String tags,
+            @ApiParam(required = false, value = "Filter out events for unspecified tags.",
+                    allowableValues = "A tag query expression.")
+            @QueryParam("tagQuery")
+            final String tagQuery
             ) {
         try {
-            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories, tags, null);
+            /*
+                We maintain old tags criteria as deprecated (it can be removed in a next major version).
+                If present, the tags criteria has precedence over tagQuery parameter.
+             */
+            String unifiedTagQuery;
+            if (!isEmpty(tags)) {
+                unifiedTagQuery = parseTagQuery(parseTags(tags));
+            } else {
+                unifiedTagQuery = tagQuery;
+            }
+            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
+                    unifiedTagQuery, null);
             int numDeleted = alertsService.deleteEvents(tenantId, criteria);
             if (log.isDebugEnabled()) {
                 log.debug("Events deleted: " + numDeleted);
@@ -423,18 +495,6 @@ public class EventsHandler {
             log.debug(e.getMessage(), e);
             return ResponseUtil.internalError(e);
         }
-    }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.trim().isEmpty();
-    }
-
-    private boolean isEmpty(Collection collection) {
-        return collection == null || collection.isEmpty();
-    }
-
-    private boolean isEmpty(Map map) {
-        return map == null || map.isEmpty();
     }
 
     private boolean checkTags(Event event) {

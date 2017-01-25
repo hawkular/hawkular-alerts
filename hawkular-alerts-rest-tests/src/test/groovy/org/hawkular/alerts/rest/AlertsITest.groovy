@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,6 +49,9 @@ class AlertsITest extends AbstractITestBase {
         resp = client.get(path: "", query: [tags:"dataId|data-01,dataId|data-02",thin:true] )
         assert resp.status == 200 : resp.status
 
+        resp = client.get(path: "", query: [tagQuery:"tagA or (tagB and tagC in ['e.*', 'f.*'])"] )
+        assert resp.status == 200 : resp.status
+
         resp = client.get(path: "", query: [endResolvedTime:now, startResolvedTime:"0"] )
         assert resp.status == 200 : resp.status
 
@@ -76,6 +79,9 @@ class AlertsITest extends AbstractITestBase {
         assert resp.status == 200 : resp.status
 
         resp = client.put(path: "delete", query: [tags:"dataId|data-01,dataId|data-02"] )
+        assert resp.status == 200 : resp.status
+
+        resp = client.put(path: "delete", query: [tagQuery:"tagA or (tagB and tagC in ['e.*', 'f.*'])"] )
         assert resp.status == 200 : resp.status
 
         resp = client.put(path: "delete", query: [endResolvedTime:now, startResolvedTime:"0"] )

@@ -94,6 +94,12 @@
       <version>${version.org.apache.commons.commons-math3}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4-runtime</artifactId>
+      <version>${version.org.antlr}</version>
+    </dependency>
+
     <!-- Wildfly dependencies -->
     <dependency>
       <groupId>org.jboss.logging</groupId>
@@ -220,8 +226,36 @@
         <configuration>
           <excludes combine.children="append">
             <exclude>**/*.data</exclude>
+            <!-- Exclude ANTLR token files -->
+            <exclude>**/*tokens</exclude>
           </excludes>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <excludes>src/main/java/org/hawkular/alerts/engine/tags/parser/*.java</excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-maven-plugin</artifactId>
+        <version>${version.org.antlr}</version>
+        <executions>
+          <execution>
+            <id>antlr4</id>
+            <goals>
+              <goal>antlr4</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <listener>true</listener>
+              <visitor>true</visitor>
+              <outputDirectory>src/main/java</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

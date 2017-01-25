@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,8 +18,6 @@ package org.hawkular.alerts.api.services;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Query criteria for fetching Alerts.
@@ -35,7 +33,7 @@ public class EventsCriteria {
     Collection<String> categories = null;
     String triggerId = null;
     Collection<String> triggerIds = null;
-    Map<String, String> tags = null;
+    String tagQuery = null;
     boolean thin = false;
     Integer criteriaNoQuerySize = null;
 
@@ -44,7 +42,7 @@ public class EventsCriteria {
     }
 
     public EventsCriteria(Long startTime, Long endTime, String eventIds, String triggerIds, String categories,
-           String tags, Boolean thin) {
+                          String tagQuery, Boolean thin) {
         setStartTime(startTime);
         setEndTime(endTime);
         if (!isEmpty(eventIds)) {
@@ -56,19 +54,7 @@ public class EventsCriteria {
         if (!isEmpty(categories)) {
             setCategories(Arrays.asList(categories.split(",")));
         }
-        if (!isEmpty(tags)) {
-            String[] tagTokens = tags.split(",");
-            Map<String, String> tagsMap = new HashMap<>(tagTokens.length);
-            for (String tagToken : tagTokens) {
-                String[] fields = tagToken.split("\\|");
-                if (fields.length == 2) {
-                    tagsMap.put(fields[0], fields[1]);
-                } else {
-                    throw new IllegalArgumentException("Invalid Tag Criteria " + Arrays.toString(fields));
-                }
-            }
-            setTags(tagsMap);
-        }
+        setTagQuery(tagQuery);
         if (null != thin) {
             setThin(thin.booleanValue());
         }
@@ -150,23 +136,28 @@ public class EventsCriteria {
         this.triggerIds = triggerIds;
     }
 
-    public Map<String, String> getTags() {
-        return tags;
+    public String getTagQuery() {
+        return tagQuery;
     }
 
     /**
-     * @param tags return alerts with *any* of these tags, it does not have to have all of the tags). Specify '*' for
-     * the value if you only want to match the name portion of the tag.
+     * @param tagQuery return events with *any* of the tags specified by the tag expression language:
+     *
+     * <pre>
+     *        <tag_query> ::= ( <expression> | "(" <object> ")" | <object> <logical_operator> <object> )
+     *        <expression> ::= ( <tag_name> | <not> <tag_name> | <tag_name> <boolean_operator> <tag_value> |
+     *               <tag_key> <array_operator> <array> )
+     *        <not> ::= [ "NOT" | "not" ]
+     *        <logical_operator> ::= [ "AND" | "OR" | "and" | "or" ]
+     *        <boolean_operator> ::= [ "==" | "!=" ]
+     *        <array_operator> ::= [ "IN" | "NOT IN" | "in" | "not in" ]
+     *        <array> ::= ( "[" "]" | "[" ( "," <tag_value> )* )
+     *        <tag_name> ::= <identifier>                                // Tag identifier
+     *        <tag_value> ::= ( "'" <regexp> "'" | <simple_value> )      // Regular expression used with quotes
+     * </pre>
      */
-    public void setTags(Map<String, String> tags) {
-        this.tags = tags;
-    }
-
-    public void addTag(String name, String value) {
-        if (null == tags) {
-            tags = new HashMap<>();
-        }
-        tags.put(name, value);
+    public void setTagQuery(String tagQuery) {
+        this.tagQuery = tagQuery;
     }
 
     public boolean isThin() {
@@ -195,8 +186,8 @@ public class EventsCriteria {
                 || (null != categories && !categories.isEmpty());
     }
 
-    public boolean hasTagCriteria() {
-        return (null != tags && !tags.isEmpty());
+    public boolean hasTagQueryCriteria() {
+        return !isEmpty(tagQuery);
     }
 
     public boolean hasCTimeCriteria() {
@@ -211,17 +202,26 @@ public class EventsCriteria {
     public boolean hasCriteria() {
         return hasEventIdCriteria()
                 || hasCategoryCriteria()
-                || hasTagCriteria()
+                || hasTagQueryCriteria()
                 || hasCTimeCriteria()
                 || hasTriggerIdCriteria();
     }
 
     @Override
     public String toString() {
-        return "EventsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", eventId=" + eventId
-                + ", eventIds=" + eventIds + ", category=" + category + ", categories=" + categories + ", triggerId="
-                + triggerId + ", triggerIds=" + triggerIds + ", tags=" + tags + ", thin=" + thin
-                + ", criteriaNoQuerySize=" + criteriaNoQuerySize + "]";
+        return "EventsCriteria{" +
+                "startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", eventId='" + eventId + '\'' +
+                ", eventIds=" + eventIds +
+                ", category='" + category + '\'' +
+                ", categories=" + categories +
+                ", triggerId='" + triggerId + '\'' +
+                ", triggerIds=" + triggerIds +
+                ", tagQuery='" + tagQuery + '\'' +
+                ", thin=" + thin +
+                ", criteriaNoQuerySize=" + criteriaNoQuerySize +
+                '}';
     }
 
     private static boolean isEmpty(String s) {

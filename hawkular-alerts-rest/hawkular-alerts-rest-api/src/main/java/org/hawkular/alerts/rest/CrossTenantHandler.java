@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,9 +18,11 @@ package org.hawkular.alerts.rest;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
+import static org.hawkular.alerts.rest.CommonUtil.isEmpty;
+import static org.hawkular.alerts.rest.CommonUtil.parseTagQuery;
+import static org.hawkular.alerts.rest.CommonUtil.parseTags;
 import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 
-import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -77,7 +79,26 @@ public class CrossTenantHandler {
             notes = "If not criteria defined, it fetches all alerts available in the system. + \n" +
                     " + \n" +
                     "Multiple tenants are expected on HawkularTenant header as a comma separated list. + \n" +
-                    "i.e. HawkularTenant: tenant1,tenant2,tenant3 + \n",
+                    "i.e. HawkularTenant: tenant1,tenant2,tenant3 + \n" +
+                    "Tags Query language (BNF): + \n" +
+                    "[source] \n" +
+                    "---- \n" +
+                    "<tag_query> ::= ( <expression> | \"(\" <object> \")\" " +
+                    "| <object> <logical_operator> <object> ) \n" +
+                    "<expression> ::= ( <tag_name> | <not> <tag_name> " +
+                    "| <tag_name> <boolean_operator> <tag_value> | " +
+                    "<tag_name> <array_operator> <array> ) \n" +
+                    "<not> ::= [ \"NOT\" | \"not\" ] \n" +
+                    "<logical_operator> ::= [ \"AND\" | \"OR\" | \"and\" | \"or\" ] \n" +
+                    "<boolean_operator> ::= [ \"==\" | \"!=\" ] \n" +
+                    "<array_operator> ::= [ \"IN\" | \"NOT IN\" | \"in\" | \"not in\" ] \n" +
+                    "<array> ::= ( \"[\" \"]\" | \"[\" ( \",\" <tag_value> )* ) \n" +
+                    "<tag_name> ::= <identifier> \n" +
+                    "<tag_value> ::= ( \"'\" <regexp> \"'\" | <simple_value> ) \n" +
+                    "; \n" +
+                    "; <identifier> and <simple_value> follow pattern [a-zA-Z_0-9][\\-a-zA-Z_0-9]* \n" +
+                    "; <regexp> follows any valid Java Regular Expression format \n" +
+                    "---- \n",
             response = Alert.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of alerts."),
@@ -109,11 +130,15 @@ public class CrossTenantHandler {
                     allowableValues = "Comma separated list of [LOW, MEDIUM, HIGH, CRITICAL]")
             @QueryParam("severities")
             final String severities,
-            @ApiParam(required = false, value = "Filter out events for unspecified tags.",
+            @ApiParam(required = false, value = "[DEPRECATED] Filter out events for unspecified tags.",
                     allowableValues = "Comma separated list of tags, each tag of format 'name\\|value'. + \n" +
                             "Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
+            @ApiParam(required = false, value = "Filter out alerts for unspecified tags.",
+                    allowableValues = "A tag query expression.")
+            @QueryParam("tagQuery")
+            final String tagQuery,
             @ApiParam(required = false, value = "Filter out alerts resolved before this time.",
                     allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("startResolvedTime")
@@ -138,8 +163,18 @@ public class CrossTenantHandler {
         Pager pager = RequestUtil.extractPaging(uri);
         try {
             Set<String> tenantIds = getTenants(tenantId);
+            /*
+                We maintain old tags criteria as deprecated (it can be removed in a next major version).
+                If present, the tags criteria has precedence over tagQuery parameter.
+             */
+            String unifiedTagQuery;
+            if (!isEmpty(tags)) {
+                unifiedTagQuery = parseTagQuery(parseTags(tags));
+            } else {
+                unifiedTagQuery = tagQuery;
+            }
             AlertsCriteria criteria = new AlertsCriteria(startTime, endTime, alertIds, triggerIds, statuses,
-                    severities, tags, startResolvedTime, endResolvedTime, startAckTime, endAckTime, thin);
+                    severities, unifiedTagQuery, startResolvedTime, endResolvedTime, startAckTime, endAckTime, thin);
             Page<Alert> alertPage = alertsService.getAlerts(tenantIds, criteria, pager);
             if (log.isDebugEnabled()) {
                 log.debug("Alerts: " + alertPage);
@@ -164,7 +199,26 @@ public class CrossTenantHandler {
             notes = "If not criteria defined, it fetches all events stored in the system. + \n" +
                     " + \n" +
                     "Multiple tenants are expected on HawkularTenant header as a comma separated list. + \n" +
-                    "i.e. HawkularTenant: tenant1,tenant2,tenant3 + \n",
+                    "i.e. HawkularTenant: tenant1,tenant2,tenant3 + \n" +
+                    "Tags Query language (BNF): + \n" +
+                    "[source] \n" +
+                    "---- \n" +
+                    "<tag_query> ::= ( <expression> | \"(\" <object> \")\" " +
+                    "| <object> <logical_operator> <object> ) \n" +
+                    "<expression> ::= ( <tag_name> | <not> <tag_name> " +
+                    "| <tag_name> <boolean_operator> <tag_value> | " +
+                    "<tag_name> <array_operator> <array> ) \n" +
+                    "<not> ::= [ \"NOT\" | \"not\" ] \n" +
+                    "<logical_operator> ::= [ \"AND\" | \"OR\" | \"and\" | \"or\" ] \n" +
+                    "<boolean_operator> ::= [ \"==\" | \"!=\" ] \n" +
+                    "<array_operator> ::= [ \"IN\" | \"NOT IN\" | \"in\" | \"not in\" ] \n" +
+                    "<array> ::= ( \"[\" \"]\" | \"[\" ( \",\" <tag_value> )* ) \n" +
+                    "<tag_name> ::= <identifier> \n" +
+                    "<tag_value> ::= ( \"'\" <regexp> \"'\" | <simple_value> ) \n" +
+                    "; \n" +
+                    "; <identifier> and <simple_value> follows pattern [a-zA-Z_0-9][\\-a-zA-Z_0-9]* \n" +
+                    "; <regexp> follows any valid Java Regular Expression format \n" +
+                    "---- \n",
             response = Event.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of events."),
@@ -191,11 +245,15 @@ public class CrossTenantHandler {
                     allowableValues = "Comma separated list of category values.")
             @QueryParam("categories")
             final String categories,
-            @ApiParam(required = false, value = "Filter out events for unspecified tags.",
+            @ApiParam(required = false, value = "[DEPRECATED] Filter out events for unspecified tags.",
                     allowableValues = "Comma separated list of tags, each tag of format 'name\\|value'. + \n" +
                             "Specify '*' for value to match all values.")
             @QueryParam("tags")
             final String tags,
+            @ApiParam(required = false, value = "Filter out events for unspecified tags.",
+                    allowableValues = "A tag query expression.")
+            @QueryParam("tagQuery")
+            final String tagQuery,
             @ApiParam(required = false, value = "Return only thin events, do not include: evalSets.")
             @QueryParam("thin")
             final Boolean thin,
@@ -204,8 +262,18 @@ public class CrossTenantHandler {
         Pager pager = RequestUtil.extractPaging(uri);
         try {
             Set<String> tenantIds = getTenants(tenantId);
+            /*
+                We maintain old tags criteria as deprecated (it can be removed in a next major version).
+                If present, the tags criteria has precedence over tagQuery parameter.
+             */
+            String unifiedTagQuery;
+            if (!isEmpty(tags)) {
+                unifiedTagQuery = parseTagQuery(parseTags(tags));
+            } else {
+                unifiedTagQuery = tagQuery;
+            }
             EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
-                    tags, thin);
+                    unifiedTagQuery, thin);
             Page<Event> eventPage = alertsService.getEvents(tenantIds, criteria, pager);
             if (log.isDebugEnabled()) {
                 log.debug("Events: " + eventPage);
@@ -229,9 +297,5 @@ public class CrossTenantHandler {
             tenantIds.add(t);
         }
         return tenantIds;
-    }
-
-    private boolean isEmpty(Collection collection) {
-        return collection == null || collection.isEmpty();
     }
 }

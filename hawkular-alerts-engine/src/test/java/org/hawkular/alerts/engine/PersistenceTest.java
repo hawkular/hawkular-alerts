@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -60,7 +60,6 @@ import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.paging.TriggerComparator;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsCriteria;
@@ -69,8 +68,11 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.jboss.logging.Logger;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.junit.runners.MethodSorters;
 
 
@@ -92,10 +94,16 @@ public abstract class PersistenceTest {
     static AlertsService alertsService;
     static ActionsService actionsService;
 
+    @Rule
+    public TestName testName = new TestName();
+
+    @Before
+    public void before() {
+        log.info(testName.getMethodName());
+    }
+
     @Test
     public void test000InitScheme() throws Exception {
-        log.info("test000InitScheme...");
-
         assertTrue(definitionsService.getAllTriggers().size() > 0);
         assertTrue(definitionsService.getAllConditions().size() > 0);
         assertTrue(definitionsService.getAllDampenings().size() > 0);
@@ -104,8 +112,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test001ExportImport() throws Exception {
-        log.info("test001ExportDefinitions");
-
         Definitions exported = definitionsService.exportDefinitions(TENANT);
         int exportedTriggers = exported.getTriggers().size();
         int exportedActionDefinitions = exported.getActions().size();
@@ -120,8 +126,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0010GroupTrigger() throws Exception {
-        log.info("test0010GroupTrigger...");
-
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
 
@@ -329,8 +333,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0020GroupTriggerUpdate() throws Exception {
-        log.info("test0020GroupTriggerUpdate...");
-
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
 
@@ -424,8 +426,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0021GroupCondition() throws Exception {
-        log.info("test0021GroupCondition...");
-
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
 
@@ -590,8 +590,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0022GroupDampening() throws Exception {
-        log.info("test0022GroupDampening...");
-
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-7");
         assertNotNull(t);
 
@@ -686,8 +684,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0030BasicTags() throws Exception {
-        log.info("test0030BasicTags...");
-
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-1");
         assertNotNull(t);
 
@@ -727,8 +723,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0035PagingTriggers() throws Exception {
-        log.info("test0035PagingTriggers...");
-
         List<Trigger> result = definitionsService.getTriggers(TENANT, null, null);
         assertEquals(9, result.size());
 
@@ -909,8 +903,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0040BasicAlert() throws Exception {
-        log.info("test0040BasicAlert...");
-
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-1");
         assertNotNull(t);
 
@@ -979,13 +971,13 @@ public abstract class PersistenceTest {
 
         // Using tags
         criteria = new AlertsCriteria();
-        criteria.addTag("tname1", "*");
+        criteria.setTagQuery("tname1");
         result = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(result.toString(), result.size() == 1);
 
         // More specific tags
         criteria = new AlertsCriteria();
-        criteria.addTag("tname2", "tvalue2");
+        criteria.setTagQuery("tname2 = tvalue2");
         result = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(result.toString(), result.size() == 1);
 
@@ -1041,8 +1033,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0050PagingAlerts() throws Exception {
-        log.info("test0050PagingAlerts...");
-
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-6");
         assertNotNull(t);
 
@@ -1317,88 +1307,8 @@ public abstract class PersistenceTest {
         assertTrue(firstStatus.compareTo(lastStatus) > 0);
     }
 
-    public void test0051SortOnAlertsContext() throws Exception {
-        Trigger t = definitionsService.getTrigger(TENANT, "trigger-6");
-        assertNotNull(t);
-
-        Collection<Condition> cs = definitionsService.getTriggerConditions(TENANT, t.getId(), null);
-        assertTrue(cs.toString(), cs.size() == 1);
-
-        AvailabilityCondition availability = (AvailabilityCondition) cs.iterator().next();
-
-        List<Alert> alerts = new ArrayList<>();
-
-        for (int i = 0; i < 107; i++) {
-            long dataTime = System.currentTimeMillis();
-            Data data = Data.forAvailability(TENANT, "Availability-01", dataTime, AvailabilityType.DOWN);
-            AvailabilityConditionEval eval = new AvailabilityConditionEval(availability, data);
-            Set<ConditionEval> evalSet = new HashSet<>();
-            evalSet.add(eval);
-            List<Set<ConditionEval>> evals = new ArrayList<>();
-            evals.add(evalSet);
-            Alert alert = new Alert(TENANT, t, evals);
-            alert.getContext().put("random", String.valueOf(Math.random()));
-            int iAlert = i % 3;
-            switch (iAlert) {
-                case 2:
-                    alert.setStatus(Alert.Status.OPEN);
-                    alert.setSeverity(Severity.CRITICAL);
-                    break;
-                case 1:
-                    alert.setStatus(Alert.Status.ACKNOWLEDGED);
-                    alert.setSeverity(Severity.LOW);
-                    break;
-                case 0:
-                    alert.setStatus(Alert.Status.RESOLVED);
-                    alert.setSeverity(Severity.MEDIUM);
-            }
-            alerts.add(alert);
-            Thread.sleep(2);
-        }
-
-        alertsService.addAlerts(alerts);
-
-        List<Alert> result = alertsService.getAlerts(TENANT, null, null);
-        assertEquals(107, result.size());
-
-        /*
-            Ordering and paging by alertId
-         */
-        Pager pager = Pager.builder().withPageSize(10).withStartPage(0)
-                .orderByAscending("context.random").build();
-
-        String firstContext;
-        String lastContext;
-
-        //logger.info("1st Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
-        Page<Alert> page = alertsService.getAlerts(TENANT, null, pager);
-        //logger.info("1st Page size: " + page.size() + " totalSize: " + page.getTotalSize());
-
-        firstContext = page.get(0).getContext().get("random");
-
-        assertEquals(107, page.getTotalSize());
-        assertEquals(10, page.size());
-
-        while (pager.getEnd() < page.getTotalSize()) {
-            pager = pager.nextPage();
-            //logger.info("Pager: " + pager + " pager.getEnd(): " + pager.getEnd());
-            page = alertsService.getAlerts(TENANT, null, pager);
-            //logger.info("Page size: " + page.size() + " totalSize: " + page.getTotalSize());
-        }
-
-        assertEquals(7, page.size());
-
-        lastContext = page.get(6).getContext().get("random");
-
-        //logger.info("first alert: " + firstContext + " last alert: " + lastContext);
-
-        assertTrue(firstContext.compareTo(lastContext) < 0);
-    }
-
     @Test
     public void test0060BasicEvent() throws Exception {
-        log.info("test0060BasicEvent...");
-
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-8");
         assertNotNull(t);
 
@@ -1471,13 +1381,13 @@ public abstract class PersistenceTest {
 
         // Using tags
         criteria = new EventsCriteria();
-        criteria.addTag("trigger8-name1", "*");
+        criteria.setTagQuery("trigger8-name1");
         result = alertsService.getEvents(TENANT, criteria, null);
         assertEquals(1, result.size());
 
         // More specific tags
         criteria = new EventsCriteria();
-        criteria.addTag("trigger8-name2", "value2");
+        criteria.setTagQuery("trigger8-name2 = value2");
         result = alertsService.getEvents(TENANT, criteria, null);
         assertEquals(1, result.size());
 
@@ -1534,8 +1444,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0070PagingEvents() throws Exception {
-        log.info("test0070PagingEvents...");
-
         Trigger t = definitionsService.getTrigger(TENANT, "trigger-8");
         assertNotNull(t);
 
@@ -1817,23 +1725,8 @@ public abstract class PersistenceTest {
 
     }
 
-    public void test0080BasicActionsHistory() throws Exception {
-        for (int i = 0; i < 107; i++) {
-            Event testEvent = new Event(TENANT, "test-trigger", "test-dataid", "test-category", "test-text");
-            Trigger testTrigger = new Trigger("test-trigger", "test-trigger");
-            testTrigger.addAction(new TriggerAction(TENANT, "testplugin", "send-to-this-group"));
-            Thread.sleep(2);
-            actionsService.send(testTrigger, testEvent);
-        }
-
-        List<Action> actions = actionsService.getActions(TENANT, null, null);
-        assertEquals(107, actions.size());
-    }
-
     @Test
     public void test0090SearchActionsHistory() throws Exception {
-        log.info("test0090SearchActionsHistory...");
-
         for (int i = 0; i < 10; i++) {
             Alert testAlert = new Alert();
             testAlert.setTenantId(TENANT);
@@ -1938,8 +1831,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test00100PaginationActionsHistory() throws Exception {
-        log.info(" test00100PaginationActionsHistory...");
-
         for (int i = 0; i < 103; i++) {
             Alert testAlert = new Alert();
             testAlert.setTenantId(TENANT);
@@ -2029,8 +1920,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0110ThinActionsHistory() throws Exception {
-        log.info("test0110ThinActionsHistory...");
-
         for (int i = 0; i < 103; i++) {
             Alert testAlert = new Alert();
             testAlert.setTenantId(TENANT);
@@ -2077,8 +1966,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0120BasicNotesOnAlert() throws Exception {
-        log.info(" test0120BasicNotesOnAlert...");
-
         Trigger t = new Trigger("non-existence-trigger", "non-existence-trigger");
         Alert testAlert = new Alert(TENANT, t, null);
 
@@ -2104,8 +1991,6 @@ public abstract class PersistenceTest {
 
     @Test
     public void test0130AlertTags() throws Exception {
-        log.info(" test0130Tags...");
-
         Trigger t = new Trigger("non-existence-trigger", "non-existence-trigger");
         t.addTag("TriggerTag1Name", "TriggerTag1Value");
         t.addTag("TriggerTag2Name", "TriggerTag2Value");
@@ -2116,7 +2001,7 @@ public abstract class PersistenceTest {
 
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setThin(true);
-        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+        criteria.setTagQuery("TriggerTag1Name = TriggerTag1Value");
 
         List<Alert> alerts = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(alerts != null);
@@ -2127,8 +2012,7 @@ public abstract class PersistenceTest {
         assertEquals("TriggerTag2Value", alert.getTags().get("TriggerTag2Name"));
 
         // make sure second tag also works for fetch
-        criteria.getTags().clear();
-        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+        criteria.setTagQuery("TriggerTag2Name = TriggerTag2Value");
 
         alerts = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(alerts != null);
@@ -2151,8 +2035,7 @@ public abstract class PersistenceTest {
         alertsService.addAlertTags(TENANT, alertIds, alertTags);
 
         // all four tags should now be searchable
-        criteria.getTags().clear();
-        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+        criteria.setTagQuery("TriggerTag1Name = TriggerTag1Value");
         alerts = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(alerts != null);
         assertEquals(1, alerts.size());
@@ -2163,8 +2046,7 @@ public abstract class PersistenceTest {
         assertEquals("AlertTag1Value", alert.getTags().get("AlertTag1Name"));
         assertEquals("AlertTag2Value", alert.getTags().get("AlertTag2Name"));
 
-        criteria.getTags().clear();
-        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+        criteria.setTagQuery("TriggerTag2Name = TriggerTag2Value");
         alerts = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(alerts != null);
         assertEquals(1, alerts.size());
@@ -2175,8 +2057,7 @@ public abstract class PersistenceTest {
         assertEquals("AlertTag1Value", alert.getTags().get("AlertTag1Name"));
         assertEquals("AlertTag2Value", alert.getTags().get("AlertTag2Name"));
 
-        criteria.getTags().clear();
-        criteria.addTag("AlertTag1Name", "AlertTag1Value");
+        criteria.setTagQuery("AlertTag1Name = AlertTag1Value");
         alerts = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(alerts != null);
         assertEquals(1, alerts.size());
@@ -2187,8 +2068,7 @@ public abstract class PersistenceTest {
         assertEquals("AlertTag1Value", alert.getTags().get("AlertTag1Name"));
         assertEquals("AlertTag2Value", alert.getTags().get("AlertTag2Name"));
 
-        criteria.getTags().clear();
-        criteria.addTag("AlertTag2Name", "AlertTag2Value");
+        criteria.setTagQuery("AlertTag2Name = AlertTag2Value");
         alerts = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(alerts != null);
         assertEquals(1, alerts.size());
@@ -2208,14 +2088,12 @@ public abstract class PersistenceTest {
         alertsService.removeAlertTags(TENANT, alertIds, doomedTags);
 
         // Only two tags should now be searchable
-        criteria.getTags().clear();
-        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+        criteria.setTagQuery("TriggerTag1Name = TriggerTag1Value");
         alerts = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(alerts != null);
         assertEquals(0, alerts.size());
 
-        criteria.getTags().clear();
-        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+        criteria.setTagQuery("TriggerTag2Name = TriggerTag2Value");
         alerts = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(alerts != null);
         assertEquals(1, alerts.size());
@@ -2224,14 +2102,12 @@ public abstract class PersistenceTest {
         assertEquals("TriggerTag2Value", alert.getTags().get("TriggerTag2Name"));
         assertEquals("AlertTag2Value", alert.getTags().get("AlertTag2Name"));
 
-        criteria.getTags().clear();
-        criteria.addTag("AlertTag1Name", "AlertTag1Value");
+        criteria.setTagQuery("AlertTag1Name = AlertTag1Value");
         alerts = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(alerts != null);
         assertEquals(0, alerts.size());
 
-        criteria.getTags().clear();
-        criteria.addTag("AlertTag2Name", "AlertTag2Value");
+        criteria.setTagQuery("AlertTag2Name = AlertTag2Value");
         alerts = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(alerts != null);
         assertEquals(1, alerts.size());
@@ -2242,8 +2118,325 @@ public abstract class PersistenceTest {
     }
 
     @Test
+    public void test131AlertTagQuery() throws Exception {
+        Trigger t = new Trigger("t131", "trigger 131");
+
+        List<Alert> alerts = new ArrayList<>();
+        for (int i=0; i<10; i++) {
+            alerts.add(new Alert(TENANT, t, null));
+        }
+
+        alertsService.addAlerts(alerts);
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setThin(true);
+        criteria.setTriggerId("t131");
+
+        List<Alert> results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(10, results.size());
+
+        /*
+            Test tagging
+
+                Alerts = a0 a1 a2 a3 a4 a5 a6 a7 a8 a9
+                tagA = 0, 1, 2, 3
+                    tagA:a0 0
+                    tagA:a1 1
+                    tagA:b0 2
+                    tagA:b1 3
+                tagB = 3, 4, 5, 6
+                    tagB:c0 3
+                    tagB:c1 4
+                    tagB:d0 5
+                    tagB:d1 6
+                tagC = 6, 7, 8, 9
+                    tagC:e0 6
+                    tagC:e1 7
+                    tagC:f0 8
+                    tagC:f1 9
+         */
+
+        List<String> ids = new ArrayList<>();
+        Map<String, String> tags = new HashMap<>();
+
+        ids.add(results.get(0).getAlertId());
+        tags.put("tagA", "a0");
+        alertsService.addAlertTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(1).getAlertId());
+        tags.put("tagA", "a1");
+        alertsService.addAlertTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(2).getAlertId());
+        tags.put("tagA", "b0");
+        alertsService.addAlertTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(3).getAlertId());
+        tags.put("tagA", "b1");
+        tags.put("tagB", "c0");
+        alertsService.addAlertTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(4).getAlertId());
+        tags.put("tagB", "c1");
+        alertsService.addAlertTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(5).getAlertId());
+        tags.put("tagB", "d0");
+        alertsService.addAlertTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(6).getAlertId());
+        tags.put("tagB", "d1");
+        tags.put("tagC", "e0");
+        alertsService.addAlertTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(7).getAlertId());
+        tags.put("tagC", "e1");
+        alertsService.addAlertTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(8).getAlertId());
+        tags.put("tagC", "f0");
+        alertsService.addAlertTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(9).getAlertId());
+        tags.put("tagC", "f1");
+        alertsService.addAlertTags(TENANT, ids, tags);
+
+        /*
+            Queries
+         */
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(4, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagB");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(4, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagC");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(4, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA or tagB");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(7, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagB or tagC");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(7, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA or tagB or tagC");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(10, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA and tagB");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(1, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA and not tagB");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(3, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagB and tagC");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(1, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagB and not tagC");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(3, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("not tagA");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(6, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("not tagB");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(6, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("not tagC");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(6, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA = 'a0'");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(1, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA = 'b.*'");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(2, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA = 'c'");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(0, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA != 'a0'");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(3, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA in ['a0','b0','c']");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(2, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA not in ['a0','a1','b0']");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(1, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagB and tagC in ['f.*']");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(0, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagB and tagC in ['e.*', 'f.*']");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(1, results.size());
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("tagA or (tagB and tagC in ['e.*', 'f.*'])");
+
+        results = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(5, results.size());
+
+        /*
+            Malformed expressions
+         */
+        try {
+            criteria = new AlertsCriteria();
+            criteria.setTagQuery("tag A");
+            alertsService.getAlerts(TENANT, criteria, null);
+            fail("It should fail on tag A");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        try {
+            criteria = new AlertsCriteria();
+            criteria.setTagQuery("tagA == '.*'");
+            alertsService.getAlerts(TENANT, criteria, null);
+            fail("It should faild on token ==");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        try {
+            criteria = new AlertsCriteria();
+            criteria.setTagQuery("tagA !!= '.*'");
+            alertsService.getAlerts(TENANT, criteria, null);
+            fail("It should fail on !!=");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        try {
+            criteria = new AlertsCriteria();
+            criteria.setTagQuery("tagA IN '.*'");
+            alertsService.getAlerts(TENANT, criteria, null);
+            fail("It should fail on IN '.*'");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        try {
+            criteria = new AlertsCriteria();
+            criteria.setTagQuery("tagA IN ['a1', b0, 'c1']'");
+            alertsService.getAlerts(TENANT, criteria, null);
+            fail("It should fail on b0");
+        } catch (Exception e) {
+            // Expected
+        }
+    }
+
+    @Test
     public void test0140EventTags() throws Exception {
-        log.info(" test0130Tags...");
 
         Trigger t = new Trigger("non-existence-trigger", "non-existence-trigger");
         t.addTag("TriggerTag1Name", "TriggerTag1Value");
@@ -2255,7 +2448,7 @@ public abstract class PersistenceTest {
 
         EventsCriteria criteria = new EventsCriteria();
         criteria.setThin(true);
-        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+        criteria.setTagQuery("TriggerTag1Name = TriggerTag1Value");
 
         List<Event> events = alertsService.getEvents(TENANT, criteria, null);
         assertTrue(events != null);
@@ -2266,8 +2459,7 @@ public abstract class PersistenceTest {
         assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
 
         // make sure second tag also works for fetch
-        criteria.getTags().clear();
-        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+        criteria.setTagQuery("TriggerTag2Name = TriggerTag2Value");
 
         events = alertsService.getEvents(TENANT, criteria, null);
         assertTrue(events != null);
@@ -2290,8 +2482,7 @@ public abstract class PersistenceTest {
         alertsService.addEventTags(TENANT, eventIds, eventTags);
 
         // all four tags should now be searchable
-        criteria.getTags().clear();
-        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+        criteria.setTagQuery("TriggerTag1Name = TriggerTag1Value");
         events = alertsService.getEvents(TENANT, criteria, null);
         assertTrue(events != null);
         assertEquals(1, events.size());
@@ -2302,8 +2493,7 @@ public abstract class PersistenceTest {
         assertEquals("EventTag1Value", event.getTags().get("EventTag1Name"));
         assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
 
-        criteria.getTags().clear();
-        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+        criteria.setTagQuery("TriggerTag2Name = TriggerTag2Value");
         events = alertsService.getEvents(TENANT, criteria, null);
         assertTrue(events != null);
         assertEquals(1, events.size());
@@ -2314,8 +2504,7 @@ public abstract class PersistenceTest {
         assertEquals("EventTag1Value", event.getTags().get("EventTag1Name"));
         assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
 
-        criteria.getTags().clear();
-        criteria.addTag("EventTag1Name", "EventTag1Value");
+        criteria.setTagQuery("EventTag1Name = EventTag1Value");
         events = alertsService.getEvents(TENANT, criteria, null);
         assertTrue(events != null);
         assertEquals(1, events.size());
@@ -2326,8 +2515,7 @@ public abstract class PersistenceTest {
         assertEquals("EventTag1Value", event.getTags().get("EventTag1Name"));
         assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
 
-        criteria.getTags().clear();
-        criteria.addTag("EventTag2Name", "EventTag2Value");
+        criteria.setTagQuery("EventTag2Name = EventTag2Value");
         events = alertsService.getEvents(TENANT, criteria, null);
         assertTrue(events != null);
         assertEquals(1, events.size());
@@ -2347,14 +2535,12 @@ public abstract class PersistenceTest {
         alertsService.removeEventTags(TENANT, eventIds, doomedTags);
 
         // Only two tags should now be searchable
-        criteria.getTags().clear();
-        criteria.addTag("TriggerTag1Name", "TriggerTag1Value");
+        criteria.setTagQuery("TriggerTag1Name = TriggerTag1Value");
         events = alertsService.getEvents(TENANT, criteria, null);
         assertTrue(events != null);
         assertEquals(0, events.size());
 
-        criteria.getTags().clear();
-        criteria.addTag("TriggerTag2Name", "TriggerTag2Value");
+        criteria.setTagQuery("TriggerTag2Name = TriggerTag2Value");
         events = alertsService.getEvents(TENANT, criteria, null);
         assertTrue(events != null);
         assertEquals(1, events.size());
@@ -2363,14 +2549,12 @@ public abstract class PersistenceTest {
         assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
         assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
 
-        criteria.getTags().clear();
-        criteria.addTag("EventTag1Name", "EventTag1Value");
+        criteria.setTagQuery("EventTag1Name = EventTag1Value");
         events = alertsService.getEvents(TENANT, criteria, null);
         assertTrue(events != null);
         assertEquals(0, events.size());
 
-        criteria.getTags().clear();
-        criteria.addTag("EventTag2Name", "EventTag2Value");
+        criteria.setTagQuery("EventTag2Name = EventTag2Value");
         events = alertsService.getEvents(TENANT, criteria, null);
         assertTrue(events != null);
         assertEquals(1, events.size());
@@ -2379,6 +2563,325 @@ public abstract class PersistenceTest {
         assertEquals("TriggerTag2Value", event.getTags().get("TriggerTag2Name"));
         assertEquals("EventTag2Value", event.getTags().get("EventTag2Name"));
     }
+
+    @Test
+    public void test141EventTagQuery() throws Exception {
+        Trigger t = new Trigger("t141", "trigger 141");
+
+        List<Event> events = new ArrayList<>();
+        for (int i=0; i<10; i++) {
+            events.add(new Event(new Alert(TENANT, t, null)));
+        }
+
+        alertsService.persistEvents(events);
+
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setThin(true);
+        criteria.setTriggerId("t141");
+
+        List<Event> results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(10, results.size());
+
+        /*
+            Test tagging
+
+                Events = e0 e1 e2 e3 e4 e5 e6 e7 e8 e9
+                tagA = 0, 1, 2, 3
+                    tagA:a0 0
+                    tagA:a1 1
+                    tagA:b0 2
+                    tagA:b1 3
+                tagB = 3, 4, 5, 6
+                    tagB:c0 3
+                    tagB:c1 4
+                    tagB:d0 5
+                    tagB:d1 6
+                tagC = 6, 7, 8, 9
+                    tagC:e0 6
+                    tagC:e1 7
+                    tagC:f0 8
+                    tagC:f1 9
+         */
+
+        List<String> ids = new ArrayList<>();
+        Map<String, String> tags = new HashMap<>();
+
+        ids.add(results.get(0).getId());
+        tags.put("tagA", "a0");
+        alertsService.addEventTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(1).getId());
+        tags.put("tagA", "a1");
+        alertsService.addEventTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(2).getId());
+        tags.put("tagA", "b0");
+        alertsService.addEventTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(3).getId());
+        tags.put("tagA", "b1");
+        tags.put("tagB", "c0");
+        alertsService.addEventTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(4).getId());
+        tags.put("tagB", "c1");
+        alertsService.addEventTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(5).getId());
+        tags.put("tagB", "d0");
+        alertsService.addEventTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(6).getId());
+        tags.put("tagB", "d1");
+        tags.put("tagC", "e0");
+        alertsService.addEventTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(7).getId());
+        tags.put("tagC", "e1");
+        alertsService.addEventTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(8).getId());
+        tags.put("tagC", "f0");
+        alertsService.addEventTags(TENANT, ids, tags);
+
+        ids.clear();
+        tags.clear();
+
+        ids.add(results.get(9).getId());
+        tags.put("tagC", "f1");
+        alertsService.addEventTags(TENANT, ids, tags);
+
+        /*
+            Queries
+         */
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(4, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagB");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(4, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagC");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(4, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA or tagB");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(7, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagB or tagC");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(7, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA or tagB or tagC");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(10, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA and tagB");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(1, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA and not tagB");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(3, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagB and tagC");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(1, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagB and not tagC");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(3, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("not tagA");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(6, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("not tagB");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(6, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("not tagC");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(6, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA = 'a0'");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(1, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA = 'b.*'");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(2, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA = 'c'");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(0, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA != 'a0'");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(3, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA in ['a0','b0','c']");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(2, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA not in ['a0','a1','b0']");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(1, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagB and tagC in ['f.*']");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(0, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagB and tagC in ['e.*', 'f.*']");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(1, results.size());
+
+        criteria = new EventsCriteria();
+        criteria.setTagQuery("tagA or (tagB and tagC in ['e.*', 'f.*'])");
+
+        results = alertsService.getEvents(TENANT, criteria, null);
+        assertTrue(results != null);
+        assertEquals(5, results.size());
+
+        /*
+            Malformed expressions
+         */
+        try {
+            criteria = new EventsCriteria();
+            criteria.setTagQuery("tag A");
+            alertsService.getEvents(TENANT, criteria, null);
+            fail("It should fail on tag A");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        try {
+            criteria = new EventsCriteria();
+            criteria.setTagQuery("tagA == '.*'");
+            alertsService.getEvents(TENANT, criteria, null);
+            fail("It should faild on token ==");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        try {
+            criteria = new EventsCriteria();
+            criteria.setTagQuery("tagA !!= '.*'");
+            alertsService.getEvents(TENANT, criteria, null);
+            fail("It should fail on !!=");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        try {
+            criteria = new EventsCriteria();
+            criteria.setTagQuery("tagA IN '.*'");
+            alertsService.getEvents(TENANT, criteria, null);
+            fail("It should fail on IN '.*'");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        try {
+            criteria = new EventsCriteria();
+            criteria.setTagQuery("tagA IN ['a1', b0, 'c1']'");
+            alertsService.getEvents(TENANT, criteria, null);
+            fail("It should fail on b0");
+        } catch (Exception e) {
+            // Expected
+        }
+    }
+
 
     // These tests would be nice in a separate class but I couldn't figure how to get multiple test classes
     // running together without hitting Cassandra life-cycle issues.
