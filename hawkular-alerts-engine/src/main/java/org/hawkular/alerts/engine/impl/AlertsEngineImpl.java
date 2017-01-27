@@ -332,6 +332,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         Trigger trigger = null;
         try {
             trigger = definitions.getTrigger(tenantId, triggerId);
+
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
             msgLog.errorDefinitionsService("Trigger", e.getMessage());
@@ -344,13 +345,13 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             removeTrigger(doomedTrigger);
             return;
         }
+
         /*
-            Non loadable triggers are filtered at this level.
-            So in this case we can maintain a generic partition of all triggers on all nodes.
+            Leave now if this happens to be a group trigger, they do not get loaded into the rule base.
          */
-        if (!trigger.isLoadable()) {
+        if (trigger.isGroup()) {
             if (log.isDebugEnabled()) {
-                log.debug("Skipping reload of trigger [" + trigger.getTenantId() + "/" + trigger.getId() + "]");
+                log.debug("Skipping reload of group trigger [" + trigger.getTenantId() + "/" + trigger.getId() + "]");
             }
             return;
         }
@@ -372,7 +373,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         if (log.isDebugEnabled()) {
             log.debug("Reloading " + trigger);
         }
+
         // Look for the Trigger in the rules engine, if it is there then remove everything about it
+        // Note that removeTrigger relies only on tenatId+triggerId.
         removeTrigger(trigger);
 
         try {
@@ -416,7 +419,6 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             log.debug(e.getMessage(), e);
             msgLog.errorDefinitionsService("Conditions/Dampening", e.getMessage());
         }
-
     }
 
     @Override

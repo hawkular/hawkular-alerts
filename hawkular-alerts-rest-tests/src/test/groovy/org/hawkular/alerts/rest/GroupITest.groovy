@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,7 +70,7 @@ class GroupITest extends AbstractITestBase {
         assert(200 == resp.status || 404 == resp.status)
 
         testTrigger.setType(TriggerType.DATA_DRIVEN_GROUP);
-        testTrigger.setAutoDisable(true);
+        testTrigger.setAutoDisable(false);
         testTrigger.setAutoResolve(false);
         testTrigger.setSeverity(Severity.LOW);
 
@@ -98,7 +98,7 @@ class GroupITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals("test-ddgroup-trigger", resp.data.name)
         assertTrue(resp.data.enabled)
-        assertTrue(resp.data.autoDisable);
+        assertFalse(resp.data.autoDisable);
         assertFalse(resp.data.autoEnable);
         assertEquals("LOW", resp.data.severity);
         assertNotNull(resp.data.context);
@@ -186,6 +186,47 @@ class GroupITest extends AbstractITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size())
+
+        // Test to make sure disabling the group trigger disables the member triggers (and updates the rule base)
+
+        // DISABLE Trigger
+        testTrigger.setEnabled(false);
+
+        resp = client.put(path: "triggers/groups/test-ddgroup-trigger/", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // FETCH trigger and make sure it's as expected
+        resp = client.get(path: "triggers/test-ddgroup-trigger");
+        assertEquals(200, resp.status)
+        assertEquals("test-ddgroup-trigger", resp.data.name)
+        assertFalse(resp.data.enabled)
+
+        // FETCH members, should not be any
+        resp = client.get(path: "triggers/groups/test-ddgroup-trigger/members")
+        assertEquals(200, resp.status)
+        assertEquals(2, resp.data.size)
+        assertFalse(resp.data[0].enabled)
+        assertFalse(resp.data[1].enabled)
+
+        // Send in avail data to create Source-1 alert if it were enabled (it should not generate an alert)
+        jsonData = "[{\"source\":\"Source-1\",\"id\":\"test-ddgroup-avail\",\"timestamp\":" + (System.currentTimeMillis() + 1000) + ",\"value\":\"DOWN\"}]";
+        resp = client.post(path: "data", body: jsonData);
+        assertEquals(200, resp.status)
+
+        // The alert processing happens async, so give it a little time before failing...
+        for ( int i=0; i < 10; ++i ) {
+            Thread.sleep(500);
+
+            // FETCH alerts for member triggers, there should still be only 2
+            resp = client.get(path: "",
+                              query: [startTime:start,
+                                      triggerIds:"test-ddgroup-trigger_Source-1,test-ddgroup-trigger_Source-2"] )
+            if ( resp.status == 200 && resp.data != null && resp.data.size > 2) {
+                fail("The disabled trigger should not generate an alert!")
+                break;
+            }
+            assertEquals(200, resp.status)
+        }
 
         // an update to the group conditions should invalidate the data-driven members, and they will need to be
         // regenerated.
