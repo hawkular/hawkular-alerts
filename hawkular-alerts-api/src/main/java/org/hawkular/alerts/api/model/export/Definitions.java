@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import java.util.List;
 
+import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.trigger.FullTrigger;
 
@@ -34,8 +35,8 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "Representation of a list of full triggers (trigger, dampenings and conditions) and " +
-        "actions definitions. + \n" +
+@ApiModel(description = "Representation of a list of full triggers (trigger, dampenings and conditions)," +
+        "group members triggers and actions definitions. + \n" +
         "Used for bulk import/export operations.")
 public class Definitions {
 
@@ -45,8 +46,14 @@ public class Definitions {
     @JsonInclude(Include.NON_EMPTY)
     private List<FullTrigger> triggers;
 
-    @ApiModelProperty(value = "List of action definitions.",
+    @ApiModelProperty(value = "List of group member triggers information.",
             position = 1,
+            required = false)
+    @JsonInclude(Include.NON_EMPTY)
+    private List<GroupMemberInfo> groupMembersInfo;
+
+    @ApiModelProperty(value = "List of action definitions.",
+            position = 2,
             required = false)
     @JsonInclude(Include.NON_EMPTY)
     private List<ActionDefinition> actions;
@@ -56,7 +63,14 @@ public class Definitions {
 
     public Definitions(List<FullTrigger> triggers,
                        List<ActionDefinition> actions) {
+        this(triggers, null, actions);
+    }
+
+    public Definitions(List<FullTrigger> triggers,
+                       List<GroupMemberInfo> groupMembersInfo,
+                       List<ActionDefinition> actions) {
         this.triggers = triggers;
+        this.groupMembersInfo = groupMembersInfo;
         this.actions = actions;
     }
 
@@ -66,6 +80,14 @@ public class Definitions {
 
     public void setTriggers(List<FullTrigger> triggers) {
         this.triggers = triggers;
+    }
+
+    public List<GroupMemberInfo> getGroupMembersInfo() {
+        return groupMembersInfo;
+    }
+
+    public void setGroupMembersInfo(List<GroupMemberInfo> groupMembersInfo) {
+        this.groupMembersInfo = groupMembersInfo;
     }
 
     public List<ActionDefinition> getActions() {
@@ -102,21 +124,24 @@ public class Definitions {
         Definitions that = (Definitions) o;
 
         if (triggers != null ? !triggers.equals(that.triggers) : that.triggers != null) return false;
+        if (groupMembersInfo != null ? !groupMembersInfo.equals(that.groupMembersInfo) : that.groupMembersInfo != null) return false;
         return actions != null ? actions.equals(that.actions) : that.actions == null;
     }
 
     @Override
     public int hashCode() {
         int result = triggers != null ? triggers.hashCode() : 0;
+        result = 31 * result + (groupMembersInfo != null ? groupMembersInfo.hashCode() : 0);
         result = 31 * result + (actions != null ? actions.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "Definitions" + '[' +
+        return "Definitions{" +
                 "triggers=" + triggers +
+                ", groupMembersInfo=" + groupMembersInfo +
                 ", actions=" + actions +
-                ']';
+                '}';
     }
 }

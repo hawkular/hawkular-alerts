@@ -1,0 +1,73 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "template-trigger",
+        "type": "GROUP",
+        "enabled": true,
+        "name": "Template Trigger",
+        "description": "Trigger definition used as parent",
+        "severity": "HIGH",
+        "actions": [
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
+        ]
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "Generic-X",
+          "operator": "LT",
+          "threshold": 10.0,
+          "context": {
+            "description": "Response Time",
+            "unit": "ms"
+          }
+        },
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "Generic-Y",
+          "operator": "GT",
+          "threshold": 200.0,
+          "context": {
+            "description": "Memory",
+            "unit": "mb"
+          }
+        }
+      ]
+    }
+  ],
+  "groupMembersInfo":[
+    {
+      "groupId": "template-trigger",
+      "memberId": "member1",
+      "memberName": "Member 1",
+      "memberDescription": "This is the first member",
+      "dataIdMap":{
+        "Generic-X": "Member1-X",
+        "Generic-Y": "Member1-Y"
+      }
+    },
+    {
+      "groupId": "template-trigger",
+      "memberId": "member2",
+      "memberName": "Member 2",
+      "memberDescription": "This is the second member",
+      "dataIdMap":{
+        "Generic-X": "Member2-X",
+        "Generic-Y": "Member2-Y"
+      }
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "email",
+      "actionId": "email-to-admin",
+      "properties": {
+        "to": "admin@hawkular.org",
+        "cc": "bigboss@hawkular.org"
+      }
+    }
+  ]
+}

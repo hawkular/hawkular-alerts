@@ -42,6 +42,7 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
 
+import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
@@ -3208,7 +3209,60 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     }
                 }
             }
+            List<GroupMemberInfo> importedMembersInfo = new ArrayList<>();
+            if (!isEmpty(definitions.getGroupMembersInfo())) {
+                for (GroupMemberInfo memberInfo : definitions.getGroupMembersInfo()) {
+                    if (!isEmpty(memberInfo.getGroupId()) && !isEmpty(memberInfo.getMemberId())) {
+                        boolean existing = false;
+                        for (Trigger t : existingTriggers) {
+                            if (t.getId().equals(memberInfo.getMemberId())) {
+                                existing = true;
+                                break;
+                            }
+                        }
+                        switch (strategy) {
+                            case DELETE:
+                                addMemberTrigger(tenantId, memberInfo.getGroupId(), memberInfo.getMemberId(),
+                                        memberInfo.getMemberName(), memberInfo.getMemberDescription(),
+                                        memberInfo.getMemberContext(), memberInfo.getMemberTags(),
+                                        memberInfo.getDataIdMap());
+                                importedMembersInfo.add(memberInfo);
+                                break;
+                            case ALL:
+                                if (existing) {
+                                    removeTrigger(tenantId, memberInfo.getMemberId());
+                                }
+                                addMemberTrigger(tenantId, memberInfo.getGroupId(), memberInfo.getMemberId(),
+                                        memberInfo.getMemberName(), memberInfo.getMemberDescription(),
+                                        memberInfo.getMemberContext(), memberInfo.getMemberTags(),
+                                        memberInfo.getDataIdMap());
+                                importedMembersInfo.add(memberInfo);
+                                break;
+                            case NEW:
+                                if (!existing) {
+                                    addMemberTrigger(tenantId, memberInfo.getGroupId(), memberInfo.getMemberId(),
+                                            memberInfo.getMemberName(), memberInfo.getMemberDescription(),
+                                            memberInfo.getMemberContext(), memberInfo.getMemberTags(),
+                                            memberInfo.getDataIdMap());
+                                    importedMembersInfo.add(memberInfo);
+                                }
+                                break;
+                            case OLD:
+                                if (existing) {
+                                    removeTrigger(tenantId, memberInfo.getMemberId());
+                                    addMemberTrigger(tenantId, memberInfo.getGroupId(), memberInfo.getMemberId(),
+                                            memberInfo.getMemberName(), memberInfo.getMemberDescription(),
+                                            memberInfo.getMemberContext(), memberInfo.getMemberTags(),
+                                            memberInfo.getDataIdMap());
+                                    importedMembersInfo.add(memberInfo);
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
             imported.setTriggers(importedTriggers);
+            imported.setGroupMembersInfo(importedMembersInfo);
             imported.setActions(importedActionDefinitions);
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());

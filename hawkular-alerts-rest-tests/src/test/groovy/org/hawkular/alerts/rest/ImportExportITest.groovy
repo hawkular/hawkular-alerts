@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,6 +45,20 @@ class ImportExportITest extends AbstractITestBase {
         // Original definitions from alerts-data.json should be in the backend
         assertEquals(9, resp.data.triggers.size())
         assertEquals(1, resp.data.actions.size())
+    }
+
+    @Test
+    void importGroupTest() {
+        String basePath = new File(".").canonicalPath
+        String toImport = new File(basePath + "/src/test/wildfly-data/hawkular-alerts/groups-data.json").text
+
+        def resp = client.post(path: "import/delete", body: toImport)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "export")
+        assertEquals(200, resp.status)
+
+        assertEquals(3, resp.data.triggers.size())
     }
 
 
