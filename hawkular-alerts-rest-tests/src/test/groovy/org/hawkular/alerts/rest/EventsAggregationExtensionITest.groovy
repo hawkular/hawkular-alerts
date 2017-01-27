@@ -318,20 +318,20 @@ class EventsAggregationExtensionITest extends AbstractITestBase {
         e8.addTag("accountId", "user2")
         e8.addTag("location", "ip5")
 
-        client.post(path: "events/data", body: Arrays.asList(e7))
+        client.post(path: "events/data", body: Arrays.asList(e8))
         assertEquals(200, resp.status)
 
         // The alert processing happens async, so give it a little time before failing...
         for ( int i=0; i < 20; ++i ) {
             Thread.sleep(500);
             resp = client.get(path: "", query: [startTime:start,triggerIds:"fraud-scenario"] )
-            if ( resp.status == 200 && resp.data != null && resp.data.size >= 5) {
+            if ( resp.status == 200 && resp.data != null && resp.data.size >= 6) {
                 break;
             }
             assertEquals(200, resp.status)
         }
         assertEquals(200, resp.status)
-        assertEquals(5, resp.data.size())
+        assertEquals(6, resp.data.size())
     }
 
     @Test
