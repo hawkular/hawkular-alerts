@@ -1,5 +1,5 @@
 --
--- Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+-- Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
 -- and other contributors as indicated by the @author tags.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,6 +48,16 @@ WHERE keyspace_name='${keyspace}' AND table_name = 'conditions';
 
 SELECT column_name FROM system_schema.columns
 WHERE keyspace_name='${keyspace}' AND table_name = 'conditions' AND column_name = 'interval';
+
+-- #
+
+SELECT column_name FROM system_schema.columns
+WHERE keyspace_name='${keyspace}' AND table_name = 'conditions' AND column_name = 'activerules';
+
+-- #
+
+SELECT column_name FROM system_schema.columns
+WHERE keyspace_name='${keyspace}' AND table_name = 'conditions' AND column_name = 'samplesize';
 
 -- #
 
