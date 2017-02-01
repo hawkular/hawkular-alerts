@@ -561,7 +561,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         addEvents(events);
 
         if (distributed) {
-            partitionManager.notifyEvents(events);
+            partitionManager.notifyEvents(new ArrayList<>(events));
         }
     }
 
@@ -658,7 +658,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                         /*
                             Generated events on a node should be notified to other nodes for chained triggers
                          */
-                        partitionManager.notifyEvents(events);
+                        partitionManager.notifyEvents(new ArrayList<>(events));
                     }
                     events.clear();
                     handleDisabledTriggers();
