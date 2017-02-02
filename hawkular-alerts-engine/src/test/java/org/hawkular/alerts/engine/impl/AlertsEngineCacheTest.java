@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,19 +40,19 @@ public class AlertsEngineCacheTest {
         DataEntry entry4 = new DataEntry("o1", "t4", "d1");
 
         cache.add(entry1);
-        assertTrue(cache.isDataIdActive("d1"));
+        assertTrue(cache.isDataIdActive("o1", "d1"));
         cache.add(entry2);
-        assertTrue(cache.isDataIdActive("d2"));
+        assertTrue(cache.isDataIdActive("o1", "d2"));
         cache.add(entry3);
-        assertTrue(cache.isDataIdActive("d3"));
+        assertTrue(cache.isDataIdActive("o1", "d3"));
         cache.add(entry4);
 
         cache.remove("o1", "t1");
-        assertTrue(cache.isDataIdActive("d1"));
+        assertTrue(cache.isDataIdActive("o1","d1"));
         cache.remove("o1", "t4");
-        assertFalse(cache.isDataIdActive("d1"));
+        assertFalse(cache.isDataIdActive("o1", "d1"));
         cache.remove("o1", "t2");
-        assertFalse(cache.isDataIdActive("d3"));
+        assertFalse(cache.isDataIdActive("o1", "d3"));
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -62,9 +62,14 @@ class CrossTenantITest extends AbstractITestBase {
             resp = client.put(path: "triggers/test-multiple-tenants", body: testTrigger)
             assertEquals(200, resp.status)
 
+            if (cluster) {
+                // In cluster scenarios we should give some time to process the trigger before sending data
+                Thread.sleep(500);
+            }
+
             // SEND Data to generate Alerts
             for (int i=0; i<numAlerts; i++) {
-                Data avail = new Data("test-multiple-tenants", System.currentTimeMillis() + (i*1000), "DOWN");
+                Data avail = new Data("test-multiple-tenants", System.currentTimeMillis() + (i*2000), "DOWN");
                 Collection<Data> datums = new ArrayList<>();
                 datums.add(avail);
                 resp = client.post(path: "data", body: datums);
@@ -82,7 +87,7 @@ class CrossTenantITest extends AbstractITestBase {
 
         client.headers.put("Hawkular-Tenant", "tenant1,tenant2,tenant3,tenant4")
         def resp
-        for ( int i=0; i < 10; ++i ) {
+        for ( int i=0; i < 30; ++i ) {
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
@@ -93,13 +98,19 @@ class CrossTenantITest extends AbstractITestBase {
         }
 
         // The alert processing happens async, so give it a little time before failing...
-        for ( int i=0; i < 10; ++i ) {
+        for ( int i=0; i < 30; ++i ) {
             Thread.sleep(500);
 
             // FETCH recent alerts for trigger, there should be 5
             resp = client.get(path: "admin/alerts", query: [startTime:start,triggerIds:"test-multiple-tenants"] )
             if ( resp.status == 200 && resp.data.size() == 20 ) {
                 break;
+            }
+        }
+        if (cluster) {
+            logger.info("Alerts generated: ")
+            for (int i = 0; i < resp.data.size(); i++) {
+                logger.info(resp.data[i].toString())
             }
         }
         assertEquals(200, resp.status)

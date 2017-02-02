@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.rest
 
+import org.junit.After
+import org.junit.Before
 import org.junit.BeforeClass
 
 import groovyx.net.http.ContentType
@@ -38,6 +40,7 @@ class AbstractITestBase {
     static testTenant = "28026b36-8fe4-4332-84c8-524e173a68bf"
     static final String TENANT_PREFIX = UUID.randomUUID().toString()
     static final AtomicInteger TENANT_ID_COUNTER = new AtomicInteger(0)
+    static cluster = System.getProperty('cluster') ? true : false
 
     @BeforeClass
     static void initClient() {
@@ -76,4 +79,20 @@ class AbstractITestBase {
     static String nextTenantId() {
         return "T${TENANT_PREFIX}${TENANT_ID_COUNTER.incrementAndGet()}"
     }
+
+    @Before
+    void beforeCluster() {
+        if (cluster) {
+            Thread.sleep(1000)
+        }
+    }
+
+    @After
+    void afterCluster() {
+        if (cluster) {
+            Thread.sleep(1000)
+        }
+    }
+
+
 }

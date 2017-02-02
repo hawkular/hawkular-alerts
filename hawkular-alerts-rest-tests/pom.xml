@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -1076,7 +1076,7 @@
             <configuration>
               <jboss-home>${hawkular.home}/wildfly-${version.org.wildfly}</jboss-home>
               <skip>${skipTests}</skip>
-              <startupTimeout>240</startupTimeout>
+              <startupTimeout>300</startupTimeout>
               <serverType>DOMAIN</serverType>
               <domain-config>domain.xml</domain-config>
               <host-config>host.xml</host-config>
@@ -1117,6 +1117,21 @@
                     </server-groups>
                   </domain>
                   <filename>hawkular-alerts.war</filename>
+                </configuration>
+              </execution>
+              <execution>
+                <id>deploy-email-plugin</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>deploy</goal>
+                </goals>
+                <configuration>
+                  <domain>
+                    <server-groups>
+                      <server-group>hawkular-alerts-group</server-group>
+                    </server-groups>
+                  </domain>
+                  <filename>hawkular-alerts-actions-email.war</filename>
                 </configuration>
               </execution>
               <execution>
@@ -1162,6 +1177,7 @@
                 <hawkular.test.origin>http://test.hawkular.org</hawkular.test.origin>
                 <hawkular.test.access-control-allow-headers>random-header1,random-header2</hawkular.test.access-control-allow-headers>
                 <hawkular-alerts.data-driven-triggers-enabled>false</hawkular-alerts.data-driven-triggers-enabled>
+                <cluster>true</cluster>
               </systemPropertyVariables>
             </configuration>
             <executions>
@@ -1173,6 +1189,7 @@
                 <configuration>
                   <includes>
                     <include>org/hawkular/alerts/rest/ClusterITest.class</include>
+                    <include>org/hawkular/alerts/rest/ClusterIntegrationSuite.class</include>
                   </includes>
                 </configuration>
               </execution>
