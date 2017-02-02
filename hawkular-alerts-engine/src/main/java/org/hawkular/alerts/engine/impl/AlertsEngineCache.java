@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,7 +42,7 @@ public class AlertsEngineCache {
     /**
      * A cache of the dataIds hold. Used to filter if a data has a dataId on this node or not.
      */
-    private Set<String> activeDataIds;
+    private Set<DataId> activeDataIds;
 
     public AlertsEngineCache() {
         activeDataEntries = new HashSet<>();
@@ -52,12 +52,13 @@ public class AlertsEngineCache {
     /**
      * Check if a specific dataId is active on this node
      *
+     * @param tenantId to check if has triggers deployed on this node
      * @param dataId to check if it has triggers deployed on this node
      * @return true if it is active
      *         false otherwise
      */
-    public boolean isDataIdActive(String dataId) {
-        return dataId != null && activeDataIds.contains(dataId);
+    public boolean isDataIdActive(String tenantId, String dataId) {
+        return tenantId != null && dataId != null && activeDataIds.contains(new DataId(tenantId, dataId));
     }
 
     /**
@@ -67,8 +68,9 @@ public class AlertsEngineCache {
      */
     public void add(DataEntry dataEntry) {
         activeDataEntries.add(dataEntry);
-        if (!activeDataIds.contains(dataEntry.dataId)) {
-            activeDataIds.add(dataEntry.dataId);
+        DataId newDataId = new DataId(dataEntry.getTenantId(), dataEntry.getDataId());
+        if (!activeDataIds.contains(newDataId)) {
+            activeDataIds.add(newDataId);
         }
     }
 
@@ -91,15 +93,16 @@ public class AlertsEngineCache {
             }
         });
         activeDataEntries.removeAll(dataEntriesToRemove);
-        Set<String> dataIdToCheck = new HashSet<>();
+        Set<DataId> dataIdToCheck = new HashSet<>();
         dataEntriesToRemove.stream().forEach(e -> {
-            dataIdToCheck.add(e.getDataId());
+            dataIdToCheck.add(new DataId(e.getTenantId(), e.getDataId()));
         });
-        Set<String> dataIdToRemove = new HashSet<>();
+        Set<DataId> dataIdToRemove = new HashSet<>();
         dataIdToCheck.stream().forEach(dataId -> {
             boolean found = false;
             for (DataEntry entry : activeDataEntries) {
-                if (entry.getDataId().equals(dataId)) {
+                DataId currentDataId = new DataId(entry.getTenantId(), entry.getDataId());
+                if (currentDataId.equals(dataId)) {
                     found = true;
                     break;
                 }
@@ -117,6 +120,58 @@ public class AlertsEngineCache {
     public void clear() {
         activeDataEntries.clear();
         activeDataIds.clear();
+    }
+
+    public static class DataId {
+        String tenantId;
+        String dataId;
+
+        public DataId(String tenantId, String dataId) {
+            this.tenantId = tenantId;
+            this.dataId = dataId;
+        }
+
+        public String getTenantId() {
+            return tenantId;
+        }
+
+        public void setTenantId(String tenantId) {
+            this.tenantId = tenantId;
+        }
+
+        public String getDataId() {
+            return dataId;
+        }
+
+        public void setDataId(String dataId) {
+            this.dataId = dataId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            DataId dataId1 = (DataId) o;
+
+            if (tenantId != null ? !tenantId.equals(dataId1.tenantId) : dataId1.tenantId != null) return false;
+            return dataId != null ? dataId.equals(dataId1.dataId) : dataId1.dataId == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = tenantId != null ? tenantId.hashCode() : 0;
+            result = 31 * result + (dataId != null ? dataId.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "DataId{" +
+                    "tenantId='" + tenantId + '\'' +
+                    ", dataId='" + dataId + '\'' +
+                    '}';
+        }
     }
 
     public static class DataEntry {

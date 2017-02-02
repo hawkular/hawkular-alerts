@@ -454,22 +454,27 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             // then remove everything else.
             // We may want to do this with rules, because as is, we need to loop through every Fact in
             // the rules engine doing a relatively slow check.
+            final String tenantId = trigger.getTenantId();
             final String triggerId = trigger.getId();
             rules.removeFacts(t -> {
                 if (t instanceof Dampening) {
-                    return ((Dampening) t).getTriggerId().equals(triggerId);
+                    return ((Dampening) t).getTenantId().equals(tenantId)
+                            && ((Dampening) t).getTriggerId().equals(triggerId);
                 } else if (t instanceof Condition) {
-                    return ((Condition) t).getTriggerId().equals(triggerId);
+                    return ((Condition) t).getTenantId().equals(tenantId) &&
+                            ((Condition) t).getTriggerId().equals(triggerId);
                 }
                 return false;
             });
-            Iterator<MissingState> it = missingStates.iterator();
-            while (it.hasNext()) {
-                MissingState missingState = it.next();
-                if (missingState.getTenantId().equals(trigger.getTenantId()) &&
-                        missingState.getTriggerId().equals(triggerId)) {
-                    rules.removeFact(missingState);
-                    it.remove();
+            synchronized (missingStates) {
+                Iterator<MissingState> it = missingStates.iterator();
+                while (it.hasNext()) {
+                    MissingState missingState = it.next();
+                    if (missingState.getTenantId().equals(trigger.getTenantId()) &&
+                            missingState.getTriggerId().equals(triggerId)) {
+                        rules.removeFact(missingState);
+                        it.remove();
+                    }
                 }
             }
         } else {
@@ -504,6 +509,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         }
 
         synchronized (pendingData) {
+            log.debugf("Adding [%s] to pendingData [%s]", data, pendingData);
             pendingData.addAll(data);
         }
     }
@@ -512,7 +518,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         TreeSet<Data> filteredData = new TreeSet<>(data);
         for (Iterator<Data> i = filteredData.iterator(); i.hasNext();) {
             Data d = i.next();
-            if (!alertsEngineCache.isDataIdActive(d.getId())) {
+            if (!alertsEngineCache.isDataIdActive(d.getTenantId(), d.getId())) {
                 i.remove();
             }
         }
@@ -544,6 +550,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         }
 
         synchronized (pendingEvents) {
+            log.debugf("Adding [%s] to pendingEvents [%s]", events, pendingEvents);
             pendingEvents.addAll(events);
         }
     }
@@ -552,7 +559,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         TreeSet<Event> filteredEvents = new TreeSet<>(events);
         for (Iterator<Event> i = filteredEvents.iterator(); i.hasNext();) {
             Event e = i.next();
-            if (!alertsEngineCache.isDataIdActive(e.getDataId())) {
+            if (!alertsEngineCache.isDataIdActive(e.getTenantId(), e.getDataId())) {
                 i.remove();
             }
         }
@@ -613,7 +620,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                     alertsService.addAlerts(alerts);
                     alerts.clear();
                     alertsService.persistEvents(events);
-                    if (distributed) {
+                    if (distributed && !events.isEmpty()) {
                         /*
                             Generated events on a node should be notified to other nodes for chained triggers
                          */
@@ -721,19 +728,21 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
     private int checkMissingStates() {
         int numMatchingEvals = 0;
-        for (MissingState missingState : missingStates) {
+        Iterator<MissingState> itMissingStates = missingStates.iterator();
+        while (itMissingStates.hasNext()) {
+            MissingState missingState = itMissingStates.next();
             long now = System.currentTimeMillis();
+            rules.removeFact(missingState);
+            missingState.setTime(now);
             if (missingState.getCondition().match(missingState.getPreviousTime(), now)) {
                 MissingConditionEval eval = new MissingConditionEval(missingState.getCondition(),
                         missingState.getPreviousTime(),
                         now);
-                rules.removeFact(missingState);
-                missingState.setPreviousTime(System.currentTimeMillis());
-                missingState.setTime(System.currentTimeMillis());
-                rules.addFact(missingState);
+                missingState.setPreviousTime(now);
                 rules.addFact(eval);
                 numMatchingEvals++;
             }
+            rules.addFact(missingState);
         }
         return numMatchingEvals;
     }

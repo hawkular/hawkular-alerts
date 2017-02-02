@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -270,6 +270,7 @@ public class PartitionManagerImpl implements PartitionManager {
         if (distributed) {
             NotifyData nData = new NotifyData(currentNode, data, Data.class);
             Integer key = nData.hashCode();
+            log.debugf("Sending data [%s]", nData);
             dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                     .putAsync(key, nData, LIFESPAN, TimeUnit.MILLISECONDS);
         }
@@ -280,6 +281,7 @@ public class PartitionManagerImpl implements PartitionManager {
         if (distributed) {
             NotifyData nEvent = new NotifyData(currentNode, events, Event.class);
             Integer key = nEvent.hashCode();
+            log.debugf("Sending events [%s]", nEvent);
             dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                     .putAsync(key, nEvent, LIFESPAN, TimeUnit.MILLISECONDS);
         }
@@ -740,6 +742,7 @@ public class PartitionManagerImpl implements PartitionManager {
             if (!dataListeners.isEmpty() && notifyData.getFromNode() != currentNode) {
                 if (notifyData.getDataCollection() != null) {
                     dataListeners.stream().forEach(dataListener -> {
+                        log.debugf("processNotifyData [%s]", notifyData);
                         dataListener.onNewData(notifyData.getDataCollection());
                     });
                 } else if (notifyData.getEventCollection() != null) {

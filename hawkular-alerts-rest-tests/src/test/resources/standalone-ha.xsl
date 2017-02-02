@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -72,6 +72,7 @@
       </replicated-cache>
       <replicated-cache name="schema" mode="SYNC">
         <transaction mode="NON_XA"/>
+        <locking acquire-timeout="100000" />
       </replicated-cache>
       <replicated-cache name="globalActions" mode="ASYNC">
         <transaction mode="BATCH"/>

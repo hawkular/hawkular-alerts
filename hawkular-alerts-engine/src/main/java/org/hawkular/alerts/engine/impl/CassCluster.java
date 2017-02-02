@@ -415,5 +415,8 @@ public class CassCluster {
         if (session != null && !session.isClosed()) {
             session.close();
         }
+        if (!cluster.isClosed()) {
+            cluster.close();
+        }
     }
 }

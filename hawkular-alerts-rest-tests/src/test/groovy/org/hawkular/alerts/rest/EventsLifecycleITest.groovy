@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -410,6 +410,10 @@ class EventsLifecycleITest extends AbstractITestBase {
         resp = client.get(path: "events", query: [startTime:start,triggerIds:"test-events-t04"] )
         assertEquals(200, resp.status)
         assertEquals(1, resp.data.size())
+
+        // Clean previous tests
+        resp = client.delete(path: "triggers/test-events-t04")
+        assert(200 == resp.status || 404 == resp.status)
     }
 
     @Test
@@ -489,6 +493,10 @@ class EventsLifecycleITest extends AbstractITestBase {
         resp = client.get(path: "events", query: [startTime:start,triggerIds:"test-events-t05"] )
         assertEquals(200, resp.status)
         assertEquals(0, resp.data.size())
+
+        // Clean previous tests
+        resp = client.delete(path: "triggers/test-events-t05")
+        assert(200 == resp.status || 404 == resp.status)
     }
 
     @Test
