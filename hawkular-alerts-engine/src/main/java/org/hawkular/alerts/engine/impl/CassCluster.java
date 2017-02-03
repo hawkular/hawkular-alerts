@@ -382,7 +382,8 @@ public class CassCluster {
         Map<String, ?> vars  = ImmutableMap.of(
                 "keyspace", keyspace,
                 "reset", resetDB,
-                "session", session
+                "session", session,
+                "logger", log
         );
         // List of versions of alerting
         URI script = getCassalogScript();
