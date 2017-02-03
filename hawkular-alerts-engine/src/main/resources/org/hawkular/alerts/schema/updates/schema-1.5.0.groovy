@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@ schemaChange {
   author 'jshaughn'
   tags '1.5.x'
   cql "ALTER TABLE conditions ADD activeRules set<text>"
+  verify { columnExists(keyspace, 'conditions', 'activeRules') }
 }
 
 schemaChange {
@@ -29,4 +30,5 @@ schemaChange {
   author 'jshaughn'
   tags '1.5.x'
   cql "ALTER TABLE conditions ADD sampleSize int"
+  verify { columnExists(keyspace, 'conditions', 'sampleSize') }
 }
