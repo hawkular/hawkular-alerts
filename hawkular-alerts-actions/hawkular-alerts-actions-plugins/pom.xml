@@ -24,7 +24,7 @@
   <parent>
     <artifactId>hawkular-alerts-actions</artifactId>
     <groupId>org.hawkular.alerts</groupId>
-    <version>1.5.2.Final</version>
+    <version>1.5.3.Final-SNAPSHOT</version>
   </parent>
 
   <artifactId>hawkular-alerts-actions-plugins</artifactId>
