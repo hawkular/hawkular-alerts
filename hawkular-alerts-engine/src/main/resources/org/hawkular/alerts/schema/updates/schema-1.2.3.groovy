@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,4 +22,5 @@ schemaChange {
   author 'lponce'
   tags '1.2.x'
   cql "ALTER TABLE conditions ADD interval bigint"
+  verify { columnExists(keyspace, 'conditions', 'interval') }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,15 +19,6 @@ package org.hawkular.alerts.schema
 import com.datastax.driver.core.ConsistencyLevel
 import com.datastax.driver.core.SimpleStatement
 
-/**
- * Because we have releases of Hawkular Metrics prior to using cassalog, we need some special logic to initially
- * get things set up. That is the purpose of this script. If the target keyspace does not exist, then we have a new
- * installation and the script installs the schema as it exists prior to cassalog integration. If the target keyspace
- * exists, we check to see if it is already versions, i.e., managed by cassalog. If so, then we assume that there
- * is nothing left for this script to do. If the keyspace is not versioned, then we check that the schema matches
- * what we expect it to be to ensure we are in a known, consistent state before we start managing it with cassalog.
- */
-
 def executeCQL(String cql, Integer readTimeoutMillis = null) {
   def statement = new SimpleStatement(cql)
   statement.consistencyLevel = ConsistencyLevel.LOCAL_QUORUM
@@ -39,42 +30,22 @@ def executeCQL(String cql, Integer readTimeoutMillis = null) {
   return session.execute(statement)
 }
 
-// We check the reset flag here because if we are resetting the database as would be the case in a dev/test environment,
-// we don't need to worry about the state of the schema since we are dropping it.
-if (!reset && keyspaceExists(keyspace)) {
-  if (isSchemaVersioned(keyspace)) {
-    // nothing to do
-  } else {
-    // If the schema exists and is not versioned, then we want to check that it matches what we expect it to be prior
-    // to being managed with cassalog. We perform this check simply by checking the tables and UDTs in the keyspace.
-
-    def expectedTables = [
-        'triggers', 'triggers_actions', 'conditions', 'dampenings', 'action_plugins', 'actions_definitions',
-        'actions_history', 'actions_history_actions', 'actions_history_alerts', 'actions_history_ctimes',
-        'actions_history_results', 'tags', 'alerts', 'alerts_triggers', 'alerts_ctimes', 'alerts_statuses',
-        'alerts_severities', 'alerts_lifecycle', 'events', 'events_triggers', 'events_ctimes', 'events_categories'
-    ] as Set
-
-    def actualTables = getTables(keyspace) as Set
-
-    if (actualTables != expectedTables) {
-      throw new RuntimeException("The schema is in an unknown state and cannot be versioned. Expected tables to be " +
-        "$expectedTables but found $actualTables.")
-    }
+def createTable(String table, String cql) {
+  if (tableDoesNotExist(keyspace, table)) {
+    logger.info("Creating table $table")
+    executeCQL(cql)
   }
-} else {
-  // If the schema does not already exist, we bypass cassalog's API and create it without
-  // being versioned. This allows to use the same logic for subsequent schema changes
-  // regardless of whether we are dealing with a new install or an upgrade.
+}
 
-  if (reset) {
-    executeCQL("DROP KEYSPACE IF EXISTS $keyspace", 20000)
-  }
 
-  executeCQL("CREATE KEYSPACE $keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}")
-  executeCQL("USE $keyspace")
+if (reset) {
+  executeCQL("DROP KEYSPACE IF EXISTS $keyspace", 20000)
+}
 
-  executeCQL("""
+executeCQL("CREATE KEYSPACE IF NOT EXISTS $keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}")
+executeCQL("USE $keyspace")
+
+createTable('triggers', """
 CREATE TABLE triggers (
     tenantId text,
     id text,
@@ -101,7 +72,7 @@ CREATE TABLE triggers (
 )
 """)
 
-  executeCQL("""
+createTable('triggers_actions', """
 CREATE TABLE triggers_actions (
     tenantId text,
     triggerId text,
@@ -112,7 +83,7 @@ CREATE TABLE triggers_actions (
 )
 """)
 
-  executeCQL("""
+createTable('conditions', """
 CREATE TABLE conditions (
     tenantId text,
     triggerId text,
@@ -140,11 +111,11 @@ CREATE TABLE conditions (
 )
 """)
 
-  executeCQL("""
-CREATE INDEX conditions_id ON conditions(conditionId)
+executeCQL("""
+CREATE INDEX IF NOT EXISTS conditions_id ON conditions(conditionId)
 """)
 
-  executeCQL("""
+createTable('dampenings', """
 CREATE TABLE dampenings (
     tenantId text,
     triggerId text,
@@ -158,11 +129,11 @@ CREATE TABLE dampenings (
 )
 """)
 
-  executeCQL("""
-CREATE INDEX dampenings_id ON dampenings(dampeningId)
+executeCQL("""
+CREATE INDEX IF NOT EXISTS dampenings_id ON dampenings(dampeningId)
 """)
 
-  executeCQL("""
+createTable('action_plugins', """
 CREATE TABLE action_plugins (
     actionPlugin text,
     properties set<text>,
@@ -171,7 +142,7 @@ CREATE TABLE action_plugins (
 )
 """)
 
-  executeCQL("""
+createTable('actions_definitions', """
 CREATE TABLE actions_definitions (
     tenantId text,
     actionId text,
@@ -181,7 +152,7 @@ CREATE TABLE actions_definitions (
 )
 """)
 
-  executeCQL("""
+createTable('actions_history', """
 CREATE TABLE actions_history (
     tenantId text,
     actionPlugin text,
@@ -193,7 +164,7 @@ CREATE TABLE actions_history (
 )
 """)
 
-  executeCQL("""
+createTable('actions_history_actions', """
 CREATE TABLE actions_history_actions (
     tenantId text,
     actionPlugin text,
@@ -204,7 +175,7 @@ CREATE TABLE actions_history_actions (
 )
 """)
 
-  executeCQL("""
+createTable('actions_history_alerts', """
 CREATE TABLE actions_history_alerts (
     tenantId text,
     actionPlugin text,
@@ -215,7 +186,7 @@ CREATE TABLE actions_history_alerts (
 )
 """)
 
-  executeCQL("""
+createTable('actions_history_ctimes', """
 CREATE TABLE actions_history_ctimes (
     tenantId text,
     actionPlugin text,
@@ -226,7 +197,7 @@ CREATE TABLE actions_history_ctimes (
 )
 """)
 
-  executeCQL("""
+createTable('actions_history_results', """
 CREATE TABLE actions_history_results (
     tenantId text,
     actionPlugin text,
@@ -238,7 +209,7 @@ CREATE TABLE actions_history_results (
 )
 """)
 
-  executeCQL("""
+createTable('tags', """
 CREATE TABLE tags (
     tenantId text,
     type text,
@@ -249,7 +220,7 @@ CREATE TABLE tags (
 )
 """)
 
-  executeCQL("""
+createTable('alerts', """
 CREATE TABLE alerts (
     tenantId text,
     alertId text,
@@ -258,7 +229,7 @@ CREATE TABLE alerts (
 )
 """)
 
-  executeCQL("""
+createTable('alerts_triggers', """
 CREATE TABLE alerts_triggers (
     tenantId text,
     alertId text,
@@ -267,7 +238,7 @@ CREATE TABLE alerts_triggers (
 )
 """)
 
-  executeCQL("""
+createTable('alerts_ctimes', """
 CREATE TABLE alerts_ctimes (
     tenantId text,
     alertId text,
@@ -276,7 +247,7 @@ CREATE TABLE alerts_ctimes (
 )
 """)
 
-  executeCQL("""
+createTable('alerts_statuses', """
 CREATE TABLE alerts_statuses (
     tenantId text,
     alertId text,
@@ -285,7 +256,7 @@ CREATE TABLE alerts_statuses (
 )
 """)
 
-  executeCQL("""
+createTable('alerts_severities', """
 CREATE TABLE alerts_severities (
     tenantId text,
     alertId text,
@@ -294,7 +265,7 @@ CREATE TABLE alerts_severities (
 )
 """)
 
-  executeCQL("""
+createTable('alerts_lifecycle', """
 CREATE TABLE alerts_lifecycle (
     tenantId text,
     alertId text,
@@ -304,7 +275,7 @@ CREATE TABLE alerts_lifecycle (
 )
 """)
 
-  executeCQL("""
+createTable('events', """
 CREATE TABLE events (
     tenantId text,
     id text,
@@ -313,7 +284,7 @@ CREATE TABLE events (
 )
 """)
 
-  executeCQL("""
+createTable('events_triggers', """
 CREATE TABLE events_triggers (
     tenantId text,
     id text,
@@ -322,7 +293,7 @@ CREATE TABLE events_triggers (
 )
 """)
 
-  executeCQL("""
+createTable('events_ctimes', """
 CREATE TABLE events_ctimes (
     tenantId text,
     id text,
@@ -331,7 +302,7 @@ CREATE TABLE events_ctimes (
 )
 """)
 
-  executeCQL("""
+createTable('events_categories', """
 CREATE TABLE events_categories (
     tenantId text,
     id text,
@@ -339,5 +310,3 @@ CREATE TABLE events_categories (
     PRIMARY KEY ((tenantId, category), id)
 )
 """)
-
-}

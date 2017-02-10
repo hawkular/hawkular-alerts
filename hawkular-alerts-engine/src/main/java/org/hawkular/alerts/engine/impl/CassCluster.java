@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,7 +47,6 @@ import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.JdkSSLOptions;
-import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.ResultSet;
@@ -264,31 +263,14 @@ public class CassCluster {
     private void initScheme() throws IOException {
 
         log.infof("Checking Schema existence for keyspace: %s", keyspace);
-
-        KeyspaceMetadata keyspaceMetadata = cluster.getMetadata().getKeyspace(keyspace);
-        if (keyspaceMetadata != null) {
-            // If overwrite flag is true it should not check if all tables are created
-            if (!overwrite) {
-                waitForSchemaCheck();
-                if (!checkSchema()) {
-                    log.errorf("Keyspace %s detected, but failed on check phase.", keyspace);
-                    initialized = false;
-                } else {
-                    log.infof("Schema already exist. Skipping schema creation.");
-                    initialized = true;
-                }
-            }
+        createSchema(session, keyspace, overwrite);
+        waitForSchemaCheck();
+        if (!checkSchema()) {
+            log.errorf("Schema %s not created correctly", keyspace);
+            initialized = false;
         } else {
-            log.infof("Creating Schema for keyspace %s", keyspace);
-            createSchema(session, keyspace, overwrite);
-            waitForSchemaCheck();
-            if (!checkSchema()) {
-                log.errorf("Schema %s not created correctly", keyspace);
-                initialized = false;
-            } else {
-                initialized = true;
-                log.infof("Done creating Schema for keyspace: %s", keyspace);
-            }
+            initialized = true;
+            log.infof("Done creating Schema for keyspace: %s", keyspace);
         }
     }
 
@@ -379,7 +361,8 @@ public class CassCluster {
         Map<String, ?> vars  = ImmutableMap.of(
                 "keyspace", keyspace,
                 "reset", resetDB,
-                "session", session
+                "session", session,
+                "logger", log
         );
         // List of versions of alerting
         URI script = getCassalogScript();
