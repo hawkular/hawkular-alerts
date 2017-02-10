@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts-rest</artifactId>
-    <version>1.5.3.Final-SNAPSHOT</version>
+    <version>1.5.3.Final</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
