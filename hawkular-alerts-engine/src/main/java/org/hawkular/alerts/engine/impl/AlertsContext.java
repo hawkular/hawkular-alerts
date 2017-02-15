@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,19 +16,30 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
+import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
 import org.hawkular.alerts.api.services.ActionListener;
+import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
 import org.hawkular.alerts.api.services.DefinitionsListener;
+import org.hawkular.alerts.api.services.DistributedEvent;
+import org.hawkular.alerts.api.services.DistributedListener;
+import org.hawkular.alerts.engine.service.PartitionManager;
+import org.hawkular.alerts.engine.service.PartitionTriggerListener;
 import org.jboss.logging.Logger;
 
 /**
@@ -47,12 +58,62 @@ public class AlertsContext {
 
     List<ActionListener> actionsListeners = new CopyOnWriteArrayList<>();
 
+    List<DistributedListener> distributedListener = new CopyOnWriteArrayList<>();
+
+    private boolean distributed = false;
+
+    @EJB
+    PartitionManager partitionManager;
+
+    @PostConstruct
+    public void init() {
+        if (partitionManager != null) {
+            distributed = partitionManager.isDistributed();
+        }
+        if (distributed) {
+            partitionManager.registerTriggerListener(new PartitionTriggerListener() {
+                @Override
+                public void onTriggerChange(PartitionManager.Operation operation, String tenantId, String triggerId) {
+                    DistributedEvent.Operation op = DistributedEvent.Operation.valueOf(operation.name());
+                    DistributedEvent event = new DistributedEvent(op, tenantId, triggerId);
+                    distributedListener.stream().forEach(listener -> listener.onChange(Collections.singleton(event)));
+                }
+
+                @Override
+                public void onPartitionChange(Map<String, List<String>> partition, Map<String, List<String>> removed,
+                                              Map<String, List<String>> added) {
+                    Set<DistributedEvent> events = new HashSet<>();
+                    removed.entrySet().stream().forEach(entry -> {
+                        String tenantId = entry.getKey();
+                        entry.getValue().stream().forEach(triggerId ->
+                            events.add(new DistributedEvent(DistributedEvent.Operation.REMOVE, tenantId, triggerId))
+                        );
+                    });
+                    added.entrySet().stream().forEach(entry -> {
+                        String tenantId = entry.getKey();
+                        entry.getValue().stream().forEach(triggerId ->
+                                events.add(new DistributedEvent(DistributedEvent.Operation.ADD, tenantId, triggerId))
+                        );
+                    });
+                    distributedListener.stream().forEach(listener -> listener.onChange(events));
+                }
+            });
+        }
+    }
+
     public void registerDefinitionListener(DefinitionsListener listener, Type eventType, Type... eventTypes) {
         EnumSet<Type> types = EnumSet.of(eventType, eventTypes);
         if (log.isDebugEnabled()) {
             log.debug("Registering listeners " + listener + " for event types " + types);
         }
         definitionListeners.put(listener, types);
+    }
+
+    public void registerDistributedListener(DistributedListener listener) {
+        if (listener == null) {
+            throw new IllegalArgumentException("DistributedListener must not be null");
+        }
+        distributedListener.add(listener);
     }
 
     public Map<DefinitionsListener, Set<Type>> getDefinitionListeners() {
@@ -68,5 +129,59 @@ public class AlertsContext {
 
     public List<ActionListener> getActionsListeners() {
         return actionsListeners;
+    }
+
+    public void notifyListeners(Set<DefinitionsEvent> notifications) {
+        Set<DefinitionsEvent.Type> notificationTypes = notifications.stream()
+                .map(n -> n.getType())
+                .collect(Collectors.toSet());
+        log.debugf("Notifying applicable listeners %s of events %s", definitionListeners, notifications);
+        definitionListeners.entrySet().stream()
+                .filter(e -> shouldNotify(e.getValue(), notificationTypes))
+                .forEach(e -> {
+                    log.debugf("Notified Listener %s of %s", e.getKey(), notificationTypes);
+                    e.getKey().onChange(notifications.stream()
+                            .filter(de -> e.getValue().contains(de.getType()))
+                            .collect(Collectors.toSet()));
+                });
+        if (!distributed) {
+            distributedListener.stream().forEach(listener -> listener.onChange(mapDistributedEvents(notifications)));
+        }
+    }
+
+    private boolean shouldNotify(Set<DefinitionsEvent.Type> listenerTypes, Set<DefinitionsEvent.Type> eventTypes) {
+        HashSet<Type> intersection = new HashSet<>(listenerTypes);
+        intersection.retainAll(eventTypes);
+        return !intersection.isEmpty();
+    }
+
+    private Set<DistributedEvent> mapDistributedEvents(Set<DefinitionsEvent> notification) {
+        if (notification == null) {
+            return null;
+        }
+        Set<DistributedEvent> events = new LinkedHashSet<>();
+        for (DefinitionsEvent definitionsEvent : notification) {
+            DistributedEvent.Operation op = null;
+            String tenantId = definitionsEvent.getTargetTenantId();
+            String triggerId = definitionsEvent.getTargetId();
+            switch (definitionsEvent.getType()) {
+                case TRIGGER_CREATE:
+                    op = DistributedEvent.Operation.ADD;
+                    break;
+                case TRIGGER_UPDATE:
+                    op = DistributedEvent.Operation.UPDATE;
+                    break;
+                case TRIGGER_REMOVE:
+                    op = DistributedEvent.Operation.REMOVE;
+                    break;
+                case TRIGGER_CONDITION_CHANGE:
+                    op = DistributedEvent.Operation.UPDATE;
+                    break;
+            }
+            if (op != null) {
+                events.add(new DistributedEvent(op, tenantId, triggerId));
+            }
+        }
+        return events;
     }
 }

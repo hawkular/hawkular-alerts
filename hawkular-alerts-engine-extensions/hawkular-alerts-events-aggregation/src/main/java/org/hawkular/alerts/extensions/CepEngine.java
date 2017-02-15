@@ -35,4 +35,6 @@ public interface CepEngine {
     void processEvents(TreeSet<Event> events);
 
     void sendResult(Event event);
+
+    void stop();
 }

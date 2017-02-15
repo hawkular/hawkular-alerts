@@ -19,23 +19,23 @@ package org.hawkular.alerts.api.services;
 import java.util.Set;
 
 /**
- * A listener for reacting to definitions changes.
+ * A listener for reacting to distribution triggers changes.
  *
- * {@code DefinitionsListener} are registered via {@code DefinitionsService}.
+ * {@code DistributedListener} are registered via {@code DefinitionsService}.
  *
- * {@code DefinitionsListener} are invoked locally on the node which performs the definitions operation,
- * in distributed scenarios these events are not propagated and others nodes are not aware of the changes.
+ * On each node of the cluster, a {@code DistributedListener} is invoked with the {@code DistributedEvent}
+ * represeting the changes on the triggers the node should load/unload.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public interface DefinitionsListener {
+public interface DistributedListener {
 
     /**
-     * React to one or more definitions change events sent to {@link DefinitionsListener}.  Multiple events may be
-     * received in one notification due to several updates being imported in a batch.
+     * React to one or more distribution trigger changes sent to {@link DistributedListener}.
+     * Multiple events may be received in one notification as result of a topology change.
      *
-     * @param events change events triggering the notification.
+     * @param events distributed events triggering the notification.
      */
-    void onChange(Set<DefinitionsEvent> events);
+    void onChange(Set<DistributedEvent> events);
 }

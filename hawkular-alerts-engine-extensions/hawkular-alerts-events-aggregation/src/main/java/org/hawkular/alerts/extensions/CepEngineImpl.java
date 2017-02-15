@@ -100,12 +100,7 @@ public class CepEngineImpl implements CepEngine {
     public void updateConditions(String expiration, Collection<FullTrigger> activeTriggers) {
         expression = new Expression(expiration, activeTriggers);
         log.debugf("Rules: \n %s", expression);
-        if (kieSession != null) {
-            kieSession.halt();
-            kieSession.dispose();
-            kieSession.destroy();
-            log.info("Sent halt() signal to CEP session");
-        }
+        stop();
         KieBaseConfiguration kieBaseConfiguration = KnowledgeBaseFactory.newKnowledgeBaseConfiguration();
         kieBaseConfiguration.setOption( EventProcessingOption.STREAM );
         KieBase kieBase = new KieHelper().addContent(expression.getDrl(), ResourceType.DRL).build(kieBaseConfiguration);
@@ -129,6 +124,17 @@ public class CepEngineImpl implements CepEngine {
             kieSession.fireUntilHalt();
             log.info("Stopping fireUntilHalt()");
         });
+    }
+
+    @Override
+    public void stop() {
+        if (kieSession != null) {
+            kieSession.halt();
+            kieSession.dispose();
+            kieSession.destroy();
+            kieSession = null;
+            log.info("Sent halt() signal to CEP session");
+        }
     }
 
     public static class CepAgendaEventListener implements AgendaEventListener {

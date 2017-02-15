@@ -88,6 +88,9 @@ public class ExpressionTest {
 
             @Override
             public void processEvents(TreeSet<Event> events) { }
+
+            @Override
+            public void stop() { }
         });
     }
 

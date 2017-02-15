@@ -33,6 +33,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses([
         ActionsITest.class,
         AlertsITest.class,
+        ClusterITest.class,
         ConditionsITest.class,
         CORSITest.class,
         CrossTenantITest.class,

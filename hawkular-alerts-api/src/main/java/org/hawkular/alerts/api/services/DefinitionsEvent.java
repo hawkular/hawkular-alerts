@@ -24,10 +24,17 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * Immutable definitions change event.  The target object depends on the change type.
+ * A DefinitionEvent represents a change on the Alerting backend.
+ * It targets triggers, conditions, dampenings and actions granularity.
  *
- * @author jay shaughnessy
- * @author lucas ponce
+ * {@code DefinitionEvent} are invoked via {@code DefinitionsListener} which are registered
+ * via {@code DefinitionsService}.
+ *
+ * {@code DefinitionsListener} are invoked locally on the node which performs the definitions operation,
+ * in distributed scenarios these events are not propagated and others nodes are not aware of the changes.
+ *
+ * @author Jay Shaughnessy
+ * @author Lucas Ponce
  */
 public class DefinitionsEvent {
 

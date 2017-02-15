@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -77,6 +78,7 @@ import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.services.DistributedListener;
 import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.alerts.engine.exception.NotFoundApplicationException;
@@ -122,7 +124,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     // desirable to only send a listener update one time, at the end, because we want listeners to be
     // efficient (i.e. don't update a cache 100 times in a row for one import of 100 triggers). Methods should not
     // manipulate these variables directly, instead call deferNotifications() and releaseNotifications().
-    private Set<DefinitionsEvent> deferredNotifications = new HashSet<>();
+    private Set<DefinitionsEvent> deferredNotifications = new LinkedHashSet<>();
     private int deferNotificationsCount = 0;
     private int batchSize;
     private final BatchStatement.Type batchType = BatchStatement.Type.LOGGED;
@@ -3039,15 +3041,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             deferredNotifications.add(de);
             return;
         }
-        if (log.isDebugEnabled()) {
-            log.debugf("Notifying applicable listeners %s of event %s", alertsContext.getDefinitionListeners(), de);
-        }
-        alertsContext.getDefinitionListeners().entrySet().stream()
-                .filter(e -> e.getValue().contains(de.getType()))
-                .forEach(e -> {
-                    log.debugf("Notified Listener %s of %s", e.getKey(), de.getType().name());
-                    e.getKey().onChange(Collections.singleton(de));
-                });
+        alertsContext.notifyListeners(Collections.singleton(de));
     }
 
     private void notifyListenersDeferred() {
@@ -3056,30 +3050,13 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         Set<DefinitionsEvent> notifications = deferredNotifications;
-        deferredNotifications = new HashSet<>();
-
-        Set<DefinitionsEvent.Type> notificationTypes = notifications.stream()
-                .map(n -> n.getType())
-                .collect(Collectors.toSet());
-
-        if (log.isDebugEnabled()) {
-            log.debugf("Notifying applicable listeners %s of deferred events %s",
-                    alertsContext.getDefinitionListeners(), notifications);
-        }
-        alertsContext.getDefinitionListeners().entrySet().stream()
-                .filter(e -> shouldNotify(e.getValue(), notificationTypes))
-                .forEach(e -> {
-                    log.debugf("Notified Listener %s of %s", e.getKey(), notificationTypes);
-                    e.getKey().onChange(notifications.stream()
-                                                     .filter(de -> e.getValue().contains(de.getType()))
-                                                     .collect(Collectors.toSet()));
-                });
+        deferredNotifications = new LinkedHashSet<>();
+        alertsContext.notifyListeners(notifications);
     }
 
-    private boolean shouldNotify(Set<DefinitionsEvent.Type> listenerTypes, Set<DefinitionsEvent.Type> eventTypes) {
-        HashSet<DefinitionsEvent.Type> intersection = new HashSet<>(listenerTypes);
-        intersection.retainAll(eventTypes);
-        return !intersection.isEmpty();
+    @Override
+    public void registerDistributedListener(DistributedListener listener) {
+        alertsContext.registerDistributedListener(listener);
     }
 
     @Override

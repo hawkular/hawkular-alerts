@@ -16,13 +16,14 @@
  */
 package org.hawkular.alerts.extensions;
 
-import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_CREATE;
-import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_REMOVE;
-import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_UPDATE;
+import static org.hawkular.alerts.api.services.DistributedEvent.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -40,8 +41,8 @@ import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.FullTrigger;
 import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.api.services.DistributedEvent;
 import org.hawkular.alerts.api.services.EventExtension;
 import org.hawkular.alerts.api.services.ExtensionsService;
 import org.hawkular.alerts.api.services.PropertiesService;
@@ -50,7 +51,7 @@ import org.jboss.logging.Logger;
 /**
  * This EventExtension is responsible of the following tasks:
  *
- * - It register a DefinitionsListener into the Alerting engine.
+ * - It register a DistributedListener into the Alerting engine.
  *   It will process ExternalConditions tagged with HawkularExtension=AggregatedEvents into CEP rules.
  *
  * - All events tagged with HawkularExtension=AggregatedEvents will be filtered out and processed asynchronously by
@@ -85,6 +86,8 @@ public class EventsAggregationExtension implements EventExtension {
      */
     private static final String CONTEXT_PROCESSED = "processed";
 
+    private Map<TriggerKey, FullTrigger> activeTriggers = new HashMap<>();
+
     @EJB
     private PropertiesService properties;
 
@@ -106,67 +109,132 @@ public class EventsAggregationExtension implements EventExtension {
                 ENGINE_EXTENSIONS_DEFAULT));
         defaultExpiration = properties.getProperty(EVENTS_EXPIRATION, EVENTS_EXPIRATION_ENV, EVENTS_EXTENSIONS_DEFAULT);
         if (engineExtensions) {
-            log.info("Registering Trigger CREATE/UPDATE/REMOVE listener");
-            definitions.registerListener(events -> refresh(events), TRIGGER_CREATE, TRIGGER_UPDATE, TRIGGER_REMOVE);
+            log.info("Registering Distributed Trigger listener");
+            definitions.registerDistributedListener(events -> refresh(events));
             extensions.addExtension(this);
         }
     }
 
-    private void refresh(Set<DefinitionsEvent> defEvents) {
-        boolean refresh = false;
-        for (DefinitionsEvent defEvent : defEvents) {
-            if (defEvent.getTags() != null && TAG_VALUE.equals(defEvent.getTags().get(TAG_NAME))) {
-                refresh = true;
-                break;
-            }
+    private class TriggerKey {
+        private String tenantId;
+        private String triggerId;
+
+        public TriggerKey(String tenantId, String triggerId) {
+            this.tenantId = tenantId;
+            this.triggerId = triggerId;
         }
-        if (!refresh) {
-            return;
+
+        public String getTenantId() {
+            return tenantId;
         }
+
+        public void setTenantId(String tenantId) {
+            this.tenantId = tenantId;
+        }
+
+        public String getTriggerId() {
+            return triggerId;
+        }
+
+        public void setTriggerId(String triggerId) {
+            this.triggerId = triggerId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            TriggerKey that = (TriggerKey) o;
+
+            if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
+            return triggerId != null ? triggerId.equals(that.triggerId) : that.triggerId == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = tenantId != null ? tenantId.hashCode() : 0;
+            result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);
+            return result;
+        }
+    }
+
+    /*
+        A refresh() call can be invoked with several events for same trigger
+        (i.e. trigger creation, conditions added, trigger enabled, and trigger removed)
+        Effectively the last event for the same trigger is what this extension needs to load/unload the trigger
+        from the alerter/extension.
+     */
+    private Set<DistributedEvent> optimizeEvents(Set<DistributedEvent> distEvents) {
+        Map<TriggerKey, Operation> map = new HashMap<>();
+        distEvents.stream().forEach(event -> map.put(new TriggerKey(event.getTenantId(), event.getTriggerId()),
+                event.getOperation()));
+        Set<DistributedEvent> optimizedEvents = new HashSet<>();
+        map.entrySet().stream().forEach(entry -> optimizedEvents.add(new DistributedEvent(entry.getValue(),
+                entry.getKey().getTenantId(), entry.getKey().getTriggerId())));
+        return optimizedEvents;
+    }
+
+    private void refresh(Set<DistributedEvent> distEvents) {
+        final Set<DistributedEvent> optimizedEvents = optimizeEvents(distEvents);
         executor.submit(() -> {
             try {
-                // get all of the triggers tagged for this alerter
-                Collection<Trigger> triggers = definitions.getAllTriggersByTag(TAG_NAME, TAG_VALUE);
-                log.infof("Found [%s] Tag [%s, %s] Triggers!", triggers.size(), TAG_NAME, TAG_VALUE);
-
-                Collection<FullTrigger> activeTriggers = new ArrayList<>();
-                for (Trigger trigger : triggers) {
-                    Collection<Condition> conditions = null;
-                    List<Condition> activeConditions = new ArrayList<>();
-                    try {
-                        if (!trigger.isGroup()) {
-                            conditions = definitions.getTriggerConditions(trigger.getTenantId(), trigger.getId(), null);
-                            log.infof("Checking [%s] Conditions for enabled trigger [%s]!", conditions.size(),
-                                    trigger.getName());
-                        }
-                    } catch (Exception e) {
-                        log.error("Failed to fetch Conditions when scheduling metrics conditions for " + trigger, e);
-                        continue;
-                    }
-                    if (null == conditions) {
-                        continue;
-                    }
-                    for (Condition condition : conditions) {
-                        if (condition instanceof ExternalCondition) {
-                            ExternalCondition externalCondition = (ExternalCondition) condition;
-                            if (TAG_VALUE.equals(externalCondition.getAlerterId())) {
-                                activeConditions.add(externalCondition);
+                for (DistributedEvent distEvent : optimizedEvents) {
+                    switch (distEvent.getOperation()) {
+                        case REMOVE:
+                            activeTriggers.remove(new TriggerKey(distEvent.getTenantId(), distEvent.getTriggerId()));
+                            break;
+                        case ADD:
+                        case UPDATE:
+                            Trigger trigger = definitions.getTrigger(distEvent.getTenantId(), distEvent.getTriggerId());
+                            if (trigger != null && trigger.getTags().containsKey(TAG_NAME)
+                                    && trigger.getTags().get(TAG_NAME).equals(TAG_VALUE)) {
+                                log.infof("Found [%s]", trigger.getName());
+                                Collection<Condition> conditions = null;
+                                List<Condition> activeConditions = new ArrayList<>();
+                                try {
+                                    if (!trigger.isGroup()) {
+                                        conditions = definitions.getTriggerConditions(trigger.getTenantId(),
+                                                trigger.getId(), null);
+                                        log.infof("Checking [%s] Conditions for enabled trigger [%s]!",
+                                                conditions.size(), trigger.getName());
+                                    }
+                                } catch (Exception e) {
+                                    log.error("Failed to fetch Conditions when " +
+                                            "scheduling metrics conditions for " + trigger, e);
+                                    continue;
+                                }
+                                if (null == conditions) {
+                                    continue;
+                                }
+                                for (Condition condition : conditions) {
+                                    if (condition instanceof ExternalCondition) {
+                                        ExternalCondition externalCondition = (ExternalCondition) condition;
+                                        if (TAG_VALUE.equals(externalCondition.getAlerterId())) {
+                                            activeConditions.add(externalCondition);
+                                        }
+                                    }
+                                }
+                                TriggerKey triggerKey = new TriggerKey(trigger.getTenantId(), trigger.getId());
+                                if (activeConditions.isEmpty()) {
+                                    activeTriggers.remove(triggerKey);
+                                } else {
+                                    FullTrigger activeTrigger = new FullTrigger();
+                                    activeTrigger.setTrigger(trigger);
+                                    activeTrigger.setConditions(activeConditions);
+                                    activeTriggers.put(triggerKey, activeTrigger);
+                                }
                             }
-                        }
+                            break;
                     }
-                    if (!activeConditions.isEmpty()) {
-                        FullTrigger activeTrigger = new FullTrigger();
-                        activeTrigger.setTrigger(trigger);
-                        activeTrigger.setConditions(activeConditions);
-                        activeTriggers.add(activeTrigger);
-                    }
-                }
-                if (!activeTriggers.isEmpty()) {
-                    log.infof("ActiveTriggers: %s", activeTriggers);
-                    cep.updateConditions(defaultExpiration, activeTriggers);
                 }
             } catch (Exception e) {
                 log.error("Failed to fetch Triggers for external conditions.", e);
+            }
+            if (activeTriggers.isEmpty()) {
+                cep.stop();
+            } else {
+                cep.updateConditions(defaultExpiration, activeTriggers.values());
             }
         });
     }

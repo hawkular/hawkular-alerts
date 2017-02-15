@@ -1073,6 +1073,7 @@
           <plugin>
             <groupId>org.wildfly.plugins</groupId>
             <artifactId>wildfly-maven-plugin</artifactId>
+            <version>${version.org.wildfly.plugins}</version>
             <configuration>
               <jboss-home>${hawkular.home}/wildfly-${version.org.wildfly}</jboss-home>
               <skip>${skipTests}</skip>
@@ -1138,8 +1139,13 @@
                 <id>stop-domain</id>
                 <phase>post-integration-test</phase>
                 <goals>
-                  <goal>shutdown</goal>
+                  <goal>execute-commands</goal>
                 </goals>
+                <configuration>
+                  <commands>
+                    <command>/host=master:shutdown</command>
+                  </commands>
+                </configuration>
               </execution>
             </executions>
           </plugin>
@@ -1188,8 +1194,7 @@
                 </goals>
                 <configuration>
                   <includes>
-                    <include>org/hawkular/alerts/rest/ClusterITest.class</include>
-                    <include>org/hawkular/alerts/rest/ClusterIntegrationSuite.class</include>
+                    <include>org/hawkular/alerts/rest/IntegrationSuite.class</include>
                   </includes>
                 </configuration>
               </execution>
