@@ -1077,7 +1077,10 @@ public class TriggersHandler {
             if (!isEmpty(conditions)) {
                 for (Condition condition : conditions) {
                     condition.setTriggerId(triggerId);
-                    condition.setTriggerMode(mode);
+                    if (condition.getTriggerMode() == null || !condition.getTriggerMode().equals(mode)) {
+                        return ResponseUtil.badRequest("Condition: " + condition +
+                                " has a different triggerMode [" + triggerMode + "]");
+                    }
                 }
             }
             Collection<Condition> updatedConditions = definitions.setConditions(tenantId, triggerId, mode, conditions);
@@ -1129,7 +1132,10 @@ public class TriggersHandler {
                             groupConditionsInfo);
                 }
                 condition.setTriggerId(groupId);
-                condition.setTriggerMode(mode);
+                if (condition.getTriggerMode() == null || !condition.getTriggerMode().equals(mode)) {
+                    return ResponseUtil.badRequest("Condition: " + condition +
+                            " has a different triggerMode [" + triggerMode + "]");
+                }
             }
 
             Collection<Condition> conditions = definitions.setGroupConditions(tenantId, groupId, mode,

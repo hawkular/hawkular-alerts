@@ -2126,7 +2126,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         // Get rid of the prior condition set
         removeConditions(tenantId, triggerId, triggerMode);
 
-
         Set<String> dataIds = new HashSet<>();
         // Now add the new condition set
         try {
