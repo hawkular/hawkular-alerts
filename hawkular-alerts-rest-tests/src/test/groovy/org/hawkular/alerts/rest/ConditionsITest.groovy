@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,11 @@
  * limitations under the License.
  */
 package org.hawkular.alerts.rest
+
+import org.hawkular.alerts.api.json.GroupConditionsInfo
+import org.hawkular.alerts.api.json.GroupMemberInfo
+import org.hawkular.alerts.api.json.UnorphanMemberInfo
+import org.hawkular.alerts.api.model.dampening.Dampening
 
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
 import static org.hawkular.alerts.api.model.condition.NelsonCondition.NelsonRule
@@ -364,4 +369,118 @@ class ConditionsITest extends AbstractITestBase {
         assertEquals(200, resp.status)
     }
 
+    @Test
+    void createMultipleTriggerModeConditions() {
+        Trigger testTrigger = new Trigger("test-multiple-mode-conditions", "No-Metric")
+
+        // make sure clean test trigger exists
+        client.delete(path: "triggers/test-multiple-mode-conditions")
+        def resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        ThresholdCondition testCond1 = new ThresholdCondition("test-multiple-mode-conditions", Mode.FIRING,
+                "No-Metric", ThresholdCondition.Operator.GT, 10.12);
+
+        ThresholdCondition testCond2 = new ThresholdCondition("test-multiple-mode-conditions", Mode.AUTORESOLVE,
+                "No-Metric", ThresholdCondition.Operator.LT, 4.10);
+
+        Collection<Condition> conditions = new ArrayList<>(2);
+        conditions.add( testCond1 );
+        conditions.add( testCond2 );
+        resp = client.put(path: "triggers/test-multiple-mode-conditions/conditions", body: conditions)
+        assertEquals(200, resp.status)
+        assertEquals(2, resp.data.size())
+
+        resp = client.get(path: "triggers/test-multiple-mode-conditions/conditions")
+        Set<String> modes = new HashSet<>();
+        modes.add(resp.data[0].triggerMode)
+        modes.add(resp.data[1].triggerMode)
+        assertEquals(2, modes.size())
+
+        conditions = Arrays.asList(testCond2)
+
+        resp = client.put(path: "triggers/test-multiple-mode-conditions/conditions", body: conditions)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-multiple-mode-conditions/conditions")
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals("AUTORESOLVE", resp.data[0].triggerMode);
+
+        conditions = Collections.EMPTY_LIST
+
+        resp = client.put(path: "triggers/test-multiple-mode-conditions/conditions", body: conditions)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/test-multiple-mode-conditions/conditions")
+        assertEquals(200, resp.status)
+        assertEquals(0, resp.data.size())
+
+        resp = client.delete(path: "triggers/test-multiple-mode-conditions")
+        assertEquals(200, resp.status)
+    }
+
+    @Test
+    void createMultipleTriggerModeConditionsInGroups() {
+        Trigger groupTrigger = new Trigger("group-trigger", "group-trigger");
+        groupTrigger.setEnabled(false);
+
+        // remove if it exists
+        def resp = client.delete(path: "triggers/groups/group-trigger", query: [keepNonOrphans:false,keepOrphans:false])
+        assert(200 == resp.status || 404 == resp.status)
+
+        // create the group
+        resp = client.post(path: "triggers/groups", body: groupTrigger)
+        assertEquals(200, resp.status)
+
+        resp = client.get(path: "triggers/group-trigger")
+        assertEquals(200, resp.status)
+        groupTrigger = (Trigger)resp.data;
+        assertEquals( true, groupTrigger.isGroup() );
+
+        ThresholdCondition cond1 = new ThresholdCondition("group-trigger", Mode.FIRING, "DataId1-Token",
+                ThresholdCondition.Operator.GT, 10.0);
+        ThresholdCondition cond2 = new ThresholdCondition("group-trigger", Mode.AUTORESOLVE, "DataId2-Token",
+                ThresholdCondition.Operator.LT, 20.0);
+
+        Map<String, Map<String, String>> dataIdMemberMap = new HashMap<>();
+        GroupConditionsInfo groupConditionsInfo = new GroupConditionsInfo(Arrays.asList(cond1, cond2), dataIdMemberMap)
+
+        resp = client.put(path: "triggers/groups/group-trigger/conditions", body: groupConditionsInfo)
+        assertEquals(resp.toString(), 200, resp.status)
+        assertEquals(2, resp.data.size())
+
+        // get the group conditions
+        resp = client.get(path: "triggers/group-trigger/conditions")
+        assertEquals(200, resp.status)
+        assertEquals(2, resp.data.size());
+
+        Set<String> modes = new HashSet<>();
+        modes.add(resp.data[0].triggerMode)
+        modes.add(resp.data[1].triggerMode)
+        assertEquals(2, modes.size())
+
+        groupConditionsInfo.setConditions(Arrays.asList(cond2))
+
+        resp = client.put(path: "triggers/groups/group-trigger/conditions", body: groupConditionsInfo)
+        assertEquals(resp.toString(), 200, resp.status)
+
+        resp = client.get(path: "triggers/group-trigger/conditions")
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size());
+        assertEquals("AUTORESOLVE", resp.data[0].triggerMode);
+
+        groupConditionsInfo.setConditions(Collections.EMPTY_LIST)
+
+        resp = client.put(path: "triggers/groups/group-trigger/conditions", body: groupConditionsInfo)
+        assertEquals(resp.toString(), 200, resp.status)
+
+        resp = client.get(path: "triggers/group-trigger/conditions")
+        assertEquals(200, resp.status)
+        assertEquals(0, resp.data.size());
+
+        // remove group trigger
+        resp = client.delete(path: "triggers/groups/group-trigger")
+        assertEquals(200, resp.status)
+    }
 }

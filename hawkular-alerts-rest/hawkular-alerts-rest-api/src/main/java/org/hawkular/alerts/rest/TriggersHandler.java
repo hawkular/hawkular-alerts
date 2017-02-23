@@ -24,7 +24,9 @@ import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -1050,6 +1052,57 @@ public class TriggersHandler {
     }
 
     @PUT
+    @Path("/{triggerId}/conditions")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Set the conditions for the trigger. ",
+            notes = "This sets the conditions for all trigger modes, " +
+                    "replacing existing conditions for all trigger modes. Returns the new conditions.",
+            response = Condition.class, responseContainer = "List")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Condition Set created."),
+            @ApiResponse(code = 404, message = "No trigger found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+    })
+    public Response setConditions(
+            @ApiParam(value = "The relevant Trigger.", required = true)
+            @PathParam("triggerId")
+            final String triggerId,
+            @ApiParam(value = "Collection of Conditions to set.", required = true)
+            final Collection<Condition> conditions) {
+        try {
+            if (conditions == null) {
+                return ResponseUtil.badRequest("Conditions must be non null");
+            }
+            Collection<Condition> updatedConditions = new HashSet<>();
+            conditions.stream().forEach(c -> c.setTriggerId(triggerId));
+            Collection<Condition> firingConditions = conditions.stream()
+                    .filter(c -> c.getTriggerMode() == null || c.getTriggerMode().equals(Mode.FIRING))
+                    .collect(Collectors.toList());
+            updatedConditions.addAll(definitions.setConditions(tenantId, triggerId, Mode.FIRING, firingConditions));
+            Collection<Condition> autoResolveConditions = conditions.stream()
+                    .filter(c -> c.getTriggerMode().equals(Mode.AUTORESOLVE))
+                    .collect(Collectors.toList());
+            updatedConditions.addAll(definitions.setConditions(tenantId, triggerId, Mode.AUTORESOLVE,
+                    autoResolveConditions));
+            if (log.isDebugEnabled()) {
+                log.debug("Conditions: " + updatedConditions);
+            }
+            return ResponseUtil.ok(updatedConditions);
+
+        } catch (NotFoundException e) {
+            return ResponseUtil.notFound(e.getMessage());
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
+            return ResponseUtil.internalError(e);
+        }
+    }
+
+    @PUT
     @Path("/{triggerId}/conditions/{triggerMode}")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
@@ -1084,6 +1137,74 @@ public class TriggersHandler {
                 }
             }
             Collection<Condition> updatedConditions = definitions.setConditions(tenantId, triggerId, mode, conditions);
+            if (log.isDebugEnabled()) {
+                log.debug("Conditions: " + updatedConditions);
+            }
+            return ResponseUtil.ok(updatedConditions);
+
+        } catch (NotFoundException e) {
+            return ResponseUtil.notFound(e.getMessage());
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
+            return ResponseUtil.internalError(e);
+        }
+    }
+
+    @PUT
+    @Path("/groups/{groupId}/conditions")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Set the conditions for the group trigger.",
+            notes = "This replaces any existing conditions on the group and member conditions " +
+                    "for all trigger modes. + \n" +
+                    "Return the new group conditions.",
+            response = Condition.class, responseContainer = "List")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Group Condition Set created."),
+            @ApiResponse(code = 404, message = "No trigger found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+    })
+    public Response setGroupConditions(
+            @ApiParam(value = "The relevant Group Trigger.", required = true)
+            @PathParam("groupId")
+            final String groupId,
+            @ApiParam(value = "Collection of Conditions to set and Map with tokens per dataId on members.")
+            final GroupConditionsInfo groupConditionsInfo) {
+        try {
+            Collection<Condition> updatedConditions = new HashSet<>();
+            if (groupConditionsInfo == null) {
+                return ResponseUtil.badRequest("GroupConditionsInfo must be non null.");
+            }
+            if (groupConditionsInfo.getConditions() == null) {
+                groupConditionsInfo.setConditions(Collections.EMPTY_LIST);
+            }
+            for (Condition condition : groupConditionsInfo.getConditions()) {
+                if (condition == null) {
+                    return ResponseUtil.badRequest("GroupConditionsInfo must have non null conditions: " +
+                            groupConditionsInfo);
+                }
+                condition.setTriggerId(groupId);
+            }
+
+            Collection<Condition> firingConditions = groupConditionsInfo.getConditions().stream()
+                    .filter(c -> c.getTriggerMode() == null || c.getTriggerMode().equals(Mode.FIRING))
+                    .collect(Collectors.toList());
+
+            updatedConditions.addAll(definitions.setGroupConditions(tenantId, groupId, Mode.FIRING, firingConditions,
+                    groupConditionsInfo.getDataIdMemberMap()));
+
+            Collection<Condition> autoResolveConditions = groupConditionsInfo.getConditions().stream()
+                    .filter(c -> c.getTriggerMode().equals(Mode.AUTORESOLVE))
+                    .collect(Collectors.toList());
+
+            updatedConditions.addAll(definitions.setGroupConditions(tenantId, groupId, Mode.AUTORESOLVE,
+                    autoResolveConditions,
+                    groupConditionsInfo.getDataIdMemberMap()));
+
             if (log.isDebugEnabled()) {
                 log.debug("Conditions: " + updatedConditions);
             }
