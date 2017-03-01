@@ -151,8 +151,20 @@ public class ExpressionTagQueryParserTest {
     }
 
     @Test
-    public void t06existUnnecessaryParentheses() throws Exception {
+    public void t06_existUnnecessaryParentheses() throws Exception {
         String e1 = "((tagA and not tagB) and ((not tagC or tagD)))";
         assertEquals("and(and(tagA, not tagB), or(tagD, not tagC))", parser.parse(e1));
+    }
+
+    @Test
+    public void t07_checkDotsInTags() throws Exception {
+        String e1 = "tagA.subA.subsubA";
+
+        assertEquals("tagA.subA.subsubA", parser.parse(e1));
+        assertEquals("[tagA.subA.subsubA]", getTokens(parser.parse(e1)).toString());
+
+        String e3 = "tagA.subA.subsubA  =      'abc.abc.abc'";
+        assertEquals("tagA.subA.subsubA = 'abc.abc.abc'", parser.parse(e3));
+        assertEquals("[tagA.subA.subsubA, =, 'abc.abc.abc']", getTokens(parser.parse(e3)).toString());
     }
 }

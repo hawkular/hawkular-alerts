@@ -918,6 +918,7 @@ public abstract class PersistenceTest {
         List<Set<ConditionEval>> evals = new ArrayList<>();
         evals.add(evalSet);
         Alert alert = new Alert(TENANT, t, evals);
+        alert.addTag("test.subtest.subname", "value.subvalue");
         List<Alert> alerts = new ArrayList<>();
         alerts.add(alert);
 
@@ -980,6 +981,27 @@ public abstract class PersistenceTest {
         criteria.setTagQuery("tname2 = tvalue2");
         result = alertsService.getAlerts(TENANT, criteria, null);
         assertTrue(result.toString(), result.size() == 1);
+
+        // Test dots in tags
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("test.subtest.subname");
+        result = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(result.toString(), result.size() == 1);
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("test.subtest.bad");
+        result = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(result.toString(), result.size() == 0);
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("test.subtest.subname = value.subvalue");
+        result = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(result.toString(), result.size() == 1);
+
+        criteria = new AlertsCriteria();
+        criteria.setTagQuery("test.subtest.subname = value.subvalue.bad");
+        result = alertsService.getAlerts(TENANT, criteria, null);
+        assertTrue(result.toString(), result.size() == 0);
 
         // Using alertId
         criteria = new AlertsCriteria();
