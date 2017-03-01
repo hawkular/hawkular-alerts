@@ -91,7 +91,7 @@ EQUAL: '=';
 NOTEQUAL: '!=';
 IN: I N;
 
-SIMPLETEXT  : [a-zA-Z_0-9][\-a-zA-Z_0-9]* ;
+SIMPLETEXT  : [a-zA-Z_0-9.][\-a-zA-Z_0-9.]* ;
 COMPLEXTEXT :  '\'' (ESC | ~[\'\\])* '\'' ;
 
 WS  :   [ \t\n\r]+ -> skip ;
