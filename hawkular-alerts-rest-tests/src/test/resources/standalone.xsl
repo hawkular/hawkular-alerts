@@ -53,6 +53,12 @@
     <logger category="org.hawkular.alerts">
       <level name="DEBUG"/>
     </logger>
+    <logger category="org.hawkular.alerter">
+      <level name="DEBUG"/>
+    </logger>
+    <logger category="org.elasticsearch">
+      <level name="ERROR"/>
+    </logger>
   </xsl:template>
 
   <!-- add system properties -->

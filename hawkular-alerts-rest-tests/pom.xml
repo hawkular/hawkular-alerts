@@ -83,6 +83,14 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>hawkular-alerts-actions-elasticsearch-standalone</artifactId>
+      <version>${project.version}</version>
+      <type>war</type>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>hawkular-alerts-actions-file-standalone</artifactId>
       <version>${project.version}</version>
       <type>war</type>
@@ -100,6 +108,14 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>hawkular-alerts-actions-webhook-standalone</artifactId>
+      <version>${project.version}</version>
+      <type>war</type>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>hawkular-elasticsearch-alerter-standalone</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <scope>test</scope>
@@ -857,6 +873,14 @@
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-elasticsearch-standalone</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-elasticsearch.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
                       <artifactId>hawkular-alerts-actions-email-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
@@ -886,6 +910,14 @@
                       <overWrite>true</overWrite>
                       <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts-actions-webhook.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-elasticsearch-alerter-standalone</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-elasticsearch-alerter.war</destFileName>
                     </artifactItem>
                   </artifactItems>
                 </configuration>

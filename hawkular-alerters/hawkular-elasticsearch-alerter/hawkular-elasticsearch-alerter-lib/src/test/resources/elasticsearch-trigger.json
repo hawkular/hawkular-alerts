@@ -1,0 +1,71 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "es-trigger",
+        "name": "ES Trigger",
+        "description": "ElasticSearch / Hawkular Alerting integration",
+        "severity": "HIGH",
+        "enabled": true,
+        "firingMatch": "ANY",
+        "tags": {
+          "ElasticSearch": "@timestamp"
+        },
+        "context": {
+          "interval": "30s",
+          "map": "level|'INFO':category,@timestamp:ctime,message:text,hostname:dataId,index:tags"
+        },
+        "actions":[
+          {
+            "actionPlugin": "elasticsearch",
+            "actionId": "write-full-alert"
+          },
+          {
+            "actionPlugin": "elasticsearch",
+            "actionId": "write-partial-alert"
+          },
+          {
+            "actionPlugin": "email",
+            "actionId": "email-to-admins"
+          }
+        ]
+      },
+      "conditions":[
+        {
+          "type": "EVENT",
+          "dataId": "localhost",
+          "expression": "category == 'ERROR', tags.index starts 'project'"
+        },
+        {
+          "type": "EVENT",
+          "dataId": "localhost",
+          "expression": "category == 'WARN', tags.index starts 'project'"
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "elasticsearch",
+      "actionId": "write-full-alert",
+      "properties": {
+        "index": "alerts_full"
+      }
+    },
+    {
+      "actionPlugin": "elasticsearch",
+      "actionId": "write-partial-alert",
+      "properties": {
+        "index": "alerts_summary",
+        "transform": "{\"tenantId\":\"tenant\",\"ctime\":\"timestamp\",\"text\":\"trigger\",\"context\":{\"interval\":\"fetch-interval\"},\"evalSets\":\"details\"}"
+      }
+    },
+    {
+      "actionPlugin": "email",
+      "actionId": "email-to-admins",
+      "properties": {
+        "to": "admins@hawkular.org"
+      }
+    }
+  ]
+}

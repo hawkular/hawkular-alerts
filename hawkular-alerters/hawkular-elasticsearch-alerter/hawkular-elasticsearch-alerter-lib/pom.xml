@@ -18,53 +18,52 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <artifactId>hawkular-alerts-actions</artifactId>
     <groupId>org.hawkular.alerts</groupId>
+    <artifactId>hawkular-elasticsearch-alerter</artifactId>
     <version>1.6.0.Final-SNAPSHOT</version>
   </parent>
 
-  <artifactId>hawkular-alerts-actions-plugins</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>hawkular-elasticsearch-alerter-lib</artifactId>
+  <packaging>jar</packaging>
 
-  <name>Hawkular Alerting: Action Plugins</name>
-  <description>Parent module of all Action Plugins</description>
-
-  <properties>
-    <org.hawkular.wildfly.home>${project.basedir}/../../../hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-${version.org.wildfly}</org.hawkular.wildfly.home>
-  </properties>
+  <name>Hawkular Alerting: ElasticSearch Alerter</name>
 
   <dependencies>
 
     <dependency>
-      <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-actions-api</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.elasticsearch</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>${version.org.elasticsearch.client}</version>
     </dependency>
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-actions-impl</artifactId>
+      <artifactId>hawkular-alerts-api</artifactId>
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Hawkular Nest dependencies -->
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${version.com.google.guava}</version>
-      <scope>provided</scope>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${version.elasticsearch.com.fasterxml.jackson.core}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>${version.elasticsearch.org.apache.logging.log4j}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${version.elasticsearch.org.apache.logging.log4j}</version>
     </dependency>
 
     <!-- Wildfly dependencies -->
-    <dependency>
-      <groupId>org.jboss.resteasy</groupId>
-      <artifactId>resteasy-jackson2-provider</artifactId>
-      <scope>provided</scope>
-    </dependency>
 
     <dependency>
       <groupId>javax</groupId>
@@ -76,6 +75,7 @@
     <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -98,44 +98,30 @@
     </dependency>
 
     <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${version.org.slf4j}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-all</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.groovy.modules.http-builder</groupId>
+      <artifactId>http-builder</artifactId>
       <scope>test</scope>
     </dependency>
 
   </dependencies>
 
-  <build>
-    <finalName>${project.artifactId}</finalName>
-  </build>
-
-  <profiles>
-    <profile>
-      <id>default</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <modules>
-        <module>hawkular-alerts-actions-aerogear</module>
-        <module>hawkular-alerts-actions-elasticsearch</module>
-        <module>hawkular-alerts-actions-email</module>
-        <module>hawkular-alerts-actions-file</module>
-        <module>hawkular-alerts-actions-generic</module>
-        <module>hawkular-alerts-actions-irc</module>
-        <module>hawkular-alerts-actions-pagerduty</module>
-        <module>hawkular-alerts-actions-sms</module>
-        <module>hawkular-alerts-actions-webhook</module>
-      </modules>
-    </profile>
-
-    <profile>
-      <id>openshift</id>
-      <modules>
-        <module>hawkular-alerts-actions-email</module>
-        <module>hawkular-alerts-actions-file</module>
-        <module>hawkular-alerts-actions-generic</module>
-        <module>hawkular-alerts-actions-webhook</module>
-      </modules>
-    </profile>
-  </profiles>
 </project>

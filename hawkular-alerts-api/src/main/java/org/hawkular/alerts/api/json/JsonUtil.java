@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +17,7 @@
 package org.hawkular.alerts.api.json;
 
 import java.io.IOException;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,5 +61,9 @@ public class JsonUtil {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    public static Map<String, Object> getMap(Object o) {
+        return instance.mapper.convertValue(o, Map.class);
     }
 }
