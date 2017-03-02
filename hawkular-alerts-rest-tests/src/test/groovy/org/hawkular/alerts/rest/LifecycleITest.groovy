@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -98,9 +98,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // ENABLE Trigger
-        testTrigger.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-autodisable-trigger/", body: testTrigger)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-autodisable-trigger",enabled:true])
         assertEquals(200, resp.status)
 
         // FETCH trigger and make sure it's as expected
@@ -219,9 +217,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // ENABLE Trigger
-        testTrigger.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-autoresolve-trigger", body: testTrigger)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-autoresolve-trigger",enabled:true])
         assertEquals(200, resp.status)
 
         // FETCH trigger and make sure it's as expected
@@ -349,9 +345,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // ENABLE Trigger
-        testTrigger.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-manual-trigger", body: testTrigger)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-manual-trigger",enabled:true])
         assertEquals(200, resp.status)
 
         // FETCH trigger and make sure it's as expected
@@ -645,9 +639,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // ENABLE Trigger
-        testTrigger.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-manual2-trigger", body: testTrigger)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-manual2-trigger",enabled:true])
         assertEquals(200, resp.status)
 
         // FETCH trigger and make sure it's as expected
@@ -783,9 +775,7 @@ class LifecycleITest extends AbstractITestBase {
         /*
             Step 5: Enable the trigger to accept data
          */
-        testTrigger.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-autoresolve-threshold-trigger", body: testTrigger)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-autoresolve-threshold-trigger",enabled:true])
         assertEquals(200, resp.status)
 
         /*
@@ -1069,9 +1059,7 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // ENABLE Trigger
-        testTrigger.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-manual-autoresolve-trigger", body: testTrigger)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-manual-autoresolve-trigger",enabled:true])
         assertEquals(200, resp.status)
 
         // FETCH trigger and make sure it's as expected
@@ -1170,7 +1158,52 @@ class LifecycleITest extends AbstractITestBase {
     }
 
     @Test
-    void t100_cleanup() {
+    void t10_multiDisable() {
+        def testTriggerIds = "test-autodisable-trigger";
+        testTriggerIds += ",test-autoresolve-trigger";
+        testTriggerIds += ",test-manual-trigger";
+        testTriggerIds += ",test-manual2-trigger";
+        testTriggerIds += ",test-autoresolve-threshold-trigger";
+        testTriggerIds += ",test-autoenable-trigger";
+        testTriggerIds += ",test-manual-autoresolve-trigger";
+        def resp = client.get(path: "triggers", query: [triggerIds:testTriggerIds,thin:true])
+        assert(200 == resp.status)
+
+        def triggerIds = "";
+        def numTriggers = 0;
+        for (int i=0; i < resp.data.size(); ++i) {
+            triggerIds += (( i > 0 ) ? "," : "");
+            triggerIds += resp.data[i].id;
+            ++numTriggers;
+        }
+
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:triggerIds,enabled:false])
+        assert(200 == resp.status)
+
+        resp = client.get(path: "triggers", query: [triggerIds:triggerIds,thin:true])
+        assert(200 == resp.status)
+        assert(numTriggers == resp.data.size())
+
+        for (int i=0; i < resp.data.size(); ++i) {
+            assert(false == resp.data[i].enabled)
+        }
+
+        // test NotFound (nothing should get set true)
+        def badIds = triggerIds + "BOGUS";
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:badIds,enabled:true])
+        assert(404 == resp.status)
+
+        resp = client.get(path: "triggers", query: [triggerIds:triggerIds,thin:true])
+        assert(200 == resp.status)
+        assert(numTriggers == resp.data.size())
+
+        for (int i=0; i < resp.data.size(); ++i) {
+            assert(false == resp.data[i].enabled)
+        }
+    }
+
+    @Test
+    void t99_cleanup() {
         logger.info("Running t100_cleanup")
         // clean up triggers
         def resp = client.delete(path: "triggers/test-autodisable-trigger")

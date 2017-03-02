@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -76,8 +76,8 @@ public interface AlertsEngine {
     void addTrigger(String tenantId, String triggerId);
 
     /**
-     * Reload the specified Trigger.  Removes any existing definition from the engine.  If enabled then loads the firing
-     * condition set and dampening.  If safetyEnabled then also loads the safety condition set and dampening.
+     * Reload the specified Trigger.  Removes any existing definition from the engine.  If enabled then loads the
+     * firing and autoResolve condition sets and dampening.
      * @param tenantId Tenant where Trigger is stored
      * @param triggerId Trigger id to be reloaded
      */

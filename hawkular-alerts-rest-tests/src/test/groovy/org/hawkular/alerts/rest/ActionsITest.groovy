@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -333,9 +333,7 @@ class ActionsITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // ENABLE Trigger
-        testTrigger.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-email-threshold", body: testTrigger)
+        resp = client.put(path: "triggers/enabled", query:[triggerIds:"test-email-threshold",enabled:true] )
         assertEquals(200, resp.status)
 
         // FETCH trigger and make sure it's as expected
@@ -459,9 +457,7 @@ class ActionsITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // ENABLE Trigger
-        testTrigger.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-status-threshold", body: testTrigger)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-status-threshold",enabled:true] )
         assertEquals(200, resp.status)
 
         // FETCH trigger and make sure it's as expected
@@ -618,9 +614,7 @@ class ActionsITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // ENABLE Trigger
-        testTrigger.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-global-status-threshold", body: testTrigger)
+        resp = client.put(path: "triggers/enabled", query:[triggerIds:"test-global-status-threshold",enabled:true] )
         assertEquals(200, resp.status)
 
         // FETCH trigger and make sure it's as expected

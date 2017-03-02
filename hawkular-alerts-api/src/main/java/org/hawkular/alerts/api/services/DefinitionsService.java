@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
@@ -164,17 +165,28 @@ public interface DefinitionsService {
     Trigger updateGroupTrigger(String tenantId, Trigger groupTrigger) throws Exception;
 
     /**
-     * Update the <code>Trigger</code> enablement state.  The updated <code>Trigger</code> will be persisted.
-     * If enabled the <code>Trigger</code> will be [re-]inserted into the Alerts engine and any prior dampening
-     * will be reset.
+     * Update and persist Group <code>Trigger</code> enablement state. The Alerts engine will be updated
+     * with any changes to member <code>Trigger</code> enablement.
      * @param tenantId Tenant where trigger is updated
-     * @param triggerId Existing triggerId to be updated
+     * @param groupTriggerIds Comma-separated list of existing group triggerIds to be updated.
      * @param enabled The desired enablement state
-     * @throws NotFoundException if trigger is not found
+     * @throws NotFoundException if a trigger is not found
      * @throws Exception on any problem
-     * @see {@link #updateGroupTrigger(String, Trigger)} for updating a group trigger
+     * @see {@link #updateGroupTriggerEnablement(String, Trigger)} for updating a group trigger
      */
-    void updateTriggerEnablement(String tenantId, String triggerId, boolean enabled) throws Exception;
+    void updateGroupTriggerEnablement(String tenantId, String groupTriggerIds, boolean enabled) throws Exception;
+
+    /**
+     * Update and persist <code>Trigger</code> enablement state. The Alerts engine will be updated
+     * with any changes to <code>Trigger</code> enablement.
+     * @param tenantId Tenant where trigger is updated
+     * @param triggerIds Comma-separated list of existing triggerIds to be updated.
+     * @param enabled The desired enablement state
+     * @throws NotFoundException if a trigger is not found
+     * @throws Exception on any problem
+     * @see {@link #updateGroupTriggerEnablement(String, Trigger)} for updating a group trigger
+     */
+    void updateTriggerEnablement(String tenantId, String triggerIds, boolean enabled) throws Exception;
 
     /**
      * Get a stored Trigger for a specific Tenant.
