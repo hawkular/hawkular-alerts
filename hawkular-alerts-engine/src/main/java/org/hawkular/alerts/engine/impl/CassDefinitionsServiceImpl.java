@@ -261,7 +261,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                         .findFirst().isPresent();
                 if (!found) {
                     throw new IllegalArgumentException("Action " + actionDefinition.getActionId() + " on plugin: "
-                        + actionDefinition.getActionPlugin() + " is not found");
+                            + actionDefinition.getActionPlugin() + " is not found");
                 }
             });
         }
@@ -275,8 +275,9 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     trigger.isAutoEnable(), trigger.isAutoResolve(), trigger.isAutoResolveAlerts(),
                     trigger.getAutoResolveMatch().name(), trigger.getContext(), trigger.getDataIdMap(),
                     trigger.getDescription(), trigger.isEnabled(), trigger.getEventCategory(), trigger.getEventText(),
-                    trigger.getEventType().name(), trigger.getFiringMatch().name(), trigger.getMemberOf(), trigger.getName(),
-                    trigger.getSeverity().name(), trigger.getSource(), trigger.getTags(), trigger.getType().name()));
+                    trigger.getEventType().name(), trigger.getFiringMatch().name(), trigger.getMemberOf(),
+                    trigger.getName(), trigger.getSeverity().name(), trigger.getSource(), trigger.getTags(),
+                    trigger.getType().name()));
 
             insertTriggerActions(trigger);
             insertTags(trigger.getTenantId(), TagType.TRIGGER, trigger.getId(), trigger.getTags());
@@ -518,42 +519,111 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void updateTriggerEnablement(String tenantId, String triggerId, boolean enabled) throws Exception {
+    public void updateGroupTriggerEnablement(String tenantId, String groupTriggerIds, boolean enabled)
+            throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
-        if (isEmpty(triggerId)) {
-            throw new IllegalArgumentException("TriggerId must be not null");
+        if (isEmpty(groupTriggerIds)) {
+            throw new IllegalArgumentException("GroupTriggerIds must be not null");
         }
 
-        Trigger existingTrigger = getTrigger(tenantId, triggerId);
-        if (null == existingTrigger) {
-            throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, triggerId);
-        }
-        if (existingTrigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
-        }
-        if (enabled == existingTrigger.isEnabled()) {
-            log.debugf("Ignoring enable/disable request. Trigger %s is already set enabled=%s", triggerId, enabled);
-            return;
+        Set<Trigger> filteredGroupTriggers = new HashSet<>();
+
+        for (String groupTriggerId : groupTriggerIds.split(",")) {
+            Trigger existingGroupTrigger = getTrigger(tenantId, groupTriggerId.trim());
+            if (null == existingGroupTrigger) {
+                throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupTriggerId);
+            }
+            if (!existingGroupTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupTriggerId + "] is not a group trigger.");
+            }
+
+            if (enabled == existingGroupTrigger.isEnabled()) {
+                log.debugf("Ignoring enable/disable request. Group Trigger %s is already set enabled=%s",
+                        groupTriggerId, enabled);
+                continue;
+            }
+
+            filteredGroupTriggers.add(existingGroupTrigger);
         }
 
+        try {
+            deferNotifications();
+
+            for (Trigger groupTrigger : filteredGroupTriggers) {
+                Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupTrigger.getId(), false);
+
+                updateTriggerEnablement(tenantId, memberTriggers, enabled);
+                updateTriggerEnablement(tenantId, Collections.singleton(groupTrigger), enabled);
+            }
+        } finally {
+            releaseNotifications();
+        }
+    }
+
+    @Override
+    public void updateTriggerEnablement(String tenantId, String triggerIds, boolean enabled) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerIds)) {
+            throw new IllegalArgumentException("TriggerIds must be not null");
+        }
+
+        Set<Trigger> filteredTriggers = new HashSet<>();
+
+        for (String triggerId : triggerIds.split(",")) {
+            Trigger existingTrigger = getTrigger(tenantId, triggerId.trim());
+            if (null == existingTrigger) {
+                throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, triggerId);
+            }
+            if (existingTrigger.isGroup()) {
+                throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+            }
+
+            if (enabled == existingTrigger.isEnabled()) {
+                log.debugf("Ignoring enable/disable request. Trigger %s is already set enabled=%s", triggerId,
+                        enabled);
+                continue;
+            }
+
+            filteredTriggers.add(existingTrigger);
+        }
+
+        updateTriggerEnablement(tenantId, filteredTriggers, enabled);
+    }
+
+    private void updateTriggerEnablement(String tenantId, Collection<Trigger> triggers, boolean enabled)
+            throws Exception {
         PreparedStatement updateTriggerEnabled = CassStatement.get(session, CassStatement.UPDATE_TRIGGER_ENABLED);
         if (updateTriggerEnabled == null) {
             throw new RuntimeException("updateTriggerEnabled PreparedStatement is null");
         }
+
         try {
-            session.execute(updateTriggerEnabled.bind(enabled, tenantId, triggerId));
-        } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
-            throw e;
-        }
+            deferNotifications();
 
-        if (null != alertsEngine) {
-            alertsEngine.reloadTrigger(tenantId, triggerId);
-        }
+            for (Trigger trigger : triggers) {
+                String triggerId = trigger.getId();
+                try {
+                    session.execute(updateTriggerEnabled.bind(enabled, tenantId, triggerId));
+                } catch (Exception e) {
+                    msgLog.errorDatabaseException(e.getMessage());
+                    throw e;
+                }
 
-        notifyListeners(new DefinitionsEvent(Type.TRIGGER_UPDATE, tenantId, triggerId));
+                if (null != alertsEngine) {
+                    alertsEngine.reloadTrigger(tenantId, triggerId);
+                }
+
+                notifyListeners(new DefinitionsEvent(Type.TRIGGER_UPDATE, tenantId, triggerId));
+
+            }
+        } finally {
+            releaseNotifications();
+        }
     }
 
     private Trigger copyGroupTrigger(Trigger group, Trigger member, boolean isNewMember) {

@@ -1281,6 +1281,88 @@ public class TriggersHandler {
         }
     }
 
+    @PUT
+    @Path("/groups/enabled")
+    @ApiOperation(value = "Update group triggers and their member triggers to be enabled or disabled.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Group Triggers updated."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Group Trigger doesn't exist.", response = ApiError.class)
+    })
+    public Response setGroupTriggersEnabled(
+            @ApiParam(required = true, value = "List of group trigger ids to enable or disable",
+                allowableValues = "Comma separated list of group triggerIds to be enabled or disabled.")
+            @QueryParam("triggerIds")
+            final String triggerIds,
+            @ApiParam(required = true, value = "Set enabled or disabled.")
+            @QueryParam("enabled")
+            final Boolean enabled) {
+        try {
+            if (isEmpty(triggerIds)) {
+                return ResponseUtil.badRequest("GroupTriggerIds must be non empty.");
+            }
+            if (null == enabled) {
+                return ResponseUtil.badRequest("Enabled must be non-empty.");
+            }
+
+            definitions.updateGroupTriggerEnablement(tenantId, triggerIds, enabled);
+
+            return ResponseUtil.ok();
+
+        } catch (NotFoundException e) {
+            return ResponseUtil.notFound("Trigger does not exist for update: " + e.getMessage());
+
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
+            return ResponseUtil.internalError(e);
+        }
+    }
+
+    @PUT
+    @Path("/enabled")
+    @ApiOperation(value = "Update triggers to be enabled or disabled.")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Success, Triggers updated."),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Trigger doesn't exist.", response = ApiError.class)
+    })
+    public Response setTriggersEnabled(
+            @ApiParam(required = true, value = "List of trigger ids to enable or disable",
+                allowableValues = "Comma separated list of triggerIds to be enabled or disabled.")
+            @QueryParam("triggerIds")
+            final String triggerIds,
+            @ApiParam(required = true, value = "Set enabled or disabled.")
+            @QueryParam("enabled")
+            final Boolean enabled) {
+        try {
+            if (isEmpty(triggerIds)) {
+                return ResponseUtil.badRequest("TriggerIds must be non empty.");
+            }
+            if (null == enabled) {
+                return ResponseUtil.badRequest("Enabled must be non-empty.");
+            }
+
+            definitions.updateTriggerEnablement(tenantId, triggerIds, enabled);
+
+            return ResponseUtil.ok();
+
+        } catch (NotFoundException e) {
+            return ResponseUtil.notFound("Trigger does not exist for update: " + e.getMessage());
+
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
+            return ResponseUtil.internalError(e);
+        }
+    }
+
     private boolean checkTags(Trigger trigger) {
         return checkTags(trigger.getTags());
     }

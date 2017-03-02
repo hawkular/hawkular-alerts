@@ -73,9 +73,7 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // Enable trigger
-        t01.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-events-t01/", body: t01)
+        resp = client.put(path: "triggers/enabled", query:[triggerIds:"test-events-t01",enabled:true] )
         assertEquals(200, resp.status)
 
         String jsonEvent = "{" +
@@ -141,9 +139,7 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // Enable trigger
-        t02app1.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-events-t02-app1", body: t02app1)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-events-t02-app1",enabled:true])
         assertEquals(200, resp.status)
 
         // Triggers to fire events
@@ -164,9 +160,7 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // Enable trigger
-        t02app2.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-events-t02-app2", body: t02app2)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-events-t02-app2",enabled:true])
         assertEquals(200, resp.status)
 
         // Trigger to fire alerts
@@ -190,9 +184,7 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(2, resp.data.size())
 
         // Enable trigger
-        t02combined.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-events-t02-combined/", body: t02combined)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-events-t02-combined",enabled:true])
         assertEquals(200, resp.status)
 
         String jsonEventApp1Down = "{" +
@@ -269,9 +261,7 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // Enable trigger
-        t03app1.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-events-t03-app1", body: t03app1)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-events-t03-app1",enabled:true])
         assertEquals(200, resp.status)
 
         // Triggers to fire events
@@ -292,9 +282,7 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // Enable trigger
-        t03app2.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-events-t03-app2", body: t03app2)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-events-t03-app2",enabled:true])
         assertEquals(200, resp.status)
 
         // Trigger to fire alerts
@@ -318,9 +306,7 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(2, resp.data.size())
 
         // Enable trigger
-        t03combined.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-events-t03-combined/", body: t03combined)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-events-t03-combined",enabled:true])
         assertEquals(200, resp.status)
 
         String jsonEventApp1DownId = UUID.randomUUID().toString();
@@ -399,9 +385,7 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // Enable trigger
-        t04.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-events-t04/", body: t04)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-events-t04",enabled:true])
         assertEquals(200, resp.status)
 
         // Wait for 7 seconds to fire the missing events
@@ -443,9 +427,7 @@ class EventsLifecycleITest extends AbstractITestBase {
         assertEquals(1, resp.data.size())
 
         // Enable trigger
-        t05.setEnabled(true);
-
-        resp = client.put(path: "triggers/test-events-t05/", body: t05)
+        resp = client.put(path: "triggers/enabled", query: [triggerIds:"test-events-t05",enabled:true])
         assertEquals(200, resp.status)
 
         Thread.sleep(2000);

@@ -57,9 +57,7 @@ class CrossTenantITest extends AbstractITestBase {
             assertEquals(1, resp.data.size())
 
             // ENABLE Trigger
-            testTrigger.setEnabled(true);
-
-            resp = client.put(path: "triggers/test-multiple-tenants", body: testTrigger)
+            resp = client.put(path: "triggers/enabled", query:[triggerIds:"test-multiple-tenants",enabled:true] )
             assertEquals(200, resp.status)
 
             if (cluster) {

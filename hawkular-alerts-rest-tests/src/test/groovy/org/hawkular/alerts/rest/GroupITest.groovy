@@ -190,9 +190,7 @@ class GroupITest extends AbstractITestBase {
         // Test to make sure disabling the group trigger disables the member triggers (and updates the rule base)
 
         // DISABLE Trigger
-        testTrigger.setEnabled(false);
-
-        resp = client.put(path: "triggers/groups/test-ddgroup-trigger/", body: testTrigger)
+        resp = client.put(path: "triggers/groups/enabled", query: [triggerIds:"test-ddgroup-trigger",enabled:false])
         assertEquals(200, resp.status)
 
         // FETCH trigger and make sure it's as expected
