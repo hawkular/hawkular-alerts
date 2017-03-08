@@ -33,6 +33,7 @@ import org.hawkular.alerts.api.model.Severity
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval
 import org.hawkular.alerts.api.model.condition.Condition
+import org.hawkular.alerts.api.model.condition.MissingCondition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.event.Alert
@@ -1203,8 +1204,119 @@ class LifecycleITest extends AbstractITestBase {
     }
 
     @Test
+    void t11_hwkalerts234Test() {
+        logger.info("Running t10_hwkalerts234Test")
+        String start = String.valueOf(System.currentTimeMillis());
+
+        // CREATE the trigger
+        def resp = client.get(path: "")
+        assertEquals(200, resp.status)
+
+        Trigger testTrigger = new Trigger("test-hwkalerts234-trigger", "test-hwkalerts234-trigger");
+
+        // remove if it exists
+        resp = client.delete(path: "triggers/test-hwkalerts234-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        testTrigger.setAutoResolve(true);
+        testTrigger.setAutoResolveAlerts(true);
+
+        resp = client.post(path: "triggers", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // ADD Firing condition
+        MissingCondition firingCond = new MissingCondition("test-hwkalerts234-trigger",
+                Mode.FIRING, "test-hwkalerts234-avail", 3000);
+
+        Collection<Condition> conditions = new ArrayList<>(1);
+        conditions.add( firingCond );
+        resp = client.put(path: "triggers/test-hwkalerts234-trigger/conditions/firing", body: conditions)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // ADD AutoResolve condition
+        AvailabilityCondition autoResolveCond = new AvailabilityCondition("test-hwkalerts234-trigger",
+                Mode.AUTORESOLVE, "test-hwkalerts234-avail", Operator.UP);
+
+        conditions.clear();
+        conditions.add( autoResolveCond );
+        resp = client.put(path: "triggers/test-hwkalerts234-trigger/conditions/autoresolve", body: conditions)
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+
+        // ENABLE Trigger
+        testTrigger.setEnabled(true);
+
+        resp = client.put(path: "triggers/test-hwkalerts234-trigger", body: testTrigger)
+        assertEquals(200, resp.status)
+
+        // FETCH trigger and make sure it's as expected
+        resp = client.get(path: "triggers/test-hwkalerts234-trigger");
+        assertEquals(200, resp.status)
+        assertEquals("test-hwkalerts234-trigger", resp.data.name)
+        assertTrue(resp.data.enabled)
+        assertFalse(resp.data.autoDisable);
+        assertFalse(resp.data.autoEnable);
+        assertTrue(resp.data.autoResolve);
+        assertTrue(resp.data.autoResolveAlerts);
+
+        // This tests that one and only one alert is generated, so let it run for 15s.  This is plenty of time
+        // to ensure we are properly skipping the MissingState check based on the trigger now being in
+        // autoresolve mode (3s missingcondition interval and 2s engine runs)
+        for ( int i=0; i < 30; ++i ) {
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 1
+            resp = client.get(path: "", query: [startTime:start,triggerIds:"test-hwkalerts234-trigger"] )
+            if ( resp.status == 200 && resp.data.size() >= 2 ) {
+                break;
+            }
+            assertEquals(200, resp.status)
+        }
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals("OPEN", resp.data[0].status)
+
+        // FETCH trigger and make sure it's still enabled (note - we can't check the mode as that is runtime
+        // info and not supplied in the returned json)
+        resp = client.get(path: "triggers/test-hwkalerts234-trigger");
+        assertEquals(200, resp.status)
+        assertTrue(resp.data.enabled)
+
+        // Send in UP avail and complete the auto-resolve
+        def avail = Data.forAvailability("", "test-hwkalerts234-avail", System.currentTimeMillis(), UP);
+        def datums = new ArrayList<>();
+        datums.add(avail);
+        resp = client.post(path: "data", body: datums);
+        assertEquals(200, resp.status)
+
+        // We should see our alert quickly move to RESOLVED
+        for ( int i=0; i < 20; ++i ) {
+            Thread.sleep(500);
+
+            // FETCH recent alerts for trigger, there should be 1
+            resp = client.get(path: "",
+                query: [startTime:start,triggerIds:"test-hwkalerts234-trigger",statuses:"RESOLVED"] )
+            if ( resp.status == 200 && resp.data.size() == 1 ) {
+                System.out.println(resp.data);
+                break;
+            }
+            assertEquals(200, resp.status)
+        }
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+        assertEquals("RESOLVED", resp.data[0].status)
+
+        // DISABLE Trigger to stop it from firing again
+        testTrigger.setEnabled(false);
+
+        resp = client.put(path: "triggers/test-hwkalerts234-trigger", body: testTrigger)
+        assertEquals(200, resp.status)
+    }
+
+    @Test
     void t99_cleanup() {
-        logger.info("Running t100_cleanup")
+        logger.info("Running t99_cleanup")
         // clean up triggers
         def resp = client.delete(path: "triggers/test-autodisable-trigger")
         assert(200 == resp.status || 404 == resp.status)
@@ -1225,6 +1337,9 @@ class LifecycleITest extends AbstractITestBase {
         assert(200 == resp.status || 404 == resp.status)
 
         resp = client.delete(path: "triggers/test-manual-autoresolve-trigger")
+        assert(200 == resp.status || 404 == resp.status)
+
+        resp = client.delete(path: "triggers/test-hwkalerts234-trigger")
         assert(200 == resp.status || 404 == resp.status)
 
         // clean up alerts
@@ -1276,6 +1391,10 @@ class LifecycleITest extends AbstractITestBase {
         assertTrue( resp.data.deleted > 0 )
 
         resp = client.put(path: "delete", query: [triggerIds:"test-manual-autoresolve-trigger"])
+        assertEquals(200, resp.status)
+        assertTrue( resp.data.deleted > 0 )
+
+        resp = client.put(path: "delete", query: [triggerIds:"test-hwkalerts234-trigger"])
         assertEquals(200, resp.status)
         assertTrue( resp.data.deleted > 0 )
     }

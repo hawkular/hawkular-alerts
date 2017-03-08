@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@ import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
+import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.CompareConditionEval;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
@@ -340,7 +341,7 @@ rule UpdateMissingStateFromData
             setPreviousTime($d.getTimestamp()),
             setTime($d.getTimestamp())
         }
-        // We now is a non matching eval but needed for Dampening
+        // An eval is needed for Dampening
         MissingConditionEval mce = new MissingConditionEval( $ms.getCondition(), $ms.getPreviousTime(), $ms.getTime());
         if (log != null && log.isDebugEnabled()) {
             log.debugf("MissingConditionEval : %s %s", (mce.isMatch() ? "Match!" : "no match"), mce.getLog());
@@ -361,7 +362,7 @@ rule UpdateMissingStateFromEvent
             setPreviousTime($e.getCtime()),
             setTime($e.getCtime())
         };
-        // We now is a non matching eval but needed for Dampening
+        // An eval is needed for Dampening
         MissingConditionEval mce = new MissingConditionEval( $ms.getCondition(), $ms.getPreviousTime(), $ms.getTime());
         if (log != null && log.isDebugEnabled()) {
             log.debugf("MissingConditionEval : %s %s", (mce.isMatch() ? "Match!" : "no match"), mce.getLog());
@@ -583,10 +584,9 @@ rule AlertOnSatisfiedDampening
 
         if ($t.isAutoResolve()) {
             log.debugf("Setting Trigger to AutoResolve Mode! %s", $t);
-            retract( $t );
-            $t.setMode(Mode.AUTORESOLVE);
-            insert( $t );
-
+            modify($t) {
+               setMode(Mode.AUTORESOLVE)
+            }
         } else if ($t.isAutoDisable()) {
             if (log != null && log.isDebugEnabled()) {
                 log.debugf("Setting Trigger Disabled! %s", $t);
@@ -621,6 +621,48 @@ rule SetFiringModeOnSatisfiedDampening
         $t.setMode(Mode.FIRING);
         autoResolvedTriggers.put( $t, $d.getSatisfyingEvals() );
 
-        retract( $d );
         retract( $t );
+end
+
+
+////// TRIGGER RETRACTION CLEANUP
+
+// If a trigger is retracted these rules will ensure all associated facts are removed. This only assures
+// a clean working memory if the trigger is retracted while rules are firing. If a Trigger fact is removed via
+// the API while the rule-base is not firing, then these rules don't fire and manual cleanup may be necessary.
+
+rule retractOrphanDampening
+    when
+        $d : Dampening( $tenantId : tenantId, $tid : triggerId )
+        not  Trigger( tenantId == $tenantId, id == $tid )
+    then
+        retract( $d )
+
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("Retract Dampening with no Trigger. %s", $d);
+        }
+end
+
+rule retractOrphanCondition
+    when
+        $c : Condition( $tenantId : tenantId, $tid : triggerId )
+        not Trigger( tenantId == $tenantId, id == $tid )
+    then
+        retract( $c )
+
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("Retract Condition with no Trigger. %s", $c);
+        }
+end
+
+rule retractOrphanMissingState
+    when
+        $s : MissingState( $tenantId : tenantId, $tid : triggerId )
+        not Trigger( tenantId == $tenantId, id == $tid )
+    then
+        retract( $s )
+
+        if (log != null && log.isDebugEnabled()) {
+            log.debugf("Retract MissingState with no Trigger. %s", $s);
+        }
 end

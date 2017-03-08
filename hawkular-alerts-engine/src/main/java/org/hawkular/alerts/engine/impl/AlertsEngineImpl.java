@@ -402,10 +402,14 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                         }
                     }
                     if (c instanceof MissingCondition) {
+                        // MissingState keeps a reference to the Trigger fact to check active trigger mode
                         MissingState missingState = new MissingState(trigger, (MissingCondition) c);
                         // MissingStates are modified inside the rules engine
-                        missingStates.add(missingState);
-                        rules.addFact(missingState);
+                        synchronized (missingStates) {
+                            missingStates.remove(missingState);
+                            missingStates.add(missingState);
+                            rules.addFact(missingState);
+                        }
                     }
                 }
 
@@ -455,44 +459,47 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     }
 
     private void removeTrigger(Trigger trigger) {
+        final String tenantId = trigger.getTenantId();
+        final String triggerId = trigger.getId();
+
+        // If necessary, clean up working memory
         if (null != rules.getFact(trigger)) {
-            // First remove the related Trigger facts from the engine
+            // Remove the Trigger fact
             rules.removeFact(trigger);
 
-            // Remove dataId associated from cache
-            if (distributed) {
-                alertsEngineCache.remove(trigger.getTenantId(), trigger.getId());
-            }
-
-            // then remove everything else.
-            // We may want to do this with rules, because as is, we need to loop through every Fact in
-            // the rules engine doing a relatively slow check.
-            final String tenantId = trigger.getTenantId();
-            final String triggerId = trigger.getId();
-            rules.removeFacts(t -> {
-                if (t instanceof Dampening) {
-                    return ((Dampening) t).getTenantId().equals(tenantId)
-                            && ((Dampening) t).getTriggerId().equals(triggerId);
-                } else if (t instanceof Condition) {
-                    return ((Condition) t).getTenantId().equals(tenantId) &&
-                            ((Condition) t).getTriggerId().equals(triggerId);
+            // Remove related facts
+            rules.removeFacts(f -> {
+                if (f instanceof Dampening) {
+                    return ((Dampening) f).getTenantId().equals(tenantId)
+                            && ((Dampening) f).getTriggerId().equals(triggerId);
+                } else if (f instanceof Condition) {
+                    return ((Condition) f).getTenantId().equals(tenantId) &&
+                            ((Condition) f).getTriggerId().equals(triggerId);
+                } else if (f instanceof MissingState) {
+                    return ((MissingState) f).getTenantId().equals(tenantId) &&
+                            ((MissingState) f).getTriggerId().equals(triggerId);
                 }
                 return false;
             });
-            synchronized (missingStates) {
-                Iterator<MissingState> it = missingStates.iterator();
-                while (it.hasNext()) {
-                    MissingState missingState = it.next();
-                    if (missingState.getTenantId().equals(trigger.getTenantId()) &&
-                            missingState.getTriggerId().equals(triggerId)) {
-                        rules.removeFact(missingState);
-                        it.remove();
-                    }
-                }
-            }
         } else {
             if (log.isDebugEnabled()) {
-                log.debug("Trigger not found. Not removed from rulebase " + trigger.toString());
+                log.debug("Trigger Fact not found. Nothing removed from rulebase " + trigger.toString());
+            }
+        }
+
+        // Remove dataId associated from cache
+        if (distributed) {
+            alertsEngineCache.remove(trigger.getTenantId(), trigger.getId());
+        }
+        // Remove any MissingState being managed for the trigger
+        synchronized (missingStates) {
+            Iterator<MissingState> it = missingStates.iterator();
+            while (it.hasNext()) {
+                MissingState missingState = it.next();
+                if (missingState.getTenantId().equals(trigger.getTenantId()) &&
+                        missingState.getTriggerId().equals(triggerId)) {
+                    it.remove();
+                }
             }
         }
     }
@@ -768,10 +775,16 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     }
 
     private int checkMissingStates() {
+        if (missingStates.isEmpty()) {
+            return 0;
+        }
+
         int numMatchingEvals = 0;
-        Iterator<MissingState> itMissingStates = missingStates.iterator();
-        while (itMissingStates.hasNext()) {
-            MissingState missingState = itMissingStates.next();
+        for (MissingState missingState : missingStates) {
+            if (missingState.getTriggerMode() != missingState.getTrigger().getMode()) {
+                continue;
+            }
+
             long now = System.currentTimeMillis();
             rules.removeFact(missingState);
             missingState.setTime(now);
@@ -785,6 +798,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             }
             rules.addFact(missingState);
         }
+
         return numMatchingEvals;
     }
 
