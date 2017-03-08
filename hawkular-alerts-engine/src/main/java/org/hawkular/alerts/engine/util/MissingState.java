@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,82 +21,64 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
- * MissingConditions detects when there is a missing data or event within a defined time interval.
- * This class stores a last evaluation time of a missing data.
+ * MissingConditions detect missing data or events within a defined time interval.  Each MissingCondition
+ * has an associated MissingState object to track last-seen/evaluation times for the relevant data or event.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class MissingState {
 
+    // Fields accessed in the rulebase
     private String tenantId;
-
     private String triggerId;
-
-    private Mode triggerMode;
-
+    private Mode triggerMode; // This is the MissingCondition trigger mode
     private String source;
-
     private String dataId;
-
     private long previousTime;
-
     private long time;
 
-    private String conditionId;
+    // Need to ensure the current trigger mode matches the condition's trigger mode
+    private Trigger trigger;
 
+    // Given the 1:1 relationship we use the [immutable] conditionId as the unique id for this as well.
+    private String conditionId;
     private MissingCondition condition;
 
     public MissingState(Trigger trigger, MissingCondition condition) {
+        this.trigger = trigger;
         this.tenantId = trigger.getTenantId();
         this.triggerId = trigger.getId();
-        this.triggerMode = condition.getTriggerMode();
         this.source = trigger.getSource();
-        this.dataId = condition.getDataId();
-        this.previousTime = System.currentTimeMillis();
-        this.time = System.currentTimeMillis();
-        this.conditionId = condition.getConditionId();
+
         this.condition = condition;
+        this.conditionId = condition.getConditionId();
+        this.triggerMode = condition.getTriggerMode();
+        this.dataId = condition.getDataId();
+
+        long now = System.currentTimeMillis();
+        this.previousTime = now;
+        this.time = now;
     }
 
     public String getTenantId() {
         return tenantId;
     }
 
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
-    }
-
     public String getTriggerId() {
         return triggerId;
-    }
-
-    public void setTriggerId(String triggerId) {
-        this.triggerId = triggerId;
     }
 
     public Mode getTriggerMode() {
         return triggerMode;
     }
 
-    public void setTriggerMode(Mode triggerMode) {
-        this.triggerMode = triggerMode;
-    }
-
     public String getSource() {
         return source;
     }
 
-    public void setSource(String source) {
-        this.source = source;
-    }
-
     public String getDataId() {
         return dataId;
-    }
-
-    public void setDataId(String dataId) {
-        this.dataId = dataId;
     }
 
     public long getPreviousTime() {
@@ -115,68 +97,43 @@ public class MissingState {
         this.time = time;
     }
 
-    public String getConditionId() {
-        return conditionId;
-    }
-
-    public void setConditionId(String conditionId) {
-        this.conditionId = conditionId;
+    public Trigger getTrigger() {
+        return trigger;
     }
 
     public MissingCondition getCondition() {
         return condition;
     }
 
-    public void setCondition(MissingCondition condition) {
-        this.condition = condition;
-    }
-
-    /*
-            Due performance reasons, conditionId will be used for equals()/hashCode() instead of condition
-         */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        MissingState that = (MissingState) o;
-
-        if (previousTime != that.previousTime) return false;
-        if (time != that.time) return false;
-        if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
-        if (triggerId != null ? !triggerId.equals(that.triggerId) : that.triggerId != null) return false;
-        if (triggerMode != that.triggerMode) return false;
-        if (source != null ? !source.equals(that.source) : that.source != null) return false;
-        if (dataId != null ? !dataId.equals(that.dataId) : that.dataId != null) return false;
-        return conditionId != null ? conditionId.equals(that.conditionId) : that.conditionId == null;
-
-    }
-
     @Override
     public int hashCode() {
-        int result = tenantId != null ? tenantId.hashCode() : 0;
-        result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);
-        result = 31 * result + (triggerMode != null ? triggerMode.hashCode() : 0);
-        result = 31 * result + (source != null ? source.hashCode() : 0);
-        result = 31 * result + (dataId != null ? dataId.hashCode() : 0);
-        result = 31 * result + (int) (previousTime ^ (previousTime >>> 32));
-        result = 31 * result + (int) (time ^ (time >>> 32));
-        result = 31 * result + (conditionId != null ? conditionId.hashCode() : 0);
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((conditionId == null) ? 0 : conditionId.hashCode());
         return result;
     }
 
     @Override
-    public String toString() {
-        return "MissingState{" +
-                "tenantId='" + tenantId + '\'' +
-                ", triggerId='" + triggerId + '\'' +
-                ", triggerMode=" + triggerMode +
-                ", source='" + source + '\'' +
-                ", dataId='" + dataId + '\'' +
-                ", previousTime=" + previousTime +
-                ", time=" + time +
-                ", conditionId='" + conditionId + '\'' +
-                ", condition=" + condition +
-                '}';
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        MissingState other = (MissingState) obj;
+        if (conditionId == null) {
+            if (other.conditionId != null)
+                return false;
+        } else if (!conditionId.equals(other.conditionId))
+            return false;
+        return true;
     }
+
+    @Override
+    public String toString() {
+        return "MissingState [previousTime=" + previousTime + ", time=" + time + ", condition=" + condition + "]";
+    }
+
+
 }
