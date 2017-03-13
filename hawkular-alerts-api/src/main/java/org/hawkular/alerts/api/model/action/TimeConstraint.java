@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.api.model.action;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.*;
-
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -27,6 +25,7 @@ import java.util.IllegalFormatException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -106,7 +105,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Lucas Ponce
  */
 @ApiModel(description = "Define a time interval (startTime, endTime) used as a constraint for action execution. + \n" +
-        "Time interval can be defined in a absolute or relative expression. + \n" +
+        "Time interval can be defined in an absolute or relative expression. + \n" +
         " + \n" +
         "An absolute time interval uses the pattern yyyy.MM.dd[,HH:mm] for startTime and endTime properties. + \n" +
         "For example, these representations are valid absolute expressions for time interval: + \n" +
@@ -116,7 +115,6 @@ import io.swagger.annotations.ApiModelProperty;
         " + \n" +
         "Absolute time interval are marked with flag relative set to false. + \n" +
         "Hour and minutes can be optional in absolute format, by default it takes 00:00 value. + \n" +
-        "The absolute interval time is based on the default time zone and locale. + \n" +
         " + \n" +
         "A relative interval is used for repetitive expressions. + \n" +
         "It can be defined an interval between months (i.e. December to March), between days of the week + \n " +
@@ -288,7 +286,7 @@ public class TimeConstraint implements Serializable {
     @ApiModelProperty(value = "Indicate if time constraint is satisfied when a given timestamp is inside or outside " +
             "the interval.",
             position = 3,
-            example = "false")
+            example = "true")
     @JsonInclude(Include.NON_NULL)
     private boolean inRange;
 

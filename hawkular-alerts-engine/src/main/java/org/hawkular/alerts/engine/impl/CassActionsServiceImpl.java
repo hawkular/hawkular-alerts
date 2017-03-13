@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -78,7 +78,7 @@ public class CassActionsServiceImpl implements ActionsService {
     private final Logger log = Logger.getLogger(CassActionsServiceImpl.class);
 
     private static final String WAITING_RESULT = "WAITING";
-    private static final String UNKNOWN_RESULT = "UNKWON";
+    private static final String UNKNOWN_RESULT = "UNKNOWN";
 
     @EJB
     AlertsContext alertsContext;

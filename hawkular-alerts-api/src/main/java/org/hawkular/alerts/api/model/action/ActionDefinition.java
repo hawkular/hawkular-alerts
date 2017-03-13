@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
- * An action is the abstract concept of ta consequence of an event.
+ * An action is the abstract concept of a consequence of an event.
  *
  * Actions are processed by plugins, and plugins offer a map of properties to personalize an action.
  * An ActionDefinition stores which properties will be used for a specific action in a specific plugin.
@@ -45,22 +45,23 @@ import io.swagger.annotations.ApiModelProperty;
         "Actions are processed by plugins, and plugins offer a map of properties to personalize an action. + \n" +
         "An ActionDefinition stores which properties will be used for a specific action in a specific plugin. + \n" +
         " + \n" +
-        "A Trigger definition can be linked with a list of action definitions. + \n" +
+        "A Trigger definition can be assigned a list of action definitions. + \n" +
         " + \n" +
-        "Alert engine will instantiate a specific Action based on its ActionDefinition. + \n" +
+        "The alert engine will instantiate a specific Action based on its ActionDefinition. + \n" +
         " + \n" +
-        "In a similar way as <<TriggerAction>> an ActionDefinition can add optional constraints that determine + \n" +
-        "when an action will be executed. + \n" +
+        "An ActionDefinition can add default constraints to determine when an action will be performed. + \n" +
         " + \n" +
-        "- A set of Alert.Status (represented by its string value). + \n" +
-        "The action will be executed if the Alert which is linked is on one of the states defined. + \n" +
-        "Unlike Alerts, Events don't have lifecycle, TriggerActions on Events are all executed at " +
-        "Event creation time. + \n" +
+        "<<TriggerAction>> can override the default constraints. + \n" +
+        "-- States constraint: a set of Alert.Status (represented by its string value). + \n" +
+        "The action is limited to the specified states.  By default the action applies to all Alert states. + \n" +
+        "Unlike Alerts, Events don't have lifecycle. All TriggerActions are applied at Event creation time. + \n" +
         " + \n" +
-        "- A <<TimeConstraint>> object that defines a time interval in absolute or relative way. + \n" +
-        "The action will be executed if the action creation time is satisfied by the time interval." +
+        "-- Calendar constraint: A <<TimeConstraint>>. + \n" +
+        "The action is applied only when the event create time occurs during the specified time intervals, + \n" +
+        "absolute or relative, as defined. By default the action can be performed at any time. + \n" +
         " + \n" +
-        "If a <<TriggerAction>> does not define any constraint, <<ActionDefinition>> constraints will be used. + \n")
+        "If a <<TriggerAction>> defines any constraints the <<ActionDefinition>> constraints will be ignored. + \n" +
+        "If a <<TriggerAction>> defines no constraints the <<ActionDefinition>> constraints will be used. + \n")
 public class ActionDefinition implements Serializable {
 
     @ApiModelProperty(value = "Tenant id owner of this trigger.",
@@ -95,15 +96,15 @@ public class ActionDefinition implements Serializable {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, String> properties;
 
-    @ApiModelProperty(value = "A list of Alert.Status where this action is linked. <<TriggerAction>> constraints " +
-            "take precedence.",
+    @ApiModelProperty(value = "A list of Alert.Status restricting active states for this action. <<TriggerAction>> " +
+            "constraints take precedence, if defined",
             position = 5,
             allowableValues = "OPEN, ACKNOWLEDGED, RESOLVED")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<String> states;
 
-    @ApiModelProperty(value = "A list of TimeConstraint where this action is linked. <<TriggerAction>> constraints " +
-            "take precedence.",
+    @ApiModelProperty(value = "A TimeConstraint restricting active times for this action. <<TriggerAction>> " +
+            "constraints take precedence, if defined.",
             position = 6)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private TimeConstraint calendar;

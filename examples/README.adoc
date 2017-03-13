@@ -1,0 +1,33 @@
+
+== Examples and Tutorial
+
+Welcome to the Hawkular Alerting (hAlerting) Examples and Tutorials.  This will hopefully get you quickly up and running.  In addition there are the official docs:
+
+* http://www.hawkular.org/community/docs/developer-guide/alerts.html[User Guide]
+* http://www.hawkular.org/docs/rest/rest-alerts.html[REST API Guide]
+* http://github.com/hawkular/hawkular-alerts[Github]
+
+If you have questions please find us on IRC at irc://irc.freenode.org/#hawkular[#hawkular on freenode].
+
+We would be more than happy to accept more examples or tutorial lessons,  we welcome the contributions!
+
+
+=== Tutorial
+
+This is a step by step guide to learning and using hAlerting.  The first few lessons will give you a quick start and you can continue to gain an excellent understanding of the tool.
+
+link:tutorial/README.adoc[The Tutorial]
+
+
+=== Examples
+
+These are runnable examples to help demonstrate some basic and more advanced hAlerting features.  See the README.adoc at the top level of each example for more!
+
+* link:hello-world/README.adoc[Hello World]
+* link:autoresolve-process/README.adoc[Auto-Resolve]
+* link:group-triggers/README.adoc[Group Triggers]
+* link:events/README.adoc[Events]
+* link:events-aggregation/README.adoc[Event Aggregation]
+* link:webhook/README.adoc[Webhook Action]
+
+
