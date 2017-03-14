@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
- * Link an ActionDefinition with a Trigger.
+ * Links an ActionDefinition with a Trigger.
  *
  * It can add optional constraints that determine when an action will be executed:
  *
@@ -43,17 +43,12 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "Link an <<ActionDefinition>> with a <<Trigger>>. + \n" +
+@ApiModel(description = "Links an <<ActionDefinition>> with a <<Trigger>>. + \n" +
         " + \n" +
-        "It can add optional constraints that determine when an action will be executed: + \n" +
-        " + \n" +
-        "- A set of Alert.Status (represented by its string value). + \n" +
-        "The action will be executed if the linked Alert is set to one of the defined states. + \n" +
-        "Unlike Alerts, Events don't have lifecycle, TriggerActions on Events are all executed at " +
-        "Event creation time. + \n" +
-        " + \n" +
-        "- A <<TimeConstraint>> object that defines a time interval in absolute or relative way. + \n" +
-        "The action will be executed if the action creation time is satisfied by the time interval.")
+        "The TriggerAction can override the constraints set on the <<ActionDefintion>>. + \n" +
+        "If a <<TriggerAction>> defines any constraints the <<ActionDefinition>> constraints will be ignored. + \n" +
+        "If a <<TriggerAction>> defines no constraints the <<ActionDefinition>> constraints will be used. + \n")
+
 public class TriggerAction implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -79,14 +74,14 @@ public class TriggerAction implements Serializable {
     @JsonInclude
     private String actionId;
 
-    @ApiModelProperty(value = "A list of Alert.Status where this action is linked.",
+    @ApiModelProperty(value = "A list of Alert.Status restricting active states for this action.",
             position = 3,
             required = false,
             allowableValues = "OPEN, ACKNOWLEDGED, RESOLVED")
     @JsonInclude(Include.NON_EMPTY)
     private Set<String> states;
 
-    @ApiModelProperty(value = "A list of TimeConstraint where this action is linked.",
+    @ApiModelProperty(value = "A TimeConstraint restricting active times for this action.",
             position = 4,
             required = false)
     @JsonInclude(Include.NON_NULL)
