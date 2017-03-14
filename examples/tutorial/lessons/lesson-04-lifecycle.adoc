@@ -79,8 +79,8 @@ Content-Type: application/json
 |Body
 |
 {
-"id":"lesson-02",
-"name":"Lesson 02",
+"id":"lesson-03",
+"name":"Lesson 03",
 "description": "A useful description that can also include resolution instructions or links",
 "autoDisable":true,
 "autoEnable":true
