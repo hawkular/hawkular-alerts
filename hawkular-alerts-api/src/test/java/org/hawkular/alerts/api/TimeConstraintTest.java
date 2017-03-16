@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import org.hawkular.alerts.api.model.action.TimeConstraint;
 import org.junit.Test;
@@ -93,6 +94,28 @@ public class TimeConstraintTest {
         cal.set(2016, Calendar.FEBRUARY, 3, 4, 35);
         timestamp = cal.getTimeInMillis();
         assertTrue(tc.isSatisfiedBy(timestamp));
+
+        cal.set(2016, Calendar.FEBRUARY, 3, 4, 35);
+        timestamp = cal.getTimeInMillis();
+        assertTrue(tc.isSatisfiedBy(timestamp));
+
+        // tz
+        tc.setStartTime("2016.02.03,10:00");
+        tc.setEndTime("2016.02.03,18:00");
+        tc.setInRange(true);
+
+        Calendar gmtCal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        gmtCal.set(2016, Calendar.FEBRUARY, 3, 16, 00);
+        timestamp = gmtCal.getTimeInMillis();
+
+        tc.setTimeZoneName("GMT");
+        assertTrue(tc.isSatisfiedBy(timestamp));
+
+        tc.setTimeZoneName("GMT-4:00"); // GMT 14:00-22:00
+        assertTrue(tc.isSatisfiedBy(timestamp));
+
+        tc.setTimeZoneName("GMT+4:00"); // GMT 06:00-14:00
+        assertFalse(tc.isSatisfiedBy(timestamp));
     }
 
     @Test
@@ -298,6 +321,39 @@ public class TimeConstraintTest {
         cal.set(2016, Calendar.AUGUST, 27, 18, 0);
         timestamp = cal.getTimeInMillis();
         assertTrue(tc.isSatisfiedBy(timestamp));
+
+        // tz
+        tc.setStartTime("Jul,Mon,02:00");
+        tc.setEndTime("Jul,Fri,18:00");
+        tc.setInRange(true);
+
+        Calendar gmtCal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        gmtCal.set(2016, Calendar.JULY, 18, 16, 00); // Monday 16:00
+        timestamp = gmtCal.getTimeInMillis();
+
+        tc.setTimeZoneName("GMT");
+        assertTrue(tc.isSatisfiedBy(timestamp));  // Monday 16:00
+
+        tc.setTimeZoneName("GMT-4:00");
+        assertTrue(tc.isSatisfiedBy(timestamp));  // Monday 12:00
+
+        tc.setTimeZoneName("GMT+4:00");
+        assertFalse(tc.isSatisfiedBy(timestamp)); // Monday 20:00
+
+        gmtCal.set(2016, Calendar.JULY, 17, 16, 00); // Sunday 16:00
+        timestamp = gmtCal.getTimeInMillis();
+
+        tc.setTimeZoneName("GMT");
+        assertFalse(tc.isSatisfiedBy(timestamp)); // Sunday 16:00
+
+        tc.setTimeZoneName("GMT-4:00");
+        assertFalse(tc.isSatisfiedBy(timestamp)); // Sunday 12:00
+
+        tc.setTimeZoneName("GMT+4:00");
+        assertFalse(tc.isSatisfiedBy(timestamp)); // Sunday 20:00
+
+        tc.setTimeZoneName("GMT+10:00");
+        assertTrue(tc.isSatisfiedBy(timestamp));  // Monday 02:00
     }
 
     @Test

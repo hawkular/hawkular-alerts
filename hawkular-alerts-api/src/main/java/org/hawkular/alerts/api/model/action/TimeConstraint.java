@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.IllegalFormatException;
+import java.util.TimeZone;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -32,18 +33,17 @@ import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Define a time interval (startTime, endTime) used as a constraint for action execution.
- * Time interval can be defined in a absolute or relative expression.
- *
+ * Time interval can be defined in an absolute or relative expression.
+ * <p>
  * An absolute time interval uses the pattern yyyy.MM.dd[,HH:mm] for startTime and endTime properties.
  * For example,these representations are valid absolute expressions for time interval:
- *
+ *</p><pre>
  *              {startTime: "2016.02.01", endTime: "2016.03.01", relative: false}
  *              {startTime: "2016.02.01,09:00", endTime: "2016.03.01,18:00", relative: false}
- *
+ *</pre>
  * Absolute time interval are marked with flag relative set to false.
  * Hour and minutes can be optional in absolute format, by default it takes 00:00 value.
- * The absolute interval time is based on the default time zone and locale.
- *
+ *<p>
  * A relative interval is used for repetitive expressions.
  * It can be defined an interval between months (i.e. December to March), between days of the week (i.e. Sunday to
  * Friday), between hours and minutes (i.e. 23:00 to 04:30), or a combination of month, day of the week and/or hours
@@ -52,7 +52,7 @@ import io.swagger.annotations.ApiModelProperty;
  * short format.
  * Same pattern should be applied to both startTime and endTime properties.
  * For example, these representations are valid relative expressions for time interval:
- *
+ *</p><pre>
  *          {startTime: "Jul", endTime: "Dec", relative: true}
  *          {startTime: "July", endTime: "December", relative: true}
  *
@@ -86,13 +86,14 @@ import io.swagger.annotations.ApiModelProperty;
  *         {startTime:"09:00", endTime:"18:00", relative: true}
  *
  *         All times within 09:00 and 18:00 are valid.
- *
- * TimeConstraint object can define if a given date will be satisfied within the interval or outside interval using
- * the property inRange. A value inRange == true means that a time interval will be satisfied when a given date is
- * within the interval (taking the limits as inclusive), in case of inRange == false a given date will be satisfied
- * if it is outside of the interval. By default, inRange == true.
+ *</pre>
+ * TimeConstraint inRange property defines whether a given time must fall inside or outside
+ * the defined interval. Setting inRange == true means the constraint will be satisfied if a
+ * given date is within the interval (taking the limits as inclusive). By setting
+ * inRange == false the constraint is satisfied if a given date is outside of the interval.
+ * By default, inRange == true.
  * For example,
- *
+ *<pre>
  *         {startTime:"09:00", endTime:"18:00", relative: true, inRange: true}
  *
  *         All times within 09:00 and 18:00 are satisfied by the interval.
@@ -100,7 +101,25 @@ import io.swagger.annotations.ApiModelProperty;
  *         {startTime:"09:00", endTime:"18:00", relative: true, inRange: false}
  *
  *         All times from 18:01 to 08:59 are satisfied in the interval.
- *
+ *</pre>
+ * By default the defined absolute or relative intervals use the default time zone (of the server).
+ * This can be unpredictable unless the server time zone is well known and acceptable.  It is
+ * recommended to explicitly set the time zone for which the TimeConstraint intervals are applicable.
+ * This is done by setting the timeZoneName property.
+ * For example, here is a TimeConstraint for business hours:
+ *<pre>
+ *         {startTime:"09:00", endTime:"18:00", relative: true, inRange: true}
+ *</pre>
+ * If the server is running in London then this reflects business hours in London. But perhaps the
+ * admins are in New York and the TimeConstraint should actually reflect their local time zone.
+ * In that case use:
+ *<pre>
+ *         {startTime:"09:00", endTime:"18:00", timeZoneName: "America/New_York", relative: true}
+ *</pre>
+ * It is also possible to use a GMT-relative value:
+ *<pre>
+ *         {startTime:"09:00", endTime:"18:00", timeZoneName: "GMT-5:00", relative: true}
+ *</pre>
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
@@ -159,11 +178,10 @@ import io.swagger.annotations.ApiModelProperty;
         " + \n" +
         "All times within 09:00 and 18:00 are valid. + \n" +
         " + \n" +
-        "TimeConstraint object can define if a given date will be satisfied within the interval or + \n" +
-        "outside interval using the property inRange. + \n" +
-        "A value inRange == true means that a time interval will be satisfied when a given date is + \n" +
-        "within the interval (taking the limits as inclusive), in case of inRange == false a given date + \n" +
-        "will be satisfied if it is outside of the interval. + \n" +
+        "TimeConstraint inRange property defines whether a given time must fall inside or outside + \n" +
+        "the defined interval. Setting inRange == true means the constraint will be satisfied if a + \n" +
+        "given date is within the interval (taking the limits as inclusive). By setting + \n" +
+        "inRange == false the constraint is satisfied if a given date is outside of the interval. + \n" +
         "By default, inRange == true. + \n" +
         "For example, + \n" +
         " + \n" +
@@ -173,7 +191,25 @@ import io.swagger.annotations.ApiModelProperty;
         " + \n" +
         "{startTime:\"09:00\", endTime:\"18:00\", relative: true, inRange: false} + \n" +
         " + \n" +
-        "All times from 18:01 to 08:59 are satisfied in the interval. + \n")
+        "All times from 18:01 to 08:59 are satisfied in the interval. + \n" +
+        " + \n" +
+        "By default the defined absolute or relative intervals use the default time zone (of the server). + \n" +
+        "This can be unpredictable unless the server time zone is well known and acceptable.  It is + \n" +
+        "recommended to explicitly set the time zone for which the TimeConstraint intervals are applicable. + \n" +
+        "This is done by setting the timeZoneName property. + \n" +
+        "For example, here is a TimeConstraint for business hours: + \n" +
+        " + \n" +
+        "        {startTime:\"09:00\", endTime:\"18:00\"} + \n" +
+        " + \n" +
+        "If the server is running in London then this reflects business hours in London. But perhaps the + \n" +
+        "admins are in New York and the TimeConstraint should actually reflect their local time zone. + \n" +
+        "In that case use: + \n" +
+        " + \n" +
+        "        {startTime:\"09:00\", endTime:\"18:00\", timeZoneName: \"America/New_York\", relative: true} + \n" +
+        " + \n" +
+        "It is also possible to use a GMT-relative value: + \n" +
+        " + \n" +
+        "        {startTime:\"09:00\", endTime:\"18:00\", timeZoneName: \"GMT-5:00\", relative: true} + \n")
 public class TimeConstraint implements Serializable {
 
     public enum MONTH {
@@ -290,6 +326,19 @@ public class TimeConstraint implements Serializable {
     @JsonInclude(Include.NON_NULL)
     private boolean inRange;
 
+    /**
+     * Indicate the time zone in which the times are expressed. If not specified the server's default time zone is
+     * applied. Time zone is expressed in standard <i>Area/Location</i> format. It is recommended to specify the time
+     * zone unless you are sure of the server environment.
+     */
+    @ApiModelProperty(value = "Indicate the time zone in which the times are expressed. If not specified the " +
+            "server's default time zone is applied. Time zone is expressed in standard Area/Location format. " +
+            "It is recommended to specify the time zone unless you are sure of the server environment.",
+            position = 4,
+            required = false)
+    @JsonInclude(Include.NON_NULL)
+    private String timeZoneName;
+
     @JsonIgnore
     private transient int startMonth = -1;
 
@@ -314,19 +363,34 @@ public class TimeConstraint implements Serializable {
     @JsonIgnore
     private transient Date endDate = null;
 
+    @JsonIgnore
+    private transient TimeZone timeZone;
+
     public TimeConstraint() {
         this("Jan","Dec", true, true);
     }
 
     public TimeConstraint(String startTime, String endTime) {
-        this(startTime, endTime, true, true);
+        this(startTime, endTime, null, true, true);
+    }
+
+    public TimeConstraint(String startTime, String endTime, String timeZoneName) {
+        this(startTime, endTime, timeZoneName, true, true);
     }
 
     public TimeConstraint(String startTime, String endTime, boolean relative) {
-        this(startTime, endTime, relative, true);
+        this(startTime, endTime, null, relative, true);
+    }
+
+    public TimeConstraint(String startTime, String endTime, String timeZoneName, boolean relative) {
+        this(startTime, endTime, timeZoneName, relative, true);
     }
 
     public TimeConstraint(String startTime, String endTime, boolean relative, boolean inRange) {
+        this(startTime, endTime, null, relative, inRange);
+    }
+
+    public TimeConstraint(String startTime, String endTime, String timeZoneName, boolean relative, boolean inRange) {
         if (isEmpty(startTime)) {
             throw new IllegalArgumentException("startTime must be not null");
         }
@@ -337,11 +401,7 @@ public class TimeConstraint implements Serializable {
         this.endTime = endTime;
         this.relative = relative;
         this.inRange = inRange;
-        if (relative) {
-            updateRelative();
-        } else {
-            updateAbsolute();
-        }
+        setTimeZoneName(timeZoneName);
     }
 
     public String getStartTime() {
@@ -395,6 +455,23 @@ public class TimeConstraint implements Serializable {
 
     public void setInRange(boolean inRange) {
         this.inRange = inRange;
+        if (relative) {
+            updateRelative();
+        } else {
+            updateAbsolute();
+        }
+    }
+
+    public String getTimeZoneName() {
+        return timeZoneName;
+    }
+
+    public void setTimeZoneName(String timeZoneName) {
+        this.timeZoneName = timeZoneName;
+        this.timeZone = (null == timeZoneName) ? TimeZone.getDefault() : TimeZone.getTimeZone(timeZoneName);
+        // Parse absolute date/time in the target tz
+        dateParser.setTimeZone(this.timeZone);
+        dateTimeParser.setTimeZone(this.timeZone);
         if (relative) {
             updateRelative();
         } else {
@@ -490,7 +567,8 @@ public class TimeConstraint implements Serializable {
     }
 
     private boolean checkRelative(long timestamp) throws IllegalArgumentException {
-        Calendar cal = Calendar.getInstance();
+        // make sure the calendar reflects Month/Day/Minute in the TC's target time zone
+        Calendar cal = Calendar.getInstance(this.timeZone);
         cal.setTimeInMillis(timestamp);
         if (inRange) {
             // Check month
@@ -661,6 +739,8 @@ public class TimeConstraint implements Serializable {
                 ", endTime='" + endTime + '\'' +
                 ", relative=" + relative +
                 ", inRange=" + inRange +
+                ", timeZoneName=" + timeZoneName +
+                ", timeZone=" + timeZone.toString() +
                 ']';
     }
 
