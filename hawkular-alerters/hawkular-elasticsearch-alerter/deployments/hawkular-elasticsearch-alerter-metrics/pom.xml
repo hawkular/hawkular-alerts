@@ -30,7 +30,7 @@
   <artifactId>hawkular-elasticsearch-alerter-metrics</artifactId>
   <packaging>war</packaging>
 
-  <name>Hawkular Alerting: ElasticSearch Alerter deployment for Hawkular Metrics</name>
+  <name>Hawkular Alerting: Elasticsearch Alerter deployment for Hawkular Metrics</name>
 
   <dependencies>
 
@@ -38,12 +38,6 @@
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-elasticsearch-alerter-lib</artifactId>
       <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <version>${version.elasticsearch.com.fasterxml.jackson.core}</version>
     </dependency>
 
   </dependencies>

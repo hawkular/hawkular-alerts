@@ -46,31 +46,38 @@ import org.hawkular.alerts.api.services.PropertiesService;
 import org.jboss.logging.Logger;
 
 /**
- * This is the main class of the ElasticSearch Alerter.
+ * This is the main class of the Elasticsearch Alerter.
  *
- * The ElasticSearch Alerter will listen for triggers tagged with "ElasticSearch" tag. The Alerter will schedule a
- * periodically query to an ElasticSearch system with the info provided from the tagged trigger context. The Alerter
- * will convert ElasticSearch documents into Hawkular Alerting Events and send them into the Alerting engine.
+ * The Elasticsearch Alerter will listen for triggers tagged with "Elasticsearch" tag. The Alerter will schedule a
+ * periodic query to an Elasticsearch system with the info provided from the tagged trigger context. The Alerter
+ * will convert Elasticsearch documents into Hawkular Alerting Events and send them into the Alerting engine.
  *
- * The ElasticSearch Alerter uses the following conventions for trigger tags and context:
+ * The Elasticsearch Alerter uses the following conventions for trigger tags and context:
  *
  * <pre>
  *
- * - [Required]    trigger.tags["ElasticSearch"] = "<timestamp field>"
+ * - [Required]    trigger.tags["Elasticsearch"] = "<value reserved for future uses>"
  *
- *   Documents fetched from ElasticSearch needs a date field to indicate the timestamp.
+ *   An "Elasticsearch" tag is required for the alerter to detect this trigger will query to an Elasticsearch system.
+ *   Value is not necessary, it can be used as a description, it is reserved for future uses.
+ *
+ *   i.e.   trigger.tags["Elasticsearch"] = ""                          // Empty value is valid
+ *          trigger.tags["Elasticsearch"] = "OpenShift Logging System"  // It can be used as description
+ *
+ * - [Required]    trigger.context["timestamp"] = "<timestamp field>"
+ *
+ *   Documents fetched from Elasticsearch need a date field to indicate the timestamp.
  *   This timestamp will be used in the queries to fetch documents in interval basis.
  *
- *   Timestamps are expected to follow patterns:
+ *   If there is not defined a specific pattern under the trigger.context["timestamp.pattern"] it will follow the
+ *   default patterns:
  *
  *      "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
  *      "yyyy-MM-dd'T'HH:mm:ssZ"
  *
- *   i.e.   trigger.tags["ElasticSearch"] = "@timestamp"
+ * - [Required]    trigger.context["mapping"] = "<mapping_expression>"
  *
- * - [Required]    trigger.context["map"] = "<mapping_expression>"
- *
- *   A mapping expressions defines how to convert an ElasticSearch document into a Hawkular Event:
+ *   A mapping expressions defines how to convert an Elasticsearch document into a Hawkular Event:
  *
  *   <mapping_expression> ::= <mapping> | <mapping> "," <mapping_expression>
  *   <mapping> ::= <elasticsearch_field> [ "|" "'" <DEFAULT_VALUE> "'" ] ":" <hawkular_event_field>
@@ -78,19 +85,27 @@ import org.jboss.logging.Logger;
  *   <hawkular_event_field> ::= "id" | "ctime" | "dataSource" | "dataId" | "category" | "text" | "context" | "tags"
  *
  *   A minimum mapping for the "dataId" is required.
- *   If a mapping is not present in an ElasticSearch document it will return an empty value.
- *   It is possible to define a default value for cases when the ElasticSearch field is not present.
- *   Special ElasticSearch metafields "_index" and "_id" are supported under "index" and "id" labels.
+ *   If a mapping is not present in an Elasticsearch document it will return an empty value.
+ *   It is possible to define a default value for cases when the Elasticsearch field is not present.
+ *   Special Elasticsearch metafields "_index" and "_id" are supported under "index" and "id" labels.
  *
- *   i.e.   trigger.context["map"] = "level|'INFO':category,@timestamp:ctime,message:text,hostname:dataId,index:tags"
+ *   i.e.   trigger.context["mapping"] = "level|'INFO':category,@timestamp:ctime,message:text,hostname:dataId,index:tags"
  *
  * - [Optional]    trigger.context["interval"] = "[0-9]+[smh]"  (i.e. 30s, 2h, 10m)
  *
- *   Defines the periodic interval when a query will be performed against an ElasticSearch system.
+ *   Defines the periodic interval when a query will be performed against an Elasticsearch system.
  *   If not value provided, default one is "2m" (two minutes).
  *
  *   i.e.   trigger.context["interval"] = "30s" will perform queries each 30 seconds fetching new documents generated
  *          on the last 30 seconds, using the timestamp field provided in the Alerter tag.
+ *
+ * - [Optional]    trigger.context["timestamp.pattern"] = "<date and time pattern>"
+ *
+ *   Defines a new time pattern for the trigger.context["timestamp"]. It must follow supported formats of
+ *   {@link java.text.SimpleDateFormat}. If it is not present, it will expect default patterns:
+ *
+ *      "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+ *      "yyyy-MM-dd'T'HH:mm:ssZ"
  *
  * - [Optional]    trigger.context["index"] = "<elastic_search_index>"
  *
@@ -99,8 +114,8 @@ import org.jboss.logging.Logger;
  *
  * - [Optional]    trigger.context["filter"] = "<elastic_search_query_filter>"
  *
- *   By default the ElasticSearch Alerter performs a range query over the timestamp field provided in the alerter tag.
- *   This query accepts additional filter in ElasticSearch format. The final query should be built from:
+ *   By default the Elasticsearch Alerter performs a range query over the timestamp field provided in the alerter tag.
+ *   This query accepts additional filter in Elasticsearch format. The final query should be built from:
  *
  *      {
  *        "query":{
@@ -114,23 +129,28 @@ import org.jboss.logging.Logger;
  *        }
  *      }
  *
- * - [Optional]    trigger.context["host"] / trigger.context["port"]
+ * - [Optional]    trigger.context["url"]
  *
- *   ElasticSearch host/port can be defined in several ways in the alerter.
+ *   Elasticsearch url can be defined in several ways in the alerter.
  *   If can be defined globally as system properties:
  *
- *      hawkular-alerts.elasticsearch-host
- *      hawkular-alerts.elasticsearch-port
+ *      hawkular-alerts.elasticsearch-url
  *
  *   It can be defined globally from system env variables:
  *
- *      ELASTICSEARCH_HOST
- *      ELASTICSEARCH_PORT
+ *      ELASTICSEARCH_URL
  *
  *   Or it can be overwritten per trigger using
  *
- *      trigger.context["host"]
- *      trigger.context["port"]
+ *      trigger.context["url"]
+ *
+ *   Url can be a list of valid {@link org.apache.http.HttpHost} urls. By default it will point to
+ *
+ *      trigger.context["url"] = "http://localhost:9200"
+ *
+ *   i.e.
+ *
+ *      trigger.context["url"] = "http://host1:9200,http://host2:9200,http://host3:9200"
  *
  * </pre>
  *
@@ -139,25 +159,31 @@ import org.jboss.logging.Logger;
  */
 @Startup
 @Singleton
-public class ElasticSearchAlerter {
-    private static final Logger log = Logger.getLogger(ElasticSearchAlerter.class);
+public class ElasticsearchAlerter {
+    private static final Logger log = Logger.getLogger(ElasticsearchAlerter.class);
 
     private static final String ELASTICSEARCH_ALERTER = "hawkular-alerts.elasticsearch-alerter";
     private static final String ELASTICSEARCH_ALERTER_ENV = "ELASTICSEARCH_ALERTER";
     private static final String ELASTICSEARCH_ALERTER_DEFAULT = "true";
     private boolean elasticSearchAlerter;
 
-    private static final String ELASTICSEARCH_HOST = "hawkular-alerts.elasticsearch-host";
-    private static final String ELASTICSEARCH_HOST_ENV = "ELASTICSEARCH_HOST";
-    private static final String ELASTICSEARCH_HOST_DEFAULT = "localhost";
+    private static final String ELASTICSEARCH_URL="hawkular-alerts.elasticsearch-url";
+    private static final String ELASTICSEARCH_URL_ENV = "ELASTICSEARCH_URL";
+    private static final String ELASTICSEARCH_URL_DEFAULT = "http://localhost:9200";
 
-    private static final String ELASTICSEARCH_PORT = "hawkular-alerts.elasticsearch-port";
-    private static final String ELASTICSEARCH_PORT_ENV = "ELASTICSEARCH_PORT";
-    private static final String ELASTICSEARCH_PORT_DEFAULT = "9300";
+    private static final String ELASTICSEARCH_FORWARDED_FOR = "hawkular-alerts.elasticsearch-forwarded-for";
+    private static final String ELASTICSEARCH_FORWARDED_FOR_ENV = "ELASTICSEARCH_FORWARDED_FOR";
+    private static final String ELASTICSEARCH_FORWARDED_FOR_DEFAULT = "";
 
-    private static final String ALERTER_NAME = "ElasticSearch";
-    private static final String HOST = "host";
-    private static final String PORT = "port";
+    private static final String ELASTICSEARCH_TOKEN = "hawkular-alerts.elasticsearch-token";
+    private static final String ELASTICSEARCH_TOKEN_ENV = "ELASTICSEARCH_TOKEN";
+    private static final String ELASTICSEARCH_TOKEN_DEFAULT = "";
+
+    private static final String ELASTICSEARCH_PROXY_REMOTE_USER = "hawkular-alerts.elasticsearch-proxy-remote-user";
+    private static final String ELASTICSEARCH_PROXY_REMOTE_USER_ENV = "ELASTICSEARCH_PROXY_REMOTE_USER";
+    private static final String ELASTICSEARCH_PROXY_REMOTE_USER_DEFAULT = "";
+
+    private static final String ALERTER_NAME = "Elasticsearch";
 
     private Map<TriggerKey, Trigger> activeTriggers = new ConcurrentHashMap<>();
 
@@ -165,6 +191,10 @@ public class ElasticSearchAlerter {
 
     private static final String INTERVAL = "interval";
     private static final String INTERVAL_DEFAULT = "2m";
+    private static final String URL = "url";
+    private static final String FORWARDED_FOR = "forwarded-for";
+    private static final String PROXY_REMOTE_USER = "proxy-remote-user";
+    private static final String TOKEN = "token";
 
     private ScheduledThreadPoolExecutor scheduledExecutor;
     private Map<TriggerKey, ScheduledFuture<?>> queryFutures = new HashMap<>();
@@ -191,15 +221,20 @@ public class ElasticSearchAlerter {
             log.errorf("Cannot access to JNDI context", e);
         }
         if (properties == null || definitions == null || alerts == null) {
-            throw new IllegalStateException("ElasticSearch Alerter cannot connect with Hawkular Alerting");
+            throw new IllegalStateException("Elasticsearch Alerter cannot connect with Hawkular Alerting");
         }
         elasticSearchAlerter = Boolean.parseBoolean(properties.getProperty(ELASTICSEARCH_ALERTER,
                 ELASTICSEARCH_ALERTER_ENV, ELASTICSEARCH_ALERTER_DEFAULT));
         defaultProperties = new HashMap();
-        defaultProperties.put(HOST, properties.getProperty(ELASTICSEARCH_HOST, ELASTICSEARCH_HOST_ENV,
-                ELASTICSEARCH_HOST_DEFAULT));
-        defaultProperties.put(PORT, properties.getProperty(ELASTICSEARCH_PORT, ELASTICSEARCH_PORT_ENV,
-                ELASTICSEARCH_PORT_DEFAULT));
+        defaultProperties.put(URL, properties.getProperty(ELASTICSEARCH_URL, ELASTICSEARCH_URL_ENV,
+                ELASTICSEARCH_URL_DEFAULT));
+        defaultProperties.put(TOKEN, properties.getProperty(ELASTICSEARCH_TOKEN, ELASTICSEARCH_TOKEN_ENV,
+                ELASTICSEARCH_TOKEN_DEFAULT));
+        defaultProperties.put(FORWARDED_FOR, properties.getProperty(ELASTICSEARCH_FORWARDED_FOR,
+                ELASTICSEARCH_FORWARDED_FOR_ENV, ELASTICSEARCH_FORWARDED_FOR_DEFAULT));
+        defaultProperties.put(PROXY_REMOTE_USER, properties.getProperty(ELASTICSEARCH_PROXY_REMOTE_USER,
+                ELASTICSEARCH_PROXY_REMOTE_USER_ENV, ELASTICSEARCH_PROXY_REMOTE_USER_DEFAULT));
+
         if (elasticSearchAlerter) {
             definitions.registerDistributedListener(events -> refresh(events));
         }
@@ -286,7 +321,7 @@ public class ElasticSearchAlerter {
             Trigger t = activeTriggers.get(key);
             String interval = t.getContext().get(INTERVAL) == null ? INTERVAL_DEFAULT : t.getContext().get(INTERVAL);
             queryFutures.put(key, scheduledExecutor
-                    .scheduleAtFixedRate(new ElasticSearchQuery(t, defaultProperties, alerts),0L,
+                    .scheduleAtFixedRate(new ElasticsearchQuery(t, defaultProperties, alerts),0L,
                             getIntervalValue(interval), getIntervalUnit(interval)));
 
         }

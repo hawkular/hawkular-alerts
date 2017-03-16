@@ -34,8 +34,8 @@
   <dependencies>
 
     <dependency>
-      <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch</artifactId>
+      <groupId>org.elasticsearch.client</groupId>
+      <artifactId>rest</artifactId>
       <version>${version.org.elasticsearch.client}</version>
     </dependency>
 
@@ -43,24 +43,6 @@
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>
       <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <version>${version.elasticsearch.com.fasterxml.jackson.core}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>${version.elasticsearch.org.apache.logging.log4j}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>${version.elasticsearch.org.apache.logging.log4j}</version>
     </dependency>
 
     <dependency>
@@ -74,6 +56,39 @@
       <artifactId>hawkular-alerts-actions-tests</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.elasticsearch</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>${version.org.elasticsearch.client}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.elasticsearch.client</groupId>
+      <artifactId>transport</artifactId>
+      <version>${version.org.elasticsearch.client}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${version.com.fasterxml.jackson.core-elasticsearch}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>${version.org.apache.logging.log4j-elasticsearch}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${version.org.apache.logging.log4j-elasticsearch}</version>
     </dependency>
 
   </dependencies>

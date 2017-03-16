@@ -20,17 +20,27 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
+
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class ElasticSearchQueryTest {
+public class ElasticsearchQueryTest {
 
     @Test
     public void checkPropertiesAndMappings() throws Exception {
@@ -40,7 +50,7 @@ public class ElasticSearchQueryTest {
         properties.put("host", "defaultHost");
         properties.put("port", "defaultPort");
 
-        ElasticSearchQuery esQuery = new ElasticSearchQuery(trigger, properties, null);
+        ElasticsearchQuery esQuery = new ElasticsearchQuery(trigger, properties, null);
         try {
             esQuery.parseProperties();
             fail("Trigger has not mandatory tags/context properties");
@@ -48,22 +58,22 @@ public class ElasticSearchQueryTest {
             assertTrue(e.getMessage().contains("timestamp"));
         }
 
-        trigger.getTags().put("ElasticSearch", "@timestamp");
+        trigger.getContext().put("timestamp", "@timestamp");
         try {
             esQuery.parseProperties();
             fail("Trigger has not mandatory tags/context properties");
         } catch (Exception e) {
-            assertTrue(e.getMessage().contains("map"));
+            assertTrue(e.getMessage().contains("mapping"));
         }
 
         try {
             esQuery.parseMap();
             fail("Trigger has not mandatory context properties");
         } catch (Exception e) {
-            assertTrue(e.getMessage().contains("map"));
+            assertTrue(e.getMessage().contains("mapping"));
         }
 
-        trigger.getContext().put("map", "@timestamp:ctime");
+        trigger.getContext().put("mapping", "@timestamp:ctime");
         try {
             esQuery.parseProperties();
             esQuery.parseMap();
@@ -72,14 +82,14 @@ public class ElasticSearchQueryTest {
             assertTrue(e.getMessage().contains("dataId"));
         }
 
-        trigger.getContext().put("map", "@timestamp:ctime,index:dataId");
+        trigger.getContext().put("mapping", "@timestamp:ctime,index:dataId");
         esQuery.parseProperties();
         esQuery.parseMap();
     }
 
     @Test
     public void checkConstantMapping() throws Exception {
-        ElasticSearchQuery esQuery = new ElasticSearchQuery(null, null, null);
+        ElasticsearchQuery esQuery = new ElasticsearchQuery(null, null, null);
 
         Map<String, Object> source = new HashMap<>();
         String value = esQuery.getField(source, "test");
@@ -112,4 +122,49 @@ public class ElasticSearchQueryTest {
         value = esQuery.getField(source, "test.propB|'value'");
         assertEquals("valueB", value);
     }
+
+    /*
+        -Djavax.net.ssl.trustStore=/tmp/truststore.jks
+        -Djavax.net.ssl.trustStorePassword=password
+        -Djavax.net.ssl.keyStore=/tmp/admin-key.jks
+        -Djavax.net.ssl.keyStorePassword=password
+        -Djavax.net.debug=ssl
+    */
+
+   @Ignore
+   @Test
+   public void queryByObject() throws Exception {
+        System.setProperty("javax.net.ssl.trustStore", "/tmp/truststore.jks");
+        System.setProperty("javax.net.ssl.trustStorePassword", "password");
+
+        Map<String, String> properties = new HashMap<>();
+        properties.put("token", "Q1KcScGJOgJUFadfOrEL4uX56lqnschT4jcsnoqBDFI");
+        properties.put("proxy-remote-user", "kibtest");
+        properties.put("forwarded-for", "127.0.0.1");
+
+        ElasticsearchQuery query = new ElasticsearchQuery(null, properties, null);
+        query.connect("https://logging-es:9200");
+        List<Map<String, Object>> results = query.query("[]", ".operations*");
+        System.out.println(results.size());
+        List<Event> events = query.parseEvents(results);
+        System.out.println(events.size());
+        query.disconnect();
+   }
+
+   @Ignore
+   @Test
+   public void directConnectionTest() throws Exception {
+        SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        URL url = new URL("https://logging-es:9200/_search");
+        HttpsURLConnection conn = (HttpsURLConnection)url.openConnection();
+        conn.setSSLSocketFactory(sslsocketfactory);
+        InputStream inputstream = conn.getInputStream();
+        InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
+        BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
+
+        String string = null;
+        while ((string = bufferedreader.readLine()) != null) {
+            System.out.println("Received " + string);
+        }
+   }
 }

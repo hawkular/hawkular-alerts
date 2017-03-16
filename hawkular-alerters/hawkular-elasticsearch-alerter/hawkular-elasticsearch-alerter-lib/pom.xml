@@ -29,13 +29,13 @@
   <artifactId>hawkular-elasticsearch-alerter-lib</artifactId>
   <packaging>jar</packaging>
 
-  <name>Hawkular Alerting: ElasticSearch Alerter</name>
+  <name>Hawkular Alerting: Elasticsearch Alerter</name>
 
   <dependencies>
 
     <dependency>
-      <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch</artifactId>
+      <groupId>org.elasticsearch.client</groupId>
+      <artifactId>rest</artifactId>
       <version>${version.org.elasticsearch.client}</version>
     </dependency>
 
@@ -43,24 +43,6 @@
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>
       <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <version>${version.elasticsearch.com.fasterxml.jackson.core}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>${version.elasticsearch.org.apache.logging.log4j}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>${version.elasticsearch.org.apache.logging.log4j}</version>
     </dependency>
 
     <!-- Wildfly dependencies -->
@@ -87,6 +69,18 @@
     <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging-processor</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
       <scope>provided</scope>
     </dependency>
 

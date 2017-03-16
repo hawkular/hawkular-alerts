@@ -16,15 +16,9 @@
  */
 package org.hawkular.alerter.elasticsearch
 
-import org.hawkular.alerts.api.model.condition.EventCondition
-import org.hawkular.alerts.api.model.trigger.FullTrigger
-import org.hawkular.alerts.api.model.trigger.Mode
-import org.hawkular.alerts.api.model.trigger.Trigger
+import static org.junit.Assert.assertTrue
 
 import java.text.SimpleDateFormat
-
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertTrue
 
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
@@ -35,14 +29,14 @@ import org.junit.Test
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-class ElasticSearchITest {
+class ElasticsearchITest {
 
     def elasticsearch, hawkular, format, definitions, response
 
-    ElasticSearchITest() {
+    ElasticsearchITest() {
         elasticsearch = new RESTClient(System.getProperty('elasticsearch.base-uri') ?: 'http://127.0.0.1:9200/', ContentType.JSON)
         elasticsearch.handler.failure = { it }
-        hawkular = new RESTClient(System.getProperty('hawkular.base-uri') ?: 'http://127.0.0.1:8080/hawkular/alerts/', ContentType.JSON)
+        hawkular = new RESTClient(System.getProperty('hawkular.base-uri') ?: 'http://centos:8080/hawkular/alerts/', ContentType.JSON)
         hawkular.handler.failure = { it }
         /*
             Basic header is used only for hawkular-services distribution.
@@ -69,6 +63,12 @@ class ElasticSearchITest {
     void hawkularCreateTestDefinitions() {
         response = hawkular.post(path: "import/all", body: definitions)
         assertTrue(response.status < 300)
+    }
+
+    @Ignore
+    @Test
+    void hawkularDeleteTestDefinitions() {
+        hawkular.delete(path: "triggers/es-trigger")
     }
 
     @Ignore
@@ -228,6 +228,15 @@ class ElasticSearchITest {
         println project
         response = elasticsearch.post(path: "${index}/${type}", body: project)
         assertTrue(response.status < 300)
+    }
+
+    @Ignore
+    @Test
+    void send100elasticsearchSendInfoProjectLog() {
+        for (int i=0; i<100; i++) {
+            elasticsearchSendInfoProjectLog();
+            Thread.sleep(5);
+        }
     }
 
 }

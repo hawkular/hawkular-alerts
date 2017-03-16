@@ -66,4 +66,8 @@ public class JsonUtil {
     public static Map<String, Object> getMap(Object o) {
         return instance.mapper.convertValue(o, Map.class);
     }
+
+    public static ObjectMapper getMapper() {
+        return instance.mapper;
+    }
 }

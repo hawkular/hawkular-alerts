@@ -29,7 +29,7 @@
   <artifactId>hawkular-elasticsearch-alerter</artifactId>
   <packaging>pom</packaging>
 
-  <name>Hawkular Alerting: ElasticSearch Alerter parent</name>
+  <name>Hawkular Alerting: Elasticsearch Alerter parent</name>
 
   <modules>
     <module>hawkular-elasticsearch-alerter-lib</module>

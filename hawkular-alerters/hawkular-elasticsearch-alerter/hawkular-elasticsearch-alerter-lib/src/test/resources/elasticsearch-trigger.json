@@ -2,18 +2,19 @@
   "triggers":[
     {
       "trigger":{
-        "id": "es-trigger",
-        "name": "ES Trigger",
-        "description": "ElasticSearch / Hawkular Alerting integration",
+        "id": "trigger-project",
+        "name": "Project Logging Trigger",
+        "description": "Alert on Project Logging (EFK infrastructure)",
         "severity": "HIGH",
         "enabled": true,
-        "firingMatch": "ANY",
         "tags": {
-          "ElasticSearch": "@timestamp"
+          "Elasticsearch": "Demo ES instance"
         },
         "context": {
+          "timestamp": "@timestamp",
           "interval": "30s",
-          "map": "level|'INFO':category,@timestamp:ctime,message:text,hostname:dataId,index:tags"
+          "index": "project.logging*",
+          "mapping": "type|'Unknown':category,@timestamp:ctime,message:text,hostname:dataId,index:tags"
         },
         "actions":[
           {
@@ -33,13 +34,47 @@
       "conditions":[
         {
           "type": "EVENT",
-          "dataId": "localhost",
-          "expression": "category == 'ERROR', tags.index starts 'project'"
+          "dataId": "192.168.122.198",
+          "expression": "category == 'response'"
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "trigger-operations",
+        "name": "Operations Trigger",
+        "description": "Alert on .operations data",
+        "severity": "HIGH",
+        "enabled": true,
+        "tags": {
+          "Elasticsearch": "Demo ES instance"
         },
+        "context": {
+          "timestamp": "@timestamp",
+          "interval": "30s",
+          "index": ".operations*",
+          "mapping": "type|'Unknown':category,@timestamp:ctime,message:text,hostname:dataId,index:tags"
+        },
+        "actions":[
+          {
+            "actionPlugin": "elasticsearch",
+            "actionId": "write-full-alert"
+          },
+          {
+            "actionPlugin": "elasticsearch",
+            "actionId": "write-partial-alert"
+          },
+          {
+            "actionPlugin": "email",
+            "actionId": "email-to-admins"
+          }
+        ]
+      },
+      "conditions":[
         {
           "type": "EVENT",
-          "dataId": "localhost",
-          "expression": "category == 'WARN', tags.index starts 'project'"
+          "dataId": "centos",
+          "expression": "text starts '[system]'"
         }
       ]
     }
@@ -57,6 +92,7 @@
       "actionId": "write-partial-alert",
       "properties": {
         "index": "alerts_summary",
+        "timestamp.pattern": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ",
         "transform": "{\"tenantId\":\"tenant\",\"ctime\":\"timestamp\",\"text\":\"trigger\",\"context\":{\"interval\":\"fetch-interval\"},\"evalSets\":\"details\"}"
       }
     },
@@ -64,6 +100,7 @@
       "actionPlugin": "email",
       "actionId": "email-to-admins",
       "properties": {
+        "mail.smtp.host": "192.168.1.16",
         "to": "admins@hawkular.org"
       }
     }

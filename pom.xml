@@ -71,19 +71,19 @@
   <properties>
     <!-- overrides 3.1.2 from parent which produces NPE -->
     <version.com.bazaarvoice.jolt>0.1.0</version.com.bazaarvoice.jolt>
+    <version.com.fasterxml.jackson.core-elasticsearch>2.8.3</version.com.fasterxml.jackson.core-elasticsearch>
     <version.com.icegreen>1.4.1</version.com.icegreen>
-    <version.elasticsearch.com.fasterxml.jackson.core>2.8.6</version.elasticsearch.com.fasterxml.jackson.core>
-    <version.elasticsearch.org.apache.logging.log4j>2.8</version.elasticsearch.org.apache.logging.log4j>
     <version.javaee.spec>7.0</version.javaee.spec>
     <version.maven-patch-plugin>1.2</version.maven-patch-plugin>
     <version.org.antlr>4.6</version.org.antlr>
     <version.org.apache.commons.commons-math3>3.4.1</version.org.apache.commons.commons-math3>
+    <version.org.apache.logging.log4j-elasticsearch>2.8</version.org.apache.logging.log4j-elasticsearch>
     <version.org.cassalog>0.4.2</version.org.cassalog>
     <version.org.codehaus.jsr166-mirror>1.7.0</version.org.codehaus.jsr166-mirror>
     <version.org.codehaus.gpars>1.2.0</version.org.codehaus.gpars>
     <version.org.codehaus.groovy.maven>1.0</version.org.codehaus.groovy.maven>
     <version.org.drools>6.4.0.Final</version.org.drools>
-    <version.org.elasticsearch.client>2.4.4</version.org.elasticsearch.client>
+    <version.org.elasticsearch.client>5.2.2</version.org.elasticsearch.client>
     <version.org.freemarker>2.3.23</version.org.freemarker>
     <version.org.hawkular.commons>0.9.1.Final</version.org.hawkular.commons>
     <version.org.infinispan.wildfly>8.0.1.Final</version.org.infinispan.wildfly>
