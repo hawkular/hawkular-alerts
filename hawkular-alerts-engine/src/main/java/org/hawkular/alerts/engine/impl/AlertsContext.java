@@ -131,7 +131,7 @@ public class AlertsContext {
         return actionsListeners;
     }
 
-    public void notifyListeners(Set<DefinitionsEvent> notifications) {
+    public void notifyListeners(List<DefinitionsEvent> notifications) {
         Set<DefinitionsEvent.Type> notificationTypes = notifications.stream()
                 .map(n -> n.getType())
                 .collect(Collectors.toSet());
@@ -142,7 +142,7 @@ public class AlertsContext {
                     log.debugf("Notified Listener %s of %s", e.getKey(), notificationTypes);
                     e.getKey().onChange(notifications.stream()
                             .filter(de -> e.getValue().contains(de.getType()))
-                            .collect(Collectors.toSet()));
+                            .collect(Collectors.toList()));
                 });
         if (!distributed) {
             distributedListener.stream().forEach(listener -> listener.onChange(mapDistributedEvents(notifications)));
@@ -155,7 +155,7 @@ public class AlertsContext {
         return !intersection.isEmpty();
     }
 
-    private Set<DistributedEvent> mapDistributedEvents(Set<DefinitionsEvent> notification) {
+    private Set<DistributedEvent> mapDistributedEvents(List<DefinitionsEvent> notification) {
         if (notification == null) {
             return null;
         }

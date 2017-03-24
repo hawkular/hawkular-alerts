@@ -21,12 +21,12 @@ import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFI
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_UPDATE;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -124,7 +124,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     // desirable to only send a listener update one time, at the end, because we want listeners to be
     // efficient (i.e. don't update a cache 100 times in a row for one import of 100 triggers). Methods should not
     // manipulate these variables directly, instead call deferNotifications() and releaseNotifications().
-    private Set<DefinitionsEvent> deferredNotifications = new LinkedHashSet<>();
+    private List<DefinitionsEvent> deferredNotifications = new ArrayList<>();
     private int deferNotificationsCount = 0;
     private int batchSize;
     private final BatchStatement.Type batchType = BatchStatement.Type.LOGGED;
@@ -3110,7 +3110,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             deferredNotifications.add(de);
             return;
         }
-        alertsContext.notifyListeners(Collections.singleton(de));
+        alertsContext.notifyListeners(Arrays.asList(de));
     }
 
     private void notifyListenersDeferred() {
@@ -3118,8 +3118,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             return;
         }
 
-        Set<DefinitionsEvent> notifications = deferredNotifications;
-        deferredNotifications = new LinkedHashSet<>();
+        List<DefinitionsEvent> notifications = deferredNotifications;
+        deferredNotifications = new ArrayList<>();
         alertsContext.notifyListeners(notifications);
     }
 

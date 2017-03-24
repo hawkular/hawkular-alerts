@@ -16,7 +16,7 @@
  */
 package org.hawkular.alerts.api.services;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * A listener for reacting to definitions changes.
@@ -37,5 +37,5 @@ public interface DefinitionsListener {
      *
      * @param events change events triggering the notification.
      */
-    void onChange(Set<DefinitionsEvent> events);
+    void onChange(List<DefinitionsEvent> events);
 }
