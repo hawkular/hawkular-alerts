@@ -76,6 +76,9 @@ public class EventsHandler {
     @EJB
     AlertsService alertsService;
 
+    @EJB
+    StreamWatcher streamWatcher;
+
     public EventsHandler() {
         log.debug("Creating instance.");
     }
@@ -344,6 +347,90 @@ public class EventsHandler {
         }
     }
 
+    @GET
+    @Path("/watch")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Watch events with optional filtering.",
+            notes = "Return a stream of events ordered by ctime. + \n" +
+                    " + \n" +
+                    "If not criteria defined, it fetches all events stored in the system. + \n" +
+                    " + \n" +
+                    "Time criterias are used only for the initial query. + \n" +
+                    "After initial query, time criterias are discarded, watching events by ctime. + \n" +
+                    "Non time criterias are active. + \n" +
+                    "If not criteria defined, it fetches all events stored in the system. + \n" +
+                    "Tags Query language (BNF): + \n" +
+                    "[source] \n" +
+                    "---- \n" +
+                    "<tag_query> ::= ( <expression> | \"(\" <object> \")\" " +
+                    "| <object> <logical_operator> <object> ) \n" +
+                    "<expression> ::= ( <tag_name> | <not> <tag_name> " +
+                    "| <tag_name> <boolean_operator> <tag_value> | " +
+                    "<tag_name> <array_operator> <array> ) \n" +
+                    "<not> ::= [ \"NOT\" | \"not\" ] \n" +
+                    "<logical_operator> ::= [ \"AND\" | \"OR\" | \"and\" | \"or\" ] \n" +
+                    "<boolean_operator> ::= [ \"==\" | \"!=\" ] \n" +
+                    "<array_operator> ::= [ \"IN\" | \"NOT IN\" | \"in\" | \"not in\" ] \n" +
+                    "<array> ::= ( \"[\" \"]\" | \"[\" ( \",\" <tag_value> )* ) \n" +
+                    "<tag_name> ::= <identifier> \n" +
+                    "<tag_value> ::= ( \"'\" <regexp> \"'\" | <simple_value> ) \n" +
+                    "; \n" +
+                    "; <identifier> and <simple_value> follow pattern [a-zA-Z_0-9][\\-a-zA-Z_0-9]* \n" +
+                    "; <regexp> follows any valid Java Regular Expression format \n" +
+                    "---- \n",
+            response = Event.class, responseContainer = "List")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Stream of events.", response = Event.class),
+            @ApiResponse(code = 200, message = "Errors will close the stream. Description is sent before stream is closed.", response = ResponseUtil.ApiError.class)
+    })
+    public Response watchEvents(
+            @ApiParam(required = false, value = "Filter out events created before this time.",
+                    allowableValues = "Timestamp in millisecond since epoch.")
+            @QueryParam("startTime")
+            final Long startTime,
+            @ApiParam(required = false, value = "Filter out events created after this time.",
+                    allowableValues = "Timestamp in millisecond since epoch.")
+            @QueryParam("endTime")
+            final Long endTime,
+            @ApiParam(required = false, value = "Filter out events for unspecified eventIds.",
+                    allowableValues = "Comma separated list of event IDs.")
+            @QueryParam("eventIds") final String eventIds,
+            @ApiParam(required = false, value = "Filter out events for unspecified triggers.",
+                    allowableValues = "Comma separated list of trigger IDs.")
+            @QueryParam("triggerIds")
+            final String triggerIds,
+            @ApiParam(required = false, value = "Filter out events for unspecified categories. ",
+                    allowableValues = "Comma separated list of category values.")
+            @QueryParam("categories")
+            final String categories,
+            @ApiParam(required = false, value = "[DEPRECATED] Filter out events for unspecified tags.",
+                    allowableValues = "Comma separated list of tags, each tag of format 'name\\|value'. + \n" +
+                            "Specify '*' for value to match all values.")
+            @QueryParam("tags")
+            final String tags,
+            @ApiParam(required = false, value = "Filter out events for unspecified tags.",
+                    allowableValues = "A tag query expression.")
+            @QueryParam("tagQuery")
+            final String tagQuery,
+            @ApiParam(required = false, value = "Define interval when watcher notifications will be sent.",
+                    allowableValues = "Interval in seconds")
+            @QueryParam("watchInterval")
+            final Long watchInterval,
+            @ApiParam(required = false, value = "Return only thin events, do not include: evalSets.")
+            @QueryParam("thin")
+            final Boolean thin,
+            @Context
+            final UriInfo uri) {
+        String unifiedTagQuery;
+        if (!isEmpty(tags)) {
+            unifiedTagQuery = parseTagQuery(parseTags(tags));
+        } else {
+            unifiedTagQuery = tagQuery;
+        }
+        EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
+                unifiedTagQuery, thin);
+        return Response.ok(streamWatcher.watchEvents(Collections.singleton(tenantId), criteria, watchInterval)).build();
+    }
 
     @DELETE
     @Path("/{eventId}")

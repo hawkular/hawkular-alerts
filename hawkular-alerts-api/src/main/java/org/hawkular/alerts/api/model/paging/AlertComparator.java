@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,6 +34,7 @@ public class AlertComparator implements Comparator<Alert> {
         CTIME("ctime"),
         SEVERITY("severity"),
         STATUS("status"),
+        STIME("stime"),
         CONTEXT("context");
 
         private String text;
@@ -110,6 +111,8 @@ public class AlertComparator implements Comparator<Alert> {
                 return o1.getAlertId().compareTo(o2.getAlertId()) * iOrder;
             case CTIME:
                 return (int) ((o1.getCtime() - o2.getCtime()) * iOrder);
+            case STIME:
+                return (int) ((o1.getCurrentLifecycle().getStime() - o2.getCurrentLifecycle().getStime()) * iOrder);
             case SEVERITY:
                 if (o1.getSeverity() == null && o2.getSeverity() == null) {
                     return 0;

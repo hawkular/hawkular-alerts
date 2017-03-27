@@ -36,6 +36,8 @@ public class AlertsCriteria {
     Long endResolvedTime = null;
     Long startAckTime = null;
     Long endAckTime = null;
+    Long startStatusTime = null;
+    Long endStatusTime = null;
     String alertId = null;
     Collection<String> alertIds = null;
     Alert.Status status = null;
@@ -53,7 +55,8 @@ public class AlertsCriteria {
 
     public AlertsCriteria(Long startTime, Long endTime, String alertIds, String triggerIds,
                           String statuses, String severities, String tagQuery, Long startResolvedTime,
-                          Long endResolvedTime, Long startAckTime, Long endAckTime, Boolean thin) {
+                          Long endResolvedTime, Long startAckTime, Long endAckTime, Long startStatusTime,
+                          Long endStatusTime, Boolean thin) {
         setStartTime(startTime);
         setEndTime(endTime);
         if (!isEmpty(alertIds)) {
@@ -81,6 +84,8 @@ public class AlertsCriteria {
         setEndResolvedTime(endResolvedTime);
         setStartAckTime(startAckTime);
         setEndAckTime(endAckTime);
+        setStartStatusTime(startStatusTime);
+        setEndStatusTime(endStatusTime);
         if (null != thin) {
             setThin(thin.booleanValue());
         }
@@ -159,6 +164,30 @@ public class AlertsCriteria {
      */
     public void setEndAckTime(Long endAckTime) {
         this.endAckTime = endAckTime;
+    }
+
+    public Long getStartStatusTime() {
+        return startStatusTime;
+    }
+
+    /**
+     * @param startStatusTime fetched Alerts must have at least one statusTime in the lifecycle greater than or equal to
+     *                     startStatusTime.
+     */
+    public void setStartStatusTime(Long startStatusTime) {
+        this.startStatusTime = startStatusTime;
+    }
+
+    public Long getEndStatusTime() {
+        return endStatusTime;
+    }
+
+    /**
+     * @param endStatusTime fetched Alerts must have at least one statusTime in the lifecycle less than or equal to
+     *                   endStatusTime.
+     */
+    public void setEndStatusTime(Long endStatusTime) {
+        this.endStatusTime = endStatusTime;
     }
 
     public String getAlertId() {
@@ -299,6 +328,10 @@ public class AlertsCriteria {
         return (null != startAckTime || null != endAckTime);
     }
 
+    public boolean hasStatusTimeCriteria() {
+        return (null != startStatusTime || null != endStatusTime);
+    }
+
     public boolean hasCriteria() {
         return hasAlertIdCriteria()
                 || hasStatusCriteria()
@@ -307,17 +340,32 @@ public class AlertsCriteria {
                 || hasCTimeCriteria()
                 || hasTriggerIdCriteria()
                 || hasResolvedTimeCriteria()
-                || hasAckTimeCriteria();
+                || hasAckTimeCriteria()
+                || hasStatusTimeCriteria();
     }
 
     @Override
     public String toString() {
-        return "AlertsCriteria [startTime=" + startTime + ", endTime=" + endTime + ", alertId=" + alertId
-                + ", alertIds=" + alertIds + ", status=" + status + ", statusSet=" + statusSet + ", severity="
-                + severity + ", severities=" + severities + ", triggerId=" + triggerId + ", triggerIds=" + triggerIds
-                + ", tagQuery=" + tagQuery + ", startAckTime=" + startAckTime
-                + ", endAckTime=" + endAckTime + ", " + "startResolvedTime=" + startResolvedTime
-                + ", endResolvedTime=" + endResolvedTime + ", " + "thin=" + thin + "]";
+        return "AlertsCriteria{" +
+                "startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", startResolvedTime=" + startResolvedTime +
+                ", endResolvedTime=" + endResolvedTime +
+                ", startAckTime=" + startAckTime +
+                ", endAckTime=" + endAckTime +
+                ", startStatusTime=" + startStatusTime +
+                ", endStatusTime=" + endStatusTime +
+                ", alertId='" + alertId + '\'' +
+                ", alertIds=" + alertIds +
+                ", status=" + status +
+                ", statusSet=" + statusSet +
+                ", severity=" + severity +
+                ", severities=" + severities +
+                ", triggerId='" + triggerId + '\'' +
+                ", triggerIds=" + triggerIds +
+                ", tagQuery='" + tagQuery + '\'' +
+                ", thin=" + thin +
+                '}';
     }
 
     private static boolean isEmpty(String s) {

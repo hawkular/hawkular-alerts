@@ -100,6 +100,7 @@ public class PublishCacheManager {
             definitions.registerListener(events -> {
                 log.debugf("Receiving %s", events);
                 events.stream().forEach(e -> {
+                    log.debugf("Received %s", e);
                     String tenantId = e.getTargetTenantId();
                     String triggerId = e.getTargetId();
                     TriggerKey triggerKey = new TriggerKey(tenantId, triggerId);

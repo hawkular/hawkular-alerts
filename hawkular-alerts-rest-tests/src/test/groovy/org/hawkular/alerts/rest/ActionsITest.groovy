@@ -653,7 +653,7 @@ class ActionsITest extends AbstractITestBase {
 
         // Check actions generated
         // This used to fail randomly, therefore try several times before failing
-        for ( int i=0; i < 20; ++i ) {
+        for ( int i=0; i < 30; ++i ) {
             resp = client.get(path: "actions/history",
                     query: [startTime:start,actionPlugins:"email",
                             actionIds:"global-action-notify-to-admins,global-action-notify-to-developers"])

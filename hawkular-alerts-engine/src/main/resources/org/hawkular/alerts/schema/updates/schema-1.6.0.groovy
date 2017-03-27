@@ -14,15 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.schema
-
-include '/org/hawkular/alerts/schema/bootstrap.groovy'
 
 setKeyspace keyspace
 
-// Upgrade scripts are defined here:
-include '/org/hawkular/alerts/schema/updates/schema-1.2.1.groovy'
-include '/org/hawkular/alerts/schema/updates/schema-1.2.3.groovy'
-include '/org/hawkular/alerts/schema/updates/schema-1.4.0.groovy'
-include '/org/hawkular/alerts/schema/updates/schema-1.5.0.groovy'
-include '/org/hawkular/alerts/schema/updates/schema-1.6.0.groovy'
+schemaChange {
+  version '5.0'
+  author 'lponce'
+  tags '1.6.x'
+  cql """
+CREATE TABLE alerts_stimes (
+    tenantId text,
+    alertId text,
+    stime bigint,
+    PRIMARY KEY (tenantId, stime, alertId)
+)
+"""
+  verify { tableExists(keyspace, "alerts_stimes") }
+}

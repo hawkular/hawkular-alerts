@@ -173,6 +173,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         PreparedStatement insertAlert = CassStatement.get(session, CassStatement.INSERT_ALERT);
         PreparedStatement insertAlertTrigger = CassStatement.get(session, CassStatement.INSERT_ALERT_TRIGGER);
         PreparedStatement insertAlertCtime = CassStatement.get(session, CassStatement.INSERT_ALERT_CTIME);
+        PreparedStatement insertAlertStime = CassStatement.get(session, CassStatement.INSERT_ALERT_STIME);
         PreparedStatement insertTag = CassStatement.get(session, CassStatement.INSERT_TAG);
 
         try {
@@ -183,6 +184,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 batch.add(insertAlert.bind(a.getTenantId(), a.getAlertId(), JsonUtil.toJson(a)));
                 batch.add(insertAlertTrigger.bind(a.getTenantId(), a.getAlertId(), a.getTriggerId()));
                 batch.add(insertAlertCtime.bind(a.getTenantId(), a.getAlertId(), a.getCtime()));
+                batch.add(insertAlertStime.bind(a.getTenantId(), a.getAlertId(), a.getCurrentLifecycle().getStime()));
 
                 a.getTags().entrySet().stream().forEach(tag -> {
                     batch.add(insertTag.bind(a.getTenantId(), TagType.ALERT.name(),
@@ -710,6 +712,22 @@ public class CassAlertsServiceImpl implements AlertsService {
                 }
 
                 /*
+                    Get alertsIds filteres by status time clause
+                 */
+                if (criteria.hasStatusTimeCriteria()) {
+                    Set<String> alertIdsFilteredByStatusTime = filterByStatusTime(tenantId, criteria);
+                    if (activeFilter) {
+                        alertIds.retainAll(alertIdsFilteredByStatusTime);
+                    } else {
+                        alertIds.addAll(alertIdsFilteredByStatusTime);
+                    }
+                    if (alertIds.isEmpty()) {
+                        return alerts;
+                    }
+                    activeFilter = true;
+                }
+
+                /*
                     Below this point we filter manually  because the remaining filters have a low cardinality of
                     values, and are not efficiently handled with database indexes and the intersection-based approach.
                     Fetch the alerts now and proceed.
@@ -947,6 +965,37 @@ public class CassAlertsServiceImpl implements AlertsService {
                 }
             }
         }
+    }
+
+    private Set<String> filterByStatusTime(String tenantId, AlertsCriteria criteria) throws Exception {
+        Set<String> result = Collections.emptySet();
+
+        if (criteria.getStartStatusTime() != null || criteria.getEndStatusTime() != null) {
+            result = new HashSet<>();
+
+            BoundStatement boundStime;
+            if (criteria.getStartStatusTime() != null && criteria.getEndStatusTime() != null) {
+                PreparedStatement selectAlertSTimeStartEnd = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_STIME_START_END);
+                boundStime = selectAlertSTimeStartEnd.bind(tenantId, criteria.getStartStatusTime(),
+                        criteria.getEndStatusTime());
+            } else if (criteria.getStartStatusTime() != null) {
+                PreparedStatement selectAlertSTimeStart = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_STIME_START);
+                boundStime = selectAlertSTimeStart.bind(tenantId, criteria.getStartStatusTime());
+            } else {
+                PreparedStatement selectAlertSTimeEnd = CassStatement.get(session,
+                        CassStatement.SELECT_ALERT_STIME_END);
+                boundStime = selectAlertSTimeEnd.bind(tenantId, criteria.getEndStatusTime());
+            }
+
+            ResultSet rsAlertsStimes = session.execute(boundStime);
+            for (Row row : rsAlertsStimes) {
+                String alertId = row.getString("alertId");
+                result.add(alertId);
+            }
+        }
+        return result;
     }
 
     private Set<String> filterByEvents(EventsCriteria criteria) {
@@ -1668,6 +1717,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         PreparedStatement deleteAlertCtime = CassStatement.get(session, CassStatement.DELETE_ALERT_CTIME);
         PreparedStatement deleteAlertTrigger = CassStatement.get(session, CassStatement.DELETE_ALERT_TRIGGER);
         PreparedStatement deleteAlertLifecycle = CassStatement.get(session, CassStatement.DELETE_ALERT_LIFECYCLE);
+        PreparedStatement deleteAlertStime = CassStatement.get(session, CassStatement.DELETE_ALERT_STIME);
         if (deleteAlert == null || deleteAlertCtime == null || deleteAlertTrigger == null
                 || deleteAlertLifecycle == null) {
             throw new RuntimeException("delete*Alerts PreparedStatement is null");
@@ -1683,6 +1733,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             batch.add(deleteAlertTrigger.bind(tenantId, a.getTriggerId(), id));
             a.getLifecycle().stream().forEach(l -> {
                 batch.add(deleteAlertLifecycle.bind(tenantId, l.getStatus().name(), l.getStime(), a.getAlertId()));
+                batch.add(deleteAlertStime.bind(tenantId, l.getStime(), a.getAlertId()));
             });
             i += batch.size();
             if (i > batchSize) {
@@ -1830,6 +1881,8 @@ public class CassAlertsServiceImpl implements AlertsService {
         try {
             PreparedStatement insertAlertLifecycle = CassStatement.get(session,
                     CassStatement.INSERT_ALERT_LIFECYCLE);
+            PreparedStatement insertAlertStime = CassStatement.get(session,
+                    CassStatement.INSERT_ALERT_STIME);
             PreparedStatement updateAlert = CassStatement.get(session,
                     CassStatement.UPDATE_ALERT);
 
@@ -1838,12 +1891,13 @@ public class CassAlertsServiceImpl implements AlertsService {
             if (lifecycle != null) {
                 futures.add(session.executeAsync(insertAlertLifecycle.bind(alert.getTenantId(), alert.getAlertId(),
                         lifecycle.getStatus().name(), lifecycle.getStime())));
+                futures.add(session.executeAsync(insertAlertStime.bind(alert.getTenantId(), alert.getAlertId(),
+                        lifecycle.getStime())));
             }
             futures.add(session.executeAsync(updateAlert.bind(JsonUtil.toJson(alert), alert.getTenantId(),
                     alert.getAlertId())));
 
-            @SuppressWarnings("unused")
-            List<ResultSet> rsAlertsStatusToDelete = Futures.allAsList(futures).get();
+            Futures.allAsList(futures).get();
 
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());

@@ -81,6 +81,66 @@ class CrossTenantITest extends AbstractITestBase {
         def start = System.currentTimeMillis();
 
         List<String> tenantIds = ["tenant1", "tenant2", "tenant3", "tenant4"];
+
+        def watcherRun = true
+        def alertsWatched = 0, eventsWatched = 0, tenant1AlertsWatched = 0, tenant1EventsWatched = 0
+
+        Thread.start {
+            URL watcherUrl = new URL(baseURI + "admin/watch/alerts")
+            HttpURLConnection conn = watcherUrl.openConnection()
+            conn.setRequestMethod("GET")
+            conn.setRequestProperty("Hawkular-Tenant", "tenant1,tenant2,tenant3,tenant4")
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))
+            def notification
+            while (watcherRun && ( (notification = reader.readLine()) != null )) {
+                logger.info(notification)
+                alertsWatched++
+            }
+            reader.close()
+        }
+
+        Thread.start {
+            URL watcherUrl = new URL(baseURI + "admin/watch/events")
+            HttpURLConnection conn = watcherUrl.openConnection()
+            conn.setRequestMethod("GET")
+            conn.setRequestProperty("Hawkular-Tenant", "tenant1,tenant2,tenant3,tenant4")
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))
+            def notification
+            while (watcherRun && ( (notification = reader.readLine()) != null )) {
+                logger.info(notification)
+                eventsWatched++
+            }
+            reader.close()
+        }
+
+        Thread.start {
+            URL watcherUrl = new URL(baseURI + "watch")
+            HttpURLConnection conn = watcherUrl.openConnection()
+            conn.setRequestMethod("GET")
+            conn.setRequestProperty("Hawkular-Tenant", "tenant1")
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))
+            def notification
+            while (watcherRun && ( (notification = reader.readLine()) != null )) {
+                logger.info(notification)
+                tenant1AlertsWatched++
+            }
+            reader.close()
+        }
+
+        Thread.start {
+            URL watcherUrl = new URL(baseURI + "events/watch")
+            HttpURLConnection conn = watcherUrl.openConnection()
+            conn.setRequestMethod("GET")
+            conn.setRequestProperty("Hawkular-Tenant", "tenant1")
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))
+            def notification
+            while (watcherRun && ( (notification = reader.readLine()) != null )) {
+                logger.info(notification)
+                tenant1EventsWatched++
+            }
+            reader.close()
+        }
+
         generateAlertsForMultipleTenants(tenantIds, 5);
 
         client.headers.put("Hawkular-Tenant", "tenant1,tenant2,tenant3,tenant4")
@@ -105,6 +165,9 @@ class CrossTenantITest extends AbstractITestBase {
                 break;
             }
         }
+        // Give watchers some time
+        Thread.sleep(6000)
+        watcherRun = false
         if (cluster) {
             logger.info("Alerts generated: ")
             for (int i = 0; i < resp.data.size(); i++) {
@@ -113,6 +176,10 @@ class CrossTenantITest extends AbstractITestBase {
         }
         assertEquals(200, resp.status)
         assertEquals(20, resp.data.size())
+        assertEquals(20, alertsWatched)
+        assertEquals(20, eventsWatched)
+        assertEquals(5, tenant1AlertsWatched)
+        assertEquals(5, tenant1EventsWatched)
     }
 
 }

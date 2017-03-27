@@ -57,6 +57,9 @@ class AlertsITest extends AbstractITestBase {
 
         resp = client.get(path: "", query: [endAckTime:now, startAckTime:"0"] )
         assert resp.status == 200 : resp.status
+
+        resp = client.get(path: "", query: [endStatusTime:now, startStatusTime:"0"] )
+        assert resp.status == 200 : resp.status
     }
 
     @Test
@@ -88,6 +91,9 @@ class AlertsITest extends AbstractITestBase {
         assert resp.status == 200 : resp.status
 
         resp = client.put(path: "delete", query: [endAckTime:now, startAckTime:"0"] )
+        assert resp.status == 200 : resp.status
+
+        resp = client.put(path: "delete", query: [endStatusTime:now, startStatusTime:"0"] )
         assert resp.status == 200 : resp.status
     }
 
