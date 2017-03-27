@@ -74,7 +74,7 @@ public class GroupMemberInfo {
             required = true)
     private String memberName;
 
-    @ApiModelProperty(value = "Trigger name for member Trigger.",
+    @ApiModelProperty(value = "Trigger description for member Trigger.",
             position = 3,
             required = true)
     private String memberDescription;
