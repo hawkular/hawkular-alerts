@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
  */
 package org.hawkular.alerts.api.services;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * A listener for reacting to definitions changes.
@@ -32,5 +32,5 @@ public interface DefinitionsListener {
      *
      * @param events change events triggering the notification.
      */
-    void onChange(Set<DefinitionsEvent> events);
+    void onChange(List<DefinitionsEvent> events);
 }

@@ -21,6 +21,7 @@ import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFI
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_UPDATE;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -121,7 +122,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     // desirable to only send a listener update one time, at the end, because we want listeners to be
     // efficient (i.e. don't update a cache 100 times in a row for one import of 100 triggers). Methods should not
     // manipulate these variables directly, instead call deferNotifications() and releaseNotifications().
-    private Set<DefinitionsEvent> deferredNotifications = new HashSet<>();
+    private List<DefinitionsEvent> deferredNotifications = new ArrayList<>();
     private int deferNotificationsCount = 0;
     private int batchSize;
     private final BatchStatement.Type batchType = BatchStatement.Type.LOGGED;
@@ -3045,7 +3046,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 .filter(e -> e.getValue().contains(de.getType()))
                 .forEach(e -> {
                     log.debugf("Notified Listener %s of %s", e.getKey(), de.getType().name());
-                    e.getKey().onChange(Collections.singleton(de));
+                    e.getKey().onChange(Arrays.asList(de));
                 });
     }
 
@@ -3054,8 +3055,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             return;
         }
 
-        Set<DefinitionsEvent> notifications = deferredNotifications;
-        deferredNotifications = new HashSet<>();
+        List<DefinitionsEvent> notifications = deferredNotifications;
+        deferredNotifications = new ArrayList<>();
 
         Set<DefinitionsEvent.Type> notificationTypes = notifications.stream()
                 .map(n -> n.getType())
@@ -3071,7 +3072,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     log.debugf("Notified Listener %s of %s", e.getKey(), notificationTypes);
                     e.getKey().onChange(notifications.stream()
                                                      .filter(de -> e.getValue().contains(de.getType()))
-                                                     .collect(Collectors.toSet()));
+                                                     .collect(Collectors.toList()));
                 });
     }
 
