@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,8 +38,8 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(description = "A base class for condition definition. ",
         subTypes = { AvailabilityCondition.class, CompareCondition.class, EventCondition.class, ExternalCondition.class,
-            MissingCondition.class, RateCondition.class, StringCondition.class, ThresholdCondition.class,
-            ThresholdRangeCondition.class })
+            MissingCondition.class, NelsonCondition.class, RateCondition.class, StringCondition.class,
+            ThresholdCondition.class, ThresholdRangeCondition.class })
 @JsonDeserialize(using = JacksonDeserializer.ConditionDeserializer.class)
 public abstract class Condition implements Serializable {
 

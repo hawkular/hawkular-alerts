@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -249,7 +249,8 @@ ${definitionParent ? definitionParent : ''}
                     map = "map[string,string]"
                 }
             }
-            def allowableValues = allowableValues(property.value.enum)
+            def allowableValues = property.value.items ? allowableValues(property.value.items.enum)
+                    : allowableValues(property.value.enum)
             def defaultValue = property.value.example ?: '-'
             writer.println "|${propertyName}|${required}|${description}|${type}|${map ? map : allowableValues}|${defaultValue}"
         }
