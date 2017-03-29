@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,7 +41,7 @@ public class AlertsImportManagerTest {
 
     @Before
     public void checkTestFile() throws Exception {
-        String testFolder = AlertsImportManagerTest.class.getResource("/").getPath();
+        String testFolder = AlertsImportManagerTest.class.getResource("/").toURI().getPath();
         File fAlerts = new File(new File(testFolder, "hawkular-alerts"), "alerts-data.json");
         importManager = new AlertsImportManager(fAlerts);
     }
