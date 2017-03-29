@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ package org.hawkular.alerts.engine;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -2079,8 +2080,9 @@ public class RulesEngineTest {
         NelsonConditionEval e = (NelsonConditionEval) eval.iterator().next();
         assertTrue(e.getViolations().toString(), e.getViolations().contains(NelsonRule.Rule1));
         assertEquals(e.getMean().toString(), Double.valueOf(10.0), e.getMean());
-        assertEquals(e.getStandardDeviation().toString(), "2.58199",
-                new DecimalFormat("#0.#####").format(e.getStandardDeviation()));
+        NumberFormat nf = NumberFormat.getInstance(Locale.ENGLISH);
+        nf.setMaximumFractionDigits(5);
+        assertEquals(e.getStandardDeviation().toString(), "2.58199", nf.format(e.getStandardDeviation()));
         assertEquals(e.getViolations().toString(), 1, e.getViolations().size());
 
         // violate rule 2: nine (or more) points in a row are on the same side of the mean
