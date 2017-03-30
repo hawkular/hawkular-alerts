@@ -21,6 +21,22 @@
 #   Gauge   gauge-2   random values between 0 and 100
 #   Counter counter-1 increasing counter, incremented 0..5 each time
 
+# OS specific support (must be 'true' or 'false').
+linux=false;
+darwin=false;
+other=false;
+case "`uname`" in
+    Darwin*)
+        darwin=true
+        ;;
+    Linux)
+        linux=true
+        ;;
+    *)
+        other=true
+        ;;
+esac
+
 counter=0;
 gauge1Url="http://localhost:8080/hawkular/metrics/gauges/gauge-1/raw"
 gauge2Url="http://localhost:8080/hawkular/metrics/gauges/gauge-2/raw"
@@ -31,7 +47,11 @@ do
   gauge1=$(echo "scale=0; $RANDOM % 101" | bc -l)
   gauge2=$(echo "scale=0; $RANDOM % 101" | bc -l)
   counter=$(echo "scale=0; $counter + ($RANDOM % 6)" | bc -l)
-  timestamp=$(date +%s%3N)
+  if $darwin; then
+    timestamp=$(gdate +%s%3N)
+  else
+    timestamp=$(date +%s%3N)
+  fi
 
   gauge1Metric="[{'timestamp':$timestamp,'value':$gauge1}]"
   gauge2Metric="[{'timestamp':$timestamp,'value':$gauge2}]"
