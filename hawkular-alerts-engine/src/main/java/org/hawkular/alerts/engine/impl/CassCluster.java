@@ -46,6 +46,7 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Host;
 import com.datastax.driver.core.JdkSSLOptions;
 import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.ProtocolVersion;
@@ -258,6 +259,7 @@ public class CassCluster {
         }
         if (session != null) {
             try {
+                waitForAllNodesToBeUp();
                 if (distributed) {
                     initSchemeDistributed();
                 } else {
@@ -273,6 +275,31 @@ public class CassCluster {
         }
         if (session != null && !initialized) {
             throw new RuntimeException("Cassandra alerts keyspace is not initialized");
+        }
+    }
+
+    private void waitForAllNodesToBeUp() {
+        boolean isReady = false;
+        int attempts = this.attempts;
+
+        while (!isReady && !Thread.currentThread().isInterrupted() && attempts-- >= 0) {
+            isReady = true;
+            for (Host host : cluster.getMetadata().getAllHosts()) {
+                if (!host.isUp()) {
+                    isReady = false;
+                    log.warnf("Cassandra node %s may not be up yet. Waiting %s ms for node to come up", host, timeout);
+                    try {
+                        Thread.sleep(timeout);
+                    } catch(InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    break;
+                }
+            }
+        }
+        if (!isReady) {
+            throw new RuntimeException("It appears that not all nodes in the Cassandra cluster are up after " +
+                    this.attempts + " checks. Schema updates cannot proceed without all nodes being up.");
         }
     }
 
