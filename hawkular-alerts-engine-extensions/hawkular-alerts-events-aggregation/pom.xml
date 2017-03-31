@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts-engine-extensions</artifactId>
-    <version>1.6.0.Final</version>
+    <version>1.7.0.Final-SNAPSHOT</version>
   </parent>
 
   <artifactId>hawkular-alerts-events-aggregation</artifactId>
