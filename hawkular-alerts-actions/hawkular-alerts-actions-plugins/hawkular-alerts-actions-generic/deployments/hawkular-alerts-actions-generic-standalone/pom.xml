@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts-actions-generic</artifactId>
-    <version>1.6.0.Final-SNAPSHOT</version>
+    <version>1.6.0.Final</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
