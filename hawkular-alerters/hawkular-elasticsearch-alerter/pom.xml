@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerters</artifactId>
-    <version>1.6.0.Final</version>
+    <version>1.6.1.Final-SNAPSHOT</version>
   </parent>
 
   <artifactId>hawkular-elasticsearch-alerter</artifactId>
