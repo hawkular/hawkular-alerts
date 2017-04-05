@@ -69,7 +69,7 @@ import org.jboss.logging.Logger;
  *   Documents fetched from Elasticsearch need a date field to indicate the timestamp.
  *   This timestamp will be used in the queries to fetch documents in interval basis.
  *
- *   If there is not defined a specific pattern under the trigger.context["timestamp.pattern"] it will follow the
+ *   If there is not defined a specific pattern under the trigger.context["timestamp_pattern"] it will follow the
  *   default patterns:
  *
  *      "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
@@ -99,10 +99,10 @@ import org.jboss.logging.Logger;
  *   i.e.   trigger.context["interval"] = "30s" will perform queries each 30 seconds fetching new documents generated
  *          on the last 30 seconds, using the timestamp field provided in the Alerter tag.
  *
- * - [Optional]    trigger.context["timestamp.pattern"] = "<date and time pattern>"
+ * - [Optional]    trigger.context["timestamp_pattern"] = "<date and time pattern>"
  *
  *   Defines a new time pattern for the trigger.context["timestamp"]. It must follow supported formats of
- *   {@link java.text.SimpleDateFormat}. If it is not present, it will expect default patterns:
+ *   {@link java.time.format.DateTimeFormatter}. If it is not present, it will expect default patterns:
  *
  *      "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
  *      "yyyy-MM-dd'T'HH:mm:ssZ"

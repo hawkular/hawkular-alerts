@@ -16,9 +16,11 @@
  */
 package org.hawkular.alerts.actions.elasticsearch;
 
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -113,9 +115,9 @@ public class ElasticSearchPlugin implements ActionPluginListener {
     public static final String PROP_TOKEN = "token";
 
     /**
-     * "timestamp.pattern" used on ctime transformations
+     * "timestamp_pattern" used on ctime transformations
      */
-    private static final String PROP_TIMESTAMP_PATTERN = "timestamp.pattern";
+    private static final String PROP_TIMESTAMP_PATTERN = "timestamp_pattern";
 
     private static final String ELASTICSEARCH_URL="hawkular-alerts.elasticsearch-url";
     private static final String ELASTICSEARCH_URL_ENV = "ELASTICSEARCH_URL";
@@ -151,6 +153,7 @@ public class ElasticSearchPlugin implements ActionPluginListener {
         TIMESTAMP_FIELDS.add("evalTimestamp");
         TIMESTAMP_FIELDS.add("dataTimestamp");
     }
+    private static final ZoneId UTC = ZoneId.of("UTC");
 
     private static final String AUTHORIZATION = "Authorization";
     private static final String BEARER = "Bearer";
@@ -257,7 +260,9 @@ public class ElasticSearchPlugin implements ActionPluginListener {
                 if (TIMESTAMP_FIELDS.contains(entry.getKey())) {
                     try {
                         Long timestamp = (Long) entry.getValue();
-                        entry.setValue(new SimpleDateFormat(pattern).format(new Date(timestamp)));
+                        entry.setValue(
+                                DateTimeFormatter.ofPattern(pattern)
+                                        .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), UTC)));
                     } catch (Exception e) {
                         msgLog.warnf("Cannot parse %s timestamp", entry.getKey());
                     }

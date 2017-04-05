@@ -22,7 +22,10 @@ import static org.hawkular.alerter.elasticsearch.ElasticsearchAlerter.getInterva
 import static org.hawkular.alerter.elasticsearch.ElasticsearchAlerter.getIntervalValue;
 import static org.hawkular.alerter.elasticsearch.ElasticsearchQuery.EventField.DATAID;
 
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -84,7 +87,7 @@ public class ElasticsearchQuery implements Runnable {
     private static final String PROXY_REMOTE_USER = "proxy-remote-user";
     private static final String USER = "user";
     private static final String TIMESTAMP = "timestamp";
-    private static final String TIMESTAMP_PATTERN = "timestamp.pattern";
+    private static final String TIMESTAMP_PATTERN = "timestamp_pattern";
     private static final String TOKEN = "token";
     private static final String TOTAL = "total";
     private static final String TYPE = "type";
@@ -94,10 +97,11 @@ public class ElasticsearchQuery implements Runnable {
     private static final String X_FORWARDED = "X-Forwarded-For";
     private static final String X_PROXY_REMOTE_USER = "X-Proxy-Remote-User";
 
-    private static final SimpleDateFormat[] DEFAULT_DATE_FORMATS = {
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"),
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+    private static final DateTimeFormatter[] DEFAULT_DATE_FORMATS = {
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ")
     };
+    private static final ZoneId UTC = ZoneId.of("UTC");
 
     /*
         Event fields
@@ -436,19 +440,19 @@ public class ElasticsearchQuery implements Runnable {
     public long parseTimestamp(String timestamp) {
         String definedPattern = properties.get(TIMESTAMP_PATTERN);
         if (definedPattern != null) {
-            SimpleDateFormat definedFormat = null;
+            DateTimeFormatter formatter = null;
             try {
-                definedFormat = new SimpleDateFormat(definedPattern);
-                return definedFormat.parse(timestamp).getTime();
+                formatter = DateTimeFormatter.ofPattern(definedPattern);
+                return ZonedDateTime.parse(timestamp, formatter).toInstant().toEpochMilli();
             } catch (Exception e) {
-                log.debugf("Not able to parse [%s] with format [%s]", timestamp, definedFormat);
+                log.debugf("Not able to parse [%s] with format [%s]", timestamp, formatter);
             }
         }
-        for (SimpleDateFormat dateFormat : DEFAULT_DATE_FORMATS) {
+        for (DateTimeFormatter formatter : DEFAULT_DATE_FORMATS) {
             try {
-                return dateFormat.parse(timestamp).getTime();
+                return ZonedDateTime.parse(timestamp, formatter).toInstant().toEpochMilli();
             } catch (Exception e) {
-                log.debugf("Not able to parse [%s] with format [%s]", timestamp, dateFormat);
+                log.debugf("Not able to parse [%s] with format [%s]", timestamp, formatter);
             }
         }
         try {
@@ -462,15 +466,15 @@ public class ElasticsearchQuery implements Runnable {
     public String formatTimestamp(Date date) {
         String definedPattern = properties.get(TIMESTAMP_PATTERN);
         if (definedPattern != null) {
-            SimpleDateFormat definedFormat = null;
+            DateTimeFormatter formatter = null;
             try {
-                definedFormat = new SimpleDateFormat(definedPattern);
-                return definedFormat.format(date);
+                formatter = DateTimeFormatter.ofPattern(definedPattern);
+                return formatter.format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(date.getTime()), UTC));
             } catch (Exception e) {
-                log.debugf("Not able to format [%s] with pattern [%s]", date, definedFormat.toPattern());
+                log.debugf("Not able to format [%s] with pattern [%s]", date, formatter);
             }
         }
-        return DEFAULT_DATE_FORMATS[0].format(date);
+        return DEFAULT_DATE_FORMATS[0].format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(date.getTime()), UTC));
     }
 
     private String rawQuery(String filter) {
