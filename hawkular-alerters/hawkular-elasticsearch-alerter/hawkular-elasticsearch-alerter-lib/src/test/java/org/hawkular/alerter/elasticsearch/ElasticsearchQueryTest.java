@@ -24,6 +24,9 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,9 +134,9 @@ public class ElasticsearchQueryTest {
         -Djavax.net.debug=ssl
     */
 
-   @Ignore
-   @Test
-   public void queryByObject() throws Exception {
+    @Ignore
+    @Test
+    public void querySecure() throws Exception {
         System.setProperty("javax.net.ssl.trustStore", "/tmp/truststore.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "password");
 
@@ -149,7 +152,36 @@ public class ElasticsearchQueryTest {
         List<Event> events = query.parseEvents(results);
         System.out.println(events.size());
         query.disconnect();
-   }
+    }
+
+    @Ignore
+    @Test
+    public void validateMapping() throws Exception {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("mapping", "level:category,@timestamp:ctime,message:text,app:dataId,index:tags");
+
+        ElasticsearchQuery query = new ElasticsearchQuery(null, properties, null);
+        query.parseMap();
+        query.connect("http://localhost:9200");
+        List<Map<String, Object>> results = query.query("[]", "log");
+        List<Event> events = query.parseEvents(results);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ");
+        Calendar calendar = Calendar.getInstance();
+        for (int i=0; i<results.size(); i++) {
+            Map<String, Object> source = (Map<String,Object>)results.get(i).get("_source");
+            String timestamp = (String) source.get("@timestamp");
+            System.out.println(timestamp);
+            System.out.println(sdf.parse(timestamp).getTime());
+            Event event = events.get(i);
+            System.out.println(event.getCtime());
+            System.out.println(event.getContext());
+            System.out.println(sdf.format(new Date(event.getCtime())));
+            System.out.println("---");
+        }
+        query.disconnect();
+        System.out.println(results);
+        System.out.println(events);
+    }
 
    @Ignore
    @Test
