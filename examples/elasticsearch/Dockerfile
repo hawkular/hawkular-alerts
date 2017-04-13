@@ -1,3 +1,4 @@
+#
 # Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
 # and other contributors as indicated by the @author tags.
 #
@@ -12,10 +13,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-# @author Guilherme Baufaker Rêgo
-
-# Hawkular Alerting ElasticSearch Sample
+# @author Guilherme Baufaker Rêgo (@gbaufake)
+# Docker Container for Tutorial on Hawkular Alerts with ElasticSearh
 
 FROM fedora
 
@@ -54,7 +55,7 @@ RUN mkdir -p tar /opt/kibana/ && tar xvfz kibana-4.6.4-linux-x86_64.tar.gz -C /o
 RUN git clone https://github.com/hawkular/hawkular-alerts.git /opt/hawkular-alerts
 
 
-# Copy the resources 
+# Copy the resources
 
 COPY create-definitions.sh \ /opt/
 
