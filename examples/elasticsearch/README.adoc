@@ -58,6 +58,25 @@ Start the standalone server
     bin/standalone.sh
 ----
 
+== Alternative as Docker Container
+
+This tutorial can be followed as docker container.
+
+That can be done by the following commands:
+
+[source,shell,subs="+attributes"]
+----
+docker build -t hawkular-alerts-elasticsearch .
+docker run -i -t  hawkular-alerts-elasticsearch /bin/bash
+nohup /opt/hawkular-alerts/hawkular-alerts-rest-tests/target/wildfly-10.0.0.Final/bin/standalone.sh > hawkular-alerts.out 
+nohup /opt/elasticsearch/bin/elasticsearch -Des.insecure.allow.root=true > elastic-search.out 
+nohup /opt/kibana/bin/kibana > kibana.out 
+/opt/create-definitions.sh
+/opt/create-logs.sh
+----
+
+
+
 [TIP]
 .Test Email server
 ==================
