@@ -267,7 +267,7 @@ public class EventsHandler {
                     "<tag_name> <array_operator> <array> ) \n" +
                     "<not> ::= [ \"NOT\" | \"not\" ] \n" +
                     "<logical_operator> ::= [ \"AND\" | \"OR\" | \"and\" | \"or\" ] \n" +
-                    "<boolean_operator> ::= [ \"==\" | \"!=\" ] \n" +
+                    "<boolean_operator> ::= [ \"=\" | \"!=\" ] \n" +
                     "<array_operator> ::= [ \"IN\" | \"NOT IN\" | \"in\" | \"not in\" ] \n" +
                     "<array> ::= ( \"[\" \"]\" | \"[\" ( \",\" <tag_value> )* ) \n" +
                     "<tag_name> ::= <identifier> \n" +
@@ -369,7 +369,7 @@ public class EventsHandler {
                     "<tag_name> <array_operator> <array> ) \n" +
                     "<not> ::= [ \"NOT\" | \"not\" ] \n" +
                     "<logical_operator> ::= [ \"AND\" | \"OR\" | \"and\" | \"or\" ] \n" +
-                    "<boolean_operator> ::= [ \"==\" | \"!=\" ] \n" +
+                    "<boolean_operator> ::= [ \"=\" | \"!=\" ] \n" +
                     "<array_operator> ::= [ \"IN\" | \"NOT IN\" | \"in\" | \"not in\" ] \n" +
                     "<array> ::= ( \"[\" \"]\" | \"[\" ( \",\" <tag_value> )* ) \n" +
                     "<tag_name> ::= <identifier> \n" +
@@ -478,7 +478,7 @@ public class EventsHandler {
                     "<tag_name> <array_operator> <array> ) \n" +
                     "<not> ::= [ \"NOT\" | \"not\" ] \n" +
                     "<logical_operator> ::= [ \"AND\" | \"OR\" | \"and\" | \"or\" ] \n" +
-                    "<boolean_operator> ::= [ \"==\" | \"!=\" ] \n" +
+                    "<boolean_operator> ::= [ \"=\" | \"!=\" ] \n" +
                     "<array_operator> ::= [ \"IN\" | \"NOT IN\" | \"in\" | \"not in\" ] \n" +
                     "<array> ::= ( \"[\" \"]\" | \"[\" ( \",\" <tag_value> )* ) +\n" +
                     "<tag_name> ::= <identifier> \n" +
