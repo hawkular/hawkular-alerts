@@ -336,7 +336,7 @@ Here are some instructions for http://www.hawkular.org/community/docs/developer-
 
 Otherwise, it's time to move on...
 
-__Coming Soon! Lesson 06 - Events__
+link:lesson-06-events.adoc[Lesson 06 - Events]
 
 link:../README.adoc[Tutorial Home]
 
