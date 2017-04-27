@@ -31,7 +31,7 @@ FROM jboss/wildfly:10.1.0.Final
 MAINTAINER Hawkular Alerting <hawkular-dev@lists.jboss.org>
 
 ENV HAWKULAR_METRICS_ENDPOINT_PORT="8080" \
-    HAWKULAR_METRICS_VERSION="0.23.6.Final" \
+    HAWKULAR_METRICS_VERSION="0.26.0.Final" \
     HAWKULAR_METRICS_DIRECTORY="/opt/hawkular-alerting-tutorial" \
     HAWKULAR_METRICS_SCRIPT_DIRECTORY="/opt/hawkular-alerting-tutorial/scripts/" \
     PATH=$PATH:$HAWKULAR_METRICS_SCRIPT_DIRECTORY \

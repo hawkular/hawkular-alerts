@@ -10,7 +10,7 @@ If you already have Docker running, great,  If not you'll want to https://docs.d
 When you have docker running you can start the tutorial containers.  Note that the the tutorial will want to use port 8080, so make sure it is free.  Also, if you haven't seen already, running docker will likely need "root" user permission.
 
 ----
-> cd TUTORIAL_HOME/lesson-01
+> cd TUTORIAL_HOME/lessons
 > docker-compose up -d
 ----
 
