@@ -46,7 +46,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.json.GroupConditionsInfo;
 import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.json.UnorphanMemberInfo;
@@ -118,19 +117,14 @@ public class TriggersHandler {
         try {
             TriggersCriteria criteria = buildCriteria(triggerIds, tags, thin);
             Page<Trigger> triggerPage = definitions.getTriggers(tenantId, criteria, pager);
-            if (log.isDebugEnabled()) {
-                log.debug("Triggers: " + triggerPage);
-            }
+            log.debugf("Triggers: %s", triggerPage);
             if (isEmpty(triggerPage)) {
                 return ResponseUtil.ok(triggerPage);
             }
             return ResponseUtil.paginatedOk(triggerPage, uri);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -148,7 +142,7 @@ public class TriggersHandler {
                     tagsMap.put(fields[0], fields[1]);
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debug("Invalid Tag Criteria " + Arrays.toString(fields));
+                        log.debugf("Invalid Tag Criteria: %s", Arrays.toString(fields));
                     }
                     throw new IllegalArgumentException( "Invalid Tag Criteria " + Arrays.toString(fields) );
                 }
@@ -170,6 +164,7 @@ public class TriggersHandler {
             response = Trigger.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of triggers."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response findGroupMembers(
@@ -181,13 +176,11 @@ public class TriggersHandler {
             final boolean includeOrphans) {
         try {
             Collection<Trigger> members = definitions.getMemberTriggers(tenantId, groupId, includeOrphans);
-            if (log.isDebugEnabled()) {
-                log.debug("Member Triggers: " + members);
-            }
+            log.debugf("Member Triggers: %s", members);
             return ResponseUtil.ok(members);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -200,8 +193,8 @@ public class TriggersHandler {
             response = Trigger.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Trigger created."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response createTrigger(
             @ApiParam(value = "Trigger definition to be created.", name = "trigger", required = true)
@@ -217,17 +210,13 @@ public class TriggersHandler {
                     return ResponseUtil.badRequest("Tags " + trigger.getTags() + " must be non empty.");
                 }
                 definitions.addTrigger(tenantId, trigger);
-                log.debug("Trigger: " + trigger.toString());
+                log.debugf("Trigger: %s", trigger);
                 return ResponseUtil.ok(trigger);
-            } else {
-                return ResponseUtil.badRequest("Trigger is null");
             }
+            return ResponseUtil.badRequest("Trigger is null");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -240,8 +229,8 @@ public class TriggersHandler {
             response = FullTrigger.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, FullTrigger created."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response createFullTrigger(
             @ApiParam(value = "FullTrigger (trigger, dampenings, conditions) to be created.",
@@ -262,7 +251,7 @@ public class TriggersHandler {
                 return ResponseUtil.badRequest("Tags " + trigger.getTags() + " must be non empty.");
             }
             definitions.addTrigger(tenantId, trigger);
-            log.debug("Trigger: " + trigger.toString());
+            log.debugf("Trigger: %s", trigger);
             for (Dampening dampening : fullTrigger.getDampenings()) {
                 dampening.setTenantId(tenantId);
                 dampening.setTriggerId(trigger.getId());
@@ -271,7 +260,7 @@ public class TriggersHandler {
                     definitions.removeDampening(tenantId, dampening.getDampeningId());
                 }
                 definitions.addDampening(tenantId, dampening);
-                log.debug("Dampening: " + dampening.toString());
+                log.debugf("Dampening: %s", dampening);
             }
             fullTrigger.getConditions().stream().forEach(c -> {
                 c.setTenantId(tenantId);
@@ -280,24 +269,21 @@ public class TriggersHandler {
             List<Condition> firingConditions = fullTrigger.getConditions().stream()
                     .filter(c -> c.getTriggerMode() == Mode.FIRING)
                     .collect(Collectors.toList());
-            if (firingConditions != null && !firingConditions.isEmpty()) {
+            if (!isEmpty(firingConditions)) {
                 definitions.setConditions(tenantId, trigger.getId(), Mode.FIRING, firingConditions);
-                log.debug("Conditions: " + firingConditions);
+                log.debugf("Conditions: %s", firingConditions);
             }
             List<Condition> autoResolveConditions = fullTrigger.getConditions().stream()
                     .filter(c -> c.getTriggerMode() == Mode.AUTORESOLVE)
                     .collect(Collectors.toList());
-            if (autoResolveConditions != null && !autoResolveConditions.isEmpty()) {
+            if (!isEmpty(autoResolveConditions)) {
                 definitions.setConditions(tenantId, trigger.getId(), Mode.AUTORESOLVE, autoResolveConditions);
-                log.debug("Conditions:" + autoResolveConditions);
+                log.debugf("Conditions: %s", autoResolveConditions);
             }
             return ResponseUtil.ok(fullTrigger);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -310,8 +296,8 @@ public class TriggersHandler {
             response = Trigger.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Group Trigger Created."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response createGroupTrigger(
             @ApiParam(value = "Trigger definition to be created.", name = "groupTrigger", required = true)
@@ -327,17 +313,13 @@ public class TriggersHandler {
                     return ResponseUtil.badRequest("Tags " + groupTrigger.getTags() + " must be non empty.");
                 }
                 definitions.addGroupTrigger(tenantId, groupTrigger);
-                log.debug("Group Trigger: " + groupTrigger.toString());
+                log.debugf("Group Trigger: %s", groupTrigger);
                 return ResponseUtil.ok(groupTrigger);
-            } else {
-                return ResponseUtil.badRequest("Trigger is null");
             }
+            return ResponseUtil.badRequest("Trigger is null");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -350,9 +332,9 @@ public class TriggersHandler {
             response = Trigger.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Member Trigger Created."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "Group trigger not found.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response createGroupMember(
             @ApiParam(value = "Group member trigger to be created.", name = "groupMember", required = true)
@@ -374,20 +356,11 @@ public class TriggersHandler {
                     groupMember.getMemberContext(),
                     groupMember.getMemberTags(),
                     groupMember.getDataIdMap());
-            if (log.isDebugEnabled()) {
-                log.debug("Child Trigger: " + child.toString());
-            }
+            log.debugf("Child Trigger: %s", child);
             return ResponseUtil.ok(child);
 
-        } catch (NotFoundException e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -398,6 +371,7 @@ public class TriggersHandler {
             response = Trigger.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Trigger found."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
@@ -408,14 +382,13 @@ public class TriggersHandler {
         try {
             Trigger found = definitions.getTrigger(tenantId, triggerId);
             if (found != null) {
-                log.debug("Trigger: " + found);
+                log.debugf("Trigger: %s", found);
                 return ResponseUtil.ok(found);
-            } else {
-                return ResponseUtil.notFound("triggerId: " + triggerId + " not found");
             }
+            return ResponseUtil.notFound("triggerId: " + triggerId + " not found");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -426,6 +399,7 @@ public class TriggersHandler {
             response = FullTrigger.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, FullTrigger found."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
@@ -436,20 +410,18 @@ public class TriggersHandler {
         try {
             Trigger found = definitions.getTrigger(tenantId, triggerId);
             if (found != null) {
-                log.debug("Trigger: " + found);
+                log.debugf("Trigger: %s", found);
                 List<Dampening> dampenings = new ArrayList<>(definitions.getTriggerDampenings(tenantId, found.getId(),
                         null));
                 List<Condition> conditions = new ArrayList<>(definitions.getTriggerConditions(tenantId, found.getId(),
                         null));
                 FullTrigger fullTrigger = new FullTrigger(found, dampenings, conditions);
                 return ResponseUtil.ok(fullTrigger);
-            } else {
-                return ResponseUtil.notFound("triggerId: " + triggerId + " not found");
             }
+            return ResponseUtil.notFound("triggerId: " + triggerId + " not found");
 
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -459,9 +431,9 @@ public class TriggersHandler {
     @ApiOperation(value = "Update an existing trigger definition.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Trigger updated."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
-            @ApiResponse(code = 404, message = "Trigger doesn't exist.", response = ApiError.class)
+            @ApiResponse(code = 404, message = "Trigger doesn't exist.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response updateTrigger(
             @ApiParam(value = "Trigger definition id to be updated.", required = true)
@@ -477,20 +449,11 @@ public class TriggersHandler {
                 return ResponseUtil.badRequest("Tags " + trigger.getTags() + " must be non empty.");
             }
             definitions.updateTrigger(tenantId, trigger);
-            if (log.isDebugEnabled()) {
-                log.debug("Trigger: " + trigger);
-            }
+            log.debugf("Trigger: %s", trigger);
             return ResponseUtil.ok();
 
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound("Trigger " + triggerId + " doesn't exist for update");
-
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -500,9 +463,9 @@ public class TriggersHandler {
     @ApiOperation(value = "Update an existing group trigger definition and its member definitions.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Group Trigger updated."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
-            @ApiResponse(code = 404, message = "Trigger doesn't exist.", response = ApiError.class)
+            @ApiResponse(code = 404, message = "Trigger doesn't exist.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response updateGroupTrigger(
             @ApiParam(value = "Group Trigger id to be updated.", required = true)
@@ -518,20 +481,11 @@ public class TriggersHandler {
                 return ResponseUtil.badRequest("Tags " + groupTrigger.getTags() + " must be non empty.");
             }
             definitions.updateGroupTrigger(tenantId, groupTrigger);
-            if (log.isDebugEnabled()) {
-                log.debug("Trigger: " + groupTrigger);
-            }
+            log.debugf("Trigger: %s", groupTrigger);
             return ResponseUtil.ok();
 
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound("Trigger " + groupId + " doesn't exist for update");
-
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -541,8 +495,9 @@ public class TriggersHandler {
     @ApiOperation(value = "Make a non-orphan member trigger into an orphan.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Trigger updated."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters.", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Trigger doesn't exist/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response orphanMemberTrigger(
             @ApiParam(value = "Member Trigger id to be made an orphan.", required = true)
@@ -550,17 +505,11 @@ public class TriggersHandler {
             final String memberId) {
         try {
             Trigger child = definitions.orphanMemberTrigger(tenantId, memberId);
-            if (log.isDebugEnabled()) {
-                log.debug("Orphan Member Trigger: " + child);
-            }
+            log.debugf("Orphan Member Trigger: %s", child);
             return ResponseUtil.ok();
 
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound("Member Trigger " + memberId + " doesn't exist for update");
-
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -570,9 +519,9 @@ public class TriggersHandler {
     @ApiOperation(value = "Make a non-orphan member trigger into an orphan.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Trigger updated."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
-            @ApiResponse(code = 404, message = "Trigger doesn't exist.", response = ApiError.class)
+            @ApiResponse(code = 404, message = "Trigger doesn't exist.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response unorphanMemberTrigger(
             @ApiParam(value = "Member Trigger id to be made an orphan.", required = true)
@@ -592,20 +541,11 @@ public class TriggersHandler {
                     unorphanMemberInfo.getMemberContext(),
                     unorphanMemberInfo.getMemberTags(),
                     unorphanMemberInfo.getDataIdMap());
-            if (log.isDebugEnabled()) {
-                log.debug("Member Trigger: " + child);
-            }
+            log.debugf("Member Trigger: %s", child);
             return ResponseUtil.ok();
 
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound("Member Trigger " + memberId + " doesn't exist for update");
-
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -615,8 +555,9 @@ public class TriggersHandler {
             notes = "This can not be used to delete a group trigger definition.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Trigger deleted."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 404, message = "Trigger not found.", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response deleteTrigger(
             @ApiParam(value = "Trigger definition id to be deleted.", required = true)
@@ -624,17 +565,11 @@ public class TriggersHandler {
             final String triggerId) {
         try {
             definitions.removeTrigger(tenantId, triggerId);
-            if (log.isDebugEnabled()) {
-                log.debug("TriggerId: " + triggerId);
-            }
+            log.debugf("TriggerId: %s", triggerId);
             return ResponseUtil.ok();
 
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound("Trigger " + triggerId + " doesn't exist for delete");
-
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -645,9 +580,9 @@ public class TriggersHandler {
     @ApiOperation(value = "Delete a group trigger.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Group Trigger Removed."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "Group Trigger not found.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response deleteGroupTrigger(
             @ApiParam(required = true, value = "Group Trigger id.")
@@ -661,17 +596,11 @@ public class TriggersHandler {
             final boolean keepOrphans) {
         try {
             definitions.removeGroupTrigger(tenantId, groupId, keepNonOrphans, keepOrphans);
-            if (log.isDebugEnabled()) {
-                log.debug("Remove Group Trigger: " + tenantId + "/" + groupId);
-            }
+            log.debugf("Remove Group Trigger: %s/%s", tenantId, groupId);
             return ResponseUtil.ok();
 
-        } catch (NotFoundException e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -682,6 +611,7 @@ public class TriggersHandler {
             response = Dampening.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of dampenings."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response getTriggerDampenings(
@@ -690,11 +620,11 @@ public class TriggersHandler {
             final String triggerId) {
         try {
             Collection<Dampening> dampenings = definitions.getTriggerDampenings(tenantId, triggerId, null);
-            log.debug("Dampenings: " + dampenings);
+            log.debugf("Dampenings: %s", dampenings);
             return ResponseUtil.ok(dampenings);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -718,16 +648,11 @@ public class TriggersHandler {
         try {
             Collection<Dampening> dampenings = definitions.getTriggerDampenings(tenantId, triggerId,
                     triggerMode);
-            if (log.isDebugEnabled()) {
-                log.debug("Dampenings: " + dampenings);
-            }
+            log.debugf("Dampenings: %s", dampenings);
             return ResponseUtil.ok(dampenings);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -738,6 +663,7 @@ public class TriggersHandler {
             response = Dampening.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampening Found."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "No Dampening Found.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
@@ -750,15 +676,15 @@ public class TriggersHandler {
             final String dampeningId) {
         try {
             Dampening found = definitions.getDampening(tenantId, dampeningId);
-            log.debug("Dampening: " + found);
+            log.debugf("Dampening: %s", found);
             if (found == null) {
                 return ResponseUtil.notFound("No dampening found for triggerId: " + triggerId + " and dampeningId:" +
                         dampeningId);
             }
             return ResponseUtil.ok(found);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -771,8 +697,8 @@ public class TriggersHandler {
             response = Dampening.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampening created."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response createDampening(
             @ApiParam(value = "Trigger definition id attached to dampening.", required = true)
@@ -788,19 +714,13 @@ public class TriggersHandler {
                 // make sure we have the best chance of clean data..
                 Dampening d = getCleanDampening(dampening);
                 definitions.addDampening(tenantId, d);
-                if (log.isDebugEnabled()) {
-                    log.debug("Dampening: " + d);
-                }
+                log.debugf("Dampening: %s", d);
                 return ResponseUtil.ok(d);
-            } else {
-                return ResponseUtil.badRequest("Existing dampening for dampeningId: " + dampening.getDampeningId());
             }
+            return ResponseUtil.badRequest("Existing dampening for dampeningId: " + dampening.getDampeningId());
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -813,8 +733,8 @@ public class TriggersHandler {
             response = Dampening.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampening created."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response createGroupDampening(
             @ApiParam(value = "Group Trigger definition id attached to dampening.", required = true)
@@ -829,19 +749,13 @@ public class TriggersHandler {
                 // make sure we have the best chance of clean data..
                 Dampening d = getCleanDampening(dampening);
                 definitions.addGroupDampening(tenantId, d);
-                if (log.isDebugEnabled()) {
-                    log.debug("Dampening: " + d);
-                }
+                log.debugf("Dampening: %s", d);
                 return ResponseUtil.ok(d);
-            } else {
-                return ResponseUtil.badRequest("Existing dampening for dampeningId: " + dampening.getDampeningId());
             }
+            return ResponseUtil.badRequest("Existing dampening for dampeningId: " + dampening.getDampeningId());
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -905,19 +819,13 @@ public class TriggersHandler {
                 dampening.setTriggerId(triggerId);
                 Dampening d = getCleanDampening(dampening);
                 definitions.updateDampening(tenantId, d);
-                if (log.isDebugEnabled()) {
-                    log.debug("Dampening: " + d);
-                }
+                log.debugf("Dampening: %s", d);
                 return ResponseUtil.ok(d);
-            } else {
-                return ResponseUtil.notFound("No dampening found for dampeningId: " + dampeningId);
             }
+            return ResponseUtil.notFound("No dampening found for dampeningId: " + dampeningId);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -950,19 +858,13 @@ public class TriggersHandler {
                 dampening.setTriggerId(groupId);
                 Dampening d = getCleanDampening(dampening);
                 definitions.updateGroupDampening(tenantId, d);
-                if (log.isDebugEnabled()) {
-                    log.debug("Group Dampening: " + d);
-                }
+                log.debugf("Group Dampening: %s", d);
                 return ResponseUtil.ok(d);
-            } else {
-                return ResponseUtil.notFound("No dampening found for dampeningId: " + dampeningId);
             }
+            return ResponseUtil.notFound("No dampening found for dampeningId: " + dampeningId);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -971,6 +873,7 @@ public class TriggersHandler {
     @ApiOperation(value = "Delete an existing dampening definition.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampening deleted."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "No Dampening found.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class)
     })
@@ -985,14 +888,13 @@ public class TriggersHandler {
             boolean exists = (definitions.getDampening(tenantId, dampeningId) != null);
             if (exists) {
                 definitions.removeDampening(tenantId, dampeningId);
-                log.debug("DampeningId: " + dampeningId);
+                log.debugf("DampeningId: %s", dampeningId);
                 return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.notFound("Dampening not found for dampeningId: " + dampeningId);
             }
+            return ResponseUtil.notFound("Dampening not found for dampeningId: " + dampeningId);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -1001,6 +903,7 @@ public class TriggersHandler {
     @ApiOperation(value = "Delete an existing group dampening definition.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Dampening deleted."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "No Dampening found.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
@@ -1015,16 +918,13 @@ public class TriggersHandler {
             boolean exists = (definitions.getDampening(tenantId, dampeningId) != null);
             if (exists) {
                 definitions.removeGroupDampening(tenantId, dampeningId);
-                if (log.isDebugEnabled()) {
-                    log.debug("Group DampeningId: " + dampeningId);
-                }
+                log.debugf("Group DampeningId: %s", dampeningId);
                 return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.notFound("Dampening not found for dampeningId: " + dampeningId);
             }
+            return ResponseUtil.notFound("Dampening not found for dampeningId: " + dampeningId);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -1035,6 +935,7 @@ public class TriggersHandler {
             response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of conditions."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response getTriggerConditions(
@@ -1043,11 +944,11 @@ public class TriggersHandler {
             final String triggerId) {
         try {
             Collection<Condition> conditions = definitions.getTriggerConditions(tenantId, triggerId, null);
-            log.debug("Conditions: " + conditions);
+            log.debugf("Conditions: %s", conditions);
             return ResponseUtil.ok(conditions);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -1061,9 +962,9 @@ public class TriggersHandler {
             response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Condition Set created."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "No trigger found.", response = ApiError.class),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response setConditions(
             @ApiParam(value = "The relevant Trigger.", required = true)
@@ -1086,19 +987,11 @@ public class TriggersHandler {
                     .collect(Collectors.toList());
             updatedConditions.addAll(definitions.setConditions(tenantId, triggerId, Mode.AUTORESOLVE,
                     autoResolveConditions));
-            if (log.isDebugEnabled()) {
-                log.debug("Conditions: " + updatedConditions);
-            }
+            log.debugf("Conditions: %s", updatedConditions);
             return ResponseUtil.ok(updatedConditions);
 
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -1111,9 +1004,9 @@ public class TriggersHandler {
             response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Condition Set created."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "No trigger found.", response = ApiError.class),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response setConditions(
             @ApiParam(value = "The relevant Trigger.", required = true)
@@ -1137,19 +1030,11 @@ public class TriggersHandler {
                 }
             }
             Collection<Condition> updatedConditions = definitions.setConditions(tenantId, triggerId, mode, conditions);
-            if (log.isDebugEnabled()) {
-                log.debug("Conditions: " + updatedConditions);
-            }
+            log.debugf("Conditions: %s", updatedConditions);
             return ResponseUtil.ok(updatedConditions);
 
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -1164,9 +1049,9 @@ public class TriggersHandler {
             response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Group Condition Set created."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "No trigger found.", response = ApiError.class),
-            @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+            @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class)
     })
     public Response setGroupConditions(
             @ApiParam(value = "The relevant Group Trigger.", required = true)
@@ -1180,7 +1065,7 @@ public class TriggersHandler {
                 return ResponseUtil.badRequest("GroupConditionsInfo must be non null.");
             }
             if (groupConditionsInfo.getConditions() == null) {
-                groupConditionsInfo.setConditions(Collections.EMPTY_LIST);
+                groupConditionsInfo.setConditions(Collections.emptyList());
             }
             for (Condition condition : groupConditionsInfo.getConditions()) {
                 if (condition == null) {
@@ -1205,19 +1090,11 @@ public class TriggersHandler {
                     autoResolveConditions,
                     groupConditionsInfo.getDataIdMemberMap()));
 
-            if (log.isDebugEnabled()) {
-                log.debug("Conditions: " + updatedConditions);
-            }
+            log.debugf("Conditions: %s", updatedConditions);
             return ResponseUtil.ok(updatedConditions);
 
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -1231,9 +1108,9 @@ public class TriggersHandler {
             response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Group Condition Set created."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "No trigger found.", response = ApiError.class),
-            @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+            @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class)
     })
     public Response setGroupConditions(
             @ApiParam(value = "The relevant Group Trigger.", required = true)
@@ -1263,21 +1140,11 @@ public class TriggersHandler {
                     groupConditionsInfo.getConditions(),
                     groupConditionsInfo.getDataIdMemberMap());
 
-            if (log.isDebugEnabled()) {
-                log.debug("Conditions: " + conditions);
-            }
+            log.debugf("Conditions: %s", conditions);
             return ResponseUtil.ok(conditions);
 
-        } catch (IllegalArgumentException e) {
-            return ResponseUtil.badRequest("Bad trigger mode: " + triggerMode);
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound(e.getMessage());
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -1286,9 +1153,9 @@ public class TriggersHandler {
     @ApiOperation(value = "Update group triggers and their member triggers to be enabled or disabled.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Group Triggers updated."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
-            @ApiResponse(code = 404, message = "Group Trigger doesn't exist.", response = ApiError.class)
+            @ApiResponse(code = 404, message = "Group Trigger doesn't exist.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response setGroupTriggersEnabled(
             @ApiParam(required = true, value = "List of group trigger ids to enable or disable",
@@ -1307,18 +1174,10 @@ public class TriggersHandler {
             }
 
             definitions.updateGroupTriggerEnablement(tenantId, triggerIds, enabled);
-
             return ResponseUtil.ok();
 
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound("Trigger does not exist for update: " + e.getMessage());
-
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -1327,9 +1186,9 @@ public class TriggersHandler {
     @ApiOperation(value = "Update triggers to be enabled or disabled.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Triggers updated."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
-            @ApiResponse(code = 404, message = "Trigger doesn't exist.", response = ApiError.class)
+            @ApiResponse(code = 404, message = "Trigger doesn't exist.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response setTriggersEnabled(
             @ApiParam(required = true, value = "List of trigger ids to enable or disable",
@@ -1348,42 +1207,22 @@ public class TriggersHandler {
             }
 
             definitions.updateTriggerEnablement(tenantId, triggerIds, enabled);
-
             return ResponseUtil.ok();
 
-        } catch (NotFoundException e) {
-            return ResponseUtil.notFound("Trigger does not exist for update: " + e.getMessage());
-
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
     private boolean checkTags(Trigger trigger) {
-        return checkTags(trigger.getTags());
+        return CommonUtil.checkTags(trigger.getTags());
     }
 
     private boolean checkTags(GroupMemberInfo groupMemberInfo) {
-        return checkTags(groupMemberInfo.getMemberTags());
+        return CommonUtil.checkTags(groupMemberInfo.getMemberTags());
     }
 
     private boolean checkTags(UnorphanMemberInfo unorphanMemberInfo) {
-        return checkTags(unorphanMemberInfo.getMemberTags());
-    }
-
-    private boolean checkTags(Map<String, String> tagsMap) {
-        if (isEmpty(tagsMap)) {
-            return true;
-        }
-        for (Map.Entry<String, String> entry : tagsMap.entrySet()) {
-            if (isEmpty(entry.getKey()) || isEmpty(entry.getValue())) {
-                return false;
-            }
-        }
-        return true;
+        return CommonUtil.checkTags(unorphanMemberInfo.getMemberTags());
     }
 }

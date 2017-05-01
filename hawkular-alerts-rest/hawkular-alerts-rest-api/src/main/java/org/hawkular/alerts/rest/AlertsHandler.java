@@ -115,7 +115,7 @@ public class AlertsHandler {
             response = Alert.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of alerts."),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response findAlerts(
@@ -197,19 +197,14 @@ public class AlertsHandler {
                     unifiedTagQuery, startResolvedTime, endResolvedTime, startAckTime, endAckTime, startStatusTime,
                     endStatusTime, thin);
             Page<Alert> alertPage = alertsService.getAlerts(tenantId, criteria, pager);
-            if (log.isDebugEnabled()) {
-                log.debug("Alerts: " + alertPage);
-            }
+            log.debugf("Alerts: %s", alertPage);
             if (isEmpty(alertPage)) {
                 return ResponseUtil.ok(alertPage);
             }
             return ResponseUtil.paginatedOk(alertPage, uri);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -336,8 +331,8 @@ public class AlertsHandler {
     @ApiOperation(value = "Set one alert Acknowledged.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alert Acknowledged invoked successfully."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response ackAlert(
             @ApiParam(required = true, value = "The alertId to Ack.",
@@ -353,19 +348,13 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertId)) {
                 alertsService.ackAlerts(tenantId, Arrays.asList(alertId), ackBy, ackNotes);
-                if (log.isDebugEnabled()) {
-                    log.debug("AlertId: " + alertId);
-                }
+                log.debugf("AlertId: %s", alertId);
                 return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.badRequest("AlertId required for ack");
             }
+            return ResponseUtil.badRequest("AlertId required for ack");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -375,8 +364,8 @@ public class AlertsHandler {
     @ApiOperation(value = "Add a note into an existing Alert.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alert note added successfully."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response addAlertNote(
             @ApiParam(required = true, value = "The alertId to add the note.",
@@ -392,19 +381,13 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertId)) {
                 alertsService.addNote(tenantId, alertId, user, text);
-                if (log.isDebugEnabled()) {
-                    log.debug("AlertId: " + alertId);
-                }
+                log.debugf("AlertId: %s", alertId);
                 return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.badRequest("AlertId required for adding notes");
             }
+            return ResponseUtil.badRequest("AlertId required for adding notes");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -414,8 +397,8 @@ public class AlertsHandler {
     @ApiOperation(value = "Add tags to existing Alerts.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alerts tagged successfully."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response addTags(
             @ApiParam(required = true, value = "List of alerts to tag.",
@@ -428,23 +411,17 @@ public class AlertsHandler {
             @QueryParam("tags")
             final String tags) {
         try {
-            if (!isEmpty(alertIds) || isEmpty(tags)) {
+            if (!isEmpty(alertIds) && !isEmpty(tags)) {
                 List<String> alertIdList = Arrays.asList(alertIds.split(","));
                 Map<String, String> tagsMap = parseTags(tags);
                 alertsService.addAlertTags(tenantId, alertIdList, tagsMap);
-                if (log.isDebugEnabled()) {
-                    log.debugf("Tagged alertIds:%s, %s", alertIdList, tagsMap);
-                }
+                log.debugf("Tagged alertIds:%s, %s", alertIdList, tagsMap);
                 return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.badRequest("AlertIds and Tags required for adding tags");
             }
+            return ResponseUtil.badRequest("AlertIds and Tags required for adding tags");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -454,8 +431,8 @@ public class AlertsHandler {
     @ApiOperation(value = "Remove tags from existing Alerts.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alerts untagged successfully."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response deleteTags(
             @ApiParam(required = true, value = "List of alerts to untag.",
@@ -467,23 +444,17 @@ public class AlertsHandler {
             @QueryParam("tagNames")
             final String tagNames) {
         try {
-            if (!isEmpty(alertIds) || isEmpty(tagNames)) {
+            if (!isEmpty(alertIds) && !isEmpty(tagNames)) {
                 Collection<String> ids = Arrays.asList(alertIds.split(","));
                 Collection<String> tags = Arrays.asList(tagNames.split(","));
                 alertsService.removeAlertTags(tenantId, ids, tags);
-                if (log.isDebugEnabled()) {
-                    log.debugf("Untagged alertIds:%s, %s", ids, tags);
-                }
+                log.debugf("Untagged alertIds:%s, %s", ids, tags);
                 return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.badRequest("AlertIds and Tags required for removing tags");
             }
+            return ResponseUtil.badRequest("AlertIds and Tags required for removing tags");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -493,8 +464,8 @@ public class AlertsHandler {
     @ApiOperation(value = "Set one or more alerts Acknowledged.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alerts Acknowledged invoked successfully."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response ackAlerts(
             @ApiParam(required = true, value = "List of alerts to Ack.",
@@ -510,19 +481,13 @@ public class AlertsHandler {
         try {
             if (!isEmpty(alertIds)) {
                 alertsService.ackAlerts(tenantId, Arrays.asList(alertIds.split(",")), ackBy, ackNotes);
-                if (log.isDebugEnabled()) {
-                    log.debug("Acked alertIds: " + alertIds);
-                }
+                log.debugf("Acked alertIds: %s", alertIds);
                 return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.badRequest("AlertIds required for ack");
             }
+            return ResponseUtil.badRequest("AlertIds required for ack");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -531,9 +496,9 @@ public class AlertsHandler {
     @ApiOperation(value = "Delete an existing Alert.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alert deleted."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
-            @ApiResponse(code = 404, message = "Alert not found.", response = ApiError.class)
+            @ApiResponse(code = 404, message = "Alert not found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response deleteAlert(
             @ApiParam(required = true, value = "Alert id to be deleted.")
@@ -544,19 +509,13 @@ public class AlertsHandler {
             criteria.setAlertId(alertId);
             int numDeleted = alertsService.deleteAlerts(tenantId, criteria);
             if (1 == numDeleted) {
-                if (log.isDebugEnabled()) {
-                    log.debug("AlertId: " + alertId);
-                }
+                log.debugf("AlertId: %s", alertId);
                 return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.notFound("Alert " + alertId + " doesn't exist for delete");
             }
+            return ResponseUtil.notFound("Alert " + alertId + " doesn't exist for delete");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -588,7 +547,7 @@ public class AlertsHandler {
             response = ApiDeleted.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alerts deleted."),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response deleteAlerts(
@@ -665,16 +624,11 @@ public class AlertsHandler {
                     unifiedTagQuery, startResolvedTime, endResolvedTime, startAckTime, endAckTime, startStatusTime,
                     endStatusTime, null);
             int numDeleted = alertsService.deleteAlerts(tenantId, criteria);
-            if (log.isDebugEnabled()) {
-                log.debug("Alerts deleted: " + numDeleted);
-            }
+            log.debugf("Alerts deleted: %d", numDeleted);
             return ResponseUtil.ok(new ApiDeleted(numDeleted));
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -685,6 +639,7 @@ public class AlertsHandler {
             response = Alert.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alert found."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "Alert not found.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class)
     })
@@ -698,16 +653,13 @@ public class AlertsHandler {
         try {
             Alert found = alertsService.getAlert(tenantId, alertId, ((null == thin) ? false : thin.booleanValue()));
             if (found != null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Alert: " + found);
-                }
+                log.debugf("Alert: %s", found);
                 return ResponseUtil.ok(found);
-            } else {
-                return ResponseUtil.notFound("alertId: " + alertId + " not found");
             }
+            return ResponseUtil.notFound("alertId: " + alertId + " not found");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -717,8 +669,8 @@ public class AlertsHandler {
     @ApiOperation(value = "Set one alert Resolved.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alerts Resolution invoked successfully."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response resolveAlert(
             @ApiParam(required = true, value = "The alertId to set resolved.")
@@ -734,19 +686,13 @@ public class AlertsHandler {
             if (!isEmpty(alertId)) {
                 alertsService.resolveAlerts(tenantId, Arrays.asList(alertId), resolvedBy,
                         resolvedNotes, null);
-                if (log.isDebugEnabled()) {
-                    log.debug("AlertId: " + alertId);
-                }
+                log.debugf("AlertId: %s", alertId);
                 return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.badRequest("AlertsId required for resolve");
             }
+            return ResponseUtil.badRequest("AlertsId required for resolve");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -756,8 +702,9 @@ public class AlertsHandler {
     @ApiOperation(value = "Set one or more alerts resolved.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Alerts Resolution invoked successfully."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "Alert not found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response resolveAlerts(
             @ApiParam(required = true, value = "List of alertIds to set resolved.",
@@ -774,19 +721,13 @@ public class AlertsHandler {
             if (!isEmpty(alertIds)) {
                 alertsService.resolveAlerts(tenantId, Arrays.asList(alertIds.split(",")), resolvedBy,
                         resolvedNotes, null);
-                if (log.isDebugEnabled()) {
-                    log.debug("AlertsIds: " + alertIds);
-                }
+                log.debugf("AlertsIds: %s", alertIds);
                 return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.badRequest("AlertsIds required for resolve");
             }
+            return ResponseUtil.badRequest("AlertsIds required for resolve");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -796,31 +737,25 @@ public class AlertsHandler {
     @ApiOperation(value = "Send data for alert processing/condition evaluation.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, data added."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response sendData(
-            @ApiParam(required = true, name = "datums", value = "Data to be processed by alerting.")
-            final Collection<Data> datums) {
+            @ApiParam(required = true, name = "datums", value = "Data to be processed by alerting.") final Collection<Data> datums) {
         try {
             if (isEmpty(datums)) {
                 return ResponseUtil.badRequest("Data is empty");
-            } else {
-                for (Data d : datums) {
-                    d.setTenantId(tenantId);
-                }
-                alertsService.sendData(datums);
-                if (log.isDebugEnabled()) {
-                    log.debug("Datums: " + datums);
-                }
-                return ResponseUtil.ok();
             }
+
+            for (Data d : datums) {
+                d.setTenantId(tenantId);
+            }
+            alertsService.sendData(datums);
+            log.debugf("Datums: %s", datums);
+            return ResponseUtil.ok();
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 }

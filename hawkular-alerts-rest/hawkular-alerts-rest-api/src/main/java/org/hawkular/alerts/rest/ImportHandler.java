@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -97,8 +97,8 @@ public class ImportHandler {
             response = Definitions.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully exported list of full triggers and action definitions."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response importDefinitions(
             @ApiParam(value = "Import strategy.", required = true,
@@ -111,11 +111,9 @@ public class ImportHandler {
             ImportType importType = ImportType.valueOf(strategy.toUpperCase());
             Definitions imported = this.definitions.importDefinitions(tenantId, definitions, importType);
             return ResponseUtil.ok(imported);
-        } catch (IllegalArgumentException e) {
-            return ResponseUtil.badRequest("Bad argument: " + e.getMessage());
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 

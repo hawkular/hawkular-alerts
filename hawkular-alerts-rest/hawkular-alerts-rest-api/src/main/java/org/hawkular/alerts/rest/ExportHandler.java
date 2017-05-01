@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,15 +61,16 @@ public class ExportHandler {
             response = Definitions.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully exported list of full triggers and action definitions."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response exportDefinitions() {
         try {
             Definitions definitions = this.definitions.exportDefinitions(tenantId);
             return ResponseUtil.ok(definitions);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 }

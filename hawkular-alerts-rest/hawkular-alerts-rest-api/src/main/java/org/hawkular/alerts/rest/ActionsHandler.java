@@ -90,18 +90,17 @@ public class ActionsHandler {
             response = Collection.class, responseContainer = "Map")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched map of action ids grouped by plugin."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response findActionIds() {
         try {
             Map<String, Set<String>> actions = definitions.getActionDefinitionIds(tenantId);
-            if (log.isDebugEnabled()) {
-                log.debug("Actions: " + actions);
-            }
+            log.debugf("Actions: %s", actions);
             return ResponseUtil.ok(actions);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -112,6 +111,7 @@ public class ActionsHandler {
             response = String.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of action ids."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response findActionIdsByPlugin(@ApiParam(value = "Action plugin to filter query for action ids.",
@@ -120,13 +120,11 @@ public class ActionsHandler {
             final String actionPlugin) {
         try {
             Collection<String> actions = definitions.getActionDefinitionIds(tenantId, actionPlugin);
-            if (log.isDebugEnabled()) {
-                log.debug("Actions: " + actions);
-            }
+            log.debugf("Actions: %s", actions);
             return ResponseUtil.ok(actions);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -137,6 +135,7 @@ public class ActionsHandler {
             response = ActionDefinition.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, Action found."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "No Action found.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
@@ -148,17 +147,15 @@ public class ActionsHandler {
             final String actionId) {
         try {
             ActionDefinition actionDefinition = definitions.getActionDefinition(tenantId, actionPlugin, actionId);
-            if (log.isDebugEnabled()) {
-                log.debug("ActionDefinition: " + actionDefinition);
-            }
+            log.debugf("ActionDefinition: %s", actionDefinition);
             if (actionDefinition == null) {
                 return ResponseUtil.notFound("Not action found for actionPlugin: " + actionPlugin + " and actionId: "
                         + actionId);
             }
             return ResponseUtil.ok(actionDefinition);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -171,9 +168,9 @@ public class ActionsHandler {
             response = ActionDefinition.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, ActionDefinition Created."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 400, message = "Existing ActionDefinition/Invalid Parameters",
-                    response = ApiError.class)
+                    response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response createActionDefinition(
            @ApiParam(value = "ActionDefinition to be created.",
@@ -196,19 +193,13 @@ public class ActionsHandler {
             if (definitions.getActionDefinition(tenantId, actionDefinition.getActionPlugin(),
                     actionDefinition.getActionId()) != null) {
                 return ResponseUtil.badRequest("Existing ActionDefinition:  " + actionDefinition);
-            } else {
-                definitions.addActionDefinition(tenantId, actionDefinition);
-                if (log.isDebugEnabled()) {
-                    log.debug("ActionDefinition: " + actionDefinition);
-                }
-                return ResponseUtil.ok(actionDefinition);
             }
+            definitions.addActionDefinition(tenantId, actionDefinition);
+            log.debugf("ActionDefinition: %s", actionDefinition);
+            return ResponseUtil.ok(actionDefinition);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -220,9 +211,9 @@ public class ActionsHandler {
             response = ActionDefinition.class)
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, ActionDefinition Updated."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
-            @ApiResponse(code = 404, message = "ActionDefinition not found for update.", response = ApiError.class)
+            @ApiResponse(code = 404, message = "ActionDefinition not found for update.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response updateActionDefinition(
            @ApiParam(value = "ActionDefinition to be updated.",
@@ -243,19 +234,13 @@ public class ActionsHandler {
             if (definitions.getActionDefinition(tenantId, actionDefinition.getActionPlugin(),
                     actionDefinition.getActionId()) != null) {
                 definitions.updateActionDefinition(tenantId, actionDefinition);
-                if (log.isDebugEnabled()) {
-                    log.debug("ActionDefinition: " + actionDefinition);
-                }
+                log.debugf("ActionDefinition: %s", actionDefinition);
                 return ResponseUtil.ok(actionDefinition);
-            } else {
-                return ResponseUtil.notFound("ActionDefinition: " + actionDefinition + " not found for update");
             }
+            return ResponseUtil.notFound("ActionDefinition: " + actionDefinition + " not found for update");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -264,8 +249,9 @@ public class ActionsHandler {
     @ApiOperation(value = "Delete an existing ActionDefinition.")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Success, ActionDefinition Deleted."),
-            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class),
-            @ApiResponse(code = 404, message = "ActionDefinition not found for delete.", response = ApiError.class)
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "ActionDefinition not found for delete.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response deleteActionDefinition(
            @ApiParam(value = "Action plugin.", required = true)
@@ -277,17 +263,14 @@ public class ActionsHandler {
         try {
             if (definitions.getActionDefinition(tenantId, actionPlugin, actionId) != null) {
                 definitions.removeActionDefinition(tenantId, actionPlugin, actionId);
-                if (log.isDebugEnabled()) {
-                    log.debug("ActionPlugin: " + actionPlugin + " ActionId: " + actionId);
-                }
+                log.debugf("ActionPlugin: %s, ActionId: %s", actionPlugin, actionId);
                 return ResponseUtil.ok();
-            } else {
-                return ResponseUtil.notFound("ActionPlugin: " + actionPlugin + " ActionId: " + actionId +
-                        " not found for delete");
             }
+            return ResponseUtil
+                    .notFound("ActionPlugin: " + actionPlugin + " ActionId: " + actionId + " not found for delete");
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -338,19 +321,14 @@ public class ActionsHandler {
             ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
                     thin);
             Page<Action> actionPage = actions.getActions(tenantId, criteria, pager);
-            if (log.isDebugEnabled()) {
-                log.debug("Actions: " + actionPage);
-            }
+            log.debugf("Actions: %s", actionPage);
             if (isEmpty(actionPage)) {
                 return ResponseUtil.ok(actionPage);
             }
             return ResponseUtil.paginatedOk(actionPage, uri);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -394,16 +372,11 @@ public class ActionsHandler {
             ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
                     false);
             int numDeleted = actions.deleteActions(tenantId, criteria);
-            if (log.isDebugEnabled()) {
-                log.debug("Actions deleted: " + numDeleted);
-            }
+            log.debugf("Actions deleted: %d", numDeleted);
             return ResponseUtil.ok(new ApiDeleted(numDeleted));
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 

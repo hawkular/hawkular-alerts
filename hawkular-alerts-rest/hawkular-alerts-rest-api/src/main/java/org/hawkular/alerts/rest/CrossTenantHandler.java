@@ -188,19 +188,14 @@ public class CrossTenantHandler {
                     severities, unifiedTagQuery, startResolvedTime, endResolvedTime, startAckTime, endAckTime,
                     startStatusTime, endStatusTime, thin);
             Page<Alert> alertPage = alertsService.getAlerts(tenantIds, criteria, pager);
-            if (log.isDebugEnabled()) {
-                log.debug("Alerts: " + alertPage);
-            }
+            log.debugf("Alerts: %s", alertPage);
             if (isEmpty(alertPage)) {
                 return ResponseUtil.ok(alertPage);
             }
             return ResponseUtil.paginatedOk(alertPage, uri);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -287,19 +282,14 @@ public class CrossTenantHandler {
             EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
                     unifiedTagQuery, thin);
             Page<Event> eventPage = alertsService.getEvents(tenantIds, criteria, pager);
-            if (log.isDebugEnabled()) {
-                log.debug("Events: " + eventPage);
-            }
+            log.debugf("Events: %s", eventPage);
             if (isEmpty(eventPage)) {
                 return ResponseUtil.ok(eventPage);
             }
             return ResponseUtil.paginatedOk(eventPage, uri);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
-                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
-            }
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 

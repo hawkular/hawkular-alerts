@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,9 +25,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.PageContext;
 import org.hawkular.alerts.rest.json.Link;
+import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -82,6 +84,25 @@ public class ResponseUtil {
     public static Response badRequest(String message) {
         return Response.status(Response.Status.BAD_REQUEST)
                 .entity(new ApiError(message)).type(APPLICATION_JSON_TYPE).build();
+    }
+
+    public static Response onException(Exception e, Logger log) {
+        if (e instanceof NotFoundException || (null != e.getCause() && e.getCause() instanceof NotFoundException)) {
+            return notFound(e.getMessage());
+        }
+        if (null != e.getCause() && e.getCause() instanceof NotFoundException) {
+            return notFound(e.getCause().getMessage());
+        }
+        if (e instanceof IllegalArgumentException) {
+            return badRequest(e.getMessage());
+        }
+        if (null != e.getCause() && e.getCause() instanceof IllegalArgumentException) {
+            return badRequest(e.getCause().getMessage());
+        }
+        if (null != log) {
+            log.debug(e.getMessage(), e);
+        }
+        return internalError(e);
     }
 
     /**
