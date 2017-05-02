@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,87 +31,83 @@ import io.swagger.annotations.ApiModelProperty;
 
 /**
  * An <code>EventCondition</code> is used for condition evaluations over Event data using expressions.
+ * <pre>
+ * Expression is a comma separated list of the following 3-token structure:
  *
- * Expression is a comma separated list of the following 3 tokens structure:
+ * {@code <eventField> <operator> <constant> [,<eventField> <operator> <constant>]* }
  *
- * <event.field> <operator> <constant> [,<event.field> <operator> <constant>]*
+ * {@code <eventField>} represents a fixed field of the Event structure, or a tag key.
+ * Supported eventFields:
+ *   - tenantId (String)
+ *   - id (String)
+ *   - ctime (Numeric time since epoch in milliseconds)
+ *   - text (String)
+ *   - category (String)
+ *   - tags.<key> (String)
  *
- * - <event.field> represent a fixed field of event structure or a key of tags.
- *   Supported fields are the following:
- *      - tenantId
- *      - id
- *      - ctime
- *      - text
- *      - category
- *      - tags.<key>
- *
- * - <operator> is a string representing a string/numeric operator, supported ones are:
+ * {@code <operator>} is a string representing a string/numeric operator.
+ * Supported operators:
+ *   "starts" starts with String
+ *   "ends" ends with String
+ *   "contains" contains String
+ *   "match" regex match String
  *   "==" equals
  *   "!=" not equals
- *   "starts" starts with String operator
- *   "ends" ends with String operator
- *   "contains" contains String operator
- *   "match" match String operator
  *   "<" less than
- *   "<=" less or equals than
+ *   "<=" less than or equals
  *   ">" greater than
- *   ">=" greater or equals than
- *   "==" equals
+ *   ">=" greater than or equals
  *
- * - <constant> is a string that might be interpreted as a number if is not closed with single quotes or a string
- * constant if it is closed with single quotes
- * i.e. 23, 'test'
+ * A String {@code <constant>} must be enclosed in single-quotes. Special characters must be
+ * escaped with a backslash. Examples: 'test', '\,test\\'
  *
- * A constant string can contain special character comma but escaped with backslash.
- * i.e. '\,test', 'test\,'
+ * A Numeric {@code <constant>} must be a valid number. Examples: 0, 23, 90.5, -10
  *
- * So, putting everything together, a valid expression might look like:
- * event.id start 'IDXYZ', event.tag.category == 'Server', event.tag.from end '.com'
+ * Example of a valid expression:
+ * id starts 'IDXYZ', category == 'Server', tags.from ends '.com'
  *
- * A non valid expression will return false.
- *
+ * An invalid expression will always return false.
+ * </pre>
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 @ApiModel(description = "An EventCondition is used for condition evaluations over Event data using expressions. + \n" +
         " + \n" +
-        "Expression is a comma separated list of the following 3 tokens structure: + \n" +
+        "Expression is a comma separated list of the following 3-token structure: + \n" +
         " + \n" +
-        "<event.field> <operator> <constant> [,<event.field> <operator> <constant>]* + \n" +
+        "<eventField> <operator> <constant> [,<eventField> <operator> <constant>]* + \n" +
         " + \n" +
-        "<event.field> represent a fixed field of event structure or a key of tags. + \n" +
-        "Supported fields are the following: + \n" +
-        "- tenantId + \n" +
-        "- id + \n" +
-        "- ctime + \n" +
-        "- text + \n" +
-        "- category + \n" +
-        "- tags.<key> + \n" +
+        "<eventField> represents a fixed field of the Event structure, or a tag key. + \n" +
+        "Supported eventFields: + \n" +
+        "- tenantId (String) + \n" +
+        "- id (String) + \n" +
+        "- ctime (Numeric time since epoch in milliseconds) + \n" +
+        "- text (String) + \n" +
+        "- category (String) + \n" +
+        "- tags.<key> (String) + \n" +
         " + \n" +
-        "<operator> is a string representing a string/numeric operator, supported ones are: + \n" +
+        "<operator> is a string representing a string/numeric operator. \n" +
+        "Supported operators: + \n" +
+        "\"starts\" starts with String + \n" +
+        "\"ends\" ends with String + \n" +
+        "\"contains\" contains String + \n" +
+        "\"match\" regex match String + \n" +
         "\"==\" equals + \n" +
         "\"!=\" not equals + \n" +
-        "\"starts\" starts with String operator + \n" +
-        "\"ends\" ends with String operator + \n" +
-        "\"contains\" contains String operator + \n" +
-        "\"match\" match String operator + \n" +
         "\"<\" less than + \n" +
-        "\"<=\" less or equals than + \n" +
+        "\"<=\" less than or equals + \n" +
         "\">\" greater than + \n" +
-        "\">=\" greater or equals than + \n" +
-        "\"==\" equals + \n" +
+        "\">=\" greater than or equals + \n" +
         " + \n" +
-        "<constant> is a string that might be interpreted as a number if is not closed with single quotes or a " +
-        "string constant if it is closed with single quotes + \n" +
-        "i.e. 23, 'test' + \n" +
+        "A String <constant> must be enclosed in single-quotes. Special characters must be + \n" +
+        "escaped with a backslash. Examples: 'test', '\\,test\\\\' \n" +
         " + \n" +
-        "A constant string can contain special character comma but escaped with backslash. + \n" +
-        "i.e '\\,test', 'test\\,' + \n" +
+        "A Numeric <constant> must be a valid number. Examples: 0, 23, 90.5, -10 \n" +
         " + \n" +
-        "So, putting everything together, a valid expression might look like: + \n" +
-        "event.id starts 'IDXYZ', event.tag.category == 'Server', event.tag.from end '.com' + \n" +
+        "Example of a valid expression: + \n" +
+        "id starts 'IDXYZ', category == 'Server', tags.from ends '.com' + \n" +
         " + \n" +
-        "A non valid expression will return false. + \n")
+        "An invalid expression will always return false. + \n")
 public class EventCondition extends Condition {
 
     private static final long serialVersionUID = 1L;
