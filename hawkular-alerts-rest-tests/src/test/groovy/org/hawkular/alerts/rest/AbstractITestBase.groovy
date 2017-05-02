@@ -20,6 +20,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.BeforeClass
 
+import groovy.json.internal.Charsets
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
 import groovyx.net.http.HttpResponseDecorator
@@ -42,12 +43,23 @@ class AbstractITestBase {
     static final AtomicInteger TENANT_ID_COUNTER = new AtomicInteger(0)
     static cluster = System.getProperty('cluster') ? true : false
 
+    static String failureEntity;
+
     @BeforeClass
     static void initClient() {
 
         client = new RESTClient(baseURI, ContentType.JSON)
         // this prevents 404 from being wrapped in an Exception, just return the response, better for testing
-        client.handler.failure = { it }
+        client.handler.failure = { resp ->
+          failureEntity = null
+          if (resp.entity != null && resp.entity.contentLength != 0) {
+            def baos = new ByteArrayOutputStream()
+            resp.entity.writeTo(baos)
+            failureEntity = new String(baos.toByteArray(), Charsets.UTF_8)
+          }
+          return resp
+        }
+
         /*
         client.handler.failure = { resp, data ->
             resp.setData(data)

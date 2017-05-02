@@ -63,6 +63,28 @@ class AlertsITest extends AbstractITestBase {
     }
 
     @Test
+    void findAlertsUnknownParams() {
+        String now = String.valueOf(System.currentTimeMillis());
+        def resp = client.get(path: "", query: [
+            startTime:"0", endTime:now,
+            startAckTime:"0", endAckTime:now,
+            startResolvedTime:"0", endResolvedTime:now,
+            alertIds:"Alert-01", triggerIds:"Trigger-01,Trigger-02", statuses: "OPEN", severities: "LOW",
+            tags: "a|b", tagQuery: "foo", thin: true] )
+        assert resp.status == 200 : resp.status
+
+        resp = client.get(path: "", query: [
+            startyTime:"0", endTime:now,
+            alertIds:"Alert-01", triggrIds:"Trigger-01,Trigger-02", statuses: "OPEN"])
+        assert resp.status == 400 : resp.status
+        assert failureEntity.contains("startyTime")
+        assert failureEntity.contains("triggrIds")
+        assert !failureEntity.contains("endTime")
+        assert !failureEntity.contains("alertIds")
+        assert !failureEntity.contains("statuses")
+    }
+
+    @Test
     void deleteAlerts() {
         String now = String.valueOf(System.currentTimeMillis());
 

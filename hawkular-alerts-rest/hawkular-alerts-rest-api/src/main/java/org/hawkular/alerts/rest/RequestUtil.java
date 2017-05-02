@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,10 @@
 package org.hawkular.alerts.rest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
@@ -31,6 +34,10 @@ import org.hawkular.alerts.api.model.paging.Pager;
  * @author Lukas Krejci
  */
 public class RequestUtil {
+
+    public static final Set<String> PARAMS_PAGING = new HashSet<>(Arrays.asList(new String[] {
+            "page", "per_page", "sort", "order"
+    }));
 
     private RequestUtil() {
     }

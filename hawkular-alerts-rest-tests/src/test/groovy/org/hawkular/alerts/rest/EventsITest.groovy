@@ -75,7 +75,7 @@ class EventsITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         resp = client.put(path: "events/delete",
-                          query: [endTime:now, startTime:"0",alertIds:"Trigger-01|"+now+","+"Trigger-02|"+now] )
+                          query: [endTime:now, startTime:"0", eventIds:"Trigger-01|"+now+","+"Trigger-02|"+now] )
         assertEquals(200, resp.status)
 
         resp = client.put(path: "events/delete",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -120,7 +120,7 @@ class CORSITest extends AbstractITestBase {
 
     // Now query for the event
     response = client.get(path: "events",
-        query: [ids: "cors-test-event-id",tags: "cors-test-tag-name|cors-test-tag-value"],
+        query: [eventIds: "cors-test-event-id",tags: "cors-test-tag-name|cors-test-tag-value"],
         headers: [(tenantHeaderName): tenantId])
 
     assertEquals(200, response.status)
@@ -149,7 +149,7 @@ class CORSITest extends AbstractITestBase {
     assertEquals(responseHeaders, (72 * 60 * 60) + "", response.headers[ACCESS_CONTROL_MAX_AGE].value)
 
     //Requery "metrics" endpoint to make sure data gets returned and check headers
-    response = client.get(path: "events", query: [ids: "cors-test-event-id"],
+    response = client.get(path: "events", query: [eventIds: "cors-test-event-id"],
         headers: [
             (tenantHeaderName): tenantId,
             (ORIGIN): testOrigin
