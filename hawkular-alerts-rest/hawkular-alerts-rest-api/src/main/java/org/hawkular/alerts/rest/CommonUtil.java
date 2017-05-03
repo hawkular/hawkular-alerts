@@ -28,7 +28,7 @@ import java.util.Map;
  */
 public class CommonUtil {
 
-    public static boolean isEmpty(Map map) {
+    public static boolean isEmpty(Map<?, ?> map) {
         return map == null || map.isEmpty();
     }
 
@@ -36,8 +36,20 @@ public class CommonUtil {
         return s == null || s.trim().isEmpty();
     }
 
-    public static boolean isEmpty(Collection collection) {
+    public static boolean isEmpty(Collection<?> collection) {
         return collection == null || collection.isEmpty();
+    }
+
+    public static boolean checkTags(Map<String, String> tagsMap) {
+        if (isEmpty(tagsMap)) {
+            return true;
+        }
+        for (Map.Entry<String, String> entry : tagsMap.entrySet()) {
+            if (isEmpty(entry.getKey()) || isEmpty(entry.getValue())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static Map<String, String> parseTags(String tags) {

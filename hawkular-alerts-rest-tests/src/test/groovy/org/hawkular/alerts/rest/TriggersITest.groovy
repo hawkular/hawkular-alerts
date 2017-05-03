@@ -362,7 +362,7 @@ class TriggersITest extends AbstractITestBase {
 
         // ensure a group trigger can not be removed with the standard remove trigger
         resp = client.delete(path: "triggers/group-trigger")
-        assertEquals(500, resp.status)
+        assertEquals(400, resp.status)
 
         // remove group trigger
         resp = client.delete(path: "triggers/groups/group-trigger")

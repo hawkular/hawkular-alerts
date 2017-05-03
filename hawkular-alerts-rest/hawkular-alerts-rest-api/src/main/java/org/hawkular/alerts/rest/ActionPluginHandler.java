@@ -70,18 +70,17 @@ public class ActionPluginHandler {
             response = String.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully fetched list of actions plugins."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
     public Response findActionPlugins() {
         try {
             Collection<String> actionPlugins = definitions.getActionPlugins();
-            if (log.isDebugEnabled()) {
-                log.debug("ActionPlugins: " + actionPlugins);
-            }
+            log.debugf("ActionPlugins: %s", actionPlugins);
             return ResponseUtil.ok(actionPlugins);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 
@@ -94,6 +93,7 @@ public class ActionPluginHandler {
             response = String.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Action Plugin found."),
+            @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 404, message = "Action Plugin not found.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error", response = ApiError.class)
     })
@@ -102,16 +102,14 @@ public class ActionPluginHandler {
             final String actionPlugin) {
         try {
             Set<String> actionPluginProps = definitions.getActionPlugin(actionPlugin);
-            if (log.isDebugEnabled()) {
-                log.debug("ActionPlugin: " + actionPlugin + " - Properties: " + actionPluginProps);
-            }
+            log.debugf("ActionPlugin: %s, Properties: %s", actionPlugin, actionPluginProps);
             if (isEmpty(actionPluginProps)) {
                 return ResponseUtil.notFound("actionPlugin: " + actionPlugin + " not found");
             }
             return ResponseUtil.ok(actionPluginProps);
+
         } catch (Exception e) {
-            log.debug(e.getMessage(), e);
-            return ResponseUtil.internalError(e);
+            return ResponseUtil.onException(e, log);
         }
     }
 }

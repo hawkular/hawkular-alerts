@@ -434,7 +434,7 @@ class LifecycleITest extends AbstractITestBase {
 
         // FETCH alerts for bogus value name/value tag syntax, should fail
         resp = client.get(path: "", query: [startTime:start,tags:"test-autodisable-tname/test-autodisable-tvalue"] )
-        assertEquals(500, resp.status)
+        assertEquals(400, resp.status)
 
         // FETCH alerts for just triggers generated in test t01, by time, should be 1
         resp = client.get(path: "", query: [startTime:t01Start,endTime:t02Start] )
