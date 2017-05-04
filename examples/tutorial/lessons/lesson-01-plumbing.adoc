@@ -26,6 +26,8 @@ The last bit of plumbing is data.  We'll need some incoming data on which we can
 
 TIP: By default hAlerting has a 1 second minimum for data using the same dataId.  This is to protect against data floods. Data violating the minimum will be discarded.  The default is configurable via the `hawkular-alerts.min-reporting-interval-data` system property or `HAWKULAR_MIN_REPORTING_INTERVAL_DATA` environment variable. The tutorial data pump generates metric data at 5 second intervals, which is fine.
 
+TIP: If you are running this tutorial on OS X. You should install `coreutils` on https://brew.sh/[Homebrew] by `brew install coreutils`
+
 To start pumping in some data, run the provided script:
 
 `> ./tutorial-data.sh`
