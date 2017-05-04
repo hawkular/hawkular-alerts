@@ -23,6 +23,7 @@ import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,6 +68,12 @@ import io.swagger.annotations.ApiResponses;
 @Api(value = "/actions", description = "Actions Handling")
 public class ActionsHandler {
     private final Logger log = Logger.getLogger(ActionsHandler.class);
+
+    private static final Map<String, Set<String>> queryParamValidationMap = new HashMap<>();
+
+    static {
+        ResponseUtil.populateQueryParamsMap(ActionsHandler.class, queryParamValidationMap);
+    }
 
     @HeaderParam(TENANT_HEADER_NAME)
     String tenantId;
@@ -286,6 +293,7 @@ public class ActionsHandler {
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
+    @QueryParamValidation(name = "findActionsHistory")
     public Response findActionsHistory(
             @ApiParam(required = false, value = "Filter out actions created before this time.",
                 allowableValues = "Timestamp in millisecond since epoch.")
@@ -316,8 +324,10 @@ public class ActionsHandler {
             final Boolean thin,
             @Context
             final UriInfo uri) {
-        Pager pager = RequestUtil.extractPaging(uri);
         try {
+            ResponseUtil.checkForUnknownQueryParams(uri, queryParamValidationMap.get("findActionsHistory"));
+            Pager pager = RequestUtil.extractPaging(uri);
+
             ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
                     thin);
             Page<Action> actionPage = actions.getActions(tenantId, criteria, pager);
@@ -343,6 +353,7 @@ public class ActionsHandler {
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
+    @QueryParamValidation(name = "deleteActionsHistory")
     public Response deleteActionsHistory(
             @ApiParam(required = false, value = "Filter out actions created before this time.",
                 allowableValues = "Timestamp in millisecond since epoch.")
@@ -367,8 +378,12 @@ public class ActionsHandler {
             @ApiParam(required = false, value = "Filter out alerts for unspecified result. ",
                 allowableValues = "Comma separated list of action results.")
             @QueryParam("results")
-            final String results) {
+            final String results,
+            @Context
+            final UriInfo uri) {
         try {
+            ResponseUtil.checkForUnknownQueryParams(uri, queryParamValidationMap.get("deleteActionsHistory"));
+
             ActionsCriteria criteria = buildCriteria(startTime, endTime, actionPlugins, actionIds, alertIds, results,
                     false);
             int numDeleted = actions.deleteActions(tenantId, criteria);

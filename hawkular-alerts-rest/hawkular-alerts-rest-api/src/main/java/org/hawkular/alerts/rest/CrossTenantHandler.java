@@ -23,6 +23,8 @@ import static org.hawkular.alerts.rest.CommonUtil.parseTagQuery;
 import static org.hawkular.alerts.rest.CommonUtil.parseTags;
 import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -61,6 +63,12 @@ import io.swagger.annotations.ApiResponses;
 @Api(value = "/admin", description = "Cross tenant Operations")
 public class CrossTenantHandler {
     private static final Logger log = Logger.getLogger(CrossTenantHandler.class);
+
+    private static final Map<String, Set<String>> queryParamValidationMap = new HashMap<>();
+
+    static {
+        ResponseUtil.populateQueryParamsMap(CrossTenantHandler.class, queryParamValidationMap);
+    }
 
     @HeaderParam(TENANT_HEADER_NAME)
     String tenantId;
@@ -108,6 +116,7 @@ public class CrossTenantHandler {
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters", response = ResponseUtil.ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ResponseUtil.ApiError.class)
     })
+    @QueryParamValidation(name = "findAlerts")
     public Response findAlerts(
             @ApiParam(required = false, value = "Filter out alerts created before this time.",
                     allowableValues = "Timestamp in millisecond since epoch.")
@@ -171,8 +180,10 @@ public class CrossTenantHandler {
             final Boolean thin,
             @Context
             final UriInfo uri) {
-        Pager pager = RequestUtil.extractPaging(uri);
         try {
+            ResponseUtil.checkForUnknownQueryParams(uri, queryParamValidationMap.get("findAlerts"));
+            Pager pager = RequestUtil.extractPaging(uri);
+
             Set<String> tenantIds = getTenants(tenantId);
             /*
                 We maintain old tags criteria as deprecated (it can be removed in a next major version).
@@ -232,6 +243,7 @@ public class CrossTenantHandler {
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ResponseUtil.ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ResponseUtil.ApiError.class)
     })
+    @QueryParamValidation(name = "findEvents")
     public Response findEvents(
             @ApiParam(required = false, value = "Filter out events created before this time.",
                     allowableValues = "Timestamp in millisecond since epoch.")
@@ -266,8 +278,10 @@ public class CrossTenantHandler {
             final Boolean thin,
             @Context
             final UriInfo uri) {
-        Pager pager = RequestUtil.extractPaging(uri);
         try {
+            ResponseUtil.checkForUnknownQueryParams(uri, queryParamValidationMap.get("findEvents"));
+            Pager pager = RequestUtil.extractPaging(uri);
+
             Set<String> tenantIds = getTenants(tenantId);
             /*
                 We maintain old tags criteria as deprecated (it can be removed in a next major version).
@@ -332,6 +346,7 @@ public class CrossTenantHandler {
             @ApiResponse(code = 200, message = "Stream of alerts.", response = Alert.class),
             @ApiResponse(code = 200, message = "Errors will close the stream. Description is sent before stream is closed.", response = ResponseUtil.ApiError.class)
     })
+    @QueryParamValidation(name = "watchAlerts")
     public Response watchAlerts(
             @ApiParam(required = false, value = "Filter out alerts created before this time.",
                     allowableValues = "Timestamp in millisecond since epoch.")
@@ -399,17 +414,28 @@ public class CrossTenantHandler {
             final Boolean thin,
             @Context
             final UriInfo uri) {
-        Set<String> tenantIds = getTenants(tenantId);
-        String unifiedTagQuery;
-        if (!isEmpty(tags)) {
-            unifiedTagQuery = parseTagQuery(parseTags(tags));
-        } else {
-            unifiedTagQuery = tagQuery;
+        try {
+            ResponseUtil.checkForUnknownQueryParams(uri, queryParamValidationMap.get("findEvents"));
+
+            Set<String> tenantIds = getTenants(tenantId);
+            String unifiedTagQuery;
+            if (!isEmpty(tags)) {
+                unifiedTagQuery = parseTagQuery(parseTags(tags));
+            } else {
+                unifiedTagQuery = tagQuery;
+            }
+            AlertsCriteria criteria = new AlertsCriteria(startTime, endTime, alertIds, triggerIds, statuses,
+                    severities, unifiedTagQuery, startResolvedTime, endResolvedTime, startAckTime, endAckTime,
+                    startStatusTime, endStatusTime, thin);
+            return Response.ok(streamWatcher.watchAlerts(tenantIds, criteria, watchInterval)).build();
+
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
+            return ResponseUtil.internalError(e);
         }
-        AlertsCriteria criteria = new AlertsCriteria(startTime, endTime, alertIds, triggerIds, statuses,
-                severities, unifiedTagQuery, startResolvedTime, endResolvedTime, startAckTime, endAckTime,
-                startStatusTime, endStatusTime, thin);
-        return Response.ok(streamWatcher.watchAlerts(tenantIds, criteria, watchInterval)).build();
     }
 
     @GET
@@ -452,6 +478,7 @@ public class CrossTenantHandler {
             @ApiResponse(code = 200, message = "Stream of events.", response = Event.class),
             @ApiResponse(code = 200, message = "Errors will close the stream. Description is sent before stream is closed.", response = ResponseUtil.ApiError.class)
     })
+    @QueryParamValidation(name = "watchEvents")
     public Response watchEvents(
             @ApiParam(required = false, value = "Filter out events created before this time.",
                     allowableValues = "Timestamp in millisecond since epoch.")
@@ -490,16 +517,27 @@ public class CrossTenantHandler {
             final Boolean thin,
             @Context
             final UriInfo uri) {
-        Set<String> tenantIds = getTenants(tenantId);
-        String unifiedTagQuery;
-        if (!isEmpty(tags)) {
-            unifiedTagQuery = parseTagQuery(parseTags(tags));
-        } else {
-            unifiedTagQuery = tagQuery;
+        try {
+            ResponseUtil.checkForUnknownQueryParams(uri, queryParamValidationMap.get("findEvents"));
+
+            Set<String> tenantIds = getTenants(tenantId);
+            String unifiedTagQuery;
+            if (!isEmpty(tags)) {
+                unifiedTagQuery = parseTagQuery(parseTags(tags));
+            } else {
+                unifiedTagQuery = tagQuery;
+            }
+            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
+                    unifiedTagQuery, thin);
+            return Response.ok(streamWatcher.watchEvents(tenantIds, criteria, watchInterval)).build();
+
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            if (e.getCause() != null && e.getCause() instanceof IllegalArgumentException) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
+            return ResponseUtil.internalError(e);
         }
-        EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
-                unifiedTagQuery, thin);
-        return Response.ok(streamWatcher.watchEvents(tenantIds, criteria, watchInterval)).build();
     }
 
     private Set<String> getTenants(String tenantId) {

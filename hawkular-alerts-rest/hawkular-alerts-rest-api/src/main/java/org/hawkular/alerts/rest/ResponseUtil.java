@@ -19,8 +19,13 @@ package org.hawkular.alerts.rest;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -87,7 +92,7 @@ public class ResponseUtil {
     }
 
     public static Response onException(Exception e, Logger log) {
-        if (e instanceof NotFoundException || (null != e.getCause() && e.getCause() instanceof NotFoundException)) {
+        if (e instanceof NotFoundException) {
             return notFound(e.getMessage());
         }
         if (null != e.getCause() && e.getCause() instanceof NotFoundException) {
@@ -103,6 +108,36 @@ public class ResponseUtil {
             log.debug(e.getMessage(), e);
         }
         return internalError(e);
+    }
+
+    public static void populateQueryParamsMap(Class<?> clazz, Map<String, Set<String>> queryParamValidationMap) {
+        Arrays.asList(clazz.getDeclaredMethods()).stream()
+                .filter(m -> m.isAnnotationPresent(QueryParamValidation.class))
+                .forEach(m -> {
+                    String name = m.getAnnotation(QueryParamValidation.class).name();
+                    Set<String> queryParams = Arrays.asList(m.getParameters()).stream()
+                            .filter(p -> p.isAnnotationPresent(QueryParam.class))
+                            .map(p -> p.getAnnotation(QueryParam.class).value())
+                            .collect(Collectors.toSet());
+                    queryParamValidationMap.put(name, queryParams);
+                });
+    }
+
+    public static void checkForUnknownQueryParams(final UriInfo uri, final Set<String> expected) {
+        Set<String> received = uri.getQueryParameters().keySet();
+        if (received.contains("ignoreUnknownQueryParams")) {
+            return;
+        }
+
+        Set<String> unknown = received.stream()
+                .filter(p -> !expected.contains(p) && !RequestUtil.PARAMS_PAGING.contains(p))
+                .collect(Collectors.toSet());
+        if (!unknown.isEmpty()) {
+            String message = "Unknown Query Parameter(s): " + unknown.toString();
+            throw new IllegalArgumentException(message);
+        }
+
+        return;
     }
 
     /**

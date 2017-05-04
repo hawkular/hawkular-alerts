@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.ejb.EJB;
@@ -78,6 +79,12 @@ import io.swagger.annotations.ApiResponses;
 public class TriggersHandler {
     private static final Logger log = Logger.getLogger(TriggersHandler.class);
 
+    private static final Map<String, Set<String>> queryParamValidationMap = new HashMap<>();
+
+    static {
+        ResponseUtil.populateQueryParamsMap(TriggersHandler.class, queryParamValidationMap);
+    }
+
     @HeaderParam(TENANT_HEADER_NAME)
     String tenantId;
 
@@ -99,6 +106,7 @@ public class TriggersHandler {
             @ApiResponse(code = 400, message = "Bad request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
+    @QueryParamValidation(name = "findTriggers")
     public Response findTriggers(
             @ApiParam(required = false, value = "Filter out triggers for unspecified triggerIds. ",
                 allowableValues = "Comma separated list of trigger IDs.")
@@ -113,8 +121,10 @@ public class TriggersHandler {
             @QueryParam("thin")
             final Boolean thin,
             @Context final UriInfo uri) {
-        Pager pager = RequestUtil.extractPaging(uri);
         try {
+            ResponseUtil.checkForUnknownQueryParams(uri, queryParamValidationMap.get("findTriggers"));
+            Pager pager = RequestUtil.extractPaging(uri);
+
             TriggersCriteria criteria = buildCriteria(triggerIds, tags, thin);
             Page<Trigger> triggerPage = definitions.getTriggers(tenantId, criteria, pager);
             log.debugf("Triggers: %s", triggerPage);

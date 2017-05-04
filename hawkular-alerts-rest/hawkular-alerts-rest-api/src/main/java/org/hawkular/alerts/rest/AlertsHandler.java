@@ -26,8 +26,10 @@ import static org.hawkular.alerts.rest.HawkularAlertsApp.TENANT_HEADER_NAME;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
@@ -71,6 +73,12 @@ import io.swagger.annotations.ApiResponses;
 @Api(value = "/*", description = "Alerts Handling") // '/*' is a trick to manipulate root endpoint in apidoc.groovy
 public class AlertsHandler {
     private final Logger log = Logger.getLogger(AlertsHandler.class);
+
+    private static final Map<String, Set<String>> queryParamValidationMap = new HashMap<>();
+
+    static {
+        ResponseUtil.populateQueryParamsMap(AlertsHandler.class, queryParamValidationMap);
+    }
 
     @HeaderParam(TENANT_HEADER_NAME)
     String tenantId;
@@ -118,6 +126,7 @@ public class AlertsHandler {
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
+    @QueryParamValidation(name = "findAlerts")
     public Response findAlerts(
             @ApiParam(required = false, value = "Filter out alerts created before this time.",
                 allowableValues = "Timestamp in millisecond since epoch.")
@@ -181,8 +190,10 @@ public class AlertsHandler {
             final Boolean thin,
             @Context
             final UriInfo uri) {
-        Pager pager = RequestUtil.extractPaging(uri);
         try {
+            ResponseUtil.checkForUnknownQueryParams(uri, queryParamValidationMap.get("findAlerts"));
+            Pager pager = RequestUtil.extractPaging(uri);
+
             /*
                 We maintain old tags criteria as deprecated (it can be removed in a next major version).
                 If present, the tags criteria has precedence over tagQuery parameter.
@@ -246,6 +257,7 @@ public class AlertsHandler {
             @ApiResponse(code = 200, message = "Stream of alerts.", response = Alert.class),
             @ApiResponse(code = 200, message = "Errors will close the stream. Description is sent before stream is closed.", response = ResponseUtil.ApiError.class)
     })
+    @QueryParamValidation(name = "watchAlerts")
     public Response watchAlerts(
             @ApiParam(required = false, value = "Filter out alerts created before this time.",
                     allowableValues = "Timestamp in millisecond since epoch.")
@@ -313,16 +325,29 @@ public class AlertsHandler {
             final Boolean thin,
             @Context
             final UriInfo uri) {
-        String unifiedTagQuery;
-        if (!isEmpty(tags)) {
-            unifiedTagQuery = parseTagQuery(parseTags(tags));
-        } else {
-            unifiedTagQuery = tagQuery;
+        try {
+            ResponseUtil.checkForUnknownQueryParams(uri, queryParamValidationMap.get("watchAlerts"));
+
+            String unifiedTagQuery;
+            if (!isEmpty(tags)) {
+                unifiedTagQuery = parseTagQuery(parseTags(tags));
+            } else {
+                unifiedTagQuery = tagQuery;
+            }
+            AlertsCriteria criteria = new AlertsCriteria(startTime, endTime, alertIds, triggerIds, statuses,
+                    severities,
+                    unifiedTagQuery, startResolvedTime, endResolvedTime, startAckTime, endAckTime, startStatusTime,
+                    endStatusTime, thin);
+            return Response.ok(streamWatcher.watchAlerts(Collections.singleton(tenantId), criteria, watchInterval))
+                    .build();
+        } catch (Exception e) {
+            log.debug(e.getMessage(), e);
+            if (e instanceof IllegalArgumentException ||
+                    (e.getCause() != null && e.getCause() instanceof IllegalArgumentException)) {
+                return ResponseUtil.badRequest("Bad arguments: " + e.getMessage());
+            }
+            return ResponseUtil.internalError(e);
         }
-        AlertsCriteria criteria = new AlertsCriteria(startTime, endTime, alertIds, triggerIds, statuses, severities,
-                unifiedTagQuery, startResolvedTime, endResolvedTime, startAckTime, endAckTime, startStatusTime,
-                endStatusTime, thin);
-        return Response.ok(streamWatcher.watchAlerts(Collections.singleton(tenantId), criteria, watchInterval)).build();
     }
 
     @PUT
@@ -550,6 +575,7 @@ public class AlertsHandler {
             @ApiResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
             @ApiResponse(code = 500, message = "Internal server error.", response = ApiError.class)
     })
+    @QueryParamValidation(name = "deleteAlerts")
     public Response deleteAlerts(
             @ApiParam(required = false, value = "Filter out alerts created before this time.",
                 allowableValues = "Timestamp in millisecond since epoch.")
@@ -607,9 +633,13 @@ public class AlertsHandler {
             @ApiParam(required = false, value = "Filter out alerts with some lifecycle after this time.",
                     allowableValues = "Timestamp in millisecond since epoch.")
             @QueryParam("endStatusTime")
-            final Long endStatusTime
+            final Long endStatusTime,
+            @Context
+            final UriInfo uri
             ) {
         try {
+            ResponseUtil.checkForUnknownQueryParams(uri, queryParamValidationMap.get("deleteAlerts"));
+
             /*
                 We maintain old tags criteria as deprecated (it can be removed in a next major version).
                 If present, the tags criteria has precedence over tagQuery parameter.
