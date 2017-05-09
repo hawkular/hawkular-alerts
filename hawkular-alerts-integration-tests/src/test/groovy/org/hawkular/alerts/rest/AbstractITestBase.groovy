@@ -38,7 +38,7 @@ class AbstractITestBase {
     static final String TENANT_PREFIX = UUID.randomUUID().toString()
     static final AtomicInteger TENANT_ID_COUNTER = new AtomicInteger(0)
     static cluster = System.getProperty('cluster') ? true : false
-    static timeout = 100000  // 100s of timeout to spot networking issues
+    static timeout = 30000  // 30s of timeout to spot networking issues
 
     @BeforeClass
     static void initClient() {
