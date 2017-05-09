@@ -21,13 +21,13 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.hawkular.alerts</groupId>
-  <artifactId>hawkular-alerts-netty-poc</artifactId>
+  <artifactId>hawkular-alerts-reactor-netty-poc</artifactId>
   <version>1.7.0.Final-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <name>Hawkular Alerting: Netty PoC</name>
+  <name>Hawkular Alerting: Reactor Netty PoC</name>
   <description>Alerting subsystem for Hawkular</description>
-  <url>https://github.com/lucasponce/alerting-reactor</url>
+  <url>https://github.com/hawkular/hawkular-alerts/tree/reactor-netty-poc</url>
   <inceptionYear>2015</inceptionYear>
   <organization>
     <name>Red Hat, Inc.</name>

@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
     <groupId>org.hawkular.alerts</groupId>
-    <artifactId>hawkular-alerts-netty-poc</artifactId>
+    <artifactId>hawkular-alerts-reactor-netty-poc</artifactId>
     <version>1.7.0.Final-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
