@@ -29,27 +29,15 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.ejb.AccessTimeout;
-import javax.ejb.EJB;
-import javax.ejb.Local;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.engine.log.MsgLogger;
+import org.hawkular.alerts.cache.IspnCacheManager;
 import org.hawkular.alerts.engine.service.PartitionDataListener;
 import org.hawkular.alerts.engine.service.PartitionManager;
 import org.hawkular.alerts.engine.service.PartitionTriggerListener;
+import org.hawkular.alerts.log.MsgLogger;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.infinispan.manager.EmbeddedCacheManager;
@@ -102,10 +90,6 @@ import com.google.common.hash.Hashing;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Local(PartitionManager.class)
-@Startup
-@Singleton
-@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class PartitionManagerImpl implements PartitionManager {
 
     /**
@@ -113,6 +97,10 @@ public class PartitionManagerImpl implements PartitionManager {
      */
     private static final String LIFESPAN_PROPERTY = "hawkular-alerts.partition-lifespan";
     private static final int LIFESPAN = Integer.parseInt(System.getProperty(LIFESPAN_PROPERTY, "100"));
+
+    private static final String ALERTS_DISTRIBUTED = "hawkular-alerts.distributed";
+    private static final String ALERTS_DISTRIBUTED_ENV = "HAWKULAR_ALERTS_DISTRIBUTED";
+    private static final String ALERTS_DISTRIBUTED_DEFAULT = "false";
 
     public static final String BUCKETS = "buckets";
     public static final String PREVIOUS = "previousPartition";
@@ -122,14 +110,13 @@ public class PartitionManagerImpl implements PartitionManager {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(PartitionManagerImpl.class);
 
-    @EJB
     DefinitionsService definitionsService;
 
     /**
      * Indicate if the deployment is on a clustering scenario.
      * With distributed == false PartitionManager services are simply ignored.
      */
-    private boolean distributed = false;
+    private boolean distributed = IspnCacheManager.isDistributed();
 
     private final Map<String, String> status = new HashMap<>();
 
@@ -137,7 +124,6 @@ public class PartitionManagerImpl implements PartitionManager {
      * Access to the manager of the caches used for the partition services.
      * Main function is to manage the list of members and add listener for topology changes.
      */
-    @Resource(lookup = "java:jboss/infinispan/container/hawkular-alerts")
     private EmbeddedCacheManager cacheManager;
 
     /**
@@ -150,21 +136,18 @@ public class PartitionManagerImpl implements PartitionManager {
      *
      * Partition cache is modified by cluster coordinator.
      */
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/partition")
     private Cache partitionCache;
 
     /**
      * This cache will be used to propagate a trigger across nodes.
      * It will hold listeners to notify the change.
      */
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/triggers")
     private Cache triggersCache;
 
     /**
      * This cache will be used to propagate a data or event across nodes.
      * It will hold listeners to notify the change.
      */
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/data")
     private Cache dataCache;
 
     /**
@@ -188,8 +171,12 @@ public class PartitionManagerImpl implements PartitionManager {
     private NewTriggerListener newTriggerListener = new NewTriggerListener();
     private NewDataListener newDataListener = new NewDataListener();
 
+
+    public void setDefinitionsService(DefinitionsService definitionsService) {
+        this.definitionsService = definitionsService;
+    }
+
     @Override
-    @Lock(LockType.READ)
     public boolean isDistributed() {
         return distributed;
     }
@@ -207,15 +194,14 @@ public class PartitionManagerImpl implements PartitionManager {
         return status;
     }
 
-    @PostConstruct
     public void init() {
-        /*
-            Cache manager has an active transport (i.e. jgroups) when is configured on distributed mode
-         */
-        distributed = cacheManager.getTransport() != null;
         if (!distributed) {
             msgLog.infoPartitionManagerDisabled();
         } else {
+            cacheManager = IspnCacheManager.getCacheManager();
+            partitionCache = cacheManager.getCache("partition");
+            triggersCache = cacheManager.getCache("triggers");
+            dataCache = cacheManager.getCache("data");
             status.put("currentNode", cacheManager.getAddress().toString());
             currentNode = cacheManager.getAddress().hashCode();
             cacheManager.addListener(topologyChangeListener);
@@ -233,7 +219,6 @@ public class PartitionManagerImpl implements PartitionManager {
         }
     }
 
-    @PreDestroy
     public void shutdown() {
         if (distributed) {
             cacheManager.removeListener(topologyChangeListener);
@@ -298,7 +283,6 @@ public class PartitionManagerImpl implements PartitionManager {
         It updated the new and old partition state on the "partition" cache.
         This can take some time, avoid timeouts by allowing longer waits for pending client calls
      */
-    @AccessTimeout(value = 5, unit = TimeUnit.MINUTES)
     private void processTopologyChange() {
         if (distributed && cacheManager.isCoordinator()) {
             /*

@@ -31,17 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import javax.annotation.PostConstruct;
-import javax.ejb.AccessTimeout;
-import javax.ejb.EJB;
-import javax.ejb.Local;
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
 
 import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.json.JsonUtil;
@@ -82,8 +72,8 @@ import org.hawkular.alerts.api.services.DistributedListener;
 import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.alerts.engine.exception.NotFoundApplicationException;
-import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
+import org.hawkular.alerts.log.MsgLogger;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BatchStatement;
@@ -100,9 +90,6 @@ import com.google.common.util.concurrent.Futures;
  *
  * @author Lucas Ponce
  */
-@Local(DefinitionsService.class)
-@Stateless
-@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class CassDefinitionsServiceImpl implements DefinitionsService {
 
     /*
@@ -129,23 +116,17 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private int batchSize;
     private final BatchStatement.Type batchType = BatchStatement.Type.LOGGED;
 
-    @EJB
     AlertsEngine alertsEngine;
 
-    @EJB
     AlertsContext alertsContext;
 
-    @EJB
     PropertiesService properties;
 
-    @Inject
-    @CassClusterSession
     Session session;
 
     public CassDefinitionsServiceImpl() {
     }
 
-    @PostConstruct
     public void init() {
         batchSize = Integer.valueOf(properties.getProperty(BATCH_SIZE,
                 BATCH_SIZE_ENV, BATCH_SIZE_DEFAULT));
@@ -801,7 +782,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     // TODO: This fetch perform cross-tenant fetch and may be inefficient at scale
     //       Added timeout to prevent slow startup on embedded Cassandra scenarios
     @Override
-    @AccessTimeout(value = 60, unit = TimeUnit.SECONDS)
+    // @AccessTimeout(value = 60, unit = TimeUnit.SECONDS)
     public Collection<Trigger> getAllTriggers() throws Exception {
         return selectTriggers(null);
     }
@@ -2791,7 +2772,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    @AccessTimeout(value = 60, unit = TimeUnit.SECONDS)
+    // @AccessTimeout(value = 60, unit = TimeUnit.SECONDS)
     public Set<String> getActionPlugin(String actionPlugin) throws Exception {
         if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");

@@ -16,28 +16,23 @@
  */
 package org.hawkular.alerts.actions.standalone;
 
-import static org.hawkular.alerts.actions.standalone.ServiceNames.Service.ACTIONS_SERVICE;
-
-import java.lang.annotation.Annotation;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.ActionPluginSender;
 import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.actions.api.Sender;
 import org.hawkular.alerts.api.services.ActionsService;
-import org.jboss.vfs.VirtualFile;
+import org.hawkular.alerts.engine.StandaloneAlerts;
+import org.hawkular.alerts.log.MsgLogger;
+import org.jboss.logging.Logger;
 
 /**
  * Helper class to find the classes annotated with ActionPlugin and instantiate them.
@@ -45,11 +40,12 @@ import org.jboss.vfs.VirtualFile;
  * @author Lucas Ponce
  */
 public class ActionPlugins {
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, ActionPlugins.class.getName());
     private ActionsService actions;
     private static ActionPlugins instance;
     private Map<String, ActionPluginListener> plugins;
     private Map<String, ActionPluginSender> senders;
+    private ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
     public static synchronized Map<String, ActionPluginListener> getPlugins() {
         if (instance == null) {
@@ -69,75 +65,46 @@ public class ActionPlugins {
         try {
             plugins = new HashMap<>();
             senders = new HashMap<>();
-            init();
-            List<URL> webInfUrls = getWebInfUrls();
-            for (URL webInfUrl : webInfUrls) {
-                List<Class> pluginClasses = findAnnotationInJar(webInfUrl, Plugin.class);
-                for (Class pluginClass : pluginClasses) {
-                    Annotation actionPlugin = pluginClass.getDeclaredAnnotation(Plugin.class);
-                    if (actionPlugin instanceof Plugin) {
-                        String name = ((Plugin) actionPlugin).name();
-                        Object newInstance = pluginClass.newInstance();
-                        if (newInstance instanceof ActionPluginListener) {
-                            ActionPluginListener pluginInstance = (ActionPluginListener)newInstance;
-                            injectActionPluginSender(name, pluginInstance);
-                            plugins.put(name, pluginInstance);
-                        } else {
-                            throw new IllegalStateException("Plugin [" + name + "] is not instance of " +
-                                    "ActionPluginListener");
-                        }
-                    }
-                }
-            }
+            actions = StandaloneAlerts.getActionsService();
+            scan();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private List<URL> getWebInfUrls() throws Exception {
-        Enumeration<URL> allUrls = Thread.currentThread().getContextClassLoader().getResources("");
-        List<URL> webInfUrls = new ArrayList<>();
-        while (allUrls != null && allUrls.hasMoreElements()) {
-            URL url = allUrls.nextElement();
-            String sUrl = url.toExternalForm();
-            int indexPrefix = sUrl.indexOf("hawkular-alerts-actions-");
-            if (indexPrefix > 0) {
-                int indexSuffix = sUrl.indexOf("-plugin", indexPrefix);
-                if (indexSuffix > 0) {
-                    msgLog.debugf("Scanning %s", url);
-                    webInfUrls.add(url);
-                }
-            }
-        }
-        return webInfUrls;
-    }
-
-    private List<Class> findAnnotationInJar(URL url, Class annotation) throws Exception {
-        if (url == null || annotation == null) {
-            throw new IllegalArgumentException("url or annotation must be not null");
-        }
-        List<Class> plugins = new ArrayList<>();
-        URLConnection conn = url.openConnection();
-        Object content = conn.getContent();
-        if (content instanceof VirtualFile) {
-            VirtualFile root = (VirtualFile)content;
-            List<VirtualFile> children = root.getChildrenRecursively();
-            for (VirtualFile vf : children) {
-                String vfName = vf.toURI().toString();
-                msgLog.debugf("Searching %s", vfName);
-                if (vfName.endsWith(".class")) {
-                    int startName = vfName.indexOf(".jar/") + 5;
-                    int stopName = vfName.indexOf(".class");
-                    String className = vfName.substring(startName, stopName).replace("/", ".");
-                    msgLog.debugf("Loading %s", className);
-                    Class clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
-                    if (clazz.isAnnotationPresent(annotation)) {
-                        plugins.add(clazz);
+    private void scan() throws IOException {
+        String[] classpath = System.getProperty("java.class.path").split(":");
+        for (int i=0; i<classpath.length; i++) {
+            if (classpath[i].contains("hawkular") && classpath[i].endsWith("jar")) {
+                ZipInputStream zip = new ZipInputStream(new FileInputStream(classpath[i]));
+                for (ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
+                    if (!entry.isDirectory() && entry.getName().endsWith(".class")) {
+                        String className = entry.getName().replace('/', '.'); // including ".class"
+                        className = className.substring(0, className.length() - 6);
+                        try {
+                            Class clazz = cl.loadClass(className);
+                            if (clazz.isAnnotationPresent(Plugin.class)) {
+                                Plugin plugin = (Plugin)clazz.getAnnotation(Plugin.class);
+                                String name = plugin.name();
+                                Object newInstance = clazz.newInstance();
+                                log.infof("Scanning %s", clazz.getName());
+                                if (newInstance instanceof ActionPluginListener) {
+                                    ActionPluginListener pluginInstance = (ActionPluginListener)newInstance;
+                                    injectActionPluginSender(name, pluginInstance);
+                                    plugins.put(name, pluginInstance);
+                                } else {
+                                    throw new IllegalStateException("Plugin [" + name + "] is not instance of " +
+                                            "ActionPluginListener");
+                                }
+                            }
+                        } catch (Exception e) {
+                            log.errorf(e,"Error loading Handler %s. Reason: %s", className, e.toString());
+                            System.exit(1);
+                        }
                     }
                 }
             }
         }
-        return plugins;
     }
 
     /*
@@ -163,17 +130,4 @@ public class ActionPlugins {
             senders.put(actionPlugin, standaloneSender);
         }
     }
-
-    private void init() {
-        if (actions == null) {
-            try {
-                InitialContext ctx = new InitialContext();
-                actions = (ActionsService)ctx.lookup(ServiceNames.getServiceName(ACTIONS_SERVICE));
-            } catch (NamingException e) {
-                msgLog.error("Cannot access to JNDI context", e);
-            }
-
-        }
-    }
-
 }

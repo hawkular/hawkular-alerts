@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.actions.standalone;
 
-import static org.hawkular.alerts.actions.standalone.ServiceNames.Service.DEFINITIONS_SERVICE;
-
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,6 +28,8 @@ import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.engine.StandaloneAlerts;
+import org.hawkular.alerts.log.MsgLogger;
 import org.jboss.logging.Logger;
 
 /**
@@ -38,33 +38,33 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class StandaloneActionPluginListener implements ActionListener {
-    private static final String NUM_THREADS = "hawkular-alerts.standalone-actions-threads";
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(StandaloneActionPluginListener.class);
+    private final MsgLogger log = Logger.getMessageLogger(MsgLogger.class,
+            StandaloneActionPluginListener.class.getName());
 
-    private InitialContext ctx;
     private DefinitionsService definitions;
 
     ExecutorService executorService;
 
     private Map<String, ActionPluginListener> plugins;
 
-    public StandaloneActionPluginListener(Map<String, ActionPluginListener> plugins) {
+    public StandaloneActionPluginListener(Map<String, ActionPluginListener> plugins, ExecutorService executorService) {
         this.plugins = plugins;
-        int numThreads = Integer.parseInt(System.getProperty(NUM_THREADS, "10"));
-        executorService = Executors.newFixedThreadPool(numThreads, new StandaloneThreadFactory());
+        if (executorService == null) {
+            throw new IllegalArgumentException("ExecutorService must be non null");
+        }
+        this.executorService = executorService;
     }
 
     @Override
     public void process(Action action) {
         try {
-            init();
+            definitions = StandaloneAlerts.getDefinitionsService();
             if (plugins.isEmpty()) {
-                msgLog.warnNoPluginsFound();
+                log.warnNoPluginsFound();
                 return;
             }
             if (action == null || action.getActionPlugin() == null) {
-                msgLog.warnMessageReceivedWithoutPluginInfo();
+                log.warnMessageReceivedWithoutPluginInfo();
                 return;
             }
             String actionPlugin = action.getActionPlugin();
@@ -84,22 +84,13 @@ public class StandaloneActionPluginListener implements ActionListener {
                         plugin.process(pluginMessage);
                     } catch (Exception e) {
                         log.debug("Error processing action: " + action.getActionPlugin(), e);
-                        msgLog.errorProcessingAction(e.getMessage());
+                        log.errorProcessingAction(e.getMessage());
                     }
                 });
             }
         } catch (Exception e) {
             log.debug("Error processing action: " + action.getActionPlugin(), e);
-            msgLog.errorProcessingAction(e.getMessage());
-        }
-    }
-
-    private void init() throws Exception {
-        if (ctx == null) {
-            ctx = new InitialContext();
-        }
-        if (definitions == null) {
-            definitions = (DefinitionsService) ctx.lookup(ServiceNames.getServiceName(DEFINITIONS_SERVICE));
+            log.errorProcessingAction(e.getMessage());
         }
     }
 
@@ -109,13 +100,11 @@ public class StandaloneActionPluginListener implements ActionListener {
         }
     }
 
-    public class StandaloneThreadFactory implements ThreadFactory {
-        private int counter = 0;
-        private static final String PREFIX = "standalone-action-";
-
-        @Override
-        public Thread newThread(Runnable r) {
-            return new Thread(r, PREFIX + counter++);
-        }
+    @Override
+    public String toString() {
+        return new StringBuilder("StandaloneActionPluginListener - [")
+                .append(String.join(",", plugins.keySet()))
+                .append("] plugins")
+                .toString();
     }
 }

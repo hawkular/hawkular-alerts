@@ -26,21 +26,15 @@ import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.ejb.AccessTimeout;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.enterprise.inject.Produces;
 import javax.net.ssl.SSLContext;
 
 import org.cassalog.core.Cassalog;
 import org.cassalog.core.CassalogBuilder;
+import org.hawkular.alerts.cache.IspnCacheManager;
 import org.hawkular.alerts.engine.util.TokenReplacingReader;
+import org.hawkular.alerts.properties.AlertProperties;
 import org.infinispan.Cache;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.jboss.logging.Logger;
@@ -63,8 +57,6 @@ import com.google.common.io.CharStreams;
  *
  * @author Lucas Ponce
  */
-@Startup
-@Singleton
 public class CassCluster {
     private static final Logger log = Logger.getLogger(CassCluster.class);
 
@@ -130,7 +122,6 @@ public class CassCluster {
     private static final String ALERTS_CASSANDRA_MAX_QUEUE_ENV = "CASSANDRA_MAX_QUEUE";
     private static final String ALERTS_CASSANDRA_MAX_QUEUE_ENV_DEFAULT = "9182";
 
-
     private int attempts;
     private int timeout;
     private String cqlPort;
@@ -150,18 +141,11 @@ public class CassCluster {
 
     private boolean distributed = false;
 
-    /**
-     * Access to the manager of the caches used for the partition services.
-     */
-    @Resource(lookup = "java:jboss/infinispan/container/hawkular-alerts")
-    private EmbeddedCacheManager cacheManager;
-
     private static final String SCHEMA = "schema";
 
     /**
      * This cache will be used to coordinate schema creation across a cluster of nodes.
      */
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/schema")
     private Cache schemaCache;
 
     private void readProperties() {
@@ -184,14 +168,15 @@ public class CassCluster {
                 ALERTS_CASSANDRA_USESSL_ENV, ALERTS_CASSANDRA_USESSL_ENV_DEFAULT));
         maxQueue = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_MAX_QUEUE,
                 ALERTS_CASSANDRA_MAX_QUEUE_ENV, ALERTS_CASSANDRA_MAX_QUEUE_ENV_DEFAULT));
+
+        distributed = IspnCacheManager.isDistributed();
     }
 
-    @PostConstruct
     public void initCassCluster() {
         readProperties();
 
-        if (cacheManager != null) {
-            distributed = cacheManager.getTransport() != null;
+        if (distributed) {
+            schemaCache = IspnCacheManager.getCacheManager().getCache(SCHEMA);
         }
 
         int currentAttempts = attempts;
@@ -304,12 +289,17 @@ public class CassCluster {
     }
 
     private void initSchemeDistributed() throws IOException {
-        schemaCache.getAdvancedCache().lock(SCHEMA);
-        initScheme();
+        try {
+            schemaCache.getAdvancedCache().getTransactionManager().begin();
+            schemaCache.getAdvancedCache().lock(SCHEMA);
+            initScheme();
+            schemaCache.getAdvancedCache().getTransactionManager().rollback();
+        } catch (Exception e) {
+            log.error(e);
+        }
     }
 
     private void initScheme() throws IOException {
-
         log.infof("Checking Schema existence for keyspace: %s", keyspace);
         createSchema(session, keyspace, overwrite);
         waitForSchemaCheck();
@@ -420,16 +410,26 @@ public class CassCluster {
                 "('org.hawkular.alerts', 'version', '" + getNewHawkularAlertingVersion() + "')");
     }
 
-    @Produces
-    @CassClusterSession
     /*
         This timeout value should be adjusted to the worst case on a Cassandra scheme initialization.
         Normally it takes an order of < 1 minute a full schema generation.
         Taking into consideration that there are CI systems very slow we will increase this threshold before to throw
         an exception.
      */
-    @AccessTimeout(value = 300, unit = TimeUnit.SECONDS)
     public Session getSession() {
+        if (!isInitialized()) {
+            int currentAttempts = attempts;
+            while(!initialized && !Thread.currentThread().isInterrupted() && currentAttempts >= 0) {
+                log.warnf("[%s] Session is not yet initialized. Retrying in [%s] ms...",
+                        currentAttempts, timeout);
+                currentAttempts--;
+                try {
+                    Thread.sleep(timeout);
+                } catch(InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
         return session;
     }
 
@@ -437,7 +437,6 @@ public class CassCluster {
         return initialized;
     }
 
-    @PreDestroy
     public void shutdown() {
         log.info("Closing Cassandra cluster session");
         if (session != null && !session.isClosed()) {

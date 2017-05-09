@@ -20,17 +20,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.Local;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.enterprise.concurrent.ManagedExecutorService;
-import javax.inject.Inject;
+import java.util.concurrent.ExecutorService;
 
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
@@ -40,41 +30,55 @@ import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.hawkular.alerts.engine.service.PartitionManager;
 import org.hawkular.alerts.engine.service.RulesEngine;
 import org.hawkular.alerts.filter.CacheClient;
+import org.hawkular.alerts.properties.AlertProperties;
 import org.jboss.logging.Logger;
 
 /**
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
-@Startup
-@Local(IncomingDataManager.class)
-@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class IncomingDataManagerImpl implements IncomingDataManager {
     private final Logger log = Logger.getLogger(IncomingDataManagerImpl.class);
 
     private int minReportingIntervalData;
     private int minReportingIntervalEvents;
 
-    @Resource
-    private ManagedExecutorService executor;
+    private ExecutorService executor;
 
-    @EJB
     DataDrivenGroupCacheManager dataDrivenGroupCacheManager;
 
-    @EJB
     DefinitionsService definitionsService;
 
-    @EJB
     PartitionManager partitionManager;
 
-    @EJB
     AlertsEngine alertsEngine;
 
-    @Inject
     CacheClient dataIdCache;
 
-    @PostConstruct
+    public void setExecutor(ExecutorService executor) {
+        this.executor = executor;
+    }
+
+    public void setDataDrivenGroupCacheManager(DataDrivenGroupCacheManager dataDrivenGroupCacheManager) {
+        this.dataDrivenGroupCacheManager = dataDrivenGroupCacheManager;
+    }
+
+    public void setDefinitionsService(DefinitionsService definitionsService) {
+        this.definitionsService = definitionsService;
+    }
+
+    public void setPartitionManager(PartitionManager partitionManager) {
+        this.partitionManager = partitionManager;
+    }
+
+    public void setAlertsEngine(AlertsEngine alertsEngine) {
+        this.alertsEngine = alertsEngine;
+    }
+
+    public void setDataIdCache(CacheClient dataIdCache) {
+        this.dataIdCache = dataIdCache;
+    }
+
     public void init() {
         try {
             minReportingIntervalData = new Integer(

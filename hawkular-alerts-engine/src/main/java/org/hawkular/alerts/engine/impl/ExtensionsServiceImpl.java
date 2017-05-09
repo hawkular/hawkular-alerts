@@ -19,13 +19,6 @@ package org.hawkular.alerts.engine.impl;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.Local;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-
 import org.hawkular.alerts.api.services.DataExtension;
 import org.hawkular.alerts.api.services.EventExtension;
 import org.hawkular.alerts.api.services.ExtensionsService;
@@ -35,16 +28,12 @@ import org.jboss.logging.Logger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
-@Startup
-@Local(ExtensionsService.class)
 public class ExtensionsServiceImpl implements ExtensionsService {
     private final Logger log = Logger.getLogger(ExtensionsServiceImpl.class);
 
     Set<DataExtension> dataExtensions;
     Set<EventExtension> eventsExtensions;
 
-    @PostConstruct
     public void init() {
         dataExtensions = new HashSet<>();
         eventsExtensions = new HashSet<>();
@@ -62,13 +51,11 @@ public class ExtensionsServiceImpl implements ExtensionsService {
         eventsExtensions.add(extension);
     }
 
-    @Lock(LockType.READ)
     @Override
     public Set<DataExtension> getDataExtensions() {
         return dataExtensions;
     }
 
-    @Lock(LockType.READ)
     @Override
     public Set<EventExtension> getEventExtensions() {
         return eventsExtensions;

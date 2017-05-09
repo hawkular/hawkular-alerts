@@ -17,9 +17,12 @@
 package org.hawkular.alerts.api.json;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
@@ -53,6 +56,14 @@ public class JsonUtil {
 
     public static <T> T fromJson(String json, Class<T> clazz) {
         return fromJson(json,clazz, false);
+    }
+
+    public static <T> Collection<T> collectionFromJson(String json, Class<T> clazz) {
+        try {
+            return instance.mapper.readValue(json, instance.mapper.getTypeFactory().constructCollectionType(List.class, clazz));
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     public static <T> T fromJson(String json, Class<T> clazz, boolean thin) {

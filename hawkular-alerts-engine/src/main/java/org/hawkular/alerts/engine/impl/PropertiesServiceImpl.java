@@ -16,23 +16,16 @@
  */
 package org.hawkular.alerts.engine.impl;
 
-import javax.ejb.Local;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-
 import org.hawkular.alerts.api.services.PropertiesService;
+import org.hawkular.alerts.properties.AlertProperties;
 
 /**
  * A default implementation of PropertiesService.
  *
- * TODO Merge properly this class with local AlertProperties.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Local(PropertiesService.class)
-@Singleton
-@Startup
 public class PropertiesServiceImpl implements PropertiesService {
 
     @Override

@@ -22,7 +22,7 @@
 
   <parent>
     <groupId>org.hawkular.alerts</groupId>
-    <artifactId>hawkular-alerts</artifactId>
+    <artifactId>hawkular-alerts-netty-poc</artifactId>
     <version>1.7.0.Final-SNAPSHOT</version>
   </parent>
 
@@ -39,9 +39,22 @@
       <artifactId>hawkular-alerts-api</artifactId>
       <version>${project.version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-filter-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-events-aggregation</artifactId>
       <version>${project.version}</version>
     </dependency>
 
@@ -80,6 +93,7 @@
     <dependency>
       <groupId>com.datastax.cassandra</groupId>
       <artifactId>cassandra-driver-core</artifactId>
+      <version>${version.com.datastax.cassandra}</version>
     </dependency>
 
     <dependency>
@@ -102,21 +116,34 @@
 
     <!-- Wildfly dependencies -->
     <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${version.org.apache.logging.log4j}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>${version.org.apache.logging.log4j}</version>
+      <scope>provided</scope>
+    </dependency>
+        
+    <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging</artifactId>
-      <scope>provided</scope>
+      <version>${version.org.jboss.logging}</version>
     </dependency>
 
     <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging-annotations</artifactId>
-      <scope>provided</scope>
+      <version>${version.org.jboss.logging.jboss-logging-annotations}</version>
     </dependency>
 
     <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging-processor</artifactId>
-      <scope>provided</scope>
+      <version>${version.org.jboss.logging.jboss-logging-processor}</version>
     </dependency>
 
     <dependency>
@@ -129,25 +156,24 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <scope>provided</scope>
+      <version>${version.com.fasterxml.jackson}</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <scope>provided</scope>
+      <version>${version.com.fasterxml.jackson}</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <scope>provided</scope>
+      <version>${version.com.fasterxml.jackson}</version>
     </dependency>
 
     <dependency>
       <groupId>org.infinispan</groupId>
-      <artifactId>infinispan-core</artifactId>
-      <scope>provided</scope>
+      <artifactId>infinispan-embedded</artifactId>
       <version>${version.org.infinispan.wildfly}</version>
     </dependency>
 
@@ -156,19 +182,7 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>${version.org.slf4j}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <scope>test</scope>
+      <version>${version.junit}</version>
     </dependency>
 
     <dependency>
@@ -191,17 +205,28 @@
       <artifactId>thrift-server</artifactId>
       <version>0.3.7</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
       <groupId>org.apache.cassandra</groupId>
       <artifactId>cassandra-all</artifactId>
       <scope>test</scope>
+      <version>${version.com.datastax.cassandra}</version>
       <exclusions>
         <!-- A workaround for CASSANDRA-10071 -->
         <exclusion>
           <groupId>com.thinkaurelius.thrift</groupId>
           <artifactId>thrift-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-classic</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -220,24 +245,6 @@
     </resources>
 
     <plugins>
-      <plugin>
-        <groupId>com.mycila</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <configuration>
-          <excludes combine.children="append">
-            <exclude>**/*.data</exclude>
-            <!-- Exclude ANTLR token files -->
-            <exclude>**/*tokens</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <configuration>
-          <excludes>src/main/java/org/hawkular/alerts/engine/tags/parser/*.java</excludes>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>

@@ -18,13 +18,6 @@ package org.hawkular.alerts.engine.impl;
 
 import java.util.Map;
 
-import javax.ejb.EJB;
-import javax.ejb.Local;
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
-
 import org.hawkular.alerts.api.services.StatusService;
 import org.hawkular.alerts.engine.service.PartitionManager;
 
@@ -36,17 +29,19 @@ import com.datastax.driver.core.Session;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Local(StatusService.class)
-@Stateless
-@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class StatusServiceImpl implements StatusService {
 
-    @EJB
     PartitionManager partitionManager;
 
-    @Inject
-    @CassClusterSession
     Session session;
+
+    public void setPartitionManager(PartitionManager partitionManager) {
+        this.partitionManager = partitionManager;
+    }
+
+    public void setSession(Session session) {
+        this.session = session;
+    }
 
     @Override
     public boolean isStarted() {

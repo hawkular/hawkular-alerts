@@ -22,7 +22,7 @@
 
   <parent>
     <groupId>org.hawkular.alerts</groupId>
-    <artifactId>hawkular-alerts</artifactId>
+    <artifactId>hawkular-alerts-netty-poc</artifactId>
     <version>1.7.0.Final-SNAPSHOT</version>
   </parent>
 
@@ -38,30 +38,10 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Wildfly dependencies -->
     <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-annotations</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-processor</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>javax</groupId>
-      <artifactId>javaee-api</artifactId>
-      <version>${version.javaee.spec}</version>
-      <scope>provided</scope>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-commons</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
@@ -74,7 +54,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <scope>provided</scope>
+      <version>${version.com.fasterxml.jackson}</version>
     </dependency>
 
     <!-- Tests -->
@@ -82,6 +62,7 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
+      <version>${version.junit}</version>
     </dependency>
 
   </dependencies>

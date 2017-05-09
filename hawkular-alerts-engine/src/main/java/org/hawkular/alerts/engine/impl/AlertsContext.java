@@ -27,11 +27,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.EJB;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
@@ -49,8 +44,6 @@ import org.jboss.logging.Logger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Startup
-@Singleton
 public class AlertsContext {
     private final Logger log = Logger.getLogger(AlertsContext.class);
 
@@ -62,10 +55,12 @@ public class AlertsContext {
 
     private boolean distributed = false;
 
-    @EJB
     PartitionManager partitionManager;
 
-    @PostConstruct
+    public void setPartitionManager(PartitionManager partitionManager) {
+        this.partitionManager = partitionManager;
+    }
+
     public void init() {
         if (partitionManager != null) {
             distributed = partitionManager.isDistributed();

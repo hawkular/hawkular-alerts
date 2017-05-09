@@ -22,8 +22,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <artifactId>hawkular-alerts</artifactId>
     <groupId>org.hawkular.alerts</groupId>
+    <artifactId>hawkular-alerts-netty-poc</artifactId>
     <version>1.7.0.Final-SNAPSHOT</version>
   </parent>
 
@@ -41,6 +41,19 @@
       <version>${project.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+      <version>${version.junit}</version>
+    </dependency>
+
   </dependencies>
 
   <profiles>
@@ -49,16 +62,6 @@
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
-      <modules>
-        <module>hawkular-alerts-actions-api</module>
-        <module>hawkular-alerts-actions-plugins</module>
-        <module>hawkular-alerts-actions-impl</module>
-        <module>hawkular-alerts-actions-tests</module>
-      </modules>
-    </profile>
-
-    <profile>
-      <id>openshift</id>
       <modules>
         <module>hawkular-alerts-actions-api</module>
         <module>hawkular-alerts-actions-plugins</module>

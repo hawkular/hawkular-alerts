@@ -78,14 +78,11 @@ public class CassPersistenceTest extends PersistenceTest {
         embeddedCassandra.start();
 
         System.setProperty("hawkular-alerts.cassandra-keyspace", keyspace);
-
-        cluster = new CassCluster();
         System.setProperty("hawkular-alerts.cassandra-overwrite", "true");
-        cluster.initCassCluster();
 
-        definitionsService = StandaloneAlerts.getDefinitionsService(cluster.getSession());
-        alertsService = StandaloneAlerts.getAlertsService(cluster.getSession());
-        actionsService = StandaloneAlerts.getActionsService(cluster.getSession());
+        definitionsService = StandaloneAlerts.getDefinitionsService();
+        alertsService = StandaloneAlerts.getAlertsService();
+        actionsService = StandaloneAlerts.getActionsService();
 
         mockPluginsDeployments();
 

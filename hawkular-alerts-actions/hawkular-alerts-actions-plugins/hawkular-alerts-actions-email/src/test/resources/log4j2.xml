@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" shutdownHook="disable">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{1.} - %msg%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="com.datastax" level="warn" />
+        <Logger name="infinispan" level="warn" />
+        <Logger name="io.netty" level="warn" />
+        <Logger name="org.drools" level="warn" />
+        <Logger name="org.jboss" level="warn" />
+        <Logger name="org.hawkular" level="info" />
+        <Logger name="org.infinispan" level="info" />
+        <Logger name="reactor" level="warn" />
+        <Root level="debug">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>

@@ -22,16 +22,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.PostConstruct;
-import javax.ejb.AccessTimeout;
-import javax.ejb.EJB;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -40,6 +30,7 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerType;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.properties.AlertProperties;
 import org.jboss.logging.Logger;
 
 /**
@@ -48,8 +39,6 @@ import org.jboss.logging.Logger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
-@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class DataDrivenGroupCacheManager {
     private final Logger log = Logger.getLogger(DataDrivenGroupCacheManager.class);
 
@@ -68,13 +57,15 @@ public class DataDrivenGroupCacheManager {
     private volatile boolean updateRequested = false;
     private volatile boolean updating = false;
 
-    @EJB
     DefinitionsService definitions;
 
-    @PostConstruct
+    public void setDefinitions(DefinitionsService definitions) {
+        this.definitions = definitions;
+    }
+
     public void init() {
-        dataDrivenTriggersEnabled = new Boolean(
-                AlertProperties.getProperty(DATA_DRIVEN_TRIGGERS_ENABLED, DATA_DRIVEN_TRIGGERS_ENABLED_DEFAULT));
+        dataDrivenTriggersEnabled = new Boolean(AlertProperties.getProperty(DATA_DRIVEN_TRIGGERS_ENABLED,
+                DATA_DRIVEN_TRIGGERS_ENABLED_DEFAULT));
 
         log.infof("Data-driven Group Triggers enabled: %s", dataDrivenTriggersEnabled);
 
@@ -103,9 +94,6 @@ public class DataDrivenGroupCacheManager {
         }
     }
 
-    // cache update can take some time if the trigger population is large and cross-tenant, avoid
-    // timeouts by allowing longer waits for pending client calls
-    @AccessTimeout(value = 5, unit = TimeUnit.MINUTES)
     private synchronized void updateCache() {
         log.debug("Updating cache...");
 
@@ -167,12 +155,10 @@ public class DataDrivenGroupCacheManager {
         }
     }
 
-    @Lock(LockType.READ)
     public boolean isCacheActive() {
         return !sourcesMap.isEmpty();
     }
 
-    @Lock(LockType.READ)
     public Set<String> needsSourceMember(String tenantId, String dataId, String source) {
         if (isEmpty(source, dataId, tenantId) || Data.SOURCE_NONE.equals(source)) {
             return Collections.emptySet();

@@ -16,26 +16,17 @@
  */
 package org.hawkular.alerts.actions.standalone;
 
-import static org.hawkular.alerts.actions.standalone.ServiceNames.Service.ACTIONS_SERVICE;
-import static org.hawkular.alerts.actions.standalone.ServiceNames.Service.DEFINITIONS_SERVICE;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
+import java.util.concurrent.ExecutorService;
 
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.engine.StandaloneAlerts;
+import org.hawkular.alerts.log.MsgLogger;
 import org.jboss.logging.Logger;
 
 /**
@@ -43,27 +34,25 @@ import org.jboss.logging.Logger;
  *
  * @author Lucas Ponce
  */
-@Startup
-@Singleton
-@TransactionAttribute(value= TransactionAttributeType.NOT_SUPPORTED)
 public class StandaloneActionPluginRegister {
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(StandaloneActionPluginRegister.class);
+    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class,
+            StandaloneActionPluginRegister.class.getName());
+
+    private static StandaloneActionPluginRegister instance;
+    private static ExecutorService executor;
+
+    private StandaloneActionPluginRegister() {
+        init();
+    }
 
     DefinitionsService definitions;
     ActionsService actions;
 
     Set<ActionListener> actionListeners = new HashSet<>();
 
-    @PostConstruct
     public void init() {
-        try {
-            InitialContext ctx = new InitialContext();
-            definitions = (DefinitionsService)ctx.lookup(ServiceNames.getServiceName(DEFINITIONS_SERVICE));
-            actions = (ActionsService)ctx.lookup(ServiceNames.getServiceName(ACTIONS_SERVICE));
-        } catch (NamingException e) {
-            msgLog.error("Cannot access to JNDI context", e);
-        }
+        definitions = StandaloneAlerts.getDefinitionsService();
+        actions = StandaloneAlerts.getActionsService();
         Map<String, ActionPluginListener> plugins = ActionPlugins.getPlugins();
         for (String actionPlugin : plugins.keySet()) {
             ActionPluginListener actionPluginListener = plugins.get(actionPlugin);
@@ -75,26 +64,37 @@ public class StandaloneActionPluginRegister {
                 } else {
                     definitions.addActionPlugin(actionPlugin, properties);
                 }
-                ActionListener actionListener = new StandaloneActionPluginListener(ActionPlugins.getPlugins());
-                actions.addListener(actionListener);
-                actionListeners.add(actionListener);
-                msgLog.infoActionPluginRegistration(actionPlugin);
             } catch (Exception e) {
-                msgLog.errorCannotRegisterPlugin(actionPlugin, e.getMessage());
+                log.errorCannotRegisterPlugin(actionPlugin, e.getMessage());
             }
+        }
+        ActionListener actionListener = new StandaloneActionPluginListener(ActionPlugins.getPlugins(), executor);
+        actions.addListener(actionListener);
+        actionListeners.add(actionListener);
+        log.info("Actions Plugins registration finished");
+    }
+
+    public static void setExecutor(ExecutorService executor) {
+        StandaloneActionPluginRegister.executor = executor;
+    }
+
+    public static synchronized void start() {
+        if (instance == null) {
+            instance = new StandaloneActionPluginRegister();
         }
     }
 
-    @PreDestroy
-    public void close() {
-        actionListeners.stream().forEach(a -> {
-            try {
-                if (a instanceof StandaloneActionPluginListener) {
-                    ((StandaloneActionPluginListener)a).close();
+    public static synchronized void stop() {
+        if (instance != null && instance.actionListeners != null) {
+            instance.actionListeners.stream().forEach(a -> {
+                try {
+                    if (a instanceof StandaloneActionPluginListener) {
+                        ((StandaloneActionPluginListener)a).close();
+                    }
+                } catch (Exception e) {
+                    log.debug(e.getMessage(), e);
                 }
-            } catch (Exception e) {
-                log.debug(e.getMessage(), e);
-            }
-        });
+            });
+        }
     }
 }

@@ -19,7 +19,7 @@ package org.hawkular.alerts.engine.util;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.TriggerAction;
-import org.hawkular.alerts.engine.log.MsgLogger;
+import org.hawkular.alerts.log.MsgLogger;
 import org.jboss.logging.Logger;
 
 /**

@@ -33,10 +33,6 @@
   <name>Hawkular Alerting: Action Plugins</name>
   <description>Parent module of all Action Plugins</description>
 
-  <properties>
-    <org.hawkular.wildfly.home>${project.basedir}/../../../hawkular-bus/hawkular-nest/hawkular-nest-distro/target/wildfly-${version.org.wildfly}</org.hawkular.wildfly.home>
-  </properties>
-
   <dependencies>
 
     <dependency>
@@ -51,56 +47,12 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Hawkular Nest dependencies -->
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${version.com.google.guava}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Wildfly dependencies -->
-    <dependency>
-      <groupId>org.jboss.resteasy</groupId>
-      <artifactId>resteasy-jackson2-provider</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>javax</groupId>
-      <artifactId>javaee-api</artifactId>
-      <version>${version.javaee.spec}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-annotations</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-processor</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
     <!-- Tests -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <scope>test</scope>
+      <version>${version.junit}</version>
     </dependency>
 
   </dependencies>
@@ -116,25 +68,8 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
-        <module>hawkular-alerts-actions-aerogear</module>
-        <module>hawkular-alerts-actions-elasticsearch</module>
         <module>hawkular-alerts-actions-email</module>
         <module>hawkular-alerts-actions-file</module>
-        <module>hawkular-alerts-actions-generic</module>
-        <module>hawkular-alerts-actions-irc</module>
-        <module>hawkular-alerts-actions-pagerduty</module>
-        <module>hawkular-alerts-actions-sms</module>
-        <module>hawkular-alerts-actions-webhook</module>
-      </modules>
-    </profile>
-
-    <profile>
-      <id>openshift</id>
-      <modules>
-        <module>hawkular-alerts-actions-email</module>
-        <module>hawkular-alerts-actions-file</module>
-        <module>hawkular-alerts-actions-generic</module>
-        <module>hawkular-alerts-actions-webhook</module>
       </modules>
     </profile>
   </profiles>

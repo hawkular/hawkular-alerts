@@ -28,19 +28,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeSet;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.Local;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.enterprise.concurrent.ManagedExecutorService;
+import java.util.concurrent.ExecutorService;
 
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
@@ -59,7 +47,6 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventExtension;
 import org.hawkular.alerts.api.services.ExtensionsService;
 import org.hawkular.alerts.engine.impl.AlertsEngineCache.DataEntry;
-import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.PartitionDataListener;
 import org.hawkular.alerts.engine.service.PartitionManager;
@@ -67,6 +54,8 @@ import org.hawkular.alerts.engine.service.PartitionManager.Operation;
 import org.hawkular.alerts.engine.service.PartitionTriggerListener;
 import org.hawkular.alerts.engine.service.RulesEngine;
 import org.hawkular.alerts.engine.util.MissingState;
+import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.alerts.properties.AlertProperties;
 import org.jboss.logging.Logger;
 
 /**
@@ -80,10 +69,6 @@ import org.jboss.logging.Logger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
-@Startup
-@Local(AlertsEngine.class)
-@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener, PartitionDataListener {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(AlertsEngineImpl.class);
@@ -127,26 +112,19 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     private static final String ENGINE_EXTENSIONS_DEFAULT = "true";
     private boolean engineExtensions;
 
-    @EJB
     RulesEngine rules;
 
-    @EJB
     DefinitionsService definitions;
 
-    @EJB
     ActionsService actions;
 
-    @EJB
     AlertsService alertsService;
 
-    @EJB
     PartitionManager partitionManager;
 
-    @EJB
     ExtensionsService extensionsService;
 
-    @Resource
-    private ManagedExecutorService executor;
+    private ExecutorService executor;
 
     public AlertsEngineImpl() {
         pendingData = new TreeSet<>();
@@ -174,31 +152,30 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         this.rules = rules;
     }
 
-    public DefinitionsService getDefinitions() {
-        return definitions;
-    }
-
     public void setDefinitions(DefinitionsService definitions) {
         this.definitions = definitions;
-    }
-
-    public ActionsService getActions() {
-        return actions;
     }
 
     public void setActions(ActionsService actions) {
         this.actions = actions;
     }
 
-    public AlertsService getAlertsService() {
-        return alertsService;
-    }
-
     public void setAlertsService(AlertsService alertsService) {
         this.alertsService = alertsService;
     }
 
-    @PostConstruct
+    public void setPartitionManager(PartitionManager partitionManager) {
+        this.partitionManager = partitionManager;
+    }
+
+    public void setExtensionsService(ExtensionsService extensionsService) {
+        this.extensionsService = extensionsService;
+    }
+
+    public void setExecutor(ExecutorService executor) {
+        this.executor = executor;
+    }
+
     public void initServices() {
         try {
             distributed = partitionManager.isDistributed();
@@ -224,7 +201,6 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         }
     }
 
-    @PreDestroy
     public void shutdown() {
         rulesTask.cancel();
         wakeUpTimer.cancel();
@@ -507,7 +483,6 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     // We allow concurrent threads to make this call in order to process distributed data in parallel. We
     // use synchronized blocks to protect pendingData.
     @Override
-    @Lock(LockType.READ)
     public void sendData(TreeSet<Data> data) {
         if (data == null) {
             throw new IllegalArgumentException("Data must be not null");
@@ -562,7 +537,6 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     // We allow concurrent threads to make this call in order to process distributed data in parallel. We
     // use synchronized blocks to protect pendingEvents.
     @Override
-    @Lock(LockType.READ)
     public void sendEvents(TreeSet<Event> events) {
         if (events == null) {
             throw new IllegalArgumentException("Events must be not null");
@@ -810,7 +784,6 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         use synchronized blocks to protect pendingData.
      */
     @Override
-    @Lock(LockType.READ)
     public void onNewData(Collection<Data> data) {
         addData(new TreeSet<>(data));
     }
@@ -823,7 +796,6 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         use synchronized blocks to protect pendingEvents.
      */
     @Override
-    @Lock(LockType.READ)
     public void onNewEvents(Collection<Event> events) {
         addEvents(new TreeSet<>(events));
     }

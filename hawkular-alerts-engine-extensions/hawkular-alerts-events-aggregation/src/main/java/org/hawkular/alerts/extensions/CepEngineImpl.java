@@ -21,14 +21,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.TreeSet;
-
-import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.enterprise.concurrent.ManagedExecutorService;
+import java.util.concurrent.ExecutorService;
 
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.FullTrigger;
@@ -63,8 +56,6 @@ import org.kie.internal.utils.KieHelper;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
-@Startup
 public class CepEngineImpl implements CepEngine {
     private final Logger log = Logger.getLogger(CepEngineImpl.class);
 
@@ -72,20 +63,24 @@ public class CepEngineImpl implements CepEngine {
     List<Event> results;
     KieSession kieSession;
 
-    @EJB
     private AlertsService alertsService;
 
-    @Resource
-    private ManagedExecutorService executor;
+    private ExecutorService executor;
 
-    @Lock(LockType.READ)
+    public void setAlertsService(AlertsService alertsService) {
+        this.alertsService = alertsService;
+    }
+
+    public void setExecutor(ExecutorService executor) {
+        this.executor = executor;
+    }
+
     public void processEvents(TreeSet<Event> events) {
         if (kieSession != null) {
             events.stream().forEach(e -> kieSession.insert(e));
         }
     }
 
-    @Lock(LockType.READ)
     public void sendResult(Event event) {
         log.debugf("Resulted event %s", event);
         executor.submit(() -> {

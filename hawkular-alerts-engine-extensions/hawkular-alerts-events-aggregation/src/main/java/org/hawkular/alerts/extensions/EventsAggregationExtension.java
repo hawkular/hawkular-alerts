@@ -26,15 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.enterprise.concurrent.ManagedExecutorService;
+import java.util.concurrent.ExecutorService;
 
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
@@ -62,8 +54,6 @@ import org.jboss.logging.Logger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Startup
-@Singleton
 public class EventsAggregationExtension implements EventExtension {
     private final Logger log = Logger.getLogger(EventsAggregationExtension.class);
 
@@ -88,22 +78,36 @@ public class EventsAggregationExtension implements EventExtension {
 
     private Map<TriggerKey, FullTrigger> activeTriggers = new HashMap<>();
 
-    @EJB
     private PropertiesService properties;
 
-    @EJB
     private DefinitionsService definitions;
 
-    @EJB
     private ExtensionsService extensions;
 
-    @EJB
     private CepEngine cep;
 
-    @Resource
-    private ManagedExecutorService executor;
+    private ExecutorService executor;
 
-    @PostConstruct
+    public void setProperties(PropertiesService properties) {
+        this.properties = properties;
+    }
+
+    public void setDefinitions(DefinitionsService definitions) {
+        this.definitions = definitions;
+    }
+
+    public void setExtensions(ExtensionsService extensions) {
+        this.extensions = extensions;
+    }
+
+    public void setCep(CepEngine cep) {
+        this.cep = cep;
+    }
+
+    public void setExecutor(ExecutorService executor) {
+        this.executor = executor;
+    }
+
     public void init() {
         engineExtensions = Boolean.parseBoolean(properties.getProperty(ENGINE_EXTENSIONS, ENGINE_EXTENSIONS_ENV,
                 ENGINE_EXTENSIONS_DEFAULT));
@@ -239,8 +243,6 @@ public class EventsAggregationExtension implements EventExtension {
         });
     }
 
-    @Lock(LockType.READ)
-    @Override
     public TreeSet<Event> processEvents(TreeSet<Event> events) {
         if (isEmpty(events)) {
             return events;

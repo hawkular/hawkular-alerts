@@ -31,18 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.Local;
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.enterprise.concurrent.ManagedExecutorService;
-import javax.inject.Inject;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.Severity;
@@ -67,10 +58,10 @@ import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl.IncomingData;
 import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl.IncomingEvents;
-import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.hawkular.alerts.engine.tags.ExpressionTagQueryParser;
+import org.hawkular.alerts.log.MsgLogger;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BatchStatement;
@@ -88,9 +79,6 @@ import com.google.common.util.concurrent.Futures;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Local(AlertsService.class)
-@Stateless
-@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class CassAlertsServiceImpl implements AlertsService {
 
     private static final String CRITERIA_NO_QUERY_SIZE = "hawkular-alerts.criteria-no-query-size";
@@ -114,32 +102,23 @@ public class CassAlertsServiceImpl implements AlertsService {
     private int batchSize;
     private final BatchStatement.Type batchType = BatchStatement.Type.LOGGED;
 
-    @EJB
     AlertsEngine alertsEngine;
 
-    @EJB
     DefinitionsService definitionsService;
 
-    @EJB
     ActionsService actionsService;
 
-    @EJB
     IncomingDataManager incomingDataManager;
 
-    @EJB
     PropertiesService properties;
 
-    @Inject
-    @CassClusterSession
     Session session;
 
-    @Resource
-    private ManagedExecutorService executor;
+    private ExecutorService executor;
 
     public CassAlertsServiceImpl() {
     }
 
-    @PostConstruct
     public void init() {
         criteriaNoQuerySize = Integer.valueOf(properties.getProperty(CRITERIA_NO_QUERY_SIZE,
                 CRITERIA_NO_QUERY_SIZE_ENV, CRITERIA_NO_QUERY_SIZE_DEFAULT));
@@ -147,11 +126,43 @@ public class CassAlertsServiceImpl implements AlertsService {
                 BATCH_SIZE_ENV, BATCH_SIZE_DEFAULT));
     }
 
+    public AlertsEngine getAlertsEngine() {
+        return alertsEngine;
+    }
+
+    public void setAlertsEngine(AlertsEngine alertsEngine) {
+        this.alertsEngine = alertsEngine;
+    }
+
+    public DefinitionsService getDefinitionsService() {
+        return definitionsService;
+    }
+
+    public void setDefinitionsService(DefinitionsService definitionsService) {
+        this.definitionsService = definitionsService;
+    }
+
+    public ActionsService getActionsService() {
+        return actionsService;
+    }
+
+    public void setActionsService(ActionsService actionsService) {
+        this.actionsService = actionsService;
+    }
+
+    public IncomingDataManager getIncomingDataManager() {
+        return incomingDataManager;
+    }
+
+    public void setIncomingDataManager(IncomingDataManager incomingDataManager) {
+        this.incomingDataManager = incomingDataManager;
+    }
+
     public void setSession(Session session) {
         this.session = session;
     }
 
-    public void setExecutor(ManagedExecutorService executor) {
+    public void setExecutor(ExecutorService executor) {
         this.executor = executor;
     }
 
@@ -827,8 +838,12 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
             return new Page<>(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
         } else {
-            pager = Pager.builder().withPageSize(alerts.size()).orderBy(Field.ALERT_ID.getText(),
-                    Order.Direction.ASCENDING).build();
+            Field defaultField = Field.ALERT_ID;
+            Order.Direction defaultDirection = Order.Direction.ASCENDING;
+            AlertComparator comparator = new AlertComparator(defaultField.getText(), defaultDirection.ASCENDING);
+            pager = Pager.builder().withPageSize(alerts.size()).orderBy(defaultField.getText(), defaultDirection)
+                    .build();
+            Collections.sort(alerts, comparator);
             return new Page<>(alerts, pager, alerts.size());
         }
     }
@@ -1525,8 +1540,12 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
             return new Page<>(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
         } else {
-            pager = Pager.builder().withPageSize(events.size()).orderBy(EventComparator.Field.ID.getName(),
-                    Order.Direction.ASCENDING).build();
+            EventComparator.Field defaultField = EventComparator.Field.ID;
+            Order.Direction defaultDirection = Order.Direction.ASCENDING;
+            pager = Pager.builder().withPageSize(events.size()).orderBy(defaultField.getName(),
+                    defaultDirection).build();
+            EventComparator comparator = new EventComparator(defaultField.getName(), defaultDirection);
+            Collections.sort(events, comparator);
             return new Page<>(events, pager, events.size());
         }
     }

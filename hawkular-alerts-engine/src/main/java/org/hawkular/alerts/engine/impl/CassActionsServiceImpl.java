@@ -25,16 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
-
-import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.Local;
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.enterprise.concurrent.ManagedExecutorService;
-import javax.inject.Inject;
 
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
@@ -52,8 +44,8 @@ import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.cache.ActionsCacheManager;
-import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.engine.util.ActionsValidator;
+import org.hawkular.alerts.log.MsgLogger;
 import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BoundStatement;
@@ -70,9 +62,6 @@ import com.google.common.util.concurrent.Futures;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Local(ActionsService.class)
-@Stateless
-@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class CassActionsServiceImpl implements ActionsService {
     private final MsgLogger msgLog = MsgLogger.LOGGER;
     private final Logger log = Logger.getLogger(CassActionsServiceImpl.class);
@@ -80,20 +69,14 @@ public class CassActionsServiceImpl implements ActionsService {
     private static final String WAITING_RESULT = "WAITING";
     private static final String UNKNOWN_RESULT = "UNKNOWN";
 
-    @EJB
     AlertsContext alertsContext;
 
-    @EJB
     DefinitionsService definitions;
 
-    @EJB
     ActionsCacheManager actionsCacheManager;
 
-    @Resource
-    private ManagedExecutorService executor;
+    private ExecutorService executor;
 
-    @Inject
-    @CassClusterSession
     Session session;
 
     public CassActionsServiceImpl() {
@@ -108,12 +91,16 @@ public class CassActionsServiceImpl implements ActionsService {
         this.definitions = definitions;
     }
 
-    public void setExecutor(ManagedExecutorService executor) {
+    public void setExecutor(ExecutorService executor) {
         this.executor = executor;
     }
 
     public void setSession(Session session) {
         this.session = session;
+    }
+
+    public void setActionsCacheManager(ActionsCacheManager actionsCacheManager) {
+        this.actionsCacheManager = actionsCacheManager;
     }
 
     @Override

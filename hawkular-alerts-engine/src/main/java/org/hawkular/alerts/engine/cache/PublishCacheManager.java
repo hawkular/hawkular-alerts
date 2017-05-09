@@ -24,19 +24,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-
 import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.PropertiesService;
-import org.hawkular.alerts.engine.log.MsgLogger;
+import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.filter.CacheKey;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
@@ -54,9 +46,6 @@ import org.jboss.logging.Logger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
-@Startup
-@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class PublishCacheManager {
     private final Logger log = Logger.getLogger(PublishCacheManager.class);
     private final MsgLogger msgLog = MsgLogger.LOGGER;
@@ -66,22 +55,33 @@ public class PublishCacheManager {
     private static final String RESET_PUBLISH_CACHE_PROP = "hawkular-alerts.reset-publish-cache";
     private static final String RESET_PUBLISH_CACHE_ENV = "RESET_PUBLISH_CACHE";
 
-    @EJB
     PropertiesService properties;
 
-    @EJB
     DefinitionsService definitions;
 
     // It stores a list of dataIds used per key (tenantId, triggerId).
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/dataIds")
     private Cache<TriggerKey, Set<String>> publishDataIdsCache;
 
     // It stores a list of triggerIds used per key (tenantId, dataId).
     // This cache is used by CacheClient to check wich dataIds are published and forwarded from metrics.
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/publish")
     private Cache<CacheKey, Set<String>> publishCache;
 
-    @PostConstruct
+    public void setProperties(PropertiesService properties) {
+        this.properties = properties;
+    }
+
+    public void setDefinitions(DefinitionsService definitions) {
+        this.definitions = definitions;
+    }
+
+    public void setPublishDataIdsCache(Cache<TriggerKey, Set<String>> publishDataIdsCache) {
+        this.publishDataIdsCache = publishDataIdsCache;
+    }
+
+    public void setPublishCache(Cache<CacheKey, Set<String>> publishCache) {
+        this.publishCache = publishCache;
+    }
+
     public void init() {
         boolean disablePublish = Boolean.parseBoolean(properties.getProperty(DISABLE_PUBLISH_FILTERING_PROP,
                 DISABLE_PUBLISH_FILTERING_ENV, "false"));
@@ -115,6 +115,7 @@ public class PublishCacheManager {
                     }
                     publishDataIdsCache.endBatch(true);
                     publishCache.endBatch(true);
+                    log.debugf("PublishCache: %s", publishCache.entrySet());
                 });
             }, TRIGGER_CONDITION_CHANGE, TRIGGER_REMOVE);
 

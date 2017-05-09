@@ -20,9 +20,6 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.Resource;
-import javax.enterprise.context.ApplicationScoped;
-
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
 import org.infinispan.Cache;
@@ -37,13 +34,15 @@ import org.infinispan.Cache;
  * @author Lucas Ponce
  * @author Jay Shaughnessy
  */
-@ApplicationScoped
 public class CacheClient {
 
     // It stores a list of triggerIds used per key (tenantId, dataId).
     // This cache is used by CacheClient to check wich dataIds are published and forwarded from metrics.
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/publish")
     private Cache<CacheKey, Set<String>> cache;
+
+    public void setCache(Cache<CacheKey, Set<String>> cache) {
+        this.cache = cache;
+    }
 
     public Set<CacheKey> keySet() {
         return cache.keySet();

@@ -27,41 +27,19 @@
   </parent>
 
   <artifactId>hawkular-alerts-actions-file</artifactId>
-  <packaging>pom</packaging>
+  <packaging>jar</packaging>
 
-  <name>Hawkular Alerting: Action Filesystem Plugin parent</name>
+  <name>Hawkular Alerting: Action File Plugin</name>
 
-  <modules>
-    <module>hawkular-alerts-actions-file-plugin</module>
-  </modules>
+  <dependencies>
 
-  <profiles>
-    <profile>
-      <id>metrics</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <modules>
-        <module>deployments/hawkular-alerts-actions-file-metrics</module>
-      </modules>
-    </profile>
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-actions-tests</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
 
-    <profile>
-      <id>standalone</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <modules>
-        <module>deployments/hawkular-alerts-actions-file-standalone</module>
-      </modules>
-    </profile>
-
-    <profile>
-      <id>openshift</id>
-      <modules>
-        <module>deployments/hawkular-alerts-actions-file-metrics</module>
-      </modules>
-    </profile>
-  </profiles>
+  </dependencies>
 
 </project>

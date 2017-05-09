@@ -22,6 +22,7 @@ import org.hawkular.alerts.actions.api.ActionResponseMessage.Operation;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionsService;
+import org.hawkular.alerts.log.MsgLogger;
 import org.jboss.logging.Logger;
 
 /**
@@ -31,8 +32,8 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class StandaloneActionPluginSender implements ActionPluginSender {
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(StandaloneActionPluginListener.class);
+    private final MsgLogger log = Logger.getMessageLogger(MsgLogger.class,
+            StandaloneActionPluginSender.class.getName());
 
     private ActionsService actions;
 
@@ -50,19 +51,15 @@ public class StandaloneActionPluginSender implements ActionPluginSender {
 
     @Override
     public void send(ActionResponseMessage msg) throws Exception {
-        if (log.isDebugEnabled()) {
-            log.debug("Message received: " + msg);
-        }
+        log.debugf("Message received: %s", msg);
         if (msg != null && msg.getPayload().containsKey("action")) {
             String jsonAction = msg.getPayload().get("action");
             Action updatedAction = JsonUtil.fromJson(jsonAction, Action.class);
             actions.updateResult(updatedAction);
-            if (log.isDebugEnabled()) {
-                log.debug("Operation message received from plugin [" + updatedAction.getActionPlugin() + "] with " +
-                    "payload [" + updatedAction.getResult() + "]");
-            }
+            log.debugf("Operation message received from plugin [%s] with payload [%s]",
+                    updatedAction.getActionPlugin(), updatedAction.getResult());
         } else {
-            msgLog.warnActionResponseMessageWithoutPayload();
+            log.warnActionResponseMessageWithoutPayload();
         }
     }
 }

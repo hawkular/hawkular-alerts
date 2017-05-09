@@ -25,17 +25,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.engine.log.MsgLogger;
+import org.hawkular.alerts.log.MsgLogger;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 
@@ -45,20 +37,22 @@ import org.jboss.logging.Logger;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@Singleton
-@Startup
-@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class ActionsCacheManager {
     private final Logger log = Logger.getLogger(ActionsCacheManager.class);
     private final MsgLogger msgLog = MsgLogger.LOGGER;
 
-    @EJB
     DefinitionsService definitions;
 
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/globalActions")
     private Cache<ActionKey, ActionDefinition> globalActionsCache;
 
-    @PostConstruct
+    public void setDefinitions(DefinitionsService definitions) {
+        this.definitions = definitions;
+    }
+
+    public void setGlobalActionsCache(Cache<ActionKey, ActionDefinition> globalActionsCache) {
+        this.globalActionsCache = globalActionsCache;
+    }
+
     public void init() {
         msgLog.infoInitActionsCache();
 

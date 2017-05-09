@@ -20,20 +20,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.hawkular</groupId>
-    <artifactId>hawkular-parent</artifactId>
-    <version>50</version>
-  </parent>
-
   <groupId>org.hawkular.alerts</groupId>
-  <artifactId>hawkular-alerts</artifactId>
+  <artifactId>hawkular-alerts-netty-poc</artifactId>
   <version>1.7.0.Final-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <name>Hawkular Alerting:</name>
+  <name>Hawkular Alerting: Netty PoC</name>
   <description>Alerting subsystem for Hawkular</description>
-  <url>https://github.com/hawkular/hawkular-alerts</url>
+  <url>https://github.com/lucasponce/alerting-reactor</url>
   <inceptionYear>2015</inceptionYear>
   <organization>
     <name>Red Hat, Inc.</name>
@@ -57,9 +51,9 @@
   </mailingLists>
 
   <scm>
-    <connection>scm:git:git@github.com:hawkular/hawkular-alerts.git</connection>
-    <developerConnection>scm:git:git@github.com:hawkular/hawkular-alerts.git</developerConnection>
-    <url>https://github.com/hawkular/hawkular-alerts</url>
+    <connection>scm:git:git@github.com:lucasponce/alerting-reactor.git</connection>
+    <developerConnection>scm:git:git@github.com:lucasponce/alerting-reactor.git</developerConnection>
+    <url>https://github.com/lucasponce/alerting-reactor</url>
     <tag>head</tag>
   </scm>
 
@@ -69,59 +63,49 @@
   </issueManagement>
 
   <properties>
-    <!-- overrides 3.1.2 from parent which produces NPE -->
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <version.com.bazaarvoice.jolt>0.1.0</version.com.bazaarvoice.jolt>
+    <version.com.datastax.cassandra>3.0.5</version.com.datastax.cassandra>
+    <version.com.fasterxml.jackson>2.5.4</version.com.fasterxml.jackson>
     <version.com.fasterxml.jackson.core-elasticsearch>2.8.3</version.com.fasterxml.jackson.core-elasticsearch>
+    <version.com.google.guava>19.0</version.com.google.guava>
     <version.com.icegreen>1.4.1</version.com.icegreen>
     <version.javaee.spec>7.0</version.javaee.spec>
+    <version.javax.mail>1.4.7</version.javax.mail>
+    <version.junit>4.12</version.junit>
+    <version.io.netty>4.1.8.Final</version.io.netty>
+    <version.io.projectreactor>3.0.7.RELEASE</version.io.projectreactor>
+    <version.io.projectreactor.ipc>0.6.2.RELEASE</version.io.projectreactor.ipc>
+    <version.io.swagger>1.5.8</version.io.swagger>
+    <version.log4j>1.2.17</version.log4j>
     <version.maven-patch-plugin>1.2</version.maven-patch-plugin>
     <version.org.antlr>4.6</version.org.antlr>
     <version.org.apache.commons.commons-math3>3.4.1</version.org.apache.commons.commons-math3>
     <version.org.apache.logging.log4j-elasticsearch>2.8</version.org.apache.logging.log4j-elasticsearch>
+    <version.org.apache.logging.log4j>2.8.1</version.org.apache.logging.log4j>
     <version.org.cassalog>0.4.2</version.org.cassalog>
+    <version.org.codehaus.groovy>2.4.10</version.org.codehaus.groovy>
+    <version.org.codehaus.groovy.modules.http-builder>0.7.1</version.org.codehaus.groovy.modules.http-builder>
     <version.org.codehaus.jsr166-mirror>1.7.0</version.org.codehaus.jsr166-mirror>
     <version.org.codehaus.gpars>1.2.0</version.org.codehaus.gpars>
     <version.org.codehaus.groovy.maven>1.0</version.org.codehaus.groovy.maven>
     <version.org.drools>6.4.0.Final</version.org.drools>
     <version.org.elasticsearch.client>5.2.2</version.org.elasticsearch.client>
     <version.org.freemarker>2.3.23</version.org.freemarker>
-    <version.org.hawkular.commons>0.9.2.Final</version.org.hawkular.commons>
-    <version.org.infinispan.wildfly>8.0.1.Final</version.org.infinispan.wildfly>
-    <version.org.infinispan.eap64>5.2.9.Final</version.org.infinispan.eap64>
-    <version.org.jboss.jboss-vfs>3.2.10.Final</version.org.jboss.jboss-vfs>
+    <version.org.hawkular.commons>0.9.1.Final</version.org.hawkular.commons>
+    <version.org.infinispan.wildfly>9.0.0.Final</version.org.infinispan.wildfly>
+    <version.org.jboss.logging>3.2.1.Final</version.org.jboss.logging>
+    <version.org.jboss.logging.jboss-logging-annotations>2.0.2.Final</version.org.jboss.logging.jboss-logging-annotations>
+    <version.org.jboss.logging.jboss-logging-processor>2.0.2.Final</version.org.jboss.logging.jboss-logging-processor>
+    <version.org.jboss.weld.se>2.4.3.Final</version.org.jboss.weld.se>
     <version.org.schwering>2.0.0.Alpha3</version.org.schwering>
     <version.org.slf4j>1.7.2</version.org.slf4j>
     <version.org.yaml>1.11</version.org.yaml>
     <version.org.wildfly.plugins>1.2.0.Alpha1</version.org.wildfly.plugins>
+    <version.pl.project13.maven>2.2.1</version.pl.project13.maven>
   </properties>
-
-  <dependencyManagement>
-    <dependencies>
-
-      <dependency>
-        <groupId>org.wildfly.bom</groupId>
-        <artifactId>wildfly-javaee7</artifactId>
-        <version>${version.org.wildfly.bom}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-
-    </dependencies>
-  </dependencyManagement>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>com.mycila</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <configuration>
-          <excludes combine.children="append">
-            <exclude>**/*.ftl</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 
   <profiles>
     <profile>
@@ -130,39 +114,15 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
+        <module>hawkular-alerts-actions</module>
         <module>hawkular-alerts-api</module>
+        <module>hawkular-alerts-commons</module>
         <module>hawkular-alerts-filter-api</module>
         <module>hawkular-alerts-engine</module>
+        <module>hawkular-alerts-netty</module>
+        <module>hawkular-alerts-integration-tests</module>
         <module>hawkular-alerts-engine-extensions</module>
-        <module>hawkular-alerts-rest</module>
-        <module>hawkular-alerts-rest-tests</module>
-        <module>hawkular-alerters</module>
-      </modules>
-    </profile>
-
-    <profile>
-      <id>actions</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <modules>
-        <module>hawkular-alerts-actions</module>
-      </modules>
-    </profile>
-
-    <profile>
-      <id>openshift</id>
-      <properties>
-        <skipTests>true</skipTests>
-      </properties>
-      <modules>
-        <module>hawkular-alerts-api</module>
-        <module>hawkular-alerts-filter-api</module>
-        <module>hawkular-alerts-engine</module>
-        <module>hawkular-alerts-engine-extensions</module>
-        <module>hawkular-alerts-rest</module>
-        <module>hawkular-alerts-actions</module>
-        <module>hawkular-alerters</module>
+        <!--module>hawkular-alerters</module-->
       </modules>
     </profile>
   </profiles>

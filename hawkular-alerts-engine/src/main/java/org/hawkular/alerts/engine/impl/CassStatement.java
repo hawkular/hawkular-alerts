@@ -19,6 +19,8 @@ package org.hawkular.alerts.engine.impl;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.hawkular.alerts.properties.AlertProperties;
+
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 
