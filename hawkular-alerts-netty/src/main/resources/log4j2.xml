@@ -12,7 +12,7 @@
         <Logger name="org.drools" level="warn" />
         <Logger name="org.jboss" level="warn" />
         <Logger name="org.jgroups" level="warn" />
-        <Logger name="org.hawkular" level="debug" />
+        <Logger name="org.hawkular" level="info" />
         <Logger name="org.infinispan" level="warn" />
         <Logger name="reactor" level="debug" />
         <Root level="debug">
