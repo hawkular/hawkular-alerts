@@ -1,23 +1,19 @@
 package org.hawkular.alerts.netty.handlers;
 
-import static io.netty.handler.codec.http.HttpMethod.DELETE;
-import static io.netty.handler.codec.http.HttpMethod.GET;
-import static io.netty.handler.codec.http.HttpMethod.POST;
-import static io.netty.handler.codec.http.HttpMethod.PUT;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hawkular.alerts.api.json.JsonUtil.collectionFromJson;
 import static org.hawkular.alerts.api.json.JsonUtil.fromJson;
 import static org.hawkular.alerts.api.json.JsonUtil.toJson;
-import static org.hawkular.alerts.netty.HandlersManager.TENANT_HEADER_NAME;
-import static org.hawkular.alerts.netty.util.ResponseUtil.badRequest;
+import static org.hawkular.alerts.netty.util.ResponseUtil.ACCEPT;
+import static org.hawkular.alerts.netty.util.ResponseUtil.APPLICATION_JSON;
+import static org.hawkular.alerts.netty.util.ResponseUtil.CONTENT_TYPE;
 import static org.hawkular.alerts.netty.util.ResponseUtil.checkTags;
+import static org.hawkular.alerts.netty.util.ResponseUtil.checkTenant;
 import static org.hawkular.alerts.netty.util.ResponseUtil.extractPaging;
-import static org.hawkular.alerts.netty.util.ResponseUtil.handleExceptions;
 import static org.hawkular.alerts.netty.util.ResponseUtil.isEmpty;
-import static org.hawkular.alerts.netty.util.ResponseUtil.ok;
-import static org.hawkular.alerts.netty.util.ResponseUtil.paginatedOk;
 import static org.hawkular.alerts.netty.util.ResponseUtil.parseTagQuery;
 import static org.hawkular.alerts.netty.util.ResponseUtil.parseTags;
+import static org.hawkular.alerts.netty.util.ResponseUtil.result;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,19 +31,15 @@ import org.hawkular.alerts.engine.StandaloneAlerts;
 import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.netty.RestEndpoint;
 import org.hawkular.alerts.netty.RestHandler;
-import org.hawkular.alerts.netty.handlers.EventsWatcher.EventsListener;
-import org.hawkular.alerts.netty.util.ResponseUtil;
 import org.hawkular.alerts.netty.util.ResponseUtil.BadRequestException;
 import org.hawkular.alerts.netty.util.ResponseUtil.InternalServerException;
+import org.hawkular.alerts.netty.util.ResponseUtil.NotFoundException;
 import org.jboss.logging.Logger;
-import org.reactivestreams.Publisher;
 
-import io.netty.handler.codec.http.HttpMethod;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
-import reactor.ipc.netty.http.server.HttpServerRequest;
-import reactor.ipc.netty.http.server.HttpServerResponse;
+import io.vertx.core.MultiMap;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.BodyHandler;
 
 /**
  * @author Jay Shaughnessy
@@ -56,12 +48,6 @@ import reactor.ipc.netty.http.server.HttpServerResponse;
 @RestEndpoint(path = "/events")
 public class EventsHandler implements RestHandler {
     private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, EventsHandler.class.getName());
-    private static final String ROOT = "/";
-    private static final String DATA = "/data";
-    private static final String TAGS = "/tags";
-    private static final String WATCH = "/watch";
-    private static final String _DELETE = "/delete";
-    private static final String EVENT = "/event";
     private static final String PARAM_START_TIME = "startTime";
     private static final String PARAM_END_TIME = "endTime";
     private static final String PARAM_EVENT_IDS = "eventIds";
@@ -80,76 +66,32 @@ public class EventsHandler implements RestHandler {
     }
 
     @Override
-    public Publisher<Void> process(HttpServerRequest req,
-                                   HttpServerResponse resp,
-                                   String tenantId,
-                                   String subpath,
-                                   Map<String, List<String>> params) {
-        HttpMethod method = req.method();
-        if (isEmpty(tenantId)) {
-            return badRequest(resp, TENANT_HEADER_NAME + " header is required");
-        }
-
-        // POST /
-        if (method == POST && subpath.equals(ROOT)) {
-            return createEvent(req, resp, tenantId);
-        }
-        // POST /data
-        if (method == POST && subpath.equals(DATA)) {
-            return sendEvents(req, resp, tenantId);
-        }
-        // PUT /tags
-        if (method == PUT && subpath.equals(TAGS)) {
-            return addTags(req, resp, tenantId, params);
-        }
-        // DELETE /tags
-        if (method == DELETE && subpath.equals(TAGS)) {
-            return removeTags(req, resp, tenantId, params);
-        }
-        // GET /
-        if (method == GET && subpath.equals(ROOT)) {
-            return findEvents(req, resp, tenantId, params, req.uri());
-        }
-        // GET /watch
-        if (method == GET && subpath.equals(WATCH)) {
-            return watchEvents(resp, tenantId, params);
-        }
-        // PUT /delete
-        if (method == PUT && subpath.equals(_DELETE)) {
-            return deleteEvents(req, resp, tenantId, null, params);
-        }
-        String[] tokens = subpath.substring(1).split(ROOT);
-
-        // DELETE /{eventId}
-        if (method == DELETE && tokens.length == 1) {
-            return deleteEvents(req, resp, tenantId, tokens[0], params);
-        }
-
-        // GET /event/{eventId}
-        if (method == GET && subpath.startsWith(EVENT) && tokens.length == 2) {
-            return getEvent(req, resp, tenantId, tokens[1], params);
-        }
-
-        return badRequest(resp, "Wrong path " + method + " " + subpath);
+    public void initRoutes(String baseUrl, Router router) {
+        String path = baseUrl + "/events";
+        router.route(path).handler(BodyHandler.create());
+        router.post(path).handler(this::createEvent);
+        router.post(path + "/data").handler(this::sendEvents);
+        router.put(path + "/tags").handler(this::addTags);
+        router.delete(path + "/tags").handler(this::removeTags);
+        router.get(path).handler(this::findEvents);
+        router.get(path + "/watch").blockingHandler(this::watchEvents);
+        router.put(path + "/delete").handler(this::deleteEvents);
+        router.delete(path + "/:eventId").handler(this::deleteEvents);
+        router.get(path + "/event/:eventId").handler(this::getEvent);
     }
 
-    Publisher<Void> createEvent(HttpServerRequest req, HttpServerResponse resp, String tenantId) {
-        return req
-                .receive()
-                .aggregate()
-                .asString()
-                .publishOn(Schedulers.elastic())
-                .map(json -> {
-                    Event parsed;
+    void createEvent(RoutingContext routing) {
+        routing.vertx()
+                .executeBlocking(future -> {
+                    String tenantId = checkTenant(routing);
+                    String json = routing.getBodyAsString();
+                    Event event;
                     try {
-                        parsed = fromJson(json, Event.class);
-                        return parsed;
+                        event = fromJson(json, Event.class);
                     } catch (Exception e) {
                         log.errorf(e, "Error parsing Event json: %s. Reason: %s", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
-                })
-                .flatMap(event -> {
                     if (event == null) {
                         throw new BadRequestException("Event null.");
                     }
@@ -176,33 +118,27 @@ public class EventsHandler implements RestHandler {
                     }
                     try {
                         alertsService.addEvents(Collections.singletonList(event));
-                        return ok(resp, event);
+                        future.complete(event);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
                     } catch (Exception e) {
                         throw new InternalServerException(e.toString());
                     }
-                })
-                .onErrorResumeWith(e -> handleExceptions(resp, e));
+                }, res -> result(routing, res));
     }
 
-    Publisher<Void> sendEvents(HttpServerRequest req, HttpServerResponse resp, String tenantId) {
-        return req
-                .receive()
-                .aggregate()
-                .asString()
-                .publishOn(Schedulers.elastic())
-                .map(json -> {
-                    Collection<Event> parsed;
+    void sendEvents(RoutingContext routing) {
+        routing.vertx()
+                .executeBlocking(future -> {
+                    String tenantId = checkTenant(routing);
+                    String json = routing.getBodyAsString();
+                    Collection<Event> events;
                     try {
-                        parsed = collectionFromJson(json, Event.class);
-                        return parsed;
+                        events = collectionFromJson(json, Event.class);
                     } catch (Exception e) {
                         log.errorf(e, "Error parsing Event json: %s. Reason: %s", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
-                })
-                .flatMap(events -> {
                     if (isEmpty(events)) {
                         throw new BadRequestException("Events is empty");
                     }
@@ -210,28 +146,26 @@ public class EventsHandler implements RestHandler {
                         events.stream().forEach(ev -> ev.setTenantId(tenantId));
                         alertsService.sendEvents(events);
                         log.debugf("Events: ", events);
-                        return ok(resp);
+                        future.complete(events);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
                     } catch (Exception e) {
                         throw new InternalServerException(e.toString());
                     }
-                })
-                .onErrorResumeWith(e -> handleExceptions(resp, e));
+                }, res -> result(routing, res));
     }
 
-    Publisher<Void> addTags(HttpServerRequest req, HttpServerResponse resp, String tenantId, Map<String, List<String>> params) {
-        return req
-                .receive()
-                .publishOn(Schedulers.elastic())
-                .thenMany(Mono.fromSupplier(() -> {
+    void addTags(RoutingContext routing) {
+        routing.vertx()
+                .executeBlocking(future -> {
+                    String tenantId = checkTenant(routing);
                     String eventIds = null;
                     String tags = null;
-                    if (params.get(PARAM_EVENT_IDS) != null) {
-                        eventIds = params.get(PARAM_EVENT_IDS).get(0);
+                    if (routing.request().params().get(PARAM_EVENT_IDS) != null) {
+                        eventIds = routing.request().params().get(PARAM_EVENT_IDS);
                     }
-                    if (params.get(PARAM_TAGS) != null) {
-                        tags = params.get(PARAM_TAGS).get(0);
+                    if (routing.request().params().get(PARAM_TAGS) != null) {
+                        tags = routing.request().params().get(PARAM_TAGS);
                     }
                     if (isEmpty(eventIds) || isEmpty(tags)) {
                         throw new BadRequestException("EventIds and Tags required for adding tags");
@@ -241,29 +175,26 @@ public class EventsHandler implements RestHandler {
                         Map<String, String> tagsMap = parseTags(tags);
                         alertsService.addEventTags(tenantId, eventIdList, tagsMap);
                         log.debugf("Tagged eventIds:%s, %s", eventIdList, tagsMap);
-                        return tagsMap;
+                        future.complete(tagsMap);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
                     } catch (Exception e) {
                         throw new InternalServerException(e.toString());
                     }
-                }))
-                .flatMap(tagsMap -> ok(resp))
-                .onErrorResumeWith(e -> handleExceptions(resp, e));
+                }, res -> result(routing, res));
     }
 
-    Publisher<Void> removeTags(HttpServerRequest req, HttpServerResponse resp, String tenantId, Map<String, List<String>> params) {
-        return req
-                .receive()
-                .publishOn(Schedulers.elastic())
-                .thenMany(Mono.fromSupplier(() -> {
+    void removeTags(RoutingContext routing) {
+        routing.vertx()
+                .executeBlocking(future -> {
+                    String tenantId = checkTenant(routing);
                     String eventIds = null;
                     String tagNames = null;
-                    if (params.get(PARAM_EVENT_IDS) != null) {
-                        eventIds = params.get(PARAM_EVENT_IDS).get(0);
+                    if (routing.request().params().get(PARAM_EVENT_IDS) != null) {
+                        eventIds = routing.request().params().get(PARAM_EVENT_IDS);
                     }
-                    if (params.get(PARAM_TAG_NAMES) != null) {
-                        tagNames = params.get(PARAM_TAG_NAMES).get(0);
+                    if (routing.request().params().get(PARAM_TAG_NAMES) != null) {
+                        tagNames = routing.request().params().get(PARAM_TAG_NAMES);
                     }
                     if (isEmpty(eventIds) || isEmpty(tagNames)) {
                         throw new BadRequestException("EventIds and Tags required for removing tags");
@@ -273,72 +204,66 @@ public class EventsHandler implements RestHandler {
                         Collection<String> tags = Arrays.asList(tagNames.split(","));
                         alertsService.removeEventTags(tenantId, ids, tags);
                         log.debugf("Untagged eventsIds:%s, %s", ids, tags);
-                        return tags;
+                        future.complete(tags);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
                     } catch (Exception e) {
                         throw new InternalServerException(e.toString());
                     }
-                }))
-                .flatMap(tags -> ok(resp))
-                .onErrorResumeWith(e -> handleExceptions(resp, e));
+                }, res -> result(routing, res));
     }
 
-    Publisher<Void> findEvents(HttpServerRequest req, HttpServerResponse resp, String tenantId, Map<String, List<String>> params, String uri) {
-        return req
-                .receive()
-                .publishOn(Schedulers.elastic())
-                .thenMany(Mono.fromSupplier(() -> {
+    void findEvents(RoutingContext routing) {
+        routing.vertx()
+                .executeBlocking(future -> {
+                    String tenantId = checkTenant(routing);
                     try {
-                        Pager pager = extractPaging(params);
-                        EventsCriteria criteria = buildCriteria(params);
+                        Pager pager = extractPaging(routing.request().params());
+                        EventsCriteria criteria = buildCriteria(routing.request().params());
                         Page<Event> eventPage = alertsService.getEvents(tenantId, criteria, pager);
                         log.debugf("Events: %s", eventPage);
-                        return eventPage;
+                        future.complete(eventPage);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
                     } catch (Exception e) {
                         log.debug(e.getMessage(), e);
                         throw new InternalServerException(e.toString());
                     }
-                }))
-                .flatMap(eventPage -> {
-                    if (isEmpty(eventPage)) {
-                        return ok(resp, eventPage);
-                    }
-                    return paginatedOk(req, resp, eventPage, uri);
-                })
-                .onErrorResumeWith(e -> handleExceptions(resp, e));
+                }, res -> result(routing, res));
     }
 
-    Publisher<Void> watchEvents(HttpServerResponse resp, String tenantId, Map<String, List<String>> params) {
-        EventsCriteria criteria = buildCriteria(params);
-        Flux<String> watcherFlux = Flux.create(sink -> {
-            Long watchInterval = null;
-            if (params.get(PARAM_WATCH_INTERVAL) != null) {
-                watchInterval = Long.valueOf(params.get(PARAM_WATCH_INTERVAL).get(0));
-            }
-            EventsListener listener = event -> {
-                sink.next(toJson(event) + "\r\n");
-            };
-            String channelId = resp.context().channel().id().asShortText();
-            EventsWatcher watcher = new EventsWatcher(channelId, listener, Collections.singleton(tenantId), criteria, watchInterval);
-            sink.onCancel(() -> watcher.dispose());
-            watcher.start();
+    void watchEvents(RoutingContext routing) {
+        String tenantId = checkTenant(routing);
+        EventsCriteria criteria = buildCriteria(routing.request().params());
+        Long watchInterval = null;
+        if (routing.request().params().get(PARAM_WATCH_INTERVAL) != null) {
+            watchInterval = Long.valueOf(routing.request().params().get(PARAM_WATCH_INTERVAL));
+        }
+        routing.response()
+                .putHeader(ACCEPT, APPLICATION_JSON)
+                .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .setStatusCode(OK.code());
+        EventsWatcher.EventsListener listener = event -> {
+            routing.response().write(toJson(event) + "\r\n");
+        };
+        String channelId = routing.request().connection().toString();
+        EventsWatcher watcher = new EventsWatcher(channelId, listener, Collections.singleton(tenantId), criteria, watchInterval);
+        watcher.start();
+        log.infof("EventsWatcher [%s] created", channelId);
+        routing.response().closeHandler(e -> {
+            watcher.dispose();
+            log.infof("EventsWatcher [%s] finished", channelId);
         });
-        resp.status(OK);
-        // Watcher send events one by one, so flux is splited in windows of one element
-        return watcherFlux.window(1).concatMap(w -> resp.sendString(w));
     }
 
-    Publisher<Void> deleteEvents(HttpServerRequest req, HttpServerResponse resp, String tenantId, String eventId, Map<String, List<String>> params) {
-        return req
-                .receive()
-                .publishOn(Schedulers.elastic())
-                .thenMany(Mono.fromSupplier(() -> {
-                    int numDeleted = -1;
+    void deleteEvents(RoutingContext routing) {
+        routing.vertx()
+                .executeBlocking(future -> {
+                    String tenantId = checkTenant(routing);
+                    String eventId = routing.request().getParam("eventId");
+                    int numDeleted;
                     try {
-                        EventsCriteria criteria = buildCriteria(params);
+                        EventsCriteria criteria = buildCriteria(routing.request().params());
                         criteria.setEventId(eventId);
                         numDeleted = alertsService.deleteEvents(tenantId, criteria);
                         log.debugf("Events deleted: ", numDeleted);
@@ -349,30 +274,29 @@ public class EventsHandler implements RestHandler {
                         throw new InternalServerException(e.toString());
                     }
                     if (numDeleted <= 0 && eventId != null) {
-                        throw new ResponseUtil.NotFoundException("Event " + eventId + " doesn't exist for delete");
+                        throw new NotFoundException("Event " + eventId + " doesn't exist for delete");
                     }
                     Map<String, Integer> deleted = new HashMap<>();
                     deleted.put("deleted", new Integer(numDeleted));
-                    return deleted;
-                }))
-                .flatMap(deleted -> ok(resp, deleted))
-                .onErrorResumeWith(e -> handleExceptions(resp, e));
+                    future.complete(deleted);
+                }, res -> result(routing, res));
     }
 
-    Publisher<Void> getEvent(HttpServerRequest req, HttpServerResponse resp, String tenantId, String eventId, Map<String, List<String>> params) {
-        return req
-                .receive()
-                .publishOn(Schedulers.elastic())
-                .thenMany(Mono.fromSupplier(() -> {
+    void getEvent(RoutingContext routing) {
+        routing.vertx()
+                .executeBlocking(future -> {
+                    String tenantId = checkTenant(routing);
+                    String eventId = routing.request().getParam("eventId");
                     boolean thin = false;
-                    if (params.get(PARAM_THIN) != null) {
-                        thin = Boolean.valueOf(params.get(PARAM_THIN).get(0));
+                    if (routing.request().params().get(PARAM_THIN) != null) {
+                        thin = Boolean.valueOf(routing.request().params().get(PARAM_THIN));
                     }
                     Event found;
                     try {
                         found = alertsService.getEvent(tenantId, eventId, thin);
                         if (found != null) {
-                            return found;
+                            future.complete(found);
+                            return;
                         }
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -380,13 +304,11 @@ public class EventsHandler implements RestHandler {
                         log.debug(e.getMessage(), e);
                         throw new InternalServerException(e.toString());
                     }
-                    throw new ResponseUtil.NotFoundException("eventId: " + eventId + " not found");
-                }))
-                .flatMap(found -> ok(resp, found))
-                .onErrorResumeWith(e -> handleExceptions(resp, e));
+                    throw new NotFoundException("eventId: " + eventId + " not found");
+                }, res -> result(routing, res));
     }
 
-    EventsCriteria buildCriteria(Map<String, List<String>> params) {
+    public static EventsCriteria buildCriteria(MultiMap params) {
         Long startTime = null;
         Long endTime = null;
         String eventIds = null;
@@ -397,25 +319,25 @@ public class EventsHandler implements RestHandler {
         boolean thin = false;
 
         if (params.get(PARAM_START_TIME) != null) {
-            startTime = Long.valueOf(params.get(PARAM_START_TIME).get(0));
+            startTime = Long.valueOf(params.get(PARAM_START_TIME));
         }
         if (params.get(PARAM_END_TIME) != null) {
-            endTime = Long.valueOf(params.get(PARAM_END_TIME).get(0));
+            endTime = Long.valueOf(params.get(PARAM_END_TIME));
         }
         if (params.get(PARAM_EVENT_IDS) != null) {
-            eventIds = params.get(PARAM_EVENT_IDS).get(0);
+            eventIds = params.get(PARAM_EVENT_IDS);
         }
         if (params.get(PARAM_TRIGGER_IDS) != null) {
-            triggerIds = params.get(PARAM_TRIGGER_IDS).get(0);
+            triggerIds = params.get(PARAM_TRIGGER_IDS);
         }
         if (params.get(PARAM_CATEGORIES) != null) {
-            categories = params.get(PARAM_CATEGORIES).get(0);
+            categories = params.get(PARAM_CATEGORIES);
         }
         if (params.get(PARAM_TAGS) != null) {
-            tags = params.get(PARAM_TAGS).get(0);
+            tags = params.get(PARAM_TAGS);
         }
         if (params.get(PARAM_TAG_QUERY) != null) {
-            tagQuery = params.get(PARAM_TAG_QUERY).get(0);
+            tagQuery = params.get(PARAM_TAG_QUERY);
         }
         String unifiedTagQuery;
         if (!isEmpty(tags)) {
@@ -424,7 +346,7 @@ public class EventsHandler implements RestHandler {
             unifiedTagQuery = tagQuery;
         }
         if (params.get(PARAM_THIN) != null) {
-            thin = Boolean.valueOf(params.get(PARAM_THIN).get(0));
+            thin = Boolean.valueOf(params.get(PARAM_THIN));
         }
         return new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories, unifiedTagQuery, thin);
     }

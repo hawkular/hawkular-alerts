@@ -22,7 +22,7 @@
 
   <parent>
     <groupId>org.hawkular.alerts</groupId>
-    <artifactId>hawkular-alerts-reactor-netty-poc</artifactId>
+    <artifactId>hawkular-alerts-vertx-netty-poc</artifactId>
     <version>1.7.0.Final-SNAPSHOT</version>
   </parent>
 

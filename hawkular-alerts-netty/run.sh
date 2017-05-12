@@ -9,6 +9,7 @@ fi
 
 JGROUPS_BIND_ADDR="127.0.0.1"
 JAVA_OPTS="$JAVA_OPTS -Xmx64m -Xms64m -Djava.net.preferIPv4Stack=true -Djgroups.bind_addr=${JGROUPS_BIND_ADDR}"
+JAVA_OPTS="$JAVA_OPTS -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory"
 # JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y"
 
 CLUSTER=$1

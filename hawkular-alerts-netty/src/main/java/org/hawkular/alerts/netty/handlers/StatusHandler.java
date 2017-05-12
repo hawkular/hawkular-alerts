@@ -1,25 +1,20 @@
 package org.hawkular.alerts.netty.handlers;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static org.hawkular.alerts.api.json.JsonUtil.toJson;
-import static org.hawkular.alerts.netty.util.ResponseUtil.ok;
-import static reactor.core.publisher.Mono.just;
+import static org.hawkular.alerts.netty.util.ResponseUtil.result;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.hawkular.alerts.api.services.StatusService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
+import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.netty.RestEndpoint;
 import org.hawkular.alerts.netty.RestHandler;
 import org.hawkular.alerts.netty.util.ManifestUtil;
-import org.reactivestreams.Publisher;
+import org.jboss.logging.Logger;
 
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
-import reactor.ipc.netty.http.server.HttpServerRequest;
-import reactor.ipc.netty.http.server.HttpServerResponse;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 
 /**
  * @author Jay Shaughnessy
@@ -27,6 +22,7 @@ import reactor.ipc.netty.http.server.HttpServerResponse;
  */
 @RestEndpoint(path = "/status")
 public class StatusHandler implements RestHandler {
+    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, StatusHandler.class.getName());
     static final String STATUS = "status";
     static final String STARTED = "STARTED";
     static final String FAILED = "FAILED";
@@ -41,15 +37,14 @@ public class StatusHandler implements RestHandler {
     }
 
     @Override
-    public Publisher<Void> process(HttpServerRequest req,
-                                   HttpServerResponse resp,
-                                   String tenantId,
-                                   String subpath,
-                                   Map<String, List<String>> params) {
-        return req
-                .receive()
-                .publishOn(Schedulers.elastic())
-                .thenMany(Mono.fromSupplier(() -> {
+    public void initRoutes(String baseUrl, Router router) {
+        String path = baseUrl + "/status";
+        router.get(path).handler(this::status);
+    }
+
+    public void status(RoutingContext routing) {
+        routing.vertx()
+                .executeBlocking(future -> {
                     Map<String, String> status = new HashMap<>();
                     status.putAll(manifestUtil.getFrom());
                     if (statusService.isStarted()) {
@@ -62,8 +57,7 @@ public class StatusHandler implements RestHandler {
                     if (distributed) {
                         status.putAll(statusService.getDistributedStatus());
                     }
-                    return status;
-                }))
-                .flatMap(status -> ok(resp, status));
+                    future.complete(status);
+                }, res -> result(routing, res));
     }
 }

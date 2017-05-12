@@ -12,8 +12,8 @@ import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.properties.AlertProperties;
 import org.jboss.logging.Logger;
 
-import reactor.ipc.netty.NettyContext;
-import reactor.ipc.netty.http.server.HttpServer;
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServer;
 
 /**
  * @author Jay Shaughnessy
@@ -28,7 +28,8 @@ public class AlertingServer implements AlertingServerMBean {
     private static final String PORT_DEFAULT = "8080";
     private static final String JMX_NAME = "org.hawkular.alerting:name=AlertingServer";
 
-    private NettyContext context;
+    private Vertx vertx;
+    private HttpServer server;
     private HandlersManager handlers;
     private AlertingServerThreadFactory threadFactory;
     private ExecutorService executor;
@@ -44,15 +45,13 @@ public class AlertingServer implements AlertingServerMBean {
             StandaloneAlerts.start();
             StandaloneActionPluginRegister.setExecutor(executor);
             StandaloneActionPluginRegister.start();
-            handlers = new HandlersManager();
-            handlers.start();
 
+            vertx = Vertx.vertx();
+            handlers = new HandlersManager(vertx);
+            handlers.start();
+            server = vertx.createHttpServer();
             log.infof("Starting Server at http://%s:%s", bindAdress, port);
-            context = HttpServer.create(bindAdress, port)
-                    .newRouter(r -> r
-                            .route(req -> true, (req, resp) -> handlers.process(req, resp)))
-                    .block();
-            context.onClose().block();
+            server.requestHandler(handlers::handle).listen(port, bindAdress);
         } catch (Exception e) {
             log.fatal(e);
             log.fatal("Forcing exit");
@@ -64,11 +63,12 @@ public class AlertingServer implements AlertingServerMBean {
     }
 
     public String getStatus() {
-        return context != null ? "STARTED" : "STOPPED";
+        return server != null ? "STARTED" : "STOPPED";
     }
 
     public void stop() {
         log.info("Stopping Server");
+        server.close();
         StandaloneActionPluginRegister.stop();
         StandaloneAlerts.stop();
         log.info("Server stopped");

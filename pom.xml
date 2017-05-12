@@ -21,11 +21,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.hawkular.alerts</groupId>
-  <artifactId>hawkular-alerts-reactor-netty-poc</artifactId>
+  <artifactId>hawkular-alerts-vertx-netty-poc</artifactId>
   <version>1.7.0.Final-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <name>Hawkular Alerting: Reactor Netty PoC</name>
+  <name>Hawkular Alerting: Vert.x Netty PoC</name>
   <description>Alerting subsystem for Hawkular</description>
   <url>https://github.com/hawkular/hawkular-alerts/tree/reactor-netty-poc</url>
   <inceptionYear>2015</inceptionYear>
@@ -79,6 +79,7 @@
     <version.io.projectreactor>3.0.7.RELEASE</version.io.projectreactor>
     <version.io.projectreactor.ipc>0.6.2.RELEASE</version.io.projectreactor.ipc>
     <version.io.swagger>1.5.8</version.io.swagger>
+    <version.io.vertx>3.4.1</version.io.vertx>
     <version.log4j>1.2.17</version.log4j>
     <version.maven-patch-plugin>1.2</version.maven-patch-plugin>
     <version.org.antlr>4.6</version.org.antlr>

@@ -5,7 +5,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERR
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hawkular.alerts.api.json.JsonUtil.toJson;
-import static reactor.core.publisher.Mono.just;
+import static org.hawkular.alerts.netty.HandlersManager.TENANT_HEADER_NAME;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
 
 import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.json.UnorphanMemberInfo;
@@ -26,12 +27,12 @@ import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.PageContext;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.reactivestreams.Publisher;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.netty.handler.codec.http.HttpHeaders;
-import reactor.ipc.netty.http.server.HttpServerRequest;
-import reactor.ipc.netty.http.server.HttpServerResponse;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.MultiMap;
+import io.vertx.ext.web.RoutingContext;
 
 /**
  * @author Jay Shaughnessy
@@ -55,56 +56,62 @@ public class ResponseUtil {
         }
     }
 
-    public static Publisher<Void> badRequest(HttpServerResponse resp, String errorMsg) {
-        return resp
-                .addHeader(ACCEPT, APPLICATION_JSON)
-                .addHeader(CONTENT_TYPE, APPLICATION_JSON)
-                .status(BAD_REQUEST)
-                .sendString(just(toJson(new ApiError(errorMsg))));
+    public static void badRequest(RoutingContext routing, String errorMsg) {
+        routing.response()
+                .putHeader(ACCEPT, APPLICATION_JSON)
+                .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .setStatusCode(BAD_REQUEST.code())
+                .end(toJson(new ApiError(errorMsg)));
     }
 
-    public static Publisher<Void> internalServerError(HttpServerResponse resp, String errorMsg) {
-        return resp
-                .addHeader(ACCEPT, APPLICATION_JSON)
-                .addHeader(CONTENT_TYPE, APPLICATION_JSON)
-                .status(INTERNAL_SERVER_ERROR)
-                .sendString(just(toJson(new ApiError(errorMsg))));
+    public static void internalServerError(RoutingContext routing, String errorMsg) {
+        routing.response()
+                .putHeader(ACCEPT, APPLICATION_JSON)
+                .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .setStatusCode(INTERNAL_SERVER_ERROR.code())
+                .end(toJson(new ApiError(errorMsg)));
     }
 
-    public static Publisher<Void> notFound(HttpServerResponse resp, String errorMsg) {
-        return resp
-                .addHeader(ACCEPT, APPLICATION_JSON)
-                .addHeader(CONTENT_TYPE, APPLICATION_JSON)
-                .status(NOT_FOUND)
-                .sendString(just(toJson(new ApiError(errorMsg))));
+    public static void notFound(RoutingContext routing, String errorMsg) {
+        routing.response()
+                .putHeader(ACCEPT, APPLICATION_JSON)
+                .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .setStatusCode(NOT_FOUND.code())
+                .end(toJson(new ApiError(errorMsg)));
     }
 
-    public static Publisher<Void> ok(HttpServerResponse resp, Object o) {
-        return resp
-                .addHeader(ACCEPT, APPLICATION_JSON)
-                .addHeader(CONTENT_TYPE, APPLICATION_JSON)
-                .status(OK)
-                .sendString(just(toJson(o)));
+    public static void ok(RoutingContext routing, Object o) {
+        routing.response()
+                .putHeader(ACCEPT, APPLICATION_JSON)
+                .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .setStatusCode(OK.code())
+                .end(toJson(o));
     }
 
-    public static Publisher<Void> ok(HttpServerResponse resp) {
-        return resp
-                .addHeader(ACCEPT, APPLICATION_JSON)
-                .addHeader(CONTENT_TYPE, APPLICATION_JSON)
-                .status(OK)
-                .send();
+    public static void ok(RoutingContext routing) {
+        routing.response()
+                .putHeader(ACCEPT, APPLICATION_JSON)
+                .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .setStatusCode(OK.code())
+                .end();
     }
 
-    public static <T> Publisher<Void> paginatedOk(HttpServerRequest req, HttpServerResponse resp, Page<T> page, String uri) {
-        return resp
-                .addHeader(ACCEPT, APPLICATION_JSON)
-                .addHeader(CONTENT_TYPE, APPLICATION_JSON)
-                .status(OK)
-                .headers(createPagingHeaders(resp.responseHeaders(), page, uri))
-                .sendString(just(toJson(page)));
+    public static <T> void paginatedOk(RoutingContext routing, Page<T> page) {
+        createPagingHeaders(routing, page);
+        routing.response()
+                .putHeader(ACCEPT, APPLICATION_JSON)
+                .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .setStatusCode(OK.code())
+                .end(toJson(page));
     }
 
-    public static <T> HttpHeaders createPagingHeaders(HttpHeaders headers, Page<T> resultList, String uri) {
+    public static String tenant(RoutingContext routing) {
+        return routing.request().getHeader(TENANT_HEADER_NAME);
+    }
+
+    public static <T> void createPagingHeaders(RoutingContext routing, Page<T> resultList) {
+
+        String uri = routing.request().uri();
 
         PageContext pc = resultList.getPageContext();
         int page = pc.getPageNumber();
@@ -134,12 +141,10 @@ public class ResponseUtil {
         //followed by the rest of the link defined above
         links.forEach((l) -> linkHeader.append(", ").append(l.rfc5988String()));
 
-        headers.remove("Link");
-        headers.add("Link", linkHeader.toString());
-        headers.remove("X-Total-Count");
-        headers.add("X-Total-Count", resultList.getTotalSize());
-
-        return headers;
+        routing.response().headers().remove("Link");
+        routing.response().putHeader("Link", linkHeader.toString());
+        routing.response().headers().remove("X-Total-Count");
+        routing.response().putHeader("X-Total-Count", String.valueOf(resultList.getTotalSize()));
     }
 
     public static String replaceQueryParam(String uri, String param, String value) {
@@ -160,11 +165,11 @@ public class ResponseUtil {
         }
     }
 
-    public static Pager extractPaging(Map<String, List<String>> params) {
-        String pageS = params.get("page") == null ? null : params.get("page").get(0);
-        String perPageS = params.get("per_page") == null ? null : params.get("per_page").get(0);
-        List<String> sort = params.get("sort");
-        List<String> order = params.get("order");
+    public static Pager extractPaging(MultiMap params) {
+        String pageS = params.get("page") == null ? null : params.get("page");
+        String perPageS = params.get("per_page") == null ? null : params.get("per_page");
+        List<String> sort = params.getAll("sort");
+        List<String> order = params.getAll("order");
 
         int page = pageS == null ? 0 : Integer.parseInt(pageS);
         int perPage = perPageS == null ? PageContext.UNLIMITED_PAGE_SIZE : Integer.parseInt(perPageS);
@@ -263,6 +268,14 @@ public class ResponseUtil {
         return true;
     }
 
+    public static String checkTenant(RoutingContext routing) {
+        String tenantId = tenant(routing);
+        if (!isEmpty(tenantId)) {
+            return tenantId;
+        }
+        throw new BadRequestException(TENANT_HEADER_NAME + " header is required");
+    }
+
     public static Set<String> getTenants(String tenantId) {
         Set<String> tenantIds = new TreeSet<>();
         for (String t : tenantId.split(",")) {
@@ -302,14 +315,28 @@ public class ResponseUtil {
         }
     }
 
-    public static Publisher<Void> handleExceptions(HttpServerResponse resp, Throwable e) {
-        if (e instanceof BadRequestException) {
-            return badRequest(resp, e.toString());
+    public static void result(RoutingContext routing, AsyncResult result) {
+        if (result.succeeded()) {
+            if (result.result() == null) {
+                ok(routing);
+                return;
+            }
+            if (result.result() instanceof Page) {
+                paginatedOk(routing, (Page)result.result());
+                return;
+            }
+            ok(routing, result.result());
+        } else {
+            if (result.cause() instanceof BadRequestException) {
+                badRequest(routing, result.cause().getMessage());
+                return;
+            }
+            if (result.cause() instanceof NotFoundException) {
+                notFound(routing, result.cause().getMessage());
+                return;
+            }
+            internalServerError(routing, result.cause().getMessage());
         }
-        if (e instanceof NotFoundException) {
-            return notFound(resp, e.getMessage());
-        }
-        return internalServerError(resp, e.toString());
     }
 
     public static class BadRequestException extends RuntimeException {
