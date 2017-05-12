@@ -14,6 +14,7 @@ import org.jboss.logging.Logger;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.BodyHandler;
 
 /**
  * @author Jay Shaughnessy
@@ -38,6 +39,7 @@ public class HandlersManager {
         try {
             scan();
             log.info("Netty Handlers scan finished");
+            router.route(baseUrl + "*").handler(BodyHandler.create());
             endpoints.entrySet().stream().forEach(endpoint -> endpoint.getValue().initRoutes(baseUrl, router));
         } catch (IOException e) {
             log.error(e.getMessage());

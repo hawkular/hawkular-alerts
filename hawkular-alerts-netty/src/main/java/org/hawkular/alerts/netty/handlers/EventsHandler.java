@@ -68,7 +68,6 @@ public class EventsHandler implements RestHandler {
     @Override
     public void initRoutes(String baseUrl, Router router) {
         String path = baseUrl + "/events";
-        router.route(path).handler(BodyHandler.create());
         router.post(path).handler(this::createEvent);
         router.post(path + "/data").handler(this::sendEvents);
         router.put(path + "/tags").handler(this::addTags);

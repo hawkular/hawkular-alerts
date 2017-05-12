@@ -59,7 +59,6 @@ public class ActionsHandler implements RestHandler {
     @Override
     public void initRoutes(String baseUrl, Router router) {
         String path = baseUrl + "/actions";
-        router.route(path).handler(BodyHandler.create());
         router.get(path).handler(this::findActionIds);
         router.post(path).handler(this::createActionDefinition);
         router.put(path).handler(this::updateActionDefinition);

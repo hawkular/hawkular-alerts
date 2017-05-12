@@ -37,7 +37,6 @@ public class ImportHandler implements RestHandler {
     @Override
     public void initRoutes(String baseUrl, Router router) {
         String path = baseUrl + "/import";
-        router.route(path).handler(BodyHandler.create());
         router.post(path + "/:strategy").handler(this::importDefinitions);
     }
 

@@ -80,13 +80,12 @@ public class AlertsHandler implements RestHandler {
 
     @Override
     public void initRoutes(String baseUrl, Router router) {
-        router.route(baseUrl).handler(BodyHandler.create());
         router.get(baseUrl).handler(this::findAlerts);
         router.get(baseUrl + "/watch").blockingHandler(this::watchAlerts);
         router.put(baseUrl + "/tags").handler(this::addTags);
         router.delete(baseUrl + "/tags").handler(this::removeTags);
         router.put(baseUrl + "/ack").handler(this::ackAlerts);
-        router.delete(baseUrl + "/delete").handler(this::deleteAlerts);
+        router.put(baseUrl + "/delete").handler(this::deleteAlerts);
         router.put(baseUrl + "/resolve").handler(this::resolveAlerts);
         router.post(baseUrl + "/data").handler(this::sendData);
         router.delete(baseUrl + "/:alertId").handler(this::deleteAlerts);

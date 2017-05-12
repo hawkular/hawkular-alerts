@@ -14,6 +14,8 @@ import org.jboss.logging.Logger;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.impl.VertxImpl;
 
 /**
  * @author Jay Shaughnessy

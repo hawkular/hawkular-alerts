@@ -70,7 +70,6 @@ public class TriggersHandler implements RestHandler {
     @Override
     public void initRoutes(String baseUrl, Router router) {
         String path = baseUrl + "/triggers";
-        router.route(path).handler(BodyHandler.create());
         router.get(path).handler(this::findTriggers);
         router.post(path).handler(r -> createTrigger(r, false));
         router.get(path + "/:triggerId").handler(r -> getTrigger(r, false));
@@ -505,8 +504,12 @@ public class TriggersHandler implements RestHandler {
                     String tenantId = checkTenant(routing);
                     String triggerId = routing.request().getParam("triggerId");
                     String triggerMode = routing.request().getParam("triggerMode");
+                    Mode mode = null;
+                    if (triggerMode != null) {
+                        mode = Mode.valueOf(triggerMode);
+                    }
                     try {
-                        Collection<Dampening> dampenings = definitionsService.getTriggerDampenings(tenantId, triggerId, Mode.valueOf(triggerMode));
+                        Collection<Dampening> dampenings = definitionsService.getTriggerDampenings(tenantId, triggerId, mode);
                         log.debug("Dampenings: " + dampenings);
                         future.complete(dampenings);
                     } catch (IllegalArgumentException e) {
