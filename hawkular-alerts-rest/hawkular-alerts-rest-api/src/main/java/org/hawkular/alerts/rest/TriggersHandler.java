@@ -272,23 +272,10 @@ public class TriggersHandler {
                 definitions.addDampening(tenantId, dampening);
                 log.debugf("Dampening: %s", dampening);
             }
-            fullTrigger.getConditions().stream().forEach(c -> {
-                c.setTenantId(tenantId);
-                c.setTriggerId(trigger.getId());
-            });
-            List<Condition> firingConditions = fullTrigger.getConditions().stream()
-                    .filter(c -> c.getTriggerMode() == Mode.FIRING)
-                    .collect(Collectors.toList());
-            if (!isEmpty(firingConditions)) {
-                definitions.setConditions(tenantId, trigger.getId(), Mode.FIRING, firingConditions);
-                log.debugf("Conditions: %s", firingConditions);
-            }
-            List<Condition> autoResolveConditions = fullTrigger.getConditions().stream()
-                    .filter(c -> c.getTriggerMode() == Mode.AUTORESOLVE)
-                    .collect(Collectors.toList());
-            if (!isEmpty(autoResolveConditions)) {
-                definitions.setConditions(tenantId, trigger.getId(), Mode.AUTORESOLVE, autoResolveConditions);
-                log.debugf("Conditions: %s", autoResolveConditions);
+            if (!isEmpty(fullTrigger.getConditions())) {
+                Collection<Condition> conditions = definitions.setAllConditions(tenantId, trigger.getId(),
+                        fullTrigger.getConditions());
+                log.debugf("Conditions: %s", conditions);
             }
             return ResponseUtil.ok(fullTrigger);
 
@@ -986,17 +973,8 @@ public class TriggersHandler {
             if (conditions == null) {
                 return ResponseUtil.badRequest("Conditions must be non null");
             }
-            Collection<Condition> updatedConditions = new HashSet<>();
-            conditions.stream().forEach(c -> c.setTriggerId(triggerId));
-            Collection<Condition> firingConditions = conditions.stream()
-                    .filter(c -> c.getTriggerMode() == null || c.getTriggerMode().equals(Mode.FIRING))
-                    .collect(Collectors.toList());
-            updatedConditions.addAll(definitions.setConditions(tenantId, triggerId, Mode.FIRING, firingConditions));
-            Collection<Condition> autoResolveConditions = conditions.stream()
-                    .filter(c -> c.getTriggerMode().equals(Mode.AUTORESOLVE))
-                    .collect(Collectors.toList());
-            updatedConditions.addAll(definitions.setConditions(tenantId, triggerId, Mode.AUTORESOLVE,
-                    autoResolveConditions));
+
+            Collection<Condition> updatedConditions = definitions.setAllConditions(tenantId, triggerId, conditions);
             log.debugf("Conditions: %s", updatedConditions);
             return ResponseUtil.ok(updatedConditions);
 
@@ -1009,7 +987,7 @@ public class TriggersHandler {
     @Path("/{triggerId}/conditions/{triggerMode}")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
-    @ApiOperation(value = "Set the conditions for the trigger. ",
+    @ApiOperation(value = "Set the conditions for the trigger, for the given trigger mode. ",
             notes = "This replaces any existing conditions. Returns the new conditions.",
             response = Condition.class, responseContainer = "List")
     @ApiResponses(value = {
