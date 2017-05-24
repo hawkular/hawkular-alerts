@@ -21,13 +21,13 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.hawkular.alerts</groupId>
-  <artifactId>hawkular-alerts-vertx-netty-poc</artifactId>
-  <version>1.7.0.Final-SNAPSHOT</version>
+  <artifactId>hawkular-alerts</artifactId>
+  <version>2.0.0.Final-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <name>Hawkular Alerting: Vert.x Netty PoC</name>
+  <name>Hawkular Alerting</name>
   <description>Alerting subsystem for Hawkular</description>
-  <url>https://github.com/hawkular/hawkular-alerts/tree/reactor-netty-poc</url>
+  <url>https://github.com/hawkular/hawkular-alerts/tree/next</url>
   <inceptionYear>2015</inceptionYear>
   <organization>
     <name>Red Hat, Inc.</name>
@@ -51,9 +51,9 @@
   </mailingLists>
 
   <scm>
-    <connection>scm:git:git@github.com:lucasponce/alerting-reactor.git</connection>
-    <developerConnection>scm:git:git@github.com:lucasponce/alerting-reactor.git</developerConnection>
-    <url>https://github.com/lucasponce/alerting-reactor</url>
+    <connection>scm:git:git@github.com:hawkular/hawkular-alerts.git</connection>
+    <developerConnection>scm:git:git@github.com:hawkular/hawkular-alerts.git</developerConnection>
+    <url>https://github.com/hawkular/hawkular-alerts</url>
     <tag>head</tag>
   </scm>
 
@@ -86,12 +86,17 @@
     <version.org.apache.commons.commons-math3>3.4.1</version.org.apache.commons.commons-math3>
     <version.org.apache.logging.log4j-elasticsearch>2.8</version.org.apache.logging.log4j-elasticsearch>
     <version.org.apache.logging.log4j>2.8.1</version.org.apache.logging.log4j>
+    <version.org.apache.maven.plugins.maven-failsafe-plugin>2.19.1</version.org.apache.maven.plugins.maven-failsafe-plugin>
+    <version.org.apache.maven.plugins.maven-surefire-plugin>2.19.1</version.org.apache.maven.plugins.maven-surefire-plugin>
+    <version.org.apache.maven.plugins.maven-jar-plugin>3.0.2</version.org.apache.maven.plugins.maven-jar-plugin>
     <version.org.cassalog>0.4.2</version.org.cassalog>
+    <version.org.codehaus.gmavenplus>1.5</version.org.codehaus.gmavenplus>
     <version.org.codehaus.groovy>2.4.10</version.org.codehaus.groovy>
     <version.org.codehaus.groovy.modules.http-builder>0.7.1</version.org.codehaus.groovy.modules.http-builder>
     <version.org.codehaus.jsr166-mirror>1.7.0</version.org.codehaus.jsr166-mirror>
     <version.org.codehaus.gpars>1.2.0</version.org.codehaus.gpars>
     <version.org.codehaus.groovy.maven>1.0</version.org.codehaus.groovy.maven>
+    <version.org.codehaus.mojo>1.6.0</version.org.codehaus.mojo>
     <version.org.drools>6.4.0.Final</version.org.drools>
     <version.org.elasticsearch.client>5.2.2</version.org.elasticsearch.client>
     <version.org.freemarker>2.3.23</version.org.freemarker>
@@ -115,14 +120,14 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
-        <module>hawkular-alerts-actions</module>
-        <module>hawkular-alerts-api</module>
-        <module>hawkular-alerts-commons</module>
-        <module>hawkular-alerts-filter-api</module>
-        <module>hawkular-alerts-engine</module>
-        <module>hawkular-alerts-netty</module>
-        <module>hawkular-alerts-integration-tests</module>
-        <module>hawkular-alerts-engine-extensions</module>
+        <module>actions</module>
+        <module>api</module>
+        <module>commons</module>
+        <module>filter-api</module>
+        <module>engine</module>
+        <module>netty</module>
+        <module>itests</module>
+        <module>engine-extensions</module>
         <!--module>hawkular-alerters</module-->
       </modules>
     </profile>
