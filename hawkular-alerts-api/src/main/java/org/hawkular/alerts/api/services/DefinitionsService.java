@@ -369,66 +369,31 @@ public interface DefinitionsService {
      */
 
     /**
-     * A convenience method that adds a new Condition to the existing condition set for the specified
-     * Trigger and trigger mode.  The new condition will be assigned the highest conditionSetIndex for the
-     * updated conditionSet.
+     * The condition set for a trigger's trigger mode is treated as a whole.  When making any change to the
+     * conditions just [re-]set all of the conditions.  This method replaces all existing conditions (regardless
+     * of trigger mode) with the provided set of new conditions. triggerMode is required to be set for each
+     * provided condition.
      * <p>
-     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
-     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
+     * IMPORTANT! The new condition set is returned. Clients code should then use the new condition set as
+     * ConditionIds may have changed!
      * </p>
-     * The following Condition fields are ignored for the incoming condition, and set in the returned collection set:
+     * The following Condition fields are ignored for the incoming conditions, and set in the returned collection:
      * <pre>
      *   conditionId
      *   triggerId
-     *   triggerMode
      *   conditionSetSize
      *   conditionSetIndex
      * </pre>
-     * @param tenantId Tenant where trigger is stored
-     * @param triggerId Trigger where condition will be stored
-     * @param triggerMode Mode where condition is applied
-     * @param condition Not null
-     * @return The updated, persisted condition set
-     * @throws NotFoundException if trigger is not found
-     * @throws Exception on any problem
-     * @see {@link #addGroupCondition(String, String, Mode, Condition, Map)} for group-level conditions.
-     * @deprecated use {@link #setConditions(String, String, Mode, Collection)}
-     */
-    @Deprecated
-    Collection<Condition> addCondition(String tenantId, String triggerId, Mode triggerMode, Condition condition)
-            throws Exception;
-
-    /**
-     * A convenience method that removes a Condition from an existing condition set.
-     * <p>
-     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
-     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
-     * </p>
      * @param tenantId Tenant where trigger and his conditions are stored
-     * @param conditionId Condition id to be removed
-     * @return The updated, persisted condition set. Not null. Can be empty.
+     * @param triggerId Trigger where conditions will be stored
+     * @param conditions Not null, Not Empty
+     * @return The persisted condition set
      * @throws Exception on any problem
-     * @see {@link #removeGroupCondition(String, String)} for group-level conditions.
-     * @deprecated use {@link #setConditions(String, String, Mode, Collection)}
+     * @see {@link #removeGroupCondition(String, String)} to remove a group condition.
+     * @see {@link #addGroupCondition(String, String, Mode, Condition, Map)} to add a group condition.
      */
-    @Deprecated
-    Collection<Condition> removeCondition(String tenantId, String conditionId) throws Exception;
-
-    /**
-     * A convenience method that updates an existing condition.
-     * <p>
-     * IMPORTANT! Add/Delete/Update of a condition effectively replaces the condition set for the trigger.  The new
-     * condition set is returned. Clients code should then use the new condition set as ConditionIds may have changed!
-     * </p>
-     * @param tenantId
-     * @param condition Not null. conditionId must be for an existing condition.
-     * @return The updated, persisted condition set. Not null. Can be empty.
-     * @throws Exception on any problem
-     * @see {@link #updateGroupCondition(String, Condition)} for group-level conditions.
-     * @deprecated use {@link #setConditions(String, String, Mode, Collection)}
-     */
-    @Deprecated
-    Collection<Condition> updateCondition(String tenantId, Condition condition) throws Exception;
+    Collection<Condition> setAllConditions(String tenantId, String triggerId,
+            Collection<Condition> conditions) throws Exception;
 
     /**
      * The condition set for a trigger's trigger mode is treated as a whole.  When making any change to the
@@ -446,10 +411,6 @@ public interface DefinitionsService {
      *   conditionSetIndex
      * </pre>
      * <p>
-     * Note that due to the complexity of adding group-level conditions, it is only supported to
-     * add or remove a single group condition at one time.  So there is no <code>setGroupConditions</code>.
-     * Instead, use {@link #addGroupCondition(String, String, Mode, Condition, Map)} and
-     * {@link #removeGroupCondition(String, String)} as needed.
      * @param tenantId Tenant where trigger and his conditions are stored
      * @param triggerId Trigger where conditions will be stored
      * @param triggerMode Mode where conditions are applied
