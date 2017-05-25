@@ -46,7 +46,6 @@ import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.log.MsgLogger;
-import org.jboss.logging.Logger;
 
 /**
  * Action Email plugin.
@@ -189,7 +188,7 @@ public class EmailPlugin implements ActionPluginListener {
      */
     public static final String PROP_TEMPLATE_HTML = "template.html";
 
-    private final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, EmailPlugin.class.getName());
+    private final MsgLogger log = MsgLogger.getLogger(EmailPlugin.class);
 
     Map<String, String> defaultProperties = new HashMap<>();
 
@@ -310,7 +309,7 @@ public class EmailPlugin implements ActionPluginListener {
 
         Map<String, String> props = msg.getAction().getProperties();
         if (null == props || props.isEmpty()) {
-            log.warn("Properties empty on plugin " + PLUGIN_NAME);
+            log.warn("Properties empty on plugin {}.", PLUGIN_NAME);
         }
         Event event = msg.getAction() != null ? msg.getAction().getEvent() : null;
         Alert alert = null != event && (event instanceof Alert) ? (Alert) event : null;

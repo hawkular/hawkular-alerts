@@ -14,14 +14,13 @@ import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
 import org.hawkular.alerts.log.MsgLogger;
-import org.jboss.logging.Logger;
 
 /**
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class AlertsWatcher extends Thread {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, AlertsWatcher.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(AlertsWatcher.class);
     private static final Pager stimePager;
     private static final long WATCHER_INTERVAL_DEFAULT = 5 * 1000;
     private static final long CLEAN_INTERVAL = 10 * 1000;
@@ -99,7 +98,7 @@ public class AlertsWatcher extends Thread {
             criteria.setEndStatusTime(System.currentTimeMillis());
             try {
                 Thread.sleep(LEAP_INTERVAL);
-                log.debugf("Query timestamp %s. startStatusTime: %s endStatusTime: %s",
+                log.debug("Query timestamp {}. startStatusTime: {} endStatusTime: {}",
                         System.currentTimeMillis(), criteria.getStartStatusTime(), criteria.getEndStatusTime());
                 Page<Alert> watchedAlerts = alertsService.getAlerts(tenantIds, criteria, stimePager);
                 for (Alert alert : watchedAlerts) {
@@ -120,7 +119,7 @@ public class AlertsWatcher extends Thread {
                 return;
             }
         }
-        log.infof("AlertsWatcher[%s] finished", id);
+        log.info("AlertsWatcher[{}] finished", id);
     }
 
     public interface AlertsListener {

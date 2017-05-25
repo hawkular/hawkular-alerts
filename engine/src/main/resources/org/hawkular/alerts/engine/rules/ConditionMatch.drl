@@ -54,8 +54,7 @@ import org.hawkular.alerts.engine.util.CompareData;
 import org.hawkular.alerts.engine.util.MissingState;
 import org.hawkular.alerts.engine.util.NelsonData;
 import org.hawkular.alerts.engine.util.RateData;
-
-import org.jboss.logging.Logger;
+import org.hawkular.alerts.log.MsgLogger;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -64,7 +63,7 @@ import java.util.Map;
 import org.hawkular.alerts.engine.util.ActionsValidator
 import org.hawkular.alerts.engine.util.MissingState;
 
-global Logger log;
+global MsgLogger log;
 global ActionsService actions;
 global List alerts;
 global List events;
@@ -96,7 +95,7 @@ rule Threshold
     then
         ThresholdConditionEval ce = new ThresholdConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Threshold Eval: %s %s", (ce.isMatch() ? "Match!" : "no match "), ce.getLog());
+            log.debug("Threshold Eval: {} {}", (ce.isMatch() ? "Match!" : "no match "), ce.getLog());
         }
         insert( ce );
 end
@@ -109,7 +108,7 @@ rule ThresholdRange
     then
         ThresholdRangeConditionEval ce = new ThresholdRangeConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("ThresholdRange Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debug("ThresholdRange Eval: {} {}", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -132,7 +131,7 @@ rule ProvideCompareData1
     then
         CompareData compareData = new CompareData( $d );
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("ProvideCompareData1: %s", compareData);
+            log.debug("ProvideCompareData1: {}", compareData);
         }
         insert( compareData );
 end
@@ -146,7 +145,7 @@ rule ProvideCompareData2
     then
         CompareData compareData = new CompareData( $d );
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("ProvideCompareData2: %s", compareData);
+            log.debug("ProvideCompareData2: {}", compareData);
         }
         insert( compareData );
 end
@@ -162,7 +161,7 @@ rule UpdateCompareData
 
         CompareData compareData = new CompareData( $d );
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("UpdateCompareData: %s -> %s", $cd, compareData);
+            log.debug("UpdateCompareData: {} -> {}", $cd, compareData);
         }
         insert( compareData );
 end
@@ -177,7 +176,7 @@ rule Compare
     then
         CompareConditionEval ce = new CompareConditionEval($c, $cd1.data, $cd2.data);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Compare Eval: %s %s", (ce.isMatch() ? "Match!" : "no match "), ce.getLog());
+            log.debug("Compare Eval: {} {}", (ce.isMatch() ? "Match!" : "no match "), ce.getLog());
         }
         insert( ce );
 end
@@ -190,7 +189,7 @@ rule Availability
     then
         AvailabilityConditionEval ce = new AvailabilityConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Availability Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debug("Availability Eval: {} {}", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -203,7 +202,7 @@ rule String
     then
         StringConditionEval ce = new StringConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("String Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debug("String Eval: {} {}", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -216,7 +215,7 @@ rule ExternalData
     then
         ExternalConditionEval ce = new ExternalConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("ExternalData Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debug("ExternalData Eval: {} {}", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -229,7 +228,7 @@ rule ExternalEvent
     then
         ExternalConditionEval ce = new ExternalConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("ExternalEvent Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debug("ExternalEvent Eval: {} {}", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -242,7 +241,7 @@ rule Event
     then
         EventConditionEval ce = new EventConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Event Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debug("Event Eval: {} {}", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -260,7 +259,7 @@ rule ProvideInitialRateData
     then
         RateData rateData = new RateData( $d );
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("ProvideInitialRateData: %s", rateData);
+            log.debug("ProvideInitialRateData: {}", rateData);
         }
         insert( rateData );
 end
@@ -275,7 +274,7 @@ rule Rate
     then
         RateConditionEval ce = new RateConditionEval($c, $d, $rd.getData());
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Rate Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debug("Rate Eval: {} {}", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -293,7 +292,7 @@ rule ProvideInitialNelsonData
     then
         NelsonData nelsonData = new NelsonData($c);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("ProvideInitialNelsonData: %s", nelsonData);
+            log.debug("ProvideInitialNelsonData: {}", nelsonData);
         }
         insert( nelsonData );
 end
@@ -311,7 +310,7 @@ rule Nelson
         NelsonConditionEval ce = new NelsonConditionEval($c, $d, $nd.getViolations(), $nd.getMeanResult(),
             $nd.getStandardDeviationResult(), $nd.getViolationsData());
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Nelson Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debug("Nelson Eval: {} {}", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
         }
         insert( ce );
 end
@@ -324,7 +323,7 @@ rule RetractNelsonData
     then
         retract( $nd )
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("RetractNelsonData: %s", $nd);
+            log.debug("RetractNelsonData: {}", $nd);
         }
 end
 
@@ -334,7 +333,7 @@ rule UpdateMissingStateFromData
         $d  : Data( tenantId == $tenantId, source == $tsource, id == $did)
    then
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("UpdateMissingStateFromData: %s ", $ms);
+            log.debug("UpdateMissingStateFromData: {} ", $ms);
         }
         // MissingState object is referenced in the AlertsEngineImpl.missingStates set
         modify( $ms ) {
@@ -344,7 +343,7 @@ rule UpdateMissingStateFromData
         // An eval is needed for Dampening
         MissingConditionEval mce = new MissingConditionEval( $ms.getCondition(), $ms.getPreviousTime(), $ms.getTime());
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("MissingConditionEval : %s %s", (mce.isMatch() ? "Match!" : "no match"), mce.getLog());
+            log.debug("MissingConditionEval : {} {}", (mce.isMatch() ? "Match!" : "no match"), mce.getLog());
         }
         insert( mce );
 end
@@ -355,7 +354,7 @@ rule UpdateMissingStateFromEvent
         $e  : Event( tenantId == $tenantId, dataSource == $tsource, dataId == $did)
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("UpdateMissingStateFromEvent: %s ", $ms);
+            log.debug("UpdateMissingStateFromEvent: {} ", $ms);
         }
         // MissingState object is referenced in the AlertsEngineImpl.missingStates set
         modify( $ms ) {
@@ -365,7 +364,7 @@ rule UpdateMissingStateFromEvent
         // An eval is needed for Dampening
         MissingConditionEval mce = new MissingConditionEval( $ms.getCondition(), $ms.getPreviousTime(), $ms.getTime());
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("MissingConditionEval : %s %s", (mce.isMatch() ? "Match!" : "no match"), mce.getLog());
+            log.debug("MissingConditionEval : {} {}", (mce.isMatch() ? "Match!" : "no match"), mce.getLog());
         }
         insert( mce );
 end
@@ -382,8 +381,8 @@ rule RetractProcessedRateData
         $d  : Data( tenantId == $tenantId, source == $dsource, id == $did )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Retracting %s", $d);
-            log.debugf("Updating %s", $rd);
+            log.debug("Retracting {}", $d);
+            log.debug("Updating {}", $rd);
         }
         retract ( $d );
         modify ( $rd ) {
@@ -396,7 +395,7 @@ rule RetractProcessedData
         $d : Data()
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Retracting %s", $d);
+            log.debug("Retracting {}", $d);
         }
         retract ( $d );
 end
@@ -406,7 +405,7 @@ rule RetractProcessedEvent
         $e : Event()
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Retracting %s", $e);
+            log.debug("Retracting {}", $e);
         }
         retract ( $e );
 end
@@ -478,7 +477,7 @@ rule ProvideDefaultDampening
         not Dampening( tenantId == $tenantId, triggerId == $tid, triggerMode == $tmode )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Adding default %s dampening for trigger! %s", $tmode, $t.getId());
+            log.debug("Adding default {} dampening for trigger! {}", $tmode, $t.getId());
         }
         Dampening d = Dampening.forStrict( $tenantId, $tid, $tmode, 1 );
         insert( d );
@@ -505,8 +504,8 @@ rule DampenTrigger
         insert( $d );
 
         if (log != null && log.isDebugEnabled()) {
-            log.debugf( "DampenTrigger %s using [match=%s] %s", $d, $t.getMatch(), $d.getCurrentEvals() );
-            log.debugf( "Retracted %s", $ces );
+            log.debug( "DampenTrigger {} using [match={}] {}", $d, $t.getMatch(), $d.getCurrentEvals() );
+            log.debug( "Retracted {}", $ces );
         }
 end
 
@@ -520,7 +519,7 @@ rule DampeningTimeoutAdd
         $d   : Dampening( type == Type.STRICT_TIMEOUT, numTrueEvals == 1, satisfied == false )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debugf( "DampeningTimeoutAdd %s", $d );
+            log.debug( "DampeningTimeoutAdd {}", $d );
         }
         pendingTimeouts.add( $d );
 end 
@@ -532,7 +531,7 @@ rule DampeningTimeoutRemove
         $d   : Dampening( type == Type.STRICT_TIMEOUT, numTrueEvals == 0, satisfied == false )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debugf( "DampeningTimeoutRemove %s", $d );
+            log.debug( "DampeningTimeoutRemove {}", $d );
         }
         pendingTimeouts.remove( $d );
 end 
@@ -555,7 +554,7 @@ rule AlertOnSatisfiedDampening
         // Only some triggers generate an alert
         if ($t.getEventType() == EventType.ALERT) {
             if (log != null && log.isDebugEnabled()) {
-                log.debugf("Alert! Dampening Satisfied! %s", $d.log());
+                log.debug("Alert! Dampening Satisfied! {}", $d.log());
             }
 
             newEvent = new Alert( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
@@ -564,7 +563,7 @@ rule AlertOnSatisfiedDampening
 
         } else {
             if (log != null && log.isDebugEnabled() && $t.getEventType() == EventType.EVENT) {
-                log.debugf("Event! Dampening Satisfied! %s", $d.log());
+                log.debug("Event! Dampening Satisfied! {}", $d.log());
             }
 
             newEvent = new Event( $t.getTenantId(), $t, $d, $d.getSatisfyingEvals() );
@@ -583,13 +582,13 @@ rule AlertOnSatisfiedDampening
         insert( $d );
 
         if ($t.isAutoResolve()) {
-            log.debugf("Setting Trigger to AutoResolve Mode! %s", $t);
+            log.debug("Setting Trigger to AutoResolve Mode! {}", $t);
             modify($t) {
                setMode(Mode.AUTORESOLVE)
             }
         } else if ($t.isAutoDisable()) {
             if (log != null && log.isDebugEnabled()) {
-                log.debugf("Setting Trigger Disabled! %s", $t);
+                log.debug("Setting Trigger Disabled! {}", $t);
             }
 
             // the autoDisable trigger handling will result in a trigger reload, so we can just retract the
@@ -600,7 +599,7 @@ rule AlertOnSatisfiedDampening
 
         } else {
             if (log != null && log.isDebugEnabled()) {
-                log.debugf("Trigger remains in Firing mode, AutoDisable and AutoResolve not set. %s", $t);
+                log.debug("Trigger remains in Firing mode, AutoDisable and AutoResolve not set. {}", $t);
             }
         }
 end
@@ -612,7 +611,7 @@ rule SetFiringModeOnSatisfiedDampening
         $d  : Dampening( triggerMode == Mode.AUTORESOLVE, tenantId == $tenantId, triggerId == $tid, satisfied == true )
     then
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("SetFiringModeOnSatisfiedDampening! %s", $d.log());
+            log.debug("SetFiringModeOnSatisfiedDampening! {}", $d.log());
         }
 
         // the autoResolved trigger handling will result in a trigger reload, so we can just retract the
@@ -639,7 +638,7 @@ rule retractOrphanDampening
         retract( $d )
 
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Retract Dampening with no Trigger. %s", $d);
+            log.debug("Retract Dampening with no Trigger. {}", $d);
         }
 end
 
@@ -651,7 +650,7 @@ rule retractOrphanCondition
         retract( $c )
 
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Retract Condition with no Trigger. %s", $c);
+            log.debug("Retract Condition with no Trigger. {}", $c);
         }
 end
 
@@ -663,6 +662,6 @@ rule retractOrphanMissingState
         retract( $s )
 
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Retract MissingState with no Trigger. %s", $s);
+            log.debug("Retract MissingState with no Trigger. {}", $s);
         }
 end

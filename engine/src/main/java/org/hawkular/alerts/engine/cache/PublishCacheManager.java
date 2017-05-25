@@ -31,7 +31,6 @@ import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.filter.CacheKey;
 import org.infinispan.Cache;
-import org.jboss.logging.Logger;
 
 /**
  * Manages the cache of globally active dataIds. Incoming Data and Events with Ids not in the cache will be filtered
@@ -47,8 +46,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class PublishCacheManager {
-    private final Logger log = Logger.getLogger(PublishCacheManager.class);
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final MsgLogger log = MsgLogger.getLogger(PublishCacheManager.class);
 
     private static final String DISABLE_PUBLISH_FILTERING_PROP = "hawkular-alerts.disable-publish-filtering";
     private static final String DISABLE_PUBLISH_FILTERING_ENV = "DISABLE_PUBLISH_FILTERING";
@@ -89,18 +87,18 @@ public class PublishCacheManager {
                 RESET_PUBLISH_CACHE_ENV, "true"));
         if (!disablePublish) {
             if (resetCache) {
-                msgLog.warnClearPublishCache();
+                log.warnClearPublishCache();
                 publishCache.clear();
                 publishDataIdsCache.clear();
             }
-            msgLog.infoInitPublishCache();
+            log.infoInitPublishCache();
 
             initialCacheUpdate();
 
             definitions.registerListener(events -> {
-                log.debugf("Receiving %s", events);
+                log.debug("Receiving {}", events);
                 events.stream().forEach(e -> {
-                    log.debugf("Received %s", e);
+                    log.debug("Received {}", e);
                     String tenantId = e.getTargetTenantId();
                     String triggerId = e.getTargetId();
                     TriggerKey triggerKey = new TriggerKey(tenantId, triggerId);
@@ -115,13 +113,13 @@ public class PublishCacheManager {
                     }
                     publishDataIdsCache.endBatch(true);
                     publishCache.endBatch(true);
-                    log.debugf("PublishCache: %s", publishCache.entrySet());
+                    log.debug("PublishCache: {}", publishCache.entrySet());
                 });
             }, TRIGGER_CONDITION_CHANGE, TRIGGER_REMOVE);
 
 
         } else {
-            msgLog.warnDisabledPublishCache();
+            log.warnDisabledPublishCache();
         }
     }
 
@@ -182,9 +180,9 @@ public class PublishCacheManager {
                 publishDataIdsCache.put(triggerKey, prevDataIds);
                 addPublishCache(c.getTenantId(), triggerId, dataIds);
             }
-            log.debugf("Published after update=%s", publishCache.size());
-            if (log.isTraceEnabled()) {
-                publishCache.entrySet().stream().forEach(e -> log.tracef("Published: %s", e.getValue()));
+            log.debug("Published after update={}", publishCache.size());
+            if (log.isDebugEnabled()) {
+                publishCache.entrySet().stream().forEach(e -> log.debug("Published: {}", e.getValue()));
             }
             publishDataIdsCache.endBatch(true);
             publishCache.endBatch(true);

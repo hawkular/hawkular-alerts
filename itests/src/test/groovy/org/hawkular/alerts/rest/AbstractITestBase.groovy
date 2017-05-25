@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.rest
 
-import org.junit.After
-import org.junit.Before
 import org.junit.BeforeClass
 
 import groovyx.net.http.ContentType

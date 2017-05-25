@@ -35,7 +35,7 @@ import org.hawkular.alerts.api.services.DistributedEvent;
 import org.hawkular.alerts.api.services.DistributedListener;
 import org.hawkular.alerts.engine.service.PartitionManager;
 import org.hawkular.alerts.engine.service.PartitionTriggerListener;
-import org.jboss.logging.Logger;
+import org.hawkular.alerts.log.MsgLogger;
 
 /**
  * Register DefinitionListener and ActionListener instances.
@@ -45,7 +45,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class AlertsContext {
-    private final Logger log = Logger.getLogger(AlertsContext.class);
+    private final MsgLogger log = MsgLogger.getLogger(AlertsContext.class);
 
     private Map<DefinitionsListener, Set<Type>> definitionListeners = new HashMap<>();
 
@@ -130,11 +130,11 @@ public class AlertsContext {
         Set<DefinitionsEvent.Type> notificationTypes = notifications.stream()
                 .map(n -> n.getType())
                 .collect(Collectors.toSet());
-        log.debugf("Notifying applicable listeners %s of events %s", definitionListeners, notifications);
+        log.debug("Notifying applicable listeners {} of events {}", definitionListeners, notifications);
         definitionListeners.entrySet().stream()
                 .filter(e -> shouldNotify(e.getValue(), notificationTypes))
                 .forEach(e -> {
-                    log.debugf("Notified Listener %s of %s", e.getKey(), notificationTypes);
+                    log.debug("Notified Listener {} of {}", e.getKey(), notificationTypes);
                     e.getKey().onChange(notifications.stream()
                             .filter(de -> e.getValue().contains(de.getType()))
                             .collect(Collectors.toList()));

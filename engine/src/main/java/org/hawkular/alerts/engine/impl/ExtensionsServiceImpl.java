@@ -22,14 +22,14 @@ import java.util.Set;
 import org.hawkular.alerts.api.services.DataExtension;
 import org.hawkular.alerts.api.services.EventExtension;
 import org.hawkular.alerts.api.services.ExtensionsService;
-import org.jboss.logging.Logger;
+import org.hawkular.alerts.log.MsgLogger;
 
 /**
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class ExtensionsServiceImpl implements ExtensionsService {
-    private final Logger log = Logger.getLogger(ExtensionsServiceImpl.class);
+    private final MsgLogger log = MsgLogger.getLogger(ExtensionsServiceImpl.class);
 
     Set<DataExtension> dataExtensions;
     Set<EventExtension> eventsExtensions;
@@ -41,13 +41,13 @@ public class ExtensionsServiceImpl implements ExtensionsService {
 
     @Override
     public void addExtension(DataExtension extension) {
-        log.infof("Adding DataExtension %s", extension);
+        log.info("Adding DataExtension {}", extension);
         dataExtensions.add(extension);
     }
 
     @Override
     public void addExtension(EventExtension extension) {
-        log.infof("Adding EventExtension %s", extension);
+        log.info("Adding EventExtension {}", extension);
         eventsExtensions.add(extension);
     }
 

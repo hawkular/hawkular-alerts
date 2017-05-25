@@ -62,7 +62,6 @@ import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.hawkular.alerts.engine.tags.ExpressionTagQueryParser;
 import org.hawkular.alerts.log.MsgLogger;
-import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
@@ -95,8 +94,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     private static final String BATCH_SIZE_ENV = "BATCH_SIZE";
     private static final String BATCH_SIZE_DEFAULT = "10";
 
-    private static final MsgLogger msgLog = MsgLogger.LOGGER;
-    private static final Logger log = Logger.getLogger(CassAlertsServiceImpl.class);
+    private static final MsgLogger log = MsgLogger.getLogger(CassAlertsServiceImpl.class);
 
     private int criteriaNoQuerySize;
     private int batchSize;
@@ -214,7 +212,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -270,7 +268,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -301,7 +299,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         try {
             session.execute(updateAlert.bind(JsonUtil.toJson(alert), alert.getTenantId(), alert.getAlertId()));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -349,7 +347,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -392,7 +390,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -443,7 +441,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -494,7 +492,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -520,7 +518,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 alert = JsonUtil.fromJson(row.getString("payload"), Alert.class, thin);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return alert;
@@ -547,7 +545,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 event = JsonUtil.fromJson(row.getString("payload"), Event.class, thin);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return event;
@@ -592,7 +590,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                             alerts.addAll(tenantAlerts);
                         }
                     } catch (Exception e) {
-                        msgLog.errorDatabaseException(e.getMessage());
+                        log.errorDatabaseException(e.getMessage());
                     }
                 }));
             });
@@ -600,7 +598,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 try {
                     f.get();
                 } catch (Exception e) {
-                    msgLog.errorDatabaseException(e.getMessage());
+                    log.errorDatabaseException(e.getMessage());
                 }
             });
         }
@@ -760,7 +758,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 } else {
                     // This is the worst-case scenario of criteria featuring only manual filtering.  Generate a
                     // warning because clients should be discouraged from using such vague criteria.
-                    log.warnf("Only supplying Severity and/or Status can be slow and return large Sets: %s",
+                    log.warn("Only supplying Severity and/or Status can be slow and return large Sets: {}",
                             criteria);
                     fetchAllAlerts(tenantId, thin, alerts);
                 }
@@ -792,7 +790,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -1303,7 +1301,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                             events.addAll(tenantEvents);
                         }
                     } catch (Exception e) {
-                        msgLog.errorDatabaseException(e.getMessage());
+                        log.errorDatabaseException(e.getMessage());
                     }
                 }));
             });
@@ -1311,7 +1309,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 try {
                     f.get();
                 } catch (Exception e) {
-                    msgLog.errorDatabaseException(e.getMessage());
+                    log.errorDatabaseException(e.getMessage());
                 }
             });
         }
@@ -1487,7 +1485,7 @@ public class CassAlertsServiceImpl implements AlertsService {
 
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -1919,7 +1917,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return alert;
@@ -1981,7 +1979,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 alertsEngine.reloadTrigger(tenantId, triggerId);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
         }
 
     }

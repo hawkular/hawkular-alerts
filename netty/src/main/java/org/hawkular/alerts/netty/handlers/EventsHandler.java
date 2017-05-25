@@ -34,12 +34,10 @@ import org.hawkular.alerts.netty.RestHandler;
 import org.hawkular.alerts.netty.util.ResponseUtil.BadRequestException;
 import org.hawkular.alerts.netty.util.ResponseUtil.InternalServerException;
 import org.hawkular.alerts.netty.util.ResponseUtil.NotFoundException;
-import org.jboss.logging.Logger;
 
 import io.vertx.core.MultiMap;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.BodyHandler;
 
 /**
  * @author Jay Shaughnessy
@@ -47,7 +45,7 @@ import io.vertx.ext.web.handler.BodyHandler;
  */
 @RestEndpoint(path = "/events")
 public class EventsHandler implements RestHandler {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, EventsHandler.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(EventsHandler.class);
     private static final String PARAM_START_TIME = "startTime";
     private static final String PARAM_END_TIME = "endTime";
     private static final String PARAM_EVENT_IDS = "eventIds";
@@ -88,7 +86,7 @@ public class EventsHandler implements RestHandler {
                     try {
                         event = fromJson(json, Event.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing Event json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing Event json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
                     if (event == null) {
@@ -135,7 +133,7 @@ public class EventsHandler implements RestHandler {
                     try {
                         events = collectionFromJson(json, Event.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing Event json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing Event json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
                     if (isEmpty(events)) {
@@ -144,7 +142,7 @@ public class EventsHandler implements RestHandler {
                     try {
                         events.stream().forEach(ev -> ev.setTenantId(tenantId));
                         alertsService.sendEvents(events);
-                        log.debugf("Events: ", events);
+                        log.debug("Events: ", events);
                         future.complete(events);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -173,7 +171,7 @@ public class EventsHandler implements RestHandler {
                         List<String> eventIdList = Arrays.asList(eventIds.split(","));
                         Map<String, String> tagsMap = parseTags(tags);
                         alertsService.addEventTags(tenantId, eventIdList, tagsMap);
-                        log.debugf("Tagged eventIds:%s, %s", eventIdList, tagsMap);
+                        log.debug("Tagged eventIds:{}, {}", eventIdList, tagsMap);
                         future.complete(tagsMap);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -202,7 +200,7 @@ public class EventsHandler implements RestHandler {
                         Collection<String> ids = Arrays.asList(eventIds.split(","));
                         Collection<String> tags = Arrays.asList(tagNames.split(","));
                         alertsService.removeEventTags(tenantId, ids, tags);
-                        log.debugf("Untagged eventsIds:%s, %s", ids, tags);
+                        log.debug("Untagged eventsIds:{}, {}", ids, tags);
                         future.complete(tags);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -220,7 +218,7 @@ public class EventsHandler implements RestHandler {
                         Pager pager = extractPaging(routing.request().params());
                         EventsCriteria criteria = buildCriteria(routing.request().params());
                         Page<Event> eventPage = alertsService.getEvents(tenantId, criteria, pager);
-                        log.debugf("Events: %s", eventPage);
+                        log.debug("Events: {}", eventPage);
                         future.complete(eventPage);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -248,10 +246,10 @@ public class EventsHandler implements RestHandler {
         String channelId = routing.request().connection().toString();
         EventsWatcher watcher = new EventsWatcher(channelId, listener, Collections.singleton(tenantId), criteria, watchInterval);
         watcher.start();
-        log.infof("EventsWatcher [%s] created", channelId);
+        log.info("EventsWatcher [{}] created", channelId);
         routing.response().closeHandler(e -> {
             watcher.dispose();
-            log.infof("EventsWatcher [%s] finished", channelId);
+            log.info("EventsWatcher [{}] finished", channelId);
         });
     }
 
@@ -265,7 +263,7 @@ public class EventsHandler implements RestHandler {
                         EventsCriteria criteria = buildCriteria(routing.request().params());
                         criteria.setEventId(eventId);
                         numDeleted = alertsService.deleteEvents(tenantId, criteria);
-                        log.debugf("Events deleted: ", numDeleted);
+                        log.debug("Events deleted: ", numDeleted);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
                     } catch (Exception e) {

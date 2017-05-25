@@ -5,7 +5,6 @@ import static org.hawkular.alerts.netty.util.ResponseUtil.result;
 
 import java.util.Collection;
 import java.util.Set;
-import java.util.function.BiFunction;
 
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
@@ -15,7 +14,6 @@ import org.hawkular.alerts.netty.RestHandler;
 
 import org.hawkular.alerts.netty.util.ResponseUtil.InternalServerException;
 import org.hawkular.alerts.netty.util.ResponseUtil.NotFoundException;
-import org.jboss.logging.Logger;
 
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -26,7 +24,7 @@ import io.vertx.ext.web.RoutingContext;
  */
 @RestEndpoint(path = "/plugins")
 public class ActionPluginHandler implements RestHandler {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, ActionPluginHandler.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(ActionPluginHandler.class);
 
     DefinitionsService definitionsService;
 
@@ -47,10 +45,10 @@ public class ActionPluginHandler implements RestHandler {
                    checkTenant(routing);
                    try {
                        Collection<String> actionPlugins = definitionsService.getActionPlugins();
-                       log.debugf("ActionPlugins: %s", actionPlugins);
+                       log.debug("ActionPlugins: {}", actionPlugins);
                         future.complete(actionPlugins);
                    } catch (Exception e) {
-                       log.errorf(e, "Error querying all plugins. Reason: %s", e.toString());
+                       log.error("Error querying all plugins. Reason: {}", e.toString());
                        throw new InternalServerException(e.toString());
                    }
                 }, res -> result(routing, res));
@@ -64,14 +62,14 @@ public class ActionPluginHandler implements RestHandler {
                     Set<String> actionPluginProps;
                     try {
                         actionPluginProps = definitionsService.getActionPlugin(actionPlugin);
-                        log.debugf("ActionPlugin: %s - Properties: %s", actionPlugin, actionPluginProps);
+                        log.debug("ActionPlugin: {} - Properties: {}", actionPlugin, actionPluginProps);
                         if (actionPluginProps == null) {
                             future.fail(new NotFoundException("Not found action plugin: " + actionPlugin));
                         } else {
                             future.complete(actionPluginProps);
                         }
                     } catch (Exception e) {
-                        log.errorf(e, "Error querying plugin %s. Reason: %s", actionPlugin, e.toString());
+                        log.error("Error querying plugin {}. Reason: {}", actionPlugin, e.toString());
                         throw new InternalServerException(e.toString());
                     }
                 }, res -> result(routing, res));

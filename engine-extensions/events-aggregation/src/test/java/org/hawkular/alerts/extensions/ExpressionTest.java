@@ -116,7 +116,7 @@ public class ExpressionTest {
 
         String drl = exp.getDrl();
 
-        System.out.println(drl);
+        // System.out.println(drl);
 
         startSession(drl);
 
@@ -195,13 +195,15 @@ public class ExpressionTest {
         Assert.assertEquals(4, results.size());
         results.stream().forEach(e -> {
             Assert.assertEquals("user1", e.getContext().get("accountId"));
-            System.out.println("Event: ");
-            System.out.println(e);
-            System.out.println("Source events:");
-            extractEvents(e).stream().forEach(extracted -> {
-                System.out.println(extracted);
-            });
-            System.out.println("\n");
+            /*
+                System.out.println("Event: ");
+                System.out.println(e);
+                System.out.println("Source events:");
+                extractEvents(e).stream().forEach(extracted -> {
+                    System.out.println(extracted);
+                });
+                System.out.println("\n");
+            */
         });
     }
 
@@ -214,7 +216,7 @@ public class ExpressionTest {
 
         String drl = exp.getDrl();
 
-        System.out.println(drl);
+        // System.out.println(drl);
 
         startSession(drl);
 
@@ -328,13 +330,15 @@ public class ExpressionTest {
         results.stream().forEach(e -> {
             String accountId = e.getContext().get("accountId");
             Assert.assertTrue(accountId.equals("user1") || accountId.equals("user2"));
-            System.out.println("Event: ");
-            System.out.println(e);
-            System.out.println("Source events:");
-            extractEvents(e).stream().forEach(extracted -> {
-                System.out.println(extracted);
-            });
-            System.out.println("\n");
+            /*
+                System.out.println("Event: ");
+                System.out.println(e);
+                System.out.println("Source events:");
+                extractEvents(e).stream().forEach(extracted -> {
+                    System.out.println(extracted);
+                });
+                System.out.println("\n");
+            */
         });
 
     }
@@ -351,7 +355,7 @@ public class ExpressionTest {
 
         String drl = exp.getDrl();
 
-        System.out.println(drl);
+        // System.out.println(drl);
 
         startSession(drl);
 
@@ -452,13 +456,15 @@ public class ExpressionTest {
         results.stream().forEach(e -> {
             String traceId = e.getContext().get("traceId");
             Assert.assertTrue(traceId.equals("trace1") || traceId.equals("trace4"));
-            System.out.println("Event: ");
-            System.out.println(e);
-            System.out.println("Source events:");
-            extractEvents(e).stream().forEach(extracted -> {
-                System.out.println(extracted);
-            });
-            System.out.println("\n");
+            /*
+                System.out.println("Event: ");
+                System.out.println(e);
+                System.out.println("Source events:");
+                extractEvents(e).stream().forEach(extracted -> {
+                    System.out.println(extracted);
+                });
+                System.out.println("\n");
+            */
         });
     }
 
@@ -491,7 +497,7 @@ public class ExpressionTest {
 
         String drl = exp.getDrl();
 
-        System.out.println(drl);
+        // System.out.println(drl);
 
         startSession(drl);
 
@@ -716,13 +722,15 @@ public class ExpressionTest {
 
         Assert.assertEquals(15, results.size());
         results.stream().forEach(e -> {
-            System.out.println("Event: ");
-            System.out.println(e);
-            System.out.println("Source events:");
-            extractEvents(e).stream().forEach(extracted -> {
-                System.out.println(extracted);
-            });
-            System.out.println("\n");
+            /*
+                System.out.println("Event: ");
+                System.out.println(e);
+                System.out.println("Source events:");
+                extractEvents(e).stream().forEach(extracted -> {
+                    System.out.println(extracted);
+                });
+                System.out.println("\n");
+            */
         });
     }
 

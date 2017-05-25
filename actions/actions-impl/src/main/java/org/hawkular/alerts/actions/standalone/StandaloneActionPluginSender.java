@@ -23,7 +23,6 @@ import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.log.MsgLogger;
-import org.jboss.logging.Logger;
 
 /**
  * Main standalone sender for plugins implementations
@@ -32,8 +31,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class StandaloneActionPluginSender implements ActionPluginSender {
-    private final MsgLogger log = Logger.getMessageLogger(MsgLogger.class,
-            StandaloneActionPluginSender.class.getName());
+    private final MsgLogger log = MsgLogger.getLogger(StandaloneActionPluginSender.class);
 
     private ActionsService actions;
 
@@ -51,12 +49,12 @@ public class StandaloneActionPluginSender implements ActionPluginSender {
 
     @Override
     public void send(ActionResponseMessage msg) throws Exception {
-        log.debugf("Message received: %s", msg);
+        log.debug("Message received: {}", msg);
         if (msg != null && msg.getPayload().containsKey("action")) {
             String jsonAction = msg.getPayload().get("action");
             Action updatedAction = JsonUtil.fromJson(jsonAction, Action.class);
             actions.updateResult(updatedAction);
-            log.debugf("Operation message received from plugin [%s] with payload [%s]",
+            log.debug("Operation message received from plugin [{}] with payload [{}]",
                     updatedAction.getActionPlugin(), updatedAction.getResult());
         } else {
             log.warnActionResponseMessageWithoutPayload();

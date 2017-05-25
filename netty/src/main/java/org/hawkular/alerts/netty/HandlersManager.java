@@ -9,7 +9,6 @@ import java.util.zip.ZipInputStream;
 
 import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.properties.AlertProperties;
-import org.jboss.logging.Logger;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
@@ -21,7 +20,7 @@ import io.vertx.ext.web.handler.BodyHandler;
  * @author Lucas Ponce
  */
 public class HandlersManager {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, HandlersManager.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(HandlersManager.class);
     private static final String BASE_URL = "hawkular-alerts.base-url";
     private static final String BASE_URL_DEFAULT = "/hawkular/alerts";
     public static final String TENANT_HEADER_NAME = "Hawkular-Tenant";
@@ -47,7 +46,7 @@ public class HandlersManager {
     }
 
     public void handle(HttpServerRequest req) {
-        log.debugf("%s %s %s", req.method().name(), req.path(), req.params());
+        log.debug("{} {} {}", req.method().name(), req.path(), req.params());
         router.accept(req);
     }
 
@@ -68,13 +67,13 @@ public class HandlersManager {
                                 Class[] interfaces = clazz.getInterfaces();
                                 for (int j=0; j<interfaces.length; j++) {
                                     if (interfaces[j].equals(RestHandler.class)) {
-                                        log.infof("Endpoint [ %s ] - Handler [%s]", endpoint.path(), clazz.getName());
+                                        log.info("Endpoint [ {} ] - Handler [{}]", endpoint.path(), clazz.getName());
                                         endpoints.put(endpoint.path(), ((RestHandler) clazz.newInstance()));
                                     }
                                 }
                             }
                         } catch (Exception e) {
-                            log.errorf(e,"Error loading Handler [%s]. Reason: %s", className, e.toString());
+                            log.error("Error loading Handler [{}]. Reason: {}", className, e.toString());
                             System.exit(1);
                         }
                     }

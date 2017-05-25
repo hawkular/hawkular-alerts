@@ -25,7 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
-import org.jboss.logging.Logger;
+import org.hawkular.alerts.log.MsgLogger;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -79,7 +79,7 @@ import freemarker.template.Version;
  * @author Lucas Ponce
  */
 public class EmailTemplate {
-    private final Logger log = Logger.getLogger(EmailTemplate.class);
+    private final MsgLogger log = MsgLogger.getLogger(EmailTemplate.class);
 
     public static final String DEFAULT_TEMPLATE_PLAIN = "template.plain.default.ftl";
     public static final String DEFAULT_TEMPLATE_HTML = "template.html.default.ftl";

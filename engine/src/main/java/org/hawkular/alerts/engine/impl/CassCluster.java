@@ -34,10 +34,9 @@ import org.cassalog.core.Cassalog;
 import org.cassalog.core.CassalogBuilder;
 import org.hawkular.alerts.cache.IspnCacheManager;
 import org.hawkular.alerts.engine.util.TokenReplacingReader;
+import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.properties.AlertProperties;
 import org.infinispan.Cache;
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Host;
@@ -58,7 +57,7 @@ import com.google.common.io.CharStreams;
  * @author Lucas Ponce
  */
 public class CassCluster {
-    private static final Logger log = Logger.getLogger(CassCluster.class);
+    private static final MsgLogger log = MsgLogger.getLogger(CassCluster.class);
 
     /*
         PORT used by the Cassandra cluster
@@ -272,7 +271,7 @@ public class CassCluster {
             for (Host host : cluster.getMetadata().getAllHosts()) {
                 if (!host.isUp()) {
                     isReady = false;
-                    log.warnf("Cassandra node %s may not be up yet. Waiting %s ms for node to come up", host, timeout);
+                    log.warn("Cassandra node {} may not be up yet. Waiting {} ms for node to come up", host, timeout);
                     try {
                         Thread.sleep(timeout);
                     } catch(InterruptedException e) {
@@ -301,23 +300,23 @@ public class CassCluster {
     }
 
     private void initScheme() throws IOException {
-        log.infof("Checking Schema existence for keyspace: %s", keyspace);
+        log.info("Checking Schema existence for keyspace: {}", keyspace);
         createSchema(session, keyspace, overwrite);
         waitForSchemaCheck();
         if (!checkSchema()) {
-            log.errorf("Schema %s not created correctly", keyspace);
+            log.error("Schema {} not created correctly", keyspace);
             initialized = false;
         } else {
             initialized = true;
-            log.infof("Done creating Schema for keyspace: %s", keyspace);
+            log.info("Done creating Schema for keyspace: {}", keyspace);
         }
     }
 
     private void waitForSchemaCheck() {
         int currentAttempts = attempts;
         while(!checkSchema() && !Thread.currentThread().isInterrupted() && currentAttempts >= 0) {
-            log.warnf("[%s] Keyspace detected but schema not fully created. " +
-                    "Retrying in [%s] ms...", currentAttempts, timeout);
+            log.warn("[{}] Keyspace detected but schema not fully created. " +
+                    "Retrying in [{}] ms...", currentAttempts, timeout);
             currentAttempts--;
             try {
                 Thread.sleep(timeout);
@@ -338,18 +337,18 @@ public class CassCluster {
                 if (!cql.startsWith("--")) {
                     updatedCQL = substituteVars(cql.trim(), schemaVars);
                     if (log.isDebugEnabled()) {
-                        log.debugf("Checking CQL:\n %s \n",updatedCQL);
+                        log.debug("Checking CQL:\n {} \n",updatedCQL);
                     }
                     ResultSet rs = session.execute(updatedCQL);
                     if (rs.isExhausted()) {
-                        log.warnf("Table not created.\nEXECUTING CQL: \n%s", updatedCQL);
+                        log.warn("Table not created.\nEXECUTING CQL: \n{}", updatedCQL);
                         return false;
                     }
                 }
             }
             return true;
         } catch (Exception e) {
-            log.errorf("Failed schema check: %s\nEXECUTING CQL:\n%s", e, updatedCQL);
+            log.error("Failed schema check: {}\nEXECUTING CQL:\n{}", e, updatedCQL);
             return false;
         }
     }
@@ -421,7 +420,7 @@ public class CassCluster {
         if (!isInitialized()) {
             int currentAttempts = attempts;
             while(!initialized && !Thread.currentThread().isInterrupted() && currentAttempts >= 0) {
-                log.warnf("[%s] Session is not yet initialized. Retrying in [%s] ms...",
+                log.warn("[{}] Session is not yet initialized. Retrying in [{}] ms...",
                         currentAttempts, timeout);
                 currentAttempts--;
                 try {

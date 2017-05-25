@@ -5,25 +5,22 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.PageContext;
 import org.hawkular.alerts.api.model.paging.Pager;
-import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.engine.StandaloneAlerts;
 import org.hawkular.alerts.log.MsgLogger;
-import org.jboss.logging.Logger;
 
 /**
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class EventsWatcher extends Thread {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, EventsWatcher.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(EventsWatcher.class);
     private static final Pager ctimePager;
     private static final long WATCHER_INTERVAL_DEFAULT = 5 * 1000;
     private static final long CLEAN_INTERVAL = 10 * 1000;
@@ -97,7 +94,7 @@ public class EventsWatcher extends Thread {
             criteria.setEndTime(System.currentTimeMillis());
             try {
                 Thread.sleep(LEAP_INTERVAL);
-                log.debugf("Query timestamp %s. startTime: %s endTime: %s",
+                log.debug("Query timestamp {}. startTime: {} endTime: {}",
                         System.currentTimeMillis(), criteria.getStartTime(), criteria.getEndTime());
                 Page<Event> watchedEvents = alertsService.getEvents(tenantIds, criteria, ctimePager);
                 for (Event event : watchedEvents) {
@@ -118,7 +115,7 @@ public class EventsWatcher extends Thread {
                 return;
             }
         }
-        log.infof("EventsWatcher[%s] finished", id);
+        log.info("EventsWatcher[{}] finished", id);
     }
 
     public interface EventsListener {

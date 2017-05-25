@@ -38,7 +38,6 @@
       <artifactId>hawkular-alerts-actions-api</artifactId>
       <version>${project.version}</version>
     </dependency>
-
   </dependencies>
 
 </project>

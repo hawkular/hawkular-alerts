@@ -11,7 +11,6 @@ import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.netty.RestEndpoint;
 import org.hawkular.alerts.netty.RestHandler;
 import org.hawkular.alerts.netty.util.ManifestUtil;
-import org.jboss.logging.Logger;
 
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -22,7 +21,7 @@ import io.vertx.ext.web.RoutingContext;
  */
 @RestEndpoint(path = "/status")
 public class StatusHandler implements RestHandler {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, StatusHandler.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(StatusHandler.class);
     static final String STATUS = "status";
     static final String STARTED = "STARTED";
     static final String FAILED = "FAILED";

@@ -10,19 +10,16 @@ import org.hawkular.alerts.actions.standalone.StandaloneActionPluginRegister;
 import org.hawkular.alerts.engine.StandaloneAlerts;
 import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.properties.AlertProperties;
-import org.jboss.logging.Logger;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.impl.VertxImpl;
 
 /**
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class AlertingServer implements AlertingServerMBean {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, AlertingServer.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(AlertingServer.class);
 
     private static final String BIND_ADDRESS = "hawkular-alerts.bind-address";
     private static final String BIND_ADDRESS_DEFAULT = "127.0.0.1";
@@ -52,11 +49,11 @@ public class AlertingServer implements AlertingServerMBean {
             handlers = new HandlersManager(vertx);
             handlers.start();
             server = vertx.createHttpServer();
-            log.infof("Starting Server at http://%s:%s", bindAdress, port);
+            log.info("Starting Server at http://{}:{}", bindAdress, port);
             server.requestHandler(handlers::handle).listen(port, bindAdress);
         } catch (Exception e) {
-            log.fatal(e);
-            log.fatal("Forcing exit");
+            log.error(e);
+            log.error("Forcing exit");
             StandaloneActionPluginRegister.stop();
             StandaloneAlerts.stop();
             System.exit(1);

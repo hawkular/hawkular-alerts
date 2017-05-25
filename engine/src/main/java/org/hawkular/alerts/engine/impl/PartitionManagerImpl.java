@@ -48,7 +48,6 @@ import org.infinispan.notifications.cachelistener.event.CacheEntryCreatedEvent;
 import org.infinispan.notifications.cachelistener.event.CacheEntryModifiedEvent;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
-import org.jboss.logging.Logger;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -107,8 +106,7 @@ public class PartitionManagerImpl implements PartitionManager {
     public static final String CURRENT = "currentPartition";
     public static final String PARTITION_CHANGE = "partitionChangeFlag";
 
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(PartitionManagerImpl.class);
+    private final MsgLogger log = MsgLogger.getLogger(PartitionManagerImpl.class);
 
     DefinitionsService definitionsService;
 
@@ -196,7 +194,7 @@ public class PartitionManagerImpl implements PartitionManager {
 
     public void init() {
         if (!distributed) {
-            msgLog.infoPartitionManagerDisabled();
+            log.infoPartitionManagerDisabled();
         } else {
             cacheManager = IspnCacheManager.getCacheManager();
             partitionCache = cacheManager.getCache("partition");
@@ -215,7 +213,7 @@ public class PartitionManagerImpl implements PartitionManager {
                 log.debug("Initial partition for node: " + currentNode);
             }
             processTopologyChange();
-            msgLog.infoPartitionManagerEnabled();
+            log.infoPartitionManagerEnabled();
         }
     }
 
@@ -257,7 +255,7 @@ public class PartitionManagerImpl implements PartitionManager {
         if (distributed) {
             NotifyData nData = new NotifyData(currentNode, data, Data.class);
             Integer key = nData.hashCode();
-            log.debugf("Sending data [%s]", nData);
+            log.debug("Sending data [{}]", nData);
             dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                     .putAsync(key, nData, LIFESPAN, TimeUnit.MILLISECONDS);
         }
@@ -269,7 +267,7 @@ public class PartitionManagerImpl implements PartitionManager {
         if (distributed) {
             NotifyData nEvent = new NotifyData(currentNode, events, Event.class);
             Integer key = nEvent.hashCode();
-            log.debugf("Sending events [%s]", nEvent);
+            log.debug("Sending events [{}]", nEvent);
             dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                     .putAsync(key, nEvent, LIFESPAN, TimeUnit.MILLISECONDS);
         }
@@ -320,7 +318,7 @@ public class PartitionManagerImpl implements PartitionManager {
                         entries.add(entry);
                     });
                 } catch(Exception e) {
-                    msgLog.errorCannotInitializePartitionManager(e.toString());
+                    log.errorCannotInitializePartitionManager(e.toString());
                 }
             } else {
                 oldPartition.keySet().stream().forEach(e -> {
@@ -563,8 +561,8 @@ public class PartitionManagerImpl implements PartitionManager {
         @CacheEntryCreated
         public void onPartitionModified(CacheEntryCreatedEvent cacheEvent) {
             if (cacheEvent.isPre()) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Discarding pre onPartitionModified(@CacheEntryModified) event");
+                if (log.isDebugEnabled()) {
+                    log.debug("Discarding pre onPartitionModified(@CacheEntryModified) event");
                 }
                 return;
             }
@@ -583,8 +581,8 @@ public class PartitionManagerImpl implements PartitionManager {
         @CacheEntryCreated
         public void onNewNotifyTrigger(CacheEntryCreatedEvent cacheEvent) {
             if (cacheEvent.isPre()) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Discarding pre onNewNotifyTrigger(@CacheEntryCreated) event");
+                if (log.isDebugEnabled()) {
+                    log.debug("Discarding pre onNewNotifyTrigger(@CacheEntryCreated) event");
                 }
                 return;
             }
@@ -600,8 +598,8 @@ public class PartitionManagerImpl implements PartitionManager {
         @CacheEntryModified
         public void onModifiedNotifyTrigger(CacheEntryModifiedEvent cacheEvent) {
             if (cacheEvent.isPre()) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Discarding pre onModifiedNotifyTrigger(@CacheEntryModified) event");
+                if (log.isDebugEnabled()) {
+                    log.debug("Discarding pre onModifiedNotifyTrigger(@CacheEntryModified) event");
                 }
                 return;
             }
@@ -692,8 +690,8 @@ public class PartitionManagerImpl implements PartitionManager {
         @CacheEntryCreated
         public void onNewNotifyData(CacheEntryCreatedEvent cacheEvent) {
             if (cacheEvent.isPre()) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Discarding pre onNewNotifyData(@CacheEntryCreated) event");
+                if (log.isDebugEnabled()) {
+                    log.debug("Discarding pre onNewNotifyData(@CacheEntryCreated) event");
                 }
                 return;
             }
@@ -708,8 +706,8 @@ public class PartitionManagerImpl implements PartitionManager {
         @CacheEntryModified
         public void onModifiedNotifyData(CacheEntryModifiedEvent cacheEvent) {
             if (cacheEvent.isPre()) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Discarding pre onModifiedNotifyData(@CacheEntryModified) event");
+                if (log.isDebugEnabled()) {
+                    log.debug("Discarding pre onModifiedNotifyData(@CacheEntryModified) event");
                 }
                 return;
             }
@@ -734,7 +732,7 @@ public class PartitionManagerImpl implements PartitionManager {
             if (!dataListeners.isEmpty() && notifyData.getFromNode() != currentNode) {
                 if (notifyData.getDataCollection() != null) {
                     dataListeners.stream().forEach(dataListener -> {
-                        log.debugf("processNotifyData [%s]", notifyData);
+                        log.debug("processNotifyData [{}]", notifyData);
                         dataListener.onNewData(notifyData.getDataCollection());
                     });
                 } else if (notifyData.getEventCollection() != null) {

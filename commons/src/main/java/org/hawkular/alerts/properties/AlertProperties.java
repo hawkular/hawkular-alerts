@@ -29,8 +29,7 @@ import org.hawkular.alerts.log.MsgLogger;
  * @author Lucas Ponce
  */
 public class AlertProperties {
-    private static final MsgLogger msgLog = MsgLogger.LOGGER;
-
+    private static final MsgLogger log = MsgLogger.getLogger(AlertProperties.class);
     private static final String ALERTS_CONF = "hawkular-alerts.properties";
     private static Properties alertsProperties = null;
 
@@ -81,7 +80,7 @@ public class AlertProperties {
             alertsProperties = new Properties();
             alertsProperties.load(is);
         } catch (Exception e) {
-            msgLog.warningFileNotFound(ALERTS_CONF);
+            log.warningFileNotFound(ALERTS_CONF);
         }
     }
 }

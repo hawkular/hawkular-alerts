@@ -74,7 +74,6 @@ import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.alerts.engine.exception.NotFoundApplicationException;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.log.MsgLogger;
-import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
@@ -102,8 +101,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private static final String BATCH_SIZE_ENV = "BATCH_SIZE";
     private static final String BATCH_SIZE_DEFAULT = "10";
 
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(CassDefinitionsServiceImpl.class);
+    private final MsgLogger log = MsgLogger.getLogger(CassDefinitionsServiceImpl.class);
 
     // Note, the next two variables hold 'state' only for the duration of a single EJB method. This is
     // a stateless EJB, different method invocations can happen in different bean instances.  The idea here is
@@ -193,7 +191,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             session.execute(insertAction.bind(tenantId, actionDefinition.getActionPlugin(),
                     actionDefinition.getActionId(), JsonUtil.toJson(actionDefinition)));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -264,7 +262,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             insertTags(trigger.getTenantId(), TagType.TRIGGER, trigger.getId(), trigger.getTags());
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -406,7 +404,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             futures.add(session.executeAsync(deleteTrigger.bind(tenantId, triggerId)));
             Futures.allAsList(futures).get();
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -522,7 +520,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             }
 
             if (enabled == existingGroupTrigger.isEnabled()) {
-                log.debugf("Ignoring enable/disable request. Group Trigger %s is already set enabled=%s",
+                log.debug("Ignoring enable/disable request. Group Trigger {} is already set enabled={}",
                         groupTriggerId, enabled);
                 continue;
             }
@@ -565,7 +563,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             }
 
             if (enabled == existingTrigger.isEnabled()) {
-                log.debugf("Ignoring enable/disable request. Trigger %s is already set enabled=%s", triggerId,
+                log.debug("Ignoring enable/disable request. Trigger {} is already set enabled={}", triggerId,
                         enabled);
                 continue;
             }
@@ -591,7 +589,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 try {
                     session.execute(updateTriggerEnabled.bind(enabled, tenantId, triggerId));
                 } catch (Exception e) {
-                    msgLog.errorDatabaseException(e.getMessage());
+                    log.errorDatabaseException(e.getMessage());
                     throw e;
                 }
 
@@ -674,7 +672,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 insertTags(trigger.getTenantId(), TagType.TRIGGER, trigger.getId(), trigger.getTags());
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -773,7 +771,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 selectTriggerActions(trigger);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return trigger;
@@ -862,7 +860,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -925,7 +923,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 triggers.add(trigger);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return triggers;
@@ -1038,7 +1036,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             return triggers;
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -1071,7 +1069,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 }
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return triggers;
@@ -1471,7 +1469,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     dampening.getTriggerMode().name(), dampening.getType().name(), dampening.getEvalTrueSetting(),
                     dampening.getEvalTotalSetting(), dampening.getEvalTimeSetting(), dampening.getDampeningId()));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -1575,7 +1573,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             session.execute(deleteDampeningId.bind(dampening.getTenantId(), dampening.getTriggerId(),
                     dampening.getTriggerMode().name(), dampening.getDampeningId()));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -1663,7 +1661,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     dampening.getEvalTotalSetting(), dampening.getEvalTimeSetting(), dampening.getTenantId(),
                     dampening.getTriggerId(), dampening.getTriggerMode().name(), dampening.getDampeningId()));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -1698,7 +1696,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 dampening = mapDampening(row);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return dampening;
@@ -1731,7 +1729,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             }
             mapDampenings(rsDampenings, dampenings);
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return dampenings;
@@ -1749,7 +1747,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             ResultSet rsDampenings = session.execute(selectDampeningsAll.bind());
             mapDampenings(rsDampenings, dampenings);
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return dampenings;
@@ -1770,7 +1768,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             ResultSet rsDampenings = session.execute(selectDampeningsByTenant.bind(tenantId));
             mapDampenings(rsDampenings, dampenings);
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return dampenings;
@@ -1993,7 +1991,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(updateTriggerDataIdMap.bind(dataIdMap, tenantId, memberTriggerId));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -2297,7 +2295,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             Futures.allAsList(futures).get();
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -2356,7 +2354,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             session.execute(deleteConditionsMode.bind(tenantId, triggerId, triggerMode.name()));
 
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -2408,7 +2406,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 condition = mapCondition(row);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -2442,7 +2440,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             }
             mapConditions(rsConditions, conditions);
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -2461,7 +2459,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             ResultSet rsConditions = session.execute(selectConditionsAll.bind());
             mapConditions(rsConditions, conditions);
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return conditions;
@@ -2482,7 +2480,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             ResultSet rsConditions = session.execute(selectConditionsByTenant.bind(tenantId));
             mapConditions(rsConditions, conditions);
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return conditions;
@@ -2666,7 +2664,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(insertActionPlugin.bind(actionPlugin, properties));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -2688,7 +2686,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             Set<String> properties = defaultProperties.keySet();
             session.execute(insertActionPluginDefaulProperties.bind(actionPlugin, properties, defaultProperties));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -2705,7 +2703,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(deleteActionPlugin.bind(actionPlugin));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -2725,7 +2723,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(updateActionPlugin.bind(properties, actionPlugin));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -2747,7 +2745,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             Set<String> properties = defaultProperties.keySet();
             session.execute(updateDefaultPropertiesActionPlugin.bind(properties, defaultProperties, actionPlugin));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
     }
@@ -2765,7 +2763,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 actionPlugins.add(row.getString("actionPlugin"));
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return actionPlugins;
@@ -2790,7 +2788,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 properties = row.getSet("properties", String.class);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return properties;
@@ -2815,7 +2813,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 defaultProperties = row.getMap("defaultProperties", String.class, String.class);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return defaultProperties;
@@ -2839,7 +2837,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         try {
             session.execute(deleteAction.bind(tenantId, actionPlugin, actionId));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -2885,7 +2883,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             session.execute(updateAction.bind(JsonUtil.toJson(actionDefinition), tenantId,
                     actionDefinition.getActionPlugin(), actionDefinition.getActionId()));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
 
@@ -2915,7 +2913,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 actions.get(tenantId).get(actionPlugin).add(actionId);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return actions;
@@ -2934,7 +2932,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 actionDefinitions.add(JsonUtil.fromJson(row.getString("payload"), ActionDefinition.class));
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return actionDefinitions;
@@ -2962,7 +2960,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 actions.get(actionPlugin).add(actionId);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return actions;
@@ -2997,7 +2995,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 fullTriggers.add(new FullTrigger(t, allDampenings, allConditions));
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return fullTriggers;
@@ -3019,7 +3017,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 actionDefinitions.add(JsonUtil.fromJson(row.getString("payload"), ActionDefinition.class));
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return actionDefinitions;
@@ -3044,7 +3042,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 actions.add(row.getString("actionId"));
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return actions;
@@ -3075,7 +3073,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 actionDefinition = JsonUtil.fromJson(row.getString("payload"), ActionDefinition.class);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return actionDefinition;
@@ -3119,7 +3117,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             definitions.setTriggers(getFullTriggers(tenantId));
             definitions.setActions(getActionDefinitions(tenantId));
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         }
         return definitions;
@@ -3147,7 +3145,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             Collection<Trigger> existingTriggers = selectTriggers(tenantId);
             Map<String, Set<String>> existingActionDefinitions = getActionDefinitionIds(tenantId);
             if (strategy.equals(ImportType.DELETE)) {
-                msgLog.warningDeleteDefinitionsTenant(tenantId);
+                log.warningDeleteDefinitionsTenant(tenantId);
                 for (Trigger t : existingTriggers) {
                     removeTrigger(t);
                 }
@@ -3292,7 +3290,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             imported.setGroupMembersInfo(importedMembersInfo);
             imported.setActions(importedActionDefinitions);
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
             throw e;
         } finally {
             releaseNotifications();

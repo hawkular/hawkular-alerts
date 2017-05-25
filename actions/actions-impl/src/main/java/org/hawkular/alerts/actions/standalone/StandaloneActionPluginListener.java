@@ -18,10 +18,6 @@ package org.hawkular.alerts.actions.standalone;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-
-import javax.naming.InitialContext;
 
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
@@ -30,7 +26,6 @@ import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
 import org.hawkular.alerts.log.MsgLogger;
-import org.jboss.logging.Logger;
 
 /**
  * Main standalone listener for plugins implementation.
@@ -38,8 +33,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class StandaloneActionPluginListener implements ActionListener {
-    private final MsgLogger log = Logger.getMessageLogger(MsgLogger.class,
-            StandaloneActionPluginListener.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(StandaloneActionPluginRegister.class);
 
     private DefinitionsService definitions;
 

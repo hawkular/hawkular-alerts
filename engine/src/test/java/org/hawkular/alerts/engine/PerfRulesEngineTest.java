@@ -35,7 +35,7 @@ import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.service.RulesEngine;
-import org.jboss.logging.Logger;
+import org.hawkular.alerts.log.MsgLogger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -54,7 +54,7 @@ import org.junit.runners.MethodSorters;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PerfRulesEngineTest {
-    private static final Logger log = Logger.getLogger(PerfRulesEngineTest.class);
+    private static final MsgLogger log = MsgLogger.getLogger(PerfRulesEngineTest.class);
 
     RulesEngine rulesEngine = new DroolsRulesEngineImpl();
     List<Alert> alerts = new ArrayList<>();
@@ -63,8 +63,7 @@ public class PerfRulesEngineTest {
 
     @Before
     public void before() {
-        PerfLogger perfLogger = new PerfLogger("PERFLOGGER");
-        rulesEngine.addGlobal("log", perfLogger);
+        rulesEngine.addGlobal("log", log);
         rulesEngine.addGlobal("alerts", alerts);
         rulesEngine.addGlobal("pendingTimeouts", pendingTimeouts);
     }
@@ -617,52 +616,4 @@ public class PerfRulesEngineTest {
          */
         perfMixedLargeConditions("perf023LargeMixedConditions", 5000, 25, 5000, 10);
     }
-
-    public class PerfLogger extends Logger {
-        private static final long serialVersionUID = 1L;
-
-        public PerfLogger(String name) {
-            super(name);
-        }
-
-        @Override
-        protected void doLog(Level level,
-                             String loggerClassName,
-                             Object message,
-                             Object[] parameters,
-                             Throwable thrown) {
-            if (isEnabled(level)) {
-                try {
-                    final String text = parameters == null || parameters.length == 0 ?
-                            String.valueOf(message) : MessageFormat.format(String.valueOf(message), parameters);
-                    log.log(level, text, thrown);
-                } catch (Throwable ignored) {
-                }
-            }
-        }
-
-        @Override
-        protected void doLogf(Level level,
-                              String loggerClassName,
-                              String format,
-                              Object[] parameters,
-                              Throwable thrown) {
-            if (isEnabled(level)) {
-                try {
-                    final String text = parameters == null ? String.format(format) : String.format(format, parameters);
-                    log.log(level, text, thrown);
-                } catch (Throwable ignored) {
-                }
-            }
-        }
-
-        @Override
-        public boolean isEnabled(Level level) {
-            if (level == Level.INFO || level == Level.WARN || level == Level.ERROR || level == Level.FATAL) {
-                return true;
-            }
-            return false;
-        }
-    }
-
 }

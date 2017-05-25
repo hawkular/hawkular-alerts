@@ -39,12 +39,10 @@ import org.hawkular.alerts.netty.RestHandler;
 import org.hawkular.alerts.netty.util.ResponseUtil;
 import org.hawkular.alerts.netty.util.ResponseUtil.BadRequestException;
 import org.hawkular.alerts.netty.util.ResponseUtil.InternalServerException;
-import org.jboss.logging.Logger;
 
 import io.vertx.core.MultiMap;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.BodyHandler;
 
 /**
  * @author Jay Shaughnessy
@@ -52,7 +50,7 @@ import io.vertx.ext.web.handler.BodyHandler;
  */
 @RestEndpoint(path = "/triggers")
 public class TriggersHandler implements RestHandler {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, TriggersHandler.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(TriggersHandler.class);
     private static final String PARAM_KEEP_NON_ORPHANS = "keepNonOrphans";
     private static final String PARAM_KEEP_ORPHANS = "keepOrphans";
     private static final String PARAM_INCLUDE_ORPHANS = "includeOrphans";
@@ -112,7 +110,7 @@ public class TriggersHandler implements RestHandler {
                     try {
                         dampening = fromJson(json, Dampening.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing Dampening json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing Dampening json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
                     dampening.setTenantId(tenantId);
@@ -134,7 +132,7 @@ public class TriggersHandler implements RestHandler {
                         } else {
                             definitionsService.addDampening(tenantId, d);
                         }
-                        log.debugf("Dampening: %s", dampening);
+                        log.debug("Dampening: {}", dampening);
                         future.complete(d);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -154,7 +152,7 @@ public class TriggersHandler implements RestHandler {
                     try {
                         fullTrigger = fromJson(json, FullTrigger.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing FullTrigger json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing FullTrigger json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e);
                     }
                     if (fullTrigger.getTrigger() == null) {
@@ -181,7 +179,7 @@ public class TriggersHandler implements RestHandler {
                     }
                     try {
                         definitionsService.addTrigger(tenantId, trigger);
-                        log.debugf("Trigger: %s", trigger);
+                        log.debug("Trigger: {}", trigger);
                         for (Dampening dampening : fullTrigger.getDampenings()) {
                             dampening.setTenantId(tenantId);
                             dampening.setTriggerId(trigger.getId());
@@ -190,7 +188,7 @@ public class TriggersHandler implements RestHandler {
                                 definitionsService.removeDampening(tenantId, dampening.getDampeningId());
                             }
                             definitionsService.addDampening(tenantId, dampening);
-                            log.debugf("Dampening: %s", dampening);
+                            log.debug("Dampening: {}", dampening);
                         }
                         fullTrigger.getConditions().stream().forEach(c -> {
                             c.setTenantId(tenantId);
@@ -201,14 +199,14 @@ public class TriggersHandler implements RestHandler {
                                 .collect(Collectors.toList());
                         if (firingConditions != null && !firingConditions.isEmpty()) {
                             definitionsService.setConditions(tenantId, trigger.getId(), Mode.FIRING, firingConditions);
-                            log.debugf("Conditions: %s", firingConditions);
+                            log.debug("Conditions: {}", firingConditions);
                         }
                         List<Condition> autoResolveConditions = fullTrigger.getConditions().stream()
                                 .filter(c -> c.getTriggerMode() == Mode.AUTORESOLVE)
                                 .collect(Collectors.toList());
                         if (autoResolveConditions != null && !autoResolveConditions.isEmpty()) {
                             definitionsService.setConditions(tenantId, trigger.getId(), Mode.AUTORESOLVE, autoResolveConditions);
-                            log.debugf("Conditions: %s", autoResolveConditions);
+                            log.debug("Conditions: {}", autoResolveConditions);
                         }
                         future.complete(fullTrigger);
                     } catch (IllegalArgumentException e) {
@@ -229,7 +227,7 @@ public class TriggersHandler implements RestHandler {
                     try {
                         groupMember = fromJson(json, GroupMemberInfo.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing GroupMemberInfo json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing GroupMemberInfo json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
                     String groupId = groupMember.getGroupId();
@@ -246,7 +244,7 @@ public class TriggersHandler implements RestHandler {
                                 groupMember.getMemberContext(),
                                 groupMember.getMemberTags(),
                                 groupMember.getDataIdMap());
-                        log.debugf("Child Trigger: %s", child);
+                        log.debug("Child Trigger: {}", child);
                         future.complete(child);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -266,7 +264,7 @@ public class TriggersHandler implements RestHandler {
                     try {
                         trigger = fromJson(json, Trigger.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing Trigger json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing Trigger json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e);
                     }
                     if (isEmpty(trigger.getId())) {
@@ -292,7 +290,7 @@ public class TriggersHandler implements RestHandler {
                         } else {
                             definitionsService.addTrigger(tenantId, trigger);
                         }
-                        log.debugf("Trigger: %s", trigger);
+                        log.debug("Trigger: {}", trigger);
                         future.complete(trigger);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -317,7 +315,7 @@ public class TriggersHandler implements RestHandler {
                             } else {
                                 definitionsService.removeDampening(tenantId, dampeningId);
                             }
-                            log.debugf("DampeningId: %s", dampeningId);
+                            log.debug("DampeningId: {}", dampeningId);
                             future.complete(found);
                             return;
                         }
@@ -347,7 +345,7 @@ public class TriggersHandler implements RestHandler {
                         }
                         definitionsService.removeGroupTrigger(tenantId, groupId, keepNonOrphans, keepOrphans);
                         if (log.isDebugEnabled()) {
-                            log.debugf("Remove Group Trigger: %s / %s", tenantId, groupId);
+                            log.debug("Remove Group Trigger: {} / {}", tenantId, groupId);
                         }
                         future.complete();
                     } catch (NotFoundException e) {
@@ -368,7 +366,7 @@ public class TriggersHandler implements RestHandler {
                     String triggerId = routing.request().getParam("triggerId");
                     try {
                         definitionsService.removeTrigger(tenantId, triggerId);
-                        log.debugf("TriggerId: %s", triggerId);
+                        log.debug("TriggerId: {}", triggerId);
                         future.complete();
                     } catch (NotFoundException e) {
                         throw new ResponseUtil.NotFoundException(e.getMessage());
@@ -392,7 +390,7 @@ public class TriggersHandler implements RestHandler {
                             includeOrphans = Boolean.valueOf(routing.request().params().get(PARAM_INCLUDE_ORPHANS));
                         }
                         Collection<Trigger> members = definitionsService.getMemberTriggers(tenantId, groupId, includeOrphans);
-                        log.debugf("Member Triggers: %s", members);
+                        log.debug("Member Triggers: {}", members);
                         future.complete(members);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -411,7 +409,7 @@ public class TriggersHandler implements RestHandler {
                         Pager pager = extractPaging(routing.request().params());
                         TriggersCriteria criteria = buildCriteria(routing.request().params());
                         Page<Trigger> triggerPage = definitionsService.getTriggers(tenantId, criteria, pager);
-                        log.debugf("Triggers: %s", triggerPage);
+                        log.debug("Triggers: {}", triggerPage);
                         future.complete(triggerPage);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -461,7 +459,7 @@ public class TriggersHandler implements RestHandler {
                     if (found == null) {
                         throw new ResponseUtil.NotFoundException("triggerId: " + triggerId + " not found");
                     }
-                    log.debugf("Trigger: %s", found);
+                    log.debug("Trigger: {}", found);
                     if (isFullTrigger) {
                         try {
                             List<Dampening> dampenings = new ArrayList<>(definitionsService.getTriggerDampenings(tenantId, found.getId(), null));
@@ -487,7 +485,7 @@ public class TriggersHandler implements RestHandler {
                     String triggerId = routing.request().getParam("triggerId");
                     try {
                         Collection<Condition> conditions = definitionsService.getTriggerConditions(tenantId, triggerId, null);
-                        log.debugf("Conditions: %s", conditions);
+                        log.debug("Conditions: {}", conditions);
                         future.complete(conditions);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -531,7 +529,7 @@ public class TriggersHandler implements RestHandler {
                     try {
                         trigger = fromJson(json, Trigger.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing Trigger json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing Trigger json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString(), e);
                     }
                     if (trigger != null && !isEmpty(triggerId)) {
@@ -546,7 +544,7 @@ public class TriggersHandler implements RestHandler {
                         } else {
                             definitionsService.updateTrigger(tenantId, trigger);
                         }
-                        log.debugf("Trigger: %s", trigger);
+                        log.debug("Trigger: {}", trigger);
                         future.complete();
                     } catch (NotFoundException e) {
                         throw new NotFoundException(e.getMessage());
@@ -566,7 +564,7 @@ public class TriggersHandler implements RestHandler {
                     String memberId = routing.request().getParam("memberId");
                     try {
                         Trigger child = definitionsService.orphanMemberTrigger(tenantId, memberId);
-                        log.debugf("Orphan Member Trigger: %s", child);
+                        log.debug("Orphan Member Trigger: {}", child);
                         future.complete();
                     } catch (NotFoundException e) {
                         throw new ResponseUtil.NotFoundException(e.getMessage());
@@ -590,7 +588,7 @@ public class TriggersHandler implements RestHandler {
                     try {
                         dampening = fromJson(json, Dampening.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing Dampening json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing Dampening json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
                     Dampening found;
@@ -606,7 +604,7 @@ public class TriggersHandler implements RestHandler {
                     try {
                         dampening.setTriggerId(triggerId);
                         Dampening d = getCleanDampening(dampening);
-                        log.debugf("Dampening: %s", d);
+                        log.debug("Dampening: {}", d);
                         if (isGroup) {
                             definitionsService.updateGroupDampening(tenantId, d);
                         } else {
@@ -632,7 +630,7 @@ public class TriggersHandler implements RestHandler {
                     try {
                         unorphanMemberInfo = fromJson(json, UnorphanMemberInfo.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing UnorphanMemberInfo json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing UnorphanMemberInfo json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
                     if (!checkTags(unorphanMemberInfo)) {
@@ -643,7 +641,7 @@ public class TriggersHandler implements RestHandler {
                                 unorphanMemberInfo.getMemberContext(),
                                 unorphanMemberInfo.getMemberTags(),
                                 unorphanMemberInfo.getDataIdMap());
-                        log.debugf("Member Trigger: %s",child);
+                        log.debug("Member Trigger: {}",child);
                         future.complete();
                     } catch (NotFoundException e) {
                         throw new ResponseUtil.NotFoundException(e.getMessage());
@@ -667,7 +665,7 @@ public class TriggersHandler implements RestHandler {
                     try {
                         conditions = collectionFromJson(json, Condition.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing Condition json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing Condition json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
                     Collection<Condition> updatedConditions;
@@ -692,7 +690,7 @@ public class TriggersHandler implements RestHandler {
                             log.debug(e.getMessage(), e);
                             throw new InternalServerException(e.toString());
                         }
-                        log.debugf("Conditions: %s", updatedConditions);
+                        log.debug("Conditions: {}", updatedConditions);
                         future.complete(updatedConditions);
                         return;
                     }
@@ -731,7 +729,7 @@ public class TriggersHandler implements RestHandler {
                     try {
                         groupConditionsInfo = fromJson(json, GroupConditionsInfo.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing GroupConditionsInfo json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing GroupConditionsInfo json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
                     Collection<Condition> updatedConditions = new HashSet<>();
@@ -768,7 +766,7 @@ public class TriggersHandler implements RestHandler {
                             log.debug(e.getMessage(), e);
                             throw new InternalServerException(e.toString());
                         }
-                        log.debugf("Conditions: %s", updatedConditions);
+                        log.debug("Conditions: {}", updatedConditions);
                         future.complete(updatedConditions);
                         return;
                     }
@@ -786,7 +784,7 @@ public class TriggersHandler implements RestHandler {
                         updatedConditions = definitionsService.setGroupConditions(tenantId, groupId, mode,
                                 groupConditionsInfo.getConditions(),
                                 groupConditionsInfo.getDataIdMemberMap());
-                        log.debugf("Conditions: %s", updatedConditions);
+                        log.debug("Conditions: {}", updatedConditions);
                         future.complete(updatedConditions);
                     } catch (NotFoundException e) {
                         throw new ResponseUtil.NotFoundException(e.getMessage());
@@ -863,7 +861,7 @@ public class TriggersHandler implements RestHandler {
                     tagsMap.put(fields[0], fields[1]);
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debugf("Invalid Tag Criteria %s", Arrays.toString(fields));
+                        log.debug("Invalid Tag Criteria {}", Arrays.toString(fields));
                     }
                     throw new IllegalArgumentException( "Invalid Tag Criteria " + Arrays.toString(fields) );
                 }

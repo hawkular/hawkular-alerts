@@ -20,7 +20,6 @@ import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.log.MsgLogger;
-import org.jboss.logging.Logger;
 
 /**
  * A Trigger can define a list of Actions that will be executed on Event/Alert generation.
@@ -34,8 +33,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class ActionsValidator {
-    private static final MsgLogger msgLog = MsgLogger.LOGGER;
-    private static final Logger log = Logger.getLogger(ActionsValidator.class);
+    private static final MsgLogger log = MsgLogger.getLogger(ActionsValidator.class);
     /**
      * Validate if an Event should generate an Action based on the constraints defined on a TriggerAction.
      *
@@ -63,7 +61,7 @@ public class ActionsValidator {
                 return triggerAction.getCalendar().isSatisfiedBy(event.getCtime());
             } catch (Exception e) {
                 log.debug(e.getMessage(), e);
-                msgLog.errorCannotValidateAction(e.getMessage());
+                log.errorCannotValidateAction(e.getMessage());
             }
         }
         return true;

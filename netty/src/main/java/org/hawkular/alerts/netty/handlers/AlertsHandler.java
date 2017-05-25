@@ -34,12 +34,10 @@ import org.hawkular.alerts.netty.handlers.AlertsWatcher.AlertsListener;
 import org.hawkular.alerts.netty.util.ResponseUtil.BadRequestException;
 import org.hawkular.alerts.netty.util.ResponseUtil.InternalServerException;
 import org.hawkular.alerts.netty.util.ResponseUtil.NotFoundException;
-import org.jboss.logging.Logger;
 
 import io.vertx.core.MultiMap;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.BodyHandler;
 
 /**
  * @author Jay Shaughnessy
@@ -47,7 +45,7 @@ import io.vertx.ext.web.handler.BodyHandler;
  */
 @RestEndpoint(path = "/")
 public class AlertsHandler implements RestHandler {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, AlertsHandler.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(AlertsHandler.class);
     private static final String PARAM_START_TIME = "startTime";
     private static final String PARAM_END_TIME = "endTime";
     private static final String PARAM_ALERT_IDS = "alertIds";
@@ -103,7 +101,7 @@ public class AlertsHandler implements RestHandler {
                         Pager pager = extractPaging(routing.request().params());
                         AlertsCriteria criteria = buildCriteria(routing.request().params());
                         Page<Alert> alertPage = alertsService.getAlerts(tenantId, criteria, pager);
-                        log.debugf("Alerts: %s", alertPage);
+                        log.debug("Alerts: {}", alertPage);
                         future.complete(alertPage);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -131,10 +129,10 @@ public class AlertsHandler implements RestHandler {
         String channelId = routing.request().connection().toString();
         AlertsWatcher watcher = new AlertsWatcher(channelId, listener, Collections.singleton(tenantId), criteria, watchInterval);
         watcher.start();
-        log.infof("AlertsWatcher [%s] created", channelId);
+        log.info("AlertsWatcher [{}] created", channelId);
         routing.response().closeHandler(e -> {
             watcher.dispose();
-            log.infof("AlertsWatcher [%s] finished", channelId);
+            log.info("AlertsWatcher [{}] finished", channelId);
         });
     }
 
@@ -157,7 +155,7 @@ public class AlertsHandler implements RestHandler {
                         List<String> alertIdList = Arrays.asList(alertIds.split(","));
                         Map<String, String> tagsMap = parseTags(tags);
                         alertsService.addAlertTags(tenantId, alertIdList, tagsMap);
-                        log.debugf("Tagged alertIds:%s, %s", alertIdList, tagsMap);
+                        log.debug("Tagged alertIds:{}, {}", alertIdList, tagsMap);
                         future.complete(tags);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -186,7 +184,7 @@ public class AlertsHandler implements RestHandler {
                         Collection<String> ids = Arrays.asList(alertIds.split(","));
                         Collection<String> tags = Arrays.asList(tagNames.split(","));
                         alertsService.removeAlertTags(tenantId, ids, tags);
-                        log.debugf("Untagged alertIds:%s, %s", ids, tags);
+                        log.debug("Untagged alertIds:{}, {}", ids, tags);
                         future.complete(tags);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -217,7 +215,7 @@ public class AlertsHandler implements RestHandler {
                     }
                     try {
                         alertsService.ackAlerts(tenantId, Arrays.asList(alertIds.split(",")), ackBy, ackNotes);
-                        log.debugf("Acked alertIds: %s", alertIds);
+                        log.debug("Acked alertIds: {}", alertIds);
                         future.complete(alertIds);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -237,7 +235,7 @@ public class AlertsHandler implements RestHandler {
                     int numDeleted;
                     try {
                         numDeleted = alertsService.deleteAlerts(tenantId, criteria);
-                        log.debugf("Alerts deleted: %s", numDeleted);
+                        log.debug("Alerts deleted: {}", numDeleted);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
                     } catch (Exception e) {
@@ -278,7 +276,7 @@ public class AlertsHandler implements RestHandler {
                     }
                     try {
                         alertsService.resolveAlerts(tenantId, Arrays.asList(alertIds.split(",")), resolvedBy, resolvedNotes, null);
-                        log.debugf("Resolved alertIds: ", alertIds);
+                        log.debug("Resolved alertIds: ", alertIds);
                         future.complete(alertIds);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -297,7 +295,7 @@ public class AlertsHandler implements RestHandler {
                     try {
                         datums = collectionFromJson(json, Data.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing Datums json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing Datums json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
                     if (isEmpty(datums)) {
@@ -306,7 +304,7 @@ public class AlertsHandler implements RestHandler {
                     try {
                         datums.stream().forEach(d -> d.setTenantId(tenantId));
                         alertsService.sendData(datums);
-                        log.debugf("Datums: %s", datums);
+                        log.debug("Datums: {}", datums);
                         future.complete();
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -334,7 +332,7 @@ public class AlertsHandler implements RestHandler {
                     }
                     try {
                         alertsService.ackAlerts(tenantId, Arrays.asList(alertId), ackBy, ackNotes);
-                        log.debugf("Ack AlertId: ", alertId);
+                        log.debug("Ack AlertId: ", alertId);
                         future.complete(ackBy);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -363,7 +361,7 @@ public class AlertsHandler implements RestHandler {
                     }
                     try {
                         alertsService.addNote(tenantId, alertId, user, text);
-                        log.debugf("Noted AlertId: ", alertId);
+                        log.debug("Noted AlertId: ", alertId);
                         future.complete(user);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -386,7 +384,7 @@ public class AlertsHandler implements RestHandler {
                     Alert found;
                     try {
                         found = alertsService.getAlert(tenantId, alertId, thin);
-                        log.debugf("Alert: ", found);
+                        log.debug("Alert: ", found);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
                     } catch (Exception e) {

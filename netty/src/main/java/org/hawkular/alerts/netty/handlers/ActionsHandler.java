@@ -26,12 +26,10 @@ import org.hawkular.alerts.netty.RestHandler;
 import org.hawkular.alerts.netty.util.ResponseUtil.BadRequestException;
 import org.hawkular.alerts.netty.util.ResponseUtil.InternalServerException;
 import org.hawkular.alerts.netty.util.ResponseUtil.NotFoundException;
-import org.jboss.logging.Logger;
 
 import io.vertx.core.MultiMap;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.BodyHandler;
 
 /**
  * @author Jay Shaughnessy
@@ -39,7 +37,7 @@ import io.vertx.ext.web.handler.BodyHandler;
  */
 @RestEndpoint(path = "/actions")
 public class ActionsHandler implements RestHandler {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, ActionsHandler.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(ActionsHandler.class);
     private static final String PARAM_START_TIME = "startTime";
     private static final String PARAM_END_TIME = "endTime";
     private static final String PARAM_ACTION_PLUGINS = "actionPlugins";
@@ -75,10 +73,10 @@ public class ActionsHandler implements RestHandler {
                     String tenantId = checkTenant(routing);
                     try {
                         Map<String, Set<String>> actions = definitionsService.getActionDefinitionIds(tenantId);
-                        log.debugf("Actions: %s", actions);
+                        log.debug("Actions: {}", actions);
                         future.complete(actions);
                     } catch (Exception e) {
-                        log.errorf(e, "Error querying actions ids for tenantId %s. Reason: %s", tenantId, e.toString());
+                        log.error("Error querying actions ids for tenantId {}. Reason: {}", tenantId, e.toString());
                         future.fail(new InternalServerException(e.toString()));
                     }
                 }, res -> result(routing, res));
@@ -93,7 +91,7 @@ public class ActionsHandler implements RestHandler {
                     try {
                         actionDefinition = fromJson(json.toString(), ActionDefinition.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing ActionDefinition json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing ActionDefinition json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
                     if (actionDefinition == null) {
@@ -124,7 +122,7 @@ public class ActionsHandler implements RestHandler {
                     }
                     try {
                         definitionsService.addActionDefinition(actionDefinition.getTenantId(), actionDefinition);
-                        log.debugf("ActionDefinition: %s", actionDefinition);
+                        log.debug("ActionDefinition: {}", actionDefinition);
                         future.complete(actionDefinition);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -144,7 +142,7 @@ public class ActionsHandler implements RestHandler {
                     try {
                         actionDefinition = fromJson(json, ActionDefinition.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing ActionDefinition json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing ActionDefinition json: {}. Reason: {}", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
                     if (actionDefinition == null) {
@@ -175,7 +173,7 @@ public class ActionsHandler implements RestHandler {
                     }
                     try {
                         definitionsService.updateActionDefinition(actionDefinition.getTenantId(), actionDefinition);
-                        log.debugf("ActionDefinition: %s", actionDefinition);
+                        log.debug("ActionDefinition: {}", actionDefinition);
                         future.complete(actionDefinition);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -194,7 +192,7 @@ public class ActionsHandler implements RestHandler {
                         Pager pager = extractPaging(routing.request().params());
                         ActionsCriteria criteria = buildCriteria(routing.request().params());
                         Page<Action> actionPage = actionsService.getActions(tenantId, criteria, pager);
-                        log.debugf("Actions: %s", actionPage);
+                        log.debug("Actions: {}", actionPage);
                         future.complete(actionPage);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -212,7 +210,7 @@ public class ActionsHandler implements RestHandler {
                     try {
                         ActionsCriteria criteria = buildCriteria(routing.request().params());
                         int numDeleted = actionsService.deleteActions(tenantId, criteria);
-                        log.debugf("Actions deleted: %s", numDeleted);
+                        log.debug("Actions deleted: {}", numDeleted);
                         Map<String, String> deleted = new HashMap<>();
                         deleted.put("deleted", String.valueOf(numDeleted));
                         future.complete(deleted);
@@ -232,10 +230,10 @@ public class ActionsHandler implements RestHandler {
                     String actionPlugin = routing.request().getParam("actionPlugin");
                     try {
                         Collection<String> actions = definitionsService.getActionDefinitionIds(tenantId, actionPlugin);
-                        log.debugf("Actions: %s", actions);
+                        log.debug("Actions: {}", actions);
                         future.complete(actions);
                     } catch (Exception e) {
-                        log.errorf(e, "Error querying actions ids for tenantId %s and actionPlugin %s. Reason: %s", tenantId, actionPlugin, e.toString());
+                        log.error("Error querying actions ids for tenantId {} and actionPlugin {}. Reason: {}", tenantId, actionPlugin, e.toString());
                         throw new InternalServerException(e.toString());
                     }
                 }, res -> result(routing, res));
@@ -250,9 +248,9 @@ public class ActionsHandler implements RestHandler {
                     ActionDefinition actionDefinition;
                     try {
                         actionDefinition = definitionsService.getActionDefinition(tenantId, actionPlugin, actionId);
-                        log.debugf("ActionDefinition: %s", actionDefinition);
+                        log.debug("ActionDefinition: {}", actionDefinition);
                     } catch (Exception e) {
-                        log.errorf("Error querying action definition for tenantId %s actionPlugin %s and actionId %s", tenantId, actionPlugin, actionId);
+                        log.error("Error querying action definition for tenantId {} actionPlugin {} and actionId {}", tenantId, actionPlugin, actionId);
                         throw new InternalServerException(e.toString());
                     }
                     if (actionDefinition == null) {
@@ -280,7 +278,7 @@ public class ActionsHandler implements RestHandler {
                     }
                     try {
                         definitionsService.removeActionDefinition(tenantId, actionPlugin, actionId);
-                        log.debugf("ActionPlugin: %s ActionId: %s", actionPlugin, actionId);
+                        log.debug("ActionPlugin: {} ActionId: {}", actionPlugin, actionId);
                         future.complete(found);
                     } catch (Exception e) {
                         log.debug(e.getMessage(), e);

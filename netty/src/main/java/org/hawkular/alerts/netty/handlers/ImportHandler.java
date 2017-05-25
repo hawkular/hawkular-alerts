@@ -14,11 +14,9 @@ import org.hawkular.alerts.netty.RestHandler;
 import org.hawkular.alerts.netty.util.ResponseUtil;
 import org.hawkular.alerts.netty.util.ResponseUtil.BadRequestException;
 import org.hawkular.alerts.netty.util.ResponseUtil.InternalServerException;
-import org.jboss.logging.Logger;
 
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.BodyHandler;
 
 /**
  * @author Jay Shaughnessy
@@ -26,7 +24,7 @@ import io.vertx.ext.web.handler.BodyHandler;
  */
 @RestEndpoint(path = "/import")
 public class ImportHandler implements RestHandler {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, ImportHandler.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(ImportHandler.class);
 
     DefinitionsService definitionsService;
 
@@ -50,7 +48,7 @@ public class ImportHandler implements RestHandler {
                     try {
                         definitions = fromJson(json, Definitions.class);
                     } catch (Exception e) {
-                        log.errorf(e, "Error parsing Definitions json: %s. Reason: %s", json, e.toString());
+                        log.error("Error parsing Definitions json: {}. Reason: {}", json, e.toString());
                         throw new ResponseUtil.NotFoundException(e.toString());
                     }
                     try {

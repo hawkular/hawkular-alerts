@@ -60,7 +60,7 @@ public class DistributionTest {
     }
 
     public static void print(String s) {
-        logger.info(s);
+        logger.debug(s);
     }
 
     @Test

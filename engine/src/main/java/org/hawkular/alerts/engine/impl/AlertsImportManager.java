@@ -22,7 +22,7 @@ import java.util.List;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.model.trigger.FullTrigger;
-import org.jboss.logging.Logger;
+import org.hawkular.alerts.log.MsgLogger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -33,7 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author Lucas Ponce
  */
 public class AlertsImportManager {
-    private static final Logger log = Logger.getLogger(AlertsImportManager.class);
+    private static final MsgLogger log = MsgLogger.getLogger(AlertsImportManager.class);
     private ObjectMapper objectMapper = new ObjectMapper();
     private Definitions definitions;
 

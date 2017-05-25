@@ -2,10 +2,10 @@ package org.hawkular.alerts.cache;
 
 import java.io.IOException;
 
+import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.properties.AlertProperties;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.jboss.logging.Logger;
 
 /**
  * Load the DefaultCacheManager from infinispan
@@ -14,7 +14,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class IspnCacheManager {
-    private static final Logger log = Logger.getLogger(IspnCacheManager.class);
+    private static final MsgLogger log = MsgLogger.getLogger(IspnCacheManager.class);
     private static final String ISPN_CONFIG_DISTRIBUTED = "/alerting-distributed.xml";
     private static final String ISPN_CONFIG_LOCAL = "/alerting-local.xml";
     private static final String ALERTS_DISTRIBUTED = "hawkular-alerts.distributed";

@@ -38,7 +38,7 @@ import org.hawkular.alerts.api.services.DistributedEvent;
 import org.hawkular.alerts.api.services.EventExtension;
 import org.hawkular.alerts.api.services.ExtensionsService;
 import org.hawkular.alerts.api.services.PropertiesService;
-import org.jboss.logging.Logger;
+import org.hawkular.alerts.log.MsgLogger;
 
 /**
  * This EventExtension is responsible of the following tasks:
@@ -55,7 +55,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class EventsAggregationExtension implements EventExtension {
-    private final Logger log = Logger.getLogger(EventsAggregationExtension.class);
+    private final MsgLogger log = MsgLogger.getLogger(EventsAggregationExtension.class);
 
     private static final String ENGINE_EXTENSIONS = "hawkular-alerts.engine-extensions";
     private static final String ENGINE_EXTENSIONS_ENV = "ENGINE_EXTENSIONS";
@@ -193,14 +193,14 @@ public class EventsAggregationExtension implements EventExtension {
                             Trigger trigger = definitions.getTrigger(distEvent.getTenantId(), distEvent.getTriggerId());
                             if (trigger != null && trigger.getTags().containsKey(TAG_NAME)
                                     && trigger.getTags().get(TAG_NAME).equals(TAG_VALUE)) {
-                                log.infof("Found [%s]", trigger.getName());
+                                log.info("Found [{}]", trigger.getName());
                                 Collection<Condition> conditions = null;
                                 List<Condition> activeConditions = new ArrayList<>();
                                 try {
                                     if (!trigger.isGroup()) {
                                         conditions = definitions.getTriggerConditions(trigger.getTenantId(),
                                                 trigger.getId(), null);
-                                        log.infof("Checking [%s] Conditions for enabled trigger [%s]!",
+                                        log.info("Checking [{}] Conditions for enabled trigger [{}]!",
                                                 conditions.size(), trigger.getName());
                                     }
                                 } catch (Exception e) {

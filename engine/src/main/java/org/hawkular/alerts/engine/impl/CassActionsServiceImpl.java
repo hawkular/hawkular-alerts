@@ -46,7 +46,6 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.cache.ActionsCacheManager;
 import org.hawkular.alerts.engine.util.ActionsValidator;
 import org.hawkular.alerts.log.MsgLogger;
-import org.jboss.logging.Logger;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
@@ -63,8 +62,7 @@ import com.google.common.util.concurrent.Futures;
  * @author Lucas Ponce
  */
 public class CassActionsServiceImpl implements ActionsService {
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(CassActionsServiceImpl.class);
+    private final MsgLogger log = MsgLogger.getLogger(CassActionsServiceImpl.class);
 
     private static final String WAITING_RESULT = "WAITING";
     private static final String UNKNOWN_RESULT = "UNKNOWN";
@@ -164,7 +162,7 @@ public class CassActionsServiceImpl implements ActionsService {
                 }
             } catch (Exception e) {
                 log.debug(e.getMessage(), e);
-                msgLog.errorCannotUpdateAction(e.getMessage());
+                log.errorCannotUpdateAction(e.getMessage());
             }
         });
     }
@@ -203,7 +201,7 @@ public class CassActionsServiceImpl implements ActionsService {
                 }
             } catch (Exception e) {
                 log.debug(e.getMessage(), e);
-                msgLog.errorCannotUpdateAction(e.getMessage());
+                log.errorCannotUpdateAction(e.getMessage());
             }
         });
     }
@@ -258,7 +256,7 @@ public class CassActionsServiceImpl implements ActionsService {
 
             Futures.allAsList(futures).get();
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
         }
     }
 
@@ -275,7 +273,7 @@ public class CassActionsServiceImpl implements ActionsService {
                 actionHistory = JsonUtil.fromJson(row.getString("payload"), Action.class);
             }
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
         }
         return actionHistory;
     }
@@ -313,14 +311,14 @@ public class CassActionsServiceImpl implements ActionsService {
 
             Futures.allAsList(futures).get();
         } catch (Exception e) {
-            msgLog.errorDatabaseException(e.getMessage());
+            log.errorDatabaseException(e.getMessage());
         }
     }
 
     @Override
     public void addListener(ActionListener listener) {
         alertsContext.registerActionListener(listener);
-        msgLog.infoActionListenerRegistered(listener.toString());
+        log.infoActionListenerRegistered(listener.toString());
     }
 
     @Override

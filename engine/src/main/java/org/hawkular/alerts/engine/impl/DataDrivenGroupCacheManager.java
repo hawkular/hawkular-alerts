@@ -30,8 +30,8 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerType;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.properties.AlertProperties;
-import org.jboss.logging.Logger;
 
 /**
  * A helper class to keep track of DataDrivenGroup
@@ -40,7 +40,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class DataDrivenGroupCacheManager {
-    private final Logger log = Logger.getLogger(DataDrivenGroupCacheManager.class);
+    private final MsgLogger log = MsgLogger.getLogger(DataDrivenGroupCacheManager.class);
 
     private static final String DATA_DRIVEN_TRIGGERS_ENABLED = "hawkular-alerts.data-driven-triggers-enabled";
     private static final String DATA_DRIVEN_TRIGGERS_ENABLED_DEFAULT = "true";
@@ -67,7 +67,7 @@ public class DataDrivenGroupCacheManager {
         dataDrivenTriggersEnabled = new Boolean(AlertProperties.getProperty(DATA_DRIVEN_TRIGGERS_ENABLED,
                 DATA_DRIVEN_TRIGGERS_ENABLED_DEFAULT));
 
-        log.infof("Data-driven Group Triggers enabled: %s", dataDrivenTriggersEnabled);
+        log.info("Data-driven Group Triggers enabled: {}", dataDrivenTriggersEnabled);
 
         if (dataDrivenTriggersEnabled) {
 
@@ -112,7 +112,7 @@ public class DataDrivenGroupCacheManager {
                     }
                 }
 
-                log.debugf("Updating [%d] data-driven triggers out of [%d] total triggers...", ddGroupTriggers.size(),
+                log.debug("Updating [%d] data-driven triggers out of [%d] total triggers...", ddGroupTriggers.size(),
                         allTriggers.size());
 
                 for (Trigger groupTrigger : ddGroupTriggers) {
@@ -150,7 +150,7 @@ public class DataDrivenGroupCacheManager {
             log.error("FAILED to updateCache. Unable to generate data-driven member triggers!", e);
             sourcesMap = new HashMap<>();
         } finally {
-            log.debugf("Cache updates complete. sourceMap: %s", sourcesMap);
+            log.debug("Cache updates complete. sourceMap: {}", sourcesMap);
             updating = false;
         }
     }

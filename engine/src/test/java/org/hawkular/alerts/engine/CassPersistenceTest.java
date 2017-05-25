@@ -32,14 +32,13 @@ import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.engine.impl.CassCluster;
+import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.commons.cassandra.CassandraYaml;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.Session;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +51,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class CassPersistenceTest extends PersistenceTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(CassPersistenceTest.class);
+    private static final MsgLogger logger = MsgLogger.getLogger(CassPersistenceTest.class);
     private static ObjectMapper objectMapper;
 
     static EmbeddedCassandraService embeddedCassandra;

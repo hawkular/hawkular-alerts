@@ -25,7 +25,6 @@ import org.hawkular.alerts.netty.RestEndpoint;
 import org.hawkular.alerts.netty.RestHandler;
 import org.hawkular.alerts.netty.util.ResponseUtil.BadRequestException;
 import org.hawkular.alerts.netty.util.ResponseUtil.InternalServerException;
-import org.jboss.logging.Logger;
 
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -36,7 +35,7 @@ import io.vertx.ext.web.RoutingContext;
  */
 @RestEndpoint(path = "/admin")
 public class CrossTenantHandler implements RestHandler {
-    private static final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, CrossTenantHandler.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(CrossTenantHandler.class);
     private static final String PARAM_WATCH_INTERVAL = "watchInterval";
 
     AlertsService alertsService;
@@ -63,7 +62,7 @@ public class CrossTenantHandler implements RestHandler {
                         Pager pager = extractPaging(routing.request().params());
                         AlertsCriteria criteria = AlertsHandler.buildCriteria(routing.request().params());
                         Page<Alert> alertPage = alertsService.getAlerts(tenantIds, criteria, pager);
-                        log.debugf("Alerts: %s", alertPage);
+                        log.debug("Alerts: {}", alertPage);
                         future.complete(alertPage);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -83,7 +82,7 @@ public class CrossTenantHandler implements RestHandler {
                         Pager pager = extractPaging(routing.request().params());
                         EventsCriteria criteria = EventsHandler.buildCriteria(routing.request().params());
                         Page<Event> eventPage = alertsService.getEvents(tenantIds, criteria, pager);
-                        log.debugf("Events: %s", eventPage);
+                        log.debug("Events: {}", eventPage);
                         future.complete(eventPage);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
@@ -112,10 +111,10 @@ public class CrossTenantHandler implements RestHandler {
         String channelId = routing.request().connection().toString();
         AlertsWatcher watcher = new AlertsWatcher(channelId, listener, tenantIds, criteria, watchInterval);
         watcher.start();
-        log.infof("AlertsWatcher [%s] created", channelId);
+        log.info("AlertsWatcher [{}] created", channelId);
         routing.response().closeHandler(e -> {
             watcher.dispose();
-            log.infof("AlertsWatcher [%s] finished", channelId);
+            log.info("AlertsWatcher [{}] finished", channelId);
         });
     }
 
@@ -137,10 +136,10 @@ public class CrossTenantHandler implements RestHandler {
         String channelId = routing.request().connection().toString();
         EventsWatcher watcher = new EventsWatcher(channelId, listener, tenantIds, criteria, watchInterval);
         watcher.start();
-        log.infof("EventsWatcher [%s] created", channelId);
+        log.info("EventsWatcher [{}] created", channelId);
         routing.response().closeHandler(e -> {
             watcher.dispose();
-            log.infof("EventsWatcher [%s] finished", channelId);
+            log.info("EventsWatcher [{}] finished", channelId);
         });
     }
 }

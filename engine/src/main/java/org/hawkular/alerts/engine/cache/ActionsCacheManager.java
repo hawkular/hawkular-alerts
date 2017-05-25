@@ -29,7 +29,6 @@ import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.log.MsgLogger;
 import org.infinispan.Cache;
-import org.jboss.logging.Logger;
 
 /**
  * It manages the cache of global actions.
@@ -38,8 +37,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class ActionsCacheManager {
-    private final Logger log = Logger.getLogger(ActionsCacheManager.class);
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final MsgLogger log = MsgLogger.getLogger(ActionsCacheManager.class);
 
     DefinitionsService definitions;
 
@@ -54,7 +52,7 @@ public class ActionsCacheManager {
     }
 
     public void init() {
-        msgLog.infoInitActionsCache();
+        log.infoInitActionsCache();
 
         globalActionsCache.clear();
 

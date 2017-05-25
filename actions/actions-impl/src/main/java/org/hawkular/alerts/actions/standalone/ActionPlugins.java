@@ -32,7 +32,6 @@ import org.hawkular.alerts.actions.api.Sender;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
 import org.hawkular.alerts.log.MsgLogger;
-import org.jboss.logging.Logger;
 
 /**
  * Helper class to find the classes annotated with ActionPlugin and instantiate them.
@@ -40,7 +39,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class ActionPlugins {
-    private final MsgLogger log = Logger.getMessageLogger(MsgLogger.class, ActionPlugins.class.getName());
+    private static final MsgLogger log = MsgLogger.getLogger(ActionPlugins.class);
     private ActionsService actions;
     private static ActionPlugins instance;
     private Map<String, ActionPluginListener> plugins;
@@ -88,7 +87,7 @@ public class ActionPlugins {
                                 Plugin plugin = (Plugin)clazz.getAnnotation(Plugin.class);
                                 String name = plugin.name();
                                 Object newInstance = clazz.newInstance();
-                                log.infof("Scanning %s", clazz.getName());
+                                log.info("Scanning {}", clazz.getName());
                                 if (newInstance instanceof ActionPluginListener) {
                                     ActionPluginListener pluginInstance = (ActionPluginListener)newInstance;
                                     injectActionPluginSender(name, pluginInstance);
@@ -99,7 +98,7 @@ public class ActionPlugins {
                                 }
                             }
                         } catch (Exception e) {
-                            log.errorf(e,"Error loading Handler %s. Reason: %s", className, e.toString());
+                            log.error("Error loading Handler {}. Reason: {}", className, e.toString());
                             System.exit(1);
                         }
                     }

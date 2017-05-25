@@ -56,7 +56,6 @@ import org.hawkular.alerts.engine.service.RulesEngine;
 import org.hawkular.alerts.engine.util.MissingState;
 import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.properties.AlertProperties;
-import org.jboss.logging.Logger;
 
 /**
  * Cassandra implementation for {@link org.hawkular.alerts.api.services.AlertsService}.
@@ -70,8 +69,7 @@ import org.jboss.logging.Logger;
  * @author Lucas Ponce
  */
 public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener, PartitionDataListener {
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final Logger log = Logger.getLogger(AlertsEngineImpl.class);
+    private final MsgLogger log = MsgLogger.getLogger(AlertsEngineImpl.class);
 
     /*
         ENGINE_DELAY defined in milliseconds
@@ -197,7 +195,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             if (log.isDebugEnabled()) {
                 t.printStackTrace();
             }
-            msgLog.errorCannotInitializeAlertsService(t.getMessage());
+            log.errorCannotInitializeAlertsService(t.getMessage());
         }
     }
 
@@ -241,7 +239,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             triggers = definitions.getAllTriggers();
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            msgLog.errorDefinitionsService("Triggers", e.getMessage());
+            log.errorDefinitionsService("Triggers", e.getMessage());
         }
 
         if (triggers != null && !triggers.isEmpty()) {
@@ -288,7 +286,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 }
             } catch (Exception e) {
                 log.debug(e.getMessage(), e);
-                msgLog.errorDefinitionsService("Trigger", e.getMessage());
+                log.errorDefinitionsService("Trigger", e.getMessage());
             }
             if (trigger != null && trigger.isLoadable()) {
                 partitionManager.notifyTrigger(Operation.ADD, trigger.getTenantId(), trigger.getId());
@@ -311,7 +309,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            msgLog.errorDefinitionsService("Trigger", e.getMessage());
+            log.errorDefinitionsService("Trigger", e.getMessage());
         }
         if (null == trigger) {
             if (log.isDebugEnabled()) {
@@ -397,7 +395,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             }
         } catch (Exception e) {
             log.debug(e.getMessage(), e);
-            msgLog.errorDefinitionsService("Conditions/Dampening", e.getMessage());
+            log.errorDefinitionsService("Conditions/Dampening", e.getMessage());
         }
     }
 
@@ -412,7 +410,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             loadedTrigger = (Trigger) rules.getFact(trigger);
 
         } catch (Exception e) {
-            log.errorf("Failed to get Trigger from engine %s: %s", trigger, e);
+            log.error("Failed to get Trigger from engine {}: {}", trigger, e);
         }
         return loadedTrigger;
     }
@@ -508,7 +506,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         }
 
         synchronized (pendingData) {
-            log.debugf("Adding [%s] to pendingData [%s]", data, pendingData);
+            log.debug("Adding [{}] to pendingData [{}]", data, pendingData);
             pendingData.addAll(data);
         }
     }
@@ -562,7 +560,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         }
 
         synchronized (pendingEvents) {
-            log.debugf("Adding [%s] to pendingEvents [%s]", events, pendingEvents);
+            log.debug("Adding [{}] to pendingEvents [{}]", events, pendingEvents);
             pendingEvents.addAll(events);
         }
     }
@@ -617,7 +615,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 TreeSet<Data> newData = getAndClearPendingData();
                 TreeSet<Event> newEvents = getAndClearPendingEvents();
 
-                log.debugf("Executing rules engine on %d datums, %d events, %d dampening timeouts.", newData.size(),
+                log.debug("Executing rules engine on {} datums, {} events, {} dampening timeouts.", newData.size(),
                         newEvents.size(), numTimeouts);
 
                 try {
@@ -657,7 +655,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                     if (log.isDebugEnabled()) {
                         log.debug("Error on rules processing: " + e);
                     }
-                    msgLog.errorProcessingRules(e.getMessage());
+                    log.errorProcessingRules(e.getMessage());
                 } finally {
                     alerts.clear();
                     events.clear();
@@ -709,7 +707,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                     definitions.updateTriggerEnablement(t.getTenantId(), t.getId(), false);
 
                 } catch (Exception e) {
-                    log.errorf("Failed to persist updated trigger. Could not autoDisable %s", t);
+                    log.error("Failed to persist updated trigger. Could not autoDisable {}.", t);
                 }
             }
         } finally {
@@ -731,7 +729,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                                 "Trigger AutoResolve=True", entry.getValue());
                     } catch (Exception e) {
                         manualReload = true;
-                        log.errorf("Failed to resolve Alerts. Could not AutoResolve alerts for trigger %s", t);
+                        log.error("Failed to resolve Alerts. Could not AutoResolve alerts for trigger {}.", t);
                     }
                 }
 
@@ -739,7 +737,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                     try {
                         reloadTrigger(t.getTenantId(), t.getId());
                     } catch (Exception e) {
-                        log.errorf("Failed to reload AutoResolved Trigger: %s", t);
+                        log.error("Failed to reload AutoResolved Trigger: {}.", t);
                     }
                 }
             }
@@ -842,10 +840,10 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
         if (!pendingData.isEmpty() || !pendingEvents.isEmpty()) {
             if (!pendingData.isEmpty()) {
-                log.warn("Pending Data onPartitionChange: " + pendingData);
+                log.warn("Pending Data onPartitionChange: {}.", pendingData);
             }
             if (!!pendingEvents.isEmpty()) {
-                log.warn("Pending Events onPartitionChange: " + pendingData);
+                log.warn("Pending Events onPartitionChange: {}.", pendingData);
             }
         }
 

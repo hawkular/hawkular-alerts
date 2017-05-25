@@ -16,145 +16,236 @@
  */
 package org.hawkular.alerts.log;
 
-import org.jboss.logging.BasicLogger;
-import org.jboss.logging.Logger;
-import org.jboss.logging.annotations.LogMessage;
-import org.jboss.logging.annotations.Message;
-import org.jboss.logging.annotations.MessageLogger;
-import org.jboss.logging.annotations.ValidIdRange;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
 
 /**
  * Common log for INFO, WARN, ERROR and FATAL messages.
  *
  * @author Lucas Ponce
  */
-@MessageLogger(projectCode = "HAWKALERT")
-@ValidIdRange(min = 220000, max = 299999)
-public interface MsgLogger extends BasicLogger {
-    MsgLogger LOGGER = Logger.getMessageLogger(MsgLogger.class, MsgLogger.class.getPackage().getName());
+public class MsgLogger {
+    private Logger instance;
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220001, value = "Error processing rules: [%s]")
-    void errorProcessingRules(String msg);
+    private MsgLogger(Class clazz) {
+        instance = LoggerFactory.getLogger(clazz);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220002, value = "Folder [%s] not found for rules initialization.")
-    void errorFolderNotFound(String folder);
+    public static MsgLogger getLogger(Class clazz) {
+        return new MsgLogger(clazz);
+    }
 
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 220004, value = "File [%s] not found")
-    void warningFileNotFound(String file);
+    public void error(String msg) {
+        instance.error(msg);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220005, value = "Folder must be not null.")
-    void errorFolderMustBeNotNull();
+    public void error(Throwable e) {
+        instance.error(e.getMessage(), e);
+    }
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 220006, value = "ActionListener [%s] registered")
-    void infoActionListenerRegistered(String msg);
+    public void error(String msg, Throwable e) {
+        instance.error(msg, e);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220007, value = "Initial data cannot be processed. Msg: [%s]")
-    void errorProcessInitialData(String msg);
+    public void error(String msg, Object o) {
+        instance.error(msg, o);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220008, value = "Database Exception. Msg: [%s]")
-    void errorDatabaseException(String msg);
+    public void error(String msg, Object o, Object o1) {
+        instance.error(msg, o, o1);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220009, value = "Definitions Service error in [%s]. Msg: [%s]")
-    void errorDefinitionsService(String msg, String errorMsg);
+    public void error(String msg, Object o, Object o1, Object o2) {
+        instance.error(msg, o, o1, o2);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220011, value = "DefinitionsService cannot be initialized. Msg: [%s]")
-    void errorCannotUpdateAction(String msg);
+    public void warn(String msg) {
+        instance.warn(msg);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220012, value = "AlertsService cannot be initialized. Msg: [%s]")
-    void errorCannotInitializeAlertsService(String msg);
+    public void warn(String msg, Object o) {
+        instance.warn(msg, o);
+    }
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 220014, value = "Hawkular Alerts deployed in single node mode")
-    void infoPartitionManagerDisabled();
+    public void warn(String msg, Object o, Object o1) {
+        instance.warn(msg, o, o1);
+    }
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 220015, value = "Hawkular Alerts deployed in distributed mode")
-    void infoPartitionManagerEnabled();
+    public void warn(String msg, Object o, Object o1, Object o2) {
+        instance.warn(msg, o, o1, o2);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220016, value = "PartitionManager cannot be initialized. Msg: [%s]")
-    void errorCannotInitializePartitionManager(String msg);
+    public void warn(String msg, Object o, Object o1, Object o2, Object o3) {
+        instance.warn(msg, o, o1, o2, o3);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220017, value = "Action cannot be validated. Msg: [%s]")
-    void errorCannotValidateAction(String msg);
+    public void info(String msg) {
+        instance.info(msg);
+    }
 
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 220018, value = "Deleting all definitions on tenantId [%s] before import.")
-    void warningDeleteDefinitionsTenant(String tenantId);
+    public void info(String msg, Object o) {
+        instance.info(msg, o);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 220019, value = "Error sending publish message to the bus. Error: [%s]")
-    void errorCannotSendPublishMessage(String msg);
+    public void info(String msg, Object o, Object o1) {
+        instance.info(msg, o, o1);
+    }
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 220020, value = "Init Publish Cache")
-    void infoInitPublishCache();
+    public boolean isDebugEnabled() {
+        return instance.isDebugEnabled();
+    }
 
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 220021, value = "Clear Publish Cache")
-    void warnClearPublishCache();
+    public void debug(Object o) {
+        instance.debug(o.toString());
+    }
 
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 220022, value = "Publish Cache is disabled")
-    void warnDisabledPublishCache();
+    public void debug(String msg, Object o) {
+        instance.debug(msg, o);
+    }
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 220023, value = "Init Actions Cache")
-    void infoInitActionsCache();
+    public void debug(String msg, Object o, Object o1) {
+        instance.debug(msg, o, o1);
+    }
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 240001, value = "Plugin [%s] has received an action message: [%s]")
-    void infoActionReceived(String actionPlugin, String msg);
+    public void debug(String msg, Object o, Object o1, Object o2) {
+        instance.debug(msg, o, o1, o2);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 240005, value = "Plugin [%s] cannot process an action message. Error: [%s]")
-    void errorCannotProcessMessage(String actionPlugin, String msg);
+    public boolean isTraceEnabled() {
+        return instance.isTraceEnabled();
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 240006, value = "Plugin [%s] cannot be started. Error: [%s]")
-    void errorCannotBeStarted(String actionPlugin, String msg);
+    public void trace(String msg, Object o) {
+        instance.trace(msg, o);
+    }
 
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 240007, value = "Plugin [%s] received a message without payload.")
-    void warnMessageReceivedWithoutPayload(String actionPlugin);
+    public void trace(String msg, Object o, Object o1) {
+        instance.trace(msg, o, o1);
+    }
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 270001, value = "Action plugin [%s] registered")
-    void infoActionPluginRegistration(String actionPlugin);
+    public void errorProcessingRules(String msg) {
+        instance.error("HWKALERT-220001 Error processing rules: [{}].", msg);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 270002, value = "Cannot access to DefinitionsService")
-    void warnCannotAccessToDefinitionsService();
+    public void errorFolderNotFound(String folder) {
+        instance.error("HWKALERT-220002 Folder [{}] not found for rules initialization.", folder);
+    }
 
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 270003, value = "No ActionPluginListener found on plugin deployment")
-    void warnNoPluginsFound();
+    public void warningFileNotFound(String file) {
+        instance.warn("[220004] File [{}] not found", file);
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 270004, value = "Error processing action. Description: [%s]")
-    void errorProcessingAction(String msg);
+    public void errorFolderMustBeNotNull() {
+        instance.error("[220005] Folder must be not null.");
+    }
 
-    @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 270005, value = "Plugin [%s] cannot be registered into the engine. Error: [%s]")
-    void errorCannotRegisterPlugin(String actionPlugin, String msg);
+    public void infoActionListenerRegistered(String msg) {
+        instance.info("HWKALERT-220006 ActionListener [{}] registered.", msg);
+    }
 
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 270007, value = "Plugin received a message without plugin info.")
-    void warnMessageReceivedWithoutPluginInfo();
+    public void errorProcessInitialData(String msg) {
+        instance.error("HWKALERT-220007 Initial data cannot be processed. Msg: [{}].", msg);
+    }
 
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 270008, value = "ActionResponse message without payload")
-    void warnActionResponseMessageWithoutPayload();
+    public void errorDatabaseException(String msg) {
+        instance.error("HWKALERT-220008 Database Exception. Msg: [{}].", msg);
+    }
 
+    public void errorDefinitionsService(String msg, String errorMsg) {
+        instance.error("HWKALERT-220009 Definitions Service error in [{}]. Msg: [{}].", msg, errorMsg);
+    }
+
+    public void errorCannotUpdateAction(String msg) {
+        instance.error("HWKALERT-220011 DefinitionsService cannot be initialized. Msg: [{}].", msg);
+    }
+
+    public void errorCannotInitializeAlertsService(String msg) {
+        instance.error("HWKALERT-220012 AlertsService cannot be initialized. Msg: [{}].", msg);
+    }
+
+    public void infoPartitionManagerDisabled() {
+        instance.info("HWKALERT-220014 Hawkular Alerting deployed in single node mode.");
+    }
+
+    public void infoPartitionManagerEnabled() {
+        instance.info("HWKALERT-220015 Hawkular Alerts deployed in distributed mode.");
+    }
+
+    public void errorCannotInitializePartitionManager(String msg) {
+        instance.error("HWKALERT-220016 PartitionManager cannot be initialized. Msg: [{}].", msg);
+    }
+
+    public void errorCannotValidateAction(String msg) {
+        instance.error("HWKALERT-220017 Action cannot be validated. Msg: [{}].", msg);
+    }
+
+    public void warningDeleteDefinitionsTenant(String tenantId) {
+        instance.warn("HWKALERT-220018 Deleting all definitions on tenantId [{}] before import.", tenantId);
+    }
+
+    public void errorCannotSendPublishMessage(String msg) {
+        instance.error("HWKALERT-220019 Error sending publish message to the bus. Error: [{}].", msg);
+    }
+
+    public void infoInitPublishCache() {
+        instance.info("HWKALERT-220020 Init Publish Cache.");
+    }
+
+    public void warnClearPublishCache() {
+        instance.warn("HWKALERT-220021 Clear Publish Cache.");
+    }
+
+    public void warnDisabledPublishCache() {
+        instance.warn("HWKALERT-220022 Publish Cache is disabled.");
+    }
+
+    public void infoInitActionsCache() {
+        instance.info("HWKALERT-220023 Init Actions Cache.");
+    }
+
+    public void infoActionReceived(String actionPlugin, String msg) {
+        instance.info("HWKALERT-240001 Plugin [{}] has received an action message: [{}].", actionPlugin, msg);
+    }
+
+    public void errorCannotProcessMessage(String actionPlugin, String msg) {
+        instance.error("HWKALERT-240005 Plugin [{}] cannot process an action message. Error: [{}].", actionPlugin, msg);
+    }
+
+    public void errorCannotBeStarted(String actionPlugin, String msg) {
+        instance.error("HWKALERT-240006 Plugin [{}] cannot be started. Error: [{}].", actionPlugin, msg);
+    }
+
+    public void warnMessageReceivedWithoutPayload(String actionPlugin) {
+        instance.warn("HWKALERT-240007 Plugin [{}] received a message without payload.", actionPlugin);
+    }
+
+    public void infoActionPluginRegistration(String actionPlugin) {
+        instance.info("HWKALERT-270001 Action plugin [{}] registered", actionPlugin);
+    }
+
+    public void warnCannotAccessToDefinitionsService() {
+        instance.warn("HWKALERT-270002 Cannot access to DefinitionsService.");
+    }
+
+    public void warnNoPluginsFound() {
+        instance.warn("HWKALERT-270003 No ActionPluginListener found on plugin deployment.");
+    }
+
+    public void errorProcessingAction(String msg) {
+        instance.error("HWKALERT-270004 Error processing action. Description: [{}]");
+    }
+
+    public void errorCannotRegisterPlugin(String actionPlugin, String msg) {
+        instance.error("HWKALERT-270005 Plugin [{}] cannot be registered into the engine. Error: [{}].");
+    }
+
+    public void warnMessageReceivedWithoutPluginInfo() {
+        instance.warn("HWKALERT-270007 Plugin received a message without plugin info.");
+    }
+
+    public void warnActionResponseMessageWithoutPayload() {
+        instance.warn("HWKALERT-270008 ActionResponse message without payload.");
+    }
 }

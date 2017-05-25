@@ -30,15 +30,15 @@ import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.hawkular.alerts.engine.service.PartitionManager;
 import org.hawkular.alerts.engine.service.RulesEngine;
 import org.hawkular.alerts.filter.CacheClient;
+import org.hawkular.alerts.log.MsgLogger;
 import org.hawkular.alerts.properties.AlertProperties;
-import org.jboss.logging.Logger;
 
 /**
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class IncomingDataManagerImpl implements IncomingDataManager {
-    private final Logger log = Logger.getLogger(IncomingDataManagerImpl.class);
+    private final MsgLogger log = MsgLogger.getLogger(IncomingDataManagerImpl.class);
 
     private int minReportingIntervalData;
     private int minReportingIntervalEvents;
@@ -94,7 +94,7 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
             if (log.isDebugEnabled()) {
                 t.printStackTrace();
             }
-            log.errorf("Failed to initialize: %s", t.getMessage());
+            log.error("Failed to initialize: %s", t.getMessage());
         }
     }
 
@@ -113,7 +113,7 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
     }
 
     private void processData(IncomingData incomingData) {
-        log.debugf("Processing [%d] datums for AlertsEngine.", incomingData.incomingData.size());
+        log.debug("Processing [{}] datums for AlertsEngine.", incomingData.incomingData.size());
 
         // remove data not needed by the defined triggers
         // remove duplicates and apply natural ordering
@@ -127,16 +127,16 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
         checkDataDrivenGroupTriggers(filteredData);
 
         try {
-            log.debugf("Sending [%d] datums to AlertsEngine.", filteredData.size());
+            log.debug("Sending [{}] datums to AlertsEngine.", filteredData.size());
             alertsEngine.sendData(filteredData);
 
         } catch (Exception e) {
-            log.errorf("Failed to send [%d] datums:", filteredData.size(), e.getMessage());
+            log.error("Failed to send [{}] datums:", filteredData.size(), e.getMessage());
         }
     }
 
     private void processEvents(IncomingEvents incomingEvents) {
-        log.debugf("Processing [%d] events to AlertsEngine.", incomingEvents.incomingEvents.size());
+        log.debug("Processing [{}] events to AlertsEngine.", incomingEvents.incomingEvents.size());
 
         // remove events not needed by the defined triggers
         // remove duplicates and apply natural ordering
@@ -149,7 +149,7 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
         try {
             alertsEngine.sendEvents(filteredEvents);
         } catch (Exception e) {
-            log.errorf("Failed sending [%d] events: %s", filteredEvents.size(), e.getMessage());
+            log.error("Failed sending [{}] events: %s", filteredEvents.size(), e.getMessage());
         }
     }
 
@@ -176,13 +176,13 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
                 prev = d;
             } else {
                 if ((d.getTimestamp() - prev.getTimestamp()) < minReportingIntervalData) {
-                    log.tracef("MinReportingInterval violation, prev: %s, removed: %s", prev, d);
+                    log.trace("MinReportingInterval violation, prev: %s, removed: %s", prev, d);
                     i.remove();
                 }
             }
         }
         if (log.isDebugEnabled() && beforeSize != orderedData.size()) {
-            log.debugf("MinReportingInterval Data violations: [%d]", beforeSize - orderedData.size());
+            log.debug("MinReportingInterval Data violations: [{}]", beforeSize - orderedData.size());
         }
     }
 
@@ -195,13 +195,13 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
                 prev = e;
             } else {
                 if ((e.getCtime() - prev.getCtime()) < minReportingIntervalEvents) {
-                    log.tracef("MinReportingInterval violation, prev: %s, removed: %s", prev, e);
+                    log.trace("MinReportingInterval violation, prev: %s, removed: %s", prev, e);
                     i.remove();
                 }
             }
         }
         if (log.isDebugEnabled() && beforeSize != orderedEvents.size()) {
-            log.debugf("MinReportingInterval Events violations: [%d]", beforeSize - orderedEvents.size());
+            log.debug("MinReportingInterval Events violations: [{}]", beforeSize - orderedEvents.size());
         }
     }
 
@@ -228,7 +228,7 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
                     definitionsService.addDataDrivenMemberTrigger(tenantId, groupTriggerId, dataSource);
 
                 } catch (Exception e) {
-                    log.errorf("Failed to add Data-Driven Member Trigger for [%s:%s]: %s:", groupTriggerId, d,
+                    log.error("Failed to add Data-Driven Member Trigger for [{}:{}]: {}:", groupTriggerId, d,
                             e.getMessage());
                 }
             }

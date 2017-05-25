@@ -43,7 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Plugin(name = "file")
 public class FilePlugin implements ActionPluginListener {
-    private final MsgLogger msgLog = MsgLogger.LOGGER;
+    private final MsgLogger log = MsgLogger.getLogger(FilePlugin.class);
 
     private Map<String, String> defaultProperties = new HashMap<>();
     private ObjectMapper objectMapper;
@@ -73,7 +73,7 @@ public class FilePlugin implements ActionPluginListener {
     @Override
     public void process(ActionMessage msg) throws Exception {
         if (msg == null || msg.getAction() == null || msg.getAction().getEvent() == null) {
-            msgLog.warnMessageReceivedWithoutPayload("file");
+            log.warnMessageReceivedWithoutPayload("file");
         }
 
         String path = msg.getAction().getProperties() != null ? msg.getAction().getProperties().get("path") : null;
@@ -97,12 +97,12 @@ public class FilePlugin implements ActionPluginListener {
             writer = new BufferedWriter(new FileWriter(alertFile));
             String jsonEvent = objectMapper.writeValueAsString(event);
             writer.write(jsonEvent);
-            msgLog.infoActionReceived("file", msg.toString());
+            log.infoActionReceived("file", msg.toString());
             Action successAction = msg.getAction();
             successAction.setResult(MESSAGE_PROCESSED);
             sendResult(successAction);
         } catch (Exception e) {
-            msgLog.errorCannotProcessMessage("file", e.getMessage());
+            log.errorCannotProcessMessage("file", e.getMessage());
             Action failedAction = msg.getAction();
             failedAction.setResult(MESSAGE_FAILED);
             sendResult(failedAction);
@@ -125,7 +125,7 @@ public class FilePlugin implements ActionPluginListener {
         try {
             sender.send(newMessage);
         } catch (Exception e) {
-            msgLog.error("Error sending ActionResponseMessage", e);
+            log.error("Error sending ActionResponseMessage", e);
         }
     }
 
