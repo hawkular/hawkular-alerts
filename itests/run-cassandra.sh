@@ -53,7 +53,8 @@ tar -xzf ${CASSANDRA_DOWNLOADS}/${CASSANDRA_BINARY}
 mv apache-cassandra-${CASSANDRA_VERSION} ${CASSANDRA_HOME}
 
 # Increasing timeout due some travis errors on writtings
-sed -i 's/write_request_timeout_in_ms:\ 2000/write_request_timeout_in_ms:\ 20000/g' "${CASSANDRA_HOME}/conf/cassandra.yaml"
+sed -i 's/write_request_timeout_in_ms:\ 2000/write_request_timeout_in_ms:\ 3000/g' "${CASSANDRA_HOME}/conf/cassandra.yaml"
+sed -i 's/#\ memtable_offheap_space_in_mb:\ 2048/memtable_offheap_space_in_mb:\ 32/g' "${CASSANDRA_HOME}/conf/cassandra.yaml"
 
 mkdir "${CASSANDRA_HOME}/logs"
 
