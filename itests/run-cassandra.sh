@@ -52,6 +52,9 @@ rm -rf "${CASSANDRA_HOME}"
 tar -xzf ${CASSANDRA_DOWNLOADS}/${CASSANDRA_BINARY}
 mv apache-cassandra-${CASSANDRA_VERSION} ${CASSANDRA_HOME}
 
+# Increasing timeout due some travis errors on writtings
+sed -i 's/write_request_timeout_in_ms:\ 2000/write_request_timeout_in_ms:\ 20000/g' "${CASSANDRA_HOME}/conf/cassandra.yaml"
+
 mkdir "${CASSANDRA_HOME}/logs"
 
 export HEAP_NEWSIZE="100M"
