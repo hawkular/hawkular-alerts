@@ -1880,7 +1880,7 @@ public abstract class PersistenceTest {
 
         log.info("Actions are asynchronous. Give them some time.");
 
-        int tries = 10;
+        int tries = 20;
         List<Action> actions = actionsService.getActions(TENANT, null, null);
         while (actions.size() != (103 * 4) && tries > 0) {
             actions = actionsService.getActions(TENANT, null, null);
