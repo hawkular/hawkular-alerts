@@ -24,9 +24,8 @@ import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.trigger.TriggerAction
+import org.hawkular.alerts.log.MsgLogger
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import static org.hawkular.alerts.api.model.event.Alert.Status
 import static org.junit.Assert.assertEquals
@@ -39,7 +38,7 @@ import static org.junit.Assert.assertTrue
  */
 class ActionsITest extends AbstractITestBase {
 
-    static Logger logger = LoggerFactory.getLogger(ActionsITest.class)
+    static MsgLogger logger = MsgLogger.getLogger(ActionsITest.class)
 
     @Test
     void findPlugins() {

@@ -14,7 +14,7 @@ link:http://www.slideshare.net/ponceballesteros/hawkular-alerting[Hawkular Alert
 == Playground for technologies
 
 - Netty
-- Reactor
+- Reactor/Vert.X
 - Plain jar package
 
 == License

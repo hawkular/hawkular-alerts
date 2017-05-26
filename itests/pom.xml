@@ -82,13 +82,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>${version.log4j}</version>
-      <scope>test</scope>
-    </dependency>
-
   </dependencies>
 
   <build>
@@ -225,6 +218,7 @@
                 <configuration>
                   <argLine>
                     -Djava.net.preferIPv4Stack=true
+                    -Dlog4j.configurationFile=log4j2.xml
                   </argLine>
                   <includes>
                     <include>org/hawkular/alerts/rest/IntegrationSuite.class</include>

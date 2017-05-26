@@ -16,8 +16,6 @@
  */
 package org.hawkular.alerts.rest
 
-import groovyx.net.http.ContentType
-import groovyx.net.http.RESTClient
 import org.hawkular.alerts.api.json.GroupConditionsInfo
 import org.hawkular.alerts.api.json.GroupMemberInfo
 import org.hawkular.alerts.api.json.UnorphanMemberInfo
@@ -28,9 +26,8 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.dampening.Dampening
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
+import org.hawkular.alerts.log.MsgLogger
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
@@ -42,7 +39,7 @@ import static org.junit.Assert.assertNotNull
  */
 class TriggersITest extends AbstractITestBase {
 
-    static Logger logger = LoggerFactory.getLogger(TriggersITest.class)
+    static MsgLogger logger = MsgLogger.getLogger(TriggersITest.class)
 
     @Test
     void createTrigger() {

@@ -120,11 +120,13 @@
         <module>actions</module>
         <module>api</module>
         <module>commons</module>
-        <module>filter-api</module>
         <module>engine</module>
-        <module>netty</module>
-        <module>itests</module>
         <module>engine-extensions</module>
+        <module>filter-api</module>
+        <module>itests</module>
+        <module>netty</module>
+        <module>rest-api</module>
+        <module>rest-handlers</module>
         <!--module>hawkular-alerters</module-->
       </modules>
     </profile>

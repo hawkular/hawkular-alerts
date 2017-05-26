@@ -23,6 +23,7 @@ import org.hawkular.alerts.api.model.export.Definitions
 import org.hawkular.alerts.api.model.trigger.FullTrigger
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
+import org.hawkular.alerts.log.MsgLogger
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
@@ -33,6 +34,8 @@ import static org.junit.Assert.assertEquals
  * @author Lucas Ponce
  */
 class EventsAggregationExtensionITest extends AbstractITestBase {
+
+    static MsgLogger logger = MsgLogger.getLogger(EventsAggregationExtensionITest.class)
 
     public static final String TEST_TENANT = "28026b36-8fe4-4332-84c8-524e173a68bf";
     public static final String MARKETING = "marketing";
@@ -49,7 +52,7 @@ class EventsAggregationExtensionITest extends AbstractITestBase {
     }
 
     void sleep(long milliseconds) {
-        System.out.println("Sleeping [" + milliseconds + "] ms");
+        logger.info("Sleeping [" + milliseconds + "] ms");
         Thread.sleep(milliseconds);
     }
 

@@ -23,7 +23,6 @@ public class HandlersManager {
     private static final MsgLogger log = MsgLogger.getLogger(HandlersManager.class);
     private static final String BASE_URL = "hawkular-alerts.base-url";
     private static final String BASE_URL_DEFAULT = "/hawkular/alerts";
-    public static final String TENANT_HEADER_NAME = "Hawkular-Tenant";
 
     private Router router;
     private String baseUrl = AlertProperties.getProperty(BASE_URL, BASE_URL_DEFAULT);

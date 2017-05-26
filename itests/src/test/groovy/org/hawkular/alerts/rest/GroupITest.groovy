@@ -23,10 +23,9 @@ import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.trigger.TriggerType
+import org.hawkular.alerts.log.MsgLogger
 import org.junit.FixMethodOrder
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
 import static org.junit.Assert.*
@@ -40,7 +39,7 @@ import static org.junit.runners.MethodSorters.NAME_ASCENDING
 @FixMethodOrder(NAME_ASCENDING)
 class GroupITest extends AbstractITestBase {
 
-    static Logger logger = LoggerFactory.getLogger(GroupITest.class)
+    static MsgLogger logger = MsgLogger.getLogger(GroupITest.class)
 
     static host = System.getProperty('hawkular.host') ?: '127.0.0.1'
     static port = Integer.valueOf(System.getProperty('hawkular.port') ?: "8080")

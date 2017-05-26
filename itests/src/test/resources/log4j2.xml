@@ -7,13 +7,14 @@
     </Appenders>
     <Loggers>
         <Logger name="com.datastax" level="warn" />
+        <Logger name="com.icegreen" level="warn" />
         <Logger name="infinispan" level="warn" />
         <Logger name="io.netty" level="debug" />
         <Logger name="io.vertx" level="debug" />
         <Logger name="org.drools" level="warn" />
         <Logger name="org.jboss" level="warn" />
         <Logger name="org.jgroups" level="warn" />
-        <Logger name="org.hawkular" level="info" />
+        <Logger name="org.hawkular" level="warn" />
         <Logger name="org.infinispan" level="warn" />
         <Root level="debug">
             <AppenderRef ref="Console"/>

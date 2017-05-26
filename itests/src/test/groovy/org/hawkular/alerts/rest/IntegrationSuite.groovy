@@ -18,16 +18,14 @@ package org.hawkular.alerts.rest
 
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
+import org.hawkular.alerts.log.MsgLogger
 import org.junit.AfterClass
-import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 
 import com.icegreen.greenmail.util.GreenMail
 import com.icegreen.greenmail.util.ServerSetup
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 
 /**
@@ -54,7 +52,7 @@ import org.slf4j.LoggerFactory
         TriggersITest.class
 ])
 class IntegrationSuite {
-    static Logger log = LoggerFactory.getLogger(IntegrationSuite.class)
+    static MsgLogger log = MsgLogger.getLogger(IntegrationSuite.class)
     static TEST_SMTP_HOST = "localhost";
     static TEST_SMTP_PORT = 2525;
     static baseURI = System.getProperty('hawkular.base-uri') ?: 'http://127.0.0.1:8080/hawkular/alerts/'

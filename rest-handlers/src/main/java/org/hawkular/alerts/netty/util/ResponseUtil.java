@@ -5,7 +5,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERR
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hawkular.alerts.api.json.JsonUtil.toJson;
-import static org.hawkular.alerts.netty.HandlersManager.TENANT_HEADER_NAME;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,7 +29,6 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.ext.web.RoutingContext;
 
@@ -42,6 +40,7 @@ public class ResponseUtil {
     public final static String ACCEPT = "Accept";
     public final static String CONTENT_TYPE = "Content-Type";
     public final static String APPLICATION_JSON = "application/json";
+    public static final String TENANT_HEADER_NAME = "Hawkular-Tenant";
 
     public static class ApiError {
         @JsonInclude

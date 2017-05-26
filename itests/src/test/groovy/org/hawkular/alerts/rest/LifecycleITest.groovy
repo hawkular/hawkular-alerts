@@ -16,8 +16,7 @@
  */
 package org.hawkular.alerts.rest
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.hawkular.alerts.log.MsgLogger
 
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
 import static org.hawkular.alerts.api.model.data.AvailabilityType.DOWN
@@ -51,7 +50,7 @@ import org.junit.Test
 @FixMethodOrder(NAME_ASCENDING)
 class LifecycleITest extends AbstractITestBase {
 
-    static Logger logger = LoggerFactory.getLogger(LifecycleITest.class)
+    static MsgLogger logger = MsgLogger.getLogger(LifecycleITest.class)
 
     static host = System.getProperty('hawkular.host') ?: '127.0.0.1'
     static port = Integer.valueOf(System.getProperty('hawkular.port') ?: "8080")
@@ -1314,7 +1313,7 @@ class LifecycleITest extends AbstractITestBase {
             resp = client.get(path: "",
                 query: [startTime:start,triggerIds:"test-hwkalerts234-trigger",statuses:"RESOLVED"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
-                System.out.println(resp.data);
+                log.info(resp.data);
                 break;
             }
             assertEquals(200, resp.status)
