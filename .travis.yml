@@ -19,7 +19,6 @@ install:
 # unshallow is needed by license-maven-plugin
 - git fetch origin --unshallow
 script:
-- ./mvnw -s .travis.maven.settings.xml verify -Dtest-env=perf -Dsrcdeps.quiet=false
 - ./mvnw -s .travis.maven.settings.xml verify -Pitest
 env:
   global:

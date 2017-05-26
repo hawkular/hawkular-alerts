@@ -16,7 +16,6 @@
  */
 package org.hawkular.alerts.engine;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

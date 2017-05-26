@@ -139,6 +139,20 @@
       <version>${version.org.infinispan.wildfly}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <scope>test</scope>
+      <version>${version.org.apache.logging.log4j}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <scope>test</scope>
+      <version>${version.org.apache.logging.log4j}</version>
+    </dependency>
+
     <!-- Tests -->
     <dependency>
       <groupId>junit</groupId>
@@ -146,67 +160,6 @@
       <scope>test</scope>
       <version>${version.junit}</version>
     </dependency>
-
-    <dependency>
-      <groupId>org.hawkular.commons</groupId>
-      <artifactId>hawkular-commons-embedded-cassandra-service</artifactId>
-      <version>${version.org.hawkular.commons}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <version>${version.org.yaml}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- A workaround for CASSANDRA-10071 -->
-    <dependency>
-      <groupId>com.thinkaurelius.thrift</groupId>
-      <artifactId>thrift-server</artifactId>
-      <version>0.3.7</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.cassandra</groupId>
-      <artifactId>cassandra-all</artifactId>
-      <scope>test</scope>
-      <version>${version.com.datastax.cassandra}</version>
-      <exclusions>
-        <!-- A workaround for CASSANDRA-10071 -->
-        <exclusion>
-          <groupId>com.thinkaurelius.thrift</groupId>
-          <artifactId>thrift-server</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>ch.qos.logback</groupId>
-          <artifactId>logback-classic</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>${version.org.apache.logging.log4j}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>${version.org.apache.logging.log4j}</version>
-      <scope>test</scope>
-    </dependency>
-
   </dependencies>
 
   <build>
@@ -244,7 +197,6 @@
   </build>
 
   <profiles>
-
     <!--
           Profiles to control test scenarios activated with the variable test-env
           Default tests don't run performance and persistence tests.
@@ -252,40 +204,7 @@
     <profile>
       <id>default-tests</id>
       <activation>
-        <property>
-          <name>!test-env</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>${version.org.apache.maven.plugins.maven-surefire-plugin}</version>
-            <configuration>
-              <systemProperties>
-                <property>
-                  <name>testOutput</name>
-                  <value>${project.build.testOutputDirectory}</value>
-                </property>
-              </systemProperties>
-              <excludes>
-                <exclude>**/*/PerfRulesEngineTest.java</exclude>
-                <exclude>**/*/CassPersistenceTest.java</exclude>
-              </excludes>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
-    <profile>
-      <id>perf-tests</id>
-      <activation>
-        <property>
-          <name>test-env</name>
-          <value>perf</value>
-        </property>
+        <activeByDefault>true</activeByDefault>
       </activation>
       <build>
         <plugins>
@@ -305,6 +224,5 @@
         </plugins>
       </build>
     </profile>
-
   </profiles>
 </project>

@@ -22,7 +22,7 @@ set -xe
 DIRNAME=`dirname "$0"`
 $DIRNAME/stop-cassandra.sh
 
-TARGET_DIR=$(pwd)/target
+TARGET_DIR=$DIRNAME/target
 mkdir -p ${TARGET_DIR}
 cd "${TARGET_DIR}"
 

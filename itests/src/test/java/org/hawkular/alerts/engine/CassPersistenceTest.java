@@ -16,16 +16,10 @@
  */
 package org.hawkular.alerts.engine;
 
-import static org.hawkular.commons.cassandra.EmbeddedConstants.CASSANDRA_YAML;
-
-import java.io.File;
-import java.net.URL;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.cassandra.service.EmbeddedCassandraService;
 import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.model.export.ImportType;
 import org.hawkular.alerts.api.services.ActionsCriteria;
@@ -33,7 +27,6 @@ import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.engine.impl.CassCluster;
 import org.hawkular.alerts.log.MsgLogger;
-import org.hawkular.commons.cassandra.CassandraYaml;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -54,28 +47,11 @@ public class CassPersistenceTest extends PersistenceTest {
     private static final MsgLogger logger = MsgLogger.getLogger(CassPersistenceTest.class);
     private static ObjectMapper objectMapper;
 
-    static EmbeddedCassandraService embeddedCassandra;
     public static final String keyspace = "hawkular_alerts_test";
     static CassCluster cluster;
 
     @BeforeClass
     public static void initSessionAndResetTestSchema() throws Exception {
-        File baseDir = Files.createTempDirectory(CassPersistenceTest.class.getName()).toFile();
-        File cassandraYaml = new File(baseDir, "cassandra.yaml");
-
-        URL defaultCassandraYamlUrl = CassandraYaml.class.getResource("/" + CASSANDRA_YAML);
-        CassandraYaml.builder()
-                .load(defaultCassandraYamlUrl)//
-                .baseDir(baseDir)//
-                .clusterName("hawkular-alerts")//
-                .store(cassandraYaml)//
-                .mkdirs()//
-                .setCassandraConfigProp()//
-                .setTriggersDirProp();
-
-        embeddedCassandra = new EmbeddedCassandraService();
-        embeddedCassandra.start();
-
         System.setProperty("hawkular-alerts.cassandra-keyspace", keyspace);
         System.setProperty("hawkular-alerts.cassandra-overwrite", "true");
 
