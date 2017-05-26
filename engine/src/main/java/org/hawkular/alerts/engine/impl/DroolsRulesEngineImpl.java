@@ -214,7 +214,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
             }
 
             if (!pendingData.isEmpty()) {
-                log.debug("Deferring [%d] Datum(s) to next firing !!", pendingData.size());
+                log.debug("Deferring [{}] Datum(s) to next firing !!", pendingData.size());
             }
         }
 
@@ -250,7 +250,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         }
 
         if (!pendingEvents.isEmpty()) {
-            log.debug("Deferring [%d] Event(s) to next firing !!", pendingEvents.size());
+            log.debug("Deferring [{}] Event(s) to next firing !!", pendingEvents.size());
         }
 
         long batchingTime = System.currentTimeMillis() - startBatching;

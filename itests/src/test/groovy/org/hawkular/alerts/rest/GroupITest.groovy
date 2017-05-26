@@ -89,7 +89,7 @@ class GroupITest extends AbstractITestBase {
         // ENABLE Trigger
         testTrigger.setEnabled(true);
 
-        resp = client.put(path: "triggers/groups/test-ddgroup-trigger/", body: testTrigger)
+        resp = client.put(path: "triggers/groups/test-ddgroup-trigger", body: testTrigger)
         assertEquals(200, resp.status)
 
         // FETCH trigger and make sure it's as expected

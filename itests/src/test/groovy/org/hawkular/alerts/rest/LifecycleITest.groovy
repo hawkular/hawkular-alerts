@@ -1313,7 +1313,7 @@ class LifecycleITest extends AbstractITestBase {
             resp = client.get(path: "",
                 query: [startTime:start,triggerIds:"test-hwkalerts234-trigger",statuses:"RESOLVED"] )
             if ( resp.status == 200 && resp.data.size() == 1 ) {
-                log.info(resp.data);
+                logger.info(resp.data);
                 break;
             }
             assertEquals(200, resp.status)

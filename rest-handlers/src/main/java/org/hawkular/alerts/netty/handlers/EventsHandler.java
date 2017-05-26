@@ -239,11 +239,13 @@ public class EventsHandler implements RestHandler {
         routing.response()
                 .putHeader(ACCEPT, APPLICATION_JSON)
                 .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .setChunked(true)
                 .setStatusCode(OK.code());
+
         EventsWatcher.EventsListener listener = event -> {
             routing.response().write(toJson(event) + "\r\n");
         };
-        String channelId = routing.request().connection().toString();
+        String channelId = routing.request().connection().remoteAddress().toString();
         EventsWatcher watcher = new EventsWatcher(channelId, listener, Collections.singleton(tenantId), criteria, watchInterval);
         watcher.start();
         log.info("EventsWatcher [{}] created", channelId);
@@ -263,7 +265,7 @@ public class EventsHandler implements RestHandler {
                         EventsCriteria criteria = buildCriteria(routing.request().params());
                         criteria.setEventId(eventId);
                         numDeleted = alertsService.deleteEvents(tenantId, criteria);
-                        log.debug("Events deleted: ", numDeleted);
+                        log.debug("Events deleted: {}", numDeleted);
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
                     } catch (Exception e) {

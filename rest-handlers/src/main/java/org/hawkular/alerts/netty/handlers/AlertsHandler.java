@@ -122,11 +122,13 @@ public class AlertsHandler implements RestHandler {
         routing.response()
                 .putHeader(ACCEPT, APPLICATION_JSON)
                 .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .setChunked(true)
                 .setStatusCode(OK.code());
+
         AlertsListener listener = alert -> {
             routing.response().write(toJson(alert) + "\r\n");
         };
-        String channelId = routing.request().connection().toString();
+        String channelId = routing.request().connection().remoteAddress().toString();
         AlertsWatcher watcher = new AlertsWatcher(channelId, listener, Collections.singleton(tenantId), criteria, watchInterval);
         watcher.start();
         log.info("AlertsWatcher [{}] created", channelId);

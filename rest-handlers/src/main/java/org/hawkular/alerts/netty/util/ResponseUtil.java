@@ -127,7 +127,7 @@ public class ResponseUtil {
             links.add(new Link("prev", replaceQueryParam(uri, "page", String.valueOf(prevPage))));
         }
 
-        if (pc.isLimited()) {
+        if (pc.isLimited() && pc.getPageSize() > 0) {
             long lastPage = resultList.getTotalSize() / pc.getPageSize();
             if (resultList.getTotalSize() % pc.getPageSize() == 0) {
                 lastPage -= 1;

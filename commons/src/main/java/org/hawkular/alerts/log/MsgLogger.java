@@ -37,8 +37,8 @@ public class MsgLogger {
         return new MsgLogger(clazz);
     }
 
-    public void error(String msg) {
-        instance.error(msg);
+    public void error(Object o) {
+        instance.error(o.toString());
     }
 
     public void error(Throwable e) {
@@ -61,8 +61,8 @@ public class MsgLogger {
         instance.error(msg, o, o1, o2);
     }
 
-    public void warn(String msg) {
-        instance.warn(msg);
+    public void warn(Object o) {
+        instance.warn(o.toString());
     }
 
     public void warn(String msg, Object o) {
@@ -81,8 +81,8 @@ public class MsgLogger {
         instance.warn(msg, o, o1, o2, o3);
     }
 
-    public void info(String msg) {
-        instance.info(msg);
+    public void info(Object o) {
+        instance.info(o.toString());
     }
 
     public void info(String msg, Object o) {

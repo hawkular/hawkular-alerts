@@ -112,7 +112,7 @@ public class DataDrivenGroupCacheManager {
                     }
                 }
 
-                log.debug("Updating [%d] data-driven triggers out of [%d] total triggers...", ddGroupTriggers.size(),
+                log.debug("Updating [{}] data-driven triggers out of [{}] total triggers...", ddGroupTriggers.size(),
                         allTriggers.size());
 
                 for (Trigger groupTrigger : ddGroupTriggers) {

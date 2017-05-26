@@ -106,6 +106,7 @@ public class TriggersHandler implements RestHandler {
                     String tenantId = checkTenant(routing);
                     String json = routing.getBodyAsString();
                     String triggerId = routing.request().getParam("triggerId");
+                    String groupId = routing.request().getParam("groupId");
                     Dampening dampening;
                     try {
                         dampening = fromJson(json, Dampening.class);
@@ -114,7 +115,7 @@ public class TriggersHandler implements RestHandler {
                         throw new BadRequestException(e.toString());
                     }
                     dampening.setTenantId(tenantId);
-                    dampening.setTriggerId(triggerId);
+                    dampening.setTriggerId(isGroup ? groupId : triggerId);
                     Dampening found;
                     try {
                         found = definitionsService.getDampening(tenantId, dampening.getDampeningId());
@@ -525,6 +526,7 @@ public class TriggersHandler implements RestHandler {
                     String tenantId = checkTenant(routing);
                     String json = routing.getBodyAsString();
                     String triggerId = routing.request().getParam("triggerId");
+                    String groupId = routing.request().getParam("groupId");
                     Trigger trigger;
                     try {
                         trigger = fromJson(json, Trigger.class);
@@ -533,7 +535,7 @@ public class TriggersHandler implements RestHandler {
                         throw new BadRequestException(e.toString(), e);
                     }
                     if (trigger != null && !isEmpty(triggerId)) {
-                        trigger.setId(triggerId);
+                        trigger.setId(isGroup ? groupId : triggerId);
                     }
                     if (!checkTags(trigger)) {
                         throw new BadRequestException("Tags " + trigger.getTags() + " must be non empty.");
@@ -583,6 +585,7 @@ public class TriggersHandler implements RestHandler {
                     String tenantId = checkTenant(routing);
                     String json = routing.getBodyAsString();
                     String triggerId = routing.request().getParam("triggerId");
+                    String groupId = routing.request().getParam("groupId");
                     String dampeningId = routing.request().getParam("dampeningId");
                     Dampening dampening;
                     try {
@@ -602,7 +605,7 @@ public class TriggersHandler implements RestHandler {
                         throw new ResponseUtil.NotFoundException("No dampening found for dampeningId: " + dampeningId);
                     }
                     try {
-                        dampening.setTriggerId(triggerId);
+                        dampening.setTriggerId(isGroup ? groupId : triggerId);
                         Dampening d = getCleanDampening(dampening);
                         log.debug("Dampening: {}", d);
                         if (isGroup) {
