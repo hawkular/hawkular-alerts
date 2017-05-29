@@ -18,6 +18,7 @@ package org.hawkular.alerts.rest
 
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
+import org.hawkular.alerts.engine.CassPersistenceTest
 import org.hawkular.alerts.log.MsgLogger
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -38,6 +39,7 @@ import com.icegreen.greenmail.util.ServerSetup
 @Suite.SuiteClasses([
         ActionsITest.class,
         AlertsITest.class,
+        CassPersistenceTest.class,
         ClusterITest.class,
         ConditionsITest.class,
         CrossTenantITest.class,

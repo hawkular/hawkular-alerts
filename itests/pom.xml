@@ -222,7 +222,6 @@
                   </argLine>
                   <includes>
                     <include>org/hawkular/alerts/rest/IntegrationSuite.class</include>
-                    <include>org/hawkular/alerts/engine/CassPersistenceTest.class</include>
                   </includes>
                 </configuration>
               </execution>
