@@ -1,4 +1,6 @@
-sudo: false
+sudo: required
+dist: trusty
+
 language: java
 jdk:
 - oraclejdk8
@@ -14,6 +16,9 @@ cache:
   - $HOME/.m2/repository
   - $HOME/.m2/wrapper
 
+before_install:
+- ulimit -u 4096
+- ulimit -a
 install:
 - ./mvnw -version -B
 # unshallow is needed by license-maven-plugin
