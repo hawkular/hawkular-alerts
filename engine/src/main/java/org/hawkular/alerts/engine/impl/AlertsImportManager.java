@@ -22,7 +22,8 @@ import java.util.List;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.model.trigger.FullTrigger;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -33,7 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author Lucas Ponce
  */
 public class AlertsImportManager {
-    private static final MsgLogger log = MsgLogger.getLogger(AlertsImportManager.class);
+    private static final MsgLogger log = MsgLogging.getMsgLogger(AlertsImportManager.class);
     private ObjectMapper objectMapper = new ObjectMapper();
     private Definitions definitions;
 
@@ -52,12 +53,10 @@ public class AlertsImportManager {
         }
 
         definitions = objectMapper.readValue(fAlerts, Definitions.class);
-        if (log.isDebugEnabled()) {
-            if (definitions != null) {
-                log.debug("File: " + fAlerts.toString() + " imported in " + definitions.toString());
-            } else {
-                log.debug("File: " + fAlerts.toString() + " imported is null");
-            }
+        if (definitions != null) {
+            log.debugf("File: %s imported in %s", fAlerts.toString(), definitions.toString());
+        } else {
+            log.debugf("File: %s imported is null", fAlerts.toString());
         }
     }
 

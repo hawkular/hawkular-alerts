@@ -70,7 +70,8 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.service.RulesEngine;
 import org.hawkular.alerts.engine.util.MissingState;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,7 +83,7 @@ import org.junit.Test;
  * @author Lucas Ponce
  */
 public class RulesEngineTest {
-    private static final MsgLogger log = MsgLogger.getLogger(RulesEngineTest.class);
+    private static final MsgLogger log = MsgLogging.getMsgLogger(RulesEngineTest.class);
 
     RulesEngine rulesEngine = new DroolsRulesEngineImpl();
     List<Alert> alerts = new ArrayList<>();

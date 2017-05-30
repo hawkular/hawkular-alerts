@@ -19,7 +19,7 @@ package org.hawkular.alerts.engine.impl;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hawkular.alerts.properties.AlertProperties;
+import org.hawkular.commons.properties.HawkularProperties;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
@@ -165,7 +165,7 @@ public class CassStatement {
     public static final String UPDATE_TRIGGER_ENABLED;
 
     static {
-        keyspace = AlertProperties.getProperty(CASSANDRA_KEYSPACE, "hawkular_alerts");
+        keyspace = HawkularProperties.getProperty(CASSANDRA_KEYSPACE, "hawkular_alerts");
 
         DELETE_ACTION_DEFINITION = "DELETE FROM " + keyspace + ".actions_definitions "
                 + "WHERE tenantId = ? AND actionPlugin = ? AND actionId = ? ";

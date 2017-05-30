@@ -37,7 +37,10 @@ import org.hawkular.alerts.cache.IspnCacheManager;
 import org.hawkular.alerts.engine.service.PartitionDataListener;
 import org.hawkular.alerts.engine.service.PartitionManager;
 import org.hawkular.alerts.engine.service.PartitionTriggerListener;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.alerts.log.AlertingLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
+import org.hawkular.commons.properties.HawkularProperties;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.infinispan.manager.EmbeddedCacheManager;
@@ -95,7 +98,7 @@ public class PartitionManagerImpl implements PartitionManager {
      * Used to clean triggers and data cache
      */
     private static final String LIFESPAN_PROPERTY = "hawkular-alerts.partition-lifespan";
-    private static final int LIFESPAN = Integer.parseInt(System.getProperty(LIFESPAN_PROPERTY, "100"));
+    private static final int LIFESPAN = Integer.parseInt(HawkularProperties.getProperty(LIFESPAN_PROPERTY, "100"));
 
     private static final String ALERTS_DISTRIBUTED = "hawkular-alerts.distributed";
     private static final String ALERTS_DISTRIBUTED_ENV = "HAWKULAR_ALERTS_DISTRIBUTED";
@@ -106,7 +109,7 @@ public class PartitionManagerImpl implements PartitionManager {
     public static final String CURRENT = "currentPartition";
     public static final String PARTITION_CHANGE = "partitionChangeFlag";
 
-    private final MsgLogger log = MsgLogger.getLogger(PartitionManagerImpl.class);
+    private static final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, PartitionManagerImpl.class);
 
     DefinitionsService definitionsService;
 
@@ -209,9 +212,7 @@ public class PartitionManagerImpl implements PartitionManager {
             /*
                 Initial partition
              */
-            if (log.isDebugEnabled()) {
-                log.debug("Initial partition for node: " + currentNode);
-            }
+            log.debugf("Initial partition for node: %s",currentNode);
             processTopologyChange();
             log.infoPartitionManagerEnabled();
         }
@@ -255,7 +256,7 @@ public class PartitionManagerImpl implements PartitionManager {
         if (distributed) {
             NotifyData nData = new NotifyData(currentNode, data, Data.class);
             Integer key = nData.hashCode();
-            log.debug("Sending data [{}]", nData);
+            log.debugf("Sending data [%s]", nData);
             dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                     .putAsync(key, nData, LIFESPAN, TimeUnit.MILLISECONDS);
         }
@@ -267,7 +268,7 @@ public class PartitionManagerImpl implements PartitionManager {
         if (distributed) {
             NotifyData nEvent = new NotifyData(currentNode, events, Event.class);
             Integer key = nEvent.hashCode();
-            log.debug("Sending events [{}]", nEvent);
+            log.debugf("Sending events [%s]", nEvent);
             dataCache.getAdvancedCache().withFlags(Flag.IGNORE_RETURN_VALUES)
                     .putAsync(key, nEvent, LIFESPAN, TimeUnit.MILLISECONDS);
         }
@@ -298,8 +299,8 @@ public class PartitionManagerImpl implements PartitionManager {
             Map<Integer, Integer> newBuckets = updateBuckets(oldBuckets, members);
             if (log.isDebugEnabled()) {
                 log.debug("Processing Topology Change");
-                log.debug("Old buckets: " + oldBuckets);
-                log.debug("New buckets: " + newBuckets);
+                log.debugf("Old buckets: %s", oldBuckets);
+                log.debugf("New buckets: %s", newBuckets);
             }
 
             /*
@@ -328,8 +329,8 @@ public class PartitionManagerImpl implements PartitionManager {
 
             newPartition = calculatePartition(entries, newBuckets);
             if (log.isDebugEnabled()) {
-                log.debug("Old partition: " + oldPartition);
-                log.debug("New partition: " + newPartition);
+                log.debugf("Old partition: %s", oldPartition);
+                log.debugf("New partition: %s", newPartition);
             }
 
             partitionCache.startBatch();
@@ -530,11 +531,11 @@ public class PartitionManagerImpl implements PartitionManager {
                     getAddedRemovedPartition(previous, current, currentNode);
             if (log.isDebugEnabled()) {
                 log.debug("Invoke a Change Listener");
-                log.debug("Previous: " + previous);
-                log.debug("Current: " + current);
-                log.debug("Partition: " + partition);
-                log.debug("Added: " + addedRemoved.get("added"));
-                log.debug("Removed: " + addedRemoved.get("removed"));
+                log.debugf("Previous: %s", previous);
+                log.debugf("Current: %s", current);
+                log.debugf("Partition: %s", partition);
+                log.debugf("Added: %s", addedRemoved.get("added"));
+                log.debugf("Removed: %s", addedRemoved.get("removed"));
             }
             triggerListeners.stream().forEach(triggerListener -> {
                 triggerListener.onPartitionChange(partition, addedRemoved.get("removed"), addedRemoved.get("added"));
@@ -588,9 +589,9 @@ public class PartitionManagerImpl implements PartitionManager {
             }
             NotifyTrigger notifyTrigger = (NotifyTrigger)triggersCache.get(cacheEvent.getKey());
             if (log.isDebugEnabled()) {
-                log.debug("onNewNotifyTrigger(@CacheEntryCreated) received on " + currentNode);
-                log.debug("CacheEvent: " + cacheEvent);
-                log.debug("NotifyTrigger: " + notifyTrigger);
+                log.debugf("onNewNotifyTrigger(@CacheEntryCreated) received on %s", currentNode);
+                log.debugf("CacheEvent: %s", cacheEvent);
+                log.debugf("NotifyTrigger: %s", notifyTrigger);
             }
             processNotifyTrigger(notifyTrigger);
         }
@@ -605,9 +606,9 @@ public class PartitionManagerImpl implements PartitionManager {
             }
             NotifyTrigger notifyTrigger = (NotifyTrigger)triggersCache.get(cacheEvent.getKey());
             if (log.isDebugEnabled()) {
-                log.debug("onModifiedNotifyTrigger(@CacheEntryModified) received on " + currentNode);
-                log.debug("CacheEvent: " + cacheEvent);
-                log.debug("NotifyTrigger: " + notifyTrigger);
+                log.debugf("onModifiedNotifyTrigger(@CacheEntryModified) received on %s", currentNode);
+                log.debugf("CacheEvent: %s", cacheEvent);
+                log.debugf("NotifyTrigger: %s", notifyTrigger);
             }
             processNotifyTrigger(notifyTrigger);
         }
@@ -677,8 +678,8 @@ public class PartitionManagerImpl implements PartitionManager {
             partitionCache.endBatch(true);
             if (log.isDebugEnabled()) {
                 log.debug("modifyPartition()");
-                log.debug("Previous: " + current);
-                log.debug("Current: " + newPartition);
+                log.debugf("Previous: %s", current);
+                log.debugf("Current: %s", newPartition);
             }
         }
 
@@ -690,15 +691,13 @@ public class PartitionManagerImpl implements PartitionManager {
         @CacheEntryCreated
         public void onNewNotifyData(CacheEntryCreatedEvent cacheEvent) {
             if (cacheEvent.isPre()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Discarding pre onNewNotifyData(@CacheEntryCreated) event");
-                }
+                log.debug("Discarding pre onNewNotifyData(@CacheEntryCreated) event");
                 return;
             }
             NotifyData notifyData = (NotifyData)dataCache.get(cacheEvent.getKey());
             if (log.isDebugEnabled()) {
                 log.debug("onNewNotifyData(@CacheEntryCreated) received.");
-                log.debug("NotifyData: " + notifyData);
+                log.debugf("NotifyData: %s", notifyData);
             }
             processNotifyData(notifyData);
         }
@@ -706,15 +705,13 @@ public class PartitionManagerImpl implements PartitionManager {
         @CacheEntryModified
         public void onModifiedNotifyData(CacheEntryModifiedEvent cacheEvent) {
             if (cacheEvent.isPre()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Discarding pre onModifiedNotifyData(@CacheEntryModified) event");
-                }
+                log.debug("Discarding pre onModifiedNotifyData(@CacheEntryModified) event");
                 return;
             }
             NotifyData notifyData = (NotifyData)dataCache.get(cacheEvent.getKey());
             if (log.isDebugEnabled()) {
                 log.debug("onModifiedNotifyData(@CacheEntryModified) received.");
-                log.debug("NotifyData: " + notifyData);
+                log.debugf("NotifyData: %s", notifyData);
             }
             processNotifyData(notifyData);
         }
@@ -732,7 +729,7 @@ public class PartitionManagerImpl implements PartitionManager {
             if (!dataListeners.isEmpty() && notifyData.getFromNode() != currentNode) {
                 if (notifyData.getDataCollection() != null) {
                     dataListeners.stream().forEach(dataListener -> {
-                        log.debug("processNotifyData [{}]", notifyData);
+                        log.debugf("processNotifyData [%s]", notifyData);
                         dataListener.onNewData(notifyData.getDataCollection());
                     });
                 } else if (notifyData.getEventCollection() != null) {

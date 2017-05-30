@@ -38,7 +38,8 @@ import org.hawkular.alerts.api.services.DistributedEvent;
 import org.hawkular.alerts.api.services.EventExtension;
 import org.hawkular.alerts.api.services.ExtensionsService;
 import org.hawkular.alerts.api.services.PropertiesService;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 /**
  * This EventExtension is responsible of the following tasks:
@@ -55,7 +56,7 @@ import org.hawkular.alerts.log.MsgLogger;
  * @author Lucas Ponce
  */
 public class EventsAggregationExtension implements EventExtension {
-    private final MsgLogger log = MsgLogger.getLogger(EventsAggregationExtension.class);
+    private final MsgLogger log = MsgLogging.getMsgLogger(EventsAggregationExtension.class);
 
     private static final String ENGINE_EXTENSIONS = "hawkular-alerts.engine-extensions";
     private static final String ENGINE_EXTENSIONS_ENV = "ENGINE_EXTENSIONS";
@@ -193,14 +194,14 @@ public class EventsAggregationExtension implements EventExtension {
                             Trigger trigger = definitions.getTrigger(distEvent.getTenantId(), distEvent.getTriggerId());
                             if (trigger != null && trigger.getTags().containsKey(TAG_NAME)
                                     && trigger.getTags().get(TAG_NAME).equals(TAG_VALUE)) {
-                                log.info("Found [{}]", trigger.getName());
+                                log.infof("Found [%s]", trigger.getName());
                                 Collection<Condition> conditions = null;
                                 List<Condition> activeConditions = new ArrayList<>();
                                 try {
                                     if (!trigger.isGroup()) {
                                         conditions = definitions.getTriggerConditions(trigger.getTenantId(),
                                                 trigger.getId(), null);
-                                        log.info("Checking [{}] Conditions for enabled trigger [{}]!",
+                                        log.infof("Checking [%s] Conditions for enabled trigger [%s]!",
                                                 conditions.size(), trigger.getName());
                                     }
                                 } catch (Exception e) {

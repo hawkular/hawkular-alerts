@@ -27,12 +27,13 @@ import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.ActionPluginSender;
 import org.hawkular.alerts.actions.api.ActionResponseMessage;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.alerts.log.AlertingLogger;
 import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.actions.api.Sender;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.commons.log.MsgLogging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -43,7 +44,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Plugin(name = "file")
 public class FilePlugin implements ActionPluginListener {
-    private final MsgLogger log = MsgLogger.getLogger(FilePlugin.class);
+    private final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, FilePlugin.class);
 
     private Map<String, String> defaultProperties = new HashMap<>();
     private ObjectMapper objectMapper;

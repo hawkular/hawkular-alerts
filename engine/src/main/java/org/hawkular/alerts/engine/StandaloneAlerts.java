@@ -40,11 +40,9 @@ import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl;
 import org.hawkular.alerts.engine.impl.PartitionManagerImpl;
 import org.hawkular.alerts.engine.impl.PropertiesServiceImpl;
 import org.hawkular.alerts.engine.impl.StatusServiceImpl;
-import org.hawkular.alerts.extensions.CepEngine;
 import org.hawkular.alerts.extensions.CepEngineImpl;
 import org.hawkular.alerts.extensions.EventsAggregationExtension;
 import org.hawkular.alerts.filter.CacheClient;
-import org.hawkular.alerts.log.MsgLogger;
 import org.infinispan.manager.EmbeddedCacheManager;
 
 import com.datastax.driver.core.Session;
@@ -55,7 +53,6 @@ import com.datastax.driver.core.Session;
  * @author Lucas Ponce
  */
 public class StandaloneAlerts {
-    private static final MsgLogger log = MsgLogger.getLogger(StandaloneAlerts.class);
     private static StandaloneAlerts instance;
     private static ExecutorService executor;
 

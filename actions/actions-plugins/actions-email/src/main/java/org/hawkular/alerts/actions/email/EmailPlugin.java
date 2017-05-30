@@ -45,7 +45,8 @@ import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.hawkular.alerts.api.model.event.Event;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.alerts.log.AlertingLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 /**
  * Action Email plugin.
@@ -57,6 +58,8 @@ import org.hawkular.alerts.log.MsgLogger;
  */
 @Plugin(name = "email")
 public class EmailPlugin implements ActionPluginListener {
+    private final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, EmailPlugin.class);
+
     public static final String PLUGIN_NAME = "email";
 
     /**
@@ -188,7 +191,7 @@ public class EmailPlugin implements ActionPluginListener {
      */
     public static final String PROP_TEMPLATE_HTML = "template.html";
 
-    private final MsgLogger log = MsgLogger.getLogger(EmailPlugin.class);
+
 
     Map<String, String> defaultProperties = new HashMap<>();
 
@@ -309,7 +312,7 @@ public class EmailPlugin implements ActionPluginListener {
 
         Map<String, String> props = msg.getAction().getProperties();
         if (null == props || props.isEmpty()) {
-            log.warn("Properties empty on plugin {}.", PLUGIN_NAME);
+            log.warnf("Properties empty on plugin %s.", PLUGIN_NAME);
         }
         Event event = msg.getAction() != null ? msg.getAction().getEvent() : null;
         Alert alert = null != event && (event instanceof Alert) ? (Alert) event : null;
@@ -367,9 +370,7 @@ public class EmailPlugin implements ActionPluginListener {
         if (null != subject && !subject.isEmpty()) {
             email.setSubject(subject);
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Subject not found processing email on message: " + msg);
-            }
+            log.debugf("Subject not found processing email on message: %s", msg);
         }
 
         String plain = emailProcessed.get("emailBodyPlain");

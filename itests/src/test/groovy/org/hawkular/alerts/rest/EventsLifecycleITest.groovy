@@ -23,7 +23,8 @@ import org.hawkular.alerts.api.model.event.EventCategory
 import org.hawkular.alerts.api.model.event.EventType
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.log.MsgLogger
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.FixMethodOrder
 import org.junit.Test
 
@@ -39,7 +40,7 @@ import static org.junit.runners.MethodSorters.NAME_ASCENDING
 @FixMethodOrder(NAME_ASCENDING)
 class EventsLifecycleITest extends AbstractITestBase {
 
-    static MsgLogger logger = MsgLogger.getLogger(EventsLifecycleITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(EventsLifecycleITest.class)
 
     static host = System.getProperty('hawkular.host') ?: '127.0.0.1'
     static port = Integer.valueOf(System.getProperty('hawkular.port') ?: "8080")

@@ -30,15 +30,16 @@ import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.hawkular.alerts.engine.service.PartitionManager;
 import org.hawkular.alerts.engine.service.RulesEngine;
 import org.hawkular.alerts.filter.CacheClient;
-import org.hawkular.alerts.log.MsgLogger;
-import org.hawkular.alerts.properties.AlertProperties;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
+import org.hawkular.commons.properties.HawkularProperties;
 
 /**
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class IncomingDataManagerImpl implements IncomingDataManager {
-    private final MsgLogger log = MsgLogger.getLogger(IncomingDataManagerImpl.class);
+    private final MsgLogger log = MsgLogging.getMsgLogger(IncomingDataManagerImpl.class);
 
     private int minReportingIntervalData;
     private int minReportingIntervalEvents;
@@ -82,19 +83,19 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
     public void init() {
         try {
             minReportingIntervalData = new Integer(
-                    AlertProperties.getProperty(RulesEngine.MIN_REPORTING_INTERVAL_DATA,
+                    HawkularProperties.getProperty(RulesEngine.MIN_REPORTING_INTERVAL_DATA,
                             RulesEngine.MIN_REPORTING_INTERVAL_DATA_ENV,
                             RulesEngine.MIN_REPORTING_INTERVAL_DATA_DEFAULT));
 
             minReportingIntervalEvents = new Integer(
-                    AlertProperties.getProperty(RulesEngine.MIN_REPORTING_INTERVAL_EVENTS,
+                    HawkularProperties.getProperty(RulesEngine.MIN_REPORTING_INTERVAL_EVENTS,
                             RulesEngine.MIN_REPORTING_INTERVAL_EVENTS_ENV,
                             RulesEngine.MIN_REPORTING_INTERVAL_EVENTS_DEFAULT));
         } catch (Throwable t) {
             if (log.isDebugEnabled()) {
                 t.printStackTrace();
             }
-            log.error("Failed to initialize: %s", t.getMessage());
+            log.errorf("Failed to initialize: %s", t.getMessage());
         }
     }
 
@@ -113,7 +114,7 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
     }
 
     private void processData(IncomingData incomingData) {
-        log.debug("Processing [{}] datums for AlertsEngine.", incomingData.incomingData.size());
+        log.debugf("Processing [%s] datums for AlertsEngine.", incomingData.incomingData.size());
 
         // remove data not needed by the defined triggers
         // remove duplicates and apply natural ordering
@@ -127,16 +128,16 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
         checkDataDrivenGroupTriggers(filteredData);
 
         try {
-            log.debug("Sending [{}] datums to AlertsEngine.", filteredData.size());
+            log.debugf("Sending [%s] datums to AlertsEngine.", filteredData.size());
             alertsEngine.sendData(filteredData);
 
         } catch (Exception e) {
-            log.error("Failed to send [{}] datums:", filteredData.size(), e.getMessage());
+            log.errorf("Failed to send [%s] datums:", filteredData.size(), e.getMessage());
         }
     }
 
     private void processEvents(IncomingEvents incomingEvents) {
-        log.debug("Processing [{}] events to AlertsEngine.", incomingEvents.incomingEvents.size());
+        log.debugf("Processing [%s] events to AlertsEngine.", incomingEvents.incomingEvents.size());
 
         // remove events not needed by the defined triggers
         // remove duplicates and apply natural ordering
@@ -149,7 +150,7 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
         try {
             alertsEngine.sendEvents(filteredEvents);
         } catch (Exception e) {
-            log.error("Failed sending [{}] events: %s", filteredEvents.size(), e.getMessage());
+            log.errorf("Failed sending [%s] events: %s", filteredEvents.size(), e.getMessage());
         }
     }
 
@@ -176,13 +177,13 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
                 prev = d;
             } else {
                 if ((d.getTimestamp() - prev.getTimestamp()) < minReportingIntervalData) {
-                    log.trace("MinReportingInterval violation, prev: %s, removed: %s", prev, d);
+                    log.tracef("MinReportingInterval violation, prev: %s, removed: %s", prev, d);
                     i.remove();
                 }
             }
         }
         if (log.isDebugEnabled() && beforeSize != orderedData.size()) {
-            log.debug("MinReportingInterval Data violations: [{}]", beforeSize - orderedData.size());
+            log.debugf("MinReportingInterval Data violations: [%s]", beforeSize - orderedData.size());
         }
     }
 
@@ -195,13 +196,13 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
                 prev = e;
             } else {
                 if ((e.getCtime() - prev.getCtime()) < minReportingIntervalEvents) {
-                    log.trace("MinReportingInterval violation, prev: %s, removed: %s", prev, e);
+                    log.tracef("MinReportingInterval violation, prev: %s, removed: %s", prev, e);
                     i.remove();
                 }
             }
         }
         if (log.isDebugEnabled() && beforeSize != orderedEvents.size()) {
-            log.debug("MinReportingInterval Events violations: [{}]", beforeSize - orderedEvents.size());
+            log.debugf("MinReportingInterval Events violations: [%s]", beforeSize - orderedEvents.size());
         }
     }
 
@@ -228,7 +229,7 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
                     definitionsService.addDataDrivenMemberTrigger(tenantId, groupTriggerId, dataSource);
 
                 } catch (Exception e) {
-                    log.error("Failed to add Data-Driven Member Trigger for [{}:{}]: {}:", groupTriggerId, d,
+                    log.errorf("Failed to add Data-Driven Member Trigger for [%s:%s]: %s:", groupTriggerId, d,
                             e.getMessage());
                 }
             }

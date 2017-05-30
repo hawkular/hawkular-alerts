@@ -26,7 +26,8 @@ import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.engine.impl.CassCluster;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -44,7 +45,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class CassPersistenceTest extends PersistenceTest {
 
-    private static final MsgLogger logger = MsgLogger.getLogger(CassPersistenceTest.class);
+    private static final MsgLogger logger = MsgLogging.getMsgLogger(CassPersistenceTest.class);
     private static ObjectMapper objectMapper;
 
     public static final String keyspace = "hawkular_alerts_test";

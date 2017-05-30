@@ -28,8 +28,9 @@ import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.PropertiesService;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.alerts.log.AlertingLogger;
 import org.hawkular.alerts.filter.CacheKey;
+import org.hawkular.commons.log.MsgLogging;
 import org.infinispan.Cache;
 
 /**
@@ -46,7 +47,7 @@ import org.infinispan.Cache;
  * @author Lucas Ponce
  */
 public class PublishCacheManager {
-    private final MsgLogger log = MsgLogger.getLogger(PublishCacheManager.class);
+    private final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, PublishCacheManager.class);
 
     private static final String DISABLE_PUBLISH_FILTERING_PROP = "hawkular-alerts.disable-publish-filtering";
     private static final String DISABLE_PUBLISH_FILTERING_ENV = "DISABLE_PUBLISH_FILTERING";
@@ -96,9 +97,9 @@ public class PublishCacheManager {
             initialCacheUpdate();
 
             definitions.registerListener(events -> {
-                log.debug("Receiving {}", events);
+                log.debugf("Receiving %s", events);
                 events.stream().forEach(e -> {
-                    log.debug("Received {}", e);
+                    log.debugf("Received %s", e);
                     String tenantId = e.getTargetTenantId();
                     String triggerId = e.getTargetId();
                     TriggerKey triggerKey = new TriggerKey(tenantId, triggerId);
@@ -113,7 +114,7 @@ public class PublishCacheManager {
                     }
                     publishDataIdsCache.endBatch(true);
                     publishCache.endBatch(true);
-                    log.debug("PublishCache: {}", publishCache.entrySet());
+                    log.debugf("PublishCache: %s", publishCache.entrySet());
                 });
             }, TRIGGER_CONDITION_CHANGE, TRIGGER_REMOVE);
 
@@ -180,9 +181,9 @@ public class PublishCacheManager {
                 publishDataIdsCache.put(triggerKey, prevDataIds);
                 addPublishCache(c.getTenantId(), triggerId, dataIds);
             }
-            log.debug("Published after update={}", publishCache.size());
+            log.debugf("Published after update=%s", publishCache.size());
             if (log.isDebugEnabled()) {
-                publishCache.entrySet().stream().forEach(e -> log.debug("Published: {}", e.getValue()));
+                publishCache.entrySet().stream().forEach(e -> log.debugf("Published: %s", e.getValue()));
             }
             publishDataIdsCache.endBatch(true);
             publishCache.endBatch(true);

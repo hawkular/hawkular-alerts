@@ -26,7 +26,8 @@ import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.alerts.log.AlertingLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 /**
  * Main standalone register for plugins implementations
@@ -34,7 +35,7 @@ import org.hawkular.alerts.log.MsgLogger;
  * @author Lucas Ponce
  */
 public class StandaloneActionPluginRegister {
-    private static final MsgLogger log = MsgLogger.getLogger(StandaloneActionPluginRegister.class);
+    private static final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, StandaloneActionPluginRegister.class);
 
     private static StandaloneActionPluginRegister instance;
     private static ExecutorService executor;

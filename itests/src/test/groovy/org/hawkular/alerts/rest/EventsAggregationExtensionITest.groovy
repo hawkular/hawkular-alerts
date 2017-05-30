@@ -23,7 +23,8 @@ import org.hawkular.alerts.api.model.export.Definitions
 import org.hawkular.alerts.api.model.trigger.FullTrigger
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.log.MsgLogger
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
@@ -35,7 +36,7 @@ import static org.junit.Assert.assertEquals
  */
 class EventsAggregationExtensionITest extends AbstractITestBase {
 
-    static MsgLogger logger = MsgLogger.getLogger(EventsAggregationExtensionITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(EventsAggregationExtensionITest.class)
 
     public static final String TEST_TENANT = "28026b36-8fe4-4332-84c8-524e173a68bf";
     public static final String MARKETING = "marketing";

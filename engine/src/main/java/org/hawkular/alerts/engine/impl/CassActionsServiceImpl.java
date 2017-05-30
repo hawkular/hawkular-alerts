@@ -45,7 +45,8 @@ import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.cache.ActionsCacheManager;
 import org.hawkular.alerts.engine.util.ActionsValidator;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.alerts.log.AlertingLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
@@ -62,7 +63,7 @@ import com.google.common.util.concurrent.Futures;
  * @author Lucas Ponce
  */
 public class CassActionsServiceImpl implements ActionsService {
-    private final MsgLogger log = MsgLogger.getLogger(CassActionsServiceImpl.class);
+    private final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, CassActionsServiceImpl.class);
 
     private static final String WAITING_RESULT = "WAITING";
     private static final String UNKNOWN_RESULT = "UNKNOWN";
@@ -142,17 +143,13 @@ public class CassActionsServiceImpl implements ActionsService {
                     Map<String, String> mixedProps = mixProperties(actionDefinition.getProperties(), defaultProperties);
                     action.setProperties(mixedProps);
                 } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Action " + action + " has not an ActionDefinition");
-                    }
+                    log.debugf("Action %s has not an ActionDefinition", action);
                 }
                 //  If no constraints defined at TriggerAction level, ActionDefinition constraints are used.
                 if (isEmpty(triggerAction.getStates()) && triggerAction.getCalendar() == null) {
                     triggerAction.setStates(actionDefinition.getStates());
                     triggerAction.setCalendar(actionDefinition.getCalendar());
-                    if (log.isDebugEnabled()) {
-                        log.debug("Using ActionDefinition constraints: " + actionDefinition);
-                    }
+                    log.debugf("Using ActionDefinition constraints: %s", actionDefinition);
                 }
                 if (ActionsValidator.validate(triggerAction, event)) {
                     for (ActionListener listener : alertsContext.getActionsListeners()) {

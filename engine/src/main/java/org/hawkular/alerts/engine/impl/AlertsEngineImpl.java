@@ -54,8 +54,9 @@ import org.hawkular.alerts.engine.service.PartitionManager.Operation;
 import org.hawkular.alerts.engine.service.PartitionTriggerListener;
 import org.hawkular.alerts.engine.service.RulesEngine;
 import org.hawkular.alerts.engine.util.MissingState;
-import org.hawkular.alerts.log.MsgLogger;
-import org.hawkular.alerts.properties.AlertProperties;
+import org.hawkular.alerts.log.AlertingLogger;
+import org.hawkular.commons.log.MsgLogging;
+import org.hawkular.commons.properties.HawkularProperties;
 
 /**
  * Cassandra implementation for {@link org.hawkular.alerts.api.services.AlertsService}.
@@ -69,7 +70,7 @@ import org.hawkular.alerts.properties.AlertProperties;
  * @author Lucas Ponce
  */
 public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener, PartitionDataListener {
-    private final MsgLogger log = MsgLogger.getLogger(AlertsEngineImpl.class);
+    private final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, AlertsEngineImpl.class);
 
     /*
         ENGINE_DELAY defined in milliseconds
@@ -136,9 +137,9 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
         wakeUpTimer = new Timer("CassAlertsServiceImpl-Timer");
 
-        delay = new Integer(AlertProperties.getProperty(ENGINE_DELAY, "1000"));
-        period = new Integer(AlertProperties.getProperty(ENGINE_PERIOD, "2000"));
-        engineExtensions = Boolean.parseBoolean(AlertProperties.getProperty(ENGINE_EXTENSIONS, ENGINE_EXTENSIONS_ENV,
+        delay = new Integer(HawkularProperties.getProperty(ENGINE_DELAY, "1000"));
+        period = new Integer(HawkularProperties.getProperty(ENGINE_PERIOD, "2000"));
+        engineExtensions = Boolean.parseBoolean(HawkularProperties.getProperty(ENGINE_EXTENSIONS, ENGINE_EXTENSIONS_ENV,
                 ENGINE_EXTENSIONS_DEFAULT));
     }
 
@@ -410,7 +411,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             loadedTrigger = (Trigger) rules.getFact(trigger);
 
         } catch (Exception e) {
-            log.error("Failed to get Trigger from engine {}: {}", trigger, e);
+            log.errorf("Failed to get Trigger from engine %s: %s", trigger, e);
         }
         return loadedTrigger;
     }
@@ -456,9 +457,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 return false;
             });
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Trigger Fact not found. Nothing removed from rulebase " + trigger.toString());
-            }
+            log.debugf("Trigger Fact not found. Nothing removed from rulebase %s", trigger.toString());
         }
 
         // Remove dataId associated from cache
@@ -506,7 +505,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         }
 
         synchronized (pendingData) {
-            log.debug("Adding [{}] to pendingData [{}]", data, pendingData);
+            log.debugf("Adding [%s] to pendingData [%s]", data, pendingData);
             pendingData.addAll(data);
         }
     }
@@ -560,7 +559,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         }
 
         synchronized (pendingEvents) {
-            log.debug("Adding [{}] to pendingEvents [{}]", events, pendingEvents);
+            log.debugf("Adding [%s] to pendingEvents [%s]", events, pendingEvents);
             pendingEvents.addAll(events);
         }
     }
@@ -615,7 +614,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                 TreeSet<Data> newData = getAndClearPendingData();
                 TreeSet<Event> newEvents = getAndClearPendingEvents();
 
-                log.debug("Executing rules engine on {} datums, {} events, {} dampening timeouts.", newData.size(),
+                log.debugf("Executing rules engine on %s datums, %s events, %s dampening timeouts.", newData.size(),
                         newEvents.size(), numTimeouts);
 
                 try {
@@ -652,9 +651,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
                 } catch (Exception e) {
                     e.printStackTrace();
-                    if (log.isDebugEnabled()) {
-                        log.debug("Error on rules processing: " + e);
-                    }
+                    log.debugf("Error on rules processing: %s", e);
                     log.errorProcessingRules(e.getMessage());
                 } finally {
                     alerts.clear();
@@ -677,16 +674,14 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
 
                 d.setSatisfied(true);
                 try {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Dampening Timeout Hit! " + d.toString());
-                    }
+                    log.debugf("Dampening Timeout Hit! %s", d.toString());
                     rules.updateFact(d);
                     if (null == timeouts) {
                         timeouts = new HashSet<>();
                     }
                     timeouts.add(d);
                 } catch (Exception e) {
-                    log.error("Unable to update Dampening Fact on Timeout! " + d.toString(), e);
+                    log.errorf(e, "Unable to update Dampening Fact on Timeout! %s", d.toString());
                 }
 
             }
@@ -707,7 +702,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                     definitions.updateTriggerEnablement(t.getTenantId(), t.getId(), false);
 
                 } catch (Exception e) {
-                    log.error("Failed to persist updated trigger. Could not autoDisable {}.", t);
+                    log.errorf(e, "Failed to persist updated trigger. Could not autoDisable %s.", t);
                 }
             }
         } finally {
@@ -729,7 +724,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                                 "Trigger AutoResolve=True", entry.getValue());
                     } catch (Exception e) {
                         manualReload = true;
-                        log.error("Failed to resolve Alerts. Could not AutoResolve alerts for trigger {}.", t);
+                        log.errorf("Failed to resolve Alerts. Could not AutoResolve alerts for trigger %s.", t);
                     }
                 }
 
@@ -737,7 +732,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
                     try {
                         reloadTrigger(t.getTenantId(), t.getId());
                     } catch (Exception e) {
-                        log.error("Failed to reload AutoResolved Trigger: {}.", t);
+                        log.errorf("Failed to reload AutoResolved Trigger: %s.", t);
                     }
                 }
             }
@@ -805,9 +800,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
      */
     @Override
     public void onTriggerChange(Operation operation, String tenantId, String triggerId) {
-        if (log.isDebugEnabled()) {
-            log.debug("Executing: " + operation + " tenantId: " + tenantId + " triggerId: " + triggerId);
-        }
+        log.debugf("Executing: %s tenantId: %s triggerId: %s", operation, tenantId, triggerId);
         switch (operation) {
             case ADD:
             case UPDATE:
@@ -831,19 +824,17 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
     @Override
     public void onPartitionChange(Map<String, List<String>> partition, Map<String, List<String>> removed,
             Map<String, List<String>> added) {
-        if (log.isDebugEnabled()) {
-            log.debug("Executing: PartitionChange ");
-            log.debug("Local partition: " + partition);
-            log.debug("Removed: " + removed);
-            log.debug("Added: " + added);
-        }
+        log.debug("Executing: PartitionChange ");
+        log.debugf("Local partition: %s", partition);
+        log.debugf("Removed: %s", removed);
+        log.debugf("Added: %s", added);
 
         if (!pendingData.isEmpty() || !pendingEvents.isEmpty()) {
             if (!pendingData.isEmpty()) {
-                log.warn("Pending Data onPartitionChange: {}.", pendingData);
+                log.warnf("Pending Data onPartitionChange: %s.", pendingData);
             }
             if (!!pendingEvents.isEmpty()) {
-                log.warn("Pending Events onPartitionChange: {}.", pendingData);
+                log.warnf("Pending Events onPartitionChange: %s.", pendingData);
             }
         }
 

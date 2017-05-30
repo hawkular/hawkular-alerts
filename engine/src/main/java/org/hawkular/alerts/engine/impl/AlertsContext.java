@@ -35,7 +35,8 @@ import org.hawkular.alerts.api.services.DistributedEvent;
 import org.hawkular.alerts.api.services.DistributedListener;
 import org.hawkular.alerts.engine.service.PartitionManager;
 import org.hawkular.alerts.engine.service.PartitionTriggerListener;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 /**
  * Register DefinitionListener and ActionListener instances.
@@ -45,7 +46,7 @@ import org.hawkular.alerts.log.MsgLogger;
  * @author Lucas Ponce
  */
 public class AlertsContext {
-    private final MsgLogger log = MsgLogger.getLogger(AlertsContext.class);
+    private final MsgLogger log = MsgLogging.getMsgLogger(AlertsContext.class);
 
     private Map<DefinitionsListener, Set<Type>> definitionListeners = new HashMap<>();
 
@@ -98,9 +99,7 @@ public class AlertsContext {
 
     public void registerDefinitionListener(DefinitionsListener listener, Type eventType, Type... eventTypes) {
         EnumSet<Type> types = EnumSet.of(eventType, eventTypes);
-        if (log.isDebugEnabled()) {
-            log.debug("Registering listeners " + listener + " for event types " + types);
-        }
+        log.debugf("Registering listeners %s for event types %s", listener, types);
         definitionListeners.put(listener, types);
     }
 
@@ -130,11 +129,11 @@ public class AlertsContext {
         Set<DefinitionsEvent.Type> notificationTypes = notifications.stream()
                 .map(n -> n.getType())
                 .collect(Collectors.toSet());
-        log.debug("Notifying applicable listeners {} of events {}", definitionListeners, notifications);
+        log.debugf("Notifying applicable listeners %s of events %s", definitionListeners, notifications);
         definitionListeners.entrySet().stream()
                 .filter(e -> shouldNotify(e.getValue(), notificationTypes))
                 .forEach(e -> {
-                    log.debug("Notified Listener {} of {}", e.getKey(), notificationTypes);
+                    log.debugf("Notified Listener %s of %s", e.getKey(), notificationTypes);
                     e.getKey().onChange(notifications.stream()
                             .filter(de -> e.getValue().contains(de.getType()))
                             .collect(Collectors.toList()));

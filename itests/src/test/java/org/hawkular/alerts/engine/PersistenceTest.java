@@ -67,7 +67,8 @@ import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.api.services.TriggersCriteria;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
@@ -83,7 +84,7 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class PersistenceTest {
 
-    private static final MsgLogger log = MsgLogger.getLogger(PersistenceTest.class);
+    private static final MsgLogger log = MsgLogging.getMsgLogger(PersistenceTest.class);
 
     /*
         TenantId = 28026b36-8fe4-4332-84c8-524e173a68bf
@@ -2917,7 +2918,7 @@ public abstract class PersistenceTest {
         criteria.setCategory("category-a");
         criteria.setCriteriaNoQuerySize(100);
         nqs100Time = perfGetEvents(10000, 200, criteria, 25);
-        log.info("Time for perf010GetEventsNQS100 = {} ms", nqs100Time);
+        log.infof("Time for perf010GetEventsNQS100 = %s ms", nqs100Time);
         assertTrue(nqs100Time > 0);
     }
 
@@ -2929,7 +2930,7 @@ public abstract class PersistenceTest {
         criteria.setCriteriaNoQuerySize(0);
 
         long nqs0Time = perfGetEvents(10000, 200, criteria, 25);
-        log.info("Time for perf020GetEventsNQS0 = {} ms", nqs0Time);
+        log.infof("Time for perf020GetEventsNQS0 = %s ms", nqs0Time);
         assertTrue(nqs0Time > 0);
 
         // It should always be the case that we see at least a 25% gain for noQuery vs query, in these tests
@@ -2945,7 +2946,7 @@ public abstract class PersistenceTest {
         criteria.setThin(true);
 
         long time = perfGetAlerts(10000, 200, criteria, 40);
-        log.info("Time for perf030GetAlerts = {} ms", time);
+        log.infof("Time for perf030GetAlerts = %s ms", time);
         assertTrue(time > 0);
         // This test averages around 4000ms on my box, so hopefully this is a reasonable fail time
         assertTrue(time < 6000);
@@ -2966,7 +2967,7 @@ public abstract class PersistenceTest {
         }
         alertsService.persistEvents(events);
         long endPersist = System.currentTimeMillis();
-        log.info("Persisting [{}] events. Took: {} ms", numEvents, (endPersist - startPersist));
+        log.infof("Persisting [%s] events. Took: %s ms", numEvents, (endPersist - startPersist));
 
         Collection<Event> result = null;
         long start = System.currentTimeMillis();
@@ -2998,7 +2999,7 @@ public abstract class PersistenceTest {
         }
         alertsService.addAlerts(alerts);
         long alertCreateTime = System.currentTimeMillis() - alertCreateStart;
-        log.warn("Created {} Alerts in {} ms", new Integer(numAlerts), new Long(alertCreateTime));
+        log.warnf("Created %s Alerts in %s ms", new Integer(numAlerts), new Long(alertCreateTime));
 
         Collection<Alert> result = null;
         long start = System.currentTimeMillis();

@@ -52,7 +52,7 @@ public class Expression {
             "  import org.hawkular.alerts.api.json.JsonUtil; \n" +
             "  import org.hawkular.alerts.extensions.CepEngine; \n" +
             "  import org.kie.api.time.SessionClock; \n" +
-            "  import org.hawkular.alerts.log.MsgLogger; \n" +
+            "  import org.hawkular.commons.log.MsgLogger; \n" +
             "  import java.util.List; \n" +
             "  import java.util.UUID; \n\n" +
             "  global MsgLogger log; \n" +

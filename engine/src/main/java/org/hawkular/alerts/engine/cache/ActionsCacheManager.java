@@ -27,7 +27,9 @@ import java.util.List;
 
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.log.MsgLogger;
+
+import org.hawkular.alerts.log.AlertingLogger;
+import org.hawkular.commons.log.MsgLogging;
 import org.infinispan.Cache;
 
 /**
@@ -37,7 +39,7 @@ import org.infinispan.Cache;
  * @author Lucas Ponce
  */
 public class ActionsCacheManager {
-    private final MsgLogger log = MsgLogger.getLogger(ActionsCacheManager.class);
+    private final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, ActionsCacheManager.class);
 
     DefinitionsService definitions;
 

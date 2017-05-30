@@ -26,8 +26,9 @@ import org.drools.core.event.DebugRuleRuntimeEventListener;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.engine.service.RulesEngine;
-import org.hawkular.alerts.log.MsgLogger;
-import org.hawkular.alerts.properties.AlertProperties;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
+import org.hawkular.commons.properties.HawkularProperties;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
@@ -47,7 +48,7 @@ import org.kie.api.runtime.rule.FactHandle;
  */
 public class DroolsRulesEngineImpl implements RulesEngine {
     // private final MsgLogger msgLog = MsgLogger.LOGGER;
-    private final MsgLogger log = MsgLogger.getLogger(DroolsRulesEngineImpl.class);
+    private final MsgLogger log = MsgLogging.getMsgLogger(DroolsRulesEngineImpl.class);
     private static final String SESSION_NAME = "hawkular-alerts-engine-session";
     private static final long PERF_BATCHING_THRESHOLD = 3000L; // 3 seconds
     private static final long PERF_FIRING_THRESHOLD = 5000L; // 5 seconds
@@ -74,12 +75,12 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         }
 
         minReportingIntervalData = new Integer(
-                AlertProperties.getProperty(MIN_REPORTING_INTERVAL_DATA,
+                HawkularProperties.getProperty(MIN_REPORTING_INTERVAL_DATA,
                         MIN_REPORTING_INTERVAL_DATA_ENV,
                         MIN_REPORTING_INTERVAL_DATA_DEFAULT));
 
         minReportingIntervalEvents = new Integer(
-                AlertProperties.getProperty(MIN_REPORTING_INTERVAL_EVENTS,
+                HawkularProperties.getProperty(MIN_REPORTING_INTERVAL_EVENTS,
                         MIN_REPORTING_INTERVAL_EVENTS_ENV,
                         MIN_REPORTING_INTERVAL_EVENTS_DEFAULT));
     }
@@ -91,11 +92,11 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         }
         kSession.insert(fact);
         if (log.isDebugEnabled()) {
-            log.debug("addFact( {} )", fact.toString());
+            log.debugf("addFact( %s )", fact.toString());
             log.debug("==> Begin Dump");
             for (FactHandle f : kSession.getFactHandles()) {
                 Object sessionObject = kSession.getObject(f);
-                log.debug("Fact:  {}", sessionObject.toString());
+                log.debugf("Fact:  %s", sessionObject.toString());
             }
             log.debug("==> End Dump");
         }
@@ -110,16 +111,16 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         }
         for (Object fact : facts) {
             if (log.isDebugEnabled()) {
-                log.debug("Insert {}", fact);
+                log.debugf("Insert %s", fact);
             }
             kSession.insert(fact);
         }
         if (log.isDebugEnabled()) {
-            log.debug("addFacts( {} )", facts.toString());
+            log.debugf("addFacts( %s )", facts.toString());
             log.debug("==> Begin Dump");
             for (FactHandle f : kSession.getFactHandles()) {
                 Object sessionObject = kSession.getObject(f);
-                log.debug("Fact:  {}", sessionObject.toString());
+                log.debugf("Fact:  %s", sessionObject.toString());
             }
             log.debug("==> End Dump");
         }
@@ -137,18 +138,14 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
     @Override
     public void addGlobal(String name, Object global) {
-        if (log.isDebugEnabled()) {
-            log.debug("Add Global {} = {} ", name, global);
-        }
+        log.debugf("Add Global %s = %s ", name, global);
         kSession.setGlobal(name, global);
     }
 
     @Override
     public void clear() {
         for (FactHandle factHandle : kSession.getFactHandles()) {
-            if (log.isDebugEnabled()) {
-                log.debug("Delete {}", factHandle);
-            }
+            log.debugf("Delete %s", factHandle);
             kSession.delete(factHandle);
         }
     }
@@ -164,17 +161,17 @@ public class DroolsRulesEngineImpl implements RulesEngine {
         int fireCycle = 0;
         long startFiring = System.currentTimeMillis();
         while (!pendingData.isEmpty() || !pendingEvents.isEmpty()) {
-            log.debug("Firing rules... PendingData [{}] PendingEvents [{}]", initialPendingData,
+            log.debugf("Firing rules... PendingData [%s] PendingEvents [%s]", initialPendingData,
                     initialPendingEvents);
 
             batchData();
             batchEvents();
 
             if (log.isTraceEnabled()) {
-                log.trace("Firing cycle [{}] - with these facts: ", fireCycle);
+                log.tracef("Firing cycle [%s] - with these facts: ", fireCycle);
                 for (FactHandle fact : kSession.getFactHandles()) {
                     Object o = kSession.getObject(fact);
-                    log.trace("Fact: {}", o);
+                    log.tracef("Fact: %s", o);
                 }
             }
 
@@ -182,11 +179,9 @@ public class DroolsRulesEngineImpl implements RulesEngine {
             fireCycle++;
         }
         long firingTime = System.currentTimeMillis() - startFiring;
-        if (log.isDebugEnabled()) {
-            log.debug("Firing took [{}] ms", firingTime);
-        }
+        log.debugf("Firing took [%s] ms", firingTime);
         if (firingTime > PERF_FIRING_THRESHOLD) {
-            log.warn("Firing rules... PendingData [{}] PendingEvents [{}] took [{}] ms exceeding [{}] ms",
+            log.warnf("Firing rules... PendingData [%s] PendingEvents [%s] took [%s] ms exceeding [%s] ms",
                     initialPendingData, initialPendingEvents, firingTime, PERF_FIRING_THRESHOLD);
         }
     }
@@ -206,22 +201,22 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
             } else {
                 if ((d.getTimestamp() - previousData.getTimestamp()) < minReportingIntervalData) {
-                    log.trace("MinReportingInterval violation, prev: {}, removed: {}", previousData, d);
+                    log.tracef("MinReportingInterval violation, prev: %s, removed: %s", previousData, d);
                 } else {
                     pendingData.add(d);
-                    log.trace("Deferring data, keep: {}, defer: {}", previousData, d);
+                    log.tracef("Deferring data, keep: %s, defer: %s", previousData, d);
                 }
             }
 
             if (!pendingData.isEmpty()) {
-                log.debug("Deferring [{}] Datum(s) to next firing !!", pendingData.size());
+                log.debugf("Deferring [%s] Datum(s) to next firing !!", pendingData.size());
             }
         }
 
         long batchingTime = System.currentTimeMillis() - startBatching;
-        log.debug("Batching Data [{}] took [{}]", batchData.size(), batchingTime);
+        log.debugf("Batching Data [%s] took [%s]", batchData.size(), batchingTime);
         if (batchingTime > PERF_BATCHING_THRESHOLD) {
-            log.warn("Batching Data [{}] took [{}] ms exceeding [{}] ms",
+            log.warnf("Batching Data [%s] took [%s] ms exceeding [%s] ms",
                     batchData.size(), batchingTime, PERF_BATCHING_THRESHOLD);
         }
     }
@@ -241,22 +236,22 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
             } else {
                 if ((e.getCtime() - previousEvent.getCtime()) < minReportingIntervalEvents) {
-                    log.trace("MinReportingInterval violation, prev: {}, removed: {}", previousEvent, e);
+                    log.tracef("MinReportingInterval violation, prev: %s, removed: %s", previousEvent, e);
                 } else {
                     pendingEvents.add(e);
-                    log.trace("Deferring event, keep: {}, defer: {}", previousEvent, e);
+                    log.tracef("Deferring event, keep: %s, defer: %s", previousEvent, e);
                 }
             }
         }
 
         if (!pendingEvents.isEmpty()) {
-            log.debug("Deferring [{}] Event(s) to next firing !!", pendingEvents.size());
+            log.debugf("Deferring [%s] Event(s) to next firing !!", pendingEvents.size());
         }
 
         long batchingTime = System.currentTimeMillis() - startBatching;
-        log.debug("Batching Events [{}] took [{}]", batchEvents.size(), batchingTime);
+        log.debugf("Batching Events [%s] took [%s]", batchEvents.size(), batchingTime);
         if (batchingTime > PERF_BATCHING_THRESHOLD) {
-            log.warn("Batching Events [{}] took [{}] ms exceeding [{}] ms",
+            log.warnf("Batching Events [%s] took [%s] ms exceeding [%s] ms",
                     batchEvents.size(), batchingTime, PERF_BATCHING_THRESHOLD);
         }
     }
@@ -274,11 +269,11 @@ public class DroolsRulesEngineImpl implements RulesEngine {
             result = kSession.getObject(factHandle);
         }
         if (log.isDebugEnabled()) {
-            log.debug("getFact( {} )", o.toString());
+            log.debugf("getFact( %s )", o.toString());
             log.debug("==> Begin Dump");
             for (FactHandle fact : kSession.getFactHandles()) {
                 Object sessionObject = kSession.getObject(fact);
-                log.debug("Fact:  {}", sessionObject.toString());
+                log.debugf("Fact:  %s", sessionObject.toString());
             }
             log.debug("==> End Dump");
         }
@@ -289,17 +284,15 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     public void removeFact(Object fact) {
         FactHandle factHandle = kSession.getFactHandle(fact);
         if (factHandle != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Delete {}", factHandle);
-            }
+            log.debugf("Delete %s", factHandle);
             kSession.delete(factHandle);
         }
         if (log.isDebugEnabled()) {
-            log.debug("removeFact( {} )", fact.toString());
+            log.debugf("removeFact( %s )", fact.toString());
             log.debug("==> Begin Dump");
             for (FactHandle f : kSession.getFactHandles()) {
                 Object sessionObject = kSession.getObject(f);
-                log.debug("Fact:  {}", sessionObject.toString());
+                log.debugf("Fact:  %s", sessionObject.toString());
             }
             log.debug("==> End Dump");
         }
@@ -309,17 +302,15 @@ public class DroolsRulesEngineImpl implements RulesEngine {
     public void updateFact(Object fact) {
         FactHandle factHandle = kSession.getFactHandle(fact);
         if (factHandle != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Update {}", factHandle);
-            }
+            log.debugf("Update %s", factHandle);
             kSession.update(factHandle, fact);
         }
         if (log.isDebugEnabled()) {
-            log.debug("updateFact( {} )", fact.toString());
+            log.debugf("updateFact( %s )", fact.toString());
             log.debug("==> Begin Dump");
             for (FactHandle f : kSession.getFactHandles()) {
                 Object sessionObject = kSession.getObject(f);
-                log.debug("Fact:  {}", sessionObject.toString());
+                log.debugf("Fact:  %s", sessionObject.toString());
             }
             log.debug("==> End Dump");
         }
@@ -352,9 +343,7 @@ public class DroolsRulesEngineImpl implements RulesEngine {
 
     @Override
     public void removeGlobal(String name) {
-        if (log.isDebugEnabled()) {
-            log.debug("Remove Global {}", name);
-        }
+        log.debugf("Remove Global %s", name);
         kSession.setGlobal(name, null);
     }
 

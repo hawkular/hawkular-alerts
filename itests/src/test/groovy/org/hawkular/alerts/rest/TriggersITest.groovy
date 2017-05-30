@@ -26,7 +26,8 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.dampening.Dampening
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.log.MsgLogger
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
@@ -39,7 +40,7 @@ import static org.junit.Assert.assertNotNull
  */
 class TriggersITest extends AbstractITestBase {
 
-    static MsgLogger logger = MsgLogger.getLogger(TriggersITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(TriggersITest.class)
 
     @Test
     void createTrigger() {

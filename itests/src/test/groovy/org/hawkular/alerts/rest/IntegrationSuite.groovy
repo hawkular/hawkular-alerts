@@ -19,7 +19,8 @@ package org.hawkular.alerts.rest
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
 import org.hawkular.alerts.engine.CassPersistenceTest
-import org.hawkular.alerts.log.MsgLogger
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.runner.RunWith
@@ -54,7 +55,7 @@ import com.icegreen.greenmail.util.ServerSetup
         TriggersITest.class
 ])
 class IntegrationSuite {
-    static MsgLogger log = MsgLogger.getLogger(IntegrationSuite.class)
+    static MsgLogger log = MsgLogging.getMsgLogger(IntegrationSuite.class)
     static TEST_SMTP_HOST = "localhost";
     static TEST_SMTP_PORT = 2525;
     static baseURI = System.getProperty('hawkular.base-uri') ?: 'http://127.0.0.1:8080/hawkular/alerts/'

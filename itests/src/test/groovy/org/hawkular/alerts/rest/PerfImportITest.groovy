@@ -23,7 +23,8 @@ import org.hawkular.alerts.api.model.export.Definitions
 import org.hawkular.alerts.api.model.trigger.FullTrigger
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.log.MsgLogger
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
@@ -36,7 +37,7 @@ import static org.junit.Assert.assertEquals
  */
 class PerfImportITest extends AbstractITestBase {
 
-    static MsgLogger logger = MsgLogger.getLogger(PerfImportITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(PerfImportITest.class)
 
     Definitions prepareDefinitions(String prefix, int numTriggers) {
         Definitions definitions = new Definitions();

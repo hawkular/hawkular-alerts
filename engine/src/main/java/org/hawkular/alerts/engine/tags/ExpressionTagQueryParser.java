@@ -42,14 +42,15 @@ import org.hawkular.alerts.engine.tags.parser.TagQueryBaseListener;
 import org.hawkular.alerts.engine.tags.parser.TagQueryLexer;
 import org.hawkular.alerts.engine.tags.parser.TagQueryParser;
 import org.hawkular.alerts.engine.tags.parser.TagQueryParser.TagexpContext;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 /**
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class ExpressionTagQueryParser extends TagQueryBaseListener implements ANTLRErrorListener {
-    private static final MsgLogger log = MsgLogger.getLogger(ExpressionTagQueryParser.class);
+    private static final MsgLogger log = MsgLogging.getMsgLogger(ExpressionTagQueryParser.class);
 
     private ExpressionTagResolver resolver;
 
@@ -137,7 +138,7 @@ public class ExpressionTagQueryParser extends TagQueryBaseListener implements AN
             throw new IllegalArgumentException("Expression [" + expression + "] is malformed. Msg: " + errorMsg);
         }
         if (log.isDebugEnabled()) {
-            log.debug("Expression [{}] evaluated as [{}]", expression, evalsPostfix);
+            log.debugf("Expression [%s] evaluated as [%s]", expression, evalsPostfix);
         }
         return prefix(evalsPostfix);
     }

@@ -101,8 +101,10 @@
     <version.org.drools>6.4.0.Final</version.org.drools>
     <version.org.elasticsearch.client>5.2.2</version.org.elasticsearch.client>
     <version.org.freemarker>2.3.23</version.org.freemarker>
-    <version.org.hawkular.commons>0.9.1.Final</version.org.hawkular.commons>
+    <version.org.hawkular.commons>0.9.7.Final-SRC-revision-dde9a4e2eeb789807bfeaeb7cf881c4840c778ad</version.org.hawkular.commons>
     <version.org.infinispan.wildfly>9.0.0.Final</version.org.infinispan.wildfly>
+    <version.org.jboss.logging>3.3.1.Final</version.org.jboss.logging>
+    <version.org.jboss.logging.jboss-logging-tools>2.0.2.Final</version.org.jboss.logging.jboss-logging-tools>
     <version.org.jboss.weld.se>2.4.3.Final</version.org.jboss.weld.se>
     <version.org.schwering>2.0.0.Alpha3</version.org.schwering>
     <version.org.slf4j>1.7.2</version.org.slf4j>
@@ -125,8 +127,6 @@
         <module>engine-extensions</module>
         <module>filter-api</module>
         <module>itests</module>
-        <module>netty</module>
-        <module>rest-api</module>
         <module>rest-handlers</module>
         <!--module>hawkular-alerters</module-->
       </modules>

@@ -31,7 +31,8 @@ import org.hawkular.alerts.actions.api.Plugin;
 import org.hawkular.alerts.actions.api.Sender;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 /**
  * Helper class to find the classes annotated with ActionPlugin and instantiate them.
@@ -39,7 +40,7 @@ import org.hawkular.alerts.log.MsgLogger;
  * @author Lucas Ponce
  */
 public class ActionPlugins {
-    private static final MsgLogger log = MsgLogger.getLogger(ActionPlugins.class);
+    private static final MsgLogger log = MsgLogging.getMsgLogger(ActionPlugins.class);
     private ActionsService actions;
     private static ActionPlugins instance;
     private Map<String, ActionPluginListener> plugins;
@@ -87,7 +88,7 @@ public class ActionPlugins {
                                 Plugin plugin = (Plugin)clazz.getAnnotation(Plugin.class);
                                 String name = plugin.name();
                                 Object newInstance = clazz.newInstance();
-                                log.info("Scanning {}", clazz.getName());
+                                log.infof("Scanning %s", clazz.getName());
                                 if (newInstance instanceof ActionPluginListener) {
                                     ActionPluginListener pluginInstance = (ActionPluginListener)newInstance;
                                     injectActionPluginSender(name, pluginInstance);
@@ -98,7 +99,7 @@ public class ActionPlugins {
                                 }
                             }
                         } catch (Exception e) {
-                            log.error("Error loading Handler {}. Reason: {}", className, e.toString());
+                            log.errorf("Error loading Handler %s. Reason: %s", className, e.toString());
                             System.exit(1);
                         }
                     }

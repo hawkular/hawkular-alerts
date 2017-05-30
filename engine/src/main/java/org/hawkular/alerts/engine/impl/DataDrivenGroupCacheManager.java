@@ -30,8 +30,9 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerType;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsService;
-import org.hawkular.alerts.log.MsgLogger;
-import org.hawkular.alerts.properties.AlertProperties;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
+import org.hawkular.commons.properties.HawkularProperties;
 
 /**
  * A helper class to keep track of DataDrivenGroup
@@ -40,7 +41,7 @@ import org.hawkular.alerts.properties.AlertProperties;
  * @author Lucas Ponce
  */
 public class DataDrivenGroupCacheManager {
-    private final MsgLogger log = MsgLogger.getLogger(DataDrivenGroupCacheManager.class);
+    private final MsgLogger log = MsgLogging.getMsgLogger(DataDrivenGroupCacheManager.class);
 
     private static final String DATA_DRIVEN_TRIGGERS_ENABLED = "hawkular-alerts.data-driven-triggers-enabled";
     private static final String DATA_DRIVEN_TRIGGERS_ENABLED_DEFAULT = "true";
@@ -64,10 +65,10 @@ public class DataDrivenGroupCacheManager {
     }
 
     public void init() {
-        dataDrivenTriggersEnabled = new Boolean(AlertProperties.getProperty(DATA_DRIVEN_TRIGGERS_ENABLED,
+        dataDrivenTriggersEnabled = new Boolean(HawkularProperties.getProperty(DATA_DRIVEN_TRIGGERS_ENABLED,
                 DATA_DRIVEN_TRIGGERS_ENABLED_DEFAULT));
 
-        log.info("Data-driven Group Triggers enabled: {}", dataDrivenTriggersEnabled);
+        log.infof("Data-driven Group Triggers enabled: %s", dataDrivenTriggersEnabled);
 
         if (dataDrivenTriggersEnabled) {
 
@@ -112,7 +113,7 @@ public class DataDrivenGroupCacheManager {
                     }
                 }
 
-                log.debug("Updating [{}] data-driven triggers out of [{}] total triggers...", ddGroupTriggers.size(),
+                log.debugf("Updating [%s] data-driven triggers out of [%s] total triggers...", ddGroupTriggers.size(),
                         allTriggers.size());
 
                 for (Trigger groupTrigger : ddGroupTriggers) {
@@ -150,7 +151,7 @@ public class DataDrivenGroupCacheManager {
             log.error("FAILED to updateCache. Unable to generate data-driven member triggers!", e);
             sourcesMap = new HashMap<>();
         } finally {
-            log.debug("Cache updates complete. sourceMap: {}", sourcesMap);
+            log.debugf("Cache updates complete. sourceMap: %s", sourcesMap);
             updating = false;
         }
     }

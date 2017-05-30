@@ -34,7 +34,8 @@ import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.service.RulesEngine;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -53,7 +54,7 @@ import org.junit.runners.MethodSorters;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PerfRulesEngineTest {
-    private static final MsgLogger log = MsgLogger.getLogger(PerfRulesEngineTest.class);
+    private static final MsgLogger log = MsgLogging.getMsgLogger(PerfRulesEngineTest.class);
 
     RulesEngine rulesEngine = new DroolsRulesEngineImpl();
     List<Alert> alerts = new ArrayList<>();

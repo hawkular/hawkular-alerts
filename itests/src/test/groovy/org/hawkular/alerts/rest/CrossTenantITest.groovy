@@ -21,7 +21,8 @@ import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.log.MsgLogger
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
@@ -33,7 +34,7 @@ import static org.junit.Assert.assertEquals
  */
 class CrossTenantITest extends AbstractITestBase {
 
-    static MsgLogger logger = MsgLogger.getLogger(CrossTenantITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(CrossTenantITest.class)
 
 
     void cleanEventsAlerts(List<String> tenantIds) {

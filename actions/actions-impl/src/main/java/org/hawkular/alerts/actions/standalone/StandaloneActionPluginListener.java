@@ -25,7 +25,8 @@ import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.alerts.log.AlertingLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 /**
  * Main standalone listener for plugins implementation.
@@ -33,7 +34,7 @@ import org.hawkular.alerts.log.MsgLogger;
  * @author Lucas Ponce
  */
 public class StandaloneActionPluginListener implements ActionListener {
-    private static final MsgLogger log = MsgLogger.getLogger(StandaloneActionPluginRegister.class);
+    private static final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, StandaloneActionPluginRegister.class);
 
     private DefinitionsService definitions;
 
@@ -65,8 +66,7 @@ public class StandaloneActionPluginListener implements ActionListener {
             final ActionPluginListener plugin = plugins.get(actionPlugin);
             if (plugin == null) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Received action [" + actionPlugin +
-                            "] but no ActionPluginListener found on this deployment");
+                    log.debugf("Received action [%s] but no ActionPluginListener found on this deployment", actionPlugin);
                 }
                 return;
             }
@@ -77,13 +77,13 @@ public class StandaloneActionPluginListener implements ActionListener {
                     try {
                         plugin.process(pluginMessage);
                     } catch (Exception e) {
-                        log.debug("Error processing action: " + action.getActionPlugin(), e);
+                        log.debugf("Error processing action: %s", action.getActionPlugin(), e);
                         log.errorProcessingAction(e.getMessage());
                     }
                 });
             }
         } catch (Exception e) {
-            log.debug("Error processing action: " + action.getActionPlugin(), e);
+            log.debugf("Error processing action: %s", action.getActionPlugin(), e);
             log.errorProcessingAction(e.getMessage());
         }
     }

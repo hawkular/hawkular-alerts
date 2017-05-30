@@ -16,7 +16,6 @@
  */
 package org.hawkular.alerts.rest
 
-import org.hawkular.alerts.log.MsgLogger
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals

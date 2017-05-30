@@ -21,7 +21,8 @@ import org.hawkular.alerts.api.model.condition.ThresholdCondition
 import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.log.MsgLogger
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
@@ -34,7 +35,7 @@ import static org.junit.Assert.assertEquals
  */
 class PerfSendITest extends AbstractITestBase {
 
-    static MsgLogger logger = MsgLogger.getLogger(PerfSendITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(PerfSendITest.class)
 
     int numTriggers = 5000;
 

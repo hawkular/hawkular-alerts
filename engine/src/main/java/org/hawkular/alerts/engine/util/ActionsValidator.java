@@ -19,7 +19,9 @@ package org.hawkular.alerts.engine.util;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.TriggerAction;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.alerts.log.AlertingLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 /**
  * A Trigger can define a list of Actions that will be executed on Event/Alert generation.
@@ -33,7 +35,7 @@ import org.hawkular.alerts.log.MsgLogger;
  * @author Lucas Ponce
  */
 public class ActionsValidator {
-    private static final MsgLogger log = MsgLogger.getLogger(ActionsValidator.class);
+    private static final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, ActionsValidator.class);
     /**
      * Validate if an Event should generate an Action based on the constraints defined on a TriggerAction.
      *

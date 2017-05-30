@@ -16,7 +16,8 @@
  */
 package org.hawkular.alerts.rest
 
-import org.hawkular.alerts.log.MsgLogger
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 
 import static org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator
 import static org.hawkular.alerts.api.model.data.AvailabilityType.DOWN
@@ -50,7 +51,7 @@ import org.junit.Test
 @FixMethodOrder(NAME_ASCENDING)
 class LifecycleITest extends AbstractITestBase {
 
-    static MsgLogger logger = MsgLogger.getLogger(LifecycleITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(LifecycleITest.class)
 
     static host = System.getProperty('hawkular.host') ?: '127.0.0.1'
     static port = Integer.valueOf(System.getProperty('hawkular.port') ?: "8080")

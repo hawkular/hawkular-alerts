@@ -73,7 +73,8 @@ import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.alerts.engine.exception.NotFoundApplicationException;
 import org.hawkular.alerts.engine.service.AlertsEngine;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.alerts.log.AlertingLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
@@ -101,7 +102,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     private static final String BATCH_SIZE_ENV = "BATCH_SIZE";
     private static final String BATCH_SIZE_DEFAULT = "10";
 
-    private final MsgLogger log = MsgLogger.getLogger(CassDefinitionsServiceImpl.class);
+    private final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, CassDefinitionsServiceImpl.class);
 
     // Note, the next two variables hold 'state' only for the duration of a single EJB method. This is
     // a stateless EJB, different method invocations can happen in different bean instances.  The idea here is
@@ -520,7 +521,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             }
 
             if (enabled == existingGroupTrigger.isEnabled()) {
-                log.debug("Ignoring enable/disable request. Group Trigger {} is already set enabled={}",
+                log.debugf("Ignoring enable/disable request. Group Trigger %s is already set enabled=%s",
                         groupTriggerId, enabled);
                 continue;
             }
@@ -563,7 +564,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             }
 
             if (enabled == existingTrigger.isEnabled()) {
-                log.debug("Ignoring enable/disable request. Trigger {} is already set enabled={}", triggerId,
+                log.debugf("Ignoring enable/disable request. Trigger %s is already set enabled=%s", triggerId,
                         enabled);
                 continue;
             }
@@ -1493,9 +1494,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
         Dampening dampening = getDampening(tenantId, dampeningId);
         if (null == dampening) {
-            if (log.isDebugEnabled()) {
-                log.debug("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
-            }
+            log.debugf("Ignoring removeDampening(%s), the Dampening does not exist.", dampeningId);
             return;
         }
 
@@ -1529,9 +1528,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
 
             Dampening dampening = getDampening(tenantId, dampeningId);
             if (null == dampening) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Ignoring removeDampening(" + dampeningId + "), the Dampening does not exist.");
-                }
+                log.debug("Ignoring removeDampening(%s), the Dampening does not exist.");
                 return;
             }
 
@@ -2638,9 +2635,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                     condition = tCondition;
                     break;
                 default:
-                    if (log.isDebugEnabled()) {
-                        log.debug("Unexpected condition type found: " + type);
-                    }
+                    log.debugf("Unexpected condition type found: %s", type);
                     break;
             }
         } else {
@@ -3190,9 +3185,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 break;
                         }
                     } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("ActionDefinition " + a + " is empty. Ignored on the import process");
-                        }
+                        log.debugf("ActionDefinition %s is empty. Ignored on the import process.", a);
                     }
                 }
             }
@@ -3228,9 +3221,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                                 break;
                         }
                     } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Trigger " + t + " is empty. Ignored on the import process");
-                        }
+                        log.debugf("Trigger %s is empty. Ignored on the import process.", t);
                     }
                 }
             }

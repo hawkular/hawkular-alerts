@@ -22,8 +22,14 @@
     </dependency>
 
     <dependency>
+      <groupId>org.hawkular.commons</groupId>
+      <artifactId>hawkular-rest-api</artifactId>
+      <version>${version.org.hawkular.commons}</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-rest-api</artifactId>
+      <artifactId>hawkular-alerts-actions-impl</artifactId>
       <version>${project.version}</version>
     </dependency>
 
@@ -46,5 +52,27 @@
       <version>${version.junit}</version>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>${version.org.apache.maven.plugins.maven-jar-plugin}</version>
+        <configuration>
+          <archive>
+            <index>true</index>
+            <manifest>
+              <addClasspath>true</addClasspath>
+            </manifest>
+            <manifestEntries>
+              <Implementation-Vendor-Id>org.hawkular.alerts</Implementation-Vendor-Id>
+              <Implementation-Version>${project.version}</Implementation-Version>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

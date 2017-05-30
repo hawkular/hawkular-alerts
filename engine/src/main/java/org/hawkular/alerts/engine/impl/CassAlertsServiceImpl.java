@@ -61,7 +61,8 @@ import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl.IncomingEvents;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.hawkular.alerts.engine.tags.ExpressionTagQueryParser;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.alerts.log.AlertingLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
@@ -94,7 +95,7 @@ public class CassAlertsServiceImpl implements AlertsService {
     private static final String BATCH_SIZE_ENV = "BATCH_SIZE";
     private static final String BATCH_SIZE_DEFAULT = "10";
 
-    private static final MsgLogger log = MsgLogger.getLogger(CassAlertsServiceImpl.class);
+    private static final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, CassAlertsServiceImpl.class);
 
     private int criteriaNoQuerySize;
     private int batchSize;
@@ -176,9 +177,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (alerts.isEmpty()) {
             return;
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Adding " + alerts.size() + " alerts");
-        }
+        log.debugf("Adding %s alerts", alerts.size());
         PreparedStatement insertAlert = CassStatement.get(session, CassStatement.INSERT_ALERT);
         PreparedStatement insertAlertTrigger = CassStatement.get(session, CassStatement.INSERT_ALERT_TRIGGER);
         PreparedStatement insertAlertCtime = CassStatement.get(session, CassStatement.INSERT_ALERT_CTIME);
@@ -231,9 +230,7 @@ public class CassAlertsServiceImpl implements AlertsService {
         if (events.isEmpty()) {
             return;
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Adding " + events.size() + " events");
-        }
+        log.debugf("Adding %s events", events.size());
         PreparedStatement insertEvent = CassStatement.get(session, CassStatement.INSERT_EVENT);
         PreparedStatement insertEventCategory = CassStatement.get(session, CassStatement.INSERT_EVENT_CATEGORY);
         PreparedStatement insertEventCtime = CassStatement.get(session, CassStatement.INSERT_EVENT_CTIME);
@@ -613,8 +610,8 @@ public class CassAlertsServiceImpl implements AlertsService {
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin());
 
-        if (filter && log.isDebugEnabled()) {
-            log.debug("getAlerts criteria: " + criteria.toString());
+        if (filter) {
+            log.debugf("getAlerts criteria: %s", criteria.toString());
         }
 
         List<Alert> alerts = new ArrayList<>();
@@ -758,8 +755,7 @@ public class CassAlertsServiceImpl implements AlertsService {
                 } else {
                     // This is the worst-case scenario of criteria featuring only manual filtering.  Generate a
                     // warning because clients should be discouraged from using such vague criteria.
-                    log.warn("Only supplying Severity and/or Status can be slow and return large Sets: {}",
-                            criteria);
+                    log.warnf("Only supplying Severity and/or Status can be slow and return large Sets: %s", criteria);
                     fetchAllAlerts(tenantId, thin, alerts);
                 }
 
@@ -1326,8 +1322,8 @@ public class CassAlertsServiceImpl implements AlertsService {
         int noQuerySize = (null == criteria || null == criteria.getCriteriaNoQuerySize()) ? criteriaNoQuerySize
                 : criteria.getCriteriaNoQuerySize().intValue();
 
-        if (filter && log.isDebugEnabled()) {
-            log.debug("getEvents criteria: " + criteria.toString());
+        if (filter) {
+            log.debugf("getEvents criteria: %s", criteria.toString());
         }
 
         List<Event> events = new ArrayList<>();
@@ -1963,10 +1959,7 @@ public class CassAlertsServiceImpl implements AlertsService {
             }
 
             if (!allResolved) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Ignoring resolveOptions, not all Alerts for Trigger " + trigger.toString() +
-                            " are resolved");
-                }
+                log.debugf("Ignoring resolveOptions, not all Alerts for Trigger %s are resolved", trigger.toString());
                 return;
             }
 

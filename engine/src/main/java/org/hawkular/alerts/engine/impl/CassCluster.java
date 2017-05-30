@@ -34,8 +34,9 @@ import org.cassalog.core.Cassalog;
 import org.cassalog.core.CassalogBuilder;
 import org.hawkular.alerts.cache.IspnCacheManager;
 import org.hawkular.alerts.engine.util.TokenReplacingReader;
-import org.hawkular.alerts.log.MsgLogger;
-import org.hawkular.alerts.properties.AlertProperties;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
+import org.hawkular.commons.properties.HawkularProperties;
 import org.infinispan.Cache;
 
 import com.datastax.driver.core.Cluster;
@@ -57,7 +58,7 @@ import com.google.common.io.CharStreams;
  * @author Lucas Ponce
  */
 public class CassCluster {
-    private static final MsgLogger log = MsgLogger.getLogger(CassCluster.class);
+    private static final MsgLogger log = MsgLogging.getMsgLogger(CassCluster.class);
 
     /*
         PORT used by the Cassandra cluster
@@ -148,24 +149,24 @@ public class CassCluster {
     private Cache schemaCache;
 
     private void readProperties() {
-        attempts = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_ATTEMPTS,
+        attempts = Integer.parseInt(HawkularProperties.getProperty(ALERTS_CASSANDRA_RETRY_ATTEMPTS,
                 ALERTS_CASSANDRA_RETRY_ATTEMPTS_DEFAULT));
-        timeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_RETRY_TIMEOUT,
+        timeout = Integer.parseInt(HawkularProperties.getProperty(ALERTS_CASSANDRA_RETRY_TIMEOUT,
                 ALERTS_CASSANDRA_RETRY_TIMEOUT_DEFAULT));
-        cqlPort = AlertProperties.getProperty(ALERTS_CASSANDRA_PORT, ALERTS_CASSANDRA_PORT_ENV,
+        cqlPort = HawkularProperties.getProperty(ALERTS_CASSANDRA_PORT, ALERTS_CASSANDRA_PORT_ENV,
                 ALERTS_CASSANDRA_PORT_ENV_DEFAULT);
-        nodes = AlertProperties.getProperty(ALERTS_CASSANDRA_NODES, ALERTS_CASSANDRA_NODES_ENV,
+        nodes = HawkularProperties.getProperty(ALERTS_CASSANDRA_NODES, ALERTS_CASSANDRA_NODES_ENV,
                 ALERTS_CASSANDRA_NODES_ENV_DEFAULT);
-        connTimeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_CONNECT_TIMEOUT,
+        connTimeout = Integer.parseInt(HawkularProperties.getProperty(ALERTS_CASSANDRA_CONNECT_TIMEOUT,
                 ALERTS_CASSANDRA_CONNECT_TIMEOUT_ENV, String.valueOf(SocketOptions.DEFAULT_CONNECT_TIMEOUT_MILLIS)));
-        readTimeout = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_READ_TIMEOUT,
+        readTimeout = Integer.parseInt(HawkularProperties.getProperty(ALERTS_CASSANDRA_READ_TIMEOUT,
                 ALERTS_CASSANDRA_READ_TIMEOUT_ENV, String.valueOf(SocketOptions.DEFAULT_READ_TIMEOUT_MILLIS)));
-        overwrite = Boolean.parseBoolean(AlertProperties.getProperty(ALERTS_CASSANDRA_OVERWRITE,
+        overwrite = Boolean.parseBoolean(HawkularProperties.getProperty(ALERTS_CASSANDRA_OVERWRITE,
                 ALERTS_CASSANDRA_OVERWRITE_ENV, ALERTS_CASSANDRA_OVERWRITE_ENV_DEFAULT));
-        keyspace = AlertProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, ALERTS_CASSANDRA_KEYSPACE_DEFAULT);
-        cassandraUseSSL = Boolean.parseBoolean(AlertProperties.getProperty(ALERTS_CASSANDRA_USESSL,
+        keyspace = HawkularProperties.getProperty(ALERTS_CASSANDRA_KEYSPACE, ALERTS_CASSANDRA_KEYSPACE_DEFAULT);
+        cassandraUseSSL = Boolean.parseBoolean(HawkularProperties.getProperty(ALERTS_CASSANDRA_USESSL,
                 ALERTS_CASSANDRA_USESSL_ENV, ALERTS_CASSANDRA_USESSL_ENV_DEFAULT));
-        maxQueue = Integer.parseInt(AlertProperties.getProperty(ALERTS_CASSANDRA_MAX_QUEUE,
+        maxQueue = Integer.parseInt(HawkularProperties.getProperty(ALERTS_CASSANDRA_MAX_QUEUE,
                 ALERTS_CASSANDRA_MAX_QUEUE_ENV, ALERTS_CASSANDRA_MAX_QUEUE_ENV_DEFAULT));
 
         distributed = IspnCacheManager.isDistributed();
@@ -224,15 +225,14 @@ public class CassCluster {
                 cluster = clusterBuilder.build();
                 session = cluster.connect();
             } catch (Exception e) {
-                log.warn("Could not connect to Cassandra cluster - assuming is not up yet. Cause: " +
+                log.warnf("Could not connect to Cassandra cluster - assuming is not up yet. Cause: %s",
                         ((e.getCause() == null) ? e : e.getCause()));
                 if (attempts == 0) {
                     throw e;
                 }
             }
             if (session == null) {
-                log.warn("[" + currentAttempts + "] Retrying connecting to Cassandra cluster " +
-                        "in [" + timeout + "]ms...");
+                log.warnf("[%s] Retrying connecting to Cassandra cluster in [%s] ms...", currentAttempts, timeout);
                 currentAttempts--;
                 try {
                     Thread.sleep(timeout);
@@ -271,7 +271,7 @@ public class CassCluster {
             for (Host host : cluster.getMetadata().getAllHosts()) {
                 if (!host.isUp()) {
                     isReady = false;
-                    log.warn("Cassandra node {} may not be up yet. Waiting {} ms for node to come up", host, timeout);
+                    log.warnf("Cassandra node %s may not be up yet. Waiting %s ms for node to come up", host, timeout);
                     try {
                         Thread.sleep(timeout);
                     } catch(InterruptedException e) {
@@ -300,23 +300,22 @@ public class CassCluster {
     }
 
     private void initScheme() throws IOException {
-        log.info("Checking Schema existence for keyspace: {}", keyspace);
+        log.infof("Checking Schema existence for keyspace: %s", keyspace);
         createSchema(session, keyspace, overwrite);
         waitForSchemaCheck();
         if (!checkSchema()) {
-            log.error("Schema {} not created correctly", keyspace);
+            log.errorf("Schema %s not created correctly", keyspace);
             initialized = false;
         } else {
             initialized = true;
-            log.info("Done creating Schema for keyspace: {}", keyspace);
+            log.infof("Done creating Schema for keyspace: %s", keyspace);
         }
     }
 
     private void waitForSchemaCheck() {
         int currentAttempts = attempts;
         while(!checkSchema() && !Thread.currentThread().isInterrupted() && currentAttempts >= 0) {
-            log.warn("[{}] Keyspace detected but schema not fully created. " +
-                    "Retrying in [{}] ms...", currentAttempts, timeout);
+            log.warnf("[%s] Keyspace detected but schema not fully created. Retrying in [%s] ms...", currentAttempts, timeout);
             currentAttempts--;
             try {
                 Thread.sleep(timeout);
@@ -336,19 +335,17 @@ public class CassCluster {
             for (String cql : content.split("(?m)^-- #.*$")) {
                 if (!cql.startsWith("--")) {
                     updatedCQL = substituteVars(cql.trim(), schemaVars);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Checking CQL:\n {} \n",updatedCQL);
-                    }
+                    log.debugf("Checking CQL:\n %s \n",updatedCQL);
                     ResultSet rs = session.execute(updatedCQL);
                     if (rs.isExhausted()) {
-                        log.warn("Table not created.\nEXECUTING CQL: \n{}", updatedCQL);
+                        log.warnf("Table not created.\nEXECUTING CQL: \n%s", updatedCQL);
                         return false;
                     }
                 }
             }
             return true;
         } catch (Exception e) {
-            log.error("Failed schema check: {}\nEXECUTING CQL:\n{}", e, updatedCQL);
+            log.errorf("Failed schema check: %s\nEXECUTING CQL:\n%s", e, updatedCQL);
             return false;
         }
     }
@@ -420,8 +417,7 @@ public class CassCluster {
         if (!isInitialized()) {
             int currentAttempts = attempts;
             while(!initialized && !Thread.currentThread().isInterrupted() && currentAttempts >= 0) {
-                log.warn("[{}] Session is not yet initialized. Retrying in [{}] ms...",
-                        currentAttempts, timeout);
+                log.warnf("[%s] Session is not yet initialized. Retrying in [%s] ms...", currentAttempts, timeout);
                 currentAttempts--;
                 try {
                     Thread.sleep(timeout);

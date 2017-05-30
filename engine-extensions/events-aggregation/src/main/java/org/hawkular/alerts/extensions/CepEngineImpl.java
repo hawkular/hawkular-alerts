@@ -26,7 +26,8 @@ import java.util.concurrent.ExecutorService;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.FullTrigger;
 import org.hawkular.alerts.api.services.AlertsService;
-import org.hawkular.alerts.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 import org.kie.api.KieBase;
 import org.kie.api.KieBaseConfiguration;
 import org.kie.api.conf.EventProcessingOption;
@@ -57,7 +58,7 @@ import org.kie.internal.utils.KieHelper;
  * @author Lucas Ponce
  */
 public class CepEngineImpl implements CepEngine {
-    private final MsgLogger log = MsgLogger.getLogger(CepEngineImpl.class);
+    private final MsgLogger log = MsgLogging.getMsgLogger(CepEngineImpl.class);
 
     Expression expression;
     List<Event> results;
@@ -82,7 +83,7 @@ public class CepEngineImpl implements CepEngine {
     }
 
     public void sendResult(Event event) {
-        log.debug("Resulted event {}", event);
+        log.debugf("Resulted event %s", event);
         executor.submit(() -> {
             try {
                 alertsService.sendEvents(Arrays.asList(event));
@@ -94,7 +95,7 @@ public class CepEngineImpl implements CepEngine {
 
     public void updateConditions(String expiration, Collection<FullTrigger> activeTriggers) {
         expression = new Expression(expiration, activeTriggers);
-        log.debug("Rules: \n  {}", expression);
+        log.debugf("Rules: \n  %s", expression);
         stop();
         KieBaseConfiguration kieBaseConfiguration = KnowledgeBaseFactory.newKnowledgeBaseConfiguration();
         kieBaseConfiguration.setOption( EventProcessingOption.STREAM );
@@ -110,9 +111,9 @@ public class CepEngineImpl implements CepEngine {
             kieSession.addEventListener(new CepAgendaEventListener());
             kieSession.addEventListener(new CepRuleRuntimeEventListener());
         }
-        log.debug("Clock time [{}] ", kieSession.getSessionClock().getCurrentTime());
+        log.debugf("Clock time [%s] ", kieSession.getSessionClock().getCurrentTime());
 
-        kieSession.getKieBase().getKiePackages().stream().forEach(p -> log.debug("Rules: {}", p.getRules()));
+        kieSession.getKieBase().getKiePackages().stream().forEach(p -> log.debugf("Rules: %s", p.getRules()));
 
         executor.submit(() -> {
             log.info("Starting fireUntilHalt()");
@@ -133,7 +134,7 @@ public class CepEngineImpl implements CepEngine {
     }
 
     public static class CepAgendaEventListener implements AgendaEventListener {
-        private final MsgLogger log = MsgLogger.getLogger(CepAgendaEventListener.class);
+        private final MsgLogger log = MsgLogging.getMsgLogger(CepAgendaEventListener.class);
 
         @Override
         public void matchCreated(MatchCreatedEvent event) {
@@ -187,7 +188,7 @@ public class CepEngineImpl implements CepEngine {
     }
 
     public static class CepRuleRuntimeEventListener implements RuleRuntimeEventListener {
-        private final MsgLogger log = MsgLogger.getLogger(CepRuleRuntimeEventListener.class);
+        private final MsgLogger log = MsgLogging.getMsgLogger(CepRuleRuntimeEventListener.class);
 
         @Override
         public void objectInserted(ObjectInsertedEvent event) {
