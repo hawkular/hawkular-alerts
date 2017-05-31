@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.engine.impl;
+package org.hawkular.alerts.engine.impl.cass;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,6 +44,7 @@ import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.cache.ActionsCacheManager;
+import org.hawkular.alerts.engine.impl.AlertsContext;
 import org.hawkular.alerts.engine.util.ActionsValidator;
 import org.hawkular.alerts.log.AlertingLogger;
 import org.hawkular.commons.log.MsgLogging;

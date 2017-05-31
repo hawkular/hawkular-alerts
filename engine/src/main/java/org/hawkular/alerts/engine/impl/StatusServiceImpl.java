@@ -21,8 +21,6 @@ import java.util.Map;
 import org.hawkular.alerts.api.services.StatusService;
 import org.hawkular.alerts.engine.service.PartitionManager;
 
-import com.datastax.driver.core.Session;
-
 /**
  * An implementation of {@link org.hawkular.alerts.api.services.StatusService}.
  *
@@ -33,19 +31,16 @@ public class StatusServiceImpl implements StatusService {
 
     PartitionManager partitionManager;
 
-    Session session;
-
     public void setPartitionManager(PartitionManager partitionManager) {
         this.partitionManager = partitionManager;
     }
 
-    public void setSession(Session session) {
-        this.session = session;
-    }
-
     @Override
     public boolean isStarted() {
-        return session != null && !session.isClosed();
+        // TODO [lponce] this test is quite simple and with a different backend perhaps it doesnt give enough info
+        // TODO Perhaps on this call is better to call backend and check which is working correctly
+        // TODO i.e. SELECT 1 FROM Test or similar kind of test probe
+        return true;
     }
 
     @Override

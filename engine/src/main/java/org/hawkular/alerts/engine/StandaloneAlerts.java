@@ -29,10 +29,10 @@ import org.hawkular.alerts.engine.cache.ActionsCacheManager;
 import org.hawkular.alerts.engine.cache.PublishCacheManager;
 import org.hawkular.alerts.engine.impl.AlertsContext;
 import org.hawkular.alerts.engine.impl.AlertsEngineImpl;
-import org.hawkular.alerts.engine.impl.CassActionsServiceImpl;
-import org.hawkular.alerts.engine.impl.CassAlertsServiceImpl;
-import org.hawkular.alerts.engine.impl.CassCluster;
-import org.hawkular.alerts.engine.impl.CassDefinitionsServiceImpl;
+import org.hawkular.alerts.engine.impl.cass.CassActionsServiceImpl;
+import org.hawkular.alerts.engine.impl.cass.CassAlertsServiceImpl;
+import org.hawkular.alerts.engine.impl.cass.CassCluster;
+import org.hawkular.alerts.engine.impl.cass.CassDefinitionsServiceImpl;
 import org.hawkular.alerts.engine.impl.DataDrivenGroupCacheManager;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.impl.ExtensionsServiceImpl;
@@ -40,9 +40,15 @@ import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl;
 import org.hawkular.alerts.engine.impl.PartitionManagerImpl;
 import org.hawkular.alerts.engine.impl.PropertiesServiceImpl;
 import org.hawkular.alerts.engine.impl.StatusServiceImpl;
+import org.hawkular.alerts.engine.impl.ispn.IspnActionsServiceImpl;
+import org.hawkular.alerts.engine.impl.ispn.IspnAlertsServiceImpl;
+import org.hawkular.alerts.engine.impl.ispn.IspnDefinitionsServiceImpl;
 import org.hawkular.alerts.extensions.CepEngineImpl;
 import org.hawkular.alerts.extensions.EventsAggregationExtension;
 import org.hawkular.alerts.filter.CacheClient;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
+import org.hawkular.commons.properties.HawkularProperties;
 import org.infinispan.manager.EmbeddedCacheManager;
 
 import com.datastax.driver.core.Session;
@@ -53,48 +59,55 @@ import com.datastax.driver.core.Session;
  * @author Lucas Ponce
  */
 public class StandaloneAlerts {
+    private static final MsgLogger log = MsgLogging.getMsgLogger(StandaloneAlerts.class);
+    private static final String ALERTS_BACKEND = "hawkular-alerts.backend";
+    private static final String ALERTS_BACKEND_DEFAULT = "cassandra";
     private static StandaloneAlerts instance;
     private static ExecutorService executor;
+    private static boolean cass;
 
     private boolean distributed;
 
     private AlertsThreadFactory threadFactory;
 
-    private EmbeddedCacheManager cacheManager;
-    private Session session;
-    private CassCluster cassCluster;
-    private PropertiesServiceImpl properties;
+    private ActionsCacheManager actionsCacheManager;
     private AlertsContext alertsContext;
-    private CassActionsServiceImpl actions;
-    private CassAlertsServiceImpl alerts;
-    private CassDefinitionsServiceImpl definitions;
     private AlertsEngineImpl engine;
-    private DroolsRulesEngineImpl rules;
-    private PartitionManagerImpl partitionManager;
-    private StatusServiceImpl status;
+    private CacheClient dataIdCache;
+    private CassActionsServiceImpl cassActions;
+    private CassAlertsServiceImpl cassAlerts;
+    private CassCluster cassCluster;
+    private CassDefinitionsServiceImpl cassDefinitions;
+    private CepEngineImpl cepEngineImpl;
     private DataDrivenGroupCacheManager dataDrivenGroupCacheManager;
+    private DroolsRulesEngineImpl rules;
+    private EmbeddedCacheManager cacheManager;
+    private EventsAggregationExtension eventsAggregationExtension;
     private ExtensionsServiceImpl extensions;
     private IncomingDataManagerImpl incoming;
-    private CacheClient dataIdCache;
-    private ActionsCacheManager actionsCacheManager;
+    private IspnActionsServiceImpl ispnActions;
+    private IspnAlertsServiceImpl ispnAlerts;
+    private IspnDefinitionsServiceImpl ispnDefinitions;
+    private Session cassSession;
+    private StatusServiceImpl status;
+    private PartitionManagerImpl partitionManager;
+    private PropertiesServiceImpl properties;
     private PublishCacheManager publishCacheManager;
-    private CepEngineImpl cepEngineImpl;
-    private EventsAggregationExtension eventsAggregationExtension;
 
     private StandaloneAlerts() {
-
+        cass = HawkularProperties.getProperty(ALERTS_BACKEND, ALERTS_BACKEND_DEFAULT).equals(ALERTS_BACKEND_DEFAULT);
         distributed = IspnCacheManager.isDistributed();
         cacheManager = IspnCacheManager.getCacheManager();
 
-        dataIdCache = new CacheClient();
         threadFactory = new AlertsThreadFactory();
-        cassCluster = new CassCluster();
-        actions = new CassActionsServiceImpl();
+        if (executor == null) {
+            executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), threadFactory);
+        }
+
+        dataIdCache = new CacheClient();
         rules = new DroolsRulesEngineImpl();
         engine = new AlertsEngineImpl();
-        definitions = new CassDefinitionsServiceImpl();
         properties = new PropertiesServiceImpl();
-        alerts = new CassAlertsServiceImpl();
         alertsContext = new AlertsContext();
         partitionManager = new PartitionManagerImpl();
         status = new StatusServiceImpl();
@@ -106,86 +119,115 @@ public class StandaloneAlerts {
         cepEngineImpl = new CepEngineImpl();
         eventsAggregationExtension = new EventsAggregationExtension();
 
-        if (executor == null) {
-            executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), threadFactory);
+        if (cass) {
+            log.info("Hawkular Alerting uses Cassandra backend");
+            cassActions = new CassActionsServiceImpl();
+            cassAlerts = new CassAlertsServiceImpl();
+            cassCluster = new CassCluster();
+            cassDefinitions = new CassDefinitionsServiceImpl();
+
+            // Initialization of Cassandra cluster
+
+            cassCluster.initCassCluster();
+            cassSession = cassCluster.getSession();
+
+            // Initialization of components
+
+            cassActions.setSession(cassSession);
+            cassActions.setAlertsContext(alertsContext);
+            cassActions.setDefinitions(cassDefinitions);
+            cassActions.setExecutor(executor);
+            cassActions.setActionsCacheManager(actionsCacheManager);
+
+            cassAlerts.setAlertsEngine(engine);
+            cassAlerts.setDefinitionsService(cassDefinitions);
+            cassAlerts.setExecutor(executor);
+            cassAlerts.setIncomingDataManager(incoming);
+            cassAlerts.setSession(cassSession);
+            cassAlerts.setProperties(properties);
+            cassAlerts.setActionsService(cassActions);
+
+            cassDefinitions.setSession(cassSession);
+            cassDefinitions.setAlertsEngine(engine);
+            cassDefinitions.setAlertsContext(alertsContext);
+            cassDefinitions.setProperties(properties);
+        } else {
+            log.info("Hawkular Alerting uses Infinispan backend");
+            ispnActions = new IspnActionsServiceImpl();
+            ispnAlerts = new IspnAlertsServiceImpl();
+            ispnDefinitions = new IspnDefinitionsServiceImpl();
+
+            ispnActions.setActionsCacheManager(actionsCacheManager);
+            ispnActions.setAlertsContext(alertsContext);
+            ispnActions.setDefinitions(ispnDefinitions);
+            ispnActions.setExecutor(executor);
+
+            ispnAlerts.setActionsService(ispnActions);
+            ispnAlerts.setAlertsEngine(engine);
+            ispnAlerts.setDefinitionsService(ispnDefinitions);
+            ispnAlerts.setExecutor(executor);
+            ispnAlerts.setIncomingDataManager(incoming);
+            ispnAlerts.setProperties(properties);
+
+            ispnDefinitions.setAlertsEngine(engine);
+            ispnDefinitions.setAlertsContext(alertsContext);
+            ispnDefinitions.setProperties(properties);
         }
 
-        // Initialization of Cassandra cluster
-
-        cassCluster.initCassCluster();
-        session = cassCluster.getSession();
-
-        // Initialization of components
-
-        actions.setSession(session);
-        actions.setAlertsContext(alertsContext);
-        actions.setDefinitions(definitions);
-        actions.setExecutor(executor);
-        actions.setActionsCacheManager(actionsCacheManager);
-
-        actionsCacheManager.setDefinitions(definitions);
+        actionsCacheManager.setDefinitions(cass ? cassDefinitions : ispnDefinitions);
         actionsCacheManager.setGlobalActionsCache(cacheManager.getCache("globalActions"));
-
-        alerts.setAlertsEngine(engine);
-        alerts.setDefinitionsService(definitions);
-        alerts.setExecutor(executor);
-        alerts.setIncomingDataManager(incoming);
-        alerts.setSession(session);
-        alerts.setProperties(properties);
-        alerts.setActionsService(actions);
 
         alertsContext.setPartitionManager(partitionManager);
 
-        dataDrivenGroupCacheManager.setDefinitions(definitions);
+        dataDrivenGroupCacheManager.setDefinitions(cass ? cassDefinitions : ispnDefinitions);
 
         dataIdCache.setCache(cacheManager.getCache("publish"));
 
-        definitions.setSession(session);
-        definitions.setAlertsEngine(engine);
-        definitions.setAlertsContext(alertsContext);
-        definitions.setProperties(properties);
-
-        engine.setDefinitions(definitions);
-        engine.setActions(actions);
-        engine.setRules(rules);
-        engine.setPartitionManager(partitionManager);
+        engine.setActions(cass ? cassActions : ispnActions);
+        engine.setAlertsService(cass ? cassAlerts : ispnAlerts);
+        engine.setDefinitions(cass ? cassDefinitions : ispnDefinitions);
         engine.setExecutor(executor);
         engine.setExtensionsService(extensions);
-        engine.setAlertsService(alerts);
+        engine.setPartitionManager(partitionManager);
+        engine.setRules(rules);
 
         incoming.setAlertsEngine(engine);
         incoming.setDataDrivenGroupCacheManager(dataDrivenGroupCacheManager);
         incoming.setDataIdCache(dataIdCache);
-        incoming.setDefinitionsService(definitions);
+        incoming.setDefinitionsService(cass ? cassDefinitions : ispnDefinitions);
         incoming.setExecutor(executor);
         incoming.setPartitionManager(partitionManager);
 
-        partitionManager.setDefinitionsService(definitions);
+        partitionManager.setDefinitionsService(cassDefinitions);
 
-        actionsCacheManager.setDefinitions(definitions);
+        actionsCacheManager.setDefinitions(cass ? cassDefinitions : ispnDefinitions);
         actionsCacheManager.setGlobalActionsCache(cacheManager.getCache("globalActions"));
 
+        publishCacheManager.setDefinitions(cass ? cassDefinitions : ispnDefinitions);
         publishCacheManager.setProperties(properties);
-        publishCacheManager.setDefinitions(definitions);
-        publishCacheManager.setPublishDataIdsCache(cacheManager.getCache("dataIds"));
         publishCacheManager.setPublishCache(cacheManager.getCache("publish"));
+        publishCacheManager.setPublishDataIdsCache(cacheManager.getCache("dataIds"));
 
         status.setPartitionManager(partitionManager);
-        status.setSession(session);
 
-        cepEngineImpl.setAlertsService(alerts);
+        cepEngineImpl.setAlertsService(cass ? cassAlerts : ispnAlerts);
         cepEngineImpl.setExecutor(executor);
 
         eventsAggregationExtension.setCep(cepEngineImpl);
-        eventsAggregationExtension.setDefinitions(definitions);
+        eventsAggregationExtension.setDefinitions(cass ? cassDefinitions : ispnDefinitions);
         eventsAggregationExtension.setExtensions(extensions);
         eventsAggregationExtension.setProperties(properties);
         eventsAggregationExtension.setExecutor(executor);
 
         // Initialization needs order
 
-        alerts.init();
-        definitions.init();
+        if (cass) {
+            cassAlerts.init();
+            cassDefinitions.init();
+        } else {
+            ispnAlerts.init();
+            ispnDefinitions.init();
+        }
         partitionManager.init();
         alertsContext.init();
         dataDrivenGroupCacheManager.init();
@@ -216,37 +258,32 @@ public class StandaloneAlerts {
         if (instance != null) {
             instance.engine.shutdown();
             instance.partitionManager.shutdown();
-            instance.cassCluster.shutdown();
+            if (cass) {
+                instance.cassCluster.shutdown();
+            }
             instance.cacheManager.stop();
         }
-    }
-
-    public static Session getSession() {
-        if (instance == null) {
-            init();
-        }
-        return instance.cassCluster.getSession();
     }
 
     public static DefinitionsService getDefinitionsService() {
         if (instance == null) {
             init();
         }
-        return instance.definitions;
+        return cass ? instance.cassDefinitions : instance.ispnDefinitions;
     }
 
     public static AlertsService getAlertsService() {
         if (instance == null) {
             init();
         }
-        return instance.alerts;
+        return cass ? instance.cassAlerts : instance.ispnAlerts;
     }
 
     public static ActionsService getActionsService() {
         if (instance == null) {
             init();
         }
-        return instance.actions;
+        return cass ? instance.cassActions : instance.ispnActions;
     }
 
     public static StatusService getStatusService() {
@@ -261,7 +298,7 @@ public class StandaloneAlerts {
 
         @Override
         public Thread newThread(Runnable r) {
-            return new Thread(r, "DefaultHawkularAlerts-" + (++count));
+            return new Thread(r, "HawkularAlerts-" + (++count));
         }
     }
 }

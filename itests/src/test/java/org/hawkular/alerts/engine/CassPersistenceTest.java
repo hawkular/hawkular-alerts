@@ -25,7 +25,7 @@ import org.hawkular.alerts.api.model.export.ImportType;
 import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.EventsCriteria;
-import org.hawkular.alerts.engine.impl.CassCluster;
+import org.hawkular.alerts.engine.impl.cass.CassCluster;
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
 import org.junit.AfterClass;

@@ -51,6 +51,12 @@
       <version>${version.com.fasterxml.jackson}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-search-engine</artifactId>
+      <version>${version.org.hibernate}</version>
+    </dependency>
+
     <!-- Documentation dependencies -->
     <dependency>
       <groupId>io.swagger</groupId>

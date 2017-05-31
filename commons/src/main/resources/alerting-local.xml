@@ -18,5 +18,62 @@
     <local-cache name="globalActions">
       <transaction mode="BATCH"/>
     </local-cache>
+
+    <!-- Backend for definitions, actions history, events and alerts -->
+    <local-cache name="backend">
+      <persistence>
+        <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${hawkular.data}/alerting">
+          <write-behind thread-pool-size="5" modification-queue-size="10000" />
+        </file-store>
+      </persistence>
+      <indexing index="LOCAL">
+        <indexed-entities>
+          <indexed-entity>org.hawkular.alerts.api.model.action.ActionDefinition</indexed-entity>
+        </indexed-entities>
+        <property name="default.indexmanager">near-real-time</property>
+        <property name="default.directory_provider">infinispan</property>
+        <property name="default.chunk_size">128000</property>
+        <property name="default.locking_cachename">LuceneIndexesLocking_custom</property>
+        <property name="default.data_cachename">LuceneIndexesData_custom</property>
+        <property name="default.metadata_cachename">LuceneIndexesMetadata_custom</property>
+        <!-- The default is 10, but we don't want to waste many cycles in merging
+         (tune for writes at cost of reader fragmentation) -->
+        <property name="default.indexwriter.merge_factor">30</property>
+        <!-- Never create segments larger than 1GB -->
+        <property name="default.indexwriter.merge_max_size">1024</property>
+        <!-- IndexWriter flush buffer size in MB -->
+        <property name="default.indexwriter.ram_buffer_size">64</property>
+        <!-- Enable sharding on writers -->
+        <property name="default.sharding_strategy.nbr_of_shards">6</property>
+        <property name="lucene_version">LUCENE_CURRENT</property>
+      </indexing>
+    </local-cache>
+    <local-cache name="LuceneIndexesMetadata_custom">
+      <transaction mode="NON_XA" />
+      <persistence passivation="false">
+        <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${hawkular.data}/alerting">
+          <write-behind thread-pool-size="5" />
+        </file-store>
+      </persistence>
+      <indexing index="NONE"/>
+    </local-cache>
+    <local-cache name="LuceneIndexesData_custom">
+      <transaction mode="NON_XA" />
+      <persistence passivation="false">
+        <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${hawkular.data}/alerting">
+          <write-behind thread-pool-size="5" />
+        </file-store>
+      </persistence>
+      <indexing index="NONE" />
+    </local-cache>
+    <local-cache name="LuceneIndexesLocking_custom">
+      <transaction mode="NON_XA" />
+      <persistence passivation="false">
+        <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${hawkular.data}/alerting">
+          <write-behind thread-pool-size="5" />
+        </file-store>
+      </persistence>
+      <indexing index="NONE" />
+    </local-cache>
   </cache-container>
 </infinispan>

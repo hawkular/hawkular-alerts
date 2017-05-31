@@ -1,9 +1,38 @@
+/*
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.hawkular.alerts.engine.impl.ispn;
 
+import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_CREATE;
+import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_REMOVE;
+import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_UPDATE;
+import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
+import static org.hawkular.alerts.engine.util.Utils.isEmpty;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.hawkular.alerts.api.exception.FoundException;
+import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
@@ -17,9 +46,17 @@ import org.hawkular.alerts.api.services.DefinitionsEvent;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.DistributedListener;
+import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.api.services.TriggersCriteria;
+import org.hawkular.alerts.cache.IspnCacheManager;
+import org.hawkular.alerts.engine.impl.AlertsContext;
+import org.hawkular.alerts.engine.impl.ispn.model.ActionPlugin;
+import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.log.AlertingLogger;
 import org.hawkular.commons.log.MsgLogging;
+import org.infinispan.Cache;
+import org.infinispan.query.Search;
+import org.infinispan.query.dsl.QueryFactory;
 
 /**
  * @author Jay Shaughnessy
@@ -27,6 +64,86 @@ import org.hawkular.commons.log.MsgLogging;
  */
 public class IspnDefinitionsServiceImpl implements DefinitionsService {
     private final AlertingLogger log = MsgLogging.getMsgLogger(AlertingLogger.class, IspnDefinitionsServiceImpl.class);
+
+    AlertsEngine alertsEngine;
+
+    AlertsContext alertsContext;
+
+    PropertiesService properties;
+
+    Cache backend;
+    QueryFactory queryFactory;
+
+    private List<DefinitionsEvent> deferredNotifications = new ArrayList<>();
+    private int deferNotificationsCount = 0;
+
+    public void init() {
+        backend = IspnCacheManager.getCacheManager().getCache("backend");
+        if (backend == null) {
+            log.error("Ispn backend cache not found. Check configuration.");
+            throw new RuntimeException("backend cache not found");
+        }
+        queryFactory = Search.getQueryFactory(backend);
+    }
+
+    public void setAlertsEngine(AlertsEngine alertsEngine) {
+        this.alertsEngine = alertsEngine;
+    }
+
+    public void setAlertsContext(AlertsContext alertsContext) {
+        this.alertsContext = alertsContext;
+    }
+
+    public void setProperties(PropertiesService properties) {
+        this.properties = properties;
+    }
+
+    @Override
+    public void addActionDefinition(String tenantId, ActionDefinition actionDefinition) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (actionDefinition == null) {
+            throw new IllegalArgumentException("ActionDefinition must be not null");
+        }
+        actionDefinition.setTenantId(tenantId);
+        if (isEmpty(actionDefinition.getActionPlugin())) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
+        }
+        if (isEmpty(actionDefinition.getActionId())) {
+            throw new IllegalArgumentException("ActionId must be not null");
+        }
+        if (isEmpty(actionDefinition.getProperties())) {
+            throw new IllegalArgumentException("Properties must be not null");
+        }
+        String plugin = actionDefinition.getActionPlugin();
+        if (!getActionPlugins().contains(plugin)) {
+            throw new IllegalArgumentException("Plugin: " + plugin + " is not deployed");
+        }
+        Set<String> pluginProperties = getActionPlugin(plugin);
+        for (String property : actionDefinition.getProperties().keySet()) {
+            boolean isPluginProperty = false;
+            for (String pluginProperty : pluginProperties) {
+                if (property.startsWith(pluginProperty)) {
+                    isPluginProperty = true;
+                    break;
+                }
+            }
+            if (!isPluginProperty) {
+                throw new IllegalArgumentException("Property: " + property + " is not valid on plugin: " +
+                        actionDefinition.getActionPlugin());
+            }
+        }
+        String pk = pk(actionDefinition);
+        ActionDefinition found = (ActionDefinition) backend.get(pk);
+        if (found != null) {
+            throw new FoundException("ActionDefinition " + found + " exists");
+        }
+        backend.put(pk(actionDefinition), actionDefinition);
+
+        notifyListeners(new DefinitionsEvent(ACTION_DEFINITION_CREATE, actionDefinition));
+    }
+
 
     @Override
     public void addTrigger(String tenantId, Trigger trigger) throws Exception {
@@ -210,82 +327,221 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void addActionPlugin(String actionPlugin, Set<String> properties) throws Exception {
-
+        if (properties == null || properties.isEmpty()) {
+            throw new IllegalArgumentException("properties must be not null");
+        }
+        Map<String, String> defaultProperties = new HashMap<>();
+        properties.stream().forEach(prop -> defaultProperties.put(prop, ""));
+        addActionPlugin(actionPlugin, defaultProperties);
     }
 
     @Override
     public void addActionPlugin(String actionPlugin, Map<String, String> defaultProperties) throws Exception {
-
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("actionPlugin must be not null");
+        }
+        if (defaultProperties == null || defaultProperties.isEmpty()) {
+            throw new IllegalArgumentException("defaultProperties must be not null");
+        }
+        String pk = pk(actionPlugin);
+        if (backend.get(pk) != null) {
+            throw new FoundException("ActionPlugin " + actionPlugin + " exists");
+        }
+        backend.put(pk, new ActionPlugin(actionPlugin, defaultProperties));
     }
 
     @Override
     public void removeActionPlugin(String actionPlugin) throws Exception {
-
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("actionPlugin must be not null");
+        }
+        backend.remove(pk(actionPlugin));
     }
 
     @Override
     public void updateActionPlugin(String actionPlugin, Set<String> properties) throws Exception {
-
+        if (properties == null || properties.isEmpty()) {
+            throw new IllegalArgumentException("properties must be not null");
+        }
+        Map<String, String> updated = new HashMap<>();
+        properties.stream().forEach(prop -> updated.put(prop, ""));
+        updateActionPlugin(actionPlugin, updated);
     }
 
     @Override
     public void updateActionPlugin(String actionPlugin, Map<String, String> defaultProperties) throws Exception {
-
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("actionPlugin must be not null");
+        }
+        if (defaultProperties == null || defaultProperties.isEmpty()) {
+            throw new IllegalArgumentException("defaultProperties must be not null");
+        }
+        String pk = pk(actionPlugin);
+        ActionPlugin found = (ActionPlugin) backend.get(pk);
+        if (found == null) {
+            throw new NotFoundException("ActionPlugin " + actionPlugin + " not found");
+        }
+        found.setDefaultProperties(defaultProperties);
+        backend.put(pk, found);
     }
 
     @Override
     public Collection<String> getActionPlugins() throws Exception {
-        return null;
+        Set<String> pluginNames = new HashSet<>();
+        List<ActionPlugin> plugins = queryFactory.from(ActionPlugin.class).build().list();
+        for (ActionPlugin plugin : plugins) {
+            pluginNames.add(plugin.getActionPlugin());
+        }
+        return pluginNames;
     }
 
     @Override
     public Set<String> getActionPlugin(String actionPlugin) throws Exception {
-        return null;
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("actionPlugin must be not null");
+        }
+        ActionPlugin found = (ActionPlugin) backend.get(pk(actionPlugin));
+        return found == null? null : found.getDefaultProperties().keySet();
     }
 
     @Override
     public Map<String, String> getDefaultActionPlugin(String actionPlugin) throws Exception {
-        return null;
-    }
-
-    @Override
-    public void addActionDefinition(String tenantId, ActionDefinition actionDefinition) throws Exception {
-
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("actionPlugin must be not null");
+        }
+        ActionPlugin found = (ActionPlugin) backend.get(pk(actionPlugin));
+        return found == null? null : found.getDefaultProperties();
     }
 
     @Override
     public void removeActionDefinition(String tenantId, String actionPlugin, String actionId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
+        }
+        if (isEmpty(actionId)) {
+            throw new IllegalArgumentException("ActionId must be not null");
+        }
+        backend.remove(pk(tenantId, actionPlugin, actionId));
 
+        notifyListeners(new DefinitionsEvent(ACTION_DEFINITION_REMOVE, tenantId, actionPlugin, actionId));
     }
 
     @Override
     public void updateActionDefinition(String tenantId, ActionDefinition actionDefinition) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (actionDefinition == null) {
+            throw new IllegalArgumentException("actionDefinition must be not null");
+        }
+        if (isEmpty(actionDefinition.getActionPlugin())) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
+        }
+        if (isEmpty(actionDefinition.getActionId())) {
+            throw new IllegalArgumentException("ActionId must be not null");
+        }
+        if (isEmpty(actionDefinition.getProperties())) {
+            throw new IllegalArgumentException("Properties must be not null");
+        }
+        Set<String> pluginProperties = getActionPlugin(actionDefinition.getActionPlugin());
+        for (String property : actionDefinition.getProperties().keySet()) {
+            boolean isPluginProperty = false;
+            for (String pluginProperty : pluginProperties) {
+                if (property.startsWith(pluginProperty)) {
+                    isPluginProperty = true;
+                    break;
+                }
+            }
+            if (!isPluginProperty) {
+                throw new IllegalArgumentException("Property: " + property + " is not valid on plugin: " +
+                        actionDefinition.getActionPlugin());
+            }
+        }
+        String pk = pk(actionDefinition);
+        ActionDefinition found = (ActionDefinition) backend.get(pk);
+        if (found == null) {
+            throw new NotFoundException("ActionDefinition " + actionDefinition + " does not exist");
+        }
+        backend.put(pk, actionDefinition);
 
+        notifyListeners(new DefinitionsEvent(ACTION_DEFINITION_UPDATE, actionDefinition));
     }
 
     @Override
     public Map<String, Map<String, Set<String>>> getAllActionDefinitionIds() throws Exception {
-        return null;
+        Map<String, Map<String, Set<String>>> actions = new HashMap<>();
+        List<ActionDefinition> actionDefinitions = queryFactory.from(ActionDefinition.class).build().list();
+        for (ActionDefinition action : actionDefinitions) {
+            String tenantId = action.getTenantId();
+            String actionPlugin = action.getActionPlugin();
+            String actionId = action.getActionId();
+            if (actions.get(tenantId) == null) {
+                actions.put(tenantId, new HashMap<>());
+            }
+            if (actions.get(tenantId).get(actionPlugin) == null) {
+                actions.get(tenantId).put(actionPlugin, new HashSet<>());
+            }
+            actions.get(tenantId).get(actionPlugin).add(actionId);
+        }
+        return actions;
     }
 
     @Override
     public Collection<ActionDefinition> getAllActionDefinitions() throws Exception {
-        return null;
+        return queryFactory.from(ActionDefinition.class).build().list();
     }
 
     @Override
     public Map<String, Set<String>> getActionDefinitionIds(String tenantId) throws Exception {
-        return null;
+        Map<String, Set<String>> actionIds = new HashMap<>();
+        List<ActionDefinition> actionDefinitions = queryFactory.from(ActionDefinition.class)
+                .having("tenantId")
+                .eq(tenantId)
+                .build()
+                .list();
+        for (ActionDefinition action : actionDefinitions) {
+            String actionPlugin = action.getActionPlugin();
+            String actionId = action.getActionId();
+            if (actionIds.get(actionPlugin) == null) {
+                actionIds.put(actionPlugin, new HashSet<>());
+            }
+            actionIds.get(actionPlugin).add(actionId);
+        }
+        return actionIds;
     }
 
     @Override
     public Collection<String> getActionDefinitionIds(String tenantId, String actionPlugin) throws Exception {
-        return null;
+        Set<String> actionIds = new HashSet<>();
+        List<ActionDefinition> actionDefinitions = queryFactory.from(ActionDefinition.class)
+                .having("tenantId")
+                .eq(tenantId)
+                .and()
+                .having("actionPlugin")
+                .eq(actionPlugin)
+                .build()
+                .list();
+        for (ActionDefinition action : actionDefinitions) {
+            actionIds.add(action.getActionId());
+        }
+        return actionIds;
     }
 
     @Override
     public ActionDefinition getActionDefinition(String tenantId, String actionPlugin, String actionId) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(actionPlugin)) {
+            throw new IllegalArgumentException("ActionPlugin must be not null");
+        }
+        if (isEmpty(actionId)) {
+            throw new IllegalArgumentException("actionId must be not null");
+        }
+        return (ActionDefinition) backend.get(pk(tenantId, actionPlugin, actionId));
     }
 
     @Override
@@ -307,4 +563,23 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     public void registerDistributedListener(DistributedListener listener) {
 
     }
+
+    // Private methods
+
+    private void notifyListeners(final DefinitionsEvent de) {
+        if (alertsContext == null) {
+            log.debugf("AlertContext is not set. This scenario is only for testing.");
+            return;
+        }
+        if (isDeferredNotifications()) {
+            deferredNotifications.add(de);
+            return;
+        }
+        alertsContext.notifyListeners(Arrays.asList(de));
+    }
+
+    private boolean isDeferredNotifications() {
+        return deferNotificationsCount > 0;
+    }
+
 }

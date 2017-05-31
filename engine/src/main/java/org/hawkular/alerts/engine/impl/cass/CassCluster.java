@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.engine.impl;
+package org.hawkular.alerts.engine.impl.cass;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.engine.impl;
+package org.hawkular.alerts.engine.impl.cass;
 
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_CREATE;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_REMOVE;
@@ -72,6 +72,8 @@ import org.hawkular.alerts.api.services.DistributedListener;
 import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.alerts.engine.exception.NotFoundApplicationException;
+import org.hawkular.alerts.engine.impl.AlertsContext;
+import org.hawkular.alerts.engine.impl.TagType;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.log.AlertingLogger;
 import org.hawkular.commons.log.MsgLogging;

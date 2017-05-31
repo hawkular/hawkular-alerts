@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,17 +16,19 @@
  */
 package org.hawkular.alerts.api.exception;
 
-
 /**
- * Indicates a query for expected data did not return any results.
+ * Indicates in an insert operation that the element to add exists on backend.
+ *
+ * @author Jay Shaughnessy
+ * @author Lucas Ponce
  */
-public class NotFoundException extends RuntimeException {
+public class FoundException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    public NotFoundException() {
+    public FoundException(){
     }
 
-    public NotFoundException(String message) {
+    public FoundException(String message) {
         super(message);
     }
 }

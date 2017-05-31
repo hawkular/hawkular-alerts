@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hawkular.alerts.engine.impl;
+package org.hawkular.alerts.engine.impl.cass;
 
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.EQ;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.IN;
@@ -58,6 +58,7 @@ import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl.IncomingData;
 import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl.IncomingEvents;
+import org.hawkular.alerts.engine.impl.TagType;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.hawkular.alerts.engine.tags.ExpressionTagQueryParser;
