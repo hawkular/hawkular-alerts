@@ -13,6 +13,7 @@
         <Logger name="org.cassalog" level="warn" />
         <Logger name="org.drools" level="warn" />
         <Logger name="org.hawkular" level="warn" />
+        <Logger name="org.hibernate" level="warn" />
         <Logger name="org.infinispan" level="warn" />
         <Logger name="org.jboss" level="warn" />
         <Root level="debug">

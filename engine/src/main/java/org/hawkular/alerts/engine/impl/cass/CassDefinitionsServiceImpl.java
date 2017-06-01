@@ -799,8 +799,8 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         boolean filter = (null != criteria && criteria.hasCriteria());
         boolean thin = (null != criteria && criteria.isThin()); // currently ignored, triggers have no thinned data
 
-        if (filter && log.isDebugEnabled()) {
-            log.debug("getTriggers criteria: " + criteria.toString());
+        if (filter) {
+            log.debugf("getTriggers criteria: %s", criteria);
         }
 
         List<Trigger> triggers = new ArrayList<>();

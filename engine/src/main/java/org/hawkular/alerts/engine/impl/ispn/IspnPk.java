@@ -1,7 +1,7 @@
 package org.hawkular.alerts.engine.impl.ispn;
 
 import org.hawkular.alerts.api.model.action.ActionDefinition;
-import org.hawkular.alerts.engine.impl.ispn.model.ActionPlugin;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
  * @author Jay Shaughnessy
@@ -39,6 +39,28 @@ public class IspnPk {
                 .append(actionPlugin)
                 .append("-")
                 .append(actionId)
+                .toString();
+    }
+
+    public static String pk(Trigger trigger) {
+        if (trigger == null) {
+            return null;
+        }
+        return new StringBuilder("Trigger-")
+                .append(trigger.getTenantId())
+                .append("-")
+                .append(trigger.getId())
+                .toString();
+    }
+
+    public static String pk(String tenantId, String triggerId) {
+        if (tenantId == null || triggerId == null) {
+            return null;
+        }
+        return new StringBuilder("Trigger-")
+                .append(tenantId)
+                .append("-")
+                .append(triggerId)
                 .toString();
     }
 

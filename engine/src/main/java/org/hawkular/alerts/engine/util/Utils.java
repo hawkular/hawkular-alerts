@@ -20,6 +20,8 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.hawkular.alerts.api.model.action.ActionDefinition;
+import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
  * @author Jay Shaughnessy
@@ -44,4 +46,27 @@ public class Utils {
                 a.getActionId() == null || a.getActionId().trim().isEmpty();
     }
 
+    public static boolean isEmpty(Trigger trigger) {
+        return trigger == null || trigger.getId() == null || trigger.getId().trim().isEmpty();
+    }
+
+    public static void checkTenantId(String tenantId, Object obj) {
+        if (isEmpty(tenantId)) {
+            return;
+        }
+        if (obj == null) {
+            return;
+        }
+        if (obj instanceof Trigger) {
+            Trigger trigger = (Trigger) obj;
+            if (trigger.getTenantId() == null || !trigger.getTenantId().equals(tenantId)) {
+                trigger.setTenantId(tenantId);
+            }
+        } else if (obj instanceof Dampening) {
+            Dampening dampening = (Dampening) obj;
+            if (dampening.getTenantId() == null || !dampening.getTenantId().equals(tenantId)) {
+                dampening.setTenantId(tenantId);
+            }
+        }
+    }
 }

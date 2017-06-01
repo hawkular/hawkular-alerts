@@ -31,6 +31,9 @@ import java.util.UUID;
 import org.hawkular.alerts.api.exception.FoundException;
 import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
+import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -39,6 +42,7 @@ import org.junit.Test;
  * @author Lucas Ponce
  */
 public class IspnDefinitionsServiceImplTest {
+    static final MsgLogger log = MsgLogging.getMsgLogger(IspnDefinitionsServiceImplTest.class);
     static final String TENANT = "testTenant";
 
     static IspnDefinitionsServiceImpl definitions;
@@ -75,6 +79,7 @@ public class IspnDefinitionsServiceImplTest {
 
         try {
             definitions.updateActionPlugin("pluginX", updated);
+            fail("It should throw a NotFoundException");
         } catch (NotFoundException e) {
             // Expected
         }
@@ -105,6 +110,7 @@ public class IspnDefinitionsServiceImplTest {
 
         try {
             definitions.addActionDefinition(TENANT, actionDefinition);
+            fail("It should throw a FoundException");
         } catch (FoundException e) {
             // Expected
         }
@@ -124,6 +130,7 @@ public class IspnDefinitionsServiceImplTest {
 
         try {
             definitions.updateActionDefinition(TENANT, actionDefinition);
+            fail("It should throw a IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             // Expected
         }
@@ -132,6 +139,7 @@ public class IspnDefinitionsServiceImplTest {
             actionDefinition.setActionId("action2");
             actionDefinition.setProperties(updated);
             definitions.updateActionDefinition(TENANT, actionDefinition);
+            fail("It should throw a NotFoundException");
         } catch (NotFoundException e) {
             // Expected
         }
@@ -212,5 +220,83 @@ public class IspnDefinitionsServiceImplTest {
         assertEquals(numActions, actionIdsByTenantAndPlugin.size());
 
         deleteTestPluginsAndActions(numTenants, numPlugins, numActions);
+    }
+
+    @Test
+    public void addGetUpdateRemoveTrigger() throws Exception {
+        Trigger trigger = new Trigger("trigger1", "Trigger1 Test");
+        definitions.addTrigger(TENANT, trigger);
+
+        assertEquals(trigger, definitions.getTrigger(TENANT, "trigger1"));
+
+        try {
+            definitions.addTrigger(TENANT, trigger);
+            fail("It should throw a FoundException");
+        } catch (FoundException e) {
+            // Expected
+        }
+
+        trigger.setDescription("This is a long description for Trigger1 Test");
+        trigger.addTag("tag1", "value1");
+        definitions.updateTrigger(TENANT, trigger);
+
+        Trigger updated = definitions.getTrigger(TENANT, "trigger1");
+        assertEquals(trigger.getDescription(), updated.getDescription());
+        assertEquals(trigger.getTags(), updated.getTags());
+
+        try {
+            trigger.setId("trigger2");
+            definitions.updateTrigger(TENANT, trigger);
+        } catch (NotFoundException e) {
+            // Expected
+        }
+
+        definitions.removeTrigger(TENANT, "trigger1");
+        try {
+            definitions.getTrigger(TENANT, "trigger1");
+            fail("IT should throw a NotFoundException");
+        } catch (NotFoundException e) {
+            // Expected
+        }
+    }
+
+    void createTestTriggers(int numTenants, int numTriggers) throws Exception {
+        int count = 0;
+        for (int tenant = 0; tenant < numTenants; tenant++) {
+            String tenantId = "tenant" + tenant;
+            for (int trigger = 0; trigger < numTriggers; trigger++) {
+                String triggerId = "trigger" + trigger;
+                Trigger triggerX = new Trigger(tenantId, triggerId, "Trigger " + triggerId);
+                String tag = "tag" + (count % 2);
+                String value = "value" + (count % 4);
+                triggerX.addTag(tag, value);
+                count++;
+                log.debugf("trigger: %s/%s tag: %s/%s", tenantId, triggerId, tag, value);
+                definitions.addTrigger(tenantId, triggerX);
+            }
+        }
+    }
+
+    void deleteTestTriggers(int numTenants, int numTriggers) throws Exception {
+        for (int tenant = 0; tenant < numTenants; tenant++) {
+            String tenantId = "tenant" + tenant;
+            for (int trigger = 0; trigger < numTriggers; trigger++) {
+                String triggerId = "trigger" + trigger;
+                definitions.removeTrigger(tenantId, triggerId);
+            }
+        }
+    }
+
+    @Test
+    public void getTriggers() throws Exception {
+        int numTenants = 4;
+        int numTriggers = 10;
+        createTestTriggers(numTenants, numTriggers);
+
+        assertEquals(4 * 10, definitions.getAllTriggers().size());
+        assertEquals(4 * 10 / 2, definitions.getAllTriggersByTag("tag0", "*").size());
+        assertEquals(4 * 10 / 4, definitions.getAllTriggersByTag("tag0", "value0").size());
+
+        deleteTestTriggers(numTenants, numTriggers);
     }
 }
