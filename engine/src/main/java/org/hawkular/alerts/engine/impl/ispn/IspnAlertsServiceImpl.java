@@ -195,7 +195,18 @@ public class IspnAlertsServiceImpl implements AlertsService {
         query.append(")");
 
         if (filter) {
-
+           if (criteria.hasAlertIdCriteria()) {
+               query.append("and (");
+               iter = criteria.getAlertIds().iterator();
+               while (iter.hasNext()) {
+                   String alertId = iter.next();
+                   query.append("alertId = '").append(alertId).append("' ");
+                   if (iter.hasNext()) {
+                       query.append("or ");
+                   }
+               }
+               query.append(") ");
+           }
         }
 
         List<Alert> alerts = queryFactory.create(query.toString()).list();

@@ -32,6 +32,7 @@ import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
 import org.junit.BeforeClass;
@@ -109,6 +110,17 @@ public class IspnAlertsServiceImplTest {
 
         tenantIds.remove("tenant0");
         assertEquals(1 * 5 * 100, alerts.getAlerts(tenantIds, null, null).size());
+
+        List<Alert> testAlerts = alerts.getAlerts(tenantIds, null, null);
+        Set<String> alertIds = new HashSet<>();
+        for (int i = 0; i < 25; i++) {
+            alertIds.add(testAlerts.get(i).getAlertId());
+        }
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setAlertIds(alertIds);
+
+        assertEquals(25, alerts.getAlerts(tenantIds, criteria, null).size());
 
         removeAllAlerts();
     }
