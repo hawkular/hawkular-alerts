@@ -30,6 +30,8 @@
         <indexed-entities>
           <indexed-entity>org.hawkular.alerts.api.model.action.ActionDefinition</indexed-entity>
           <indexed-entity>org.hawkular.alerts.api.model.trigger.Trigger</indexed-entity>
+          <indexed-entity>org.hawkular.alerts.api.model.event.Alert</indexed-entity>
+          <indexed-entity>org.hawkular.alerts.api.model.event.Event</indexed-entity>
         </indexed-entities>
         <property name="default.indexmanager">near-real-time</property>
         <property name="default.directory_provider">infinispan</property>

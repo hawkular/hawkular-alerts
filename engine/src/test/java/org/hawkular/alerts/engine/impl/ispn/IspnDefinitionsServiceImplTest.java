@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +33,7 @@ import org.hawkular.alerts.api.exception.FoundException;
 import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
 import org.junit.BeforeClass;
@@ -296,6 +298,29 @@ public class IspnDefinitionsServiceImplTest {
         assertEquals(4 * 10, definitions.getAllTriggers().size());
         assertEquals(4 * 10 / 2, definitions.getAllTriggersByTag("tag0", "*").size());
         assertEquals(4 * 10 / 4, definitions.getAllTriggersByTag("tag0", "value0").size());
+        assertEquals(10, definitions.getTriggers("tenant0", null, null).size());
+        assertEquals(10, definitions.getTriggers("tenant3", null, null).size());
+
+        TriggersCriteria criteria = new TriggersCriteria();
+        criteria.setTriggerId("trigger0");
+        assertEquals(1, definitions.getTriggers("tenant0", criteria, null).size());
+
+        criteria.setTriggerId(null);
+        criteria.setTriggerIds(Arrays.asList("trigger0", "trigger1", "trigger2", "trigger3"));
+
+        assertEquals(4, definitions.getTriggers("tenant0", criteria, null).size());
+
+        criteria.setTriggerIds(null);
+        Map<String, String> tags = new HashMap<>();
+        tags.put("tag0", "*");
+        criteria.setTags(tags);
+
+        assertEquals(5, definitions.getTriggers("tenant0", criteria, null).size());
+
+        criteria.getTags().put("tag0", "value0");
+        criteria.getTags().put("tag1", "value1");
+
+        assertEquals(6, definitions.getTriggers("tenant0", criteria, null).size());
 
         deleteTestTriggers(numTenants, numTriggers);
     }

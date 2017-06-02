@@ -2,6 +2,7 @@ package org.hawkular.alerts.engine.impl.ispn;
 
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
@@ -69,6 +70,17 @@ public class IspnPk {
                 .append(tenantId)
                 .append("-")
                 .append(triggerId)
+                .toString();
+    }
+
+    public static String pk(Alert alert) {
+        if (alert == null) {
+            return null;
+        }
+        return new StringBuilder("Alert-")
+                .append(alert.getTenantId())
+                .append("-")
+                .append(alert.getAlertId())
                 .toString();
     }
 

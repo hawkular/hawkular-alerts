@@ -27,6 +27,10 @@ import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hibernate.search.annotations.Analyze;
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.annotations.Store;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -60,6 +64,7 @@ import io.swagger.annotations.ApiModelProperty;
 @JsonSubTypes({
         @Type(name = "EVENT", value = Event.class),
         @Type(name = "ALERT", value = Alert.class) })
+@Indexed(index = "event")
 public class Event implements Comparable<Event>, Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -71,12 +76,14 @@ public class Event implements Comparable<Event>, Serializable {
             "by the system for serialization purposes.",
             position = 0,
             allowableValues = "EVENT, ALERT")
+    @Field(store = Store.YES, analyze = Analyze.NO)
     @JsonInclude
     protected String eventType;
 
     @ApiModelProperty(value = "Tenant id owner of this event.",
             position = 1,
             allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
+    @Field(store = Store.YES, analyze = Analyze.NO)
     @JsonInclude
     protected String tenantId;
 

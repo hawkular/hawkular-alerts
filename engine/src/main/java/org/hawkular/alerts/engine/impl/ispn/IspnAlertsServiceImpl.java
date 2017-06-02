@@ -16,7 +16,14 @@
  */
 package org.hawkular.alerts.engine.impl.ispn;
 
+import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
+import static org.hawkular.alerts.engine.util.Utils.isEmpty;
+
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +33,8 @@ import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.api.model.paging.AlertComparator;
+import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.services.ActionsService;
@@ -34,10 +43,14 @@ import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.api.services.PropertiesService;
+import org.hawkular.alerts.cache.IspnCacheManager;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.hawkular.alerts.log.AlertingLogger;
 import org.hawkular.commons.log.MsgLogging;
+import org.infinispan.Cache;
+import org.infinispan.query.Search;
+import org.infinispan.query.dsl.QueryFactory;
 
 /**
  * @author Jay Shaughnessy
@@ -58,7 +71,17 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     ExecutorService executor;
 
+    Cache<String, Object> backend;
+
+    QueryFactory queryFactory;
+
     public void init() {
+        backend = IspnCacheManager.getCacheManager().getCache("backend");
+        if (backend == null) {
+            log.error("Ispn backend cache not found. Check configuration.");
+            throw new RuntimeException("backend cache not found");
+        }
+        queryFactory = Search.getQueryFactory(backend);
     }
 
     public void setAlertsEngine(AlertsEngine alertsEngine) {
@@ -92,7 +115,16 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public void addAlerts(Collection<Alert> alerts) throws Exception {
-
+        if (alerts == null) {
+            throw new IllegalArgumentException("Alerts must be not null");
+        }
+        if (alerts.isEmpty()) {
+            return;
+        }
+        log.debugf("Adding %s alerts", alerts.size());
+        for (Alert alert : alerts) {
+            backend.put(pk(alert), alert);
+        }
     }
 
     @Override
@@ -142,7 +174,36 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public Page<Alert> getAlerts(Set<String> tenantIds, AlertsCriteria criteria, Pager pager) throws Exception {
-        return null;
+        if (isEmpty(tenantIds)) {
+            throw new IllegalArgumentException("TenantIds must be not null");
+        }
+        boolean filter = (null != criteria && criteria.hasCriteria());
+        if (filter) {
+            log.debugf("getAlerts criteria: %s", criteria.toString());
+        }
+
+        StringBuilder query = new StringBuilder("from org.hawkular.alerts.api.model.event.Alert where ");
+        query.append("(");
+        Iterator<String> iter = tenantIds.iterator();
+        while (iter.hasNext()) {
+            String tenantId = iter.next();
+            query.append("tenantId = '").append(tenantId).append("' ");
+            if (iter.hasNext()) {
+                query.append("or ");
+            }
+        }
+        query.append(")");
+
+        if (filter) {
+
+        }
+
+        List<Alert> alerts = queryFactory.create(query.toString()).list();
+        if (alerts.isEmpty()) {
+            return new Page<>(alerts, pager, 0);
+        } else {
+            return preparePage(alerts, pager);
+        }
     }
 
     @Override
@@ -198,5 +259,43 @@ public class IspnAlertsServiceImpl implements AlertsService {
     @Override
     public void sendEvents(Collection<Event> events, boolean ignoreFiltering) throws Exception {
 
+    }
+
+    private Page<Alert> preparePage(List<Alert> alerts, Pager pager) {
+        if (pager != null) {
+            if (pager.getOrder() != null
+                    && !pager.getOrder().isEmpty()
+                    && pager.getOrder().get(0).getField() == null) {
+                pager = Pager.builder()
+                        .withPageSize(pager.getPageSize())
+                        .withStartPage(pager.getPageNumber())
+                        .orderBy(AlertComparator.Field.ALERT_ID.getText(), Order.Direction.DESCENDING).build();
+            }
+            List<Alert> ordered = alerts;
+            if (pager.getOrder() != null) {
+                pager.getOrder().stream()
+                        .filter(o -> o.getField() != null && o.getDirection() != null)
+                        .forEach(o -> {
+                            AlertComparator comparator = new AlertComparator(o.getField(), o.getDirection());
+                            Collections.sort(ordered, comparator);
+                        });
+            }
+            if (!pager.isLimited() || ordered.size() < pager.getStart()) {
+                pager = new Pager(0, ordered.size(), pager.getOrder());
+                return new Page<>(ordered, pager, ordered.size());
+            }
+            if (pager.getEnd() >= ordered.size()) {
+                return new Page<>(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
+            }
+            return new Page<>(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
+        } else {
+            AlertComparator.Field defaultField = AlertComparator.Field.ALERT_ID;
+            Order.Direction defaultDirection = Order.Direction.ASCENDING;
+            AlertComparator comparator = new AlertComparator(defaultField.getText(), defaultDirection.ASCENDING);
+            pager = Pager.builder().withPageSize(alerts.size()).orderBy(defaultField.getText(), defaultDirection)
+                    .build();
+            Collections.sort(alerts, comparator);
+            return new Page<>(alerts, pager, alerts.size());
+        }
     }
 }

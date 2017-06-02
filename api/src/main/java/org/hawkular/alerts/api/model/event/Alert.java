@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.event;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -25,6 +26,7 @@ import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hibernate.search.annotations.Indexed;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -57,6 +59,7 @@ import io.swagger.annotations.ApiModelProperty;
         " + \n" +
         "There are many options on triggers to help ensure that alerts are not generated too frequently, + \n" +
         "including ways of automatically disabling and enabling the trigger. + \n")
+@Indexed(index = "alert")
 public class Alert extends Event {
 
     public enum Status {
@@ -111,6 +114,11 @@ public class Alert extends Event {
         this.severity = trigger.getSeverity();
         this.eventType = EventType.ALERT.name();
         addLifecycle(this.status, "system", this.ctime);
+    }
+
+    // TODO Workaround for infinispan/objectfilter
+    public String getTenantId() {
+        return tenantId;
     }
 
     @JsonIgnore
@@ -330,7 +338,7 @@ public class Alert extends Event {
     }
 
     @ApiModel(description = "A lifecycle state representation.")
-    public static class LifeCycle {
+    public static class LifeCycle implements Serializable {
 
         @ApiModelProperty(value = "The status of this lifecycle.",
                 position = 0,

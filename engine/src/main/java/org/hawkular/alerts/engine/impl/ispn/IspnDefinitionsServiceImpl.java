@@ -53,8 +53,10 @@ import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.model.export.ImportType;
+import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.model.paging.TriggerComparator;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerType;
@@ -307,19 +309,23 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
         List<Trigger> triggers;
         if (filter) {
-            StringBuilder query = new StringBuilder("rom org.hawkular.alerts.api.model.trigger.Trigger where ");
+            StringBuilder query = new StringBuilder("from org.hawkular.alerts.api.model.trigger.Trigger where ");
+            query.append("tenantId = '").append(tenantId).append("' and ");
             if (criteria.hasTriggerIdCriteria()) {
                 Set<String> triggerIds = filterByTriggers(criteria);
                 query.append("(");
                 Iterator<String> iter = triggerIds.iterator();
                 while (iter.hasNext()) {
                     String triggerId = iter.next();
-                    query.append("triggerId = '").append(triggerId).append("' ");
+                    query.append("id = '").append(triggerId).append("' ");
                     if (iter.hasNext()) {
-                        query.append("and ");
+                        query.append("or ");
                     }
                 }
-                query.append(") and ");
+                query.append(") ");
+                if (criteria.hasTagCriteria()) {
+                    query.append("and ");
+                }
             }
             if (criteria.hasTagCriteria()) {
                 Map<String, String> tags = criteria.getTags();
@@ -327,9 +333,16 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                 Iterator<Map.Entry<String, String>> iter = tags.entrySet().iterator();
                 while(iter.hasNext()) {
                     Map.Entry<String, String> tag = iter.next();
-
+                    query.append("tags like '")
+                            .append(tag.getKey())
+                            .append(":")
+                            .append(tag.getValue().equals("*") ? "%" : tag.getValue())
+                            .append("' ");
+                    if (iter.hasNext()) {
+                        query.append("or ");
+                    }
                 }
-                query.append(") and ");
+                query.append(") ");
             }
             triggers = queryFactory.create(query.toString()).list();
         } else {
@@ -339,9 +352,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                     .build()
                     .list();
         }
-
-        // Prepare triggers page
-        return null;
+        return prepareTriggersPage(triggers, pager);
     }
 
     @Override
@@ -769,6 +780,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                         groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
                         dataIdMap.get(groupCondition.getDataId()),
                         ((MissingCondition) groupCondition).getInterval());
+                break;
             case NELSON:
                 newCondition = new NelsonCondition(member.getTenantId(), member.getId(),
                         groupCondition.getTriggerMode(),
@@ -776,6 +788,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                         dataIdMap.get(groupCondition.getDataId()),
                         ((NelsonCondition) groupCondition).getActiveRules(),
                         ((NelsonCondition) groupCondition).getSampleSize());
+                break;
             case RANGE:
                 newCondition = new ThresholdRangeCondition(member.getTenantId(), member.getId(),
                         groupCondition.getTriggerMode(),
@@ -1214,4 +1227,38 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         return result;
     }
 
+    private Page<Trigger> prepareTriggersPage(List<Trigger> triggers, Pager pager) {
+        if (pager != null) {
+            if (pager.getOrder() != null
+                    && !pager.getOrder().isEmpty()
+                    && pager.getOrder().get(0).getField() == null) {
+                pager = Pager.builder()
+                        .withPageSize(pager.getPageSize())
+                        .withStartPage(pager.getPageNumber())
+                        .orderBy(TriggerComparator.Field.NAME.getName(), Order.Direction.DESCENDING).build();
+            }
+            List<Trigger> ordered = triggers;
+            if (pager.getOrder() != null) {
+                pager.getOrder()
+                        .stream()
+                        .filter(o -> o.getField() != null && o.getDirection() != null)
+                        .forEach(o -> {
+                            TriggerComparator comparator = new TriggerComparator(o.getField(), o.getDirection());
+                            Collections.sort(ordered, comparator);
+                        });
+            }
+            if (!pager.isLimited() || ordered.size() < pager.getStart()) {
+                pager = new Pager(0, ordered.size(), pager.getOrder());
+                return new Page<>(ordered, pager, ordered.size());
+            }
+            if (pager.getEnd() >= ordered.size()) {
+                return new Page<>(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
+            }
+            return new Page<>(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
+        } else {
+            pager = Pager.builder().withPageSize(triggers.size()).orderBy(TriggerComparator.Field.ID.getName(),
+                    Order.Direction.ASCENDING).build();
+            return new Page<>(triggers, pager, triggers.size());
+        }
+    }
 }
