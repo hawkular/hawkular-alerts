@@ -48,7 +48,9 @@ public class IspnPk {
         if (condition == null) {
             return null;
         }
-        return condition.getConditionId();
+        return new StringBuilder("Condition-")
+                .append(condition.getConditionId())
+                .toString();
     }
 
     public static String pk(Trigger trigger) {
