@@ -247,12 +247,15 @@ public class IspnDefinitionsServiceImplTest {
         assertEquals(trigger.getTags(), updated.getTags());
 
         try {
+            // note, this changes the "persisted" in-memory mapped trigger. Change it back after this test.
             trigger.setId("trigger2");
             definitions.updateTrigger(TENANT, trigger);
         } catch (NotFoundException e) {
             // Expected
         }
 
+        // change back the "persisted" in-memory mapped trigger for the remove test
+        trigger.setId("trigger1");
         definitions.removeTrigger(TENANT, "trigger1");
         try {
             definitions.getTrigger(TENANT, "trigger1");
