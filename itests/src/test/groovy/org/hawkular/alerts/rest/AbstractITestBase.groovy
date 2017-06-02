@@ -16,10 +16,16 @@
  */
 package org.hawkular.alerts.rest
 
+import org.junit.After
+import org.junit.Before
 import org.junit.BeforeClass
 
+import groovy.json.internal.Charsets
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
+import groovyx.net.http.HttpResponseDecorator
+import groovyx.net.http.HttpResponseException
+
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -36,16 +42,24 @@ class AbstractITestBase {
     static final String TENANT_PREFIX = UUID.randomUUID().toString()
     static final AtomicInteger TENANT_ID_COUNTER = new AtomicInteger(0)
     static cluster = System.getProperty('cluster') ? true : false
-    static timeout = 30000  // 30s of timeout to spot networking issues
+
+    static String failureEntity;
 
     @BeforeClass
     static void initClient() {
+
         client = new RESTClient(baseURI, ContentType.JSON)
-
-        client.client.params.setParameter('http.connection.timeout', new Integer(timeout))
-        client.client.params.setParameter('http.socket.timeout', new Integer(timeout))
-
         // this prevents 404 from being wrapped in an Exception, just return the response, better for testing
+        client.handler.failure = { resp ->
+          failureEntity = null
+          if (resp.entity != null && resp.entity.contentLength != 0) {
+            def baos = new ByteArrayOutputStream()
+            resp.entity.writeTo(baos)
+            failureEntity = new String(baos.toByteArray(), Charsets.UTF_8)
+          }
+          return resp
+        }
+
         /*
         client.handler.failure = { resp, data ->
             resp.setData(data)
@@ -64,20 +78,33 @@ class AbstractITestBase {
          */
         client.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
         client.headers.put("Hawkular-Tenant", testTenant)
-        client.handler.failure = { it }
-    }
 
-    /*
-        Used to wait backend process Definitions before to send data
-     */
-    static void waitDefinitions() {
-        Thread.sleep(100)
-        if (cluster) {
+        def resp = client.get(path: "status")
+        def tries = 100
+        while (tries > 0 && resp.data.status != "STARTED") {
             Thread.sleep(500);
+            resp = client.get(path: "status")
+            tries--
         }
     }
 
     static String nextTenantId() {
         return "T${TENANT_PREFIX}${TENANT_ID_COUNTER.incrementAndGet()}"
     }
+
+    @Before
+    void beforeCluster() {
+        if (cluster) {
+            Thread.sleep(1000)
+        }
+    }
+
+    @After
+    void afterCluster() {
+        if (cluster) {
+            Thread.sleep(1000)
+        }
+    }
+
+
 }

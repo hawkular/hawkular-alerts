@@ -84,7 +84,7 @@ public class TriggersHandler implements RestHandler {
         router.post(path + "/:triggerId/dampenings").handler(r -> createDampening(r, false));
         router.put(path + "/groups/enabled").handler(r -> setTriggersEnabled(r, true));
         router.put(path + "/groups/:groupId").handler(r -> updateTrigger(r, true));
-        router.put(path + "/:triggerId/conditions").handler(this::setConditions);
+        router.put(path + "/:triggerId/conditions").handler(this::setAllConditions);
         router.delete(path + "/groups/:groupId").handler(this::deleteGroupTrigger);
         router.get(path + "/:triggerId/dampenings/:dampeningId").handler(this::getDampening);
         router.get(path + "/groups/:groupId/members").handler(this::findGroupMembers);
@@ -658,6 +658,35 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
+    void setAllConditions(RoutingContext routing) {
+        routing.vertx()
+                .executeBlocking(future -> {
+                    String tenantId = checkTenant(routing);
+                    String json = routing.getBodyAsString();
+                    String triggerId = routing.request().getParam("triggerId");
+                    Collection<Condition> conditions;
+                    try {
+                        conditions = collectionFromJson(json, Condition.class);
+                    } catch (Exception e) {
+                        log.errorf("Error parsing Condition json: %s. Reason: %s", json, e.toString());
+                        throw new BadRequestException(e.toString());
+                    }
+                    try {
+                        Collection<Condition> updatedConditions = definitionsService.setAllConditions(tenantId,
+                                triggerId, conditions);
+                        log.debugf("Conditions: %s", updatedConditions);
+                        future.complete(updatedConditions);
+                    } catch (NotFoundException e) {
+                        throw new ResponseUtil.NotFoundException(e.getMessage());
+                    } catch (IllegalArgumentException e) {
+                        throw new BadRequestException("Bad arguments: " + e.getMessage());
+                    } catch (Exception e) {
+                        log.debug(e.getMessage(), e);
+                        throw new InternalServerException(e.toString());
+                    }
+                }, res -> result(routing, res));
+    }
+
     void setConditions(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
@@ -672,43 +701,18 @@ public class TriggersHandler implements RestHandler {
                         log.errorf("Error parsing Condition json: %s. Reason: %s", json, e.toString());
                         throw new BadRequestException(e.toString());
                     }
-                    Collection<Condition> updatedConditions;
-                    if (triggerMode == null) {
-                        updatedConditions = new HashSet<>();
-                        conditions.stream().forEach(c -> c.setTriggerId(triggerId));
-                        Collection<Condition> firingConditions = conditions.stream()
-                                .filter(c -> c.getTriggerMode() == null || c.getTriggerMode().equals(Mode.FIRING))
-                                .collect(Collectors.toList());
-                        Collection<Condition> autoResolveConditions = conditions.stream()
-                                .filter(c -> c.getTriggerMode().equals(Mode.AUTORESOLVE))
-                                .collect(Collectors.toList());
-                        try {
-                            updatedConditions.addAll(definitionsService.setConditions(tenantId, triggerId, Mode.FIRING, firingConditions));
-                            updatedConditions.addAll(definitionsService.setConditions(tenantId, triggerId, Mode.AUTORESOLVE,
-                                    autoResolveConditions));
-                        } catch (NotFoundException e) {
-                            throw new ResponseUtil.NotFoundException(e.getMessage());
-                        } catch (IllegalArgumentException e) {
-                            throw new BadRequestException("Bad arguments: " + e.getMessage());
-                        } catch (Exception e) {
-                            log.debug(e.getMessage(), e);
-                            throw new InternalServerException(e.toString());
-                        }
-                        log.debugf("Conditions: %s", updatedConditions);
-                        future.complete(updatedConditions);
-                        return;
-                    }
                     Mode mode = Mode.valueOf(triggerMode.toUpperCase());
-                    if (!isEmpty(conditions)) {
-                        for (Condition condition : conditions) {
-                            condition.setTriggerId(triggerId);
-                            if (condition.getTriggerMode() == null || !condition.getTriggerMode().equals(mode)) {
-                                throw new BadRequestException("Condition: " + condition + " has a different triggerMode [" + triggerMode + "]");
-                            }
+                    for (Condition condition : conditions) {
+                        condition.setTriggerId(triggerId);
+                        if (condition.getTriggerMode() == null || !condition.getTriggerMode().equals(mode)) {
+                            throw new BadRequestException(
+                                    "Condition: " + condition + " has a different triggerMode [" + triggerMode + "]");
                         }
                     }
                     try {
-                        updatedConditions = definitionsService.setConditions(tenantId, triggerId, mode, conditions);
+                        Collection<Condition> updatedConditions = definitionsService.setConditions(tenantId, triggerId,
+                                mode, conditions);
+                        log.debugf("Conditions: %s", updatedConditions);
                         future.complete(updatedConditions);
                     } catch (NotFoundException e) {
                         throw new ResponseUtil.NotFoundException(e.getMessage());
