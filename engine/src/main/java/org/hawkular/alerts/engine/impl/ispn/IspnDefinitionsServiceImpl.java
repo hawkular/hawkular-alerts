@@ -31,12 +31,24 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.hawkular.alerts.api.exception.FoundException;
 import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
+import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
+import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.condition.EventCondition;
+import org.hawkular.alerts.api.model.condition.ExternalCondition;
+import org.hawkular.alerts.api.model.condition.MissingCondition;
+import org.hawkular.alerts.api.model.condition.NelsonCondition;
+import org.hawkular.alerts.api.model.condition.RateCondition;
+import org.hawkular.alerts.api.model.condition.StringCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdCondition;
+import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.model.export.ImportType;
@@ -46,6 +58,7 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerType;
 import org.hawkular.alerts.api.services.DefinitionsEvent;
+import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
 import org.hawkular.alerts.api.services.DefinitionsListener;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.DistributedListener;
@@ -60,6 +73,8 @@ import org.hawkular.alerts.log.AlertingLogger;
 import org.hawkular.commons.log.MsgLogging;
 import org.infinispan.Cache;
 import org.infinispan.query.Search;
+import org.infinispan.query.dsl.FilterConditionContext;
+import org.infinispan.query.dsl.QueryBuilder;
 import org.infinispan.query.dsl.QueryFactory;
 
 /**
@@ -75,7 +90,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     PropertiesService properties;
 
-    Cache backend;
+    Cache<String, Object> backend;
+
     QueryFactory queryFactory;
 
     private List<DefinitionsEvent> deferredNotifications = new ArrayList<>();
@@ -100,6 +116,22 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     public void setProperties(PropertiesService properties) {
         this.properties = properties;
+    }
+
+    private void deferNotifications() {
+        ++deferNotificationsCount;
+    }
+
+    private void releaseNotifications() {
+        if (deferNotificationsCount > 0) {
+            if (--deferNotificationsCount == 0) {
+                notifyListenersDeferred();
+            }
+        }
+    }
+
+    private boolean isDeferredNotifications() {
+        return deferNotificationsCount > 0;
     }
 
     @Override
@@ -188,11 +220,12 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         }
 
         Trigger doomedTrigger = getTrigger(tenantId, triggerId);
+
         if (doomedTrigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
         }
 
-        removeTrigger(tenantId, triggerId, doomedTrigger);
+        removeTrigger(doomedTrigger);
     }
 
     @Override
@@ -276,7 +309,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             StringBuilder query = new StringBuilder("rom org.hawkular.alerts.api.model.trigger.Trigger where ");
             if (criteria.hasTriggerIdCriteria()) {
                 Set<String> triggerIds = filterByTriggers(criteria);
-
+                // TODO: Finish This...
             }
 
             triggers = queryFactory.create(query.toString()).list();
@@ -379,48 +412,446 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Condition> addCondition(String tenantId, String triggerId, Mode triggerMode, Condition condition) throws Exception {
-        return null;
+    public Collection<Condition> setConditions(String tenantId, String triggerId, Mode triggerMode,
+            Collection<Condition> conditions) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (triggerMode == null) {
+            throw new IllegalArgumentException("TriggerMode must be not null");
+        }
+        if (conditions == null) {
+            throw new IllegalArgumentException("Conditions must be not null");
+        }
+
+        conditions.stream().forEach(c -> {
+            c.setTenantId(tenantId);
+            c.setTriggerId(triggerId);
+            c.setTriggerMode(triggerMode);
+        });
+
+        // We keep a cache of the dataIds used in Trigger conditions. They are used to filter incoming data, keeping
+        // only the data for relevant dataIds.  This method supplies/updates only the conditions of one trigger mode.
+        // To ensure we maintain all of the trigger's dataIds, we must update all conditions, so fetch any conditions
+        // for the other trigger mode and then update all of the conditions together. This does not increase overhead
+        // too much as the entire trigger must get reloaded regardless.
+        Mode otherTtriggerMode = triggerMode == Mode.FIRING ? Mode.AUTORESOLVE : Mode.FIRING;
+        Collection<Condition> otherConditions = getTriggerConditions(tenantId, triggerId, otherTtriggerMode);
+
+        Collection<Condition> allConditions = new ArrayList<>(conditions);
+        allConditions.addAll(otherConditions);
+
+        allConditions = setAllConditions(tenantId, triggerId, allConditions);
+
+        return allConditions.stream()
+                .filter(c -> c.getTriggerMode().equals(triggerMode))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Collection<Condition> removeCondition(String tenantId, String conditionId) throws Exception {
-        return null;
+    public Collection<Condition> setAllConditions(String tenantId, String triggerId,
+            Collection<Condition> conditions) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (conditions == null) {
+            throw new IllegalArgumentException("Conditions must be not null");
+        }
+        conditions.stream().forEach(c -> {
+            if (null == c.getTriggerMode()) {
+                throw new IllegalArgumentException("Condition.triggerMode must not be null");
+            }
+        });
+
+        conditions.stream().forEach(c -> c.setTenantId(tenantId));
+        conditions.stream().forEach(c -> c.setTriggerId(triggerId));
+
+        Collection<Condition> updatedConditions = new HashSet<>();
+        Set<String> dataIds = new HashSet<>();
+
+        Collection<Condition> firingConditions = conditions.stream()
+                .filter(c -> c.getTriggerMode() == null || c.getTriggerMode().equals(Mode.FIRING))
+                .collect(Collectors.toList());
+        updatedConditions.addAll(setConditions(tenantId, triggerId, Mode.FIRING, firingConditions, dataIds));
+
+        Collection<Condition> autoResolveConditions = conditions.stream()
+                .filter(c -> c.getTriggerMode().equals(Mode.AUTORESOLVE))
+                .collect(Collectors.toList());
+        updatedConditions.addAll(setConditions(tenantId, triggerId, Mode.AUTORESOLVE, autoResolveConditions, dataIds));
+
+        if (alertsEngine != null) {
+            alertsEngine.reloadTrigger(tenantId, triggerId);
+        }
+
+        notifyListeners(new DefinitionsEvent(Type.TRIGGER_CONDITION_CHANGE, tenantId, triggerId, dataIds));
+
+        return updatedConditions;
     }
 
-    @Override
-    public Collection<Condition> updateCondition(String tenantId, Condition condition) throws Exception {
-        return null;
+    private Collection<Condition> setConditions(String tenantId, String triggerId, Mode triggerMode,
+            Collection<Condition> conditions, Set<String> dataIds) throws Exception {
+
+        // Get rid of the prior condition set
+        removeConditions(tenantId, triggerId, triggerMode);
+
+        // Now add the new condition set
+        try {
+            Map<String, Condition> newConditions = new HashMap<>();
+            int indexCondition = 0;
+            for (Condition cond : conditions) {
+                cond.setTenantId(tenantId);
+                cond.setTriggerId(triggerId);
+                cond.setTriggerMode(triggerMode);
+                cond.setConditionSetSize(conditions.size());
+                cond.setConditionSetIndex(++indexCondition);
+
+                dataIds.add(cond.getDataId());
+                switch (cond.getType()) {
+                    case COMPARE:
+                        CompareCondition cCond = (CompareCondition) cond;
+                        dataIds.add(cCond.getData2Id());
+                        break;
+
+                    case AVAILABILITY:
+                    case EVENT:
+                    case EXTERNAL:
+                    case MISSING:
+                    case NELSON:
+                    case RANGE:
+                    case RATE:
+                    case STRING:
+                    case THRESHOLD:
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
+                }
+                newConditions.put(pk(cond), cond);
+            }
+            backend.putAll(newConditions);
+
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+
+        return conditions;
     }
 
-    @Override
-    public Collection<Condition> setConditions(String tenantId, String triggerId, Mode triggerMode, Collection<Condition> conditions) throws Exception {
-        return null;
+    private void removeConditions(String tenantId, String triggerId, Mode triggerMode) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must not be null");
+        }
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("TriggerId must not be null");
+        }
+        if (triggerMode == null) {
+            throw new IllegalArgumentException("TriggerMode must not be null");
+        }
+
+        try {
+            getTriggerConditions(tenantId, triggerId, triggerMode).stream()
+                    .forEach(c -> backend.remove(pk(c)));
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public Collection<Condition> setGroupConditions(String tenantId, String groupId, Mode triggerMode, Collection<Condition> groupConditions, Map<String, Map<String, String>> dataIdMemberMap) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (triggerMode == null) {
+            throw new IllegalArgumentException("TriggerMode must be not null");
+        }
+        if (groupConditions == null) {
+            throw new IllegalArgumentException("GroupConditions must be not null");
+        }
+
+        try {
+            deferNotifications();
+
+            Trigger group = getTrigger(tenantId, groupId);
+            if (null == group) {
+                throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupId);
+            }
+            if (!group.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+            }
+
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+            // for data-driven groups a change to group conditions invalidates the previously generated members
+            // Note: if the new set of conditions uses the same set of dataIds we probably don't need to invalidate
+            // the current members but the work of maintaining them may not add much, if any, benefit.
+            if (TriggerType.DATA_DRIVEN_GROUP == group.getType()) {
+                for (Trigger member : memberTriggers) {
+                    removeTrigger(member);
+                }
+                memberTriggers.clear();
+            }
+
+            if (!memberTriggers.isEmpty()) {
+                // fill in dataIdMap entries not supplied using the most recently supplied mapping
+                if (null == dataIdMemberMap) {
+                    dataIdMemberMap = new HashMap<>();
+                }
+                for (Trigger member : memberTriggers) {
+                    String memberId = member.getId();
+
+                    for (Entry<String, String> entry : member.getDataIdMap().entrySet()) {
+                        String groupDataId = entry.getKey();
+                        String memberDataId = entry.getValue();
+
+                        Map<String, String> memberIdMap = dataIdMemberMap.get(groupDataId);
+                        if (null == memberIdMap) {
+                            memberIdMap = new HashMap<>(memberTriggers.size());
+                            dataIdMemberMap.put(groupDataId, memberIdMap);
+                        }
+                        if (memberIdMap.containsKey(memberId)) {
+                            // supplied mapping has a mapping for this groupDataId and member. If it is
+                            // a new mapping for this member then update the member's dataIdMap
+                            if (!memberIdMap.get(memberId).equals(member.getDataIdMap().get(groupDataId))) {
+                                Map<String, String> updatedDataIdMap = new HashMap<>(member.getDataIdMap());
+                                updatedDataIdMap.put(groupDataId, memberIdMap.get(memberId));
+                                updateMemberTriggerDataIdMap(tenantId, memberId, updatedDataIdMap);
+                            }
+                        } else {
+                            // supplied map did not have the previously stored mapping, use the existing mapping
+                            memberIdMap.put(memberId, memberDataId);
+                        }
+                    }
+                }
+
+                // validate the dataIdMemberMap
+                for (Condition groupCondition : groupConditions) {
+                    if (!dataIdMemberMap.containsKey(groupCondition.getDataId())) {
+                        throw new IllegalArgumentException("Missing dataIdMap entry for dataId token ["
+                                + groupCondition.getDataId() + "]");
+                    }
+                    if (Condition.Type.COMPARE == groupCondition.getType()) {
+                        CompareCondition cc = (CompareCondition) groupCondition;
+                        if (!dataIdMemberMap.containsKey(cc.getData2Id())) {
+                            throw new IllegalArgumentException(
+                                    "Missing dataIdMap entry for CompareCondition data2Id token ["
+                                            + cc.getData2Id() + "]");
+                        }
+                    }
+                    for (Entry<String, Map<String, String>> entry : dataIdMemberMap.entrySet()) {
+                        String dataId = entry.getKey();
+                        Map<String, String> memberMap = entry.getValue();
+                        if (memberMap.size() != memberTriggers.size()) {
+                            throw new IllegalArgumentException("memberMap size [" + memberMap.size() + "] for dataId ["
+                                    + dataId + "] must equal number of member triggers [" + memberTriggers.size()
+                                    + "]");
+                        }
+                        for (Trigger member : memberTriggers) {
+                            String value = memberMap.get(member.getId());
+                            if (isEmpty(value)) {
+                                throw new IllegalArgumentException(
+                                        "Invalid mapping. DataId=[" + dataId + "], Member=[" + member.getId()
+                                                + "], value=[" + value + "]");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ensure conditions are set properly
+            for (Condition groupCondition : groupConditions) {
+                groupCondition.setTenantId(group.getTenantId());
+                groupCondition.setTriggerId(group.getId());
+                groupCondition.setTriggerMode(triggerMode);
+            }
+
+            // set conditions on the members
+            Map<String, String> dataIdMap = new HashMap<>();
+            Collection<Condition> memberConditions = new ArrayList<>(groupConditions.size());
+            for (Trigger member : memberTriggers) {
+                dataIdMap.clear();
+                memberConditions.clear();
+                for (Entry<String, Map<String, String>> entry : dataIdMemberMap.entrySet()) {
+                    dataIdMap.put(entry.getKey(), entry.getValue().get(member.getId()));
+                }
+
+                for (Condition groupCondition : groupConditions) {
+                    Condition memberCondition = getMemberCondition(member, groupCondition, dataIdMap);
+                    memberConditions.add(memberCondition);
+                }
+                Collection<Condition> memberConditionSet = setConditions(tenantId, member.getId(), triggerMode,
+                        memberConditions);
+                if (log.isDebugEnabled()) {
+                    log.debug("Member condition set: " + memberConditionSet);
+                }
+            }
+
+            // set conditions on the group trigger
+            return setConditions(tenantId, groupId, triggerMode, groupConditions);
+
+        } finally {
+            releaseNotifications();
+        }
+
+    }
+
+    private Condition getMemberCondition(Trigger member, Condition groupCondition, Map<String, String> dataIdMap) {
+        Condition newCondition = null;
+        switch (groupCondition.getType()) {
+            case AVAILABILITY:
+                newCondition = new AvailabilityCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((AvailabilityCondition) groupCondition).getOperator());
+                break;
+            case COMPARE:
+                newCondition = new CompareCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((CompareCondition) groupCondition).getOperator(),
+                        ((CompareCondition) groupCondition).getData2Multiplier(),
+                        dataIdMap.get(((CompareCondition) groupCondition).getData2Id()));
+                break;
+            case EVENT:
+                newCondition = new EventCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((EventCondition) groupCondition).getExpression());
+                break;
+            case EXTERNAL:
+                String tokenDataId = groupCondition.getDataId();
+                String memberDataId = dataIdMap.get(tokenDataId);
+                String tokenExpression = ((ExternalCondition) groupCondition).getExpression();
+                String memberExpression = isEmpty(tokenExpression) ? tokenExpression
+                        : tokenExpression.replace(tokenDataId, memberDataId);
+                newCondition = new ExternalCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        memberDataId,
+                        ((ExternalCondition) groupCondition).getAlerterId(),
+                        memberExpression);
+                break;
+            case MISSING:
+                newCondition = new MissingCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((MissingCondition) groupCondition).getInterval());
+            case NELSON:
+                newCondition = new NelsonCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((NelsonCondition) groupCondition).getActiveRules(),
+                        ((NelsonCondition) groupCondition).getSampleSize());
+            case RANGE:
+                newCondition = new ThresholdRangeCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((ThresholdRangeCondition) groupCondition).getOperatorLow(),
+                        ((ThresholdRangeCondition) groupCondition).getOperatorHigh(),
+                        ((ThresholdRangeCondition) groupCondition).getThresholdLow(),
+                        ((ThresholdRangeCondition) groupCondition).getThresholdHigh(),
+                        ((ThresholdRangeCondition) groupCondition).isInRange());
+                break;
+            case RATE:
+                newCondition = new RateCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((RateCondition) groupCondition).getDirection(),
+                        ((RateCondition) groupCondition).getPeriod(),
+                        ((RateCondition) groupCondition).getOperator(),
+                        ((RateCondition) groupCondition).getThreshold());
+                break;
+            case STRING:
+                newCondition = new StringCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((StringCondition) groupCondition).getOperator(),
+                        ((StringCondition) groupCondition).getPattern(),
+                        ((StringCondition) groupCondition).isIgnoreCase());
+                break;
+            case THRESHOLD:
+                newCondition = new ThresholdCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((ThresholdCondition) groupCondition).getOperator(),
+                        ((ThresholdCondition) groupCondition).getThreshold());
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected Condition type: " + groupCondition.getType().name());
+        }
+
+        newCondition.setContext(groupCondition.getContext());
+        return newCondition;
+    }
+
+    private void updateMemberTriggerDataIdMap(String tenantId, String memberTriggerId, Map<String, String> dataIdMap)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(memberTriggerId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (isEmpty(dataIdMap)) {
+            throw new IllegalArgumentException("DatIdMap must be not null");
+        }
+
+        try {
+            String pk = pk(tenantId, memberTriggerId);
+            Trigger memberTrigger = (Trigger) backend.get(pk);
+            memberTrigger.setDataIdMap(dataIdMap);
+            backend.put(pk, memberTrigger);
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public Condition getCondition(String tenantId, String conditionId) throws Exception {
-        return null;
+        // note that tenantId is already incorporated into the conditionId
+        return (Condition) backend.get(conditionId);
     }
 
     @Override
     public Collection<Condition> getTriggerConditions(String tenantId, String triggerId, Mode triggerMode) throws Exception {
-        return null;
+        FilterConditionContext qb = queryFactory.from(Condition.class)
+                .having("tenantId").eq(tenantId).and()
+                .having("triggerId").eq(triggerId);
+        if (null != triggerMode) {
+            qb = qb.and().having("triggerMode").eq(triggerMode.name());
+        }
+        return ((QueryBuilder) qb).build().list();
     }
 
     @Override
     public Collection<Condition> getConditions(String tenantId) throws Exception {
-        return null;
+        return queryFactory.from(Condition.class).having("tenantId").eq(tenantId).build().list();
     }
 
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Condition> getAllConditions() throws Exception {
-        return null;
+        return queryFactory.from(Condition.class).build().list();
     }
 
     @Override
@@ -684,8 +1115,14 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         alertsContext.notifyListeners(Arrays.asList(de));
     }
 
-    private boolean isDeferredNotifications() {
-        return deferNotificationsCount > 0;
+    private void notifyListenersDeferred() {
+        if (deferredNotifications.isEmpty()) {
+            return;
+        }
+
+        List<DefinitionsEvent> notifications = deferredNotifications;
+        deferredNotifications = new ArrayList<>();
+        alertsContext.notifyListeners(notifications);
     }
 
     private void addTrigger(Trigger trigger) throws Exception {
@@ -717,7 +1154,9 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         notifyListeners(new DefinitionsEvent(DefinitionsEvent.Type.TRIGGER_CREATE, trigger));
     }
 
-    private void removeTrigger(String tenantId, String triggerId, Trigger trigger) throws Exception {
+    private void removeTrigger(Trigger trigger) throws Exception {
+        String tenantId = trigger.getTenantId();
+        String triggerId = trigger.getId();
         backend.remove(pk(tenantId, triggerId));
         // TODO delete dampenings and conditions
 

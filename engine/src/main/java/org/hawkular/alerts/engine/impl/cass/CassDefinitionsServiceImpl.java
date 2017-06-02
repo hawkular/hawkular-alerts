@@ -1793,42 +1793,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    @Deprecated
-    public Collection<Condition> addCondition(String tenantId, String triggerId, Mode triggerMode,
-            Condition condition) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
-        }
-        if (isEmpty(triggerId)) {
-            throw new IllegalArgumentException("TriggerId must be not null");
-        }
-        if (triggerMode == null) {
-            throw new IllegalArgumentException("TriggerMode must be not null");
-        }
-        if (condition == null) {
-            throw new IllegalArgumentException("Condition must be not null");
-        }
-
-        Trigger trigger = getTrigger(tenantId, triggerId);
-        if (null == trigger) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
-        }
-        if (trigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
-        }
-        if (trigger.isMember() && !trigger.isOrphan()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
-                    + "] is a member trigger and must be managed via the group.");
-        }
-
-        condition.setTenantId(tenantId);
-        condition.setTriggerId(triggerId);
-        condition.setTriggerMode(triggerMode);
-
-        return addCondition(condition);
-    }
-
-    @Override
     public Collection<Condition> setGroupConditions(String tenantId, String groupId, Mode triggerMode,
             Collection<Condition> groupConditions, Map<String, Map<String, String>> dataIdMemberMap) throws Exception {
         if (isEmpty(tenantId)) {
@@ -2011,40 +1975,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         return setConditions(tenantId, triggerId, triggerMode, conditions);
     }
 
-    @Override
-    @Deprecated
-    public Collection<Condition> removeCondition(String tenantId, String conditionId) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
-        }
-        if (isEmpty(conditionId)) {
-            throw new IllegalArgumentException("ConditionId must be not null");
-        }
-
-        Condition condition = getCondition(tenantId, conditionId);
-        if (null == condition) {
-            if (log.isDebugEnabled()) {
-                log.debug("Ignoring removeCondition [" + conditionId + "], the condition does not exist.");
-            }
-            return null;
-        }
-
-        String triggerId = condition.getTriggerId();
-        Trigger trigger = getTrigger(tenantId, triggerId);
-        if (null == trigger) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
-        }
-        if (trigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
-        }
-        if (trigger.isMember() && !trigger.isOrphan()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
-                    + "] is a member trigger and must be managed via the group.");
-        }
-
-        return removeCondition(condition);
-    }
-
     private Collection<Condition> removeCondition(Condition condition) throws Exception {
         String tenantId = condition.getTenantId();
         String triggerId = condition.getTriggerId();
@@ -2064,47 +1994,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         }
 
         return setConditions(tenantId, triggerId, triggerMode, newConditions);
-    }
-
-    @Override
-    @Deprecated
-    public Collection<Condition> updateCondition(String tenantId, Condition condition) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
-        }
-        if (condition == null) {
-            throw new IllegalArgumentException("Condition must be not null");
-        }
-
-        String conditionId = condition.getConditionId();
-        if (isEmpty(conditionId)) {
-            throw new IllegalArgumentException("ConditionId must be not null");
-        }
-
-        Condition existingCondition = getCondition(tenantId, conditionId);
-        if (null == existingCondition) {
-            throw new IllegalArgumentException("ConditionId [" + conditionId + "] on tenant " + tenantId +
-                    " does not exist.");
-        }
-        if (existingCondition.getTriggerMode() != condition.getTriggerMode()) {
-            throw new IllegalArgumentException("The condition trigger mode ["
-                    + existingCondition.getTriggerMode().name() + "] can not be changed.");
-        }
-
-        String triggerId = existingCondition.getTriggerId();
-        Trigger existingTrigger = getTrigger(tenantId, triggerId);
-        if (null == existingTrigger) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
-        }
-        if (existingTrigger.isGroup()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
-        }
-        if (existingTrigger.isMember() && !existingTrigger.isOrphan()) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
-                    + "] is a member trigger and must be managed via the group.");
-        }
-
-        return updateCondition(existingTrigger, condition);
     }
 
     private Collection<Condition> updateCondition(Trigger trigger, Condition condition) throws Exception {
@@ -2142,6 +2031,77 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         if (conditions == null) {
             throw new IllegalArgumentException("Conditions must be not null");
         }
+
+        conditions.stream().forEach(c -> {
+            c.setTenantId(tenantId);
+            c.setTriggerId(triggerId);
+            c.setTriggerMode(triggerMode);
+        });
+
+        // We keep a cache of the dataIds used in Trigger conditions. They are used to filter incoming data, keeping
+        // only the data for relevant dataIds.  This method supplies/updates only the conditions of one trigger mode.
+        // To ensure we maintain all of the trigger's dataIds, we must update all conditions, so fetch any conditions
+        // for the other trigger mode and then update all of the conditions together. This does not increase overhead
+        // too much as the entire trigger must get reloaded regardless.
+        Mode otherTtriggerMode = triggerMode == Mode.FIRING ? Mode.AUTORESOLVE : Mode.FIRING;
+        Collection<Condition> otherConditions = getTriggerConditions(tenantId, triggerId, otherTtriggerMode);
+
+        Collection<Condition> allConditions = new ArrayList<>(conditions);
+        allConditions.addAll(otherConditions);
+
+        allConditions = setAllConditions(tenantId, triggerId, allConditions);
+
+        return allConditions.stream()
+                .filter(c -> c.getTriggerMode().equals(triggerMode))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<Condition> setAllConditions(String tenantId, String triggerId,
+            Collection<Condition> conditions) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (conditions == null) {
+            throw new IllegalArgumentException("Conditions must be not null");
+        }
+        conditions.stream().forEach(c -> {
+            if (null == c.getTriggerMode()) {
+                throw new IllegalArgumentException("Condition.triggerMode must not be null");
+            }
+        });
+
+        conditions.stream().forEach(c -> c.setTenantId(tenantId));
+        conditions.stream().forEach(c -> c.setTriggerId(triggerId));
+
+        Collection<Condition> updatedConditions = new HashSet<>();
+        Set<String> dataIds = new HashSet<>();
+
+        Collection<Condition> firingConditions = conditions.stream()
+                .filter(c -> c.getTriggerMode() == null || c.getTriggerMode().equals(Mode.FIRING))
+                .collect(Collectors.toList());
+        updatedConditions.addAll(setConditions(tenantId, triggerId, Mode.FIRING, firingConditions, dataIds));
+
+        Collection<Condition> autoResolveConditions = conditions.stream()
+                .filter(c -> c.getTriggerMode().equals(Mode.AUTORESOLVE))
+                .collect(Collectors.toList());
+        updatedConditions.addAll(setConditions(tenantId, triggerId, Mode.AUTORESOLVE, autoResolveConditions, dataIds));
+
+        if (alertsEngine != null) {
+            alertsEngine.reloadTrigger(tenantId, triggerId);
+        }
+
+        notifyListeners(new DefinitionsEvent(Type.TRIGGER_CONDITION_CHANGE, tenantId, triggerId, dataIds));
+
+        return updatedConditions;
+    }
+
+    private Collection<Condition> setConditions(String tenantId, String triggerId, Mode triggerMode,
+            Collection<Condition> conditions, Set<String> dataIds) throws Exception {
+
         PreparedStatement insertConditionAvailability = CassStatement.get(session,
                 CassStatement.INSERT_CONDITION_AVAILABILITY);
         PreparedStatement insertConditionCompare = CassStatement.get(session, CassStatement.INSERT_CONDITION_COMPARE);
@@ -2174,7 +2134,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
         // Get rid of the prior condition set
         removeConditions(tenantId, triggerId, triggerMode);
 
-        Set<String> dataIds = new HashSet<>();
         // Now add the new condition set
         try {
             List<ResultSetFuture> futures = new ArrayList<>();
@@ -2297,12 +2256,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
             log.errorDatabaseException(e.getMessage());
             throw e;
         }
-
-        if (alertsEngine != null) {
-            alertsEngine.reloadTrigger(tenantId, triggerId);
-        }
-
-        notifyListeners(new DefinitionsEvent(Type.TRIGGER_CONDITION_CHANGE, tenantId, triggerId, dataIds));
 
         return conditions;
     }

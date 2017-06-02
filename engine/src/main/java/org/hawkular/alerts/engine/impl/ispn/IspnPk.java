@@ -1,6 +1,7 @@
 package org.hawkular.alerts.engine.impl.ispn;
 
 import org.hawkular.alerts.api.model.action.ActionDefinition;
+import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
@@ -40,6 +41,13 @@ public class IspnPk {
                 .append("-")
                 .append(actionId)
                 .toString();
+    }
+
+    public static String pk(Condition condition) {
+        if (condition == null) {
+            return null;
+        }
+        return condition.getConditionId();
     }
 
     public static String pk(Trigger trigger) {

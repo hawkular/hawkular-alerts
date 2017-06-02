@@ -21,6 +21,7 @@ import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_REM
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,8 +29,8 @@ import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.PropertiesService;
-import org.hawkular.alerts.log.AlertingLogger;
 import org.hawkular.alerts.filter.CacheKey;
+import org.hawkular.alerts.log.AlertingLogger;
 import org.hawkular.commons.log.MsgLogging;
 import org.infinispan.Cache;
 
@@ -62,7 +63,7 @@ public class PublishCacheManager {
     private Cache<TriggerKey, Set<String>> publishDataIdsCache;
 
     // It stores a list of triggerIds used per key (tenantId, dataId).
-    // This cache is used by CacheClient to check wich dataIds are published and forwarded from metrics.
+    // This cache is used by CacheClient to check which dataIds are published and forwarded from metrics.
     private Cache<CacheKey, Set<String>> publishCache;
 
     public void setProperties(PropertiesService properties) {
@@ -98,26 +99,39 @@ public class PublishCacheManager {
 
             definitions.registerListener(events -> {
                 log.debugf("Receiving %s", events);
-                events.stream().forEach(e -> {
-                    log.debugf("Received %s", e);
-                    String tenantId = e.getTargetTenantId();
-                    String triggerId = e.getTargetId();
-                    TriggerKey triggerKey = new TriggerKey(tenantId, triggerId);
-                    publishCache.startBatch();
-                    publishDataIdsCache.startBatch();
-                    Set<String> oldDataIds = publishDataIdsCache.get(triggerKey);
-                    removePublishCache(tenantId, triggerId, oldDataIds);
-                    if (e.getType().equals(TRIGGER_CONDITION_CHANGE)) {
-                        Set<String> newDataIds = e.getDataIds();
-                        publishDataIdsCache.put(triggerKey, newDataIds);
-                        addPublishCache(tenantId, triggerId, newDataIds);
-                    }
-                    publishDataIdsCache.endBatch(true);
-                    publishCache.endBatch(true);
-                    log.debugf("PublishCache: %s", publishCache.entrySet());
-                });
+                events.stream()
+                        .forEach(e -> {
+                            log.debugf("Received %s", e);
+                            String tenantId = e.getTargetTenantId();
+                            String triggerId = e.getTargetId();
+                            TriggerKey triggerKey = new TriggerKey(tenantId, triggerId);
+                            publishCache.startBatch();
+                            publishDataIdsCache.startBatch();
+                            switch (e.getType()) {
+                                case TRIGGER_CONDITION_CHANGE: {
+                                    Set<String> oldDataIds = publishDataIdsCache.getOrDefault(triggerKey,
+                                            Collections.emptySet());
+                                    Set<String> newDataIds = e.getDataIds();
+                                    if (!oldDataIds.equals(newDataIds)) {
+                                        removePublishCache(tenantId, triggerId, oldDataIds);
+                                        addPublishCache(tenantId, triggerId, newDataIds);
+                                        publishDataIdsCache.put(triggerKey, newDataIds);
+                                    }
+                                    break;
+                                }
+                                case TRIGGER_REMOVE: {
+                                    Set<String> oldDataIds = publishDataIdsCache.get(triggerKey);
+                                    removePublishCache(tenantId, triggerId, oldDataIds);
+                                    publishDataIdsCache.remove(triggerKey);
+                                    break;
+                                }
+                                default:
+                                    throw new IllegalStateException("Unexpected notification: " + e.toString());
+                            }
+                            publishDataIdsCache.endBatch(true);
+                            publishCache.endBatch(true);
+                        });
             }, TRIGGER_CONDITION_CHANGE, TRIGGER_REMOVE);
-
 
         } else {
             log.warnDisabledPublishCache();
