@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -225,7 +226,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
         }
 
-        removeTrigger(doomedTrigger);
+        removeTrigger(tenantId, triggerId, doomedTrigger);
     }
 
     @Override
@@ -309,9 +310,27 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             StringBuilder query = new StringBuilder("rom org.hawkular.alerts.api.model.trigger.Trigger where ");
             if (criteria.hasTriggerIdCriteria()) {
                 Set<String> triggerIds = filterByTriggers(criteria);
-                // TODO: Finish This...
+                query.append("(");
+                Iterator<String> iter = triggerIds.iterator();
+                while (iter.hasNext()) {
+                    String triggerId = iter.next();
+                    query.append("triggerId = '").append(triggerId).append("' ");
+                    if (iter.hasNext()) {
+                        query.append("and ");
+                    }
+                }
+                query.append(") and ");
             }
+            if (criteria.hasTagCriteria()) {
+                Map<String, String> tags = criteria.getTags();
+                query.append("(");
+                Iterator<Map.Entry<String, String>> iter = tags.entrySet().iterator();
+                while(iter.hasNext()) {
+                    Map.Entry<String, String> tag = iter.next();
 
+                }
+                query.append(") and ");
+            }
             triggers = queryFactory.create(query.toString()).list();
         } else {
             triggers = queryFactory.from(Trigger.class)
@@ -597,7 +616,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             // the current members but the work of maintaining them may not add much, if any, benefit.
             if (TriggerType.DATA_DRIVEN_GROUP == group.getType()) {
                 for (Trigger member : memberTriggers) {
-                    removeTrigger(member);
+                    removeTrigger(member.getTenantId(), member.getId(), member);
                 }
                 memberTriggers.clear();
             }
@@ -1154,9 +1173,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         notifyListeners(new DefinitionsEvent(DefinitionsEvent.Type.TRIGGER_CREATE, trigger));
     }
 
-    private void removeTrigger(Trigger trigger) throws Exception {
-        String tenantId = trigger.getTenantId();
-        String triggerId = trigger.getId();
+    private void removeTrigger(String tenantId, String triggerId, Trigger trigger) throws Exception {
         backend.remove(pk(tenantId, triggerId));
         // TODO delete dampenings and conditions
 

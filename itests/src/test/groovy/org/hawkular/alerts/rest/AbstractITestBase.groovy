@@ -20,11 +20,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.BeforeClass
 
-import groovy.json.internal.Charsets
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
-import groovyx.net.http.HttpResponseDecorator
-import groovyx.net.http.HttpResponseException
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -55,7 +52,7 @@ class AbstractITestBase {
           if (resp.entity != null && resp.entity.contentLength != 0) {
             def baos = new ByteArrayOutputStream()
             resp.entity.writeTo(baos)
-            failureEntity = new String(baos.toByteArray(), Charsets.UTF_8)
+            failureEntity = new String(baos.toByteArray(), "UTF-8")
           }
           return resp
         }
@@ -90,6 +87,13 @@ class AbstractITestBase {
 
     static String nextTenantId() {
         return "T${TENANT_PREFIX}${TENANT_ID_COUNTER.incrementAndGet()}"
+    }
+
+    static void waitDefinitions() {
+        Thread.sleep(100)
+        if (cluster) {
+            Thread.sleep(500);
+        }
     }
 
     @Before
