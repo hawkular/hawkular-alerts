@@ -153,6 +153,18 @@ public class ThresholdRangeCondition extends Condition {
         this.inRange = inRange;
     }
 
+    public ThresholdRangeCondition(ThresholdRangeCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.operatorHigh = condition.getOperatorHigh();
+        this.operatorLow = condition.getOperatorLow();
+        this.thresholdHigh = condition.getThresholdHigh();
+        this.thresholdLow = condition.getThresholdLow();
+        this.inRange = condition.isInRange();
+    }
+
+    @Override
     public String getDataId() {
         return dataId;
     }

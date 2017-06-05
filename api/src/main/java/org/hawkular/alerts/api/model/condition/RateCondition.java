@@ -180,6 +180,17 @@ public class RateCondition extends Condition {
         this.threshold = threshold;
     }
 
+    public RateCondition(RateCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.direction = condition.getDirection();
+        this.operator = condition.getOperator();
+        this.period = condition.getPeriod();
+        this.threshold = condition.getThreshold();
+    }
+
+    @Override
     public String getDataId() {
         return dataId;
     }
@@ -252,7 +263,7 @@ public class RateCondition extends Condition {
     }
 
     public double getRate(long time, double value, long previousTime, double previousValue) {
-        double deltaTime = (double) (time - previousTime);
+        double deltaTime = time - previousTime;
         double deltaValue = (Direction.INCREASING == direction) ? (value - previousValue) : (previousValue - value);
         double periods = deltaTime / period.milliseconds;
         double rate = deltaValue / periods;

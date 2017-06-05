@@ -469,9 +469,6 @@ public interface DefinitionsService {
             Collection<Condition> groupConditions, Map<String, Map<String, String>> dataIdMemberMap) throws Exception;
 
 
-    @Deprecated
-    Condition getCondition(String tenantId, String conditionId) throws Exception;
-
     /**
      * @param tenantId Tenant where trigger and his conditions are stored
      * @param triggerId Trigger where conditions are stored

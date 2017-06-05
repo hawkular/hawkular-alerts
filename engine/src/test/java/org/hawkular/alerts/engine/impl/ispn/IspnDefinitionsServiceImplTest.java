@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -32,6 +33,10 @@ import java.util.UUID;
 import org.hawkular.alerts.api.exception.FoundException;
 import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
+import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
+import org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator;
+import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.commons.log.MsgLogger;
@@ -321,6 +326,48 @@ public class IspnDefinitionsServiceImplTest {
         criteria.getTags().put("tag1", "value1");
 
         assertEquals(6, definitions.getTriggers("tenant0", criteria, null).size());
+
+        deleteTestTriggers(numTenants, numTriggers);
+    }
+
+    @Test
+    public void conditionsTest() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 1;
+        createTestTriggers(numTenants, numTriggers);
+
+        Condition fc = new AvailabilityCondition("trigger-0", Mode.FIRING, "firing-cond", Operator.NOT_UP);
+        Condition rc = new AvailabilityCondition("trigger-0", Mode.AUTORESOLVE, "resolve-cond", Operator.UP);
+
+        Set<Condition> conditions = new HashSet<>(Arrays.asList(fc, rc));
+
+        conditions = new HashSet<>(definitions.setAllConditions("tenant0", "trigger0", conditions));
+
+        // get All Conditions
+        Set<Condition> fetchedConditions = new HashSet<>(definitions.getAllConditions());
+        assertEquals(conditions, fetchedConditions);
+
+        // get tenant Conditions
+        fetchedConditions = new HashSet<>(definitions.getConditions("tenant0"));
+        assertEquals(conditions, fetchedConditions);
+
+        fetchedConditions = new HashSet<>(definitions.getConditions("tenantX"));
+        assertEquals(0, fetchedConditions.size());
+
+        // get trigger conditions
+        fetchedConditions = new HashSet<>(
+                definitions.getTriggerConditions("tenant0", "trigger0", null));
+        assertEquals(conditions, fetchedConditions);
+
+        // get firing conditions
+        fetchedConditions = new HashSet<>(
+                definitions.getTriggerConditions("tenant0", "trigger0", Mode.FIRING));
+        assertEquals(Collections.singleton(fc), fetchedConditions);
+
+        // get autoresolve conditions
+        fetchedConditions = new HashSet<>(
+                definitions.getTriggerConditions("tenant0", "trigger0", Mode.AUTORESOLVE));
+        assertEquals(Collections.singleton(rc), fetchedConditions);
 
         deleteTestTriggers(numTenants, numTriggers);
     }

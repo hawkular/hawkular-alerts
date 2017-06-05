@@ -99,6 +99,14 @@ public class AvailabilityCondition extends Condition {
         this.operator = operator;
     }
 
+    public AvailabilityCondition(AvailabilityCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.operator = condition.getOperator();
+    }
+
+    @Override
     public String getDataId() {
         return dataId;
     }
@@ -161,7 +169,7 @@ public class AvailabilityCondition extends Condition {
 
     @Override
     public String toString() {
-        return "AvailabilityCondition [triggerId='" + triggerId + "', " +
+        return "AvailabilityCondition [tenantId='" + tenantId + "', triggerId='" + triggerId + "', " +
                 "triggerMode=" + triggerMode + ", " +
                 "dataId=" + (dataId == null ? null : '\'' + dataId + '\'') + ", " +
                 "operator=" + (operator == null ? null : '\'' + operator.toString() + '\'') + "]";

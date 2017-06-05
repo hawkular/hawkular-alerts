@@ -121,6 +121,16 @@ public class CompareCondition extends Condition {
         this.data2Multiplier = data2Multiplier;
     }
 
+    public CompareCondition(CompareCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.data2Id = condition.getData2Id();
+        this.data2Multiplier = condition.getData2Multiplier();
+        this.operator = condition.getOperator();
+    }
+
+    @Override
     public String getDataId() {
         return dataId;
     }

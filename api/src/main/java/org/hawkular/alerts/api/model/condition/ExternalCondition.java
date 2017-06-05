@@ -120,6 +120,14 @@ public class ExternalCondition extends Condition {
         this.expression = expression;
     }
 
+    public ExternalCondition(ExternalCondition condition) {
+        super(condition);
+
+        this.alerterId = condition.getAlerterId();
+        this.dataId = condition.getDataId();
+        this.expression = condition.getExpression();
+    }
+
     public String getAlerterId() {
         return alerterId;
     }

@@ -79,6 +79,13 @@ public class MissingCondition extends Condition {
         this.interval = interval;
     }
 
+    public MissingCondition(MissingCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.interval = condition.getInterval();
+    }
+
     @Override
     public String getDataId() {
         return dataId;

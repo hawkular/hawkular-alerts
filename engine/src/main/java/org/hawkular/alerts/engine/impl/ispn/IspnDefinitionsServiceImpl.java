@@ -20,6 +20,7 @@ import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFI
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_REMOVE;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_UPDATE;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
+import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromTriggerId;
 import static org.hawkular.alerts.engine.util.Utils.checkTenantId;
 import static org.hawkular.alerts.engine.util.Utils.isEmpty;
 
@@ -72,6 +73,7 @@ import org.hawkular.alerts.engine.exception.NotFoundApplicationException;
 import org.hawkular.alerts.engine.impl.AlertsContext;
 import org.hawkular.alerts.engine.impl.ispn.model.IspnActionDefinition;
 import org.hawkular.alerts.engine.impl.ispn.model.IspnActionPlugin;
+import org.hawkular.alerts.engine.impl.ispn.model.IspnCondition;
 import org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.log.AlertingLogger;
@@ -206,7 +208,9 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Trigger addMemberTrigger(String tenantId, String groupId, String memberId, String memberName, String memberDescription, Map<String, String> memberContext, Map<String, String> memberTags, Map<String, String> dataIdMap) throws Exception {
+    public Trigger addMemberTrigger(String tenantId, String groupId, String memberId, String memberName,
+            String memberDescription, Map<String, String> memberContext, Map<String, String> memberTags,
+            Map<String, String> dataIdMap) throws Exception {
         return null;
     }
 
@@ -234,7 +238,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void removeGroupTrigger(String tenantId, String groupId, boolean keepNonOrphans, boolean keepOrphans) throws Exception {
+    public void removeGroupTrigger(String tenantId, String groupId, boolean keepNonOrphans, boolean keepOrphans)
+            throws Exception {
 
     }
 
@@ -274,7 +279,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public void updateGroupTriggerEnablement(String tenantId, String groupTriggerIds, boolean enabled) throws Exception {
+    public void updateGroupTriggerEnablement(String tenantId, String groupTriggerIds, boolean enabled)
+            throws Exception {
 
     }
 
@@ -291,7 +297,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
-        String pk = pk(tenantId, triggerId);
+        String pk = pkFromTriggerId(tenantId, triggerId);
         IspnTrigger found = (IspnTrigger) backend.get(pk);
         if (found == null) {
             throw new NotFoundException(pk);
@@ -311,7 +317,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
         List<IspnTrigger> triggers;
         if (filter) {
-            StringBuilder query = new StringBuilder("from org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger where ");
+            StringBuilder query = new StringBuilder(
+                    "from org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger where ");
             query.append("tenantId = '").append(tenantId).append("' and ");
             if (criteria.hasTriggerIdCriteria()) {
                 Set<String> triggerIds = filterByTriggers(criteria);
@@ -333,7 +340,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                 Map<String, String> tags = criteria.getTags();
                 query.append("(");
                 Iterator<Map.Entry<String, String>> iter = tags.entrySet().iterator();
-                while(iter.hasNext()) {
+                while (iter.hasNext()) {
                     Map.Entry<String, String> tag = iter.next();
                     query.append("tags like '")
                             .append(tag.getKey())
@@ -358,7 +365,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Trigger> getMemberTriggers(String tenantId, String groupId, boolean includeOrphans) throws Exception {
+    public Collection<Trigger> getMemberTriggers(String tenantId, String groupId, boolean includeOrphans)
+            throws Exception {
         return null;
     }
 
@@ -378,11 +386,12 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(value)) {
             throw new IllegalArgumentException("value must be not null (use '*' for all");
         }
-        StringBuilder query = new StringBuilder("from org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger where tags like '")
-                .append(name)
-                .append(":")
-                .append(value.equals("*") ? "%" : value)
-                .append("'");
+        StringBuilder query = new StringBuilder(
+                "from org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger where tags like '")
+                        .append(name)
+                        .append(":")
+                        .append(value.equals("*") ? "%" : value)
+                        .append("'");
         List<IspnTrigger> triggers = queryFactory.create(query.toString()).list();
         return triggers.stream().map(t -> t.getTrigger()).collect(Collectors.toList());
     }
@@ -393,7 +402,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Trigger unorphanMemberTrigger(String tenantId, String memberId, Map<String, String> memberContext, Map<String, String> memberTags, Map<String, String> dataIdMap) throws Exception {
+    public Trigger unorphanMemberTrigger(String tenantId, String memberId, Map<String, String> memberContext,
+            Map<String, String> memberTags, Map<String, String> dataIdMap) throws Exception {
         return null;
     }
 
@@ -433,7 +443,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Dampening> getTriggerDampenings(String tenantId, String triggerId, Mode triggerMode) throws Exception {
+    public Collection<Dampening> getTriggerDampenings(String tenantId, String triggerId, Mode triggerMode)
+            throws Exception {
         return null;
     }
 
@@ -538,7 +549,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
         // Now add the new condition set
         try {
-            Map<String, Condition> newConditions = new HashMap<>();
+            Map<String, IspnCondition> newConditions = new HashMap<>();
             int indexCondition = 0;
             for (Condition cond : conditions) {
                 cond.setTenantId(tenantId);
@@ -567,7 +578,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                     default:
                         throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
                 }
-                newConditions.put(pk(cond), cond);
+                newConditions.put(pk(cond), new IspnCondition(cond));
             }
             backend.putAll(newConditions);
 
@@ -600,7 +611,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Collection<Condition> setGroupConditions(String tenantId, String groupId, Mode triggerMode, Collection<Condition> groupConditions, Map<String, Map<String, String>> dataIdMemberMap) throws Exception {
+    public Collection<Condition> setGroupConditions(String tenantId, String groupId, Mode triggerMode,
+            Collection<Condition> groupConditions, Map<String, Map<String, String>> dataIdMemberMap) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
@@ -854,7 +866,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         }
 
         try {
-            String pk = pk(tenantId, memberTriggerId);
+            String pk = pkFromTriggerId(tenantId, memberTriggerId);
             Trigger memberTrigger = (Trigger) backend.get(pk);
             memberTrigger.setDataIdMap(dataIdMap);
             backend.put(pk, memberTrigger);
@@ -864,32 +876,43 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
-    public Condition getCondition(String tenantId, String conditionId) throws Exception {
-        // note that tenantId is already incorporated into the conditionId
-        return (Condition) backend.get(conditionId);
+    public Collection<Condition> getAllConditions() throws Exception {
+        return mapConditions(queryFactory.from(IspnCondition.class).build().list());
     }
 
     @Override
-    public Collection<Condition> getTriggerConditions(String tenantId, String triggerId, Mode triggerMode) throws Exception {
-        FilterConditionContext qb = queryFactory.from(Condition.class)
+    public Collection<Condition> getConditions(String tenantId) throws Exception {
+        //        // this gives results from all classes, why?
+        //        SearchManager manager = Search.getSearchManager(backend);
+        //        org.hibernate.search.query.dsl.QueryBuilder queryBuilder = manager
+        //                .buildQueryBuilderForClass(Condition.class).get();
+        //        Query query = queryBuilder.keyword().onField("tenantId").matching(tenantId).createQuery();
+        //        CacheQuery<Condition> cacheQuery = manager.getQuery(query);
+        //        return cacheQuery.list();
+        // This gives NPE, why?
+        return mapConditions(queryFactory.from(IspnCondition.class)
+                .having("tenantId").eq(tenantId)
+                .build().list());
+    }
+
+    @Override
+    public Collection<Condition> getTriggerConditions(String tenantId, String triggerId, Mode triggerMode)
+            throws Exception {
+        FilterConditionContext qb = queryFactory.from(IspnCondition.class)
                 .having("tenantId").eq(tenantId).and()
                 .having("triggerId").eq(triggerId);
         if (null != triggerMode) {
             qb = qb.and().having("triggerMode").eq(triggerMode.name());
         }
-        return ((QueryBuilder) qb).build().list();
+        return mapConditions(((QueryBuilder) qb).build().list());
     }
 
-    @Override
-    public Collection<Condition> getConditions(String tenantId) throws Exception {
-        return queryFactory.from(Condition.class).having("tenantId").eq(tenantId).build().list();
-    }
-
-    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
-    @Override
-    public Collection<Condition> getAllConditions() throws Exception {
-        return queryFactory.from(Condition.class).build().list();
+    private Collection<Condition> mapConditions(List<IspnCondition> ispnConditions) {
+        return ispnConditions.stream()
+                .map(c -> c.getCondition())
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -968,7 +991,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         IspnActionPlugin found = (IspnActionPlugin) backend.get(pk(actionPlugin));
-        return found == null? null : found.getDefaultProperties().keySet();
+        return found == null ? null : found.getDefaultProperties().keySet();
     }
 
     @Override
@@ -977,7 +1000,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
         IspnActionPlugin found = (IspnActionPlugin) backend.get(pk(actionPlugin));
-        return found == null? null : found.getDefaultProperties();
+        return found == null ? null : found.getDefaultProperties();
     }
 
     @Override
@@ -1108,7 +1131,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public ActionDefinition getActionDefinition(String tenantId, String actionPlugin, String actionId) throws Exception {
+    public ActionDefinition getActionDefinition(String tenantId, String actionPlugin, String actionId)
+            throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
         }
@@ -1118,12 +1142,14 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionId)) {
             throw new IllegalArgumentException("actionId must be not null");
         }
-        IspnActionDefinition actionDefinition = (IspnActionDefinition) backend.get(pk(tenantId, actionPlugin, actionId));
+        IspnActionDefinition actionDefinition = (IspnActionDefinition) backend
+                .get(pk(tenantId, actionPlugin, actionId));
         return actionDefinition != null ? actionDefinition.getActionDefinition() : null;
     }
 
     @Override
-    public void registerListener(DefinitionsListener listener, DefinitionsEvent.Type eventType, DefinitionsEvent.Type... eventTypes) {
+    public void registerListener(DefinitionsListener listener, DefinitionsEvent.Type eventType,
+            DefinitionsEvent.Type... eventTypes) {
 
     }
 
@@ -1133,7 +1159,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    public Definitions importDefinitions(String tenantId, Definitions definitions, ImportType strategy) throws Exception {
+    public Definitions importDefinitions(String tenantId, Definitions definitions, ImportType strategy)
+            throws Exception {
         return null;
     }
 
@@ -1209,7 +1236,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             alertsEngine.removeTrigger(tenantId, triggerId);
         }
 
-        notifyListeners(new DefinitionsEvent(DefinitionsEvent.Type.TRIGGER_REMOVE, tenantId, triggerId, trigger.getTags()));
+        notifyListeners(
+                new DefinitionsEvent(DefinitionsEvent.Type.TRIGGER_REMOVE, tenantId, triggerId, trigger.getTags()));
     }
 
     private Trigger updateTrigger(Trigger trigger) throws Exception {

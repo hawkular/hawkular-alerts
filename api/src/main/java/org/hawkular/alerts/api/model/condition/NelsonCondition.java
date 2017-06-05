@@ -18,6 +18,7 @@ package org.hawkular.alerts.api.model.condition;
 
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -148,6 +149,14 @@ public class NelsonCondition extends Condition {
         this.dataId = dataId;
         setActiveRules(activeRules);
         setSampleSize(sampleSize);
+    }
+
+    public NelsonCondition(NelsonCondition condition) {
+        super(condition);
+
+        this.activeRules = new HashSet<>(condition.getActiveRules());
+        this.dataId = condition.getDataId();
+        this.sampleSize = condition.getSampleSize();
     }
 
     @Override
