@@ -114,6 +114,16 @@ public class StringCondition extends Condition {
         this.ignoreCase = ignoreCase;
     }
 
+    public StringCondition(StringCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.ignoreCase = condition.isIgnoreCase();
+        this.operator = condition.getOperator();
+        this.pattern = condition.getPattern();
+    }
+
+    @Override
     public String getDataId() {
         return dataId;
     }

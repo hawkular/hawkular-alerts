@@ -105,6 +105,15 @@ public class ThresholdCondition extends Condition {
         this.threshold = threshold;
     }
 
+    public ThresholdCondition(ThresholdCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.operator = condition.getOperator();
+        this.threshold = condition.getThreshold();
+    }
+
+    @Override
     public String getDataId() {
         return dataId;
     }

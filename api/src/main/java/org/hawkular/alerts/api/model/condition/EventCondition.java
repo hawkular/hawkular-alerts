@@ -180,6 +180,13 @@ public class EventCondition extends Condition {
         this.expression = expression;
     }
 
+    public EventCondition(EventCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.expression = condition.getExpression();
+    }
+
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }

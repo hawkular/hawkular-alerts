@@ -131,6 +131,20 @@ public abstract class Condition implements Serializable {
         updateId();
     }
 
+    public Condition(Condition condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("condition must be not null");
+        }
+        this.tenantId = condition.getTenantId();
+        this.triggerId = condition.getTriggerId();
+        this.triggerMode = condition.getTriggerMode();
+        this.conditionSetSize = condition.getConditionSetSize();
+        this.conditionSetIndex = condition.conditionSetIndex;
+        this.type = condition.getType();
+        this.context = new HashMap<>(condition.getContext());
+        updateId();
+    }
+
     public int getConditionSetIndex() {
         return conditionSetIndex;
     }

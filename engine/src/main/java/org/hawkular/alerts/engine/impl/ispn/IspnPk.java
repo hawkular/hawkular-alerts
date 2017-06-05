@@ -2,6 +2,7 @@ package org.hawkular.alerts.engine.impl.ispn;
 
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
@@ -53,6 +54,15 @@ public class IspnPk {
                 .toString();
     }
 
+    public static String pk(Dampening dampening) {
+        if (dampening == null) {
+            return null;
+        }
+        return new StringBuilder("Dampening-")
+                .append(dampening.getDampeningId())
+                .toString();
+    }
+
     public static String pk(Trigger trigger) {
         if (trigger == null) {
             return null;
@@ -64,7 +74,7 @@ public class IspnPk {
                 .toString();
     }
 
-    public static String pk(String tenantId, String triggerId) {
+    public static String pkFromTriggerId(String tenantId, String triggerId) {
         if (tenantId == null || triggerId == null) {
             return null;
         }

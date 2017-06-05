@@ -2337,35 +2337,6 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
-    @Deprecated
-    public Condition getCondition(String tenantId, String conditionId) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
-        }
-        if (isEmpty(conditionId)) {
-            throw new IllegalArgumentException("conditionId must be not null");
-        }
-        PreparedStatement selectConditionId = CassStatement.get(session, CassStatement.SELECT_CONDITION_ID);
-        if (selectConditionId == null) {
-            throw new RuntimeException("selectConditionId PreparedStatement is null");
-        }
-        Condition condition = null;
-        try {
-            ResultSet rsCondition = session.execute(selectConditionId.bind(tenantId, conditionId));
-            Iterator<Row> itCondition = rsCondition.iterator();
-            if (itCondition.hasNext()) {
-                Row row = itCondition.next();
-                condition = mapCondition(row);
-            }
-        } catch (Exception e) {
-            log.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-
-        return condition;
-    }
-
-    @Override
     public Collection<Condition> getTriggerConditions(String tenantId, String triggerId, Mode triggerMode)
             throws Exception {
         if (isEmpty(tenantId)) {
