@@ -17,6 +17,7 @@
 package org.hawkular.alerts.engine.impl.ispn.model;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.hibernate.search.annotations.Analyze;
@@ -29,17 +30,17 @@ import org.hibernate.search.annotations.Store;
  * @author Lucas Ponce
  */
 @Indexed(index = "actionPlugin")
-public class ActionPlugin implements Serializable {
+public class IspnActionPlugin implements Serializable {
     @Field(store = Store.YES, analyze = Analyze.NO)
     private String actionPlugin;
     private Map<String, String> defaultProperties;
 
-    public ActionPlugin() {
+    public IspnActionPlugin() {
     }
 
-    public ActionPlugin(String actionPlugin, Map<String, String> defaultProperties) {
+    public IspnActionPlugin(String actionPlugin, Map<String, String> defaultProperties) {
         this.actionPlugin = actionPlugin;
-        this.defaultProperties = defaultProperties;
+        this.defaultProperties = new HashMap<>(defaultProperties);
     }
 
     public String getActionPlugin() {
@@ -51,11 +52,11 @@ public class ActionPlugin implements Serializable {
     }
 
     public Map<String, String> getDefaultProperties() {
-        return defaultProperties;
+        return new HashMap<>(defaultProperties);
     }
 
     public void setDefaultProperties(Map<String, String> defaultProperties) {
-        this.defaultProperties = defaultProperties;
+        this.defaultProperties = new HashMap<>(defaultProperties);
     }
 
     @Override
@@ -63,7 +64,7 @@ public class ActionPlugin implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ActionPlugin that = (ActionPlugin) o;
+        IspnActionPlugin that = (IspnActionPlugin) o;
 
         if (actionPlugin != null ? !actionPlugin.equals(that.actionPlugin) : that.actionPlugin != null) return false;
         return defaultProperties != null ? defaultProperties.equals(that.defaultProperties) : that.defaultProperties == null;
@@ -78,7 +79,7 @@ public class ActionPlugin implements Serializable {
 
     @Override
     public String toString() {
-        return "ActionPlugin{" +
+        return "IspnActionPlugin{" +
                 "actionPlugin='" + actionPlugin + '\'' +
                 ", defaultProperties=" + defaultProperties +
                 '}';

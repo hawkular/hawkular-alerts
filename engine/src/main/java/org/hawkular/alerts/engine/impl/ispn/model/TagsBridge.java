@@ -1,4 +1,4 @@
-package org.hawkular.alerts.api.model.index;
+package org.hawkular.alerts.engine.impl.ispn.model;
 
 import java.util.Map;
 

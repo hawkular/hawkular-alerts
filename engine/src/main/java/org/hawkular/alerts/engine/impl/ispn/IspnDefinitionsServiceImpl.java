@@ -70,7 +70,9 @@ import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.alerts.cache.IspnCacheManager;
 import org.hawkular.alerts.engine.exception.NotFoundApplicationException;
 import org.hawkular.alerts.engine.impl.AlertsContext;
-import org.hawkular.alerts.engine.impl.ispn.model.ActionPlugin;
+import org.hawkular.alerts.engine.impl.ispn.model.IspnActionDefinition;
+import org.hawkular.alerts.engine.impl.ispn.model.IspnActionPlugin;
+import org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.log.AlertingLogger;
 import org.hawkular.commons.log.MsgLogging;
@@ -174,11 +176,11 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             }
         }
         String pk = pk(actionDefinition);
-        ActionDefinition found = (ActionDefinition) backend.get(pk);
+        IspnActionDefinition found = (IspnActionDefinition) backend.get(pk);
         if (found != null) {
             throw new FoundException(pk);
         }
-        backend.put(pk(actionDefinition), actionDefinition);
+        backend.put(pk(actionDefinition), new IspnActionDefinition(actionDefinition));
 
         notifyListeners(new DefinitionsEvent(ACTION_DEFINITION_CREATE, actionDefinition));
     }
@@ -228,7 +230,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
         }
 
-        removeTrigger(tenantId, triggerId, doomedTrigger);
+        removeTrigger(doomedTrigger);
     }
 
     @Override
@@ -290,11 +292,11 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         String pk = pk(tenantId, triggerId);
-        Trigger found = (Trigger) backend.get(pk);
+        IspnTrigger found = (IspnTrigger) backend.get(pk);
         if (found == null) {
             throw new NotFoundException(pk);
         }
-        return found;
+        return found.getTrigger();
     }
 
     @Override
@@ -307,9 +309,9 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             log.debugf("getTriggers criteria: %s", criteria);
         }
 
-        List<Trigger> triggers;
+        List<IspnTrigger> triggers;
         if (filter) {
-            StringBuilder query = new StringBuilder("from org.hawkular.alerts.api.model.trigger.Trigger where ");
+            StringBuilder query = new StringBuilder("from org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger where ");
             query.append("tenantId = '").append(tenantId).append("' and ");
             if (criteria.hasTriggerIdCriteria()) {
                 Set<String> triggerIds = filterByTriggers(criteria);
@@ -317,7 +319,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                 Iterator<String> iter = triggerIds.iterator();
                 while (iter.hasNext()) {
                     String triggerId = iter.next();
-                    query.append("id = '").append(triggerId).append("' ");
+                    query.append("triggerId = '").append(triggerId).append("' ");
                     if (iter.hasNext()) {
                         query.append("or ");
                     }
@@ -346,13 +348,13 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             }
             triggers = queryFactory.create(query.toString()).list();
         } else {
-            triggers = queryFactory.from(Trigger.class)
+            triggers = queryFactory.from(IspnTrigger.class)
                     .having("tenantId")
                     .eq(tenantId)
                     .build()
                     .list();
         }
-        return prepareTriggersPage(triggers, pager);
+        return prepareTriggersPage(triggers.stream().map(t -> t.getTrigger()).collect(Collectors.toList()), pager);
     }
 
     @Override
@@ -362,7 +364,10 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Collection<Trigger> getAllTriggers() throws Exception {
-        return queryFactory.from(Trigger.class).build().list();
+        List<IspnTrigger> triggers = queryFactory.from(IspnTrigger.class)
+                .build()
+                .list();
+        return triggers.stream().map(t -> t.getTrigger()).collect(Collectors.toList());
     }
 
     @Override
@@ -373,12 +378,13 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(value)) {
             throw new IllegalArgumentException("value must be not null (use '*' for all");
         }
-        StringBuilder query = new StringBuilder("from org.hawkular.alerts.api.model.trigger.Trigger where tags like '")
+        StringBuilder query = new StringBuilder("from org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger where tags like '")
                 .append(name)
                 .append(":")
                 .append(value.equals("*") ? "%" : value)
                 .append("'");
-        return queryFactory.create(query.toString()).list();
+        List<IspnTrigger> triggers = queryFactory.create(query.toString()).list();
+        return triggers.stream().map(t -> t.getTrigger()).collect(Collectors.toList());
     }
 
     @Override
@@ -627,7 +633,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             // the current members but the work of maintaining them may not add much, if any, benefit.
             if (TriggerType.DATA_DRIVEN_GROUP == group.getType()) {
                 for (Trigger member : memberTriggers) {
-                    removeTrigger(member.getTenantId(), member.getId(), member);
+                    removeTrigger(member);
                 }
                 memberTriggers.clear();
             }
@@ -908,7 +914,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (backend.get(pk) != null) {
             throw new FoundException(pk);
         }
-        backend.put(pk, new ActionPlugin(actionPlugin, defaultProperties));
+        backend.put(pk, new IspnActionPlugin(actionPlugin, defaultProperties));
     }
 
     @Override
@@ -938,7 +944,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("defaultProperties must be not null");
         }
         String pk = pk(actionPlugin);
-        ActionPlugin found = (ActionPlugin) backend.get(pk);
+        IspnActionPlugin found = (IspnActionPlugin) backend.get(pk);
         if (found == null) {
             throw new NotFoundException(pk);
         }
@@ -949,8 +955,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     @Override
     public Collection<String> getActionPlugins() throws Exception {
         Set<String> pluginNames = new HashSet<>();
-        List<ActionPlugin> plugins = queryFactory.from(ActionPlugin.class).build().list();
-        for (ActionPlugin plugin : plugins) {
+        List<IspnActionPlugin> plugins = queryFactory.from(IspnActionPlugin.class).build().list();
+        for (IspnActionPlugin plugin : plugins) {
             pluginNames.add(plugin.getActionPlugin());
         }
         return pluginNames;
@@ -961,7 +967,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
-        ActionPlugin found = (ActionPlugin) backend.get(pk(actionPlugin));
+        IspnActionPlugin found = (IspnActionPlugin) backend.get(pk(actionPlugin));
         return found == null? null : found.getDefaultProperties().keySet();
     }
 
@@ -970,7 +976,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
-        ActionPlugin found = (ActionPlugin) backend.get(pk(actionPlugin));
+        IspnActionPlugin found = (IspnActionPlugin) backend.get(pk(actionPlugin));
         return found == null? null : found.getDefaultProperties();
     }
 
@@ -1022,11 +1028,11 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             }
         }
         String pk = pk(actionDefinition);
-        ActionDefinition found = (ActionDefinition) backend.get(pk);
+        IspnActionDefinition found = (IspnActionDefinition) backend.get(pk);
         if (found == null) {
             throw new NotFoundException(pk);
         }
-        backend.put(pk, actionDefinition);
+        backend.put(pk, new IspnActionDefinition(actionDefinition));
 
         notifyListeners(new DefinitionsEvent(ACTION_DEFINITION_UPDATE, actionDefinition));
     }
@@ -1034,8 +1040,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     @Override
     public Map<String, Map<String, Set<String>>> getAllActionDefinitionIds() throws Exception {
         Map<String, Map<String, Set<String>>> actions = new HashMap<>();
-        List<ActionDefinition> actionDefinitions = queryFactory.from(ActionDefinition.class).build().list();
-        for (ActionDefinition action : actionDefinitions) {
+        List<IspnActionDefinition> actionDefinitions = queryFactory.from(IspnActionDefinition.class).build().list();
+        for (IspnActionDefinition action : actionDefinitions) {
             String tenantId = action.getTenantId();
             String actionPlugin = action.getActionPlugin();
             String actionId = action.getActionId();
@@ -1052,18 +1058,19 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Collection<ActionDefinition> getAllActionDefinitions() throws Exception {
-        return queryFactory.from(ActionDefinition.class).build().list();
+        List<IspnActionDefinition> actionDefinitions = queryFactory.from(IspnActionDefinition.class).build().list();
+        return actionDefinitions.stream().map(a -> a.getActionDefinition()).collect(Collectors.toList());
     }
 
     @Override
     public Map<String, Set<String>> getActionDefinitionIds(String tenantId) throws Exception {
         Map<String, Set<String>> actionIds = new HashMap<>();
-        List<ActionDefinition> actionDefinitions = queryFactory.from(ActionDefinition.class)
+        List<IspnActionDefinition> actionDefinitions = queryFactory.from(IspnActionDefinition.class)
                 .having("tenantId")
                 .eq(tenantId)
                 .build()
                 .list();
-        for (ActionDefinition action : actionDefinitions) {
+        for (IspnActionDefinition action : actionDefinitions) {
             String actionPlugin = action.getActionPlugin();
             String actionId = action.getActionId();
             if (actionIds.get(actionPlugin) == null) {
@@ -1075,17 +1082,18 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     public Collection<ActionDefinition> getActionDefinitions(String tenantId) throws Exception {
-        return queryFactory.from(ActionDefinition.class)
+        List<IspnActionDefinition> actionDefinitions = queryFactory.from(IspnActionDefinition.class)
                 .having("tenantId")
                 .eq(tenantId)
                 .build()
                 .list();
+        return actionDefinitions.stream().map(a -> a.getActionDefinition()).collect(Collectors.toList());
     }
 
     @Override
     public Collection<String> getActionDefinitionIds(String tenantId, String actionPlugin) throws Exception {
         Set<String> actionIds = new HashSet<>();
-        List<ActionDefinition> actionDefinitions = queryFactory.from(ActionDefinition.class)
+        List<IspnActionDefinition> actionDefinitions = queryFactory.from(IspnActionDefinition.class)
                 .having("tenantId")
                 .eq(tenantId)
                 .and()
@@ -1093,7 +1101,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                 .eq(actionPlugin)
                 .build()
                 .list();
-        for (ActionDefinition action : actionDefinitions) {
+        for (IspnActionDefinition action : actionDefinitions) {
             actionIds.add(action.getActionId());
         }
         return actionIds;
@@ -1110,7 +1118,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionId)) {
             throw new IllegalArgumentException("actionId must be not null");
         }
-        return (ActionDefinition) backend.get(pk(tenantId, actionPlugin, actionId));
+        IspnActionDefinition actionDefinition = (IspnActionDefinition) backend.get(pk(tenantId, actionPlugin, actionId));
+        return actionDefinition != null ? actionDefinition.getActionDefinition() : null;
     }
 
     @Override
@@ -1173,11 +1182,11 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         }
 
         String pk = pk(trigger);
-        Trigger found = (Trigger) backend.get(pk);
+        IspnTrigger found = (IspnTrigger) backend.get(pk);
         if (found != null) {
             throw new FoundException(pk);
         }
-        backend.put(pk, trigger);
+        backend.put(pk, new IspnTrigger(trigger));
 
         if (null != alertsEngine) {
             alertsEngine.addTrigger(trigger.getTenantId(), trigger.getId());
@@ -1186,8 +1195,11 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         notifyListeners(new DefinitionsEvent(DefinitionsEvent.Type.TRIGGER_CREATE, trigger));
     }
 
-    private void removeTrigger(String tenantId, String triggerId, Trigger trigger) throws Exception {
-        backend.remove(pk(tenantId, triggerId));
+    private void removeTrigger(Trigger trigger) throws Exception {
+        backend.remove(pk(trigger));
+        String tenantId = trigger.getTenantId();
+        String triggerId = trigger.getId();
+
         // TODO delete dampenings and conditions
 
         /*
@@ -1202,7 +1214,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     private Trigger updateTrigger(Trigger trigger) throws Exception {
         String pk = pk(trigger);
-        backend.put(pk, trigger);
+        backend.put(pk, new IspnTrigger(trigger));
 
         if (null != alertsEngine) {
             alertsEngine.reloadTrigger(trigger.getTenantId(), trigger.getId());

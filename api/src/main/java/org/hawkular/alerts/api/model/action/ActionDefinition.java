@@ -22,11 +22,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.Store;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import io.swagger.annotations.ApiModel;
@@ -67,13 +62,11 @@ import io.swagger.annotations.ApiModelProperty;
         " + \n" +
         "If a <<TriggerAction>> defines any constraints the <<ActionDefinition>> constraints will be ignored. + \n" +
         "If a <<TriggerAction>> defines no constraints the <<ActionDefinition>> constraints will be used. + \n")
-@Indexed(index = "actionDefinition")
 public class ActionDefinition implements Serializable {
 
     @ApiModelProperty(value = "Tenant id owner of this trigger.",
             position = 0,
             allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
-    @Field(store = Store.YES, analyze = Analyze.NO)
     @JsonInclude
     private String tenantId;
 
@@ -81,21 +74,18 @@ public class ActionDefinition implements Serializable {
             position = 1,
             required = true,
             allowableValues = "Only plugins deployed on the system are valid.")
-    @Field(store = Store.YES, analyze = Analyze.NO)
     @JsonInclude
     private String actionPlugin;
 
     @ApiModelProperty(value = "Action definition identifier.",
             position = 2,
             required = true)
-    @Field(store = Store.YES, analyze = Analyze.NO)
     @JsonInclude
     private String actionId;
 
     @ApiModelProperty(value = "Flag to indicate this is a global action.",
             position = 3,
             required = false)
-    @Field(store = Store.YES, analyze = Analyze.NO)
     @JsonInclude
     private boolean global;
 
@@ -130,6 +120,19 @@ public class ActionDefinition implements Serializable {
     public ActionDefinition(String tenantId, String actionPlugin, String actionId,
                             Map<String, String> properties) {
         this(tenantId, actionPlugin, actionId, false, properties, null, null);
+    }
+
+    public ActionDefinition(ActionDefinition actionDefinition) {
+        if (actionDefinition == null) {
+            throw new IllegalArgumentException("actionDefinition must be not null");
+        }
+        this.tenantId = actionDefinition.getTenantId();
+        this.actionPlugin = actionDefinition.getActionPlugin();
+        this.actionId = actionDefinition.getActionId();
+        this.global = actionDefinition.isGlobal();
+        this.properties = actionDefinition.getProperties() != null ? new HashMap<>(actionDefinition.getProperties()) : new HashMap<>();
+        this.states = new HashSet<>(actionDefinition.getStates());
+        this.calendar = actionDefinition.getCalendar() != null ? new TimeConstraint(actionDefinition.getCalendar()) : null;
     }
 
     public ActionDefinition(String tenantId, String actionPlugin, String actionId, boolean global,

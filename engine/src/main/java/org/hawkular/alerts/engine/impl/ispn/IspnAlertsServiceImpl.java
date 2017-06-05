@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
@@ -44,6 +45,7 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.cache.IspnCacheManager;
+import org.hawkular.alerts.engine.impl.ispn.model.IspnEvent;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.hawkular.alerts.log.AlertingLogger;
@@ -123,7 +125,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
         }
         log.debugf("Adding %s alerts", alerts.size());
         for (Alert alert : alerts) {
-            backend.put(pk(alert), alert);
+            backend.put(pk(alert), new IspnEvent(alert));
         }
     }
 
@@ -182,7 +184,8 @@ public class IspnAlertsServiceImpl implements AlertsService {
             log.debugf("getAlerts criteria: %s", criteria.toString());
         }
 
-        StringBuilder query = new StringBuilder("from org.hawkular.alerts.api.model.event.Alert where ");
+        StringBuilder query = new StringBuilder("from org.hawkular.alerts.engine.impl.ispn.model.IspnEvent where ");
+        query.append("eventType = 'ALERT' and ");
         query.append("(");
         Iterator<String> iter = tenantIds.iterator();
         while (iter.hasNext()) {
@@ -192,7 +195,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
                 query.append("or ");
             }
         }
-        query.append(")");
+        query.append(") ");
 
         if (filter) {
            if (criteria.hasAlertIdCriteria()) {
@@ -200,16 +203,22 @@ public class IspnAlertsServiceImpl implements AlertsService {
                iter = criteria.getAlertIds().iterator();
                while (iter.hasNext()) {
                    String alertId = iter.next();
-                   query.append("alertId = '").append(alertId).append("' ");
+                   query.append("id = '").append(alertId).append("' ");
                    if (iter.hasNext()) {
                        query.append("or ");
                    }
                }
                query.append(") ");
            }
+           if (criteria.hasTagQueryCriteria()) {
+               query.append("and (");
+               parseTagQuery(criteria.getTagQuery(), query);
+               query.append(") ");
+           }
         }
 
-        List<Alert> alerts = queryFactory.create(query.toString()).list();
+        List<IspnEvent> ispnEvents = queryFactory.create(query.toString()).list();
+        List<Alert> alerts = ispnEvents.stream().map(e -> (Alert) e.getEvent()).collect(Collectors.toList());
         if (alerts.isEmpty()) {
             return new Page<>(alerts, pager, 0);
         } else {
@@ -308,5 +317,9 @@ public class IspnAlertsServiceImpl implements AlertsService {
             Collections.sort(alerts, comparator);
             return new Page<>(alerts, pager, alerts.size());
         }
+    }
+
+    private void parseTagQuery(String tagQuery, StringBuilder query) {
+        // TODO Parse tagQuery
     }
 }

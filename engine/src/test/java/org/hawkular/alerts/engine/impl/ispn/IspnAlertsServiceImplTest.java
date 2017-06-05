@@ -112,15 +112,18 @@ public class IspnAlertsServiceImplTest {
         assertEquals(1 * 5 * 100, alerts.getAlerts(tenantIds, null, null).size());
 
         List<Alert> testAlerts = alerts.getAlerts(tenantIds, null, null);
+        tenantIds.clear();
         Set<String> alertIds = new HashSet<>();
-        for (int i = 0; i < 25; i++) {
-            alertIds.add(testAlerts.get(i).getAlertId());
+        for (int i = 0; i < 3; i++) {
+            Alert alertX = testAlerts.get(i);
+            tenantIds.add(alertX.getTenantId());
+            alertIds.add(alertX.getAlertId());
         }
 
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setAlertIds(alertIds);
 
-        assertEquals(25, alerts.getAlerts(tenantIds, criteria, null).size());
+        assertEquals(3, alerts.getAlerts(tenantIds, criteria, null).size());
 
         removeAllAlerts();
     }

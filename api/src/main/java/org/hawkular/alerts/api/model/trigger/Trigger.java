@@ -26,12 +26,6 @@ import java.util.UUID;
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.EventType;
-import org.hawkular.alerts.api.model.index.TagsBridge;
-import org.hibernate.search.annotations.Analyze;
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.FieldBridge;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.Store;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -60,7 +54,6 @@ import io.swagger.annotations.ApiModelProperty;
         " + \n" +
         "The mode is also needed when defining a trigger, to indicate the relevant mode for a conditions or " +
         "dampening definition.")
-@Indexed(index = "trigger")
 public class Trigger implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -69,7 +62,6 @@ public class Trigger implements Serializable {
             position = 0,
             required = true,
             allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
-    @Field(store = Store.YES, analyze = Analyze.NO)
     @JsonInclude
     private String tenantId;
 
@@ -139,8 +131,6 @@ public class Trigger implements Serializable {
             "Tags can be used as criteria on finder methods. + \n" +
             "Tag value cannot be null.",
             position = 10)
-    @Field(store = Store.YES, analyze = Analyze.NO)
-    @FieldBridge(impl = TagsBridge.class)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> tags;
 
@@ -261,6 +251,40 @@ public class Trigger implements Serializable {
 
     public Trigger(String tenantId, String id, String name, Map<String, String> context) {
         this(tenantId, id, name, context, null);
+    }
+
+    public Trigger(Trigger trigger) {
+        if (trigger == null) {
+            throw new IllegalArgumentException("trigger must be not null");
+        }
+        this.tenantId = trigger.getTenantId();
+        this.id = trigger.getId();
+        this.name = trigger.getName();
+        this.context = new HashMap<>(trigger.getContext());
+        this.tags = new HashMap<>(trigger.getTags());
+        this.actions = new HashSet<>();
+        for (TriggerAction action : trigger.getActions()) {
+            this.actions.add(new TriggerAction(action));
+        }
+        this.autoDisable = trigger.isAutoDisable();
+        this.autoEnable = trigger.isAutoEnable();
+        this.autoResolve = trigger.isAutoResolve();
+        this.autoResolveAlerts = trigger.isAutoResolveAlerts();
+        this.autoResolveMatch = trigger.getAutoResolveMatch();
+        this.dataIdMap = new HashMap<>(trigger.getDataIdMap() != null ? trigger.getDataIdMap() : new HashMap<>());
+        this.eventCategory = trigger.getEventCategory();
+        this.eventText = trigger.getEventText();
+        this.eventType = trigger.getEventType();
+        this.memberOf = trigger.getMemberOf();
+        this.description = trigger.getDescription();
+        this.enabled = trigger.isEnabled();
+        this.firingMatch = trigger.getFiringMatch();
+        this.type = trigger.getType();
+        this.source = trigger.getSource();
+        this.severity = trigger.getSeverity();
+
+        this.match = trigger.getMatch();
+        this.mode = trigger.getMode();
     }
 
     public Trigger(String tenantId, String id, String name, Map<String, String> context, Map<String, String> tags) {

@@ -20,13 +20,13 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Trigger;
-import org.hibernate.search.annotations.Indexed;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -59,7 +59,6 @@ import io.swagger.annotations.ApiModelProperty;
         " + \n" +
         "There are many options on triggers to help ensure that alerts are not generated too frequently, + \n" +
         "including ways of automatically disabling and enabling the trigger. + \n")
-@Indexed(index = "alert")
 public class Alert extends Event {
 
     public enum Status {
@@ -107,6 +106,18 @@ public class Alert extends Event {
         this(tenantId, trigger, null, evalSets);
     }
 
+    public Alert(Alert alert) {
+        super((Event) alert);
+
+        this.status = alert.getStatus();
+        this.severity = alert.getSeverity();
+        this.eventType = alert.getEventType();
+        this.lifecycle = new ArrayList<>();
+        for (LifeCycle item : alert.getLifecycle()) {
+            this.lifecycle.add(new LifeCycle(item));
+        }
+    }
+
     public Alert(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets) {
         super(tenantId, trigger, dampening, evalSets);
 
@@ -114,11 +125,6 @@ public class Alert extends Event {
         this.severity = trigger.getSeverity();
         this.eventType = EventType.ALERT.name();
         addLifecycle(this.status, "system", this.ctime);
-    }
-
-    // TODO Workaround for infinispan/objectfilter
-    public String getTenantId() {
-        return tenantId;
     }
 
     @JsonIgnore
@@ -361,6 +367,15 @@ public class Alert extends Event {
 
         public LifeCycle() {
             // for json assembly
+        }
+
+        public LifeCycle(LifeCycle lifeCycle) {
+            if (lifeCycle == null) {
+                throw new IllegalArgumentException("lifeCycle must be not null");
+            }
+            this.status = lifeCycle.getStatus();
+            this.user = lifeCycle.getUser();
+            this.stime = lifeCycle.getStime();
         }
 
         public LifeCycle(Status status, String user, long stime) {

@@ -258,6 +258,22 @@ public class Dampening implements Serializable {
         return new Dampening(tenantId, triggerId, triggerMode, Type.STRICT_TIMEOUT, 0, 0, evalPeriod);
     }
 
+    public Dampening(Dampening dampening) {
+        if (dampening == null) {
+            throw new IllegalArgumentException("dampening must be not null");
+        }
+        this.tenantId = dampening.getTenantId();
+        this.triggerId = dampening.getTriggerId();
+        this.type = dampening.getType();
+        this.evalTrueSetting = dampening.getEvalTrueSetting();
+        this.evalTotalSetting = dampening.getEvalTotalSetting();
+        this.evalTimeSetting = dampening.getEvalTimeSetting();
+        this.triggerMode = dampening.getTriggerMode();
+        updateId();
+
+        reset();
+    }
+
     public Dampening(String tenantId, String triggerId, Mode triggerMode, Type type, int evalTrueSetting,
             int evalTotalSetting, long evalTimeSetting) {
         super();
