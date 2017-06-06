@@ -216,7 +216,7 @@ public interface DefinitionsService {
     Collection<Trigger> getMemberTriggers(String tenantId, String groupId, boolean includeOrphans) throws Exception;
 
     /**
-     * Get all stored Triggers for all Tenants
+     * Get all stored Triggers for all Tenants. Be careful.
      * @throws Exception on any problem
      */
     Collection<Trigger> getAllTriggers() throws Exception;
@@ -353,7 +353,7 @@ public interface DefinitionsService {
             throws Exception;
 
     /**
-     * @return The existing dampenings stored under a tenant
+     * @return get all dampenings for all tenants. Be careful.
      * @throws Exception on any problem
      */
     Collection<Dampening> getAllDampenings() throws Exception;
@@ -482,6 +482,10 @@ public interface DefinitionsService {
 
     Collection<Condition> getConditions(String tenantId) throws Exception;
 
+    /**
+     * @return returns all conditions for all tenants. Be careful.
+     * @throws Exception on any problem
+     */
     Collection<Condition> getAllConditions() throws Exception;
 
     /*

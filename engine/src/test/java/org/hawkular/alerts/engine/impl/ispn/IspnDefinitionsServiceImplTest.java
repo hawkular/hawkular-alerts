@@ -291,6 +291,16 @@ public class IspnDefinitionsServiceImplTest {
             for (int trigger = 0; trigger < numTriggers; trigger++) {
                 String triggerId = "trigger" + trigger;
                 definitions.removeTrigger(tenantId, triggerId);
+                try {
+                    definitions.getTrigger(tenantId, triggerId);
+                    fail("IT should throw a NotFoundException");
+                } catch (NotFoundException e) {
+                    // expected
+                } catch (Exception e) {
+                    fail("IT should throw a NotFoundException, not " + e);
+                }
+                assertEquals(0, definitions.getTriggerConditions(tenantId, triggerId, null).size());
+                assertEquals(0, definitions.getTriggerDampenings(tenantId, triggerId, null).size());
             }
         }
     }

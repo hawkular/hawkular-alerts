@@ -21,6 +21,7 @@
 
     <!-- Backend for definitions, actions history, events and alerts -->
     <local-cache name="backend">
+      <transaction mode="BATCH"/>
       <persistence>
         <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${hawkular.data}/alerting">
           <write-behind thread-pool-size="5" modification-queue-size="10000" />

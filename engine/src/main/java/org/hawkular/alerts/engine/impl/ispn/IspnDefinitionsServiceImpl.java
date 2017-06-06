@@ -572,7 +572,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         return found.getDampening();
     }
 
-    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Dampening> getAllDampenings() throws Exception {
         return mapDampenings(queryFactory.from(IspnDampening.class).build().list());
@@ -741,9 +740,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         }
         if (isEmpty(triggerId)) {
             throw new IllegalArgumentException("TriggerId must not be null");
-        }
-        if (triggerMode == null) {
-            throw new IllegalArgumentException("TriggerMode must not be null");
         }
 
         try {
@@ -1021,7 +1017,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
-    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
     @Override
     public Collection<Condition> getAllConditions() throws Exception {
         return mapConditions(queryFactory.from(IspnCondition.class).build().list());
@@ -1360,11 +1355,26 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     private void removeTrigger(Trigger trigger) throws Exception {
-        backend.remove(pk(trigger));
         String tenantId = trigger.getTenantId();
         String triggerId = trigger.getId();
+        try {
+            backend.startBatch();
 
-        // TODO delete dampenings and conditions
+            backend.remove(pkFromTriggerId(tenantId, triggerId));
+            removeConditions(tenantId, triggerId, null);
+            getTriggerDampenings(tenantId, triggerId, null).stream()
+                    .forEach(d -> backend.remove(pk(d)));
+
+            backend.endBatch(true);
+        } catch (Exception e) {
+            try {
+                backend.endBatch(false);
+            } catch (Exception e2) {
+                log.errorDatabaseException(e2.getMessage());
+            }
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
 
         /*
             Trigger should be removed from the alerts engine.
