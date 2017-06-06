@@ -42,12 +42,15 @@ public class Utils {
     }
 
     public static boolean isEmpty(ActionDefinition a) {
-        return a == null || a.getActionPlugin() == null || a.getActionPlugin().trim().isEmpty() ||
-                a.getActionId() == null || a.getActionId().trim().isEmpty();
+        return a == null || isEmpty(a.getActionPlugin()) || isEmpty(a.getActionId());
+    }
+
+    public static boolean isEmpty(Dampening dampening) {
+        return dampening == null || isEmpty(dampening.getTriggerId()) || isEmpty(dampening.getDampeningId());
     }
 
     public static boolean isEmpty(Trigger trigger) {
-        return trigger == null || trigger.getId() == null || trigger.getId().trim().isEmpty();
+        return trigger == null || isEmpty(trigger.getId());
     }
 
     public static void checkTenantId(String tenantId, Object obj) {
