@@ -127,9 +127,6 @@ public class Dampening implements Serializable {
             allowableValues = "> 0")
     private long evalTimeSetting;
 
-    /**
-     * tenantId-UUID
-     */
     @ApiModelProperty(value = "A composed key for the dampening. This is a read-only value defined by the system.",
             position = 7,
             required = false)
@@ -264,11 +261,11 @@ public class Dampening implements Serializable {
         }
         this.tenantId = dampening.getTenantId();
         this.triggerId = dampening.getTriggerId();
+        this.triggerMode = dampening.getTriggerMode();
         this.type = dampening.getType();
         this.evalTrueSetting = dampening.getEvalTrueSetting();
         this.evalTotalSetting = dampening.getEvalTotalSetting();
         this.evalTimeSetting = dampening.getEvalTimeSetting();
-        this.triggerMode = dampening.getTriggerMode();
         updateId();
 
         reset();

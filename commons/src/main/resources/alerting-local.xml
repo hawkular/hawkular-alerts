@@ -30,6 +30,7 @@
         <indexed-entities>
           <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnActionDefinition</indexed-entity>
           <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnCondition</indexed-entity>
+          <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnDampening</indexed-entity>
           <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnEvent</indexed-entity>
           <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger</indexed-entity>
         </indexed-entities>

@@ -20,6 +20,7 @@ import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFI
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_REMOVE;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_UPDATE;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
+import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromDampeningId;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromTriggerId;
 import static org.hawkular.alerts.engine.util.Utils.checkTenantId;
 import static org.hawkular.alerts.engine.util.Utils.isEmpty;
@@ -74,6 +75,7 @@ import org.hawkular.alerts.engine.impl.AlertsContext;
 import org.hawkular.alerts.engine.impl.ispn.model.IspnActionDefinition;
 import org.hawkular.alerts.engine.impl.ispn.model.IspnActionPlugin;
 import org.hawkular.alerts.engine.impl.ispn.model.IspnCondition;
+import org.hawkular.alerts.engine.impl.ispn.model.IspnDampening;
 import org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.log.AlertingLogger;
@@ -409,7 +411,46 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Dampening addDampening(String tenantId, Dampening dampening) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(dampening)) {
+            throw new IllegalArgumentException("Dampening, DampeningId and TriggerId must be not null");
+        }
+
+        checkTenantId(tenantId, dampening);
+
+        String triggerId = dampening.getTriggerId();
+        Trigger trigger = getTrigger(tenantId, triggerId);
+        if (null == trigger) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
+        }
+        if (trigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (trigger.isMember() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be managed via the group.");
+        }
+
+        return addDampening(dampening);
+    }
+
+    private Dampening addDampening(Dampening dampening) throws Exception {
+        try {
+            backend.put(pk(dampening), new IspnDampening(dampening));
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+
+        if (null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        }
+
+        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
+
+        return dampening;
     }
 
     @Override
@@ -419,7 +460,31 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void removeDampening(String tenantId, String dampeningId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(dampeningId)) {
+            throw new IllegalArgumentException("dampeningId must be not null");
+        }
 
+        Dampening dampening = getDampening(tenantId, dampeningId);
+        if (null == dampening) {
+            log.debugf("Ignoring removeDampening(%s), the Dampening does not exist.", dampeningId);
+            return;
+        }
+
+        String triggerId = dampening.getTriggerId();
+        Trigger trigger = getTrigger(tenantId, triggerId);
+
+        if (trigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (trigger.isMember() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be managed via the group.");
+        }
+
+        removeDampening(dampening);
     }
 
     @Override
@@ -427,10 +492,63 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     }
 
+    private void removeDampening(Dampening dampening) throws Exception {
+        try {
+            backend.remove(pk(dampening));
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+
+        if (null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        }
+
+        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
+    }
+
     @Override
     public Dampening updateDampening(String tenantId, Dampening dampening) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(dampening)) {
+            throw new IllegalArgumentException("Dampening, DampeningId and TriggerId must be not null");
+        }
+
+        checkTenantId(tenantId, dampening);
+
+        String triggerId = dampening.getTriggerId();
+        Trigger trigger = getTrigger(tenantId, triggerId);
+
+        if (trigger.isGroup()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+        }
+        if (trigger.isMember() && !trigger.isOrphan()) {
+            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId
+                    + "] is a member trigger and must be managed via the group.");
+        }
+
+        return updateDampening(dampening);
     }
+
+    private Dampening updateDampening(Dampening dampening) throws Exception {
+        try {
+            backend.put(pk(dampening), new IspnDampening(dampening));
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+
+        if (null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        }
+
+        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
+
+        return dampening;
+    }
+
 
     @Override
     public Dampening updateGroupDampening(String tenantId, Dampening groupDampening) throws Exception {
@@ -439,23 +557,50 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Dampening getDampening(String tenantId, String dampeningId) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(dampeningId)) {
+            throw new IllegalArgumentException("DampeningId must be not null");
+        }
+
+        String pk = pkFromDampeningId(dampeningId);
+        IspnDampening found = (IspnDampening) backend.get(pk);
+        if (found == null) {
+            throw new NotFoundException(pk);
+        }
+        return found.getDampening();
+    }
+
+    // TODO: This getAll* fetches are cross-tenant fetch and may be inefficient at scale
+    @Override
+    public Collection<Dampening> getAllDampenings() throws Exception {
+        return mapDampenings(queryFactory.from(IspnDampening.class).build().list());
+    }
+
+    @Override
+    public Collection<Dampening> getDampenings(String tenantId) throws Exception {
+        return mapDampenings(queryFactory.from(IspnDampening.class)
+                .having("tenantId").eq(tenantId)
+                .build().list());
     }
 
     @Override
     public Collection<Dampening> getTriggerDampenings(String tenantId, String triggerId, Mode triggerMode)
             throws Exception {
-        return null;
+        FilterConditionContext qb = queryFactory.from(IspnDampening.class)
+                .having("tenantId").eq(tenantId).and()
+                .having("triggerId").eq(triggerId);
+        if (null != triggerMode) {
+            qb = qb.and().having("triggerMode").eq(triggerMode.name());
+        }
+        return mapDampenings(((QueryBuilder) qb).build().list());
     }
 
-    @Override
-    public Collection<Dampening> getAllDampenings() throws Exception {
-        return null;
-    }
-
-    @Override
-    public Collection<Dampening> getDampenings(String tenantId) throws Exception {
-        return null;
+    private Collection<Dampening> mapDampenings(List<IspnDampening> ispnDampenings) {
+        return ispnDampenings.stream()
+                .map(d -> d.getDampening())
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -884,14 +1029,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Collection<Condition> getConditions(String tenantId) throws Exception {
-        //        // this gives results from all classes, why?
-        //        SearchManager manager = Search.getSearchManager(backend);
-        //        org.hibernate.search.query.dsl.QueryBuilder queryBuilder = manager
-        //                .buildQueryBuilderForClass(Condition.class).get();
-        //        Query query = queryBuilder.keyword().onField("tenantId").matching(tenantId).createQuery();
-        //        CacheQuery<Condition> cacheQuery = manager.getQuery(query);
-        //        return cacheQuery.list();
-        // This gives NPE, why?
         return mapConditions(queryFactory.from(IspnCondition.class)
                 .having("tenantId").eq(tenantId)
                 .build().list());

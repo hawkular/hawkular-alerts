@@ -36,6 +36,7 @@ import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition.Operator;
 import org.hawkular.alerts.api.model.condition.Condition;
+import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.TriggersCriteria;
@@ -371,4 +372,59 @@ public class IspnDefinitionsServiceImplTest {
 
         deleteTestTriggers(numTenants, numTriggers);
     }
+
+    @Test
+    public void dampeningTest() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 1;
+        createTestTriggers(numTenants, numTriggers);
+
+        Dampening fd = Dampening.forStrict("tenant0", "trigger0", Mode.FIRING, 3);
+        Dampening ad = Dampening.forRelaxedCount("tenant0", "trigger0", Mode.AUTORESOLVE, 3, 5);
+
+        definitions.addDampening("tenant0", fd);
+        definitions.addDampening("tenant0", ad);
+
+        // get dampening
+        Dampening fetchedDampening = definitions.getDampening("tenant0", fd.getDampeningId());
+        assertEquals(fd, fetchedDampening);
+
+        fetchedDampening = definitions.getDampening("tenant0", ad.getDampeningId());
+        assertEquals(ad, fetchedDampening);
+
+        // get All Dampening
+        Set<Dampening> expectedDampenings = new HashSet<>(Arrays.asList(fd, ad));
+
+        Set<Dampening> fetchedDampenings = new HashSet<>(definitions.getAllDampenings());
+        assertEquals(expectedDampenings, fetchedDampenings);
+
+        // get tenant Dampenings
+        fetchedDampenings = new HashSet<>(definitions.getDampenings("tenant0"));
+        assertEquals(expectedDampenings, fetchedDampenings);
+
+        fetchedDampenings = new HashSet<>(definitions.getDampenings("tenantX"));
+        assertEquals(0, fetchedDampenings.size());
+
+        // get trigger Dampenings
+        fetchedDampenings = new HashSet<>(definitions.getTriggerDampenings("tenant0", "trigger0", null));
+        assertEquals(expectedDampenings, fetchedDampenings);
+
+        // get firing conditions
+        fetchedDampenings = new HashSet<>(definitions.getTriggerDampenings("tenant0", "trigger0", Mode.FIRING));
+        assertEquals(Collections.singleton(fd), fetchedDampenings);
+
+        // get autoresolve conditions
+        fetchedDampenings = new HashSet<>(definitions.getTriggerDampenings("tenant0", "trigger0", Mode.AUTORESOLVE));
+        assertEquals(Collections.singleton(ad), fetchedDampenings);
+
+        // update dampening
+        ad.setEvalTotalSetting(10);
+        definitions.updateDampening("tenant0", ad);
+        fetchedDampening = definitions.getDampening("tenant0", ad.getDampeningId());
+        assertEquals(ad, fetchedDampening);
+
+        deleteTestTriggers(numTenants, numTriggers);
+    }
+
 }
+

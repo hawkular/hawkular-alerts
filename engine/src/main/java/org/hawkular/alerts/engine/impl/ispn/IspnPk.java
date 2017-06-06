@@ -58,8 +58,15 @@ public class IspnPk {
         if (dampening == null) {
             return null;
         }
+        return pkFromDampeningId(dampening.getDampeningId());
+    }
+
+    public static String pkFromDampeningId(String dampeningId) {
+        if (dampeningId == null) {
+            return null;
+        }
         return new StringBuilder("Dampening-")
-                .append(dampening.getDampeningId())
+                .append(dampeningId)
                 .toString();
     }
 
@@ -67,11 +74,7 @@ public class IspnPk {
         if (trigger == null) {
             return null;
         }
-        return new StringBuilder("Trigger-")
-                .append(trigger.getTenantId())
-                .append("-")
-                .append(trigger.getId())
-                .toString();
+        return pkFromTriggerId(trigger.getTenantId(), trigger.getId());
     }
 
     public static String pkFromTriggerId(String tenantId, String triggerId) {

@@ -192,6 +192,7 @@ public interface DefinitionsService {
      * Get a stored Trigger for a specific Tenant.
      * @param tenantId Tenant where trigger is stored
      * @param triggerId Given trigger to be retrieved
+     * @throws NotFoundException if not found
      * @throws Exception on any problem
      */
     Trigger getTrigger(String tenantId, String triggerId) throws Exception;
