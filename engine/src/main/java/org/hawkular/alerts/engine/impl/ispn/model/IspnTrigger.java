@@ -28,6 +28,9 @@ public class IspnTrigger implements Serializable {
     @FieldBridge(impl = TagsBridge.class)
     private Map<String, String> tags;
 
+    @Field(store = Store.YES, analyze = Analyze.NO)
+    private String memberOf;
+
     private Trigger trigger;
 
     public IspnTrigger() {
@@ -76,6 +79,8 @@ public class IspnTrigger implements Serializable {
         this.trigger = new Trigger(trigger);
         this.tenantId = trigger.getTenantId();
         this.triggerId = trigger.getId();
+        this.memberOf = trigger.getMemberOf();
+
         this.tags = this.trigger.getTags();
     }
 
@@ -88,6 +93,7 @@ public class IspnTrigger implements Serializable {
 
         if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) return false;
         if (triggerId != null ? !triggerId.equals(that.triggerId) : that.triggerId != null) return false;
+        if (memberOf != null ? !memberOf.equals(that.memberOf) : that.memberOf != null) return false;
         if (tags != null ? !tags.equals(that.tags) : that.tags != null) return false;
         return trigger != null ? trigger.equals(that.trigger) : that.trigger == null;
     }
@@ -96,6 +102,7 @@ public class IspnTrigger implements Serializable {
     public int hashCode() {
         int result = tenantId != null ? tenantId.hashCode() : 0;
         result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);
+        result = 31 * result + (memberOf != null ? memberOf.hashCode() : 0);
         result = 31 * result + (tags != null ? tags.hashCode() : 0);
         result = 31 * result + (trigger != null ? trigger.hashCode() : 0);
         return result;

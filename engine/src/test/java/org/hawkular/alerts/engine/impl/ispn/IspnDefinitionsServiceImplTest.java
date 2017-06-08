@@ -39,6 +39,7 @@ import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerType;
 import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
@@ -436,5 +437,17 @@ public class IspnDefinitionsServiceImplTest {
         deleteTestTriggers(numTenants, numTriggers);
     }
 
-}
+    @Test
+    public void groupTest() throws Exception {
+        Trigger groupTrigger = new Trigger("groupTrigger0", "groupTrigger0");
+        groupTrigger.setType(TriggerType.GROUP);
+        definitions.addGroupTrigger("tenant0", groupTrigger);
+        Condition fc = new AvailabilityCondition("group-trigger", Mode.FIRING, "avail", Operator.NOT_UP);
+        definitions.setGroupConditions("tenant0", "groupTrigger0", Mode.FIRING, Collections.singleton(fc), null);
+        definitions.addMemberTrigger("tenant0", "groupTrigger0", "member0", "member0", "member0", null, null,
+                Collections.singletonMap("avail", "avail0"));
+        assertEquals(1, definitions.getMemberTriggers("tenant0", "groupTrigger0", true).size());
+        definitions.removeGroupTrigger("tenant0", "groupTrigger0", false, false);
+    }
 
+}
