@@ -16,7 +16,9 @@
  */
 package org.hawkular.alerts.engine.impl.ispn;
 
+import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.getTokens;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -127,4 +129,133 @@ public class IspnAlertsServiceImplTest {
 
         removeAllAlerts();
     }
+
+    @Test
+    public void evaluateTagQuery() throws Exception {
+        StringBuilder query = new StringBuilder();
+
+        String e1 = "tagA";
+        alerts.parseTagQuery(e1, query);
+        assertEquals("('tagA')", query.toString());
+
+        String e2 = "not tagA";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e2, query);
+        assertEquals("(not 'tagA')", query.toString());
+
+        String e3 = "tagA  =      'abc'";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e3, query);
+        assertEquals("('tagA' and (/abc/))", query.toString().trim());
+
+        String e4 = " tagA !=   'abc'";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e4, query);
+        assertEquals("('tagA' and (not /abc/))", query.toString().trim());
+
+        String e5 = "tagA IN ['abc', 'def', 'ghi']";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e5, query);
+        assertEquals("('tagA' and (/abc/ or /def/ or /ghi/))", query.toString().trim());
+
+        String e6 = "tagA NOT IN ['abc', 'def', 'ghi']";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e6, query);
+        assertEquals("('tagA' and (not /abc/ and not /def/ and not /ghi/))", query.toString().trim());
+
+        String e7 = "tagA  =      '*'";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e7, query);
+        assertEquals("('tagA' and (/.*/))", query.toString().trim());
+
+        String e8 = "tagA  =      abc";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e8, query);
+        assertEquals("('tagA' and ('abc'))", query.toString().trim());
+
+        String e9 = " tagA !=   abc";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e9, query);
+        assertEquals("('tagA' and (not 'abc'))", query.toString().trim());
+
+        String e10 = "tagA IN [abc, def, ghi]";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e10, query);
+        assertEquals("('tagA' and ('abc' or 'def' or 'ghi'))", query.toString().trim());
+
+        String e11 = "tagA NOT IN [abc, def, ghi]";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e11, query);
+        assertEquals("('tagA' and (not 'abc' and not 'def' and not 'ghi'))", query.toString().trim());
+
+        String e12 = "tagA  =      *";
+        query = new StringBuilder();
+        try {
+            alerts.parseTagQuery(e12, query);
+            fail("* should be used with single quotes");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        String e13 = "tagA-01";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e13, query);
+        assertEquals("('tagA-01')", query.toString().trim());
+
+        String e14 = "tagA and not tagB";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e14, query);
+        assertEquals("(('tagA') and (not 'tagB'))", query.toString().trim());
+
+        String e15 = "not tagB and tagA";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e15, query);
+        assertEquals("(('tagA') and (not 'tagB'))", query.toString().trim());
+
+        String e16 = "not tagB or tagA";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e16, query);
+        assertEquals("(('tagA') or (not 'tagB'))", query.toString().trim());
+
+        String e17 = "tagA = 'abc' and tagB = 'def'";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e17, query);
+        assertEquals("(('tagA' and (/abc/)) and ('tagB' and (/def/)))", query.toString().trim());
+
+        String e18 = "tagA and not tagB or tagC";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e18, query);
+        assertEquals("(('tagC') or (('tagA') and (not 'tagB')))", query.toString().trim());
+
+        String e19 = "not tagA and tagB or tagC";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e19, query);
+        assertEquals("(('tagC') or (('tagB') and (not 'tagA')))", query.toString().trim());
+
+        String e20 = "not tagA or tagB and tagC";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e20, query);
+        assertEquals("(('tagC') and (('tagB') or (not 'tagA')))", query.toString().trim());
+
+        String e21 = "tagA and (not tagB or tagC)";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e21, query);
+        assertEquals("(('tagA') and (('tagC') or (not 'tagB')))", query.toString().trim());
+
+        String e22 = "tagA and (not tagB and tagC)";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e22, query);
+        assertEquals("(('tagA') and (('tagC') and (not 'tagB')))", query.toString().trim());
+
+        String e23 = "(not tagB or tagC) and tagA";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e23, query);
+        assertEquals("(('tagA') and (('tagC') or (not 'tagB')))", query.toString().trim());
+
+        String e24 = "(tagA and not tagB) and (not tagC or tagD)";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e24, query);
+        assertEquals("((('tagA') and (not 'tagB')) and (('tagD') or (not 'tagC')))", query.toString().trim());
+    }
+
 }

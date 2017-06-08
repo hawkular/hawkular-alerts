@@ -265,11 +265,11 @@ public class ExpressionTagQueryParser extends TagQueryBaseListener implements AN
     }
 
     // Analysis
-    private String left(String exp) {
+    protected String left(String exp) {
         return getOperand(true, exp);
     }
 
-    private String right(String exp) {
+    protected String right(String exp) {
         return getOperand(false, exp);
     }
 

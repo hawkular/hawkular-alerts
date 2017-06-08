@@ -17,12 +17,15 @@
 package org.hawkular.alerts.engine.impl.ispn;
 
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
+import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.EQ;
+import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.IN;
+import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NEQ;
+import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NOT;
 import static org.hawkular.alerts.engine.util.Utils.isEmpty;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +80,8 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     QueryFactory queryFactory;
 
+    IspnExpressionTagQueryParser parser;
+
     public void init() {
         backend = IspnCacheManager.getCacheManager().getCache("backend");
         if (backend == null) {
@@ -84,6 +89,84 @@ public class IspnAlertsServiceImpl implements AlertsService {
             throw new RuntimeException("backend cache not found");
         }
         queryFactory = Search.getQueryFactory(backend);
+        parser = new IspnExpressionTagQueryParser((tokens, query) -> {
+            if (tokens != null) {
+                String tag;
+                if (tokens.size() == 1) {
+                    // tag
+                    tag = tokens.get(0);
+                    query.append("'").append(tag).append("'");
+                } else if (tokens.size() == 2) {
+                    // not tag
+                    tag = tokens.get(1);
+                    query.append("not '").append(tag).append("'");
+                } else {
+                    tag = tokens.get(0);
+                    query.append("'").append(tag).append("' and (");
+                    String op;
+                    String value;
+                    if (tokens.size() == 3) {
+                        op = tokens.get(1);
+                        value = tokens.get(2);
+                        boolean isRegexp = value.startsWith("'");
+                        String regexp = value.substring(1, value.length() - 1);
+                        regexp = regexp.equals("*") ? ".*" : regexp;
+                        if (op.equalsIgnoreCase(EQ)) {
+                            if (isRegexp) {
+                                query.append("/").append(regexp).append("/");
+                            } else {
+                                query.append("'").append(value).append("'");
+                            }
+                        } else if (op.equalsIgnoreCase(NEQ)) {
+                            query.append("not ");
+                            if (isRegexp) {
+                                query.append("/").append(regexp).append("/");
+                            } else {
+                                query.append("'").append(value).append("'");
+                            }
+                        }
+                    } else {
+                        if (tokens.get(1).equalsIgnoreCase(NOT)) {
+                            // not in array
+                            for (int i = 3; i < tokens.size(); i++) {
+                                String item = tokens.get(i);
+                                item = item.startsWith("[") ? item.substring(1) : item;
+                                item = item.charAt(item.length() - 1) == ']' ? item.substring(0, item.length() - 1) : item;
+                                item = item.charAt(item.length() -1) == ',' ? item.substring(0, item.length() -1) : item;
+                                if (item.startsWith("'")) {
+                                    String regexp = item.substring(1, item.length() - 1);
+                                    regexp = regexp.equals("*") ? ".*" : regexp;
+                                    query.append("not /").append(regexp).append("/");
+                                } else {
+                                    query.append("not '").append(item).append("'");
+                                }
+                                if (i + 1 < tokens.size()) {
+                                    query.append(" and ");
+                                }
+                            }
+                        } else {
+                            // in array
+                            for (int i = 2; i < tokens.size(); i++) {
+                                String item = tokens.get(i);
+                                item = item.startsWith("[") ? item.substring(1) : item;
+                                item = item.charAt(item.length() - 1) == ']' ? item.substring(0, item.length() - 1) : item;
+                                item = item.charAt(item.length() -1) == ',' ? item.substring(0, item.length() -1) : item;
+                                if (item.startsWith("'")) {
+                                    String regexp = item.substring(1, item.length() - 1);
+                                    query.append("/").append(regexp).append("/");
+                                } else {
+                                    query.append("'").append(item).append("'");
+                                }
+                                if (i + 1 < tokens.size()) {
+                                    query.append(" or ");
+                                }
+                            }
+                        }
+                    }
+                    query.append(")");
+                }
+            }
+        });
     }
 
     public void setAlertsEngine(AlertsEngine alertsEngine) {
@@ -211,7 +294,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
                query.append(") ");
            }
            if (criteria.hasTagQueryCriteria()) {
-               query.append("and (");
+               query.append("and (tags : ");
                parseTagQuery(criteria.getTagQuery(), query);
                query.append(") ");
            }
@@ -281,6 +364,10 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     }
 
+    protected void parseTagQuery(String tagQuery, StringBuilder query) throws Exception {
+        parser.resolveQuery(tagQuery, query);
+    }
+
     private Page<Alert> preparePage(List<Alert> alerts, Pager pager) {
         if (pager != null) {
             if (pager.getOrder() != null
@@ -317,9 +404,5 @@ public class IspnAlertsServiceImpl implements AlertsService {
             Collections.sort(alerts, comparator);
             return new Page<>(alerts, pager, alerts.size());
         }
-    }
-
-    private void parseTagQuery(String tagQuery, StringBuilder query) {
-        // TODO Parse tagQuery
     }
 }

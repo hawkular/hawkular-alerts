@@ -28,6 +28,7 @@ public class IspnEvent implements Serializable {
     @Field(store = Store.YES, analyze = Analyze.NO)
     private String id;
 
+    @Field(store = Store.YES, analyze = Analyze.YES)
     @FieldBridge(impl = TagsBridge.class)
     private Map<String, String> tags;
 
