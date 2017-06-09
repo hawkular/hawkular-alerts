@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import org.hawkular.alerts.api.exception.FoundException;
 import org.hawkular.alerts.api.exception.NotFoundException;
+import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
 import org.hawkular.alerts.api.model.condition.CompareCondition;
@@ -60,6 +61,7 @@ import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.paging.TriggerComparator;
+import org.hawkular.alerts.api.model.trigger.FullTrigger;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerType;
@@ -125,22 +127,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     public void setProperties(PropertiesService properties) {
         this.properties = properties;
-    }
-
-    private void deferNotifications() {
-        ++deferNotificationsCount;
-    }
-
-    private void releaseNotifications() {
-        if (deferNotificationsCount > 0) {
-            if (--deferNotificationsCount == 0) {
-                notifyListenersDeferred();
-            }
-        }
-    }
-
-    private boolean isDeferredNotifications() {
-        return deferNotificationsCount > 0;
     }
 
     @Override
@@ -376,51 +362,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
-    private Trigger copyGroupTrigger(Trigger group, Trigger member, boolean isNewMember) {
-        member.setActions(group.getActions());
-        member.setAutoDisable(group.isAutoDisable());
-        member.setAutoEnable(group.isAutoEnable());
-        member.setAutoResolve(group.isAutoResolve());
-        member.setAutoResolveAlerts(group.isAutoResolveAlerts());
-        member.setAutoResolveMatch(group.getAutoResolveMatch());
-        member.setEnabled(group.isEnabled());
-        member.setEventType(group.getEventType());
-        member.setFiringMatch(group.getFiringMatch());
-        member.setMemberOf(group.getId());
-        member.setSeverity(group.getSeverity());
-        member.setType(TriggerType.MEMBER);
-
-        // On update don't override fields that can be customized at the member level. Make sure new
-        // Context or Tag settings are merged in but don't remove or reset any existing keys.
-        if (isNewMember) {
-            member.setDataIdMap(group.getDataIdMap()); // likely irrelevant but here for completeness
-            member.setDescription(group.getDescription());
-            member.setContext(group.getContext());
-            member.setTags(group.getTags());
-        } else {
-            if (!isEmpty(group.getContext())) {
-                // add new group-level context
-                Map<String, String> combinedContext = new HashMap<>();
-                combinedContext.putAll(member.getContext());
-                for (Map.Entry<String, String> entry : group.getContext().entrySet()) {
-                    combinedContext.putIfAbsent(entry.getKey(), entry.getValue());
-                }
-                member.setContext(combinedContext);
-            }
-            if (!isEmpty(group.getTags())) {
-                // add new group-level tags
-                Map<String, String> combinedTags = new HashMap<>();
-                combinedTags.putAll(member.getTags());
-                for (Map.Entry<String, String> entry : group.getTags().entrySet()) {
-                    combinedTags.putIfAbsent(entry.getKey(), entry.getValue());
-                }
-                member.setTags(combinedTags);
-            }
-        }
-
-        return member;
-    }
-
     @Override
     public void removeTrigger(String tenantId, String triggerId) throws Exception {
         if (isEmpty(tenantId)) {
@@ -623,21 +564,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         updateTriggerEnablement(tenantId, filteredTriggers, enabled);
     }
 
-    private void updateTriggerEnablement(String tenantId, Collection<Trigger> triggers, boolean enabled)
-            throws Exception {
-
-        try {
-            deferNotifications();
-
-            for (Trigger trigger : triggers) {
-                trigger.setEnabled(enabled);
-                updateTrigger(trigger);
-            }
-        } finally {
-            releaseNotifications();
-        }
-    }
-
     @Override
     public Trigger getTrigger(String tenantId, String triggerId) throws Exception {
         if (isEmpty(tenantId)) {
@@ -830,23 +756,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         return addDampening(dampening);
     }
 
-    private Dampening addDampening(Dampening dampening) throws Exception {
-        try {
-            backend.put(pk(dampening), new IspnDampening(dampening));
-        } catch (Exception e) {
-            log.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-
-        if (null != alertsEngine) {
-            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
-        }
-
-        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
-
-        return dampening;
-    }
-
     @Override
     public Dampening addGroupDampening(String tenantId, Dampening groupDampening) throws Exception {
         if (isEmpty(tenantId)) {
@@ -961,20 +870,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         }
     }
 
-    private void removeDampening(Dampening dampening) throws Exception {
-        try {
-            backend.remove(pk(dampening));
-        } catch (Exception e) {
-            log.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-
-        if (null != alertsEngine) {
-            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
-        }
-
-        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
-    }
 
     @Override
     public Dampening updateDampening(String tenantId, Dampening dampening) throws Exception {
@@ -1000,24 +895,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
         return updateDampening(dampening);
     }
-
-    private Dampening updateDampening(Dampening dampening) throws Exception {
-        try {
-            backend.put(pk(dampening), new IspnDampening(dampening));
-        } catch (Exception e) {
-            log.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-
-        if (null != alertsEngine) {
-            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
-        }
-
-        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
-
-        return dampening;
-    }
-
 
     @Override
     public Dampening updateGroupDampening(String tenantId, Dampening groupDampening) throws Exception {
@@ -1095,12 +972,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             qb = qb.and().having("triggerMode").eq(triggerMode.name());
         }
         return mapDampenings(((QueryBuilder) qb).build().list());
-    }
-
-    private Collection<Dampening> mapDampenings(List<IspnDampening> ispnDampenings) {
-        return ispnDampenings.stream()
-                .map(d -> d.getDampening())
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -1184,72 +1055,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         notifyListeners(new DefinitionsEvent(Type.TRIGGER_CONDITION_CHANGE, tenantId, triggerId, dataIds));
 
         return updatedConditions;
-    }
-
-    private Collection<Condition> setConditions(String tenantId, String triggerId, Mode triggerMode,
-            Collection<Condition> conditions, Set<String> dataIds) throws Exception {
-
-        // Get rid of the prior condition set
-        removeConditions(tenantId, triggerId, triggerMode);
-
-        // Now add the new condition set
-        try {
-            Map<String, IspnCondition> newConditions = new HashMap<>();
-            int indexCondition = 0;
-            for (Condition cond : conditions) {
-                cond.setTenantId(tenantId);
-                cond.setTriggerId(triggerId);
-                cond.setTriggerMode(triggerMode);
-                cond.setConditionSetSize(conditions.size());
-                cond.setConditionSetIndex(++indexCondition);
-
-                dataIds.add(cond.getDataId());
-                switch (cond.getType()) {
-                    case COMPARE:
-                        CompareCondition cCond = (CompareCondition) cond;
-                        dataIds.add(cCond.getData2Id());
-                        break;
-
-                    case AVAILABILITY:
-                    case EVENT:
-                    case EXTERNAL:
-                    case MISSING:
-                    case NELSON:
-                    case RANGE:
-                    case RATE:
-                    case STRING:
-                    case THRESHOLD:
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
-                }
-                newConditions.put(pk(cond), new IspnCondition(cond));
-            }
-            backend.putAll(newConditions);
-
-        } catch (Exception e) {
-            log.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-
-        return conditions;
-    }
-
-    private void removeConditions(String tenantId, String triggerId, Mode triggerMode) throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must not be null");
-        }
-        if (isEmpty(triggerId)) {
-            throw new IllegalArgumentException("TriggerId must not be null");
-        }
-
-        try {
-            getTriggerConditions(tenantId, triggerId, triggerMode).stream()
-                    .forEach(c -> backend.remove(pk(c)));
-        } catch (Exception e) {
-            log.errorDatabaseException(e.getMessage());
-            throw e;
-        }
     }
 
     @Override
@@ -1393,129 +1198,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     }
 
-    private Condition getMemberCondition(Trigger member, Condition groupCondition, Map<String, String> dataIdMap) {
-        Condition newCondition = null;
-        switch (groupCondition.getType()) {
-            case AVAILABILITY:
-                newCondition = new AvailabilityCondition(member.getTenantId(), member.getId(),
-                        groupCondition.getTriggerMode(),
-                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
-                        dataIdMap.get(groupCondition.getDataId()),
-                        ((AvailabilityCondition) groupCondition).getOperator());
-                break;
-            case COMPARE:
-                newCondition = new CompareCondition(member.getTenantId(), member.getId(),
-                        groupCondition.getTriggerMode(),
-                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
-                        dataIdMap.get(groupCondition.getDataId()),
-                        ((CompareCondition) groupCondition).getOperator(),
-                        ((CompareCondition) groupCondition).getData2Multiplier(),
-                        dataIdMap.get(((CompareCondition) groupCondition).getData2Id()));
-                break;
-            case EVENT:
-                newCondition = new EventCondition(member.getTenantId(), member.getId(),
-                        groupCondition.getTriggerMode(),
-                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
-                        dataIdMap.get(groupCondition.getDataId()),
-                        ((EventCondition) groupCondition).getExpression());
-                break;
-            case EXTERNAL:
-                String tokenDataId = groupCondition.getDataId();
-                String memberDataId = dataIdMap.get(tokenDataId);
-                String tokenExpression = ((ExternalCondition) groupCondition).getExpression();
-                String memberExpression = isEmpty(tokenExpression) ? tokenExpression
-                        : tokenExpression.replace(tokenDataId, memberDataId);
-                newCondition = new ExternalCondition(member.getTenantId(), member.getId(),
-                        groupCondition.getTriggerMode(),
-                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
-                        memberDataId,
-                        ((ExternalCondition) groupCondition).getAlerterId(),
-                        memberExpression);
-                break;
-            case MISSING:
-                newCondition = new MissingCondition(member.getTenantId(), member.getId(),
-                        groupCondition.getTriggerMode(),
-                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
-                        dataIdMap.get(groupCondition.getDataId()),
-                        ((MissingCondition) groupCondition).getInterval());
-                break;
-            case NELSON:
-                newCondition = new NelsonCondition(member.getTenantId(), member.getId(),
-                        groupCondition.getTriggerMode(),
-                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
-                        dataIdMap.get(groupCondition.getDataId()),
-                        ((NelsonCondition) groupCondition).getActiveRules(),
-                        ((NelsonCondition) groupCondition).getSampleSize());
-                break;
-            case RANGE:
-                newCondition = new ThresholdRangeCondition(member.getTenantId(), member.getId(),
-                        groupCondition.getTriggerMode(),
-                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
-                        dataIdMap.get(groupCondition.getDataId()),
-                        ((ThresholdRangeCondition) groupCondition).getOperatorLow(),
-                        ((ThresholdRangeCondition) groupCondition).getOperatorHigh(),
-                        ((ThresholdRangeCondition) groupCondition).getThresholdLow(),
-                        ((ThresholdRangeCondition) groupCondition).getThresholdHigh(),
-                        ((ThresholdRangeCondition) groupCondition).isInRange());
-                break;
-            case RATE:
-                newCondition = new RateCondition(member.getTenantId(), member.getId(),
-                        groupCondition.getTriggerMode(),
-                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
-                        dataIdMap.get(groupCondition.getDataId()),
-                        ((RateCondition) groupCondition).getDirection(),
-                        ((RateCondition) groupCondition).getPeriod(),
-                        ((RateCondition) groupCondition).getOperator(),
-                        ((RateCondition) groupCondition).getThreshold());
-                break;
-            case STRING:
-                newCondition = new StringCondition(member.getTenantId(), member.getId(),
-                        groupCondition.getTriggerMode(),
-                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
-                        dataIdMap.get(groupCondition.getDataId()),
-                        ((StringCondition) groupCondition).getOperator(),
-                        ((StringCondition) groupCondition).getPattern(),
-                        ((StringCondition) groupCondition).isIgnoreCase());
-                break;
-            case THRESHOLD:
-                newCondition = new ThresholdCondition(member.getTenantId(), member.getId(),
-                        groupCondition.getTriggerMode(),
-                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
-                        dataIdMap.get(groupCondition.getDataId()),
-                        ((ThresholdCondition) groupCondition).getOperator(),
-                        ((ThresholdCondition) groupCondition).getThreshold());
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected Condition type: " + groupCondition.getType().name());
-        }
-
-        newCondition.setContext(groupCondition.getContext());
-        return newCondition;
-    }
-
-    private void updateMemberTriggerDataIdMap(String tenantId, String memberTriggerId, Map<String, String> dataIdMap)
-            throws Exception {
-        if (isEmpty(tenantId)) {
-            throw new IllegalArgumentException("TenantId must be not null");
-        }
-        if (isEmpty(memberTriggerId)) {
-            throw new IllegalArgumentException("TriggerId must be not null");
-        }
-        if (isEmpty(dataIdMap)) {
-            throw new IllegalArgumentException("DatIdMap must be not null");
-        }
-
-        try {
-            String pk = pkFromTriggerId(tenantId, memberTriggerId);
-            Trigger memberTrigger = (Trigger) backend.get(pk);
-            memberTrigger.setDataIdMap(dataIdMap);
-            backend.put(pk, memberTrigger);
-        } catch (Exception e) {
-            log.errorDatabaseException(e.getMessage());
-            throw e;
-        }
-    }
-
     @Override
     public Collection<Condition> getAllConditions() throws Exception {
         return mapConditions(queryFactory.from(IspnCondition.class).build().list());
@@ -1538,12 +1220,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             qb = qb.and().having("triggerMode").eq(triggerMode.name());
         }
         return mapConditions(((QueryBuilder) qb).build().list());
-    }
-
-    private Collection<Condition> mapConditions(List<IspnCondition> ispnConditions) {
-        return ispnConditions.stream()
-                .map(c -> c.getCondition())
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -1735,15 +1411,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         return actionIds;
     }
 
-    public Collection<ActionDefinition> getActionDefinitions(String tenantId) throws Exception {
-        List<IspnActionDefinition> actionDefinitions = queryFactory.from(IspnActionDefinition.class)
-                .having("tenantId")
-                .eq(tenantId)
-                .build()
-                .list();
-        return actionDefinitions.stream().map(a -> a.getActionDefinition()).collect(Collectors.toList());
-    }
-
     @Override
     public Collection<String> getActionDefinitionIds(String tenantId, String actionPlugin) throws Exception {
         Set<String> actionIds = new HashSet<>();
@@ -1781,28 +1448,223 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     @Override
     public void registerListener(DefinitionsListener listener, DefinitionsEvent.Type eventType,
             DefinitionsEvent.Type... eventTypes) {
-        // TODO
+        alertsContext.registerDefinitionListener(listener, eventType, eventTypes);
+    }
+
+    @Override
+    public void registerDistributedListener(DistributedListener listener) {
+        alertsContext.registerDistributedListener(listener);
     }
 
     @Override
     public Definitions exportDefinitions(String tenantId) throws Exception {
-        // TODO
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        Definitions definitions = new Definitions();
+        try {
+            definitions.setTriggers(getFullTriggers(tenantId));
+            definitions.setActions(getActionDefinitions(tenantId));
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return definitions;
     }
 
     @Override
     public Definitions importDefinitions(String tenantId, Definitions definitions, ImportType strategy)
             throws Exception {
-        // TODO
-        return null;
-    }
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (null == definitions) {
+            throw new IllegalArgumentException("Definitions must be not null");
+        }
+        if (null == strategy) {
+            throw new IllegalArgumentException("ImportType startegy must be not null");
+        }
 
-    @Override
-    public void registerDistributedListener(DistributedListener listener) {
-        // TODO
+        definitions.updateTenant(tenantId);
+        Definitions imported = new Definitions();
+
+        try {
+            deferNotifications();
+
+            Collection<Trigger> existingTriggers = getTriggers(tenantId, null, null);
+            Map<String, Set<String>> existingActionDefinitions = getActionDefinitionIds(tenantId);
+            if (strategy.equals(ImportType.DELETE)) {
+                log.warningDeleteDefinitionsTenant(tenantId);
+                for (Trigger t : existingTriggers) {
+                    removeTrigger(t);
+                }
+                for (Entry<String, Set<String>> entry : existingActionDefinitions.entrySet()) {
+                    String actionPlugin = entry.getKey();
+                    for (String actionId : entry.getValue()) {
+                        removeActionDefinition(tenantId, actionPlugin, actionId);
+                    }
+                }
+            }
+            List<ActionDefinition> importedActionDefinitions = new ArrayList<>();
+            if (!isEmpty(definitions.getActions())) {
+                for (ActionDefinition a : definitions.getActions()) {
+                    a.setTenantId(tenantId);
+                    if (!isEmpty(a)) {
+                        boolean existing = existingActionDefinitions.containsKey(a.getActionPlugin()) &&
+                                existingActionDefinitions.get(a.getActionPlugin()).contains(a.getActionId());
+                        switch (strategy) {
+                            case DELETE:
+                                addActionDefinition(tenantId, a);
+                                importedActionDefinitions.add(a);
+                                break;
+                            case ALL:
+                                if (existing) {
+                                    removeActionDefinition(tenantId, a.getActionPlugin(), a.getActionId());
+                                }
+                                addActionDefinition(tenantId, a);
+                                importedActionDefinitions.add(a);
+                                break;
+                            case NEW:
+                                if (!existing) {
+                                    addActionDefinition(tenantId, a);
+                                    importedActionDefinitions.add(a);
+                                }
+                                break;
+                            case OLD:
+                                if (existing) {
+                                    removeActionDefinition(tenantId, a.getActionPlugin(), a.getActionId());
+                                    addActionDefinition(tenantId, a);
+                                    importedActionDefinitions.add(a);
+                                }
+                                break;
+                        }
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("ActionDefinition " + a + " is empty. Ignored on the import process");
+                        }
+                    }
+                }
+            }
+            List<FullTrigger> importedTriggers = new ArrayList<>();
+            if (!isEmpty(definitions.getTriggers())) {
+                for (FullTrigger t : definitions.getTriggers()) {
+                    if (!isEmpty(t.getTrigger())) {
+                        boolean existing = existingTriggers.contains(t.getTrigger());
+                        switch (strategy) {
+                            case DELETE:
+                                addFullTrigger(tenantId, t);
+                                importedTriggers.add(t);
+                                break;
+                            case ALL:
+                                if (existing) {
+                                    removeTrigger(t.getTrigger());
+                                }
+                                addFullTrigger(tenantId, t);
+                                importedTriggers.add(t);
+                                break;
+                            case NEW:
+                                if (!existing) {
+                                    addFullTrigger(tenantId, t);
+                                    importedTriggers.add(t);
+                                }
+                                break;
+                            case OLD:
+                                if (existing) {
+                                    removeTrigger(t.getTrigger());
+                                    addFullTrigger(tenantId, t);
+                                    importedTriggers.add(t);
+                                }
+                                break;
+                        }
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Trigger " + t + " is empty. Ignored on the import process");
+                        }
+                    }
+                }
+            }
+            List<GroupMemberInfo> importedMembersInfo = new ArrayList<>();
+            if (!isEmpty(definitions.getGroupMembersInfo())) {
+                for (GroupMemberInfo memberInfo : definitions.getGroupMembersInfo()) {
+                    if (!isEmpty(memberInfo.getGroupId()) && !isEmpty(memberInfo.getMemberId())) {
+                        boolean existing = false;
+                        for (Trigger t : existingTriggers) {
+                            if (t.getId().equals(memberInfo.getMemberId())) {
+                                existing = true;
+                                break;
+                            }
+                        }
+                        switch (strategy) {
+                            case DELETE:
+                                addMemberTrigger(tenantId, memberInfo.getGroupId(), memberInfo.getMemberId(),
+                                        memberInfo.getMemberName(), memberInfo.getMemberDescription(),
+                                        memberInfo.getMemberContext(), memberInfo.getMemberTags(),
+                                        memberInfo.getDataIdMap());
+                                importedMembersInfo.add(memberInfo);
+                                break;
+                            case ALL:
+                                if (existing) {
+                                    removeTrigger(tenantId, memberInfo.getMemberId());
+                                }
+                                addMemberTrigger(tenantId, memberInfo.getGroupId(), memberInfo.getMemberId(),
+                                        memberInfo.getMemberName(), memberInfo.getMemberDescription(),
+                                        memberInfo.getMemberContext(), memberInfo.getMemberTags(),
+                                        memberInfo.getDataIdMap());
+                                importedMembersInfo.add(memberInfo);
+                                break;
+                            case NEW:
+                                if (!existing) {
+                                    addMemberTrigger(tenantId, memberInfo.getGroupId(), memberInfo.getMemberId(),
+                                            memberInfo.getMemberName(), memberInfo.getMemberDescription(),
+                                            memberInfo.getMemberContext(), memberInfo.getMemberTags(),
+                                            memberInfo.getDataIdMap());
+                                    importedMembersInfo.add(memberInfo);
+                                }
+                                break;
+                            case OLD:
+                                if (existing) {
+                                    removeTrigger(tenantId, memberInfo.getMemberId());
+                                    addMemberTrigger(tenantId, memberInfo.getGroupId(), memberInfo.getMemberId(),
+                                            memberInfo.getMemberName(), memberInfo.getMemberDescription(),
+                                            memberInfo.getMemberContext(), memberInfo.getMemberTags(),
+                                            memberInfo.getDataIdMap());
+                                    importedMembersInfo.add(memberInfo);
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+            imported.setTriggers(importedTriggers);
+            imported.setGroupMembersInfo(importedMembersInfo);
+            imported.setActions(importedActionDefinitions);
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        } finally {
+            releaseNotifications();
+        }
+
+        return imported;
     }
 
     // Private methods
+
+    private void deferNotifications() {
+        ++deferNotificationsCount;
+    }
+
+    private void releaseNotifications() {
+        if (deferNotificationsCount > 0) {
+            if (--deferNotificationsCount == 0) {
+                notifyListenersDeferred();
+            }
+        }
+    }
+
+    private boolean isDeferredNotifications() {
+        return deferNotificationsCount > 0;
+    }
 
     private void notifyListeners(final DefinitionsEvent de) {
         if (alertsContext == null) {
@@ -1949,4 +1811,381 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             return new Page<>(triggers, pager, triggers.size());
         }
     }
+
+    private Trigger copyGroupTrigger(Trigger group, Trigger member, boolean isNewMember) {
+        member.setActions(group.getActions());
+        member.setAutoDisable(group.isAutoDisable());
+        member.setAutoEnable(group.isAutoEnable());
+        member.setAutoResolve(group.isAutoResolve());
+        member.setAutoResolveAlerts(group.isAutoResolveAlerts());
+        member.setAutoResolveMatch(group.getAutoResolveMatch());
+        member.setEnabled(group.isEnabled());
+        member.setEventType(group.getEventType());
+        member.setFiringMatch(group.getFiringMatch());
+        member.setMemberOf(group.getId());
+        member.setSeverity(group.getSeverity());
+        member.setType(TriggerType.MEMBER);
+
+        // On update don't override fields that can be customized at the member level. Make sure new
+        // Context or Tag settings are merged in but don't remove or reset any existing keys.
+        if (isNewMember) {
+            member.setDataIdMap(group.getDataIdMap()); // likely irrelevant but here for completeness
+            member.setDescription(group.getDescription());
+            member.setContext(group.getContext());
+            member.setTags(group.getTags());
+        } else {
+            if (!isEmpty(group.getContext())) {
+                // add new group-level context
+                Map<String, String> combinedContext = new HashMap<>();
+                combinedContext.putAll(member.getContext());
+                for (Map.Entry<String, String> entry : group.getContext().entrySet()) {
+                    combinedContext.putIfAbsent(entry.getKey(), entry.getValue());
+                }
+                member.setContext(combinedContext);
+            }
+            if (!isEmpty(group.getTags())) {
+                // add new group-level tags
+                Map<String, String> combinedTags = new HashMap<>();
+                combinedTags.putAll(member.getTags());
+                for (Map.Entry<String, String> entry : group.getTags().entrySet()) {
+                    combinedTags.putIfAbsent(entry.getKey(), entry.getValue());
+                }
+                member.setTags(combinedTags);
+            }
+        }
+
+        return member;
+    }
+
+    private void updateTriggerEnablement(String tenantId, Collection<Trigger> triggers, boolean enabled)
+            throws Exception {
+
+        try {
+            deferNotifications();
+
+            for (Trigger trigger : triggers) {
+                trigger.setEnabled(enabled);
+                updateTrigger(trigger);
+            }
+        } finally {
+            releaseNotifications();
+        }
+    }
+
+    private Dampening addDampening(Dampening dampening) throws Exception {
+        try {
+            backend.put(pk(dampening), new IspnDampening(dampening));
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+
+        if (null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        }
+
+        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
+
+        return dampening;
+    }
+
+    // caller should be deferring notifications
+    private void addFullTrigger(String tenantId, FullTrigger fullTrigger) throws Exception {
+        if (null == fullTrigger) {
+            throw new IllegalArgumentException("FullTrigger must be not null");
+        }
+        if (fullTrigger.getTrigger() != null) {
+            Trigger trigger = fullTrigger.getTrigger();
+            trigger.setTenantId(tenantId);
+            addTrigger(trigger);
+            if (!isEmpty(fullTrigger.getDampenings())) {
+                for (Dampening d : fullTrigger.getDampenings()) {
+                    d.setTenantId(tenantId);
+                    d.setTriggerId(trigger.getId());
+                    addDampening(d);
+                }
+            }
+            if (!isEmpty(fullTrigger.getConditions())) {
+                setAllConditions(tenantId, trigger.getId(), fullTrigger.getConditions());
+            }
+        }
+    }
+
+    private List<FullTrigger> getFullTriggers(String tenantId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        List<FullTrigger> fullTriggers = new ArrayList<>();
+        try {
+            Collection<Trigger> triggers = getTriggers(tenantId, null, null);
+            for (Trigger t : triggers) {
+                List<Dampening> allDampenings = new ArrayList<>();
+                Collection<Dampening> firingDampenings = getTriggerDampenings(tenantId, t.getId(), Mode.FIRING);
+                Collection<Dampening> autoDampenings = getTriggerDampenings(tenantId, t.getId(), Mode.AUTORESOLVE);
+                if (!isEmpty(firingDampenings)) {
+                    allDampenings.addAll(firingDampenings);
+                }
+                if (!isEmpty(autoDampenings)) {
+                    allDampenings.addAll(autoDampenings);
+                }
+                List<Condition> allConditions = new ArrayList<>();
+                Collection<Condition> firingConditions = getTriggerConditions(tenantId, t.getId(), Mode.FIRING);
+                Collection<Condition> autoConditions = getTriggerConditions(tenantId, t.getId(), Mode.AUTORESOLVE);
+                if (!isEmpty(firingConditions)) {
+                    allConditions.addAll(firingConditions);
+                }
+                if (!isEmpty(autoConditions)) {
+                    allConditions.addAll(autoConditions);
+                }
+                fullTriggers.add(new FullTrigger(t, allDampenings, allConditions));
+            }
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+        return fullTriggers;
+    }
+
+    private List<ActionDefinition> getActionDefinitions(String tenantId) throws Exception {
+        List<IspnActionDefinition> actionDefinitions = queryFactory.from(IspnActionDefinition.class)
+                .having("tenantId")
+                .eq(tenantId)
+                .build()
+                .list();
+        return actionDefinitions.stream().map(a -> a.getActionDefinition()).collect(Collectors.toList());
+    }
+
+    private Collection<Condition> mapConditions(List<IspnCondition> ispnConditions) {
+        return ispnConditions.stream()
+                .map(c -> c.getCondition())
+                .collect(Collectors.toList());
+    }
+
+    private void updateMemberTriggerDataIdMap(String tenantId, String memberTriggerId, Map<String, String> dataIdMap)
+            throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(memberTriggerId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (isEmpty(dataIdMap)) {
+            throw new IllegalArgumentException("DatIdMap must be not null");
+        }
+
+        try {
+            String pk = pkFromTriggerId(tenantId, memberTriggerId);
+            Trigger memberTrigger = (Trigger) backend.get(pk);
+            memberTrigger.setDataIdMap(dataIdMap);
+            backend.put(pk, memberTrigger);
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    private Condition getMemberCondition(Trigger member, Condition groupCondition, Map<String, String> dataIdMap) {
+        Condition newCondition = null;
+        switch (groupCondition.getType()) {
+            case AVAILABILITY:
+                newCondition = new AvailabilityCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((AvailabilityCondition) groupCondition).getOperator());
+                break;
+            case COMPARE:
+                newCondition = new CompareCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((CompareCondition) groupCondition).getOperator(),
+                        ((CompareCondition) groupCondition).getData2Multiplier(),
+                        dataIdMap.get(((CompareCondition) groupCondition).getData2Id()));
+                break;
+            case EVENT:
+                newCondition = new EventCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((EventCondition) groupCondition).getExpression());
+                break;
+            case EXTERNAL:
+                String tokenDataId = groupCondition.getDataId();
+                String memberDataId = dataIdMap.get(tokenDataId);
+                String tokenExpression = ((ExternalCondition) groupCondition).getExpression();
+                String memberExpression = isEmpty(tokenExpression) ? tokenExpression
+                        : tokenExpression.replace(tokenDataId, memberDataId);
+                newCondition = new ExternalCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        memberDataId,
+                        ((ExternalCondition) groupCondition).getAlerterId(),
+                        memberExpression);
+                break;
+            case MISSING:
+                newCondition = new MissingCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((MissingCondition) groupCondition).getInterval());
+                break;
+            case NELSON:
+                newCondition = new NelsonCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((NelsonCondition) groupCondition).getActiveRules(),
+                        ((NelsonCondition) groupCondition).getSampleSize());
+                break;
+            case RANGE:
+                newCondition = new ThresholdRangeCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((ThresholdRangeCondition) groupCondition).getOperatorLow(),
+                        ((ThresholdRangeCondition) groupCondition).getOperatorHigh(),
+                        ((ThresholdRangeCondition) groupCondition).getThresholdLow(),
+                        ((ThresholdRangeCondition) groupCondition).getThresholdHigh(),
+                        ((ThresholdRangeCondition) groupCondition).isInRange());
+                break;
+            case RATE:
+                newCondition = new RateCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((RateCondition) groupCondition).getDirection(),
+                        ((RateCondition) groupCondition).getPeriod(),
+                        ((RateCondition) groupCondition).getOperator(),
+                        ((RateCondition) groupCondition).getThreshold());
+                break;
+            case STRING:
+                newCondition = new StringCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((StringCondition) groupCondition).getOperator(),
+                        ((StringCondition) groupCondition).getPattern(),
+                        ((StringCondition) groupCondition).isIgnoreCase());
+                break;
+            case THRESHOLD:
+                newCondition = new ThresholdCondition(member.getTenantId(), member.getId(),
+                        groupCondition.getTriggerMode(),
+                        groupCondition.getConditionSetSize(), groupCondition.getConditionSetIndex(),
+                        dataIdMap.get(groupCondition.getDataId()),
+                        ((ThresholdCondition) groupCondition).getOperator(),
+                        ((ThresholdCondition) groupCondition).getThreshold());
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected Condition type: " + groupCondition.getType().name());
+        }
+
+        newCondition.setContext(groupCondition.getContext());
+        return newCondition;
+    }
+
+    private Collection<Condition> setConditions(String tenantId, String triggerId, Mode triggerMode,
+            Collection<Condition> conditions, Set<String> dataIds) throws Exception {
+
+        // Get rid of the prior condition set
+        removeConditions(tenantId, triggerId, triggerMode);
+
+        // Now add the new condition set
+        try {
+            Map<String, IspnCondition> newConditions = new HashMap<>();
+            int indexCondition = 0;
+            for (Condition cond : conditions) {
+                cond.setTenantId(tenantId);
+                cond.setTriggerId(triggerId);
+                cond.setTriggerMode(triggerMode);
+                cond.setConditionSetSize(conditions.size());
+                cond.setConditionSetIndex(++indexCondition);
+
+                dataIds.add(cond.getDataId());
+                switch (cond.getType()) {
+                    case COMPARE:
+                        CompareCondition cCond = (CompareCondition) cond;
+                        dataIds.add(cCond.getData2Id());
+                        break;
+
+                    case AVAILABILITY:
+                    case EVENT:
+                    case EXTERNAL:
+                    case MISSING:
+                    case NELSON:
+                    case RANGE:
+                    case RATE:
+                    case STRING:
+                    case THRESHOLD:
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unexpected ConditionType: " + cond);
+                }
+                newConditions.put(pk(cond), new IspnCondition(cond));
+            }
+            backend.putAll(newConditions);
+
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+
+        return conditions;
+    }
+
+    private void removeConditions(String tenantId, String triggerId, Mode triggerMode) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must not be null");
+        }
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("TriggerId must not be null");
+        }
+
+        try {
+            getTriggerConditions(tenantId, triggerId, triggerMode).stream()
+                    .forEach(c -> backend.remove(pk(c)));
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+    }
+
+    private void removeDampening(Dampening dampening) throws Exception {
+        try {
+            backend.remove(pk(dampening));
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+
+        if (null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        }
+
+        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
+    }
+
+    private Dampening updateDampening(Dampening dampening) throws Exception {
+        try {
+            backend.put(pk(dampening), new IspnDampening(dampening));
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
+        }
+
+        if (null != alertsEngine) {
+            alertsEngine.reloadTrigger(dampening.getTenantId(), dampening.getTriggerId());
+        }
+
+        notifyListeners(new DefinitionsEvent(Type.DAMPENING_CHANGE, dampening));
+
+        return dampening;
+    }
+
+    private Collection<Dampening> mapDampenings(List<IspnDampening> ispnDampenings) {
+        return ispnDampenings.stream()
+                .map(d -> d.getDampening())
+                .collect(Collectors.toList());
+    }
+
 }
