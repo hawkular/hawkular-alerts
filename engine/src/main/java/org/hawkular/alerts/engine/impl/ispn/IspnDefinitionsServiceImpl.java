@@ -53,6 +53,7 @@ import org.hawkular.alerts.api.model.condition.StringCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdCondition;
 import org.hawkular.alerts.api.model.condition.ThresholdRangeCondition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.model.export.ImportType;
 import org.hawkular.alerts.api.model.paging.Order;
@@ -70,7 +71,6 @@ import org.hawkular.alerts.api.services.DistributedListener;
 import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.alerts.cache.IspnCacheManager;
-import org.hawkular.alerts.engine.exception.NotFoundApplicationException;
 import org.hawkular.alerts.engine.impl.AlertsContext;
 import org.hawkular.alerts.engine.impl.ispn.model.IspnActionDefinition;
 import org.hawkular.alerts.engine.impl.ispn.model.IspnActionPlugin;
@@ -206,19 +206,219 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void addGroupTrigger(String tenantId, Trigger groupTrigger) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupTrigger)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
 
+        checkTenantId(tenantId, groupTrigger);
+        if (!groupTrigger.isGroup()) {
+            groupTrigger.setType(TriggerType.GROUP);
+        }
+
+        addTrigger(groupTrigger);
     }
 
     @Override
     public Trigger addMemberTrigger(String tenantId, String groupId, String memberId, String memberName,
             String memberDescription, Map<String, String> memberContext, Map<String, String> memberTags,
             Map<String, String> dataIdMap) throws Exception {
-        return null;
+
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (isEmpty(dataIdMap)) {
+            throw new IllegalArgumentException("DataIdMap must be not null");
+        }
+
+        try {
+            deferNotifications();
+
+            // fetch the group trigger (or throw NotFoundException)
+            Trigger group = getTrigger(tenantId, groupId);
+
+            // fetch the group conditions
+            // ensure we have a 1-1 mapping for the dataId substitution
+            Set<String> dataIdTokens = new HashSet<>();
+            Collection<Condition> conditions = getTriggerConditions(tenantId, groupId, null);
+            for (Condition c : conditions) {
+                if (Condition.Type.COMPARE == c.getType()) {
+                    dataIdTokens.add(c.getDataId());
+                    dataIdTokens.add(((CompareCondition) c).getData2Id());
+                } else {
+                    dataIdTokens.add(c.getDataId());
+                }
+            }
+            if (!dataIdTokens.equals(dataIdMap.keySet())) {
+                throw new IllegalArgumentException(
+                        "DataIdMap must contain the exact dataIds (keyset) expected by the condition set. Expected: "
+                                + dataIdTokens + ", dataIdMap: " + dataIdMap.keySet());
+            }
+
+            // create a member trigger like the group trigger
+            memberId = isEmpty(memberId) ? Trigger.generateId() : memberId;
+            memberName = isEmpty(memberName) ? group.getName() : memberName;
+            Trigger member = new Trigger(tenantId, memberId, memberName);
+
+            copyGroupTrigger(group, member, true);
+
+            if (!isEmpty(memberDescription)) {
+                member.setDescription(memberDescription);
+            }
+            if (null != memberContext) {
+                // add additional or override existing context
+                Map<String, String> combinedContext = new HashMap<>();
+                combinedContext.putAll(member.getContext());
+                combinedContext.putAll(memberContext);
+                member.setContext(combinedContext);
+            }
+            if (null != memberTags) {
+                // add additional or override existing tags
+                Map<String, String> combinedTags = new HashMap<>();
+                combinedTags.putAll(member.getTags());
+                combinedTags.putAll(memberTags);
+                member.setTags(combinedTags);
+            }
+
+            // store the dataIdMap so that it can be used for future condition updates (where the mappings are unchanged)
+            member.setDataIdMap(dataIdMap);
+
+            addTrigger(member);
+
+            List<Condition> memberConditions = conditions.stream()
+                    .map(c -> getMemberCondition(member, c, dataIdMap))
+                    .collect(Collectors.toList());
+            setAllConditions(tenantId, memberId, memberConditions);
+
+            // add any dampening
+            Collection<Dampening> dampenings = getTriggerDampenings(tenantId, groupId, null);
+
+            for (Dampening d : dampenings) {
+                Dampening newDampening = new Dampening(member.getTenantId(), member.getId(), d.getTriggerMode(),
+                        d.getType(), d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
+                addDampening(newDampening);
+            }
+
+            return member;
+
+        } finally {
+            releaseNotifications();
+        }
     }
 
     @Override
     public Trigger addDataDrivenMemberTrigger(String tenantId, String groupId, String source) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+        if (isEmpty(source)) {
+            throw new IllegalArgumentException("source must be not null");
+        }
+        if (Data.SOURCE_NONE.equals(source)) {
+            throw new IllegalArgumentException("source is required (can not be none)");
+        }
+
+        try {
+            deferNotifications();
+
+            // fetch the group trigger (or throw NotFoundException)
+            Trigger group = getTrigger(tenantId, groupId);
+
+            // fetch the group conditions and generate a dataIdMap that just uses the same tokens as found in the
+            // group conditions. That is what we want in this use case, the source provides the differentiator
+            Map<String, String> dataIdMap = new HashMap<>();
+            Collection<Condition> conditions = getTriggerConditions(tenantId, groupId, null);
+            for (Condition c : conditions) {
+                dataIdMap.put(c.getDataId(), c.getDataId());
+                if (Condition.Type.COMPARE == c.getType()) {
+                    dataIdMap.put(((CompareCondition) c).getData2Id(), ((CompareCondition) c).getData2Id());
+                }
+            }
+
+            // create a member trigger like the group trigger
+            String memberId = group.getId() + "_" + source;
+            Trigger member = new Trigger(tenantId, memberId, group.getName());
+
+            copyGroupTrigger(group, member, true);
+            member.setSource(source);
+            // add source tag (not sure if we really need this)
+            member.getTags().put("source", source);
+
+            addTrigger(member);
+
+            // add any conditions
+            List<Condition> memberConditions = conditions.stream()
+                    .map(c -> getMemberCondition(member, c, dataIdMap))
+                    .collect(Collectors.toList());
+            setAllConditions(tenantId, memberId, memberConditions);
+
+            // add any dampening
+            Collection<Dampening> dampenings = getTriggerDampenings(tenantId, groupId, null);
+
+            for (Dampening d : dampenings) {
+                Dampening newDampening = new Dampening(member.getTenantId(), member.getId(), d.getTriggerMode(),
+                        d.getType(), d.getEvalTrueSetting(), d.getEvalTotalSetting(), d.getEvalTimeSetting());
+                addDampening(newDampening);
+            }
+
+            return member;
+
+        } finally {
+            releaseNotifications();
+        }
+    }
+
+    private Trigger copyGroupTrigger(Trigger group, Trigger member, boolean isNewMember) {
+        member.setActions(group.getActions());
+        member.setAutoDisable(group.isAutoDisable());
+        member.setAutoEnable(group.isAutoEnable());
+        member.setAutoResolve(group.isAutoResolve());
+        member.setAutoResolveAlerts(group.isAutoResolveAlerts());
+        member.setAutoResolveMatch(group.getAutoResolveMatch());
+        member.setEnabled(group.isEnabled());
+        member.setEventType(group.getEventType());
+        member.setFiringMatch(group.getFiringMatch());
+        member.setMemberOf(group.getId());
+        member.setSeverity(group.getSeverity());
+        member.setType(TriggerType.MEMBER);
+
+        // On update don't override fields that can be customized at the member level. Make sure new
+        // Context or Tag settings are merged in but don't remove or reset any existing keys.
+        if (isNewMember) {
+            member.setDataIdMap(group.getDataIdMap()); // likely irrelevant but here for completeness
+            member.setDescription(group.getDescription());
+            member.setContext(group.getContext());
+            member.setTags(group.getTags());
+        } else {
+            if (!isEmpty(group.getContext())) {
+                // add new group-level context
+                Map<String, String> combinedContext = new HashMap<>();
+                combinedContext.putAll(member.getContext());
+                for (Map.Entry<String, String> entry : group.getContext().entrySet()) {
+                    combinedContext.putIfAbsent(entry.getKey(), entry.getValue());
+                }
+                member.setContext(combinedContext);
+            }
+            if (!isEmpty(group.getTags())) {
+                // add new group-level tags
+                Map<String, String> combinedTags = new HashMap<>();
+                combinedTags.putAll(member.getTags());
+                for (Map.Entry<String, String> entry : group.getTags().entrySet()) {
+                    combinedTags.putIfAbsent(entry.getKey(), entry.getValue());
+                }
+                member.setTags(combinedTags);
+            }
+        }
+
+        return member;
     }
 
     @Override
@@ -230,8 +430,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
 
+        // fetch the trigger (or throw NotFoundException)
         Trigger doomedTrigger = getTrigger(tenantId, triggerId);
-
         if (doomedTrigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
         }
@@ -242,7 +442,41 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     @Override
     public void removeGroupTrigger(String tenantId, String groupId, boolean keepNonOrphans, boolean keepOrphans)
             throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupId)) {
+            throw new IllegalArgumentException("GroupId must be not null");
+        }
 
+        try {
+            deferNotifications();
+
+            // fetch the trigger (or throw NotFoundException)
+            Trigger doomedTrigger = getTrigger(tenantId, groupId);
+            if (!doomedTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
+            }
+
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, true);
+
+            for (Trigger member : memberTriggers) {
+                if ((keepNonOrphans && !member.isOrphan()) || (keepOrphans && member.isOrphan())) {
+                    member.setMemberOf(null);
+                    member.setType(TriggerType.STANDARD);
+                    updateTrigger(member);
+                    continue;
+                }
+
+                removeTrigger(member);
+            }
+
+            removeTrigger(doomedTrigger);
+
+        } finally {
+            releaseNotifications();
+        }
     }
 
     @Override
@@ -256,6 +490,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
         checkTenantId(tenantId, trigger);
         String triggerId = trigger.getId();
+
+        // fetch the trigger (or throw NotFoundException)
         Trigger existingTrigger = getTrigger(tenantId, trigger.getId());
         if (existingTrigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
@@ -277,18 +513,129 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Trigger updateGroupTrigger(String tenantId, Trigger groupTrigger) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupTrigger)) {
+            throw new IllegalArgumentException("Trigger must be not null");
+        }
+
+        try {
+            deferNotifications();
+
+            checkTenantId(tenantId, groupTrigger);
+            String groupId = groupTrigger.getId();
+
+            // fetch the group trigger (or throw NotFoundException)
+            Trigger existingGroupTrigger = getTrigger(tenantId, groupId);
+            if (!existingGroupTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger");
+            }
+
+            // trigger type can not be updated
+            groupTrigger.setType(existingGroupTrigger.getType());
+
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+            for (Trigger member : memberTriggers) {
+                copyGroupTrigger(groupTrigger, member, false);
+                updateTrigger(member);
+            }
+
+            return updateTrigger(groupTrigger);
+
+        } finally {
+            releaseNotifications();
+        }
     }
 
     @Override
     public void updateGroupTriggerEnablement(String tenantId, String groupTriggerIds, boolean enabled)
             throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupTriggerIds)) {
+            throw new IllegalArgumentException("GroupTriggerIds must be not null");
+        }
 
+        Set<Trigger> filteredGroupTriggers = new HashSet<>();
+
+        for (String groupTriggerId : groupTriggerIds.split(",")) {
+            // fetch the group trigger (or throw NotFoundException)
+            Trigger existingGroupTrigger = getTrigger(tenantId, groupTriggerId.trim());
+            if (!existingGroupTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupTriggerId + "] is not a group trigger.");
+            }
+
+            if (enabled == existingGroupTrigger.isEnabled()) {
+                log.debugf("Ignoring enable/disable request. Group Trigger %s is already set enabled=%s",
+                        groupTriggerId, enabled);
+                continue;
+            }
+
+            filteredGroupTriggers.add(existingGroupTrigger);
+        }
+
+        try {
+            deferNotifications();
+
+            for (Trigger groupTrigger : filteredGroupTriggers) {
+                Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupTrigger.getId(), false);
+
+                updateTriggerEnablement(tenantId, memberTriggers, enabled);
+                updateTriggerEnablement(tenantId, Collections.singleton(groupTrigger), enabled);
+            }
+        } finally {
+            releaseNotifications();
+        }
     }
 
     @Override
     public void updateTriggerEnablement(String tenantId, String triggerIds, boolean enabled) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerIds)) {
+            throw new IllegalArgumentException("TriggerIds must be not null");
+        }
 
+        Set<Trigger> filteredTriggers = new HashSet<>();
+
+        for (String triggerId : triggerIds.split(",")) {
+            // fetch the trigger (or throw NotFoundException)
+            Trigger existingTrigger = getTrigger(tenantId, triggerId.trim());
+            if (existingTrigger.isGroup()) {
+                throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
+            }
+
+            if (enabled == existingTrigger.isEnabled()) {
+                log.debugf("Ignoring enable/disable request. Trigger %s is already set enabled=%s", triggerId,
+                        enabled);
+                continue;
+            }
+
+            filteredTriggers.add(existingTrigger);
+        }
+
+        updateTriggerEnablement(tenantId, filteredTriggers, enabled);
+    }
+
+    private void updateTriggerEnablement(String tenantId, Collection<Trigger> triggers, boolean enabled)
+            throws Exception {
+
+        try {
+            deferNotifications();
+
+            for (Trigger trigger : triggers) {
+                trigger.setEnabled(enabled);
+                updateTrigger(trigger);
+            }
+        } finally {
+            releaseNotifications();
+        }
     }
 
     @Override
@@ -369,7 +716,14 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     @Override
     public Collection<Trigger> getMemberTriggers(String tenantId, String groupId, boolean includeOrphans)
             throws Exception {
-        return null;
+        Collection<IspnTrigger> ispnTriggers = queryFactory.from(IspnTrigger.class)
+                .having("tenantId").eq(tenantId).and()
+                .having("memberOf").eq(groupId)
+                .build().list();
+        return ispnTriggers.stream()
+                .map(t -> t.getTrigger())
+                .filter(t -> includeOrphans || TriggerType.MEMBER == t.getType())
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -400,13 +754,55 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Trigger orphanMemberTrigger(String tenantId, String memberId) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(memberId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+
+        // fetch the trigger (or throw NotFoundException)
+        Trigger member = getTrigger(tenantId, memberId);
+        if (!member.isMember()) {
+            throw new IllegalArgumentException("Trigger is not a member trigger: [" + tenantId + "/" + memberId + "]");
+        }
+        if (member.isOrphan()) {
+            throw new IllegalArgumentException("Trigger is already an orphan: [" + tenantId + "/" + memberId + "]");
+        }
+
+        member.setType(TriggerType.ORPHAN);
+
+        return updateTrigger(member);
     }
 
     @Override
     public Trigger unorphanMemberTrigger(String tenantId, String memberId, Map<String, String> memberContext,
             Map<String, String> memberTags, Map<String, String> dataIdMap) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(memberId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+
+        // fetch the trigger (or throw NotFoundException)
+        Trigger orphanMember = getTrigger(tenantId, memberId);
+        if (!orphanMember.isMember()) {
+            throw new IllegalArgumentException("Trigger is not a member trigger: [" + tenantId + "/" + memberId + "]");
+        }
+        if (!orphanMember.isOrphan()) {
+            throw new IllegalArgumentException("Trigger is not an orphan: [" + tenantId + "/" + memberId + "]");
+        }
+
+        String groupId = orphanMember.getMemberOf();
+        String memberName = orphanMember.getName();
+        String memberDescription = orphanMember.getDescription();
+
+        removeTrigger(orphanMember);
+        Trigger member = addMemberTrigger(tenantId, groupId, memberId, memberName, memberDescription, memberContext,
+                memberTags, dataIdMap);
+
+        return member;
     }
 
     @Override
@@ -421,10 +817,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         checkTenantId(tenantId, dampening);
 
         String triggerId = dampening.getTriggerId();
+        // fetch the trigger (or throw NotFoundException)
         Trigger trigger = getTrigger(tenantId, triggerId);
-        if (null == trigger) {
-            throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] does not exist.");
-        }
         if (trigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
         }
@@ -455,7 +849,39 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Dampening addGroupDampening(String tenantId, Dampening groupDampening) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupDampening)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+
+        try {
+            deferNotifications();
+
+            checkTenantId(tenantId, groupDampening);
+
+            String groupId = groupDampening.getTriggerId();
+            // fetch the group trigger (or throw NotFoundException)
+            Trigger groupTrigger = getTrigger(tenantId, groupId);
+            if (!groupTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+            }
+
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+            for (Trigger member : memberTriggers) {
+                groupDampening.setTriggerId(member.getId());
+                addDampening(groupDampening);
+            }
+
+            groupDampening.setTriggerId(groupTrigger.getId());
+            return addDampening(groupDampening);
+
+        } finally {
+            releaseNotifications();
+        }
     }
 
     @Override
@@ -467,15 +893,17 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("dampeningId must be not null");
         }
 
-        Dampening dampening = getDampening(tenantId, dampeningId);
-        if (null == dampening) {
+        Dampening dampening = null;
+        try {
+            dampening = getDampening(tenantId, dampeningId);
+        } catch (NotFoundException e) {
             log.debugf("Ignoring removeDampening(%s), the Dampening does not exist.", dampeningId);
             return;
         }
 
         String triggerId = dampening.getTriggerId();
+        // fetch the trigger (or throw NotFoundException)
         Trigger trigger = getTrigger(tenantId, triggerId);
-
         if (trigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
         }
@@ -489,7 +917,48 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public void removeGroupDampening(String tenantId, String groupDampeningId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupDampeningId)) {
+            throw new IllegalArgumentException("dampeningId must be not null");
+        }
 
+        try {
+            deferNotifications();
+
+            Dampening groupDampening = null;
+            try {
+                groupDampening = getDampening(tenantId, groupDampeningId);
+            } catch (NotFoundException e) {
+                log.debugf("Ignoring removeDampening(%s), the Dampening does not exist.", groupDampeningId);
+                return;
+            }
+
+            String groupId = groupDampening.getTriggerId();
+            // fetch the trigger (or throw NotFoundException)
+            Trigger groupTrigger = getTrigger(tenantId, groupId);
+            if (!groupTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+            }
+
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+            for (Trigger member : memberTriggers) {
+                Collection<Dampening> dampenings = getTriggerDampenings(tenantId, member.getId(),
+                        groupDampening.getTriggerMode());
+                if (dampenings.isEmpty()) {
+                    continue;
+                }
+                removeDampening(dampenings.iterator().next());
+            }
+
+            removeDampening(groupDampening);
+
+        } finally {
+            releaseNotifications();
+        }
     }
 
     private void removeDampening(Dampening dampening) throws Exception {
@@ -519,8 +988,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         checkTenantId(tenantId, dampening);
 
         String triggerId = dampening.getTriggerId();
+        // fetch the trigger (or throw NotFoundException)
         Trigger trigger = getTrigger(tenantId, triggerId);
-
         if (trigger.isGroup()) {
             throw new IllegalArgumentException("Trigger [" + tenantId + "/" + triggerId + "] is a group trigger.");
         }
@@ -552,7 +1021,39 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @Override
     public Dampening updateGroupDampening(String tenantId, Dampening groupDampening) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(groupDampening)) {
+            throw new IllegalArgumentException("DampeningId and TriggerId must be not null");
+        }
+
+        try {
+            deferNotifications();
+
+            checkTenantId(tenantId, groupDampening);
+
+            String groupId = groupDampening.getTriggerId();
+            // fetch the group trigger (or throw NotFoundException)
+            Trigger groupTrigger = getTrigger(tenantId, groupId);
+            if (!groupTrigger.isGroup()) {
+                throw new IllegalArgumentException(
+                        "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
+            }
+
+            Collection<Trigger> memberTriggers = getMemberTriggers(tenantId, groupId, false);
+
+            for (Trigger member : memberTriggers) {
+                groupDampening.setTriggerId(member.getId());
+                updateDampening(groupDampening);
+            }
+
+            groupDampening.setTriggerId(groupTrigger.getId());
+            return updateDampening(groupDampening);
+
+        } finally {
+            releaseNotifications();
+        }
     }
 
     @Override
@@ -770,10 +1271,8 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         try {
             deferNotifications();
 
+            // fetch the group trigger (or throw NotFoundException)
             Trigger group = getTrigger(tenantId, groupId);
-            if (null == group) {
-                throw new NotFoundApplicationException(Trigger.class.getName(), tenantId, groupId);
-            }
             if (!group.isGroup()) {
                 throw new IllegalArgumentException(
                         "Trigger [" + tenantId + "/" + groupId + "] is not a group trigger.");
@@ -1282,23 +1781,25 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     @Override
     public void registerListener(DefinitionsListener listener, DefinitionsEvent.Type eventType,
             DefinitionsEvent.Type... eventTypes) {
-
+        // TODO
     }
 
     @Override
     public Definitions exportDefinitions(String tenantId) throws Exception {
+        // TODO
         return null;
     }
 
     @Override
     public Definitions importDefinitions(String tenantId, Definitions definitions, ImportType strategy)
             throws Exception {
+        // TODO
         return null;
     }
 
     @Override
     public void registerDistributedListener(DistributedListener listener) {
-
+        // TODO
     }
 
     // Private methods
