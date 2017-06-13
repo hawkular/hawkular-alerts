@@ -31,7 +31,7 @@ FROM jboss/wildfly:10.1.0.Final
 MAINTAINER Hawkular Alerting <hawkular-dev@lists.jboss.org>
 
 ENV HAWKULAR_METRICS_ENDPOINT_PORT="8080" \
-    HAWKULAR_METRICS_VERSION="0.26.0.Final" \
+    HAWKULAR_METRICS_VERSION="0.27.0.Final" \
     HAWKULAR_METRICS_DIRECTORY="/opt/hawkular-alerting-tutorial" \
     HAWKULAR_METRICS_SCRIPT_DIRECTORY="/opt/hawkular-alerting-tutorial/scripts/" \
     PATH=$PATH:$HAWKULAR_METRICS_SCRIPT_DIRECTORY \
@@ -43,9 +43,10 @@ EXPOSE 8080 9990 8787
 
 
 # Get and copy the hawkular metrics ear to the deployment directory
-RUN cd $JBOSS_HOME/standalone/deployments/ && \
-    curl -Lo hawkular-metrics.ear https://origin-repository.jboss.org/nexus/service/local/artifact/maven/content?r=public\&g=org.hawkular.metrics\&a=hawkular-metrics-standalone-dist\&e=ear\&v=${HAWKULAR_METRICS_VERSION}
-
+#RUN cd $JBOSS_HOME/standalone/deployments/ && \
+#    curl -Lo hawkular-metrics.ear https://origin-repository.jboss.org/nexus/service/local/artifact/maven/content?r=public\&g=org.hawkular.metrics\&a=hawkular-metrics-#standalone-dist\&e=ear\&v=${HAWKULAR_METRICS_VERSION}
+COPY hawkular-metrics.ear \
+     $JBOSS_HOME/standalone/deployments/
 
 COPY hawkular-metrics-wrapper.sh \
      $HAWKULAR_METRICS_SCRIPT_DIRECTORY

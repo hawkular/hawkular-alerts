@@ -19,10 +19,11 @@ We are adding lessons as time permits, there is plenty here to get started!  The
 . link:lessons/lesson-04-lifecycle.adoc[Lesson 04 - Alert Life-cycle]
 . link:lessons/lesson-05-actions.adoc[Lesson 05 - Actions]
 . link:lessons/lesson-06-events.adoc[Lesson 06 - Events]
+. link:lessons/lesson-07-alerters.adoc[Lesson 07 - External Alerters]
 
 On Deck (want to contribute?):
 
-Lesson 07 - External Alerters
-Lesson 08 - Group Triggers
-more...
+. Lesson 08 - Group Triggers
+. Lesson 09 - Clustering
+. more...
 

@@ -205,7 +205,9 @@ Using Events and Alerts together can be a powerful combination. In general a sys
 
 When you are ready, move on to the next lesson.  It talks about how to complement your out-of-the-box condition types with custom, external conditions.  Or, if you want to work more with events, https://github.com/hawkular/hawkular-alerts/tree/master/examples/events[check out this example].
 
-__Coming Soon! Lesson 07 - External Alerters__
+Otherwise, it's time to move on...
+
+link:lesson-07-alerters.adoc[Lesson 07 - External Alerters]
 
 link:../README.adoc[Tutorial Home]
 

@@ -17,7 +17,7 @@
 
 # Hawkular Metrics+Alerting
 hawkularMetrics:
-  image: "jshaughn/hawkular-alerting-tutorial:1.6.0.Final"
+  image: "jshaughn/hawkular-alerting-tutorial:1.7.0.Final"
   ports:
     - "8080:8080"
     - "8787:8787"
