@@ -11,7 +11,7 @@ Download and install Elasticsearch and Kibana
 
 [source,shell]
 ----
-    ES_HOME= # Directory to install Elasticsearch productos
+    ES_HOME= # Directory to install Elasticsearch products
     cd $ES_HOME
     wget https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/zip/elasticsearch/2.4.4/elasticsearch-2.4.4.zip
     unzip elasticsearch-2.4.4.zip
