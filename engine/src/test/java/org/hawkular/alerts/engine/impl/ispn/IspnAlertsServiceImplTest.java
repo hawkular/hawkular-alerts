@@ -22,8 +22,10 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
@@ -93,8 +95,11 @@ public class IspnAlertsServiceImplTest {
         alerts.addAlerts(newAlerts);
     }
 
-    void removeAllAlerts() {
-
+    void removeAllAlerts(int numTenants) throws Exception {
+        AlertsCriteria criteria = new AlertsCriteria();
+        for (int i = 0; i < numTenants; i++) {
+            alerts.deleteAlerts("tenant" + i, criteria);
+        }
     }
 
     @Test
@@ -127,7 +132,7 @@ public class IspnAlertsServiceImplTest {
 
         assertEquals(3, alerts.getAlerts(tenantIds, criteria, null).size());
 
-        removeAllAlerts();
+        removeAllAlerts(numTenants);
     }
 
     @Test
@@ -256,6 +261,84 @@ public class IspnAlertsServiceImplTest {
         query = new StringBuilder();
         alerts.parseTagQuery(e24, query);
         assertEquals("((('tagA') and (not 'tagB')) and (('tagD') or (not 'tagC')))", query.toString().trim());
+    }
+
+    @Test
+    public void addAlertTagsTest() throws Exception {
+        int numTenants = 2;
+        int numTriggers = 5;
+        int numAlerts = 2;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+        tenantIds.add("tenant1");
+
+        List<Alert> nonTaggedAlerts = alerts.getAlerts(tenantIds, null, null);
+        assertEquals(2 * 5 * 2, nonTaggedAlerts.size());
+
+        int count = 0;
+        for (Alert alert : nonTaggedAlerts) {
+            Map<String, String> tags = new HashMap<>();
+            if (count < 5) {
+                tags.put("tag1", "value" + (count % 5));
+            } else if (count >= 5 && count < 10) {
+                tags.put("tag2", "value" + (count % 5));
+            } else {
+                // Yes, tag3/valueX can be repeated twice
+                tags.put("tag3", "value" + (count % 5));
+            }
+            alerts.addAlertTags(alert.getTenantId(), Arrays.asList(alert.getAlertId()), tags);
+            count++;
+        }
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setTagQuery("tag1");
+
+        List<Alert> tag1Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5, tag1Alerts.size());
+
+        criteria.setTagQuery("tag2");
+        List<Alert> tag2Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5, tag2Alerts.size());
+
+        criteria.setTagQuery("tag3");
+        List<Alert> tag3Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(10, tag3Alerts.size());
+
+        criteria.setTagQuery("tag1 = 'value1'");
+        List<Alert> tag1Value1Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(1, tag1Value1Alerts.size());
+
+        criteria.setTagQuery("tag2 = 'value1'");
+        List<Alert> tag2Value1Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(1, tag2Value1Alerts.size());
+
+        criteria.setTagQuery("tag3 = 'value2'");
+        List<Alert> tag3Value2Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(2, tag3Value2Alerts.size());
+
+        criteria.setTagQuery("tag1 = 'value10'");
+        List<Alert> tag1Value10Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(0, tag1Value10Alerts.size());
+
+        criteria.setTagQuery("tag1 or tag2");
+        List<Alert> tag1OrTag2Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(10, tag1OrTag2Alerts.size());
+
+        criteria.setTagQuery("tag1 = 'value.*'");
+        List<Alert> tag1ValueAlerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5, tag1ValueAlerts.size());
+
+        criteria.setTagQuery("tag1 != 'value0'");
+        List<Alert> tag1NotValue0Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(4, tag1NotValue0Alerts.size());
+
+        criteria.setTagQuery("tag1 != 'value0' or tag2 != 'value0'");
+        List<Alert> tag1NotValue0Tag2NotValue0Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(8, tag1NotValue0Tag2NotValue0Alerts.size());
+
+        removeAllAlerts(numTenants);
     }
 
 }

@@ -214,7 +214,24 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public void addAlertTags(String tenantId, Collection<String> alertIds, Map<String, String> tags) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(alertIds)) {
+            throw new IllegalArgumentException("AlertIds must be not null");
+        }
+        if (isEmpty(tags)) {
+            throw new IllegalArgumentException("Tags must be not null");
+        }
 
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setAlertIds(alertIds);
+        Page<Alert> existingAlerts = getAlerts(tenantId, criteria, null);
+
+        for (Alert alert : existingAlerts) {
+            tags.entrySet().stream().forEach(tag -> alert.addTag(tag.getKey(), tag.getValue()));
+            backend.put(pk(alert), new IspnEvent(alert));
+        }
     }
 
     @Override
@@ -239,7 +256,30 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public int deleteAlerts(String tenantId, AlertsCriteria criteria) throws Exception {
-        return 0;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (null == criteria) {
+            throw new IllegalArgumentException("Criteria must be not null");
+        }
+        // no need to fetch the evalSets to perform the necessary deletes
+        criteria.setThin(true);
+        List<Alert> alertsToDelete = getAlerts(tenantId, criteria, null);
+
+        if (alertsToDelete.isEmpty()) {
+            return 0;
+        }
+        try {
+            backend.startBatch();
+            for (Alert alert : alertsToDelete) {
+                backend.remove(pk(alert));
+            }
+            backend.endBatch(true);
+        } catch (Exception e) {
+            backend.endBatch(false);
+            throw e;
+        }
+        return alertsToDelete.size();
     }
 
     @Override
@@ -254,7 +294,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public Page<Alert> getAlerts(String tenantId, AlertsCriteria criteria, Pager pager) throws Exception {
-        return null;
+        return getAlerts(Collections.singleton(tenantId), criteria, pager);
     }
 
     @Override
