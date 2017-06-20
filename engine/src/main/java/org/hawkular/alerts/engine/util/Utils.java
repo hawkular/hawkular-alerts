@@ -17,11 +17,17 @@
 package org.hawkular.alerts.engine.util;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
+import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.services.AlertsCriteria;
 
 /**
  * @author Jay Shaughnessy
@@ -72,4 +78,39 @@ public class Utils {
             }
         }
     }
+
+    public static Set<String> extractTriggerIds(AlertsCriteria criteria) {
+
+        boolean hasTriggerId = !isEmpty(criteria.getTriggerId());
+        boolean hasTriggerIds = !isEmpty(criteria.getTriggerIds());
+
+        Set<String> triggerIds = hasTriggerId || hasTriggerIds ? new HashSet<>() : Collections.emptySet();
+
+        if (!hasTriggerIds) {
+            if (hasTriggerId) {
+                triggerIds.add(criteria.getTriggerId());
+            }
+        } else {
+            for (String triggerId : criteria.getTriggerIds()) {
+                if (isEmpty(triggerId)) {
+                    continue;
+                }
+                triggerIds.add(triggerId);
+            }
+        }
+
+        return triggerIds;
+    }
+
+    public static Set<Status> extractStatus(AlertsCriteria criteria) {
+        Set<Status> statuses = new HashSet<>();
+        if (criteria.getStatus() != null) {
+            statuses.add(criteria.getStatus());
+        }
+        if (!isEmpty(criteria.getStatusSet())) {
+            statuses.addAll(criteria.getStatusSet());
+        }
+        return statuses;
+    }
+
 }

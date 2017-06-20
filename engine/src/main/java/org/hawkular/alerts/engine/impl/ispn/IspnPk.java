@@ -99,4 +99,15 @@ public class IspnPk {
                 .toString();
     }
 
+    public static String pkFromAlertId(String tenantId, String alertId) {
+        if (tenantId == null || alertId == null) {
+            return null;
+        }
+        return new StringBuilder("Alert-")
+                .append(tenantId)
+                .append("-")
+                .append(alertId)
+                .toString();
+    }
+
 }

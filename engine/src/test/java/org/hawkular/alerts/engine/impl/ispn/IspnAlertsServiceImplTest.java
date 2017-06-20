@@ -75,18 +75,20 @@ public class IspnAlertsServiceImplTest {
                     List<Set<ConditionEval>> evals = new ArrayList<>();
                     evals.add(evalSet);
                     Alert alertX = new Alert(tenantId, triggerX, evals);
+                    // Hack to set up the right ctime for tests
+                    alertX.setCtime(alert + 1);
+                    alertX.getCurrentLifecycle().setStime(alert + 1);
                     switch (alert % 3) {
                         case 2:
-                            alertX.setStatus(Alert.Status.OPEN);
                             alertX.setSeverity(Severity.CRITICAL);
                             break;
                         case 1:
-                            alertX.setStatus(Alert.Status.ACKNOWLEDGED);
                             alertX.setSeverity(Severity.LOW);
+                            alertX.addLifecycle(Alert.Status.ACKNOWLEDGED, "user1", alert + 1);
                             break;
                         case 0:
-                            alertX.setStatus(Alert.Status.RESOLVED);
                             alertX.setSeverity(Severity.MEDIUM);
+                            alertX.addLifecycle(Alert.Status.RESOLVED, "user2", alert + 1);
                     }
                     newAlerts.add(alertX);
                 }
@@ -337,6 +339,200 @@ public class IspnAlertsServiceImplTest {
         criteria.setTagQuery("tag1 != 'value0' or tag2 != 'value0'");
         List<Alert> tag1NotValue0Tag2NotValue0Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(8, tag1NotValue0Tag2NotValue0Alerts.size());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void queryAlertsByTriggerId() throws Exception {
+        int numTenants = 2;
+        int numTriggers = 5;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+        tenantIds.add("tenant1");
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setTriggerId("trigger0");
+
+        List<Alert> trigger0Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(10, trigger0Alerts.size());
+
+        criteria.setTriggerIds(Arrays.asList("trigger0", "trigger1", "trigger2"));
+        List<Alert> trigger012Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(30, trigger012Alerts.size());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void queryAlertsByCTime() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 5;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setStartTime(2l);
+        criteria.setEndTime(2l);
+
+        List<Alert> ctime2Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5, ctime2Alerts.size());
+
+        criteria.setEndTime(null);
+        List<Alert> ctimeGTE2Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5 * 4, ctimeGTE2Alerts.size());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void queryAlertsByResolvedTime() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 5;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setStartResolvedTime(1l);
+
+        // Alerts on stime 1 and 4 are RESOLVED
+        List<Alert> stimeGTE2Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5 * 2, stimeGTE2Alerts.size());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void queryAlertsByAcknowledgedTime() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 5;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setStartAckTime(1l);
+
+        // Alerts on stime 2 and 5 are ACKNOWLEDGED
+        List<Alert> stimeGTE2Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5 * 2, stimeGTE2Alerts.size());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void queryAlertsByStatusTime() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 5;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setStartStatusTime(5l);
+        criteria.setEndStatusTime(5l);
+
+        List<Alert> stimeGTE5Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5, stimeGTE5Alerts.size());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void queryAlertsBySeverity() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 5;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setSeverities(Arrays.asList(Severity.LOW));
+
+        // Alerts on stime 2 and 5 are severity LOW
+        List<Alert> lowAlerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5 * 2, lowAlerts.size());
+
+        // Alerts on stime 3 are severity CRITICAL
+        criteria.setSeverities(Arrays.asList(Severity.CRITICAL));
+        List<Alert> criticalAlerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5, criticalAlerts.size());
+
+        // Alerts on stime 1 and 4 are severity MEDIUM
+        criteria.setSeverities(Arrays.asList(Severity.MEDIUM));
+        List<Alert> mediumAlerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5 * 2, mediumAlerts.size());
+
+        criteria.setSeverities(Arrays.asList(Severity.MEDIUM, Severity.CRITICAL));
+        List<Alert> mediumCriticalAlerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5 * 3, mediumCriticalAlerts.size());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void queryAlertsByStatus() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 5;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setStatus(Alert.Status.OPEN);
+
+        List<Alert> openAlerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5, openAlerts.size());
+
+        criteria.setStatus(Alert.Status.ACKNOWLEDGED);
+        List<Alert> acknowledgedAlerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5 * 2, acknowledgedAlerts.size());
+
+        criteria.setStatus(Alert.Status.RESOLVED);
+        List<Alert> resolvedAlerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5 * 2, resolvedAlerts.size());
+
+        criteria.setStatusSet(Arrays.asList(Alert.Status.ACKNOWLEDGED, Alert.Status.RESOLVED));
+        List<Alert> ackResolvedAlerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(5 * 4, ackResolvedAlerts.size());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void queryAlertsCombined() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 5;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setStatus(Alert.Status.RESOLVED);
+        criteria.setTriggerId("trigger0");
+        criteria.setStartTime(3l);
+
+        List<Alert> resolvedAlerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(1, resolvedAlerts.size());
 
         removeAllAlerts(numTenants);
     }

@@ -32,6 +32,21 @@ public class IspnEvent implements Serializable {
     @FieldBridge(impl = TagsBridge.class)
     private Map<String, String> tags;
 
+    @Field(store = Store.YES, analyze = Analyze.NO)
+    private String triggerId;
+
+    @Field(store = Store.YES, analyze = Analyze.NO)
+    private long ctime;
+
+    @Field(store = Store.YES, analyze = Analyze.NO)
+    private String status;
+
+    @Field(store = Store.YES, analyze = Analyze.NO)
+    private long stime;
+
+    @Field(store = Store.YES, analyze = Analyze.NO)
+    private String severity;
+
     private Event event;
 
     public IspnEvent() {
@@ -47,6 +62,9 @@ public class IspnEvent implements Serializable {
         }
         if (event instanceof Alert) {
             this.event = new Alert((Alert) event);
+            this.status = ((Alert) event).getCurrentLifecycle().getStatus().name();
+            this.stime = ((Alert) event).getCurrentLifecycle().getStime();
+            this.severity = ((Alert) event).getSeverity().name();
         } else {
             this.event = new Event(event);
         }
@@ -54,6 +72,8 @@ public class IspnEvent implements Serializable {
         this.eventType = event.getEventType();
         this.tenantId = event.getTenantId();
         this.tags = this.event.getTags();
+        this.triggerId = event.getTrigger() != null ? event.getTrigger().getId() : null;
+        this.ctime = event.getCtime();
     }
 
     public String getEventType() {
@@ -99,6 +119,46 @@ public class IspnEvent implements Serializable {
         updateEvent(event);
     }
 
+    public String getTriggerId() {
+        return triggerId;
+    }
+
+    public void setTriggerId(String triggerId) {
+        this.triggerId = triggerId;
+    }
+
+    public long getCtime() {
+        return ctime;
+    }
+
+    public void setCtime(long ctime) {
+        this.ctime = ctime;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public long getStime() {
+        return stime;
+    }
+
+    public void setStime(long stime) {
+        this.stime = stime;
+    }
+
+    public String getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(String severity) {
+        this.severity = severity;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -106,10 +166,15 @@ public class IspnEvent implements Serializable {
 
         IspnEvent ispnEvent = (IspnEvent) o;
 
+        if (ctime != ispnEvent.ctime) return false;
+        if (stime != ispnEvent.stime) return false;
         if (eventType != null ? !eventType.equals(ispnEvent.eventType) : ispnEvent.eventType != null) return false;
         if (tenantId != null ? !tenantId.equals(ispnEvent.tenantId) : ispnEvent.tenantId != null) return false;
         if (id != null ? !id.equals(ispnEvent.id) : ispnEvent.id != null) return false;
         if (tags != null ? !tags.equals(ispnEvent.tags) : ispnEvent.tags != null) return false;
+        if (triggerId != null ? !triggerId.equals(ispnEvent.triggerId) : ispnEvent.triggerId != null) return false;
+        if (status != null ? !status.equals(ispnEvent.status) : ispnEvent.status != null) return false;
+        if (severity != null ? !severity.equals(ispnEvent.severity) : ispnEvent.severity != null) return false;
         return event != null ? event.equals(ispnEvent.event) : ispnEvent.event == null;
     }
 
@@ -119,6 +184,11 @@ public class IspnEvent implements Serializable {
         result = 31 * result + (tenantId != null ? tenantId.hashCode() : 0);
         result = 31 * result + (id != null ? id.hashCode() : 0);
         result = 31 * result + (tags != null ? tags.hashCode() : 0);
+        result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);
+        result = 31 * result + (int) (ctime ^ (ctime >>> 32));
+        result = 31 * result + (status != null ? status.hashCode() : 0);
+        result = 31 * result + (int) (stime ^ (stime >>> 32));
+        result = 31 * result + (severity != null ? severity.hashCode() : 0);
         result = 31 * result + (event != null ? event.hashCode() : 0);
         return result;
     }
@@ -130,6 +200,11 @@ public class IspnEvent implements Serializable {
                 ", tenantId='" + tenantId + '\'' +
                 ", id='" + id + '\'' +
                 ", tags=" + tags +
+                ", triggerId='" + triggerId + '\'' +
+                ", ctime=" + ctime +
+                ", status='" + status + '\'' +
+                ", stime=" + stime +
+                ", severity='" + severity + '\'' +
                 ", event=" + event +
                 '}';
     }

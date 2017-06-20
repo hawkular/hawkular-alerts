@@ -17,10 +17,13 @@
 package org.hawkular.alerts.engine.impl.ispn;
 
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
+import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromAlertId;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.EQ;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.IN;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NEQ;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NOT;
+import static org.hawkular.alerts.engine.util.Utils.extractStatus;
+import static org.hawkular.alerts.engine.util.Utils.extractTriggerIds;
 import static org.hawkular.alerts.engine.util.Utils.isEmpty;
 
 import java.util.Arrays;
@@ -33,9 +36,11 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
+import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.Order;
@@ -289,7 +294,13 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public Alert getAlert(String tenantId, String alertId, boolean thin) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(alertId)) {
+            throw new IllegalArgumentException("AlertId must be not null");
+        }
+        return (Alert) backend.get(pkFromAlertId(tenantId, alertId));
     }
 
     @Override
@@ -336,6 +347,94 @@ public class IspnAlertsServiceImpl implements AlertsService {
            if (criteria.hasTagQueryCriteria()) {
                query.append("and (tags : ");
                parseTagQuery(criteria.getTagQuery(), query);
+               query.append(") ");
+           }
+           if (criteria.hasTriggerIdCriteria()) {
+                query.append("and (");
+                iter = extractTriggerIds(criteria).iterator();
+                while (iter.hasNext()) {
+                    String triggerId = iter.next();
+                    query.append("triggerId = '").append(triggerId).append("' ");
+                    if (iter.hasNext()) {
+                        query.append("or ");
+                    }
+                }
+                query.append(") ");
+           }
+           if (criteria.hasCTimeCriteria()) {
+                query.append("and (");
+                if (criteria.getStartTime() != null) {
+                    query.append("ctime >= ").append(criteria.getStartTime()).append(" ");
+                }
+                if (criteria.getEndTime() != null) {
+                    if (criteria.getStartTime() != null) {
+                        query.append("and ");
+                    }
+                    query.append("ctime <= ").append(criteria.getEndTime()).append(" ");
+                }
+                query.append(") ");
+           }
+           if (criteria.hasResolvedTimeCriteria()) {
+               query.append("and (status = '").append(Status.RESOLVED.name()).append("' and ");
+               if (criteria.getStartResolvedTime() != null) {
+                   query.append("stime >= ").append(criteria.getStartResolvedTime()).append(" ");
+               }
+               if (criteria.getEndResolvedTime() != null) {
+                   if (criteria.getStartResolvedTime() != null) {
+                       query.append("and ");
+                   }
+                   query.append("stime <= ").append(criteria.getEndResolvedTime()).append(" ");
+               }
+               query.append(") ");
+           }
+           if (criteria.hasAckTimeCriteria()) {
+               query.append("and (status = '").append(Status.ACKNOWLEDGED.name()).append("' and ");
+               if (criteria.getStartAckTime() != null) {
+                   query.append("stime >= ").append(criteria.getStartAckTime()).append(" ");
+               }
+               if (criteria.getEndAckTime() != null) {
+                   if (criteria.getStartAckTime() != null) {
+                       query.append("and ");
+                   }
+                   query.append("stime <= ").append(criteria.getEndAckTime()).append(" ");
+               }
+               query.append(") ");
+           }
+           if (criteria.hasStatusTimeCriteria()) {
+               query.append("and (");
+               if (criteria.getStartStatusTime() != null) {
+                   query.append("stime >= ").append(criteria.getStartStatusTime()).append(" ");
+               }
+               if (criteria.getEndTime() != null) {
+                   if (criteria.getStartTime() != null) {
+                       query.append("and ");
+                   }
+                   query.append("stime <= ").append(criteria.getEndStatusTime()).append(" ");
+               }
+               query.append(") ");
+           }
+           if (criteria.hasSeverityCriteria()) {
+               query.append("and (");
+               Iterator<Severity> iterSev = criteria.getSeverities().iterator();
+               while (iterSev.hasNext()) {
+                   Severity severity = iterSev.next();
+                   query.append("severity = '").append(severity.name()).append("' ");
+                   if (iterSev.hasNext()) {
+                       query.append(" or ");
+                   }
+               }
+               query.append(") ");
+           }
+           if (criteria.hasStatusCriteria()) {
+               query.append("and (");
+               Iterator<Status> iterStatus = extractStatus(criteria).iterator();
+               while (iterStatus.hasNext()) {
+                   Status status = iterStatus.next();
+                   query.append("status = '").append(status.name()).append("' ");
+                   if (iterStatus.hasNext()) {
+                       query.append(" or ");
+                   }
+               }
                query.append(") ");
            }
         }
