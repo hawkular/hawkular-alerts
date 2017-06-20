@@ -537,4 +537,129 @@ public class IspnAlertsServiceImplTest {
         removeAllAlerts(numTenants);
     }
 
+    @Test
+    public void ackAlert() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 1;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setStatus(Alert.Status.OPEN);
+
+        List<Alert> openAlerts = alerts.getAlerts("tenant0", criteria, null);
+        assertEquals(1, openAlerts.size());
+
+        String alertId = openAlerts.iterator().next().getAlertId();
+        alerts.ackAlerts("tenant0", Arrays.asList(alertId), "test", "ACK from ackAlert() test");
+
+        openAlerts = alerts.getAlerts("tenant0", criteria, null);
+        assertEquals(0, openAlerts.size());
+
+        Alert ackAlert = alerts.getAlert("tenant0", alertId, false);
+        assertEquals(Alert.Status.ACKNOWLEDGED, ackAlert.getStatus());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void addNote() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 1;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setStatus(Alert.Status.OPEN);
+
+        List<Alert> openAlerts = alerts.getAlerts("tenant0", criteria, null);
+        assertEquals(1, openAlerts.size());
+
+        String alertId = openAlerts.iterator().next().getAlertId();
+        alerts.addNote("tenant0", alertId, "xyz1", "Note1");
+
+        Alert alert = alerts.getAlert("tenant0", alertId, false);
+        assertEquals(1, alert.getNotes().size());
+
+        alerts.addNote("tenant0", alertId, "xyz2", "Note2");
+        alerts.addNote("tenant0", alertId, "xyz3", "Note3");
+
+        alert = alerts.getAlert("tenant0", alertId, false);
+        assertEquals(3, alert.getNotes().size());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void resolveAlert() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 1;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setStatus(Alert.Status.OPEN);
+
+        List<Alert> openAlerts = alerts.getAlerts("tenant0", criteria, null);
+        assertEquals(1, openAlerts.size());
+
+        String alertId = openAlerts.iterator().next().getAlertId();
+        alerts.resolveAlerts("tenant0", Arrays.asList(alertId), "test", "RESOLVED from resolveAlert() test", null);
+
+        openAlerts = alerts.getAlerts("tenant0", criteria, null);
+        assertEquals(0, openAlerts.size());
+
+        Alert resolvedAlert = alerts.getAlert("tenant0", alertId, false);
+        assertEquals(Alert.Status.RESOLVED, resolvedAlert.getStatus());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void resolveAlertForTrigger() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 1;
+        int numAlerts = 5;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        alerts.resolveAlertsForTrigger("tenant0", "trigger0", "test", "RESOLVED from resolveAlert() test", null);
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setStatus(Alert.Status.RESOLVED);
+
+        List<Alert> resolvedAlerts = alerts.getAlerts("tenant0", criteria, null);
+        assertEquals(5, resolvedAlerts.size());
+
+        removeAllAlerts(numTenants);
+    }
+
+    @Test
+    public void addRemoveTag() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 1;
+        int numAlerts = 1;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        List<Alert> nonTaggedAlerts = alerts.getAlerts("tenant0", null, null);
+        assertEquals(1, nonTaggedAlerts.size());
+
+        String alertId = nonTaggedAlerts.iterator().next().getAlertId();
+        Map<String, String> tags = new HashMap<>();
+        tags.put("tag1", "value1");
+        tags.put("tag2", "value2");
+        tags.put("tag3", "value3");
+        alerts.addAlertTags("tenant0", Arrays.asList(alertId), tags);
+
+        Alert alert = alerts.getAlert("tenant0", alertId, false);
+
+        assertEquals(3, alert.getTags().size());
+
+        alerts.removeAlertTags("tenant0", Arrays.asList(alertId), Arrays.asList("tag1", "tag2"));
+
+        alert = alerts.getAlert("tenant0", alertId, false);
+        assertEquals(1, alert.getTags().size());
+        assertEquals("value3", alert.getTags().get("tag3"));
+
+        removeAllAlerts(numTenants);
+    }
 }
