@@ -16,11 +16,9 @@
  */
 package org.hawkular.alerts.engine.impl.ispn;
 
-import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.getTokens;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,13 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
-import org.hawkular.alerts.api.model.condition.AvailabilityCondition;
-import org.hawkular.alerts.api.model.condition.AvailabilityConditionEval;
-import org.hawkular.alerts.api.model.condition.ConditionEval;
-import org.hawkular.alerts.api.model.data.AvailabilityType;
-import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
-import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
@@ -46,62 +38,14 @@ import org.junit.Test;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class IspnAlertsServiceImplTest {
+public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
     static final MsgLogger log = MsgLogging.getMsgLogger(IspnAlertsServiceImplTest.class);
-
-    static IspnAlertsServiceImpl alerts;
 
     @BeforeClass
     public static void init() {
         System.setProperty("hawkular.data", "./target/ispn");
         alerts = new IspnAlertsServiceImpl();
         alerts.init();
-    }
-
-    void createTestAlerts(int numTenants, int numTriggers, int numAlerts) throws Exception {
-        List<Alert> newAlerts = new ArrayList<>();
-        for (int tenant = 0; tenant < numTenants; tenant++) {
-            String tenantId = "tenant" + tenant;
-            for (int trigger = 0; trigger < numTriggers; trigger++) {
-                String triggerId = "trigger" + trigger;
-                Trigger triggerX = new Trigger(tenantId, triggerId, "Trigger " + triggerId);
-                AvailabilityCondition availability = new AvailabilityCondition(tenantId, triggerId, "Availability-" + trigger, AvailabilityCondition.Operator.DOWN);
-                for (int alert = 0; alert < numAlerts; alert++) {
-                    long dataTime = alert;
-                    Data data = Data.forAvailability(tenantId, "Availability-" + trigger, dataTime, AvailabilityType.DOWN);
-                    AvailabilityConditionEval eval = new AvailabilityConditionEval(availability, data);
-                    Set<ConditionEval> evalSet = new HashSet<>();
-                    evalSet.add(eval);
-                    List<Set<ConditionEval>> evals = new ArrayList<>();
-                    evals.add(evalSet);
-                    Alert alertX = new Alert(tenantId, triggerX, evals);
-                    // Hack to set up the right ctime for tests
-                    alertX.setCtime(alert + 1);
-                    alertX.getCurrentLifecycle().setStime(alert + 1);
-                    switch (alert % 3) {
-                        case 2:
-                            alertX.setSeverity(Severity.CRITICAL);
-                            break;
-                        case 1:
-                            alertX.setSeverity(Severity.LOW);
-                            alertX.addLifecycle(Alert.Status.ACKNOWLEDGED, "user1", alert + 1);
-                            break;
-                        case 0:
-                            alertX.setSeverity(Severity.MEDIUM);
-                            alertX.addLifecycle(Alert.Status.RESOLVED, "user2", alert + 1);
-                    }
-                    newAlerts.add(alertX);
-                }
-            }
-        }
-        alerts.addAlerts(newAlerts);
-    }
-
-    void removeAllAlerts(int numTenants) throws Exception {
-        AlertsCriteria criteria = new AlertsCriteria();
-        for (int i = 0; i < numTenants; i++) {
-            alerts.deleteAlerts("tenant" + i, criteria);
-        }
     }
 
     @Test
@@ -134,7 +78,7 @@ public class IspnAlertsServiceImplTest {
 
         assertEquals(3, alerts.getAlerts(tenantIds, criteria, null).size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -340,7 +284,7 @@ public class IspnAlertsServiceImplTest {
         List<Alert> tag1NotValue0Tag2NotValue0Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(8, tag1NotValue0Tag2NotValue0Alerts.size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -364,7 +308,7 @@ public class IspnAlertsServiceImplTest {
         List<Alert> trigger012Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(30, trigger012Alerts.size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -388,7 +332,7 @@ public class IspnAlertsServiceImplTest {
         List<Alert> ctimeGTE2Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(5 * 4, ctimeGTE2Alerts.size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -408,7 +352,7 @@ public class IspnAlertsServiceImplTest {
         List<Alert> stimeGTE2Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(5 * 2, stimeGTE2Alerts.size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -428,7 +372,7 @@ public class IspnAlertsServiceImplTest {
         List<Alert> stimeGTE2Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(5 * 2, stimeGTE2Alerts.size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -448,7 +392,7 @@ public class IspnAlertsServiceImplTest {
         List<Alert> stimeGTE5Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(5, stimeGTE5Alerts.size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -482,7 +426,7 @@ public class IspnAlertsServiceImplTest {
         List<Alert> mediumCriticalAlerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(5 * 3, mediumCriticalAlerts.size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -513,7 +457,7 @@ public class IspnAlertsServiceImplTest {
         List<Alert> ackResolvedAlerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(5 * 4, ackResolvedAlerts.size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -534,7 +478,7 @@ public class IspnAlertsServiceImplTest {
         List<Alert> resolvedAlerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(1, resolvedAlerts.size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
 }

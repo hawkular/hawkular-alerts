@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import org.hawkular.alerts.api.exception.FoundException;
 import org.hawkular.alerts.api.exception.NotFoundException;
@@ -50,11 +49,10 @@ import org.junit.Test;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-public class IspnDefinitionsServiceImplTest {
+public class IspnDefinitionsServiceImplTest extends IspnBaseServiceImplTest {
     static final MsgLogger log = MsgLogging.getMsgLogger(IspnDefinitionsServiceImplTest.class);
     static final String TENANT = "testTenant";
 
-    static IspnDefinitionsServiceImpl definitions;
 
     @BeforeClass
     public static void init() {
@@ -160,54 +158,6 @@ public class IspnDefinitionsServiceImplTest {
         assertNull(definitions.getActionPlugin("plugin2"));
     }
 
-    void createTestPluginsAndActions(int numTenants, int numPlugins, int numActions) throws Exception {
-        for (int plugin = 0; plugin < numPlugins; plugin++) {
-            String actionPlugin = "plugin" + plugin;
-            Set<String> pluginX = new HashSet<>();
-            pluginX.add("prop1");
-            pluginX.add("prop2");
-            pluginX.add("prop3");
-            definitions.addActionPlugin(actionPlugin, pluginX);
-        }
-
-        for (int tenant = 0; tenant < numTenants; tenant++) {
-            String tenantId = "tenant" + tenant;
-            for (int plugin = 0; plugin < numPlugins; plugin++) {
-                String actionPlugin = "plugin" + plugin;
-                for (int action = 0; action < numActions; action++) {
-                    String actionId = "action" + action;
-                    ActionDefinition actionX = new ActionDefinition();
-                    actionX.setTenantId(tenantId);
-                    actionX.setActionPlugin(actionPlugin);
-                    actionX.setActionId(actionId);
-                    actionX.setProperties(new HashMap<>());
-                    actionX.getProperties().put("prop1", UUID.randomUUID().toString());
-                    actionX.getProperties().put("prop2", UUID.randomUUID().toString());
-                    actionX.getProperties().put("prop3", UUID.randomUUID().toString());
-                    definitions.addActionDefinition(tenantId, actionX);
-                }
-            }
-        }
-    }
-
-    void deleteTestPluginsAndActions(int numTenants, int numPlugins, int numActions) throws Exception {
-        for (int tenant = 0; tenant < numTenants; tenant++) {
-            String tenantId = "tenant" + tenant;
-            for (int plugin = 0; plugin < numPlugins; plugin++) {
-                String actionPlugin = "plugin" + plugin;
-                for (int action = 0; action < numActions; action++) {
-                    String actionId = "action" + action;
-                    definitions.removeActionDefinition(tenantId, actionPlugin, actionId);
-                }
-            }
-        }
-
-        for (int plugin = 0; plugin < numPlugins; plugin++) {
-            String actionPlugin = "plugin" + plugin;
-            definitions.removeActionPlugin(actionPlugin);
-        }
-    }
-
     @Test
     public void getActionDefinitions() throws Exception {
         int numTenants = 2;
@@ -266,43 +216,6 @@ public class IspnDefinitionsServiceImplTest {
             fail("IT should throw a NotFoundException");
         } catch (NotFoundException e) {
             // Expected
-        }
-    }
-
-    void createTestTriggers(int numTenants, int numTriggers) throws Exception {
-        int count = 0;
-        for (int tenant = 0; tenant < numTenants; tenant++) {
-            String tenantId = "tenant" + tenant;
-            for (int trigger = 0; trigger < numTriggers; trigger++) {
-                String triggerId = "trigger" + trigger;
-                Trigger triggerX = new Trigger(tenantId, triggerId, "Trigger " + triggerId);
-                String tag = "tag" + (count % 2);
-                String value = "value" + (count % 4);
-                triggerX.addTag(tag, value);
-                count++;
-                log.debugf("trigger: %s/%s tag: %s/%s", tenantId, triggerId, tag, value);
-                definitions.addTrigger(tenantId, triggerX);
-            }
-        }
-    }
-
-    void deleteTestTriggers(int numTenants, int numTriggers) throws Exception {
-        for (int tenant = 0; tenant < numTenants; tenant++) {
-            String tenantId = "tenant" + tenant;
-            for (int trigger = 0; trigger < numTriggers; trigger++) {
-                String triggerId = "trigger" + trigger;
-                definitions.removeTrigger(tenantId, triggerId);
-                try {
-                    definitions.getTrigger(tenantId, triggerId);
-                    fail("IT should throw a NotFoundException");
-                } catch (NotFoundException e) {
-                    // expected
-                } catch (Exception e) {
-                    fail("IT should throw a NotFoundException, not " + e);
-                }
-                assertEquals(0, definitions.getTriggerConditions(tenantId, triggerId, null).size());
-                assertEquals(0, definitions.getTriggerDampenings(tenantId, triggerId, null).size());
-            }
         }
     }
 

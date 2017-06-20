@@ -19,21 +19,18 @@ package org.hawkular.alerts.engine.impl.ispn;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromAlertId;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.EQ;
-import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.IN;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NEQ;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NOT;
 import static org.hawkular.alerts.engine.util.Utils.extractStatus;
 import static org.hawkular.alerts.engine.util.Utils.extractTriggerIds;
 import static org.hawkular.alerts.engine.util.Utils.isEmpty;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import org.hawkular.alerts.api.model.Severity;
@@ -78,8 +75,6 @@ public class IspnAlertsServiceImpl implements AlertsService {
     IncomingDataManager incomingDataManager;
 
     PropertiesService properties;
-
-    ExecutorService executor;
 
     Cache<String, Object> backend;
 
@@ -192,10 +187,6 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     public void setProperties(PropertiesService properties) {
         this.properties = properties;
-    }
-
-    public void setExecutor(ExecutorService executor) {
-        this.executor = executor;
     }
 
     @Override

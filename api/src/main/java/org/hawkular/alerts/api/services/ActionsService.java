@@ -49,7 +49,7 @@ public interface ActionsService {
 
     /**
      * @param tenantId Tenant where actions are stored
-     * @param criteria If null returns all actions (not recommended)
+     * @param criteria If null returns all actions for the tenant (not recommended)
      * @param pager Paging requirement for fetching actions. Optional. Return all if null.
      * @return NotNull, can be empty.
      * @throws Exception on any problem

@@ -79,6 +79,14 @@ public class Action extends ActionDefinition implements Serializable {
         this.ctime = System.currentTimeMillis();
     }
 
+    public Action(Action action) {
+        super(action);
+        this.ctime = action.ctime;
+        this.eventId = action.eventId;
+        this.event = action.event;
+        this.result = action.result;
+    }
+
     public Event getEvent() {
         return event;
     }

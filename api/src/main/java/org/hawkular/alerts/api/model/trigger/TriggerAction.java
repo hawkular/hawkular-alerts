@@ -70,7 +70,7 @@ public class TriggerAction implements Serializable {
     @ApiModelProperty(value = "Action definition identifier.",
             position = 2,
             required = true,
-            allowableValues = "Only existing action definitinons on the system are valid.")
+            allowableValues = "Only existing action definitions on the system are valid.")
     @JsonInclude
     private String actionId;
 
@@ -115,7 +115,7 @@ public class TriggerAction implements Serializable {
         this.actionPlugin = triggerAction.getActionPlugin();
         this.actionId = triggerAction.getActionId();
         this.states = new HashSet<>(triggerAction.getStates());
-        this.calendar = new TimeConstraint(triggerAction.getCalendar());
+        this.calendar = triggerAction.getCalendar() != null ? new TimeConstraint(triggerAction.getCalendar()) : null;
     }
 
     public TriggerAction(String tenantId, String actionPlugin, String actionId, Set<String> states,
