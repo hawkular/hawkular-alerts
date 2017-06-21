@@ -31,8 +31,8 @@ public class ActionsCriteria {
     Collection<String> actionPlugins = null;
     String actionId = null;
     Collection<String> actionIds = null;
-    String alertId = null;
-    Collection<String> alertIds = null;
+    String eventId = null;
+    Collection<String> eventIds = null;
     String result = null;
     Collection<String> results = null;
     boolean thin = false;
@@ -85,20 +85,58 @@ public class ActionsCriteria {
         this.actionIds = actionIds;
     }
 
+    public String getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
+
+    public Collection<String> getEventIds() {
+        return eventIds;
+    }
+
+    public void setEventIds(Collection<String> eventIds) {
+        this.eventIds = eventIds;
+    }
+
+    /**
+     * This is an alias for <code>getEventId()</code>
+     * @deprecated
+     */
+    @Deprecated
     public String getAlertId() {
-        return alertId;
+        return eventId;
     }
 
+    /**
+     * This is an alias for <code>setEventId()</code>
+     * @param alertId the id of the event or alert
+     * @deprecated
+     */
+    @Deprecated
     public void setAlertId(String alertId) {
-        this.alertId = alertId;
+        this.eventId = alertId;
     }
 
+    /**
+     * This is an alias for <code>getAlertIds()</code>
+     * @deprecated
+     */
+    @Deprecated
     public Collection<String> getAlertIds() {
-        return alertIds;
+        return eventIds;
     }
 
+    /**
+     * This is an alias for <code>setEventIds()</code>
+     * @param alertIds the ids of the events or alerts
+     * @deprecated
+     */
+    @Deprecated
     public void setAlertIds(Collection<String> alertIds) {
-        this.alertIds = alertIds;
+        this.eventIds = alertIds;
     }
 
     public String getResult() {
@@ -125,17 +163,44 @@ public class ActionsCriteria {
         this.thin = thin;
     }
 
+    public boolean hasActionIdCriteria() {
+        return null != actionId || (null != actionIds && !actionIds.isEmpty());
+    }
+
+    public boolean hasActionPluginCriteria() {
+        return null != actionPlugin || (null != actionPlugins && !actionPlugins.isEmpty());
+    }
+
+    public boolean hasEventIdCriteria() {
+        return null != eventId || (null != eventIds && !eventIds.isEmpty());
+    }
+
+    public boolean hasResultCriteria() {
+        return null != result || (null != results && !results.isEmpty());
+    }
+
+    public boolean hasStartCriteria() {
+        return null != startTime;
+    }
+
+    public boolean hasEndCriteria() {
+        return null != endTime;
+    }
+
+    public boolean hasRangeCriteria() {
+        return hasStartCriteria() && hasEndCriteria();
+    }
+
+    public boolean hasCTimeCriteria() {
+        return hasStartCriteria() || hasEndCriteria();
+    }
+
     public boolean hasCriteria() {
-        return null != startTime
-                || null != endTime
-                || null != actionPlugin
-                || null != actionId
-                || null != alertId
-                || null != result
-                || (null != actionPlugins && !actionPlugins.isEmpty())
-                || (null != actionIds && !actionIds.isEmpty())
-                || (null != alertIds && !alertIds.isEmpty())
-                || (null != results && !results.isEmpty());
+        return hasCTimeCriteria()
+                || hasActionPluginCriteria()
+                || hasActionIdCriteria()
+                || hasEventIdCriteria()
+                || hasResultCriteria();
     }
 
     @Override
@@ -147,8 +212,8 @@ public class ActionsCriteria {
                 ", actionPlugins=" + actionPlugins +
                 ", actionId='" + actionId + '\'' +
                 ", actionIds=" + actionIds +
-                ", alertId='" + alertId + '\'' +
-                ", alertIds=" + alertIds +
+                ", alertId='" + eventId + '\'' +
+                ", alertIds=" + eventIds +
                 ", result='" + result + '\'' +
                 ", results=" + results +
                 '}';

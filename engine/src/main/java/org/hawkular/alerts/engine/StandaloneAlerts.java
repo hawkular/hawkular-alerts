@@ -29,10 +29,6 @@ import org.hawkular.alerts.engine.cache.ActionsCacheManager;
 import org.hawkular.alerts.engine.cache.PublishCacheManager;
 import org.hawkular.alerts.engine.impl.AlertsContext;
 import org.hawkular.alerts.engine.impl.AlertsEngineImpl;
-import org.hawkular.alerts.engine.impl.cass.CassActionsServiceImpl;
-import org.hawkular.alerts.engine.impl.cass.CassAlertsServiceImpl;
-import org.hawkular.alerts.engine.impl.cass.CassCluster;
-import org.hawkular.alerts.engine.impl.cass.CassDefinitionsServiceImpl;
 import org.hawkular.alerts.engine.impl.DataDrivenGroupCacheManager;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.impl.ExtensionsServiceImpl;
@@ -40,6 +36,10 @@ import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl;
 import org.hawkular.alerts.engine.impl.PartitionManagerImpl;
 import org.hawkular.alerts.engine.impl.PropertiesServiceImpl;
 import org.hawkular.alerts.engine.impl.StatusServiceImpl;
+import org.hawkular.alerts.engine.impl.cass.CassActionsServiceImpl;
+import org.hawkular.alerts.engine.impl.cass.CassAlertsServiceImpl;
+import org.hawkular.alerts.engine.impl.cass.CassCluster;
+import org.hawkular.alerts.engine.impl.cass.CassDefinitionsServiceImpl;
 import org.hawkular.alerts.engine.impl.ispn.IspnActionsServiceImpl;
 import org.hawkular.alerts.engine.impl.ispn.IspnAlertsServiceImpl;
 import org.hawkular.alerts.engine.impl.ispn.IspnDefinitionsServiceImpl;
@@ -160,12 +160,10 @@ public class StandaloneAlerts {
             ispnActions.setActionsCacheManager(actionsCacheManager);
             ispnActions.setAlertsContext(alertsContext);
             ispnActions.setDefinitions(ispnDefinitions);
-            ispnActions.setExecutor(executor);
 
             ispnAlerts.setActionsService(ispnActions);
             ispnAlerts.setAlertsEngine(engine);
             ispnAlerts.setDefinitionsService(ispnDefinitions);
-            ispnAlerts.setExecutor(executor);
             ispnAlerts.setIncomingDataManager(incoming);
             ispnAlerts.setProperties(properties);
 
@@ -227,6 +225,7 @@ public class StandaloneAlerts {
         } else {
             ispnAlerts.init();
             ispnDefinitions.init();
+            ispnActions.init();
         }
         partitionManager.init();
         alertsContext.init();

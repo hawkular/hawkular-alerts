@@ -29,6 +29,7 @@
       </persistence>
       <indexing index="LOCAL">
         <indexed-entities>
+          <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnAction</indexed-entity>
           <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnActionDefinition</indexed-entity>
           <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnCondition</indexed-entity>
           <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnDampening</indexed-entity>

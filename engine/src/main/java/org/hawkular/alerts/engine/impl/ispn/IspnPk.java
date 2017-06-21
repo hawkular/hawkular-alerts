@@ -1,5 +1,6 @@
 package org.hawkular.alerts.engine.impl.ispn;
 
+import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
@@ -11,6 +12,23 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
  * @author Lucas Ponce
  */
 public class IspnPk {
+
+    public static String pk(Action action) {
+        if (action == null) {
+            return null;
+        }
+        return new StringBuilder("Action-")
+                .append(action.getTenantId())
+                .append("-")
+                .append(action.getActionPlugin())
+                .append("-")
+                .append(action.getActionId())
+                .append("-")
+                .append(action.getEventId())
+                .append("-")
+                .append(action.getCtime())
+                .toString();
+    }
 
     public static String pk(String actionPlugin) {
         if (actionPlugin == null) {
