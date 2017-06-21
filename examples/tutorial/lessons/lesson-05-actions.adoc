@@ -11,7 +11,7 @@ In the previous lessons we've learned how to define a trigger, have it fire an a
 
 Hawkular Alerting provides all of the above (and more) as action plugins.  It is also possible to create custom action plugins.
 
-Actions are tied to life-cycle.  Most actions are performed when an alert is created and moved to OPEN.  But hAlerting also allows actions to be performed on any life-cycle state transistion.  Revisiting the diagram from lesson-04, we can perform actions on any of the arrow transistions:
+Actions are tied to life-cycle.  Most actions are performed when an alert is created and moved to OPEN.  But hAlerting also allows actions to be performed on any life-cycle state transistion.  Revisiting the diagram from lesson-04, we can perform actions on any of the arrow transitions:
 
 image::image-alert-lifecycle.png[Alert Life-cycle]
 

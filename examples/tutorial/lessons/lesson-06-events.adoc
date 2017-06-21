@@ -174,7 +174,7 @@ Shortly after this event is posted we should see an alert for trigger `lesson-06
 
 TIP: Not every API-injected event needs to be processed by the engine.  Events without a dataId, or a dataId that is not used in any enabled trigger, is ignored by the engine and will just be persisted.
 
-TIP: Not every API-injected event needs to be persisted. The event we injected above was processed by the engine and persisted. The following request will fetch it from the database: `GET http://localhost:8080/hawkular/alerts/events?categories=alarm&tagQuery=lesson=6`. To inject a non-persisted event change 'POST /hawkular/alerts/events` to `POST /hawkular/alerts/events/data`.  Using the `/data` variant is not useful if the event does not have a dataId used in a defined trigger.
+TIP: Not every API-injected event needs to be persisted. The event we injected above was processed by the engine and persisted. The following request will fetch it from the database: `GET http://localhost:8080/hawkular/alerts/events?categories=alarm&tagQuery=lesson=6`. To inject a non-persisted event change `POST /hawkular/alerts/events` to `POST /hawkular/alerts/events/data`.  Using the `/data` variant is not useful if the event does not have a dataId used in a defined trigger.
 
 === Alerts are Events
 
