@@ -27,7 +27,7 @@ This is a list of `LifeCycle` entities recording the progression of the alert.  
 
 === AutoEnable Trigger Option
 
-A trigger option we have not yet discussed in _AutoEnable_.  By default AutoEnable is off.  But it can be useful to set `AutoEnable=true`, especially when `AutoDisable=true`.  With AutoEnable activated, a disabled trigger will automatically be enabled when the trigger no longer has unresolved alerts.  This relieves a user from manually having to re-enable a trigger after resolving the issue. Instead, hAlerting will automatically start evaluating the trigger conditions again, looking for any new anomaly.
+A trigger option we have not yet discussed is _AutoEnable_.  By default AutoEnable is off.  But it can be useful to set `AutoEnable=true`, especially when `AutoDisable=true`.  With AutoEnable activated, a disabled trigger will automatically be enabled when the trigger no longer has unresolved alerts.  This relieves a user from manually having to re-enable a trigger after resolving the issue. Instead, hAlerting will automatically start evaluating the trigger conditions again, looking for any new anomaly.
 
 Let's continue where we left off with lesson 03 to show this in action.  Just run through lesson 03 if you don't already have that environment running.  Lesson 03 left us with one alert for trigger lesson-03, which used AutoDisable to disable itself after firing.
 
