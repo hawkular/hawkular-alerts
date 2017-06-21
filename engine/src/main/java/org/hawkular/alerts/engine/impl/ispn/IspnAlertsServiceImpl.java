@@ -27,6 +27,7 @@ import static org.hawkular.alerts.engine.util.Utils.isEmpty;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,8 @@ import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.model.trigger.Mode;
+import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.AlertsService;
@@ -50,6 +53,7 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.cache.IspnCacheManager;
+import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl;
 import org.hawkular.alerts.engine.impl.ispn.model.IspnEvent;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.IncomingDataManager;
@@ -191,7 +195,30 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public void ackAlerts(String tenantId, Collection<String> alertIds, String ackBy, String ackNotes) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(alertIds)) {
+            return;
+        }
 
+        if (isEmpty(ackBy)) {
+            ackBy = "unknown";
+        }
+        if (isEmpty(ackNotes)) {
+            ackNotes = "none";
+        }
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setAlertIds(alertIds);
+        List<Alert> alertsToAck = getAlerts(tenantId, criteria, null);
+
+        for (Alert alert : alertsToAck) {
+            alert.addNote(ackBy, ackNotes);
+            alert.addLifecycle(Status.ACKNOWLEDGED, ackBy, System.currentTimeMillis());
+            backend.put(pk(alert), new IspnEvent(alert));
+            sendAction(alert);
+        }
     }
 
     @Override
@@ -247,7 +274,24 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public void addNote(String tenantId, String alertId, String user, String text) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(alertId)) {
+            throw new IllegalArgumentException("AlertId must be not null");
+        }
+        if (isEmpty(user) || isEmpty(text)) {
+            throw new IllegalArgumentException("user or text must be not null");
+        }
 
+        Alert alert = getAlert(tenantId, alertId, false);
+        if (alert == null) {
+            return;
+        }
+
+        alert.addNote(user, text);
+
+        backend.put(pk(alert), new IspnEvent(alert));
     }
 
     @Override
@@ -291,7 +335,10 @@ public class IspnAlertsServiceImpl implements AlertsService {
         if (isEmpty(alertId)) {
             throw new IllegalArgumentException("AlertId must be not null");
         }
-        return (Alert) backend.get(pkFromAlertId(tenantId, alertId));
+
+        String pk = pkFromAlertId(tenantId, alertId);
+        IspnEvent ispnEvent = (IspnEvent) backend.get(pk);
+        return ispnEvent != null ? (Alert) ispnEvent.getEvent() : null;
     }
 
     @Override
@@ -456,7 +503,33 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public void removeAlertTags(String tenantId, Collection<String> alertIds, Collection<String> tags) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(alertIds)) {
+            throw new IllegalArgumentException("AlertIds must be not null");
+        }
+        if (isEmpty(tags)) {
+            throw new IllegalArgumentException("Tags must be not null");
+        }
 
+        // Only untag existing alerts
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setAlertIds(alertIds);
+        Page<Alert> existingAlerts = getAlerts(tenantId, criteria, null);
+
+        for (Alert alert : existingAlerts) {
+            boolean modified = false;
+            for (String tag : tags) {
+                if (alert.getTags().containsKey(tag)) {
+                    alert.removeTag(tag);
+                    modified = true;
+                }
+            }
+            if (modified) {
+                backend.put(pk(alert), new IspnEvent(alert));
+            }
+        }
     }
 
     @Override
@@ -466,37 +539,107 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public void resolveAlerts(String tenantId, Collection<String> alertIds, String resolvedBy, String resolvedNotes, List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(alertIds)) {
+            return;
+        }
+
+        if (isEmpty(resolvedBy)) {
+            resolvedBy = "unknown";
+        }
+        if (isEmpty(resolvedNotes)) {
+            resolvedNotes = "none";
+        }
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setAlertIds(alertIds);
+        List<Alert> alertsToResolve = getAlerts(tenantId, criteria, null);
+
+        // resolve the alerts
+        for (Alert alert : alertsToResolve) {
+            alert.addNote(resolvedBy, resolvedNotes);
+            alert.setResolvedEvalSets(resolvedEvalSets);
+            alert.addLifecycle(Status.RESOLVED, resolvedBy, System.currentTimeMillis());
+            backend.put(pk(alert), new IspnEvent(alert));
+            sendAction(alert);
+        }
+
+        // gather the triggerIds of the triggers we need to check for resolve options
+        Set<String> triggerIds = alertsToResolve.stream().map(alert -> alert.getTriggerId()).collect(Collectors.toSet());
+
+        // handle resolve options
+        triggerIds.stream().forEach(tid -> handleResolveOptions(tenantId, tid, true));
 
     }
 
     @Override
     public void resolveAlertsForTrigger(String tenantId, String triggerId, String resolvedBy, String resolvedNotes, List<Set<ConditionEval>> resolvedEvalSets) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(triggerId)) {
+            throw new IllegalArgumentException("TriggerId must be not null");
+        }
+
+        if (isEmpty(resolvedBy)) {
+            resolvedBy = "unknown";
+        }
+        if (isEmpty(resolvedNotes)) {
+            resolvedNotes = "none";
+        }
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setTriggerId(triggerId);
+        criteria.setStatusSet(EnumSet.complementOf(EnumSet.of(Status.RESOLVED)));
+        List<Alert> alertsToResolve = getAlerts(tenantId, criteria, null);
+
+        for (Alert alert : alertsToResolve) {
+            alert.addNote(resolvedBy, resolvedNotes);
+            alert.setResolvedEvalSets(resolvedEvalSets);
+            alert.addLifecycle(Status.RESOLVED, resolvedBy, System.currentTimeMillis());
+            backend.put(pk(alert), new IspnEvent(alert));
+            sendAction(alert);
+        }
+
+        handleResolveOptions(tenantId, triggerId, false);
 
     }
 
     @Override
     public void sendData(Collection<Data> data) throws Exception {
-
+        sendData(data, false);
     }
 
     @Override
     public void sendData(Collection<Data> data, boolean ignoreFiltering) throws Exception {
+        if (isEmpty(data)) {
+            return;
+        }
 
+        incomingDataManager.bufferData(new IncomingDataManagerImpl.IncomingData(data, !ignoreFiltering));
     }
 
     @Override
     public void sendEvents(Collection<Event> events) throws Exception {
-
+        sendEvents(events, false);
     }
 
     @Override
     public void sendEvents(Collection<Event> events, boolean ignoreFiltering) throws Exception {
+        if (isEmpty(events)) {
+            return;
+        }
 
+        incomingDataManager.bufferEvents(new IncomingDataManagerImpl.IncomingEvents(events, !ignoreFiltering));
     }
 
     protected void parseTagQuery(String tagQuery, StringBuilder query) throws Exception {
         parser.resolveQuery(tagQuery, query);
     }
+
+    // Private methods
 
     private Page<Alert> preparePage(List<Alert> alerts, Pager pager) {
         if (pager != null) {
@@ -535,4 +678,74 @@ public class IspnAlertsServiceImpl implements AlertsService {
             return new Page<>(alerts, pager, alerts.size());
         }
     }
+
+    private void sendAction(Alert a) {
+        if (actionsService != null && a != null && a.getTrigger() != null) {
+            actionsService.send(a.getTrigger(), a);
+        }
+    }
+
+    private void handleResolveOptions(String tenantId, String triggerId, boolean checkIfAllResolved) {
+
+        if (definitionsService == null || alertsEngine == null) {
+            log.debug("definitionsService or alertsEngine are not defined. Only valid for testing.");
+            return;
+        }
+
+        try {
+            Trigger trigger = definitionsService.getTrigger(tenantId, triggerId);
+            if (null == trigger) {
+                return;
+            }
+
+            boolean setEnabled = trigger.isAutoEnable() && !trigger.isEnabled();
+            boolean setFiring = trigger.isAutoResolve();
+
+            // Only reload the trigger if it is not already in firing mode, otherwise we could lose partial matching.
+            // This is a rare case because a trigger with autoResolve=true will not be in firing mode with an
+            // unresolved trigger. But it is possible, either by mistake, or timing,  for a client to try and
+            // resolve an already-resolved alert.
+            if (setFiring) {
+                Trigger loadedTrigger = alertsEngine.getLoadedTrigger(trigger);
+                if (null != loadedTrigger && Mode.FIRING == loadedTrigger.getMode()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Ignoring setFiring, loaded Trigger already in firing mode " +
+                                loadedTrigger.toString());
+                    }
+                    setFiring = false;
+                }
+            }
+
+            if (!(setEnabled || setFiring)) {
+                return;
+            }
+
+            boolean allResolved = true;
+            if (checkIfAllResolved) {
+                AlertsCriteria ac = new AlertsCriteria();
+                ac.setTriggerId(triggerId);
+                ac.setStatusSet(EnumSet.complementOf(EnumSet.of(Status.RESOLVED)));
+                Page<Alert> unresolvedAlerts = getAlerts(tenantId, ac, new Pager(0, 1, Order.unspecified()));
+                allResolved = unresolvedAlerts.isEmpty();
+            }
+
+            if (!allResolved) {
+                log.debugf("Ignoring resolveOptions, not all Alerts for Trigger %s are resolved", trigger.toString());
+                return;
+            }
+
+            // Either update the trigger, which implicitly reloads the trigger (and as such resets to firing mode)
+            // or perform an explicit reload to reset to firing mode.
+            if (setEnabled) {
+                trigger.setEnabled(true);
+                definitionsService.updateTrigger(tenantId, trigger);
+            } else {
+                alertsEngine.reloadTrigger(tenantId, triggerId);
+            }
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+        }
+
+    }
+
 }

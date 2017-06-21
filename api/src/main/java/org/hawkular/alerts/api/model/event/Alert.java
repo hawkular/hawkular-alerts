@@ -79,7 +79,7 @@ public class Alert extends Event {
     @ApiModelProperty(value = "Notes attached with this alert.",
             position = 2)
     @JsonInclude(Include.NON_EMPTY)
-    private List<Note> notes = new ArrayList<>();;
+    private List<Note> notes = new ArrayList<>();
 
     @ApiModelProperty(value = "List of lifecycle states that this alert has navigated.",
             position = 3)
@@ -115,6 +115,9 @@ public class Alert extends Event {
         this.lifecycle = new ArrayList<>();
         for (LifeCycle item : alert.getLifecycle()) {
             this.lifecycle.add(new LifeCycle(item));
+        }
+        for (Note note : alert.getNotes()) {
+            this.notes.add(note);
         }
     }
 
@@ -250,7 +253,7 @@ public class Alert extends Event {
     }
 
     @ApiModel(description = "A simple note representation.")
-    public static class Note {
+    public static class Note implements Serializable {
 
         @ApiModelProperty(value = "The user who creates the note.",
                 position = 0,
