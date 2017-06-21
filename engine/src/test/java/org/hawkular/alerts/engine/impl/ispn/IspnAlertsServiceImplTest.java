@@ -503,7 +503,7 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         Alert ackAlert = alerts.getAlert("tenant0", alertId, false);
         assertEquals(Alert.Status.ACKNOWLEDGED, ackAlert.getStatus());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -531,7 +531,7 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         alert = alerts.getAlert("tenant0", alertId, false);
         assertEquals(3, alert.getNotes().size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -556,7 +556,7 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         Alert resolvedAlert = alerts.getAlert("tenant0", alertId, false);
         assertEquals(Alert.Status.RESOLVED, resolvedAlert.getStatus());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -574,7 +574,7 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         List<Alert> resolvedAlerts = alerts.getAlerts("tenant0", criteria, null);
         assertEquals(5, resolvedAlerts.size());
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 
     @Test
@@ -604,6 +604,6 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         assertEquals(1, alert.getTags().size());
         assertEquals("value3", alert.getTags().get("tag3"));
 
-        removeAllAlerts(numTenants);
+        deleteTestAlerts(numTenants);
     }
 }
