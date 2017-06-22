@@ -17,10 +17,11 @@
 package org.hawkular.alerts.engine.impl.ispn;
 
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
-import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromAlertId;
+import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromEventId;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.EQ;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NEQ;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NOT;
+import static org.hawkular.alerts.engine.util.Utils.extractCategories;
 import static org.hawkular.alerts.engine.util.Utils.extractStatus;
 import static org.hawkular.alerts.engine.util.Utils.extractTriggerIds;
 import static org.hawkular.alerts.engine.util.Utils.isEmpty;
@@ -41,6 +42,7 @@ import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
+import org.hawkular.alerts.api.model.paging.EventComparator;
 import org.hawkular.alerts.api.model.paging.Order;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
@@ -259,17 +261,47 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public void addEvents(Collection<Event> events) throws Exception {
-
+        if (null == events || events.isEmpty()) {
+            return;
+        }
+        persistEvents(events);
+        sendEvents(events);
     }
 
     @Override
     public void addEventTags(String tenantId, Collection<String> eventIds, Map<String, String> tags) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(eventIds)) {
+            throw new IllegalArgumentException("AlertIds must be not null");
+        }
+        if (isEmpty(tags)) {
+            throw new IllegalArgumentException("Tags must be not null");
+        }
 
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setEventIds(eventIds);
+        Page<Event> existingEvents = getEvents(tenantId, criteria, null);
+
+        for (Event event : existingEvents) {
+            tags.entrySet().stream().forEach(tag -> event.addTag(tag.getKey(), tag.getValue()));
+            backend.put(pk(event), new IspnEvent(event));
+        }
     }
 
     @Override
     public void persistEvents(Collection<Event> events) throws Exception {
-
+        if (events == null) {
+            throw new IllegalArgumentException("Events must be not null");
+        }
+        if (events.isEmpty()) {
+            return;
+        }
+        log.debugf("Adding %s events", events.size());
+        for (Event event : events) {
+            backend.put(pk(event), new IspnEvent(event));
+        }
     }
 
     @Override
@@ -324,7 +356,30 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public int deleteEvents(String tenantId, EventsCriteria criteria) throws Exception {
-        return 0;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (null == criteria) {
+            throw new IllegalArgumentException("Criteria must be not null");
+        }
+        // no need to fetch the evalSets to perform the necessary deletes
+        criteria.setThin(true);
+        List<Event> eventsToDelete = getEvents(tenantId, criteria, null);
+
+        if (eventsToDelete.isEmpty()) {
+            return 0;
+        }
+        try {
+            backend.startBatch();
+            for (Event event : eventsToDelete) {
+                backend.remove(pk(event));
+            }
+            backend.endBatch(true);
+        } catch (Exception e) {
+            backend.endBatch(false);
+            throw e;
+        }
+        return eventsToDelete.size();
     }
 
     @Override
@@ -336,9 +391,9 @@ public class IspnAlertsServiceImpl implements AlertsService {
             throw new IllegalArgumentException("AlertId must be not null");
         }
 
-        String pk = pkFromAlertId(tenantId, alertId);
+        String pk = pkFromEventId(tenantId, alertId);
         IspnEvent ispnEvent = (IspnEvent) backend.get(pk);
-        return ispnEvent != null ? (Alert) ispnEvent.getEvent() : null;
+        return ispnEvent != null && ispnEvent.getEvent() instanceof Alert ? (Alert) ispnEvent.getEvent() : null;
     }
 
     @Override
@@ -488,17 +543,110 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public Event getEvent(String tenantId, String eventId, boolean thin) throws Exception {
-        return null;
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(eventId)) {
+            throw new IllegalArgumentException("EventId must be not null");
+        }
+
+        String pk = pkFromEventId(tenantId, eventId);
+        IspnEvent ispnEvent = (IspnEvent) backend.get(pk);
+        return ispnEvent != null ? ispnEvent.getEvent() : null;
     }
 
     @Override
     public Page<Event> getEvents(String tenantId, EventsCriteria criteria, Pager pager) throws Exception {
-        return null;
+        return getEvents(Collections.singleton(tenantId), criteria, pager);
     }
 
     @Override
     public Page<Event> getEvents(Set<String> tenantIds, EventsCriteria criteria, Pager pager) throws Exception {
-        return null;
+        if (isEmpty(tenantIds)) {
+            throw new IllegalArgumentException("TenantIds must be not null");
+        }
+        boolean filter = (null != criteria && criteria.hasCriteria());
+        if (filter) {
+            log.debugf("getEvents criteria: %s", criteria.toString());
+        }
+
+        StringBuilder query = new StringBuilder("from org.hawkular.alerts.engine.impl.ispn.model.IspnEvent where ");
+        query.append("(");
+        Iterator<String> iter = tenantIds.iterator();
+        while (iter.hasNext()) {
+            String tenantId = iter.next();
+            query.append("tenantId = '").append(tenantId).append("' ");
+            if (iter.hasNext()) {
+                query.append("or ");
+            }
+        }
+        query.append(") ");
+
+        if (filter) {
+            if (criteria.hasEventIdCriteria()) {
+                query.append("and (");
+                iter = criteria.getEventIds().iterator();
+                while (iter.hasNext()) {
+                    String eventId = iter.next();
+                    query.append("id = '").append(eventId).append("' ");
+                    if (iter.hasNext()) {
+                        query.append("or ");
+                    }
+                }
+                query.append(") ");
+            }
+            if (criteria.hasTagQueryCriteria()) {
+                query.append("and (tags : ");
+                parseTagQuery(criteria.getTagQuery(), query);
+                query.append(") ");
+            }
+            if (criteria.hasTriggerIdCriteria()) {
+                query.append("and (");
+                iter = extractTriggerIds(criteria).iterator();
+                while (iter.hasNext()) {
+                    String triggerId = iter.next();
+                    query.append("triggerId = '").append(triggerId).append("' ");
+                    if (iter.hasNext()) {
+                        query.append("or ");
+                    }
+                }
+                query.append(") ");
+            }
+            if (criteria.hasCTimeCriteria()) {
+                query.append("and (");
+                if (criteria.getStartTime() != null) {
+                    query.append("ctime >= ").append(criteria.getStartTime()).append(" ");
+                }
+                if (criteria.getEndTime() != null) {
+                    if (criteria.getStartTime() != null) {
+                        query.append("and ");
+                    }
+                    query.append("ctime <= ").append(criteria.getEndTime()).append(" ");
+                }
+                query.append(") ");
+            }
+            if (criteria.hasCategoryCriteria()) {
+                query.append("and (");
+                iter = extractCategories(criteria).iterator();
+                while (iter.hasNext()) {
+                    String category = iter.next();
+                    query.append("category = '").append(category).append("' ");
+                    if (iter.hasNext()) {
+                        query.append(" or ");
+                    }
+                }
+                query.append(") ");
+            }
+        }
+
+        List<IspnEvent> ispnEvents = queryFactory.create(query.toString()).list();
+        List<Event> events = ispnEvents.stream().map(e -> e.getEvent()).collect(Collectors.toList());
+
+        if (events.isEmpty()) {
+            return new Page<>(events, pager, 0);
+        } else {
+            return prepareEventsPage(events, pager);
+        }
     }
 
     @Override
@@ -534,7 +682,33 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @Override
     public void removeEventTags(String tenantId, Collection<String> eventIds, Collection<String> tags) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        if (isEmpty(eventIds)) {
+            throw new IllegalArgumentException("EventIds must be not null");
+        }
+        if (isEmpty(tags)) {
+            throw new IllegalArgumentException("Tags must be not null");
+        }
 
+        // Only untag existing events
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setEventIds(eventIds);
+        Page<Event> existingEvents = getEvents(tenantId, criteria, null);
+
+        for (Event event : existingEvents) {
+            boolean modified = false;
+            for (String tag : tags) {
+                if (event.getTags().containsKey(tag)) {
+                    event.removeTag(tag);
+                    modified = true;
+                }
+            }
+            if (modified) {
+                backend.put(pk(event), new IspnEvent(event));
+            }
+        }
     }
 
     @Override
@@ -618,6 +792,11 @@ public class IspnAlertsServiceImpl implements AlertsService {
             return;
         }
 
+        if (incomingDataManager == null) {
+            log.debug("incomingDataManager is not defined. Only valid for testing.");
+            return;
+        }
+
         incomingDataManager.bufferData(new IncomingDataManagerImpl.IncomingData(data, !ignoreFiltering));
     }
 
@@ -629,6 +808,11 @@ public class IspnAlertsServiceImpl implements AlertsService {
     @Override
     public void sendEvents(Collection<Event> events, boolean ignoreFiltering) throws Exception {
         if (isEmpty(events)) {
+            return;
+        }
+
+        if (incomingDataManager == null) {
+            log.debug("incomingDataManager is not defined. Only valid for testing.");
             return;
         }
 
@@ -746,6 +930,45 @@ public class IspnAlertsServiceImpl implements AlertsService {
             log.errorDatabaseException(e.getMessage());
         }
 
+    }
+
+    private Page<Event> prepareEventsPage(List<Event> events, Pager pager) {
+        if (pager != null) {
+            if (pager.getOrder() != null
+                    && !pager.getOrder().isEmpty()
+                    && pager.getOrder().get(0).getField() == null) {
+                pager = Pager.builder()
+                        .withPageSize(pager.getPageSize())
+                        .withStartPage(pager.getPageNumber())
+                        .orderBy(EventComparator.Field.ID.getName(), Order.Direction.DESCENDING).build();
+            }
+            List<Event> ordered = events;
+            if (pager.getOrder() != null) {
+                pager.getOrder()
+                        .stream()
+                        .filter(o -> o.getField() != null && o.getDirection() != null)
+                        .forEach(o -> {
+                            EventComparator comparator = new EventComparator(o.getField(), o.getDirection());
+                            Collections.sort(ordered, comparator);
+                        });
+            }
+            if (!pager.isLimited() || ordered.size() < pager.getStart()) {
+                pager = new Pager(0, ordered.size(), pager.getOrder());
+                return new Page<>(ordered, pager, ordered.size());
+            }
+            if (pager.getEnd() >= ordered.size()) {
+                return new Page<>(ordered.subList(pager.getStart(), ordered.size()), pager, ordered.size());
+            }
+            return new Page<>(ordered.subList(pager.getStart(), pager.getEnd()), pager, ordered.size());
+        } else {
+            EventComparator.Field defaultField = EventComparator.Field.ID;
+            Order.Direction defaultDirection = Order.Direction.ASCENDING;
+            pager = Pager.builder().withPageSize(events.size()).orderBy(defaultField.getName(),
+                    defaultDirection).build();
+            EventComparator comparator = new EventComparator(defaultField.getName(), defaultDirection);
+            Collections.sort(events, comparator);
+            return new Page<>(events, pager, events.size());
+        }
     }
 
 }

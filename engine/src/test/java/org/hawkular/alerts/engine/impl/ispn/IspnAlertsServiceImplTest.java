@@ -17,8 +17,10 @@
 package org.hawkular.alerts.engine.impl.ispn;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,7 +30,9 @@ import java.util.Set;
 
 import org.hawkular.alerts.api.model.Severity;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.services.AlertsCriteria;
+import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
 import org.junit.BeforeClass;
@@ -578,7 +582,7 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
     }
 
     @Test
-    public void addRemoveTag() throws Exception {
+    public void addRemoveAlertTag() throws Exception {
         int numTenants = 1;
         int numTriggers = 1;
         int numAlerts = 1;
@@ -606,4 +610,242 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
 
         deleteTestAlerts(numTenants);
     }
+
+    @Test
+    public void addEvents() throws Exception {
+        int numTenants = 2;
+        int numTriggers = 5;
+        int numEvents = 100;
+        createTestEvents(numTenants, numTriggers, numEvents);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+        tenantIds.add("tenant1");
+
+        assertEquals(2 * 5 * 100, alerts.getEvents(tenantIds, null, null).size());
+
+        tenantIds.remove("tenant0");
+        assertEquals(1 * 5 * 100, alerts.getEvents(tenantIds, null, null).size());
+
+        List<Event> testEvents = alerts.getEvents(tenantIds, null, null);
+        tenantIds.clear();
+        Set<String> eventIds = new HashSet<>();
+        for (int i = 0; i < 3; i++) {
+            Event eventX = testEvents.get(i);
+            tenantIds.add(eventX.getTenantId());
+            eventIds.add(eventX.getId());
+        }
+
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setEventIds(eventIds);
+
+        assertEquals(3, alerts.getEvents(tenantIds, criteria, null).size());
+
+        deleteTestEvents(numTenants);
+    }
+
+    @Test
+    public void queryEventsByTriggerId() throws Exception {
+        int numTenants = 2;
+        int numTriggers = 5;
+        int numEvents = 5;
+        createTestEvents(numTenants, numTriggers, numEvents);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+        tenantIds.add("tenant1");
+
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setTriggerId("trigger0");
+
+        List<Event> trigger0Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(10, trigger0Events.size());
+
+        criteria.setTriggerIds(Arrays.asList("trigger0", "trigger1", "trigger2"));
+        List<Event> trigger012Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(30, trigger012Events.size());
+
+        deleteTestEvents(numTenants);
+    }
+
+    @Test
+    public void addEventsTagsTest() throws Exception {
+        int numTenants = 2;
+        int numTriggers = 5;
+        int numEvents = 2;
+        createTestEvents(numTenants, numTriggers, numEvents);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+        tenantIds.add("tenant1");
+
+        List<Event> nonTaggedEvents = alerts.getEvents(tenantIds, null, null);
+        assertEquals(2 * 5 * 2, nonTaggedEvents.size());
+
+        int count = 0;
+        for (Event event : nonTaggedEvents) {
+            Map<String, String> tags = new HashMap<>();
+            if (count < 5) {
+                tags.put("tag1", "value" + (count % 5));
+            } else if (count >= 5 && count < 10) {
+                tags.put("tag2", "value" + (count % 5));
+            } else {
+                // Yes, tag3/valueX can be repeated twice
+                tags.put("tag3", "value" + (count % 5));
+            }
+            alerts.addEventTags(event.getTenantId(), Arrays.asList(event.getId()), tags);
+            count++;
+        }
+
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setTagQuery("tag1");
+
+        List<Event> tag1Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(5, tag1Events.size());
+
+        criteria.setTagQuery("tag2");
+        List<Event> tag2Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(5, tag2Events.size());
+
+        criteria.setTagQuery("tag3");
+        List<Event> tag3Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(10, tag3Events.size());
+
+        criteria.setTagQuery("tag1 = 'value1'");
+        List<Event> tag1Value1Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(1, tag1Value1Events.size());
+
+        criteria.setTagQuery("tag2 = 'value1'");
+        List<Event> tag2Value1Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(1, tag2Value1Events.size());
+
+        criteria.setTagQuery("tag3 = 'value2'");
+        List<Event> tag3Value2Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(2, tag3Value2Events.size());
+
+        criteria.setTagQuery("tag1 = 'value10'");
+        List<Event> tag1Value10Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(0, tag1Value10Events.size());
+
+        criteria.setTagQuery("tag1 or tag2");
+        List<Event> tag1OrTag2Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(10, tag1OrTag2Events.size());
+
+        criteria.setTagQuery("tag1 = 'value.*'");
+        List<Event> tag1ValueEvents = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(5, tag1ValueEvents.size());
+
+        criteria.setTagQuery("tag1 != 'value0'");
+        List<Event> tag1NotValue0Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(4, tag1NotValue0Events.size());
+
+        criteria.setTagQuery("tag1 != 'value0' or tag2 != 'value0'");
+        List<Event> tag1NotValue0Tag2NotValue0Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(8, tag1NotValue0Tag2NotValue0Events.size());
+
+        deleteTestEvents(numTenants);
+    }
+
+    @Test
+    public void queryEventsByCTime() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 5;
+        int numEvents = 5;
+        createTestEvents(numTenants, numTriggers, numEvents);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setStartTime(2l);
+        criteria.setEndTime(2l);
+
+        List<Event> ctime2Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(5, ctime2Events.size());
+
+        criteria.setEndTime(null);
+        List<Event> ctimeGTE2Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(5 * 4, ctimeGTE2Events.size());
+
+        deleteTestEvents(numTenants);
+    }
+
+    @Test
+    public void queryEventsByCategory() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 5;
+        int numEvents = 5;
+        createTestEvents(numTenants, numTriggers, numEvents);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setCategory("category0");
+
+        List<Event> category0Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(15, category0Events.size());
+
+        criteria.setCategories(Arrays.asList("category0", "category1"));
+        List<Event> category01Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(5 * 5, category01Events.size());
+
+        deleteTestEvents(numTenants);
+    }
+
+    @Test
+    public void addRemoveEventTag() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 1;
+        int numEvents = 1;
+        createTestEvents(numTenants, numTriggers, numEvents);
+
+        List<Event> nonTaggedEvents = alerts.getEvents("tenant0", null, null);
+        assertEquals(1, nonTaggedEvents.size());
+
+        String eventId = nonTaggedEvents.iterator().next().getId();
+        Map<String, String> tags = new HashMap<>();
+        tags.put("tag1", "value1");
+        tags.put("tag2", "value2");
+        tags.put("tag3", "value3");
+        alerts.addEventTags("tenant0", Arrays.asList(eventId), tags);
+
+        Event event = alerts.getEvent("tenant0", eventId, false);
+
+        assertEquals(3, event.getTags().size());
+
+        alerts.removeEventTags("tenant0", Arrays.asList(eventId), Arrays.asList("tag1", "tag2"));
+
+        event = alerts.getEvent("tenant0", eventId, false);
+        assertEquals(1, event.getTags().size());
+        assertEquals("value3", event.getTags().get("tag3"));
+
+        deleteTestEvents(numTenants);
+    }
+
+    @Test
+    public void combinedEventsAlerts() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 1;
+        int numEvents = 1;
+        int numAlerts = 1;
+        createTestEvents(numTenants, numTriggers, numEvents);
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        List<Event> allEvents = alerts.getEvents("tenant0", null, null);
+        assertEquals(2, allEvents.size());
+
+        List<Alert> allAlerts = alerts.getAlerts("tenant0", null, null);
+        assertEquals(1, allAlerts.size());
+
+        String alertId = allAlerts.get(0).getAlertId();
+        assertEquals(alertId, alerts.getAlert("tenant0", alertId, false).getAlertId());
+
+        assertEquals("event0", alerts.getEvent("tenant0", "event0", false).getId());
+        assertNull(alerts.getAlert("tenant0", "event0", false));
+
+        deleteTestEvents(numTenants);
+        deleteTestAlerts(numTenants);
+    }
+
 }

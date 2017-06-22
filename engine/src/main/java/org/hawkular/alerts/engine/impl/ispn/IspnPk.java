@@ -5,6 +5,7 @@ import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 /**
@@ -106,26 +107,25 @@ public class IspnPk {
                 .toString();
     }
 
-    public static String pk(Alert alert) {
-        if (alert == null) {
+    public static String pk(Event event) {
+        if (event == null) {
             return null;
         }
-        return new StringBuilder("Alert-")
-                .append(alert.getTenantId())
+        return new StringBuilder("Event-")
+                .append(event.getTenantId())
                 .append("-")
-                .append(alert.getAlertId())
+                .append(event.getId())
                 .toString();
     }
 
-    public static String pkFromAlertId(String tenantId, String alertId) {
-        if (tenantId == null || alertId == null) {
+    public static String pkFromEventId(String tenantId, String eventId) {
+        if (tenantId == null || eventId == null) {
             return null;
         }
-        return new StringBuilder("Alert-")
+        return new StringBuilder("Event-")
                 .append(tenantId)
                 .append("-")
-                .append(alertId)
+                .append(eventId)
                 .toString();
     }
-
 }

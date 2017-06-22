@@ -47,6 +47,9 @@ public class IspnEvent implements Serializable {
     @Field(store = Store.YES, analyze = Analyze.NO)
     private String severity;
 
+    @Field(store = Store.YES, analyze = Analyze.NO)
+    private String category;
+
     private Event event;
 
     public IspnEvent() {
@@ -74,6 +77,7 @@ public class IspnEvent implements Serializable {
         this.tags = this.event.getTags();
         this.triggerId = event.getTrigger() != null ? event.getTrigger().getId() : null;
         this.ctime = event.getCtime();
+        this.category = event.getCategory();
     }
 
     public String getEventType() {
@@ -159,6 +163,14 @@ public class IspnEvent implements Serializable {
         this.severity = severity;
     }
 
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -175,6 +187,7 @@ public class IspnEvent implements Serializable {
         if (triggerId != null ? !triggerId.equals(ispnEvent.triggerId) : ispnEvent.triggerId != null) return false;
         if (status != null ? !status.equals(ispnEvent.status) : ispnEvent.status != null) return false;
         if (severity != null ? !severity.equals(ispnEvent.severity) : ispnEvent.severity != null) return false;
+        if (category != null ? !category.equals(ispnEvent.category) : ispnEvent.category != null) return false;
         return event != null ? event.equals(ispnEvent.event) : ispnEvent.event == null;
     }
 
@@ -189,6 +202,7 @@ public class IspnEvent implements Serializable {
         result = 31 * result + (status != null ? status.hashCode() : 0);
         result = 31 * result + (int) (stime ^ (stime >>> 32));
         result = 31 * result + (severity != null ? severity.hashCode() : 0);
+        result = 31 * result + (category != null ? category.hashCode() : 0);
         result = 31 * result + (event != null ? event.hashCode() : 0);
         return result;
     }
@@ -205,6 +219,7 @@ public class IspnEvent implements Serializable {
                 ", status='" + status + '\'' +
                 ", stime=" + stime +
                 ", severity='" + severity + '\'' +
+                ", category='" + category + '\'' +
                 ", event=" + event +
                 '}';
     }

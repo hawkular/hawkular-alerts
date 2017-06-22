@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,8 +36,10 @@ import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsCriteria;
+import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
 
@@ -179,6 +182,39 @@ public abstract class IspnBaseServiceImplTest {
         AlertsCriteria criteria = new AlertsCriteria();
         for (int i = 0; i < numTenants; i++) {
             alerts.deleteAlerts("tenant" + i, criteria);
+        }
+    }
+
+    protected void createTestEvents(int numTenants, int numTriggers, int numEvents) throws Exception {
+        List<Event> newEvents = new ArrayList<>();
+        int count = 0;
+        for (int tenant = 0; tenant < numTenants; tenant++) {
+            String tenantId = "tenant" + tenant;
+            for (int trigger = 0; trigger < numTriggers; trigger++) {
+                String triggerId = "trigger" + trigger;
+                Trigger triggerX = new Trigger(tenantId, triggerId, "Trigger " + triggerId);
+                for (int event = 0; event < numEvents; event++) {
+                    String eventId = "event" + count;
+                    long eventTime = event;
+                    String category = "category" + (event % 2);
+                    String text = "this is text key" + (event % 2) + " for event";
+                    Map<String, String> context = new HashMap<>();
+                    context.put("context1", "value1");
+                    Map<String, String> tags = new HashMap<>();
+                    Event eventX = new Event(tenantId, eventId, eventTime, "testDataSource", "testDataId", category, text, context, tags);
+                    eventX.setTrigger(triggerX);
+                    newEvents.add(eventX);
+                    count++;
+                }
+            }
+        }
+        alerts.addEvents(newEvents);
+    }
+
+    protected void deleteTestEvents(int numTenants) throws Exception {
+        EventsCriteria criteria = new EventsCriteria();
+        for (int i = 0; i < numTenants; i++) {
+            alerts.deleteEvents("tenant" + i, criteria);
         }
     }
 

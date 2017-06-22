@@ -28,6 +28,7 @@ import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsCriteria;
+import org.hawkular.alerts.api.services.EventsCriteria;
 
 /**
  * @author Jay Shaughnessy
@@ -102,6 +103,29 @@ public class Utils {
         return triggerIds;
     }
 
+    public static Set<String> extractTriggerIds(EventsCriteria criteria) {
+
+        boolean hasTriggerId = !isEmpty(criteria.getTriggerId());
+        boolean hasTriggerIds = !isEmpty(criteria.getTriggerIds());
+
+        Set<String> triggerIds = hasTriggerId || hasTriggerIds ? new HashSet<>() : Collections.emptySet();
+
+        if (!hasTriggerIds) {
+            if (hasTriggerId) {
+                triggerIds.add(criteria.getTriggerId());
+            }
+        } else {
+            for (String triggerId : criteria.getTriggerIds()) {
+                if (isEmpty(triggerId)) {
+                    continue;
+                }
+                triggerIds.add(triggerId);
+            }
+        }
+
+        return triggerIds;
+    }
+
     public static Set<Status> extractStatus(AlertsCriteria criteria) {
         Set<Status> statuses = new HashSet<>();
         if (criteria.getStatus() != null) {
@@ -111,6 +135,17 @@ public class Utils {
             statuses.addAll(criteria.getStatusSet());
         }
         return statuses;
+    }
+
+    public static Set<String> extractCategories(EventsCriteria criteria) {
+        Set<String> categories = new HashSet<>();
+        if (!isEmpty(criteria.getCategory())) {
+            categories.add(criteria.getCategory());
+        }
+        if (!isEmpty(criteria.getCategories())) {
+            categories.addAll(criteria.getCategories());
+        }
+        return categories;
     }
 
 }
