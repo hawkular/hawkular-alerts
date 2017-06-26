@@ -260,7 +260,8 @@ public class StandaloneAlerts {
             if (cass) {
                 instance.cassCluster.shutdown();
             }
-            instance.cacheManager.stop();
+            IspnCacheManager.stop();
+            instance = null;
         }
     }
 

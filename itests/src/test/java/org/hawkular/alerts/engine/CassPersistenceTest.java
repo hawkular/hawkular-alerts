@@ -53,8 +53,11 @@ public class CassPersistenceTest extends PersistenceTest {
 
     @BeforeClass
     public static void initSessionAndResetTestSchema() throws Exception {
+        System.setProperty("hawkular-alerts.backend", "cassandra");
         System.setProperty("hawkular-alerts.cassandra-keyspace", keyspace);
         System.setProperty("hawkular-alerts.cassandra-overwrite", "true");
+
+        StandaloneAlerts.stop();
 
         definitionsService = StandaloneAlerts.getDefinitionsService();
         alertsService = StandaloneAlerts.getAlertsService();

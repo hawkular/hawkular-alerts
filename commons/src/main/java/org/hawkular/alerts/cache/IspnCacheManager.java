@@ -40,6 +40,13 @@ public class IspnCacheManager {
         return distributed;
     }
 
+    public static void stop() {
+        if (cacheManager != null) {
+            cacheManager.stop();
+            cacheManager = null;
+        }
+    }
+
     private static synchronized void init() {
         if (cacheManager == null) {
             try {

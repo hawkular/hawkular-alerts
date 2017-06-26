@@ -48,6 +48,8 @@ public class IspnPersistenceTest extends PersistenceTest {
         System.setProperty("hawkular-alerts.backend", "ispn");
         System.setProperty("hawkular.data", "./target/ispn");
 
+        StandaloneAlerts.stop();
+
         definitionsService = StandaloneAlerts.getDefinitionsService();
         alertsService = StandaloneAlerts.getAlertsService();
         actionsService = StandaloneAlerts.getActionsService();
