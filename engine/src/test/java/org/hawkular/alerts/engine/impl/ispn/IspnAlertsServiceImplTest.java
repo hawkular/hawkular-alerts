@@ -113,10 +113,15 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         alerts.parseTagQuery(e5, query);
         assertEquals("('tagA' and (/abc/ or /def/ or /ghi/))", query.toString().trim());
 
+        String e5s1 = "tagA IN ['abc','def','ghi']";
+        query = new StringBuilder();
+        alerts.parseTagQuery(e5s1, query);
+        assertEquals("('tagA' and (/abc/ or /def/ or /ghi/))", query.toString().trim());
+
         String e6 = "tagA NOT IN ['abc', 'def', 'ghi']";
         query = new StringBuilder();
         alerts.parseTagQuery(e6, query);
-        assertEquals("('tagA' and (not /abc/ and not /def/ and not /ghi/))", query.toString().trim());
+        assertEquals("(('tagA' and not /abc/) and ('tagA' and not /def/) and ('tagA' and not /ghi/))", query.toString().trim());
 
         String e7 = "tagA  =      '*'";
         query = new StringBuilder();
@@ -141,7 +146,7 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         String e11 = "tagA NOT IN [abc, def, ghi]";
         query = new StringBuilder();
         alerts.parseTagQuery(e11, query);
-        assertEquals("('tagA' and (not 'abc' and not 'def' and not 'ghi'))", query.toString().trim());
+        assertEquals("(('tagA' and not 'abc') and ('tagA' and not 'def') and ('tagA' and not 'ghi'))", query.toString().trim());
 
         String e12 = "tagA  =      *";
         query = new StringBuilder();
@@ -231,60 +236,60 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         for (Alert alert : nonTaggedAlerts) {
             Map<String, String> tags = new HashMap<>();
             if (count < 5) {
-                tags.put("tag1", "value" + (count % 5));
+                tags.put("xyztag1", "value" + (count % 5));
             } else if (count >= 5 && count < 10) {
-                tags.put("tag2", "value" + (count % 5));
+                tags.put("xyztag2", "value" + (count % 5));
             } else {
                 // Yes, tag3/valueX can be repeated twice
-                tags.put("tag3", "value" + (count % 5));
+                tags.put("xyztag3", "value" + (count % 5));
             }
             alerts.addAlertTags(alert.getTenantId(), Arrays.asList(alert.getAlertId()), tags);
             count++;
         }
 
         AlertsCriteria criteria = new AlertsCriteria();
-        criteria.setTagQuery("tag1");
+        criteria.setTagQuery("xyztag1");
 
         List<Alert> tag1Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(5, tag1Alerts.size());
 
-        criteria.setTagQuery("tag2");
+        criteria.setTagQuery("xyztag2");
         List<Alert> tag2Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(5, tag2Alerts.size());
 
-        criteria.setTagQuery("tag3");
+        criteria.setTagQuery("xyztag3");
         List<Alert> tag3Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(10, tag3Alerts.size());
 
-        criteria.setTagQuery("tag1 = 'value1'");
+        criteria.setTagQuery("xyztag1 = 'value1'");
         List<Alert> tag1Value1Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(1, tag1Value1Alerts.size());
 
-        criteria.setTagQuery("tag2 = 'value1'");
+        criteria.setTagQuery("xyztag2 = 'value1'");
         List<Alert> tag2Value1Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(1, tag2Value1Alerts.size());
 
-        criteria.setTagQuery("tag3 = 'value2'");
+        criteria.setTagQuery("xyztag3 = 'value2'");
         List<Alert> tag3Value2Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(2, tag3Value2Alerts.size());
 
-        criteria.setTagQuery("tag1 = 'value10'");
+        criteria.setTagQuery("xyztag1 = 'value10'");
         List<Alert> tag1Value10Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(0, tag1Value10Alerts.size());
 
-        criteria.setTagQuery("tag1 or tag2");
+        criteria.setTagQuery("xyztag1 or xyztag2");
         List<Alert> tag1OrTag2Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(10, tag1OrTag2Alerts.size());
 
-        criteria.setTagQuery("tag1 = 'value.*'");
+        criteria.setTagQuery("xyztag1 = 'value.*'");
         List<Alert> tag1ValueAlerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(5, tag1ValueAlerts.size());
 
-        criteria.setTagQuery("tag1 != 'value0'");
+        criteria.setTagQuery("xyztag1 != 'value0'");
         List<Alert> tag1NotValue0Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(4, tag1NotValue0Alerts.size());
 
-        criteria.setTagQuery("tag1 != 'value0' or tag2 != 'value0'");
+        criteria.setTagQuery("xyztag1 != 'value0' or xyztag2 != 'value0'");
         List<Alert> tag1NotValue0Tag2NotValue0Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(8, tag1NotValue0Tag2NotValue0Alerts.size());
 
@@ -848,4 +853,59 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         deleteTestAlerts(numTenants);
     }
 
+    @Test
+    public void alertTagWithDots() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 1;
+        int numAlerts = 1;
+        createTestAlerts(numTenants, numTriggers, numAlerts);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+
+        List<Alert> nonTaggedAlerts = alerts.getAlerts(tenantIds, null, null);
+        assertEquals(1, nonTaggedAlerts.size());
+
+        for (Alert alert : nonTaggedAlerts) {
+            Map<String, String> tags = new HashMap<>();
+            tags.put("123456789.alert.tag1", "value0");
+            alerts.addAlertTags(alert.getTenantId(), Arrays.asList(alert.getId()), tags);
+        }
+
+        AlertsCriteria criteria = new AlertsCriteria();
+        criteria.setTagQuery("123456789.alert.tag1");
+
+        List<Alert> tag1Alerts = alerts.getAlerts(tenantIds, criteria, null);
+        assertEquals(1, tag1Alerts.size());
+
+        deleteTestAlerts(numTenants);
+    }
+
+    @Test
+    public void eventTagWithDots() throws Exception {
+        int numTenants = 1;
+        int numTriggers = 1;
+        int numEvents = 1;
+        createTestEvents(numTenants, numTriggers, numEvents);
+
+        Set<String> tenantIds = new HashSet<>();
+        tenantIds.add("tenant0");
+
+        List<Event> nonTaggedEvents = alerts.getEvents(tenantIds, null, null);
+        assertEquals(1, nonTaggedEvents.size());
+
+        for (Event event : nonTaggedEvents) {
+            Map<String, String> tags = new HashMap<>();
+            tags.put("123456789.event.tag1", "value0");
+            alerts.addEventTags(event.getTenantId(), Arrays.asList(event.getId()), tags);
+        }
+
+        EventsCriteria criteria = new EventsCriteria();
+        criteria.setTagQuery("123456789.event.tag1");
+
+        List<Event> tag1Events = alerts.getEvents(tenantIds, criteria, null);
+        assertEquals(1, tag1Events.size());
+
+        deleteTestEvents(numTenants);
+    }
 }

@@ -17,6 +17,7 @@
         <Logger name="org.jgroups" level="warn" />
         <Logger name="org.hawkular" level="info" />
         <Logger name="org.infinispan" level="warn" />
+        <Logger name="org.hibernate" level="warn" />
         <Root level="debug">
             <AppenderRef ref="Console"/>
         </Root>

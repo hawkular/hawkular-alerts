@@ -64,7 +64,7 @@ public class IspnExpressionTagQueryParser extends ExpressionTagQueryParser {
         } else if (prefix.startsWith(OR)) {
             or(left(prefix), right(prefix), query);
         } else {
-            resolver.resolveQuery(getTokens(expression), query);
+            resolver.resolveQuery(getTokens(prefix), query);
         }
         query.append(")");
     }

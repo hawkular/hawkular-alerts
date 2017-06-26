@@ -21,7 +21,9 @@ import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromEventId;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.EQ;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NEQ;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NOT;
+import static org.hawkular.alerts.engine.util.Utils.extractAlertIds;
 import static org.hawkular.alerts.engine.util.Utils.extractCategories;
+import static org.hawkular.alerts.engine.util.Utils.extractEventIds;
 import static org.hawkular.alerts.engine.util.Utils.extractStatus;
 import static org.hawkular.alerts.engine.util.Utils.extractTriggerIds;
 import static org.hawkular.alerts.engine.util.Utils.isEmpty;
@@ -108,68 +110,71 @@ public class IspnAlertsServiceImpl implements AlertsService {
                     query.append("not '").append(tag).append("'");
                 } else {
                     tag = tokens.get(0);
-                    query.append("'").append(tag).append("' and (");
                     String op;
                     String value;
                     if (tokens.size() == 3) {
+                        query.append("'").append(tag).append("' and (");
                         op = tokens.get(1);
                         value = tokens.get(2);
                         boolean isRegexp = value.startsWith("'");
                         String regexp = value.substring(1, value.length() - 1);
                         regexp = regexp.equals("*") ? ".*" : regexp;
                         if (op.equalsIgnoreCase(EQ)) {
+                            // tag =
                             if (isRegexp) {
                                 query.append("/").append(regexp).append("/");
                             } else {
                                 query.append("'").append(value).append("'");
                             }
                         } else if (op.equalsIgnoreCase(NEQ)) {
+                            // tag !=
                             query.append("not ");
                             if (isRegexp) {
                                 query.append("/").append(regexp).append("/");
                             } else {
                                 query.append("'").append(value).append("'");
                             }
-                        }
-                    } else {
-                        if (tokens.get(1).equalsIgnoreCase(NOT)) {
-                            // not in array
-                            for (int i = 3; i < tokens.size(); i++) {
-                                String item = tokens.get(i);
-                                item = item.startsWith("[") ? item.substring(1) : item;
-                                item = item.charAt(item.length() - 1) == ']' ? item.substring(0, item.length() - 1) : item;
-                                item = item.charAt(item.length() -1) == ',' ? item.substring(0, item.length() -1) : item;
-                                if (item.startsWith("'")) {
-                                    String regexp = item.substring(1, item.length() - 1);
-                                    regexp = regexp.equals("*") ? ".*" : regexp;
-                                    query.append("not /").append(regexp).append("/");
-                                } else {
-                                    query.append("not '").append(item).append("'");
-                                }
-                                if (i + 1 < tokens.size()) {
-                                    query.append(" and ");
-                                }
-                            }
                         } else {
-                            // in array
-                            for (int i = 2; i < tokens.size(); i++) {
-                                String item = tokens.get(i);
-                                item = item.startsWith("[") ? item.substring(1) : item;
-                                item = item.charAt(item.length() - 1) == ']' ? item.substring(0, item.length() - 1) : item;
-                                item = item.charAt(item.length() -1) == ',' ? item.substring(0, item.length() -1) : item;
-                                if (item.startsWith("'")) {
-                                    String regexp = item.substring(1, item.length() - 1);
+                            // tag in []
+                            String array = value.substring(1, value.length() - 1);
+                            String[] values = array.split(",");
+                            for (int i = 0; i < values.length; i++) {
+                                String item = values[i];
+                                isRegexp = item.startsWith("'");
+                                regexp = item.substring(1, item.length() - 1);
+                                regexp = regexp.equals("*") ? ".*" : regexp;
+                                if (isRegexp) {
                                     query.append("/").append(regexp).append("/");
                                 } else {
                                     query.append("'").append(item).append("'");
                                 }
-                                if (i + 1 < tokens.size()) {
+                                if (i + 1 < values.length) {
                                     query.append(" or ");
                                 }
                             }
                         }
+                        query.append(")");
+                    } else {
+                        // not in array
+                        String array = tokens.get(3).substring(1, tokens.get(3).length() - 1);
+                        String[] values = array.split(",");
+                        for (int i = 0; i < values.length; i++) {
+                            String item = values[i];
+                            boolean isRegexp = item.startsWith("'");
+                            String regexp = item.substring(1, item.length() - 1);
+                            regexp = regexp.equals("*") ? ".*" : regexp;
+                            query.append("('").append(tag).append("' and ");
+                            if (isRegexp) {
+                                query.append("not /").append(regexp).append("/");
+                            } else {
+                                query.append("not '").append(item).append("'");
+                            }
+                            query.append(")");
+                            if (i + 1 < values.length) {
+                                query.append(" and ");
+                            }
+                        }
                     }
-                    query.append(")");
                 }
             }
         });
@@ -427,7 +432,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
         if (filter) {
            if (criteria.hasAlertIdCriteria()) {
                query.append("and (");
-               iter = criteria.getAlertIds().iterator();
+               iter = extractAlertIds(criteria).iterator();
                while (iter.hasNext()) {
                    String alertId = iter.next();
                    query.append("id = '").append(alertId).append("' ");
@@ -533,7 +538,16 @@ public class IspnAlertsServiceImpl implements AlertsService {
         }
 
         List<IspnEvent> ispnEvents = queryFactory.create(query.toString()).list();
-        List<Alert> alerts = ispnEvents.stream().map(e -> (Alert) e.getEvent()).collect(Collectors.toList());
+        List<Alert> alerts = ispnEvents.stream().map(ispnEvent -> {
+            if (criteria != null && criteria.isThin()) {
+                Alert alert = new Alert((Alert) ispnEvent.getEvent());
+                alert.setDampening(null);
+                alert.setEvalSets(null);
+                alert.setResolvedEvalSets(null);
+                return alert;
+            }
+            return (Alert) ispnEvent.getEvent();
+        }).collect(Collectors.toList());
         if (alerts.isEmpty()) {
             return new Page<>(alerts, pager, 0);
         } else {
@@ -585,7 +599,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
         if (filter) {
             if (criteria.hasEventIdCriteria()) {
                 query.append("and (");
-                iter = criteria.getEventIds().iterator();
+                iter = extractEventIds(criteria).iterator();
                 while (iter.hasNext()) {
                     String eventId = iter.next();
                     query.append("id = '").append(eventId).append("' ");
@@ -641,7 +655,6 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
         List<IspnEvent> ispnEvents = queryFactory.create(query.toString()).list();
         List<Event> events = ispnEvents.stream().map(e -> e.getEvent()).collect(Collectors.toList());
-
         if (events.isEmpty()) {
             return new Page<>(events, pager, 0);
         } else {

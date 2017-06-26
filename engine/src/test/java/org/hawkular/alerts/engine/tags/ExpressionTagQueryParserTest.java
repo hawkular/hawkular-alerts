@@ -57,6 +57,10 @@ public class ExpressionTagQueryParserTest {
         assertEquals("tagA in ['abc','def','ghi']", parser.parse(e5));
         assertEquals("[tagA, in, ['abc','def','ghi']]", getTokens(parser.parse(e5)).toString());
 
+        String e5s1 = "tagA IN ['abc','def','ghi']";
+        assertEquals("tagA in ['abc','def','ghi']", parser.parse(e5s1));
+        assertEquals("[tagA, in, ['abc','def','ghi']]", getTokens(parser.parse(e5s1)).toString());
+
         String e6 = "tagA NOT IN ['abc', 'def', 'ghi']";
         assertEquals("tagA not in ['abc','def','ghi']", parser.parse(e6));
         assertEquals("[tagA, not, in, ['abc','def','ghi']]", getTokens(parser.parse(e6)).toString());

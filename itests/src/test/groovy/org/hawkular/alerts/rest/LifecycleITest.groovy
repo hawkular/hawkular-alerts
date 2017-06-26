@@ -571,14 +571,14 @@ class LifecycleITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(3, resp.data.size())
 
-        // logger.info(resp.headers)
+        // log.info(resp.headers)
 
         resp = client.get(path: "",
                 query: [startTime:start,triggerIds:"test-manual-trigger",statuses:"OPEN,RESOLVED", page: "1", per_page: "3"] )
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size())
 
-        // logger.info(resp.headers)
+        // log.info(resp.headers)
     }
 
     @Test

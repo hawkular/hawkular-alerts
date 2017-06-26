@@ -133,7 +133,7 @@ public class IspnActionsServiceImpl implements ActionsService {
             IspnAction IspnAction = (IspnAction) backend.get(pk);
             if (IspnAction == null) {
                 insertAction(action);
-                log.warnf("No existing action found for %s, inserting %s", pk, action);
+                log.debugf("No existing action found for %s, inserting %s", pk, action);
                 return;
             }
             Action existingAction = IspnAction.getAction();
@@ -213,7 +213,14 @@ public class IspnActionsServiceImpl implements ActionsService {
         }
 
         List<IspnAction> ispnActions = queryFactory.create(query.toString()).list();
-        return prepareActionsPage(ispnActions.stream().map(a -> a.getAction()).collect(Collectors.toList()), pager);
+        return prepareActionsPage(ispnActions.stream().map(ispnAction -> {
+            if (criteria != null && criteria.isThin()) {
+                Action action = new Action(ispnAction.getAction());
+                action.setEvent(null);
+                return action;
+            }
+            return ispnAction.getAction();
+        }).collect(Collectors.toList()), pager);
     }
 
     // An exploded "in" clause because the actual one seems not to work

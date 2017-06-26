@@ -619,7 +619,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                     Map.Entry<String, String> tag = iter.next();
                     query.append("tags like '")
                             .append(tag.getKey())
-                            .append(":")
+                            .append(" ")
                             .append(tag.getValue().equals("*") ? "%" : tag.getValue())
                             .append("' ");
                     if (iter.hasNext()) {
@@ -671,7 +671,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         StringBuilder query = new StringBuilder(
                 "from org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger where tags like '")
                         .append(name)
-                        .append(":")
+                        .append(" ")
                         .append(value.equals("*") ? "%" : value)
                         .append("'");
         List<IspnTrigger> triggers = queryFactory.create(query.toString()).list();

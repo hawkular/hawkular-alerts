@@ -16,7 +16,7 @@
         <Logger name="org.hibernate" level="warn" />
         <Logger name="org.infinispan" level="warn" />
         <Logger name="org.jboss" level="warn" />
-        <Root level="debug">
+        <Root level="trace">
             <AppenderRef ref="Console"/>
         </Root>
     </Loggers>

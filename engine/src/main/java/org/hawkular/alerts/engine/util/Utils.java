@@ -148,4 +148,26 @@ public class Utils {
         return categories;
     }
 
+    public static Set<String> extractEventIds(EventsCriteria criteria) {
+        Set<String> eventIds = new HashSet<>();
+        if (!isEmpty(criteria.getEventId())) {
+            eventIds.add(criteria.getEventId());
+        }
+        if (!isEmpty(criteria.getEventIds())) {
+            eventIds.addAll(criteria.getEventIds());
+        }
+        return eventIds;
+    }
+
+    public static Set<String> extractAlertIds(AlertsCriteria criteria) {
+        Set<String> alertIds = new HashSet<>();
+        if (!isEmpty(criteria.getAlertId())) {
+            alertIds.add(criteria.getAlertId());
+        }
+        if (!isEmpty(criteria.getAlertIds())) {
+            alertIds.addAll(criteria.getAlertIds());
+        }
+        return alertIds;
+    }
+
 }

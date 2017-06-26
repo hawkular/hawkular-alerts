@@ -141,7 +141,7 @@ public class Alert extends Event {
 
     @JsonIgnore
     public String getTriggerId() {
-        return getTrigger().getId();
+        return getTrigger() != null ? getTrigger().getId() : null;
     }
 
     public Severity getSeverity() {

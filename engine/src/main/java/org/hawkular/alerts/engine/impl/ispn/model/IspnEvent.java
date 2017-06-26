@@ -74,7 +74,7 @@ public class IspnEvent implements Serializable {
         this.id = event.getId();
         this.eventType = event.getEventType();
         this.tenantId = event.getTenantId();
-        this.tags = this.event.getTags();
+        this.tags = new HashMap<>(this.event.getTags());
         this.triggerId = event.getTrigger() != null ? event.getTrigger().getId() : null;
         this.ctime = event.getCtime();
         this.category = event.getCategory();

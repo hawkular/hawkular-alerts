@@ -44,7 +44,7 @@ public class TagsBridge implements FieldBridge, ContainerBridge, StringBridge {
         public String objectToString(Object object) {
             if (object instanceof Map.Entry) {
                 Map.Entry<String, String> tag = (Map.Entry<String, String>)object;
-                return tag.getKey() + ":" + tag.getValue();
+                return tag.getKey() + " " + tag.getValue();
             }
             return (String) object;
         }
