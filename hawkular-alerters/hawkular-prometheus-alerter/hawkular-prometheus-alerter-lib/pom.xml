@@ -29,7 +29,7 @@
   <artifactId>hawkular-prometheus-alerter-lib</artifactId>
   <packaging>jar</packaging>
 
-  <name>Hawkular Alerting: prometheus Alerter</name>
+  <name>Hawkular Alerting: Prometheus Alerter</name>
 
   <dependencies>
 
