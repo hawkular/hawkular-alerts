@@ -18,40 +18,28 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.hawkular.alerts</groupId>
-    <artifactId>hawkular-alerts</artifactId>
+    <artifactId>hawkular-prometheus-alerter</artifactId>
     <version>1.8.0.Final-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>hawkular-alerters</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>hawkular-prometheus-alerter-metrics</artifactId>
+  <packaging>war</packaging>
 
-  <name>Hawkular Alerting: Alerters parent</name>
-  <description>Parent module of alerter artifacts</description>
+  <name>Hawkular Alerting: Prometheus Alerter deployment for Hawkular Metrics</name>
 
-  <profiles>
-    <profile>
-      <id>default</id>
-      <modules>
-        <module>hawkular-elasticsearch-alerter</module>
-        <module>hawkular-prometheus-alerter</module>
-      </modules>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-    </profile>
+  <dependencies>
 
-    <profile>
-      <id>openshift</id>
-      <modules>
-        <module>hawkular-elasticsearch-alerter</module>
-        <module>hawkular-prometheus-alerter</module>
-      </modules>
-    </profile>
-  </profiles>
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-prometheus-alerter-lib</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+  </dependencies>
 
 </project>

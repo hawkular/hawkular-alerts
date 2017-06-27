@@ -1,0 +1,8 @@
+# The prometheus config.yml should be edited to point at this rules file for the manual itest to work
+ALERT InstanceUp
+  IF up == 1
+  ANNOTATIONS {
+    summary = "Instance {{ $labels.instance }} down",
+    description = "{{ $labels.instance }} of job {{ $labels.job }} is up!",
+  }
+
