@@ -117,6 +117,8 @@
         <configuration>
           <excludes combine.children="append">
             <exclude>**/*.ftl</exclude>
+            <exclude>**/*.rules</exclude>
+            <exclude>**/*.tokens</exclude>
           </excludes>
         </configuration>
       </plugin>
