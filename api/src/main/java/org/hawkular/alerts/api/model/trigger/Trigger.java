@@ -501,6 +501,7 @@ public class Trigger implements Serializable {
     }
 
     public void addAction(TriggerAction triggerAction) {
+        triggerAction.setTenantId(this.getTenantId());
         getActions().add(triggerAction);
     }
 

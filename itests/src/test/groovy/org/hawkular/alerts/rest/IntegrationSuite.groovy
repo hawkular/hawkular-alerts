@@ -41,8 +41,6 @@ import com.icegreen.greenmail.util.ServerSetup
 @Suite.SuiteClasses([
         ActionsITest.class,
         AlertsITest.class,
-        CassPersistenceTest.class,
-        IspnPersistenceTest.class,
         ClusterITest.class,
         ConditionsITest.class,
         CrossTenantITest.class,

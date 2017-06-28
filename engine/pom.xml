@@ -151,11 +151,13 @@
       </exclusions>
     </dependency>
 
+    <!--
     <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-search-engine</artifactId>
       <version>${version.org.hibernate}</version>
     </dependency>
+    -->
 
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>

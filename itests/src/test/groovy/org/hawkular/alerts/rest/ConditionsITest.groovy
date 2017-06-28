@@ -184,7 +184,11 @@ class ConditionsITest extends AbstractITestBase {
 
         resp = client.get(path: "triggers/test-trigger-4/conditions")
         assertEquals(2, resp.data.size())
-        assertEquals("LTE", resp.data[0].operator)
+        Set<String> operators = new HashSet<>();
+        operators.add(resp.data[0].operator)
+        operators.add(resp.data[1].operator)
+        assertTrue(operators.contains("LTE"))
+        assertTrue(operators.contains("LT"))
 
         conditions.clear();
         conditions.add(testCond2);

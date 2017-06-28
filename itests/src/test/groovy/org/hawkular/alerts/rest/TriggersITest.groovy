@@ -31,6 +31,7 @@ import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertNotNull
 
 /**
@@ -216,10 +217,11 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(2, resp.data.size());
         groupConditions = (Collection<Condition>)resp.data;
-        cond1 = resp.data[0];
-        assertEquals("DataId1-Token", cond1.getDataId());
-        cond2 = resp.data[1];
-        assertEquals("DataId2-Token", cond2.getDataId());
+        Set<String> conditionDataIds = new HashSet<>();
+        conditionDataIds.add(((ThresholdCondition) resp.data[0]).getDataId())
+        conditionDataIds.add(((ThresholdCondition) resp.data[1]).getDataId())
+        assertTrue(conditionDataIds.contains("DataId1-Token"))
+        assertTrue(conditionDataIds.contains("DataId2-Token"))
 
         // get the member1 trigger
         resp = client.get(path: "triggers/member1")

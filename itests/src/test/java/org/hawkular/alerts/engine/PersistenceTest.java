@@ -3080,6 +3080,14 @@ public abstract class PersistenceTest {
     @Test
     public void test0300GetAlertsMultipleTenants() throws Exception {
         Set<String> tenantIds = new HashSet<>(Arrays.asList("tenant4", "tenant2", "tenant1", "tenant3"));
+        AlertsCriteria criteria = new AlertsCriteria();
+        tenantIds.stream().forEach(tenantId -> {
+            try {
+                alertsService.deleteAlerts(tenantId, criteria);
+            } catch (Exception e) {
+                log.error(e);
+            }
+        });
         List<String> orderedTenantIds = Arrays.asList("tenant1", "tenant2", "tenant3", "tenant4");
 
         int numAlerts = 100;

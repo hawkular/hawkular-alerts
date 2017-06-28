@@ -27,6 +27,7 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerAction;
 import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.EventsCriteria;
 
@@ -71,6 +72,11 @@ public class Utils {
             Trigger trigger = (Trigger) obj;
             if (trigger.getTenantId() == null || !trigger.getTenantId().equals(tenantId)) {
                 trigger.setTenantId(tenantId);
+                if (trigger.getActions() != null) {
+                    for (TriggerAction triggerAction : trigger.getActions()) {
+                        triggerAction.setTenantId(tenantId);
+                    }
+                }
             }
         } else if (obj instanceof Dampening) {
             Dampening dampening = (Dampening) obj;

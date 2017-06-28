@@ -119,6 +119,7 @@ public class Alert extends Event {
         for (Note note : alert.getNotes()) {
             this.notes.add(note);
         }
+        this.resolvedEvalSets = alert.getResolvedEvalSets();
     }
 
     public Alert(String tenantId, Trigger trigger, Dampening dampening, List<Set<ConditionEval>> evalSets) {

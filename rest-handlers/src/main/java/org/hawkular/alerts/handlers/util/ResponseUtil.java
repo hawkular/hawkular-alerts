@@ -230,7 +230,7 @@ public class ResponseUtil {
             Map.Entry<String, String> tag = (Map.Entry<String, String>)it.next();
             tagQuery.append(tag.getKey());
             if (!"*".equals(tag.getValue())) {
-                tagQuery.append(" = ").append("'").append(tag.getValue()).append("'");
+                tagQuery.append(" = ").append("").append(tag.getValue());
             }
             if (it.hasNext()) {
                 tagQuery.append(" or ");

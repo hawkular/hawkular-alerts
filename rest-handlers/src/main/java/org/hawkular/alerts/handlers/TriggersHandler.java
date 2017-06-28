@@ -117,9 +117,11 @@ public class TriggersHandler implements RestHandler {
                     }
                     dampening.setTenantId(tenantId);
                     dampening.setTriggerId(isGroup ? groupId : triggerId);
-                    Dampening found;
+                    Dampening found = null;
                     try {
                         found = definitionsService.getDampening(tenantId, dampening.getDampeningId());
+                    } catch(NotFoundException e) {
+                        // Expected
                     } catch (Exception e) {
                         log.debug(e.getMessage(), e);
                         throw new InternalServerException(e.toString());
@@ -165,9 +167,11 @@ public class TriggersHandler implements RestHandler {
                     if (isEmpty(trigger.getId())) {
                         trigger.setId(Trigger.generateId());
                     } else {
-                        Trigger found;
+                        Trigger found = null;
                         try {
                             found = definitionsService.getTrigger(tenantId, trigger.getId());
+                        } catch (NotFoundException e) {
+                            // Expected
                         } catch (Exception e) {
                             log.debug(e.getMessage(), e);
                             throw new InternalServerException(e.toString());
@@ -185,7 +189,12 @@ public class TriggersHandler implements RestHandler {
                         for (Dampening dampening : fullTrigger.getDampenings()) {
                             dampening.setTenantId(tenantId);
                             dampening.setTriggerId(trigger.getId());
-                            boolean exist = (definitionsService.getDampening(tenantId, dampening.getDampeningId()) != null);
+                            boolean exist;
+                            try {
+                                exist = (definitionsService.getDampening(tenantId, dampening.getDampeningId()) != null);
+                            } catch (NotFoundException e) {
+                                exist = false;
+                            }
                             if (exist) {
                                 definitionsService.removeDampening(tenantId, dampening.getDampeningId());
                             }
@@ -272,9 +281,11 @@ public class TriggersHandler implements RestHandler {
                     if (isEmpty(trigger.getId())) {
                         trigger.setId(Trigger.generateId());
                     } else {
-                        Trigger found;
+                        Trigger found = null;
                         try {
                             found = definitionsService.getTrigger(tenantId, trigger.getId());
+                        } catch (NotFoundException e) {
+                            // expected
                         } catch (Exception e) {
                             log.debug(e.getMessage(), e);
                             throw new InternalServerException(e.toString());
@@ -449,9 +460,11 @@ public class TriggersHandler implements RestHandler {
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
                     String triggerId = routing.request().getParam("triggerId");
-                    Trigger found;
+                    Trigger found = null;
                     try {
                         found = definitionsService.getTrigger(tenantId, triggerId);
+                    } catch (NotFoundException e) {
+                        // Expected
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
                     } catch (Exception e) {

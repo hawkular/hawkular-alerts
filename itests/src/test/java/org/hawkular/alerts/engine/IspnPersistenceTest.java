@@ -27,6 +27,7 @@ import org.hawkular.alerts.api.services.AlertsCriteria;
 import org.hawkular.alerts.api.services.EventsCriteria;
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -46,7 +47,7 @@ public class IspnPersistenceTest extends PersistenceTest {
     @BeforeClass
     public static void initSessionAndResetTestSchema() throws Exception {
         System.setProperty("hawkular-alerts.backend", "ispn");
-        System.setProperty("hawkular.data", "./target/ispn");
+        System.setProperty("hawkular.data", "./target/ispn-persistence-test");
 
         StandaloneAlerts.stop();
 
@@ -64,18 +65,23 @@ public class IspnPersistenceTest extends PersistenceTest {
 
     private static void mockPluginsDeployments() throws Exception {
         Set<String> propsSnmp = new HashSet<>(Arrays.asList("host", "port", "oid", "description"));
+        definitionsService.removeActionPlugin("snmp");
         definitionsService.addActionPlugin("snmp", propsSnmp);
 
         Set<String> propsEmail = new HashSet<>(Arrays.asList("to", "cc", "description"));
+        definitionsService.removeActionPlugin("email");
         definitionsService.addActionPlugin("email", propsEmail);
 
         Set<String> propsSms = new HashSet<>(Arrays.asList("phone", "description"));
+        definitionsService.removeActionPlugin("sms");
         definitionsService.addActionPlugin("sms", propsSms);
 
         Set<String> propsAerogear = new HashSet<>(Arrays.asList("alias", "description"));
+        definitionsService.removeActionPlugin("aerogear");
         definitionsService.addActionPlugin("aerogear", propsAerogear);
 
         Set<String> propsFile = new HashSet<>(Arrays.asList("description"));
+        definitionsService.removeActionPlugin("file");
         definitionsService.addActionPlugin("file", propsFile);
     }
 
@@ -95,6 +101,11 @@ public class IspnPersistenceTest extends PersistenceTest {
     public void cleanActions() throws Exception {
         ActionsCriteria criteria = new ActionsCriteria();
         log.info("Deleted " + actionsService.deleteActions(TENANT, criteria) + " Actions before test.\n");
+    }
+
+    @AfterClass
+    public static void stop() throws Exception {
+        StandaloneAlerts.stop();
     }
 
 }
