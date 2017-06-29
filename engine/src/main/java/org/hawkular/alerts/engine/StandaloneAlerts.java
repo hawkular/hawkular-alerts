@@ -50,6 +50,8 @@ import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
 import org.hawkular.commons.properties.HawkularProperties;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.query.Search;
+import org.infinispan.query.SearchManager;
 
 import com.datastax.driver.core.Session;
 
@@ -62,9 +64,12 @@ public class StandaloneAlerts {
     private static final MsgLogger log = MsgLogging.getMsgLogger(StandaloneAlerts.class);
     private static final String ALERTS_BACKEND = "hawkular-alerts.backend";
     private static final String ALERTS_BACKEND_DEFAULT = "cassandra";
+    private static final String ISPN_BACKEND_REINDEX = "hawkular-alerts.backend-reindex";
+    private static final String ISPN_BACKEND_REINDEX_DEFAULT = "false";
     private static StandaloneAlerts instance;
     private static ExecutorService executor;
     private static boolean cass;
+    private static boolean ispnReindex;
 
     private boolean distributed;
 
@@ -153,6 +158,19 @@ public class StandaloneAlerts {
             cassDefinitions.setProperties(properties);
         } else {
             log.info("Hawkular Alerting uses Infinispan backend");
+            ispnReindex = HawkularProperties.getProperty(ISPN_BACKEND_REINDEX, ISPN_BACKEND_REINDEX_DEFAULT).equals("true");
+
+            if (ispnReindex) {
+                log.info("Hawkular Alerting started with hawkular-alerts.backend-reindex=true");
+                log.info("Reindexing Ispn [backend] started.");
+                long startReindex = System.currentTimeMillis();
+                SearchManager searchManager = Search
+                        .getSearchManager(IspnCacheManager.getCacheManager().getCache("backend"));
+                searchManager.getMassIndexer().start();
+                long stopReindex = System.currentTimeMillis();
+                log.info("Reindexing Ispn [backend] completed in [" + (stopReindex - startReindex) + " ms]");
+            }
+
             ispnActions = new IspnActionsServiceImpl();
             ispnAlerts = new IspnAlertsServiceImpl();
             ispnDefinitions = new IspnDefinitionsServiceImpl();

@@ -20,8 +20,8 @@ import org.infinispan.manager.EmbeddedCacheManager;
 public class IspnCacheManager {
     private static final MsgLogger log = MsgLogging.getMsgLogger(IspnCacheManager.class);
     private static final String CONFIG_PATH = "hawkular.configuration";
-    private static final String ISPN_CONFIG_DISTRIBUTED = "alerting-distributed.xml";
-    private static final String ISPN_CONFIG_LOCAL = "alerting-local.xml";
+    private static final String ISPN_CONFIG_DISTRIBUTED = "ispn-alerting-distributed.xml";
+    private static final String ISPN_CONFIG_LOCAL = "ispn-alerting-local.xml";
     private static final String ALERTS_DISTRIBUTED = "hawkular-alerts.distributed";
     private static final String ALERTS_DISTRIBUTED_ENV = "HAWKULAR_ALERTS_DISTRIBUTED";
     private static final String ALERTS_DISTRIBUTED_DEFAULT = "false";

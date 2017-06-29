@@ -31,6 +31,7 @@ import org.junit.Test
 
 import static groovyx.gpars.dataflow.Dataflow.task
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
 
 /**
  * CRUD REST operations taking figures for performance investigation.
@@ -234,7 +235,11 @@ class PerfCrudITest extends AbstractITestBase {
             resp = client.get(path: "triggers/test-crud-" + i + "/conditions")
             endCall = System.currentTimeMillis();
             assertEquals(2, resp.data.size())
-            assertEquals("LTE", resp.data[0].operator)
+            Set<String> operators = new HashSet<>()
+            operators.add(resp.data[0].operator)
+            operators.add(resp.data[1].operator)
+            assertTrue(operators.contains("LTE"))
+            assertTrue(operators.contains("LT"))
             numCalls++;
             timeCall = (endCall - startCall);
             numGetConditions++;
