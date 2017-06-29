@@ -18,3 +18,5 @@ target/
 
 # KDE
 .directory
+
+.vertx
