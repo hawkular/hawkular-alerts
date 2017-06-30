@@ -64,7 +64,7 @@ public class StandaloneActionPluginRegister {
                     definitions.addActionPlugin(actionPlugin, properties);
                 }
             } catch (Exception e) {
-                log.errorCannotRegisterPlugin(actionPlugin, e.getMessage());
+                log.errorCannotRegisterPlugin(actionPlugin, e.toString());
             }
         }
         ActionListener actionListener = new StandaloneActionPluginListener(ActionPlugins.getPlugins(), executor);
@@ -95,5 +95,6 @@ public class StandaloneActionPluginRegister {
                 }
             });
         }
+        instance = null;
     }
 }

@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.hawkular.alerts.actions.standalone.StandaloneActionPluginRegister;
+import org.hawkular.alerts.alerters.standalone.StandaloneAlerterPluginRegister;
 import org.hawkular.alerts.engine.StandaloneAlerts;
 import org.hawkular.alerts.handlers.util.AlertingThreadFactory;
 import org.hawkular.commons.log.MsgLogger;
@@ -32,6 +33,8 @@ public class AlertingApp implements BaseApplication {
         StandaloneAlerts.start();
         StandaloneActionPluginRegister.setExecutor(executor);
         StandaloneActionPluginRegister.start();
+        StandaloneAlerterPluginRegister.setExecutor(executor);
+        StandaloneAlerterPluginRegister.start();
         log.infof("Alerting app started on [ %s ] ", baseUrl());
     }
 

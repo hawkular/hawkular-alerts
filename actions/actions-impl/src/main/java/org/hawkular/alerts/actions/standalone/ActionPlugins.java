@@ -99,7 +99,7 @@ public class ActionPlugins {
                                 }
                             }
                         } catch (Exception e) {
-                            log.errorf("Error loading Handler %s. Reason: %s", className, e.toString());
+                            log.errorf("Error loading ActionPlugin %s. Reason: %s", className, e.toString());
                             System.exit(1);
                         }
                     }

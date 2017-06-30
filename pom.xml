@@ -73,6 +73,7 @@
     <version.com.fasterxml.jackson.core-elasticsearch>2.8.3</version.com.fasterxml.jackson.core-elasticsearch>
     <version.com.google.guava>19.0</version.com.google.guava>
     <version.com.icegreen>1.4.1</version.com.icegreen>
+    <version.com.squareup.okhttp3>3.4.2</version.com.squareup.okhttp3>
     <version.javaee.spec>7.0</version.javaee.spec>
     <version.javax.mail>1.4.7</version.javax.mail>
     <version.junit>4.12</version.junit>
@@ -101,7 +102,7 @@
     <version.org.drools>6.4.0.Final</version.org.drools>
     <version.org.elasticsearch.client>5.2.2</version.org.elasticsearch.client>
     <version.org.freemarker>2.3.23</version.org.freemarker>
-    <version.org.hawkular.commons>0.9.7.Final-SRC-revision-b76074c26ebad20064f2a0b8185c5f6b1a11b415</version.org.hawkular.commons>
+    <version.org.hawkular.commons>0.9.7.Final-SRC-revision-9b56e20d01327b330ad0ba893ee056a8a54f8766</version.org.hawkular.commons>
     <version.org.hibernate>5.7.0.Final</version.org.hibernate>
     <version.org.infinispan.wildfly>9.0.0.Final</version.org.infinispan.wildfly>
     <version.org.jboss.logging>3.3.1.Final</version.org.jboss.logging>
@@ -123,6 +124,7 @@
       </activation>
       <modules>
         <module>actions</module>
+        <module>alerters</module>
         <module>api</module>
         <module>commons</module>
         <module>engine</module>
