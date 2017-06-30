@@ -1692,6 +1692,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (trigger.getActions() != null) {
             Collection<ActionDefinition> actionDefinitions = getActionDefinitions(trigger.getTenantId());
             trigger.getActions().stream().forEach(actionDefinition -> {
+                actionDefinition.setTenantId(trigger.getTenantId());
                 boolean found = actionDefinitions.stream()
                         .filter(a -> a.getActionPlugin().equals(actionDefinition.getActionPlugin())
                                 && a.getActionId().equals(actionDefinition.getActionId()))
