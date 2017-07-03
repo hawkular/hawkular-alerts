@@ -54,6 +54,10 @@ set_hawkular_classpath() {
     HWK_CLASSPATH="$ISPN_LUCENE_JAR$SEPARATOR$HWK_CLASSPATH"
 }
 
+console_alerting() {
+    java $JAVA_OPTS -cp "$HWK_CLASSPATH" "org.hawkular.HawkularServer"
+}
+
 start_alerting() {
     java $JAVA_OPTS -cp "$HWK_CLASSPATH" "org.hawkular.HawkularServer" > ${HWK_LOGS}/HawkularServer.out 2>&1 &
     echo "$!" > ${HWK_DATA}/HawkularServer.pid
@@ -78,10 +82,18 @@ main() {
     set_hawkular_classpath
     case "$1" in
         "")
+        ;&
+        "start")
             start_alerting
             ;;
         "stop")
             stop_alerting
+            ;;
+        "console")
+            console_alerting
+            ;;
+        *)
+            echo $0 '[start|stop|console]'
             ;;
     esac
 }
