@@ -20,3 +20,11 @@ target/
 .directory
 
 .vertx
+
+ui/src/main/ui/node_modules
+ui/src/main/ui/bower_components
+ui/src/main/ui/.sass-cache
+ui/src/main/ui/dist
+ui/src/main/ui/index.html
+ui/src/main/ui/src/templates/appModuleTemplates.js
+ui/src/main/ui/package-lock.json

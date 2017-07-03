@@ -1,0 +1,1184 @@
+/* line 1, scss/main.scss */
+.apf-fixed-body {
+  padding-top: 125px;
+}
+/* line 4, scss/main.scss */
+.apf-fixed-body .modal {
+  top: 85px;
+}
+
+/* line 10, scss/main.scss */
+.apf-modal .modal-header {
+  border-bottom: solid 1px #d1d1d1;
+  height: 60px;
+  padding-top: 19px;
+}
+
+/* line 17, scss/main.scss */
+.navbar-brand-txt {
+  line-height: 34px;
+}
+
+/* line 21, scss/main.scss */
+.breadcrumb {
+  margin-top: -20px;
+}
+
+/* line 25, scss/main.scss */
+.apf-body {
+  background: #f5f5f5;
+}
+/* line 27, scss/main.scss */
+.apf-body .navbar-pf-vertical .navbar-brand .navbar-brand-icon {
+  height: 20px;
+  margin-top: 10px;
+}
+
+/* line 35, scss/main.scss */
+.apf-dashboard-view .card-pf-aggregate-status .card-pf-title .pficon, .apf-dashboard-view .card-pf-aggregate-status .fa, .apf-objects-view .card-pf-aggregate-status .card-pf-title .pficon, .apf-objects-view .card-pf-aggregate-status .fa {
+  color: #0088ce !important;
+}
+/* line 40, scss/main.scss */
+.apf-dashboard-view .apf-dashboard-full-image, .apf-objects-view .apf-dashboard-full-image {
+  height: 104px;
+}
+/* line 44, scss/main.scss */
+.apf-dashboard-view .apf-card-title-img, .apf-objects-view .apf-card-title-img {
+  height: 18px;
+  margin-top: -5px;
+}
+/* line 49, scss/main.scss */
+.apf-dashboard-view .card-pf-icon-image, .apf-objects-view .card-pf-icon-image {
+  margin-left: 0;
+  margin-right: 0;
+}
+/* line 54, scss/main.scss */
+.apf-dashboard-view .apf-column-image, .apf-objects-view .apf-column-image {
+  height: 18px;
+  margin-top: -2px;
+}
+/* line 59, scss/main.scss */
+.apf-dashboard-view .list-view-pf .list-group-item.active .pficon, .apf-dashboard-view .list-view-pf .list-group-item.active:hover .pficon, .apf-dashboard-view .list-view-pf .list-group-item.active:focus .pficon, .apf-objects-view .list-view-pf .list-group-item.active .pficon, .apf-objects-view .list-view-pf .list-group-item.active:hover .pficon, .apf-objects-view .list-view-pf .list-group-item.active:focus .pficon {
+  color: #0088ce;
+}
+/* line 62, scss/main.scss */
+.apf-dashboard-view .list-view-pf .list-group-item .pficon, .apf-objects-view .list-view-pf .list-group-item .pficon {
+  font-size: 18px;
+}
+/* line 65, scss/main.scss */
+.apf-dashboard-view .card-view-pf .card.active .pficon, .apf-dashboard-view .card-view-pf .card.active:hover .pficon, .apf-dashboard-view .card-view-pf .card.active:focus .pficon, .apf-objects-view .card-view-pf .card.active .pficon, .apf-objects-view .card-view-pf .card.active:hover .pficon, .apf-objects-view .card-view-pf .card.active:focus .pficon {
+  color: #0088ce;
+}
+/* line 69, scss/main.scss */
+.apf-dashboard-view .card-pf .loading, .apf-objects-view .card-pf .loading {
+  margin: 10px auto;
+}
+/* line 73, scss/main.scss */
+.apf-dashboard-view .blank-slate-pf, .apf-objects-view .blank-slate-pf {
+  bottom: 0;
+  margin: 0 0 0 -20px;
+  padding-top: 90px;
+  position: absolute;
+  top: 0;
+}
+
+/* line 82, scss/main.scss */
+.provider-card {
+  min-height: 144px;
+}
+/* line 85, scss/main.scss */
+.provider-card .providers {
+  padding: 20px 0;
+}
+/* line 88, scss/main.scss */
+.provider-card .providers a {
+  color: #030303;
+  text-decoration: none;
+}
+/* line 93, scss/main.scss */
+.provider-card .providers a:hover {
+  color: #0088ce;
+  text-decoration: underline;
+}
+/* line 97, scss/main.scss */
+.provider-card .providers .count {
+  margin: 0 5px;
+}
+/* line 101, scss/main.scss */
+.provider-card .providers .provider-icon {
+  font-size: 22px;
+  opacity: .9;
+  padding-right: 5px;
+  position: relative;
+  top: 5px;
+}
+/* line 108, scss/main.scss */
+.provider-card .providers .provider-icon:hover {
+  opacity: 1;
+}
+/* line 114, scss/main.scss */
+.provider-card .provider-icon-large {
+  font-size: 100px;
+  padding-bottom: 4px;
+  position: relative;
+  text-align: center;
+  width: 100%;
+}
+
+/* line 123, scss/main.scss */
+.providers-status {
+  padding-bottom: 9px !important;
+}
+
+/* line 127, scss/main.scss */
+.aggregate-status-card-full-image {
+  display: block;
+  height: 48px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 48px;
+}
+
+/* line 135, scss/main.scss */
+.aggregate-status-card-title-image {
+  display: inline-block;
+  height: 15px;
+  margin-right: 7px;
+  width: 15px;
+}
+
+/* line 142, scss/main.scss */
+.aggregate-status-card-notification-image {
+  display: inline-block;
+  height: 18px;
+  margin-right: 7px;
+  width: 18px;
+}
+
+/* line 149, scss/main.scss */
+.containers-dashboard .card-pf.card-pf-aggregate-status-mini {
+  height: 60px;
+}
+
+/* line 153, scss/main.scss */
+.container-providers .card-pf.card-pf-aggregate-status-mini {
+  height: 63px;
+}
+
+/* line 157, scss/main.scss */
+.project-dashboard .card-pf.card-pf-aggregate-status-mini {
+  height: 103px;
+}
+/* line 159, scss/main.scss */
+.project-dashboard .card-pf.card-pf-aggregate-status-mini .card-pf-title {
+  margin-top: 24px;
+}
+/* line 162, scss/main.scss */
+.project-dashboard .card-pf.card-pf-aggregate-status-mini .card-pf-title .pficon, .project-dashboard .card-pf.card-pf-aggregate-status-mini .card-pf-title .fa {
+  top: 30px;
+}
+/* line 166, scss/main.scss */
+.project-dashboard .card-pf.card-pf-aggregate-status-mini .card-pf-body {
+  margin-top: 18px;
+}
+
+/* line 172, scss/main.scss */
+.card-view-pf .card {
+  overflow: visible;
+}
+/* line 175, scss/main.scss */
+.card-view-pf .card-content {
+  overflow: visible;
+}
+/* line 179, scss/main.scss */
+.card-view-pf .progress {
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+/* line 184, scss/main.scss */
+.card-view-pf .card-title .apf-icon-label {
+  padding-bottom: 15px;
+  padding-left: 5px;
+}
+/* line 189, scss/main.scss */
+.card-view-pf .card-row {
+  margin: 0;
+  padding: 0;
+}
+/* line 193, scss/main.scss */
+.card-view-pf .card-row .card-view-pf {
+  overflow: visible;
+}
+/* line 198, scss/main.scss */
+.card-view-pf .card-column {
+  float: left;
+  width: 50%;
+}
+/* line 203, scss/main.scss */
+.card-view-pf .status-object {
+  margin: 5px 20px;
+  text-align: left;
+}
+/* line 207, scss/main.scss */
+.card-view-pf .status-object .pficon {
+  color: #0088ce;
+  font-size: 20px;
+  width: 26px;
+}
+/* line 212, scss/main.scss */
+.card-view-pf .status-object .status-count {
+  color: #4d5258;
+  font-size: 18px;
+}
+/* line 216, scss/main.scss */
+.card-view-pf .status-object .status-text {
+  color: #4d5258;
+  font-size: 12px;
+}
+/* line 222, scss/main.scss */
+.card-view-pf .apf-icon-label {
+  color: #4d5258;
+  font-size: 18px;
+  white-space: nowrap;
+}
+/* line 227, scss/main.scss */
+.card-view-pf .pficon.apf-icon-label {
+  color: #0088ce;
+}
+/* line 231, scss/main.scss */
+.card-view-pf .apf-label {
+  color: #4d5258;
+  font-size: 12px;
+  padding-left: 5px;
+  white-space: nowrap;
+}
+/* line 238, scss/main.scss */
+.card-view-pf .apf-label.apf-title {
+  color: #4d5258;
+  float: left;
+  font-size: 13px;
+  font-weight: 700;
+}
+/* line 245, scss/main.scss */
+.card-view-pf .apf-icon-label.apf-title {
+  color: #4d5258;
+  float: left;
+  font-size: 13px;
+  font-weight: 700;
+}
+/* line 252, scss/main.scss */
+.card-view-pf .apf-label.apf-value {
+  float: left;
+  text-align: right;
+  width: 32px;
+}
+/* line 258, scss/main.scss */
+.card-view-pf .apf-column.usage-column .apf-title {
+  text-align: right;
+}
+/* line 262, scss/main.scss */
+.card-view-pf .cpu-usage-column {
+  width: 150px;
+}
+/* line 264, scss/main.scss */
+.card-view-pf .cpu-usage-column .apf-title {
+  text-align: right;
+  width: 95px;
+}
+/* line 269, scss/main.scss */
+.card-view-pf .memory-usage-column {
+  width: 180px;
+}
+/* line 271, scss/main.scss */
+.card-view-pf .memory-usage-column .apf-title {
+  text-align: right;
+  width: 135px;
+}
+
+/* line 279, scss/main.scss */
+.list-view-pf .apf-list-row {
+  width: 100%;
+}
+/* line 283, scss/main.scss */
+.list-view-pf .apf-row-column {
+  padding-right: 5px;
+}
+/* line 288, scss/main.scss */
+.list-view-pf .list-group-item .apf-column {
+  float: left;
+  margin-right: 10px;
+  padding: 5px 5px;
+}
+/* line 293, scss/main.scss */
+.list-view-pf .list-group-item .apf-object-column {
+  padding-top: 1px !important;
+}
+/* line 295, scss/main.scss */
+.list-view-pf .list-group-item .apf-object-column .apf-label {
+  vertical-align: middle;
+}
+/* line 301, scss/main.scss */
+.list-view-pf .list-group-item .apf-icon-label {
+  color: #4d5258;
+  font-size: 18px;
+  padding-left: 5px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+/* line 308, scss/main.scss */
+.list-view-pf .list-group-item .pficon.apf-icon-label {
+  color: #0088ce;
+}
+/* line 312, scss/main.scss */
+.list-view-pf .list-group-item .apf-label {
+  color: #4d5258;
+  font-size: 12px;
+  padding-left: 5px;
+  white-space: nowrap;
+}
+/* line 319, scss/main.scss */
+.list-view-pf .list-group-item .apf-label.apf-title {
+  color: #4d5258;
+  float: left;
+  font-size: 13px;
+  font-weight: 700;
+}
+/* line 326, scss/main.scss */
+.list-view-pf .list-group-item .apf-icon-label.apf-title {
+  color: #4d5258;
+  float: left;
+  font-size: 13px;
+  font-weight: 700;
+}
+/* line 333, scss/main.scss */
+.list-view-pf .list-group-item .apf-label.apf-value {
+  float: left;
+  text-align: right;
+  width: 32px;
+}
+/* line 339, scss/main.scss */
+.list-view-pf .list-group-item .apf-column.usage-column .apf-title {
+  text-align: right;
+}
+/* line 344, scss/main.scss */
+.list-view-pf .list-group-item .apf-column.label-value-column .label-value-container {
+  display: inline-block;
+  width: 100%;
+}
+/* line 348, scss/main.scss */
+.list-view-pf .list-group-item .apf-column.label-value-column .apf-title {
+  text-align: right;
+}
+/* line 354, scss/main.scss */
+.list-view-pf .provider-column {
+  padding-top: 5px !important;
+}
+
+/* line 359, scss/main.scss */
+.providers-cards .card-view-pf .card {
+  height: 250px;
+  width: 355px;
+}
+
+/* line 364, scss/main.scss */
+.projects-cards .card-view-pf .card {
+  height: 270px;
+  width: 355px;
+}
+
+/* line 368, scss/main.scss */
+.projects-cards .status-object.provider-object {
+  text-align: center;
+}
+
+/* line 372, scss/main.scss */
+.pods-cards .card-view-pf .card {
+  height: 230px;
+  width: 355px;
+}
+
+/* line 379, scss/main.scss */
+.pods-containers-info .containers-heading {
+  text-align: center;
+}
+/* line 381, scss/main.scss */
+.pods-containers-info .containers-heading .pficon {
+  color: #0088ce;
+  font-size: 64px;
+  padding: 10px 20px;
+}
+/* line 386, scss/main.scss */
+.pods-containers-info .containers-heading .containers-count {
+  border-left: 1px solid #d1d1d1;
+  color: #4d5258;
+  font-weight: 300;
+}
+/* line 391, scss/main.scss */
+.pods-containers-info .containers-heading .containers-label {
+  font-size: 26px;
+}
+/* line 395, scss/main.scss */
+.pods-containers-info .containers-counter {
+  font-size: 32px;
+}
+/* line 399, scss/main.scss */
+.pods-containers-info .containers-list {
+  border: 1px solid #d1d1d1;
+  margin-top: 10px;
+}
+/* line 402, scss/main.scss */
+.pods-containers-info .containers-list .toolbar-pf {
+  padding-bottom: 10px;
+}
+/* line 405, scss/main.scss */
+.pods-containers-info .containers-list .list-view-container {
+  height: 264px;
+}
+/* line 409, scss/main.scss */
+.pods-containers-info .containers-list .cpu-usage-column {
+  width: 190px;
+}
+/* line 411, scss/main.scss */
+.pods-containers-info .containers-list .cpu-usage-column .apf-title {
+  text-align: right;
+  width: 105px;
+}
+/* line 415, scss/main.scss */
+.pods-containers-info .containers-list .cpu-usage-column .apf-value {
+  text-align: right;
+  width: 30px;
+}
+/* line 420, scss/main.scss */
+.pods-containers-info .containers-list .memory-usage-column {
+  width: 225px;
+}
+/* line 422, scss/main.scss */
+.pods-containers-info .containers-list .memory-usage-column .apf-title {
+  text-align: right;
+  width: 130px;
+}
+/* line 426, scss/main.scss */
+.pods-containers-info .containers-list .memory-usage-column .apf- {
+  width: 30px;
+  text-align: right;
+}
+
+/* line 434, scss/main.scss */
+.pod-metrics {
+  height: 392px;
+  overflow-y: auto;
+}
+/* line 438, scss/main.scss */
+.pod-metrics .metric-row {
+  margin: 0;
+  padding: 10px 5px;
+}
+/* line 443, scss/main.scss */
+.pod-metrics .metric-row:first-of-type {
+  padding-top: 5px;
+}
+/* line 447, scss/main.scss */
+.pod-metrics .metric-row:last-of-type {
+  padding-bottom: 5px;
+}
+/* line 451, scss/main.scss */
+.pod-metrics .metric-col {
+  float: left;
+}
+/* line 455, scss/main.scss */
+.pod-metrics .metric-title {
+  float: left;
+  font-weight: 700;
+  padding: 0 5px;
+  text-align: right;
+  width: 175px;
+}
+/* line 462, scss/main.scss */
+.pod-metrics .metric-value {
+  float: left;
+  padding: 0 5px;
+}
+
+/***** Inline chart styles which are not currently in use
+.inline-card-status {
+  background: transparent;
+  font-size: 16px;
+  font-weight: 300;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+
+  .count-title {
+    font-weight: 300;
+    margin-top: 0;
+    float: left;
+    padding-left: 5px;
+  }
+
+  .inline-card-status-type-icon {
+    float: left;
+    width: 39px;
+    height: 39px;
+  }
+
+  .inline-card-status-count {
+    font-weight: 300;
+    display: block;
+    font-size: 24px;
+    vertical-align: bottom;
+    text-align: center;
+    line-height: 28px;
+  }
+  .inline-card-status-type {
+    display: block;
+    vertical-align: bottom;
+    text-align: center;
+  }
+  a {
+    color: $color-pf-black;
+    text-decoration: none;
+  }
+  a:hover {
+    color: $link-color;
+    text-decoration: underline;
+  }
+  .pficon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    margin-top: -20px;
+    width: 54px;
+    font-size: 26px;
+  }
+  .indicator {
+    font-size: 20px;
+    .count {
+      top: -2px;
+      position: relative;
+      padding-left: 5px;
+    }
+  }
+  .status {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    margin-top: -15px;
+    width: 54px;
+    font-size: 20px;
+  }
+}
+
+.inline-utilization-chart-title {
+  font-size: 14px !important;
+  font-weight: 500;
+  color: $color-pf-blue !important;
+}
+****/
+/* line 544, scss/main.scss */
+.icon-atomic:before {
+  color: #0088ce;
+  content: "\e62d";
+}
+
+/* line 550, scss/main.scss */
+.apf-deploy-provider-wizard .sub-group {
+  margin-left: 0;
+  margin-top: 10px;
+}
+/* line 554, scss/main.scss */
+.apf-deploy-provider-wizard .sub-group > a {
+  cursor: pointer;
+  margin-left: 10px;
+}
+/* line 561, scss/main.scss */
+.apf-deploy-provider-wizard a.disabled {
+  color: #ededed;
+  cursor: default;
+  pointer-events: none;
+}
+/* line 568, scss/main.scss */
+.apf-deploy-provider-wizard .apf-page-heading {
+  font-weight: 700;
+  padding-bottom: 10px;
+}
+/* line 573, scss/main.scss */
+.apf-deploy-provider-wizard .apf-page-text {
+  padding-bottom: 10px;
+}
+/* line 577, scss/main.scss */
+.apf-deploy-provider-wizard .apf-form-heading {
+  font-weight: 700;
+  padding-bottom: 10px;
+}
+/* line 582, scss/main.scss */
+.apf-deploy-provider-wizard .apf-form-no-label {
+  margin-left: 95px;
+  padding-left: 10px;
+}
+/* line 587, scss/main.scss */
+.apf-deploy-provider-wizard .apf-wizard-add-user-button {
+  cursor: pointer;
+  font-weight: 700;
+  margin-left: 85px;
+}
+/* line 591, scss/main.scss */
+.apf-deploy-provider-wizard .apf-wizard-add-user-button:hover {
+  text-decoration: none;
+}
+/* line 596, scss/main.scss */
+.apf-deploy-provider-wizard .apf-wizard-remove-user-button {
+  background-color: #fff;
+  color: #bbb;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: -15px;
+  padding: 4px;
+}
+/* line 603, scss/main.scss */
+.apf-deploy-provider-wizard .apf-wizard-remove-user-button:hover {
+  color: #0088ce;
+  text-decoration: none;
+}
+/* line 609, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-label-class {
+  float: left;
+  padding-left: 20px;
+  padding-right: 10px;
+  text-align: right;
+  width: 95px;
+}
+/* line 616, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-label-class.apf-input-label-class-lg {
+  width: 150px;
+}
+/* line 620, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-label-class.apf-input-label-class-xlg {
+  width: 175px;
+}
+/* line 625, scss/main.scss */
+.apf-deploy-provider-wizard .apf-clear-input-button {
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  background-color: #fff;
+  border: 1px solid #bbb;
+  border-left: none;
+  border-radius: 1px;
+  box-shadow: inset 0 1px 1px 0 rgba(0, 0, 0, 0.075);
+  color: #bbb;
+  cursor: pointer;
+  margin-left: -36px;
+  margin-right: 10px;
+  padding: 3px 3px 5px 3px;
+  width: 100%;
+  z-index: 10;
+}
+/* line 639, scss/main.scss */
+.apf-deploy-provider-wizard .apf-clear-input-button:hover {
+  color: #0088ce;
+  text-decoration: none;
+}
+/* line 645, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-no-label-class {
+  float: left;
+  padding-right: 10px;
+  padding-left: 20px;
+  width: 0;
+}
+/* line 652, scss/main.scss */
+.apf-deploy-provider-wizard .apf-radio-form, .apf-deploy-provider-wizard .apf-checkbox-form {
+  padding-left: 20px;
+}
+/* line 656, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-checkbox-form {
+  padding-bottom: 10px;
+  padding-left: 55px;
+}
+/* line 659, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-checkbox-form .apf-checkbox-input-label {
+  padding-right: 20px;
+}
+/* line 661, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-checkbox-form .apf-checkbox-input-label input {
+  margin-right: 20px;
+  position: static;
+}
+/* line 665, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-checkbox-form .apf-checkbox-input-label.apf-checkbox-input-label-lg {
+  padding-left: 55px;
+}
+/* line 669, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-checkbox-form .apf-input-label-class {
+  padding-left: 15px;
+  padding-top: 3px;
+  text-align: left;
+  vertical-align: middle;
+  width: 130px;
+}
+/* line 676, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-checkbox-form .apf-checkbox-input {
+  background-image: none;
+  border: 1px solid #bbb;
+  border-radius: 1px;
+  width: 300px;
+}
+/* line 681, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-checkbox-form .apf-checkbox-input[disabled] {
+  -webkit-box-shadow: none;
+  background-color: #f5f5f5;
+  border-color: #d1d1d1 !important;
+  box-shadow: none;
+  color: #8b8d8f;
+  cursor: not-allowed;
+  opacity: 1;
+}
+/* line 692, scss/main.scss */
+.apf-deploy-provider-wizard .apf-input-class {
+  float: left;
+  padding: 0 20px 0 10px;
+  width: 200px;
+}
+/* line 698, scss/main.scss */
+.apf-deploy-provider-wizard .apf-radio-input-class {
+  float: left;
+  padding: 0 20px 0 30px;
+  width: 200px;
+}
+/* line 704, scss/main.scss */
+.apf-deploy-provider-wizard .apf-touchspin-input-class {
+  float: left;
+  padding: 0 20px 0 10px;
+  width: 110px;
+}
+/* line 709, scss/main.scss */
+.apf-deploy-provider-wizard .apf-touchspin-input-class .form-control {
+  height: 24px;
+}
+/* line 712, scss/main.scss */
+.apf-deploy-provider-wizard .apf-touchspin-input-class .btn {
+  padding-bottom: 1px;
+}
+/* line 715, scss/main.scss */
+.apf-deploy-provider-wizard .apf-touchspin-input-class .form-control[readonly] {
+  background-color: #fff;
+}
+/* line 720, scss/main.scss */
+.apf-deploy-provider-wizard .form-horizontal > .radio {
+  margin-left: 20px;
+}
+/* line 724, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container {
+  border: solid 1px #d1d1d1;
+}
+/* line 728, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf > .col-sm-12 {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+/* line 732, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .toolbar-pf-filter {
+  padding-right: 10px;
+  width: 225px;
+}
+/* line 736, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .toolbar-pf-results {
+  margin-left: -10px;
+  margin-right: -10px;
+}
+/* line 741, scss/main.scss */
+.add-nodes-table .apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .toolbar-pf-actions {
+  padding-bottom: 0;
+}
+/* line 744, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .toolbar-pf-actions > .form-group {
+  border-right: none;
+  float: right;
+  padding: 0;
+}
+/* line 749, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .toolbar-pf-actions .dropdown-kebab-pf .dropdown-menu {
+  left: auto;
+  right: -15px;
+}
+/* line 753, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .toolbar-pf-actions .dropdown-kebab-pf .dropdown-menu:before, .apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .toolbar-pf-actions .dropdown-kebab-pf .dropdown-menu:after {
+  left: auto;
+  right: 6px;
+}
+/* line 759, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .sort-pf > form > .form-group {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+/* line 764, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .include-actions .dropdown {
+  float: left;
+  margin-left: 0;
+}
+/* line 768, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .include-actions .btn.btn-default {
+  float: right;
+}
+/* line 770, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .include-actions .btn.btn-default.btn-left {
+  float: left;
+}
+/* line 773, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .include-actions .btn.btn-default.primary-action {
+  margin-left: 5px;
+}
+/* line 777, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .include-actions .dropdown-container {
+  padding-left: 30px;
+  padding-right: 20px;
+}
+/* line 781, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .toolbar-pf .include-actions .dropdown-container .btn-primary {
+  margin-left: 20px;
+}
+/* line 788, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .checkbox-col {
+  padding-left: 6px;
+  padding-right: 6px;
+  width: 20px;
+}
+/* line 793, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .toolbar-pf-actions {
+  padding-bottom: 0;
+}
+/* line 796, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .select-all-roles.btn-link {
+  color: #0088ce;
+  font-size: 12px;
+  margin-left: -20px;
+  margin-top: 10px;
+  padding: 0;
+}
+/* line 804, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .role-column .label {
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  cursor: default;
+  display: inline-block;
+  font-weight: 600;
+  margin-right: 5px;
+  min-width: auto;
+  padding-top: 4px;
+  width: auto !important;
+}
+/* line 816, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .role-column .label:focus {
+  outline: none;
+}
+/* line 819, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .role-column .label .fa-close {
+  margin-left: 5px;
+}
+/* line 822, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .role-column .label.label-default {
+  cursor: pointer;
+}
+/* line 826, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .role-column a {
+  cursor: pointer;
+}
+/* line 828, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .role-column a:hover {
+  text-decoration: none;
+}
+/* line 834, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .role-column .add-roles-list .label.add-role-item {
+  background-color: #39a5dc;
+  color: #fff;
+  cursor: pointer;
+  display: block;
+  font-weight: 600;
+  margin-top: 5px;
+  min-width: auto;
+  text-align: left;
+  width: auto !important;
+}
+/* line 844, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .role-column .add-roles-list .label.add-role-item[disabled] {
+  background-color: #d1d1d1;
+  color: #72767b;
+}
+/* line 853, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .table-responsive {
+  max-height: 265px;
+  min-height: 265px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+/* line 860, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container.add-nodes-table .table-responsive {
+  max-height: 148px;
+  min-height: 148px;
+}
+/* line 865, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .table {
+  border: none;
+  margin-left: -1px;
+  width: calc(100% + 3px);
+}
+/* line 871, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .table-footer {
+  background-color: #fafafa;
+  height: 28px;
+  padding-top: 5px;
+  width: 100%;
+}
+/* line 877, scss/main.scss */
+.apf-deploy-provider-wizard .nodes-table-container .table-footer .badge {
+  background: transparent;
+  color: #030303;
+  font-size: 12px;
+  font-weight: 700;
+  float: left;
+  line-height: 1.66666667;
+  margin: 0;
+  padding: 0 7px;
+  text-align: center;
+}
+/* line 890, scss/main.scss */
+.apf-deploy-provider-wizard .apf-add-dialog-text {
+  font-weight: 700;
+  padding: 15px;
+}
+/* line 894, scss/main.scss */
+.apf-deploy-provider-wizard .apf-add-dialog-input {
+  padding: 0 15px;
+  width: 100%;
+}
+/* line 897, scss/main.scss */
+.apf-deploy-provider-wizard .apf-add-dialog-input > input {
+  width: 100%;
+}
+/* line 902, scss/main.scss */
+.apf-deploy-provider-wizard .wizard-apf-review-inline {
+  padding: 5px 0;
+}
+/* line 904, scss/main.scss */
+.apf-deploy-provider-wizard .wizard-apf-review-inline .wizard-apf-review-item {
+  display: inline;
+}
+/* line 906, scss/main.scss */
+.apf-deploy-provider-wizard .wizard-apf-review-inline .wizard-apf-review-item span {
+  display: inline-block;
+  margin-left: 10px;
+}
+/* line 909, scss/main.scss */
+.apf-deploy-provider-wizard .wizard-apf-review-inline .wizard-apf-review-item span:first-of-type {
+  margin-left: 0px;
+}
+/* line 913, scss/main.scss */
+.apf-deploy-provider-wizard .wizard-apf-review-inline .wizard-apf-review-item .wizard-apf-review-item-label {
+  width: 85px;
+}
+/* line 916, scss/main.scss */
+.apf-deploy-provider-wizard .wizard-apf-review-inline .wizard-apf-review-item .wizard-apf-review-item-value {
+  width: 100px;
+}
+/* line 922, scss/main.scss */
+.apf-deploy-provider-wizard .apf-review-label-class {
+  float: left;
+  padding-right: 10px;
+}
+/* line 927, scss/main.scss */
+.apf-deploy-provider-wizard .apf-review-edit-item {
+  line-height: 20px;
+  margin-bottom: 15px;
+}
+/* line 931, scss/main.scss */
+.apf-deploy-provider-wizard .apf-review-edit-field {
+  cursor: pointer;
+  float: left;
+  padding-right: 20px;
+  position: relative;
+}
+/* line 936, scss/main.scss */
+.apf-deploy-provider-wizard .apf-review-edit-field:after {
+  content: "\e60a";
+  font-family: 'PatternFlyIcons-webfont';
+  position: absolute;
+  right: 0;
+}
+/* line 943, scss/main.scss */
+.apf-deploy-provider-wizard .apf-review-edit-text {
+  margin-right: 20px;
+  margin-top: 5px;
+  resize: none;
+  width: 100%;
+}
+/* line 949, scss/main.scss */
+.apf-deploy-provider-wizard .apf-review-button-panel {
+  float: right;
+  margin-top: 0;
+  padding: 10px 0;
+  width: 100%;
+}
+/* line 956, scss/main.scss */
+.apf-deploy-provider-wizard .apf-wizard-review-list li {
+  margin: 5px 0;
+}
+
+/* line 963, scss/main.scss */
+.apf-wizard-page-wait-dialog .modal-dialog {
+  margin-top: 240px;
+}
+
+/* line 967, scss/main.scss */
+.apf-wait-dialog-content {
+  padding: 15px;
+}
+/* line 970, scss/main.scss */
+.apf-wait-dialog-content .apf-wait-dialog-text {
+  padding-top: 10px;
+  text-align: center;
+  width: 100%;
+}
+
+/* line 978, scss/main.scss */
+.apf-add-host-dialog .modal-dialog {
+  width: 400px;
+}
+
+/* line 982, scss/main.scss */
+.apf-add-dialog-content {
+  padding: 20px 20px 0 20px;
+}
+/* line 985, scss/main.scss */
+.apf-add-dialog-content .apf-page-text {
+  padding-bottom: 10px;
+}
+
+/*
+ * Charts
+ */
+/* Percentage Used Chart */
+/* line 6, scss/charts.scss */
+.percentageUsedBarChartWrapper {
+  padding-bottom: 10px;
+}
+
+/* line 10, scss/charts.scss */
+.percentageUsedBarChart {
+  margin-bottom: 12px;
+  position: relative;
+}
+
+/* line 15, scss/charts.scss */
+.percentageUsedBarChart:last-of-type {
+  margin-bottom: 0;
+}
+
+/* line 19, scss/charts.scss */
+.percentageUsedBar {
+  position: absolute;
+  top: 0;
+  left: 100px;
+  right: 100px;
+  height: 15px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+/* line 29, scss/charts.scss */
+.percentageUsedBarFilled {
+  background-color: #0088CE;
+  height: 15px;
+  position: relative;
+  z-index: 1001;
+  -webkit-transition: width .75s ease-in-out;
+  -moz-transition: width .75s ease-in-out;
+  -o-transition: width .75s ease-in-out;
+  transition: width .75s ease-in-out;
+}
+
+/* line 40, scss/charts.scss */
+.percentageUsedBarFilled.animate {
+  width: 0% !important;
+}
+
+/* line 44, scss/charts.scss */
+.percentageUsedBarUnused {
+  background-color: #D1D1D1;
+  width: 100%;
+  height: 15px;
+  position: relative;
+  top: -15px;
+  z-index: 1000;
+}
+
+/* line 53, scss/charts.scss */
+.percentageUsedBarTitle {
+  position: relative;
+  text-align: right;
+  top: 0;
+  left: 0;
+  float: left;
+  width: 100px;
+  text-align: right;
+  padding-left: 5px;
+  padding-right: 5px;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 15px;
+  margin-bottom: 5px;
+}
+
+/* line 69, scss/charts.scss */
+.percentageUsedBarSuffix {
+  position: absolute;
+  top: 0;
+  right: 0;
+  text-align: left;
+  width: 100px;
+  padding-left: 5px;
+  padding-right: 5px;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 15px;
+  margin-bottom: 5px;
+}
+
+/* line 83, scss/charts.scss */
+.empty-info {
+  color: #999;
+  font-size: 24px;
+  text-align: center;
+  width: 100%;
+}
+
+/* line 93, scss/charts.scss */
+.utilization-chart-pf.empty-utilization-chart .available-count {
+  color: transparent;
+}
+/* line 97, scss/charts.scss */
+.utilization-chart-pf.empty-utilization-chart .empty-info {
+  padding-top: 50px;
+  padding-bottom: 110px;
+}
+/* line 101, scss/charts.scss */
+.utilization-chart-pf.empty-utilization-chart .empty-info .info-text {
+  font-size: 16px;
+}
+
+/* line 109, scss/charts.scss */
+.empty-trends-chart .empty-info {
+  padding-top: 15px;
+  padding-bottom: 22px;
+}
+/* line 113, scss/charts.scss */
+.empty-trends-chart .empty-info .info-text {
+  font-size: 16px;
+}
+
+/* line 119, scss/charts.scss */
+.chart-transparent-text {
+  color: transparent;
+}
+
+/* line 123, scss/charts.scss */
+.multi-chart-body {
+  margin-top: -20px;
+}

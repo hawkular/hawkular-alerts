@@ -1,0 +1,81 @@
+= Hawkular Alerting UI Application
+
+This UI application is built using AngularJS and Patternfly.
+
+link:http://www.patternfly.org/[PatternFly]
+
+link:http://www.patternfly.org/angular-patternfly/#/api[AngularJS + PatternFly]
+
+== Project Layout
+
+The UI source is located under the folder
+
+```
+    hawkular-alerts/ui/src/main/ui
+```
+
+It follows the layout proposed in
+
+link:https://github.com/patternfly/angular-patternfly-demo-app[Angular PatternFly Demo App]
+
+Maven automates the installation of tooling `npm`, `bower` and `grunt`, copy UI resources into `target` folder and prepares
+the distribution that will be hosted under
+
+```
+    hawkular-alerts/ui/target/classes/webroot
+```
+
+and packaged into a `hawkular-alerts-ui-*.jar`.
+
+All content hosted under the `webroot` folder will be served by a Handler under the path
+
+```
+    http://<host>:<port>/hawkular/alerts/ui
+```
+
+== Working on UI
+
+To develop in the UI Application you will need NodeJS tools (optionally Ruby runtime for sass and compass tools).
+
+A standard strategy could be to work locally on your
+
+```
+    hawkular-alerts/ui/src/main/ui
+```
+
+directory and prepare the dependencies you need to run all the UI elements
+
+```
+    cd hawkular-alerts/ui/src/main/ui
+
+    npm install
+    sudo npm install -g bower
+    bower install
+    sudo npm install -g grunt-cli
+    sudo npm install -g compass
+    gem install sass
+    gem install compass
+```
+
+These steps will create some folders that will be part of the .gitignore as they can't be pushed into the repository
+
+```
+    ui/src/main/ui/node_modules
+    ui/src/main/ui/bower_components
+    ui/src/main/ui/.sass-cache
+    ui/src/main/ui/dist
+    ui/src/main/ui/index.html
+```
+
+From a terminal you can build the project using `grunt`.
+
+Grunt is an utility to define tasks in the UI project for building and preparing the final distribution.
+
+When working in the UI, an interesting utility is to use
+
+```
+    grunt server
+```
+
+This will open a server pointing to the AngularJS and will watch for changes into the UI resources and automatically
+include them into the working directory.

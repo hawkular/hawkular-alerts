@@ -55,6 +55,12 @@
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-ui</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-actions-email</artifactId>
       <version>${project.version}</version>
     </dependency>

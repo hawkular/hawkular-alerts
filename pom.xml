@@ -63,6 +63,8 @@
   </issueManagement>
 
   <properties>
+    <node.version>v6.10.3</node.version>
+    <node.npm.version>3.10.10</node.npm.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -74,6 +76,7 @@
     <version.com.google.guava>19.0</version.com.google.guava>
     <version.com.icegreen>1.4.1</version.com.icegreen>
     <version.com.squareup.okhttp3>3.4.2</version.com.squareup.okhttp3>
+    <version.com.github.eirslett>1.4</version.com.github.eirslett>
     <version.javaee.spec>7.0</version.javaee.spec>
     <version.javax.mail>1.4.7</version.javax.mail>
     <version.junit>4.12</version.junit>
@@ -92,6 +95,7 @@
     <version.org.apache.maven.plugins.maven-surefire-plugin>2.19.1</version.org.apache.maven.plugins.maven-surefire-plugin>
     <version.org.apache.maven.plugins.maven-jar-plugin>3.0.2</version.org.apache.maven.plugins.maven-jar-plugin>
     <version.org.cassalog>0.4.2</version.org.cassalog>
+    <version.org.codehaus.buildnumber-maven-plugin>1.3</version.org.codehaus.buildnumber-maven-plugin>
     <version.org.codehaus.gmavenplus>1.5</version.org.codehaus.gmavenplus>
     <version.org.codehaus.groovy>2.4.10</version.org.codehaus.groovy>
     <version.org.codehaus.groovy.modules.http-builder>0.7.1</version.org.codehaus.groovy.modules.http-builder>
@@ -133,7 +137,7 @@
         <module>itests</module>
         <module>rest-handlers</module>
         <module>dist</module>
-        <!--module>hawkular-alerters</module-->
+        <module>ui</module>
       </modules>
     </profile>
   </profiles>

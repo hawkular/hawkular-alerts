@@ -1,0 +1,93 @@
+<!doctype html>
+<html ng-app="hwk.appModule" class="layout-pf layout-pf-fixed transitions">
+<head>
+    <meta charset="utf-8"/>
+
+    <title>Hawkular Alerting</title>
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="description" content=""/>
+    <meta name="viewport" content="width=device-width"/>
+
+    <link rel="shortcut icon" href="favicon.ico?v=1"/>
+    <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+
+     <!-- build:css styles/css/bower_components.css -->
+    <link rel="stylesheet" href="bower_components/patternfly/dist/css/patternfly.min.css"/>
+    <link rel="stylesheet" href="bower_components/patternfly/dist/css/patternfly-additions.min.css"/>
+    <link rel="stylesheet" href="bower_components/angular-patternfly/dist/styles/angular-patternfly.min.css">
+    <!-- endbuild -->
+
+    <!-- build:css styles/css/app.css -->
+    <link rel="stylesheet" href="styles/app.css"/>
+    <!-- endbuild -->
+
+</head>
+<body id="pf-app" class="pf-body apf-body ng-cloak">
+  <div ng-controller="hwk.appController">
+    <div pf-vertical-navigation items="navigationItems" brand-alt="HAWKULAR ALERTING">
+      <div>
+        <ul class="nav navbar-nav">
+          <li><a href="#" target="_blank" class="nav-item-iconic nav-item-iconic-new-window"><span title="Launch" class="fa fa-external-link"></span></a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right navbar-iconic">
+          <li class="dropdown">
+            <a class="dropdown-toggle nav-item-iconic" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              <span title="Help" class="fa pficon-help"></span>
+              <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+              <li><a href="#">Help</a></li>
+              <li><a href="#">About</a></li>
+            </ul>
+          </li>
+          <li class="dropdown">
+            <a class="dropdown-toggle nav-item-iconic" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              <span title="Username" class="fa pficon-user"></span>
+              <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
+              <li><a href="#">Preferences</a></li>
+              <li><a href="#">Logout</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div id="centralPanel" class="container-pf-nav-pf-vertical container-pf-nav-pf-vertical-with-tertiary">
+    <div class="pf-framework-content">
+        <main ng-view class="pf-framework-view"></main>
+    </div>
+  </div>
+
+  <!-- build:js js/bower_components.js -->
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="bower_components/bootstrap-select/js/bootstrap-select.js"></script>
+  <script src="bower_components/moment/min/moment.min.js"></script>
+  <script src="bower_components/angular/angular.min.js"></script>
+  <script src="bower_components/angular-route/angular-route.min.js"></script>
+  <script src="bower_components/angular-resource/angular-resource.min.js"></script>
+  <script src="bower_components/angular-sanitize/angular-sanitize.min.js"></script>
+  <script src="bower_components/patternfly/dist/js/patternfly.min.js"></script>
+  <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+  <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="bower_components/angular-translate/angular-translate.min.js"></script>
+  <script src="bower_components/angular-translate-loader-static-files/angular-translate-loader-static-files.min.js"></script>
+  <script src="bower_components/d3/d3.min.js"></script>
+  <script src="bower_components/c3/c3.min.js"></script>
+  <script src="bower_components/angular-patternfly/dist/angular-patternfly.min.js"></script>
+  <script src="bower_components/lodash/lodash.min.js"></script>
+  <!-- endbuild -->
+
+
+
+  <!-- angular -->
+  <!-- endangular -->
+
+
+
+
+</body>
+</html>

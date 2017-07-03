@@ -62,6 +62,11 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>${version.org.codehaus.buildnumber-maven-plugin}</version>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <version>${version.org.apache.maven.plugins.maven-jar-plugin}</version>
@@ -74,6 +79,8 @@
             <manifestEntries>
               <Implementation-Vendor-Id>org.hawkular.alerts</Implementation-Vendor-Id>
               <Implementation-Version>${project.version}</Implementation-Version>
+              <Built-From-Git-SHA1>${buildNumber}</Built-From-Git-SHA1>
+              <Built-On>${timestamp}</Built-On>
             </manifestEntries>
           </archive>
         </configuration>
