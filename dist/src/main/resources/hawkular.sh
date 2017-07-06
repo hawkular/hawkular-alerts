@@ -21,6 +21,8 @@ set_java_opts() {
     JAVA_OPTS="$JAVA_OPTS -Dhawkular.configuration=${HWK_CONFIG}"
     JAVA_OPTS="$JAVA_OPTS -Dhawkular.bind-address=$(hwk_prop 'hawkular-alerts.bind-address')"
     JAVA_OPTS="$JAVA_OPTS -Dhawkular.port=$(hwk_prop 'hawkular-alerts.port')"
+    JAVA_OPTS="$JAVA_OPTS -Dhawkular.cors-url=http://127.0.0.1:8003"
+    JAVA_OPTS="$JAVA_OPTS -Dhawkular.cors-headers=Hawkular-Tenant"
     JAVA_OPTS="$JAVA_OPTS -Dlog4j.configurationFile=${HWK_CONFIG}/log4j2.xml"
     JAVA_OPTS="$JAVA_OPTS -Djava.net.preferIPv4Stack=true"
     JAVA_OPTS="$JAVA_OPTS -Dcom.sun.management.jmxremote"
