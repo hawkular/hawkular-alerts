@@ -1051,6 +1051,12 @@
   padding-bottom: 10px;
 }
 
+/* line 990, scss/main.scss */
+.navbar-tenant {
+  color: #fff;
+  margin-top: 17px !important;
+}
+
 /*
  * Charts
  */

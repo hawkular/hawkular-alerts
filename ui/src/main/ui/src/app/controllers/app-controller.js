@@ -2,12 +2,30 @@ angular.module('hwk.appModule').controller( 'hwk.appController', ['$scope', '$ro
   function ($scope, $rootScope, $resource ) {
     'use strict';
 
-    $scope.username = 'Administrator';
+    // Hawkular Alerting Navigation
+    // [lponce] Perhaps in the future is better to have it in the template itself
+    $scope.navigationItems = [
+      {
+        title: "Dashboard",
+        iconClass: "fa fa-dashboard",
+        href: "#/dashboard"
+      },
+      {
+        title: "Triggers",
+        iconClass: "fa fa-flash",
+        href: "#/triggers"
+      },
+      {
+        title: "Actions",
+        iconClass: "fa fa-bell-o",
+        href: "#/actions"
+      }
+    ];
 
-    //Navigation should be loaded from a service
-    $scope.navigationItems = [];
-    $scope.navigationItems.push({"title":"Dashboard", "iconClass": "fa fa-dashboard","href":"#/dashboard"});
-    $scope.navigationItems.push({"title":"Triggers", "iconClass": "fa fa-flash","href":"#/triggers"});
-    $scope.navigationItems.push({"title":"Actions", "iconClass": "fa fa-bell-o","href":"#/actions"});
+    $scope.newTenant = {};
+
+    $scope.updateTenant = function () {
+      $rootScope.selectedTenant = $scope.newTenant.tenant;
+    };
   }
 ]);

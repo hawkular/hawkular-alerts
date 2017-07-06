@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="bower_components/patternfly/dist/css/patternfly.min.css"/>
     <link rel="stylesheet" href="bower_components/patternfly/dist/css/patternfly-additions.min.css"/>
     <link rel="stylesheet" href="bower_components/angular-patternfly/dist/styles/angular-patternfly.min.css">
+    <link rel="stylesheet" href="bower_components/patternfly-timeline/dist/timeline.css">
     <!-- endbuild -->
 
     <!-- build:css styles/css/app.css -->
@@ -24,34 +25,21 @@
 
 </head>
 <body id="pf-app" class="pf-body apf-body ng-cloak">
+
   <div ng-controller="hwk.appController">
-    <div pf-vertical-navigation items="navigationItems" brand-alt="HAWKULAR ALERTING">
+    <div pf-vertical-navigation items="navigationItems" brand-src="hawkular-alerting.svg" brand-alt="Hawkular Alerting">
       <div>
-        <ul class="nav navbar-nav">
-          <li><a href="#" target="_blank" class="nav-item-iconic nav-item-iconic-new-window"><span title="Launch" class="fa fa-external-link"></span></a></li>
-        </ul>
-        <ul class="nav navbar-nav navbar-right navbar-iconic">
-          <li class="dropdown">
-            <a class="dropdown-toggle nav-item-iconic" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-              <span title="Help" class="fa pficon-help"></span>
-              <span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-              <li><a href="#">Help</a></li>
-              <li><a href="#">About</a></li>
-            </ul>
-          </li>
-          <li class="dropdown">
-            <a class="dropdown-toggle nav-item-iconic" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-              <span title="Username" class="fa pficon-user"></span>
-              <span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
-              <li><a href="#">Preferences</a></li>
-              <li><a href="#">Logout</a></li>
-            </ul>
-          </li>
-        </ul>
+        <div class="navbar-header">
+          <h2 class="navbar-tenant">{{ selectedTenant == null ? "&lt; Select a Tenant &gt;" : selectedTenant }}</h2>
+        </div>
+        <div class="nav navbar-nav navbar-right">
+          <form class="navbar-form" ng-submit="updateTenant()">
+            <div class="form-group">
+              <input name="newTenant" type="text" class="form-control" autocomplete="off" placeholder="New Tenant" ng-model="newTenant.tenant"">
+              <button type="submit" class="btn btn-default">Change</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -79,6 +67,7 @@
   <script src="bower_components/c3/c3.min.js"></script>
   <script src="bower_components/angular-patternfly/dist/angular-patternfly.min.js"></script>
   <script src="bower_components/lodash/lodash.min.js"></script>
+  <script src="bower_components/patternfly-timeline/dist/timeline.js"></script>
   <!-- endbuild -->
 
 

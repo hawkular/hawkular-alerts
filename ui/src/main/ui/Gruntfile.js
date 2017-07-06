@@ -185,6 +185,12 @@ module.exports = function (grunt) {
             cwd: '.',
             src: ['favicon.ico'],
             dest: '<%= projectSettings.dist %>/'
+          },
+          {
+            expand: true,
+            cwd: '.',
+            src: ['hawkular-alerting.svg'],
+            dest: '<%= projectSettings.dist %>/'
           }
         ]
       },
@@ -351,6 +357,18 @@ module.exports = function (grunt) {
             expand: true,
             cwd: '.',
             src: ['bower_components/lodash/lodash.min.js'],
+            dest: '<%= projectSettings.dist %>'
+          },
+          {
+            expand: true,
+            cwd: '.',
+            src: ['bower_components/patternfly-timeline/dist/timeline.js'],
+            dest: '<%= projectSettings.dist %>'
+          },
+          {
+            expand: true,
+            cwd: '.',
+            src: ['bower_components/patternfly-timeline/dist/timeline.css'],
             dest: '<%= projectSettings.dist %>'
           }
         ]
