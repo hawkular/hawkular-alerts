@@ -71,7 +71,7 @@ stop_alerting() {
     then
         HWK_PID=$(cat ${HWK_DATA}/HawkularServer.pid)
         rm ${HWK_DATA}/HawkularServer.pid
-        java -cp "$HWK_CLASSPATH" "org.hawkular.HawkularManager" "stop" "$(hwk_prop 'hawkular-alerts.bind-address')" "$(hwk_prop 'hawkular-alerts.jmx-port')"
+        java -cp "$HWK_CLASSPATH" "org.hawkular.HawkularManager" "stop" "$(hwk_prop 'hawkular.bind-address')" "$(hwk_prop 'hawkular.jmx-port')"
         echo "Stopping HawkularServer PID ${HWK_PID}"
     fi
 }
