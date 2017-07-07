@@ -151,6 +151,11 @@ module.exports = function (grunt) {
           ]
         }]
       },
+      src: {
+        files: [{
+          templates: [ '<%= projectSettings.src %>/templates' ]
+        }]
+      },
       server: '.tmp'
     },
 
