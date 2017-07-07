@@ -55,7 +55,9 @@ set_hawkular_classpath() {
 }
 
 console_alerting() {
-    java $JAVA_OPTS -cp "$HWK_CLASSPATH" "org.hawkular.HawkularServer"
+    start_alerting
+    trap stop_alerting SIGINT SIGQUIT SIGTERM
+    tail -f "${HWK_LOGS}/HawkularServer.out"
 }
 
 start_alerting() {
