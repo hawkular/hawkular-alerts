@@ -36,7 +36,8 @@
                       <dd></dd>
                       <dt ng-repeat-start="c in t.conditions"></dt>
                       <dd ng-repeat-end>
-                        <div ng-show="c.type == 'THRESHOLD'">{{ c.dataId }} {{ c.operator }} {{ c.threshold }}</div>
+                        <div ng-show="c.type == 'THRESHOLD'">{{ c.triggerMode }} when {{ c.dataId }} {{ c.operator }} {{ c.threshold }}</div>
+                        <div ng-show="c.type == 'AVAILABILITY'">{{ c.triggerMode }} when {{ c.dataId }} is {{ c.operator }}</div>
                       </dd>
                     </dl>
                     <dl class="dl-horizontal">

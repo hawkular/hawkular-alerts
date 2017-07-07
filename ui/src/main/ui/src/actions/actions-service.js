@@ -2,11 +2,12 @@ angular.module('hwk.actionsModule').service('hwk.actionsService', ['$resource',
   function ($resource) {
     'use strict';
 
-    // [lponce] TODO Enable this for testing
-    // var testHost = 'http://localhost:8080';
-    // var baseUrl = testHost + '/hawkular/alerts';
+    var host = '';
 
-    var baseUrl = '/hawkular/alerts';
+    // [lponce] TODO Enable this for testing
+    // host = 'http://localhost:8080';
+
+    var baseUrl = host + '/hawkular/alerts';
 
     this.Actions = function (tenantId) {
       return $resource(baseUrl + '/actions', {}, {

@@ -36,13 +36,14 @@ public class EventsCriteria {
     String tagQuery = null;
     boolean thin = false;
     Integer criteriaNoQuerySize = null;
+    String eventType = null;
 
     public EventsCriteria() {
         super();
     }
 
     public EventsCriteria(Long startTime, Long endTime, String eventIds, String triggerIds, String categories,
-                          String tagQuery, Boolean thin) {
+                          String tagQuery, String eventType, Boolean thin) {
         setStartTime(startTime);
         setEndTime(endTime);
         if (!isEmpty(eventIds)) {
@@ -58,6 +59,7 @@ public class EventsCriteria {
         if (null != thin) {
             setThin(thin.booleanValue());
         }
+        setEventType(eventType);
     }
 
     public Long getStartTime() {
@@ -176,6 +178,14 @@ public class EventsCriteria {
         this.criteriaNoQuerySize = criteriaNoQuerySize;
     }
 
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+
     public boolean hasEventIdCriteria() {
         return null != eventId
                 || (null != eventIds && !eventIds.isEmpty());
@@ -199,12 +209,17 @@ public class EventsCriteria {
                 || (null != triggerIds && !triggerIds.isEmpty());
     }
 
+    public boolean hasEventTypeCriteria() {
+        return !isEmpty(eventType);
+    }
+
     public boolean hasCriteria() {
         return hasEventIdCriteria()
                 || hasCategoryCriteria()
                 || hasTagQueryCriteria()
                 || hasCTimeCriteria()
-                || hasTriggerIdCriteria();
+                || hasTriggerIdCriteria()
+                || hasEventTypeCriteria();
     }
 
     @Override
@@ -221,11 +236,11 @@ public class EventsCriteria {
                 ", tagQuery='" + tagQuery + '\'' +
                 ", thin=" + thin +
                 ", criteriaNoQuerySize=" + criteriaNoQuerySize +
+                ", eventType='" + eventType + '\'' +
                 '}';
     }
 
     private static boolean isEmpty(String s) {
         return s == null || s.trim().isEmpty();
     }
-
 }

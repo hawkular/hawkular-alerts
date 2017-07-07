@@ -5,7 +5,7 @@ angular.module('hwk.dashboardModule').service('hwk.dashboardService', ['$resourc
     var host = '';
 
     // [lponce] TODO Enable this for testing
-    //host = 'http://192.168.1.15:8080';
+    // host = 'http://localhost:8080';
 
     var baseUrl = host + '/hawkular/alerts';
 
@@ -20,7 +20,7 @@ angular.module('hwk.dashboardModule').service('hwk.dashboardService', ['$resourc
     };
 
     this.Event = function (tenantId) {
-      return $resource(baseUrl + '/events', {}, {
+      return $resource(baseUrl + '/events', {eventType: 'EVENT'}, {
         query: {
           method: 'GET',
           isArray: true,

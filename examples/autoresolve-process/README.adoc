@@ -1,0 +1,96 @@
+= Autoresolve Process
+
+This example shows how to use AUTORESOLVE triggers in Hawkular Alerting.
+
+Hawkular Alerting offers the flexibility to detect when a bad situation occurs, firing an Alert, but also,
+the ability to detect when the bad status is resolved.
+
+This mechanism is implemented using a Trigger with FIRING and AUTORESOLVE conditions.
+
+FIRING conditions are defined to detect bad situations (i.e. a process is down), meanwhile AUTORESOLVE conditions
+define when a bad situation is resolved (i.e. a processs is up).
+
+With this mechanism, we will be notified only when the bad situation is detected, avoiding to repeat multiple
+notifications for the same bad situation. Only a new notification will be sent when the situation is recovered.
+
+In this example we are going to detect a specific process (by default a firefox process), notifying on UP and DOWN
+states.
+
+[NOTE]
+====
+The scripts are written in groovy to make them work from maven in any platorm but those are pretty simple and can be
+translated to bash or a different environment easily.
+====
+
+== Running the example
+
+Build a Hawkular Alerting standalone distribution
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts
+    mvn clean install -DskipTests
+----
+
+Start the standalone server
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts/hawkular-alerts-rest-tests/target/wildfly-10.0.0.Final/
+    bin/standalone.sh
+----
+
+Open a new shell to run the autoresolve-process example
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts/examples/autoresolve-process
+    mvn validate
+    ## Use mvn validate -Dprocess=otherprocess to change the process to monitor
+----
+
+Check out the Alerts generated on the link:http://localhost:8080/hawkular/alerts/ui[Hawkular Alerting UI].
+
+[TIP]
+.Test Email server
+==================
+By default, Hawkular Alerting will send email notifications using a SMTP server on localhost:25, for demo purposes
+ a test smtp server can be used to validate the reception of the emails. +
+  +
+Hawkular Alerting has been tested using
+  https://nilhcem.github.io/FakeSMTP/[FakeSMTP]. +
+  +
+A GUI SMTP server can be set up with these steps:
+[source,shell,subs="+attributes"]
+----
+    git clone https://github.com/Nilhcem/FakeSMTP
+    cd FakeSMTP
+    mvn clean install -DskipTests
+    cd target
+    sudo java -jar fakeSMTP-*.jar
+----
+==================
+
+== create_definitions.groovy
+
+Create a trigger with two conditions to fire an alert when a process is down and update when the process is up:
+
+    . Firing condition: availability data with id "process-status" is NOT_UP
+    . Autoresolve condition: availability data with id "process-status" is UP
+
+Trigger must set autoResolve and autoResolveAlerts flag to true.
+
+Create an action definition to notify by email to admins group with cc to developers team.
+
+== send_data.groovy
+
+Invoke a shell command (Linux) to detect if the process is present and send a data for "process-status" over the REST
+ API.
+
+The detection of the process is OS dependent, this example is tested under Linux platforms.
+For other platform this command should be changed for an equivalent expression:
+
+[source,shell,subs="+attributes"]
+----
+    def proc = ["sh", "-c", "ps -e | grep ${processName} | wc -l"].execute()
+----

@@ -45,6 +45,7 @@ public class EventsHandler implements RestHandler {
     private static final String PARAM_THIN = "thin";
     private static final String PARAM_WATCH_INTERVAL = "watchInterval";
     private static final String PARAM_TAG_NAMES = "tagNames";
+    private static final String PARAM_EVENT_TYPE = "eventType";
 
     AlertsService alertsService;
 
@@ -305,6 +306,7 @@ public class EventsHandler implements RestHandler {
         String tags = null;
         String tagQuery = null;
         boolean thin = false;
+        String eventType = null;
 
         if (params.get(PARAM_START_TIME) != null) {
             startTime = Long.valueOf(params.get(PARAM_START_TIME));
@@ -336,6 +338,9 @@ public class EventsHandler implements RestHandler {
         if (params.get(PARAM_THIN) != null) {
             thin = Boolean.valueOf(params.get(PARAM_THIN));
         }
-        return new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories, unifiedTagQuery, thin);
+        if (params.get(PARAM_EVENT_TYPE) != null) {
+            eventType = params.get(PARAM_EVENT_TYPE);
+        }
+        return new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories, unifiedTagQuery, eventType, thin);
     }
 }

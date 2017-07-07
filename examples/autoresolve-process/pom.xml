@@ -21,10 +21,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.hawkular.alerts</groupId>
-  <artifactId>hello-world</artifactId>
+  <artifactId>autoresolve-process</artifactId>
   <version>2.0.0.Final</version>
 
-  <name>Hawkular Alerting Examples: Hello World</name>
+  <name>Hawkular Alerting Examples: Autoresolve process</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

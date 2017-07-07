@@ -1,9 +1,13 @@
 = Hello World
 
-This example shows how to use Hawkular Alerting REST API from a script.
+This example creates a Trigger to fire an Alert when conditions 'X < 5' and 'Y > 5' are met.
+'X' and 'Y' are two data variables that can be mapped with any source. In the example, a script simulate and send random data for 'X' and 'Y'.
 
+[NOTE]
+====
 The scripts are written in groovy to make them work from maven in any platorm but those are pretty simple and can be
 translated to bash or a different environment easily.
+====
 
 == Running the example
 
@@ -30,6 +34,8 @@ Next, let's run the example
     cd hawkular-alerts/examples/hello-world
     mvn validate
 ----
+
+Check out the Alerts generated on the link:http://localhost:8080/hawkular/alerts/ui[Hawkular Alerting UI].
 
 [TIP]
 .Test Email server

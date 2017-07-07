@@ -43,6 +43,7 @@ import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.api.model.event.EventType;
 import org.hawkular.alerts.api.model.paging.AlertComparator;
 import org.hawkular.alerts.api.model.paging.EventComparator;
 import org.hawkular.alerts.api.model.paging.Order;
@@ -597,6 +598,14 @@ public class IspnAlertsServiceImpl implements AlertsService {
         query.append(") ");
 
         if (filter) {
+            if (criteria.hasEventTypeCriteria()) {
+                try {
+                    EventType eventType = EventType.valueOf(criteria.getEventType());
+                    query.append("and eventType = '").append(eventType.name()).append("' ");
+                } catch (Exception e) {
+                    log.debugf("EventType [%s] is not valid, ignoring this criteria", criteria.getEventType());
+                }
+            }
             if (criteria.hasEventIdCriteria()) {
                 query.append("and (");
                 iter = extractEventIds(criteria).iterator();
