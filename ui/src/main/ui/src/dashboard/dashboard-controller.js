@@ -184,6 +184,40 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         $scope.resolvedAlerts = dataTimeline[RESOLVED].data;
         $scope.events = dataTimeline[EVENTS].data;
 
+        // donut chart
+        $scope.activeAlertDonutConfig = {
+          'chartId': 'activeAlertDonut',
+          'legend': {"show": true},
+          'color': {
+            pattern: [
+              '#CC0000', // Open == red
+              '#FFA500'  // Acknowledged == orange
+            ]
+          },
+          'donut': {
+            'title': 'Alerts'
+          }
+        };
+
+        $scope.activeAlertDonutData = {
+          'type': 'donut',
+          'rows': [
+            ['Open', 'Acknowledged'],
+            [dataTimeline[OPEN].data.length, dataTimeline[ACKNOWLEDGED].data.length]
+          ]
+        };
+
+        var activeAlertDonutChartConfig = $scope.activeAlertDonutConfig;
+        activeAlertDonutChartConfig.bindto = '#active-alert-donut-chart';
+        activeAlertDonutChartConfig.data = $scope.activeAlertDonutData;
+        activeAlertDonutChartConfig.size = {
+          width: 200,
+          height: 200
+        };
+        var activeAlertDonutChart = c3.generate(activeAlertDonutChartConfig);
+        var activeAndAcked = dataTimeline[OPEN].data.length + dataTimeline[ACKNOWLEDGED].data.length;
+        $().pfSetDonutChartTitle("#active-alert-donut-chart", activeAndAcked, "Alerts");
+
         console.log('[Dashboard] Update timeline data ' + new Date());
         // console.log(JSON.stringify(dataTimeline));
 
