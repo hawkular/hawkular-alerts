@@ -167,4 +167,15 @@ public class ExpressionTagQueryParserTest {
         assertEquals("tagA.subA.subsubA = 'abc.abc.abc'", parser.parse(e3));
         assertEquals("[tagA.subA.subsubA, =, 'abc.abc.abc']", getTokens(parser.parse(e3)).toString());
     }
+
+    @Test
+    public void t08_checkSpacesInTagValues() throws Exception {
+        String e1 = "tagA = 'a b'";
+
+        assertEquals("[tagA, =, 'a b']", getTokens(parser.parse(e1)).toString());
+
+        String e2 = "tagA IN ['a b', 'c d'] ";
+
+        assertEquals("[tagA, in, ['a b','c d']]", getTokens(parser.parse(e2)).toString());
+    }
 }
