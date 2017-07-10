@@ -140,23 +140,24 @@ module.exports = function (grunt) {
       }
     },
     // Empties folders to start fresh
-    clean:           {
+    clean: {
       options: { force: true },
       dist:   {
         files: [{
           dot: true,
           src: [
             '.tmp',
-            '<%= projectSettings.dist %>/*'
+            'dist'
           ]
         }]
       },
-      src: {
+      source: {
         files: [{
-          templates: [ '<%= projectSettings.src %>/templates' ]
+          src: [ '<%= projectSettings.src %>/templates' ]
         }]
       },
-      server: '.tmp'
+      server: '.tmp',
+      sass: '.sass-cache',
     },
 
     // Copies remaining files to places other tasks can use
@@ -472,5 +473,17 @@ module.exports = function (grunt) {
   grunt.registerTask( 'default', [
     'build'
   ] );
+
+  grunt.registerTask( 'purgeinstall', 'Purge bower and npm installation files' , function (target) {
+    grunt.log.writeln('Removing bower_components');
+    grunt.file.delete('bower_components');
+    grunt.log.writeln('Removing node_modules');
+    grunt.file.delete('node_modules');
+    grunt.log.writeln('Removing package-lock.json');
+    grunt.file.delete('package-lock.json');
+    grunt.log.writeln('You now must run "npm install && bower install" before attempting to re-build.');
+  } );
+
+  grunt.registerTask( 'purge', 'Purge everything' , ['clean','purgeinstall']);
 
 };
