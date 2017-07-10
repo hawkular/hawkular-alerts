@@ -40,9 +40,10 @@
                         <div ng-show="c.type == 'THRESHOLD'">{{ c.triggerMode }} when {{ c.dataId }} {{ c.operator }} {{ c.threshold }}</div>
                         <div ng-show="c.type == 'AVAILABILITY'">{{ c.triggerMode }} when {{ c.dataId }} is {{ c.operator }}</div>
                         <div ng-show="c.type == 'EVENT'">{{ c.triggerMode }} when {{ c.dataId }} matches [ {{ c.expression }} ]</div>
+                        <div ng-show="c.type == 'EXTERNAL'">{{ c.triggerMode }} when {{ c.dataId }} on Alerter [ {{ c.alerterId }} ] evaluates [ {{ c.expression }} ]</div>
                       </dd>
                     </dl>
-                    <dl class="dl-horizontal">
+                    <dl class="dl-horizontal" ng-show="t.trigger.actions != null">
                       <dt>Actions</dt>
                       <dd></dd>
                       <dt ng-repeat-start="a in t.trigger.actions">
@@ -50,6 +51,18 @@
                         <span class="fa fa-code list-view-pf-icon-lg" ng-show="a.actionPlugin == 'webhook'"></span>
                       </dt>
                       <dd ng-repeat-end>{{ a.actionId }}</dd>
+                    </dl>
+                    <dl class="dl-horizontal" ng-show="t.trigger.tags != null">
+                      <dt>Tags</dt>
+                      <dd></dd>
+                      <dt ng-repeat-start="(key, value) in t.trigger.tags">{{ key }}</dt>
+                      <dd ng-repeat-end>{{ value }}</dd>
+                    </dl>
+                    <dl class="dl-horizontal" ng-show="t.trigger.context != null">
+                      <dt>Context</dt>
+                      <dd></dd>
+                      <dt ng-repeat-start="(key, value) in t.trigger.actions">{{ key }}</dt>
+                      <dd ng-repeat-end>{{ value }}</dd>
                     </dl>
                   </div>
                 </div>

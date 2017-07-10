@@ -1,6 +1,6 @@
 
 <div class="container-fluid container-cards-pf" ng-controller="hwk.dashboardController">
-  <div class="row row-cards-pf" ng-show="selectedTenant != null && selectedTenant != ''">
+  <div class="row row-cards-pf" ng-if="selectedTenant != null && selectedTenant != ''">
     <!-- Important:  if you need to nest additional .row within a .row.row-cards-pf, do *not* use .row-cards-pf on the nested .row  -->
     <div class="col-sm-6 col-md-3">
       <div class="card-pf card-pf-accented card-pf-aggregate-status card-pf-aggregate-status-mini">
@@ -43,7 +43,7 @@
       </div>
     </div>
   </div>
-  <div class="row row-cards-pf" ng-show="selectedTenant != null && selectedTenant != ''">
+  <div class="row row-cards-pf" ng-if="selectedTenant != null && selectedTenant != ''">
     <!-- Important:  if you need to nest additional .row within a .row.row-cards-pf, do *not* use .row-cards-pf on the nested .row  -->
     <div class="col-md-12">
       <div class="card-pf">
@@ -65,7 +65,7 @@
       </div>
     </div>
   </div><!-- /row -->
-  <div class="row row-cards-pf" ng-show="selectedTenant != null && selectedtenant != '' && timelineEvents != null" ng-repeat="eventSelected in timelineEvents">
+  <div class="row row-cards-pf" ng-if="selectedTenant != null && selectedtenant != '' && timelineEvents != null" ng-repeat="eventSelected in timelineEvents">
     <!-- Important:  if you need to nest additional .row within a .row.row-cards-pf, do *not* use .row-cards-pf on the nested .row  -->
     <div class="col-md-12">
       <div class="card-pf">
@@ -73,14 +73,14 @@
           <p class="card-pf-heading-details"></p>
           <h2 class="card-pf-title">
             {{ eventSelected.eventType }} on
-            <span ng-show="eventSelected.eventType == 'ALERT'">{{ eventSelected.trigger.name }}</span>
-            <span ng-show="eventSelected.eventType == 'EVENT'">{{ eventSelected.category }}</span>
-            <span class="pull-right" ng-show="eventSelected.eventType == 'ALERT'">{{ eventSelected.lifecycle[eventSelected.lifecycle.length -1].stime | date:'yyyy-MM-dd HH:mm:ss Z'}}</span>
-            <span class="pull-right" ng-show="eventSelected.eventType == 'EVENT'">{{ eventSelected.ctime | date:'yyyy-MM-dd HH:mm:ss Z'}}</span>
+            <span ng-if="eventSelected.eventType == 'ALERT'">{{ eventSelected.trigger.name }}</span>
+            <span ng-if="eventSelected.eventType == 'EVENT'">{{ eventSelected.category }}</span>
+            <span class="pull-right" ng-if="eventSelected.eventType == 'ALERT'">{{ eventSelected.lifecycle[eventSelected.lifecycle.length -1].stime | date:'yyyy-MM-dd HH:mm:ss Z'}}</span>
+            <span class="pull-right" ng-if="eventSelected.eventType == 'EVENT'">{{ eventSelected.ctime | date:'yyyy-MM-dd HH:mm:ss Z'}}</span>
           </h2>
         </div>
         <div class="card-pf-body">
-          <div class="row" ng-show="eventSelected.eventType == 'EVENT'">
+          <div class="row" ng-if="eventSelected.eventType == 'EVENT'">
             <div class="col-md-6">{{ eventSelected.text }}</div>
             <div class="col-md-3">
               <dl class="dl-horizontal" ng-show="eventSelected.tags != null">
@@ -100,7 +100,7 @@
             </div>
           </div>
           <div class="row">
-            <div class="col-md-4" ng-show="eventSelected.evalSets != null">
+            <div class="col-md-{{ 12 / eventSelected.eventSections }}" ng-if="eventSelected.evalSets != null">
               <h3>
                 Eval Sets
               </h3>
@@ -115,50 +115,69 @@
                         <div class="list-view-pf-description">
                           <div class="list-group-item-text">
                             <div class="list-group list-view-pf list-view-pf-view">
-                              <div class="list-group-item" ng-repeat="eval in evalSet">
-                                <div ng-show="eval.condition.type == 'THRESHOLD'">
-                                  <div>
-                                    {{ eval.condition.dataId }} [ {{ eval.value }} ] {{ eval.condition.operator }} {{ eval.condition.threshold }}
+                              <div class="list-group-item list-view-pf-stacked" ng-repeat="eval in evalSet">
+                                <div class="list-view-pf-main-info">
+                                  <div class="list-view-pf-description">
+                                    <div ng-if="eval.condition.type == 'THRESHOLD'">
+                                      {{ eval.condition.dataId }} [ {{ eval.value }} ] {{ eval.condition.operator }} {{ eval.condition.threshold }}
+                                    </div>
+                                    <div ng-if="eval.condition.type == 'AVAILABILITY'">
+                                      {{ eval.condition.dataId }} [ {{ eval.value }} ] is {{ eval.condition.operator }}
+                                    </div>
+                                    <div ng-if="eval.condition.type == 'EVENT'">
+                                      {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
+                                      <dl class="dl-horizontal eval-set">
+                                        <dt>Event</dt>
+                                        <dd></dd>
+                                        <dt>category</dt>
+                                        <dd>{{ eval.value.category }}</dd>
+                                        <dt>text</dt>
+                                        <dd>{{ eval.value.text}}</dd>
+                                        <dt ng-if="eval.value.tags != null">Tags</dt>
+                                        <dd ng-if="eval.value.tags != null"></dd>
+                                        <dt ng-if="eval.value.tags != null" ng-repeat-start="(key, value) in eval.value.tags">{{ key }}</dt>
+                                        <dd ng-if="eval.value.tags != null" ng-repeat-end>{{ value }}</dd>
+                                        <dt ng-if="eval.value.context != null">Context</dt>
+                                        <dd ng-if="eval.value.context != null"></dd>
+                                        <dt ng-if="eval.value.context != null" ng-repeat-start="(key, value) in eval.value.context">{{ key }}</dt>
+                                        <dd ng-if="eval.value.context != null" ng-repeat-end>{{ value }}</dd>
+                                      </dl>
+                                    </div>
+                                    <div ng-if="eval.condition.type == 'EXTERNAL'">
+                                      {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
+                                      <hr />
+                                      <dl class="dl-horizontal eval-set" ng-repeat="evalSetEvent in eval.context.parsed">
+                                        <dt>Event</dt>
+                                        <dd></dd>
+                                        <dt>category</dt>
+                                        <dd>{{ evalSetEvent.category }}</dd>
+                                        <dt>text</dt>
+                                        <dd>{{ evalSetEvent.text}}</dd>
+                                        <dt ng-if="evalSetEvent.tags != null">Tags</dt>
+                                        <dd ng-if="evalSetEvent.tags != null"></dd>
+                                        <dt ng-if="evalSetEvent.tags != null" ng-repeat-start="(key, value) in evalSetEvent.tags">{{ key }}</dt>
+                                        <dd ng-if="evalSetEvent.tags != null" ng-repeat-end>{{ value }}</dd>
+                                        <dt ng-if="evalSetEvent.context != null">Context</dt>
+                                        <dd ng-if="evalSetEvent.context != null"></dd>
+                                        <dt ng-if="evalSetEvent.context != null" ng-repeat-start="(key, value) in evalSetEvent.context">{{ key }}</dt>
+                                        <dd ng-if="evalSetEvent.context != null" ng-repeat-end>{{ value }}</dd>
+                                      </dl>
+                                    </div>
+                                    <small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small>
                                   </div>
-                                  <span class="pull-right"><small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></span>
-                                </div>
-                                <div ng-show="eval.condition.type == 'AVAILABILITY'">
-                                  <div>
-                                    {{ eval.condition.dataId }} [ {{ eval.value }} ] is {{ eval.condition.operator }}
-                                  </div>
-                                  <span class="pull-right"><small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></span>
-                                </div>
-                                <div ng-show="eval.condition.type == 'EVENT'">
-                                  {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
-                                  <dl class="dl-horizontal eval-set">
-                                    <dt>Event</dt>
-                                    <dd></dd>
-                                    <dt>category</dt>
-                                    <dd>{{ eval.value.category }}</dd>
-                                    <dt>text</dt>
-                                    <dd>{{ eval.value.text}}</dd>
-                                    <dt ng-show="eval.value.tags != null">Tags</dt>
-                                    <dd ng-show="eval.value.tags != null"></dd>
-                                    <dt ng-show="eval.value.tags != null" ng-repeat-start="(key, value) in eval.value.tags">{{ key }}</dt>
-                                    <dd ng-show="eval.value.tags != null" ng-repeat-end>{{ value }}</dd>
-                                    <dt ng-show="eval.value.context != null">Context</dt>
-                                    <dd ng-show="eval.value.context != null"></dd>
-                                    <dt ng-show="eval.value.context != null" ng-repeat-start="(key, value) in eval.value.context">{{ key }}</dt>
-                                    <dd ng-show="eval.value.context != null" ng-repeat-end>{{ value }}</dd>
-                                  </dl>
-                                  <span class="pull-right"><small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></span>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
+
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="col-md-4" ng-show="eventSelected.resolvedEvalSets != null">
+            <div class="col-md-{{ 12 / eventSelected.eventSections }}" ng-if="eventSelected.resolvedEvalSets != null">
               <h3>
                 Resolved Eval Sets
               </h3>
@@ -173,32 +192,56 @@
                         <div class="list-view-pf-description">
                           <div class="list-group-item-text">
                             <div class="list-group list-view-pf list-view-pf-view">
-                              <div ng-repeat="eval in evalSet">
-                                <div ng-show="eval.condition.type == 'THRESHOLD'">
-                                  {{ eval.condition.dataId }} [ {{ eval.value }} ] {{ eval.condition.operator }} {{ eval.condition.threshold }}
-                                </div>
-                                <div ng-show="eval.condition.type == 'AVAILABILITY'">
-                                  {{ eval.condition.dataId }} [ {{ eval.value }} ] is {{ eval.condition.operator }}
-                                </div>
-                                <div ng-show="eval.condition.type == 'EVENT'">
-                                  {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
-                                  <dl class="dl-horizontal eval-set">
-                                    <dt>Event</dt>
-                                    <dd></dd>
-                                    <dt>category</dt>
-                                    <dd>{{ eval.value.category }}</dd>
-                                    <dt>text</dt>
-                                    <dd>{{ eval.value.text}}</dd>
-                                    <dt ng-show="eval.value.tags != null">Tags</dt>
-                                    <dd ng-show="eval.value.tags != null"></dd>
-                                    <dt ng-show="eval.value.tags != null" ng-repeat-start="(key, value) in eval.value.tags">{{ key }}</dt>
-                                    <dd ng-show="eval.value.tags != null" ng-repeat-end>{{ value }}</dd>
-                                    <dt ng-show="eval.value.context != null">Context</dt>
-                                    <dd ng-show="eval.value.context != null"></dd>
-                                    <dt ng-show="eval.value.context != null" ng-repeat-start="(key, value) in eval.value.context">{{ key }}</dt>
-                                    <dd ng-show="eval.value.context != null" ng-repeat-end>{{ value }}</dd>
-                                  </dl>
-                                  <span class="pull-right"><small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></span>
+                              <div class="list-group-item list-view-pf-stacked" ng-repeat="eval in evalSet">
+                                <div class="list-view-pf-main-info">
+                                  <div class="list-view-pf-description">
+                                    <div ng-if="eval.condition.type == 'THRESHOLD'">
+                                      {{ eval.condition.dataId }} [ {{ eval.value }} ] {{ eval.condition.operator }} {{ eval.condition.threshold }}
+                                    </div>
+                                    <div ng-if="eval.condition.type == 'AVAILABILITY'">
+                                      {{ eval.condition.dataId }} [ {{ eval.value }} ] is {{ eval.condition.operator }}
+                                    </div>
+                                    <div ng-if="eval.condition.type == 'EVENT'">
+                                      {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
+                                      <dl class="dl-horizontal eval-set">
+                                        <dt>Event</dt>
+                                        <dd></dd>
+                                        <dt>category</dt>
+                                        <dd>{{ eval.value.category }}</dd>
+                                        <dt>text</dt>
+                                        <dd>{{ eval.value.text}}</dd>
+                                        <dt ng-show="eval.value.tags != null">Tags</dt>
+                                        <dd ng-show="eval.value.tags != null"></dd>
+                                        <dt ng-show="eval.value.tags != null" ng-repeat-start="(key, value) in eval.value.tags">{{ key }}</dt>
+                                        <dd ng-show="eval.value.tags != null" ng-repeat-end>{{ value }}</dd>
+                                        <dt ng-show="eval.value.context != null">Context</dt>
+                                        <dd ng-show="eval.value.context != null"></dd>
+                                        <dt ng-show="eval.value.context != null" ng-repeat-start="(key, value) in eval.value.context">{{ key }}</dt>
+                                        <dd ng-show="eval.value.context != null" ng-repeat-end>{{ value }}</dd>
+                                      </dl>
+                                    </div>
+                                    <div ng-if="eval.condition.type == 'EXTERNAL'">
+                                      {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
+                                      <hr />
+                                      <dl class="dl-horizontal eval-set" ng-repeat="evalSetEvent in eval.context.parsed">
+                                        <dt>Event</dt>
+                                        <dd></dd>
+                                        <dt>category</dt>
+                                        <dd>{{ evalSetEvent.category }}</dd>
+                                        <dt>text</dt>
+                                        <dd>{{ evalSetEvent.text}}</dd>
+                                        <dt ng-if="evalSetEvent.tags != null">Tags</dt>
+                                        <dd ng-if="evalSetEvent.tags != null"></dd>
+                                        <dt ng-if="evalSetEvent.tags != null" ng-repeat-start="(key, value) in evalSetEvent.tags">{{ key }}</dt>
+                                        <dd ng-if="evalSetEvent.tags != null" ng-repeat-end>{{ value }}</dd>
+                                        <dt ng-if="evalSetEvent.context != null">Context</dt>
+                                        <dd ng-if="evalSetEvent.context != null"></dd>
+                                        <dt ng-if="evalSetEvent.context != null" ng-repeat-start="(key, value) in evalSetEvent.context">{{ key }}</dt>
+                                        <dd ng-if="evalSetEvent.context != null" ng-repeat-end>{{ value }}</dd>
+                                      </dl>
+                                    </div>
+                                    <small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -210,7 +253,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-4" ng-show="eventSelected.lifecycle != null" >
+            <div class="col-md-{{ 12 / eventSelected.eventSections }}" ng-if="eventSelected.lifecycle != null" >
               <h3>
                 Lifecycle
               </h3>

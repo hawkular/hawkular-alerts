@@ -53,14 +53,60 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
       return '';
     };
 
+    function countEventSections(event) {
+      var count = 0;
+
+      if (event.evalSets) {
+        count++;
+      }
+      if (event.resolvedEvalSets) {
+        count++;
+      }
+      if (event.lifecycle) {
+        count++;
+      }
+
+      return count;
+    }
+
+    function transformExternalEventsOnEvalSets(event) {
+      var i, j, evalSet;
+      if (event.evalSets) {
+        for (i = 0; i < event.evalSets.length; i++) {
+          for (j = 0; j < event.evalSets[i].length; j++) {
+            evalSet = event.evalSets[i][j];
+            if (evalSet.context && evalSet.context.events) {
+              // This is a trick to convert a string into a json, as context can only hold string values not objects
+              evalSet.context.parsed = JSON.parse(evalSet.context.events);
+            }
+          }
+        }
+      }
+      if (event.resolvedEvalSets) {
+        for (i = 0; i < event.resolvedEvalSets.length; i++) {
+          for (j = 0; j < event.resolvedEvalSets[i].length; j++) {
+            evalSet = event.resolvedEvalSets[i][j];
+            if (evalSet.context && evalSet.context.events) {
+              // This is a trick to convert a string into a json, as context can only hold string values not objects
+              evalSet.context.parsed = JSON.parse(evalSet.context.events);
+            }
+          }
+        }
+      }
+    }
+
     var onTimelineClick = function (eventTimeline) {
       $scope.timelineEvents = [];
       if (eventTimeline.events) {
         for (var i = 0; i < eventTimeline.events.length; i++) {
+          transformExternalEventsOnEvalSets(eventTimeline.events[i].details);
+          eventTimeline.events[i].details.eventSections = countEventSections(eventTimeline.events[i].details);
           $scope.timelineEvents.push(eventTimeline.events[i].details);
         }
       }
       if (eventTimeline.details) {
+        transformExternalEventsOnEvalSets(eventTimeline.details);
+        eventTimeline.details.eventSections = countEventSections(eventTimeline.details);
         $scope.timelineEvents.push(eventTimeline.details);
       }
       console.log($scope.timelineEvents);
