@@ -1,0 +1,221 @@
+= Events Aggregation
+
+This example shows how to use the Events Aggregation Extension feature from Hawkular Alerting.
+
+The Events Aggregation Extension allows to scope Sliding Windows on Events and define expressions on aggregated data.
+
+A introductory article can be found under the link link:http://www.hawkular.org/blog/2017/01/13/events-aggregation-extension.html[Extending Complex Event Processing in Hawkular Alerting].
+
+Full documentation about this Extension can que found in link:http://www.hawkular.org/community/docs/developer-guide/alerts.html#_events_aggregation_extension[Events Aggregation Extension].
+
+[NOTE]
+====
+The scripts are written in groovy to make them work from maven in any platorm but those are pretty simple and can be
+translated to bash or a different environment easily.
+====
+
+== Running the example
+
+Build a Hawkular Alerting standalone distribution
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts
+    mvn clean install -DskipTests
+----
+
+Start the standalone server
+
+[source,shell,subs="+attributes"]
+----
+    cd dist/target/hawkular-alerting*
+    ./hawkular.sh
+----
+
+Next, let's run the examples
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts/examples/events-aggregation
+    mvn validate -Pmarketing
+    ## Change the profile to -Pmarketing, -Pfraud, -Ployalty to run each example
+----
+
+Check out the Alerts generated on the link:http://localhost:8080/hawkular/alerts/ui[Hawkular Alerting UI].
+
+[TIP]
+.Test Email server
+==================
+By default, Hawkular Alerting will send email notifications using a SMTP server on localhost:25, for demo purposes
+ a test smtp server can be used to validate the reception of the emails. +
+  +
+Hawkular Alerting has been tested using
+  https://nilhcem.github.io/FakeSMTP/[FakeSMTP]. +
+  +
+A GUI SMTP server can be set up with these steps:
+[source,shell,subs="+attributes"]
+----
+    git clone https://github.com/Nilhcem/FakeSMTP
+    cd FakeSMTP
+    mvn clean install -DskipTests
+    cd target
+    sudo java -jar fakeSMTP-*.jar
+----
+==================
+
+== Marketing
+
+_Detect when a customer buys several items in a short period of time_
+
+[source,json]
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "marketing-scenario",
+        "name": "Marketing Scenario",
+        "description": "Detect when a customer buys several items in a short period of time",
+        "enabled": true,
+        "actions":[
+          {
+            "actionPlugin": "email",
+            "actionId": "notify-to-marketing"
+          }
+        ],
+        "tags":{
+          "HawkularExtension": "EventsAggregation"
+        }
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "EXTERNAL",
+          "alerterId": "EventsAggregation",
+          "dataId": "marketing-source",
+          "expression": "event:groupBy(context.accountId):window(time,10s):having(count > 2)"
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "email",
+      "actionId": "notify-to-marketing",
+      "properties": {
+        "to": "marketing@hawkular.org"
+      }
+    }
+  ]
+}
+
+[source]
+groupBy(context.accountId)      Group window events by context "accountId" field
+window(time,10s)                Define a sliding time window of 10 seconds
+having(count > 2)               Define an expression on the grouped events
+
+== fraud
+
+_Alert when a customer buys from several locations in a short period of time_
+
+[source,json]
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "fraud-scenario",
+        "name": "Fraud Scenario",
+        "description": "Alert when a customer buys from several locations in a short period of time",
+        "severity": "HIGH",
+        "enabled": true,
+        "actions":[
+          {
+            "actionPlugin": "email",
+            "actionId": "notify-to-security"
+          }
+        ],
+        "tags":{
+          "HawkularExtension": "EventsAggregation"
+        }
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "EXTERNAL",
+          "alerterId": "EventsAggregation",
+          "dataId": "fraud-source",
+          "expression": "event:groupBy(tags.accountId):window(time,10s):having(count > 1, count.tags.location > 1)"
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "email",
+      "actionId": "notify-to-security",
+      "properties": {
+        "to": "security@hawkular.org"
+      }
+    }
+  ]
+}
+
+[source]
+groupBy(tags.accountId)                       Group window events by tag "accountId" field
+window(time,10s)                              Define a sliding time window of 10 seconds
+having(count > 1, count.tags.location > 1)    Define an expression on the grouped events
+
+== Customer loyalty
+
+_Detect specific transactions to offer premium discounts to customers_
+
+[source,json]
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "customer-loyalty",
+        "name": "Customer Loyalty",
+        "description": "Detect specific transactions to offer premium discounts to customers",
+        "enabled": true,
+        "actions":[
+          {
+            "actionPlugin": "email",
+            "actionId": "notify-to-marketing"
+          }
+        ],
+        "tags":{
+          "HawkularExtension": "EventsAggregation"
+        }
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "EXTERNAL",
+          "alerterId": "EventsAggregation",
+          "dataId": "loyalty-source",
+          "expression": "event:groupBy(tags.traceId):filter((category == \"Credit Check\" && text == \"Exceptionally Good\") || (category == \"Stock Check\" && text == \"Out of Stock\")):having(count > 1, count.tags.accountId == 1)"
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "email",
+      "actionId": "notify-to-marketing",
+      "properties": {
+        "to": "security@hawkular.org"
+      }
+    }
+  ]
+}
+
+[source]
+groupBy(tags.traceId)                           Group window events by tag "accountId" field
+filter(
+    (category == \"Credit Check\" && text == \"Exceptionally Good\") ||
+    (category == \"Stock Check\" && text == \"Out of Stock\")
+)
+                                                Filter events by category and text expression
+having(count > 1, count.tags.accountId == 1)    Define an expression on the grouped events
+
+
