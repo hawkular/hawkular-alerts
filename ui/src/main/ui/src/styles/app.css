@@ -1057,6 +1057,15 @@
   margin-top: 17px !important;
 }
 
+/* line 996, scss/main.scss */
+.eval-set dt {
+  width: 60px !important;
+}
+/* line 999, scss/main.scss */
+.eval-set dd {
+  margin-left: 80px !important;
+}
+
 /*
  * Charts
  */

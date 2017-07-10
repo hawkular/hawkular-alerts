@@ -36,8 +36,8 @@ Start the standalone server
 
 [source,shell,subs="+attributes"]
 ----
-    cd hawkular-alerts/hawkular-alerts-rest-tests/target/wildfly-10.0.0.Final/
-    bin/standalone.sh
+    cd dist/target/hawkular-alerting*
+    ./hawkular.sh
 ----
 
 Open a new shell to run the autoresolve-process example

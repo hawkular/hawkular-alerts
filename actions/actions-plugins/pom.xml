@@ -84,6 +84,7 @@
       <modules>
         <module>actions-email</module>
         <module>actions-file</module>
+        <module>actions-webhook</module>
       </modules>
     </profile>
   </profiles>

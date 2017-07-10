@@ -54,8 +54,16 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
     };
 
     var onTimelineClick = function (eventTimeline) {
-      $scope.eventTimeline = eventTimeline;
-      console.log(eventTimeline);
+      $scope.timelineEvents = [];
+      if (eventTimeline.events) {
+        for (var i = 0; i < eventTimeline.events.length; i++) {
+          $scope.timelineEvents.push(eventTimeline.events[i].details);
+        }
+      }
+      if (eventTimeline.details) {
+        $scope.timelineEvents.push(eventTimeline.details);
+      }
+      console.log($scope.timelineEvents);
       $scope.$apply();
     };
 

@@ -28,6 +28,7 @@
                 <div class="list-view-pf-description">
                   <div class="list-group-item-heading">
                     {{ t.trigger.name }}
+                    <small><b>{{ t.trigger.id }}</b></small>
                     <small>{{ t.trigger.description }}</small>
                   </div>
                   <div class="list-group-item-text">
@@ -38,12 +39,16 @@
                       <dd ng-repeat-end>
                         <div ng-show="c.type == 'THRESHOLD'">{{ c.triggerMode }} when {{ c.dataId }} {{ c.operator }} {{ c.threshold }}</div>
                         <div ng-show="c.type == 'AVAILABILITY'">{{ c.triggerMode }} when {{ c.dataId }} is {{ c.operator }}</div>
+                        <div ng-show="c.type == 'EVENT'">{{ c.triggerMode }} when {{ c.dataId }} matches [ {{ c.expression }} ]</div>
                       </dd>
                     </dl>
                     <dl class="dl-horizontal">
                       <dt>Actions</dt>
                       <dd></dd>
-                      <dt ng-repeat-start="a in t.trigger.actions"><span class="fa fa-envelope"></span></dt>
+                      <dt ng-repeat-start="a in t.trigger.actions">
+                        <span class="fa fa-envelope list-view-pf-icon-lg" ng-show="a.actionPlugin == 'email'"></span>
+                        <span class="fa fa-code list-view-pf-icon-lg" ng-show="a.actionPlugin == 'webhook'"></span>
+                      </dt>
                       <dd ng-repeat-end>{{ a.actionId }}</dd>
                     </dl>
                   </div>

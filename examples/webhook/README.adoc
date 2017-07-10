@@ -1,0 +1,55 @@
+= WebHook
+
+This example creates a Trigger to fire an Alert when conditions 'X < 5' and 'Y > 5' are met.
+'X' and 'Y' are two data variables that can be mapped with any source. In the example, a script simulate and send random data for 'X' and 'Y'.
+
+The example sends notifications via Webhook, instead of email.
+
+[NOTE]
+====
+The scripts are written in groovy to make them work from maven in any platorm but those are pretty simple and can be
+translated to bash or a different environment easily.
+====
+
+== Running the example
+
+Build a Hawkular Alerting standalone distribution
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts
+    mvn clean install -DskipTests
+----
+
+Start the standalone server
+
+[source,shell,subs="+attributes"]
+----
+    cd dist/target/hawkular-alerting*
+    ./hawkular.sh
+----
+
+Next, let's run the example
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts/examples/hello-world
+    mvn validate
+----
+
+Check out the Alerts generated on the link:http://localhost:8080/hawkular/alerts/ui[Hawkular Alerting UI].
+
+== create_definitions.groovy
+
+Create a hello world trigger with two conditions to fire an alert everytime that:
+
+    . numeric data with id "data-x" is less than 5 and
+    . numeric data with id "data-y" is greater than 5
+
+Create an action definition to notify by a webhook url.
+
+It will use the ping endpoint `http://webhook-mahora.rhcloud.com/ping`.
+
+== send_data.groovy
+
+Send random data for "data-x" and "data-y" over the REST API.

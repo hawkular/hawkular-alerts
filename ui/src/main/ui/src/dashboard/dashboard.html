@@ -65,22 +65,47 @@
       </div>
     </div>
   </div><!-- /row -->
-  <div class="row row-cards-pf" ng-show="selectedTenant != null && selectedtenant != '' && eventTimeline != null">
+  <div class="row row-cards-pf" ng-show="selectedTenant != null && selectedtenant != '' && timelineEvents != null" ng-repeat="eventSelected in timelineEvents">
     <!-- Important:  if you need to nest additional .row within a .row.row-cards-pf, do *not* use .row-cards-pf on the nested .row  -->
     <div class="col-md-12">
       <div class="card-pf">
         <div class="card-pf-heading">
           <p class="card-pf-heading-details"></p>
           <h2 class="card-pf-title">
-            {{ eventTimeline.details.eventType }} on {{ eventTimeline.details.trigger.name }}
-            at {{ eventTimeline.details.lifecycle[eventTimeline.details.lifecycle.length -1].stime | date:'yyyy-MM-dd HH:mm:ss Z'}}
+            {{ eventSelected.eventType }} on
+            <span ng-show="eventSelected.eventType == 'ALERT'">{{ eventSelected.trigger.name }}</span>
+            <span ng-show="eventSelected.eventType == 'EVENT'">{{ eventSelected.category }}</span>
+            <span class="pull-right" ng-show="eventSelected.eventType == 'ALERT'">{{ eventSelected.lifecycle[eventSelected.lifecycle.length -1].stime | date:'yyyy-MM-dd HH:mm:ss Z'}}</span>
+            <span class="pull-right" ng-show="eventSelected.eventType == 'EVENT'">{{ eventSelected.ctime | date:'yyyy-MM-dd HH:mm:ss Z'}}</span>
           </h2>
         </div>
         <div class="card-pf-body">
+          <div class="row" ng-show="eventSelected.eventType == 'EVENT'">
+            <div class="col-md-6">{{ eventSelected.text }}</div>
+            <div class="col-md-3">
+              <dl class="dl-horizontal" ng-show="eventSelected.tags != null">
+                <dt>Tags</dt>
+                <dd></dd>
+                <dt ng-repeat-start="(key, value) in eventSelected.tags">{{ key }}</dt>
+                <dd ng-repeat-end>{{ value }}</dd>
+              </dl>
+            </div>
+            <div class="col-md-3">
+              <dl class="dl-horizontal" ng-show="eventSelected.context != null">
+                <dt>Context</dt>
+                <dd></dd>
+                <dt ng-repeat-start="(key, value) in eventSelected.context">{{ key }}</dt>
+                <dd ng-repeat-end>{{ value }}</dd>
+              </dl>
+            </div>
+          </div>
           <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-4" ng-show="eventSelected.evalSets != null">
+              <h3>
+                Eval Sets
+              </h3>
               <div class="list-group list-view-pf list-view-pf-view">
-                <div class="list-group-item" ng-repeat="evalSet in eventTimeline.details.evalSets">
+                <div class="list-group-item" ng-repeat="evalSet in eventSelected.evalSets">
                   <div class="list-group-item-header">
                     <div class="list-view-pf-main-info">
                       <div class="list-view-pf-left">
@@ -89,12 +114,40 @@
                       <div class="list-view-pf-body">
                         <div class="list-view-pf-description">
                           <div class="list-group-item-text">
-                            <div ng-repeat="eval in evalSet">
-                              <div ng-show="eval.condition.type == 'THRESHOLD'">
-                                {{ eval.condition.dataId }} [ {{ eval.value }} ] {{ eval.condition.operator }} {{ eval.condition.threshold }}
-                              </div>
-                              <div ng-show="eval.condition.type == 'AVAILABILITY'">
-                                {{ eval.condition.dataId }} [ {{ eval.value }} ] is {{ eval.condition.operator }}
+                            <div class="list-group list-view-pf list-view-pf-view">
+                              <div class="list-group-item" ng-repeat="eval in evalSet">
+                                <div ng-show="eval.condition.type == 'THRESHOLD'">
+                                  <div>
+                                    {{ eval.condition.dataId }} [ {{ eval.value }} ] {{ eval.condition.operator }} {{ eval.condition.threshold }}
+                                  </div>
+                                  <span class="pull-right"><small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></span>
+                                </div>
+                                <div ng-show="eval.condition.type == 'AVAILABILITY'">
+                                  <div>
+                                    {{ eval.condition.dataId }} [ {{ eval.value }} ] is {{ eval.condition.operator }}
+                                  </div>
+                                  <span class="pull-right"><small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></span>
+                                </div>
+                                <div ng-show="eval.condition.type == 'EVENT'">
+                                  {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
+                                  <dl class="dl-horizontal eval-set">
+                                    <dt>Event</dt>
+                                    <dd></dd>
+                                    <dt>category</dt>
+                                    <dd>{{ eval.value.category }}</dd>
+                                    <dt>text</dt>
+                                    <dd>{{ eval.value.text}}</dd>
+                                    <dt ng-show="eval.value.tags != null">Tags</dt>
+                                    <dd ng-show="eval.value.tags != null"></dd>
+                                    <dt ng-show="eval.value.tags != null" ng-repeat-start="(key, value) in eval.value.tags">{{ key }}</dt>
+                                    <dd ng-show="eval.value.tags != null" ng-repeat-end>{{ value }}</dd>
+                                    <dt ng-show="eval.value.context != null">Context</dt>
+                                    <dd ng-show="eval.value.context != null"></dd>
+                                    <dt ng-show="eval.value.context != null" ng-repeat-start="(key, value) in eval.value.context">{{ key }}</dt>
+                                    <dd ng-show="eval.value.context != null" ng-repeat-end>{{ value }}</dd>
+                                  </dl>
+                                  <span class="pull-right"><small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -105,9 +158,12 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-4" ng-show="eventTimeline.details.resolvedEvalSets != null">
+            <div class="col-md-4" ng-show="eventSelected.resolvedEvalSets != null">
+              <h3>
+                Resolved Eval Sets
+              </h3>
               <div class="list-group list-view-pf list-view-pf-view">
-                <div class="list-group-item" ng-repeat="evalSet in eventTimeline.details.resolvedEvalSets">
+                <div class="list-group-item" ng-repeat="evalSet in eventSelected.resolvedEvalSets">
                   <div class="list-group-item-header">
                     <div class="list-view-pf-main-info">
                       <div class="list-view-pf-left">
@@ -116,12 +172,34 @@
                       <div class="list-view-pf-body">
                         <div class="list-view-pf-description">
                           <div class="list-group-item-text">
-                            <div ng-repeat="eval in evalSet">
-                              <div ng-show="eval.condition.type == 'THRESHOLD'">
-                                {{ eval.condition.dataId }} [ {{ eval.value }} ] {{ eval.condition.operator }} {{ eval.condition.threshold }}
-                              </div>
-                              <div ng-show="eval.condition.type == 'AVAILABILITY'">
-                                {{ eval.condition.dataId }} [ {{ eval.value }} ] is {{ eval.condition.operator }}
+                            <div class="list-group list-view-pf list-view-pf-view">
+                              <div ng-repeat="eval in evalSet">
+                                <div ng-show="eval.condition.type == 'THRESHOLD'">
+                                  {{ eval.condition.dataId }} [ {{ eval.value }} ] {{ eval.condition.operator }} {{ eval.condition.threshold }}
+                                </div>
+                                <div ng-show="eval.condition.type == 'AVAILABILITY'">
+                                  {{ eval.condition.dataId }} [ {{ eval.value }} ] is {{ eval.condition.operator }}
+                                </div>
+                                <div ng-show="eval.condition.type == 'EVENT'">
+                                  {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
+                                  <dl class="dl-horizontal eval-set">
+                                    <dt>Event</dt>
+                                    <dd></dd>
+                                    <dt>category</dt>
+                                    <dd>{{ eval.value.category }}</dd>
+                                    <dt>text</dt>
+                                    <dd>{{ eval.value.text}}</dd>
+                                    <dt ng-show="eval.value.tags != null">Tags</dt>
+                                    <dd ng-show="eval.value.tags != null"></dd>
+                                    <dt ng-show="eval.value.tags != null" ng-repeat-start="(key, value) in eval.value.tags">{{ key }}</dt>
+                                    <dd ng-show="eval.value.tags != null" ng-repeat-end>{{ value }}</dd>
+                                    <dt ng-show="eval.value.context != null">Context</dt>
+                                    <dd ng-show="eval.value.context != null"></dd>
+                                    <dt ng-show="eval.value.context != null" ng-repeat-start="(key, value) in eval.value.context">{{ key }}</dt>
+                                    <dd ng-show="eval.value.context != null" ng-repeat-end>{{ value }}</dd>
+                                  </dl>
+                                  <span class="pull-right"><small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -132,9 +210,12 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4" ng-show="eventSelected.lifecycle != null" >
+              <h3>
+                Lifecycle
+              </h3>
               <div class="list-group list-view-pf list-view-pf-view">
-                <div class="list-group-item" ng-repeat="cycle in eventTimeline.details.lifecycle">
+                <div class="list-group-item" ng-repeat="cycle in eventSelected.lifecycle">
                   <div class="list-group-item-header">
                     <div class="list-view-pf-main-info">
                       <div class="list-view-pf-left">
@@ -146,6 +227,7 @@
                         <div class="list-view-pf-description">
                           <div class="list-group-item-text">
                             <span class="pf pficon-user"></span> {{ cycle.user }}
+                            <span class="pull-right"><small>{{ cycle.stime | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></span>
                           </div>
                         </div>
                       </div>

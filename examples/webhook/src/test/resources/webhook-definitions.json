@@ -1,0 +1,45 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "webhook-trigger",
+        "name": "Webhook Trigger",
+        "description": "A Trigger that uses a Webhook action",
+        "severity": "HIGH",
+        "enabled": true,
+        "actions":[
+          {
+            "actionPlugin": "webhook",
+            "actionId": "notify-to-admins"
+          }
+        ]
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "data-x",
+          "operator": "LT",
+          "threshold": 5
+        },
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "data-y",
+          "operator": "GT",
+          "threshold": 5
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "webhook",
+      "actionId": "notify-to-admins",
+      "properties": {
+        "url": "http://webhook-mahora.rhcloud.com/ping",
+        "method": "POST"
+      }
+    }
+  ]
+}

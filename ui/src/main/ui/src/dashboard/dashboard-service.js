@@ -5,7 +5,7 @@ angular.module('hwk.dashboardModule').service('hwk.dashboardService', ['$resourc
     var host = '';
 
     // [lponce] TODO Enable this for testing
-    // host = 'http://localhost:8080';
+    host = 'http://localhost:8080';
 
     var baseUrl = host + '/hawkular/alerts';
 

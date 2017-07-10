@@ -276,7 +276,7 @@ public class Event implements Comparable<Event>, Serializable {
         this.trigger = trigger;
         this.dampening = dampening;
         this.evalSets = evalSets;
-
+        this.eventType = EventType.EVENT.name();
         this.ctime = System.currentTimeMillis();
 
         this.id = trigger.getId() + "-" + this.ctime + "-" + UUID.randomUUID();
