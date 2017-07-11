@@ -1,16 +1,9 @@
-angular.module('hwk.dashboardModule').service('hwk.dashboardService', ['$resource',
-  function ($resource) {
+angular.module('hwk.dashboardModule').service('hwk.dashboardService', ['$resource', '$rootScope',
+  function ($resource, $rootScope) {
     'use strict';
 
-    var host = '';
-
-    // [lponce] TODO Enable this for testing
-    // host = 'http://localhost:8080';
-
-    var baseUrl = host + '/hawkular/alerts';
-
     this.Alert = function (tenantId) {
-      return $resource(baseUrl, {}, {
+      return $resource($rootScope.appConfig.server.baseUrl, {}, {
         query: {
           method: 'GET',
           isArray: true,
@@ -20,7 +13,7 @@ angular.module('hwk.dashboardModule').service('hwk.dashboardService', ['$resourc
     };
 
     this.Event = function (tenantId) {
-      return $resource(baseUrl + '/events', {eventType: 'EVENT'}, {
+      return $resource($rootScope.appConfig.server.baseUrl + '/events', {eventType: 'EVENT'}, {
         query: {
           method: 'GET',
           isArray: true,

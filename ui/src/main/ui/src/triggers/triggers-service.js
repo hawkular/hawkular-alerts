@@ -1,16 +1,9 @@
-angular.module('hwk.triggersModule').service('hwk.triggersService', ['$resource',
-  function ($resource) {
+angular.module('hwk.triggersModule').service('hwk.triggersService', ['$resource', '$rootScope',
+  function ($resource, $rootScope) {
     'use strict';
 
-    var host = '';
-
-    // [lponce] TODO Enable this for testing
-    // host = 'http://localhost:8080';
-
-    var baseUrl = host + '/hawkular/alerts';
-
     this.Trigger = function (tenantId) {
-      return $resource(baseUrl + '/triggers', {}, {
+      return $resource($rootScope.appConfig.server.baseUrl + '/triggers', {}, {
         query: {
           method: 'GET',
           isArray: true,
@@ -20,7 +13,7 @@ angular.module('hwk.triggersModule').service('hwk.triggersService', ['$resource'
     };
 
     this.FullTrigger = function (tenantId, triggerId) {
-      return $resource(baseUrl + '/triggers/trigger/:triggerId', {
+      return $resource($rootScope.appConfig.server.baseUrl + '/triggers/trigger/:triggerId', {
         triggerId: triggerId
       }, {
         get: {
