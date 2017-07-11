@@ -1066,6 +1066,22 @@
   margin-left: 80px !important;
 }
 
+/* line 1004, scss/main.scss */
+.pagination-pf-pagesize {
+  width: 30px !important;
+  margin-right: 10px;
+}
+
+/* line 1009, scss/main.scss */
+.pagination-pf-controls {
+  margin: 0px !important;
+}
+
+/* line 1013, scss/main.scss */
+.pagination-pf-pages {
+  margin-right: 10px;
+}
+
 /*
  * Charts
  */

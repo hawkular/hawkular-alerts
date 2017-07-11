@@ -1,9 +1,24 @@
-angular.module('hwk.triggersModule').controller( 'hwk.triggersController', ['$scope', '$rootScope', '$q', 'hwk.triggersService',
+angular.module('hwk.triggersModule')
+.filter('startFrom', function () {
+  'use strict';
+
+  return function(input, start) {
+    if (input) {
+      start = +start;
+      return input.slice(start);
+    }
+    return [];
+  };
+})
+.controller( 'hwk.triggersController', ['$scope', '$rootScope', '$q', 'hwk.triggersService',
   function ($scope, $rootScope, $q, triggersService) {
     'use strict';
 
     console.log("[Triggers] Start: " + new Date());
     console.log("[Triggers] $rootScope.selectedTenant " + $rootScope.selectedTenant);
+
+    $scope.pageSize = 5;
+    $scope.triggers = [];
 
     var selectedTenant = $rootScope.selectedTenant;
 
@@ -26,11 +41,29 @@ angular.module('hwk.triggersModule').controller( 'hwk.triggersController', ['$sc
           for (var i = 0; i < resultFullTriggers.length; i++) {
             $scope.triggers.push(resultFullTriggers[i]);
           }
-          console.log(resultFullTriggers);
+          $scope.numTotalItems = $scope.triggers.length;
+          $scope.maxPages = ( $scope.numTotalItems % $scope.pageSize > 0 ) ? (( $scope.numTotalItems / $scope.pageSize ) | 0) + 1 : ( $scope.numTotalItems / $scope.pageSize ) | 0;
+          $scope.pageNumber = 1;
+          $scope.fromItem = ($scope.pageNumber - 1) * $scope.pageSize;
+          $scope.toItem = ($scope.pageNumber * $scope.pageSize) < $scope.numTotalItems ? ($scope.pageNumber * $scope.pageSize) : $scope.numTotalItems;
         });
 
       });
     };
+
+    var pageSizeRef = $scope.$watch('pageSize', function (newPageSize, oldPageSize) {
+      if (newPageSize) {
+        $scope.pageNumber = 1;
+        $scope.maxPages = ( $scope.numTotalItems % newPageSize > 0 ) ? (( $scope.numTotalItems / newPageSize ) | 0) + 1 : ( $scope.numTotalItems / newPageSize ) | 0;
+      }
+    });
+
+    var pageNumberRef = $scope.$watch('pageNumber', function (newPageNumber, oldPageNumber) {
+      if (newPageNumber) {
+        $scope.fromItem = (newPageNumber - 1) * $scope.pageSize;
+        $scope.toItem = (newPageNumber * $scope.pageSize) < $scope.numTotalItems ? (newPageNumber * $scope.pageSize) : $scope.numTotalItems;
+      }
+    });
 
     var watchRef = $rootScope.$watch('selectedTenant', function (newTenant, oldTenant) {
       selectedTenant = newTenant;
@@ -47,6 +80,8 @@ angular.module('hwk.triggersModule').controller( 'hwk.triggersController', ['$sc
     // When dashboard controler is destroyed, the $interval and $watch are removed.
     $scope.$on('$destroy', function() {
       watchRef();
+      pageSizeRef();
+      pageNumberRef();
     });
   }
 ]);

@@ -3,7 +3,7 @@
     <div class="row" ng-show="selectedTenant != null && selectedTenant != ''">
       <div class="col-md-12">
         <div class="list-group list-view-pf">
-          <div class="list-group-item" ng-repeat="t in triggers">
+          <div class="list-group-item" ng-repeat="t in triggers | startFrom: (pageNumber - 1) * pageSize | limitTo: (pageSize ? pageSize : 5)">
             <div class="list-view-pf-actions">
               <button class="btn btn-default">Action</button>
               <div class="dropdown pull-right dropdown-kebab-pf">
@@ -18,7 +18,6 @@
                   <li><a href="#">Separated link</a></li>
                 </ul>
               </div>
-
             </div>
             <div class="list-view-pf-main-info">
               <div class="list-view-pf-left">
@@ -70,6 +69,41 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="col-md-12">
+        <form class="form-inline" role="form">
+          <div class="form-group">
+            <input class="form-control pagination-pf-pagesize" type="text" ng-model="pageSize" />
+            <span> per page</span>
+          </div>
+          <div class="form-group pull-right">
+            <ul class="pagination pagination-sm pagination-pf-controls">
+              <li>
+                <a ng-click="pageNumber = 1">
+                  <span class="i fa fa-angle-double-left"></span>
+                </a>
+              </li>
+              <li>
+                <a ng-click="pageNumber = pageNumber > 1 ? pageNumber - 1 : 1">
+                  <span class="i fa fa-angle-left"></span>
+                </a>
+              </li>
+              <li>
+                <a ng-click="pageNumber = pageNumber < maxPages ? pageNumber + 1 : maxPages">
+                  <span class="i fa fa-angle-right"></span>
+                </a>
+              </li>
+              <li>
+                <a ng-click="pageNumber = maxPages">
+                  <span class="i fa fa-angle-double-right"></span>
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div class="form-group pull-right pagination-pf-pages">
+            <span><b>{{ fromItem }}-{{ toItem }} of {{ numTotalItems }}</b></span>
+          </div>
+        </form>
       </div>
     </div>
     <div class="row row-cards-pf" ng-show="selectedTenant == null || selectedTenant == ''">

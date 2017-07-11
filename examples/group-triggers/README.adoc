@@ -1,0 +1,85 @@
+= Group Triggers
+
+This example creates a Group Trigger which will be used to populate multiple Member Triggers.
+Group Triggers can be useful to manage several similar Triggers from a single point.
+For example, when a Group Trigger is modified, the changes are propagated across all the members.
+
+In the code, a Group Trigger will define two generic conditions 'Generic-X < 5' and 'Generic-Y > 5'.
+'Generic-X' and 'Generic-Y' are just an identifier that will be populated for a real variable in the member,
+i.e. 'Generic-X' -> 'Member1-X', 'Generic-Y' -> 'Member1-Y', and so. When modifying the conditions in the parent,
+'Generic-X < 100', automatically, all members update the same conditions with the modifications, 'Member1-X < 100'.
+
+[NOTE]
+====
+The scripts are written in groovy to make them work from maven in any platorm but those are pretty simple and can be
+translated to bash or a different environment easily.
+====
+
+== Running the example
+
+Build a Hawkular Alerting standalone distribution
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts
+    mvn clean install -DskipTests
+----
+
+Start the standalone server
+
+[source,shell,subs="+attributes"]
+----
+    cd dist/target/hawkular-alerting*
+    ./hawkular.sh
+----
+
+Next, let's run the examples
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts/examples/group-triggers
+    mvn validate
+----
+
+== create_group_trigger.groovy
+
+Create a group trigger with two conditions.
+
+This group trigger will be used as template/parent to create new members/children triggers.
+
+This group trigger has two conditions, using generic label for dataIds:
+
+    . numeric data with id "generic-data-x" is less than 5 and
+    . numeric data with id "generic-data-y" is greater than 5
+
+When members are created, labels used for dataIds are replaced by the definitive dataIds.
+
+== create_members.groovy
+
+Create new members from a group trigger as base.
+
+On member creation, specific details for each member are supplied.
+
+Generic labels used for dataId in the group trigger are personalized on each member:
+
+    . "generic-data-x" -> "data-x-for-member-${i}"
+    . "generic-data-y" -> "data-y-for-member-${i}"
+
+== update_group_trigger.groovy
+
+A change on the group trigger is propagated into the members.
+
+For example, a change on the threshold of the conditions:
+
+    . numeric data with id "generic-data-x" is less than 10 and
+    . numeric data with id "generic-data-y" is greater than 10
+
+New thresholds are propagated on all members of the group trigger.
+
+== clean_all.groovy
+
+A delete of a group trigger can also delete all members.
+
+It is also possible to delete a group trigger but maintain the members, in that case the existing members are updated to ORPHAN type.
+
+
