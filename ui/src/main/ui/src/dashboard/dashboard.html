@@ -158,7 +158,6 @@
                           </div>
                         </div>
                       </div>
-
                     </div>
                   </div>
                 </div>
@@ -262,6 +261,24 @@
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-{{ 12 / eventSelected.eventSections }}" ng-if="eventSelected.actions != null" >
+              <h3>
+                Actions
+              </h3>
+              <div class="list-group list-view-pf list-view-pf-view">
+                <div class="list-group-item" ng-repeat="action in eventSelected.actions">
+                  <div class="list-group-item-header">
+                    <dl>
+                      <dd ng-show="action.actionPlugin == 'email'" class="fa fa-envelope list-view-pf-icon"/>
+                      <dd ng-show="action.actionPlugin == 'webhook'" class="fa fa-code list-view-pf-icon"/>
+                      <dt>{{ action.actionId }}</dt>
+                      <dd><small>{{ action.ctime | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></dd>
+                      <dd><small>{{ action.result }}</small></dd>
+                    </dl>
                   </div>
                 </div>
               </div>

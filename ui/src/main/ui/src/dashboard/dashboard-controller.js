@@ -65,7 +65,9 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
       if (event.lifecycle) {
         count++;
       }
-
+      if (event.actions) {
+        count++;
+      }
       return count;
     }
 
@@ -95,22 +97,34 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
       }
     }
 
+    function getActions(event) {
+      var promise = dashboardService.Action(selectedTenant, event.id).query();
+      return promise;
+    }
+
     var onTimelineClick = function (eventTimeline) {
       $scope.timelineEvents = [];
+      var actionPromises = [];
       if (eventTimeline.events) {
         for (var i = 0; i < eventTimeline.events.length; i++) {
           transformExternalEventsOnEvalSets(eventTimeline.events[i].details);
-          eventTimeline.events[i].details.eventSections = countEventSections(eventTimeline.events[i].details);
+          actionPromises.push(getActions(eventTimeline.events[i].details));
           $scope.timelineEvents.push(eventTimeline.events[i].details);
         }
       }
       if (eventTimeline.details) {
         transformExternalEventsOnEvalSets(eventTimeline.details);
-        eventTimeline.details.eventSections = countEventSections(eventTimeline.details);
+        actionPromises.push(getActions(eventTimeline.details));
         $scope.timelineEvents.push(eventTimeline.details);
       }
-      console.log($scope.timelineEvents);
-      $scope.$apply();
+      $q.all(actionPromises).then(function (result) {
+        for (var i = 0; i < result.length; i++) {
+          if ( result.length > 0 ) {
+            $scope.timelineEvents[i].actions = result[i];
+          }
+          $scope.timelineEvents[i].eventSections = countEventSections($scope.timelineEvents[i]);
+        }
+      });
     };
 
     var timeline;
@@ -271,7 +285,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
       }
     });
 
-    // When dashboard controler is destroyed, the $interval and $watch are removed.
+    // When dashboard controller is destroyed, the $interval and $watch are removed.
     $scope.$on('$destroy', function() {
       $interval.cancel(intervalRef);
       watchRef();

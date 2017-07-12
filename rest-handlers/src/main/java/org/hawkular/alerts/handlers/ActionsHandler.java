@@ -17,10 +17,10 @@ import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
 import org.hawkular.alerts.handlers.util.ResponseUtil;
-import org.hawkular.handlers.RestEndpoint;
-import org.hawkular.handlers.RestHandler;
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
+import org.hawkular.handlers.RestEndpoint;
+import org.hawkular.handlers.RestHandler;
 
 import io.vertx.core.MultiMap;
 import io.vertx.ext.web.Router;
@@ -37,7 +37,9 @@ public class ActionsHandler implements RestHandler {
     private static final String PARAM_END_TIME = "endTime";
     private static final String PARAM_ACTION_PLUGINS = "actionPlugins";
     private static final String PARAM_ACTION_IDS = "actionIds";
+    @Deprecated
     private static final String PARAM_ALERTS_IDS = "alertIds";
+    private static final String PARAM_EVENT_IDS = "eventIds";
     private static final String PARAM_RESULTS = "results";
     private static final String COMMA = ",";
 
@@ -297,7 +299,10 @@ public class ActionsHandler implements RestHandler {
             criteria.setActionIds(Arrays.asList(params.get(PARAM_ACTION_IDS).split(COMMA)));
         }
         if (params.get(PARAM_ALERTS_IDS) != null) {
-            criteria.setAlertIds(Arrays.asList(params.get(PARAM_ALERTS_IDS).split(COMMA)));
+            criteria.setEventIds(Arrays.asList(params.get(PARAM_ALERTS_IDS).split(COMMA)));
+        }
+        if (params.get(PARAM_EVENT_IDS) != null) {
+            criteria.setEventIds(Arrays.asList(params.get(PARAM_EVENT_IDS).split(COMMA)));
         }
         if (params.get(PARAM_RESULTS) != null) {
             criteria.setResults(Arrays.asList(params.get(PARAM_RESULTS).split(COMMA)));
