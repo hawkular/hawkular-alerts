@@ -7,10 +7,11 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
 
     $scope.refresh = true;
 
-    var ONE_HOUR = 60 * 60 * 1000,
+    var ONE_SECOND = 1000,
+      ONE_HOUR = 60 * 60 * ONE_SECOND,
       ONE_DAY = 24 * ONE_HOUR,
       ONE_WEEK = 7 * ONE_DAY,
-      ONE_SECOND = 1000;
+      ONE_MONTH = 30 * ONE_DAY;
 
     var PING_INTERVAL = 2000;
 
@@ -244,6 +245,8 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         timeline = d3.chart.timeline()
           .end(new Date(endTimeline))
           .start(new Date(startTimeline))
+          .minScale(ONE_WEEK / ONE_MONTH)
+          .maxScale(ONE_WEEK / ONE_HOUR)
           .eventLineColor(onTimelineColor)
           .eventClick(onTimelineClick)
           .eventGrouping(ONE_SECOND);

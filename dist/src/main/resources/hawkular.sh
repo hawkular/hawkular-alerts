@@ -35,9 +35,9 @@ set_java_opts() {
 set_hawkular_classpath() {
     SEPARATOR=""
     ISPN_LUCENE_JAR=""
-    for FILE in $(find lib -name "*.jar")
+    for FILE in $(find ${DIRNAME}/lib -name "*.jar")
     do
-        if [ "$FILE" == lib/infinispan-lucene-directory* ]
+        if [ "$FILE" == ${DIRNAME}/lib/infinispan-lucene-directory* ]
         then
             ISPN_LUCENE_JAR="$FILE"
         else

@@ -78,6 +78,12 @@
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-actions-elasticsearch</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-alerters-elasticsearch</artifactId>
       <version>${project.version}</version>
     </dependency>

@@ -272,13 +272,19 @@
               <div class="list-group list-view-pf list-view-pf-view">
                 <div class="list-group-item" ng-repeat="action in eventSelected.actions">
                   <div class="list-group-item-header">
-                    <dl>
-                      <dd ng-show="action.actionPlugin == 'email'" class="fa fa-envelope list-view-pf-icon"/>
-                      <dd ng-show="action.actionPlugin == 'webhook'" class="fa fa-code list-view-pf-icon"/>
-                      <dt>{{ action.actionId }}</dt>
-                      <dd><small>{{ action.ctime | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></dd>
-                      <dd><small>{{ action.result }}</small></dd>
-                    </dl>
+                    <div>
+                      <span class="fa fa-envelope list-view-pf-icon-lg" ng-show="action.actionPlugin == 'email'"></span>
+                      <span class="fa fa-code list-view-pf-icon-lg" ng-show="action.actionPlugin == 'webhook'"></span>
+                      <span class="fa fa-file-code-o list-view-pf-icon-lg" ng-show="action.actionPlugin == 'elasticsearch'"></span>
+                      &nbsp;
+                      <b>{{ action.actionId }}</b>
+                    </div>
+                    <div>
+                      <small>{{ action.ctime | date:'yyyy-MM-dd HH:mm:ss Z' }}</small>
+                    </div>
+                    <div>
+                      <small>{{ action.result }}</small>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -79,10 +79,11 @@ public class ActionPlugins {
             if (classpath[i].contains("hawkular") && classpath[i].endsWith("jar")) {
                 ZipInputStream zip = new ZipInputStream(new FileInputStream(classpath[i]));
                 for (ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
-                    if (!entry.isDirectory() && entry.getName().endsWith(".class")) {
+                    if (!entry.isDirectory() && entry.getName().contains("hawkular") && entry.getName().endsWith(".class")) {
                         String className = entry.getName().replace('/', '.'); // including ".class"
                         className = className.substring(0, className.length() - 6);
                         try {
+                            log.debugf("Loading class %s", className);
                             Class clazz = cl.loadClass(className);
                             if (clazz.isAnnotationPresent(Plugin.class)) {
                                 Plugin plugin = (Plugin)clazz.getAnnotation(Plugin.class);

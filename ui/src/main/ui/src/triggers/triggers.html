@@ -48,6 +48,7 @@
                       <dt ng-repeat-start="a in t.trigger.actions">
                         <span class="fa fa-envelope list-view-pf-icon-lg" ng-show="a.actionPlugin == 'email'"></span>
                         <span class="fa fa-code list-view-pf-icon-lg" ng-show="a.actionPlugin == 'webhook'"></span>
+                        <span class="fa fa-file-code-o list-view-pf-icon-lg" ng-show="a.actionPlugin == 'elasticsearch'"></span>
                       </dt>
                       <dd ng-repeat-end>{{ a.actionId }}</dd>
                     </dl>
@@ -60,7 +61,7 @@
                     <dl class="dl-horizontal" ng-show="t.trigger.context != null">
                       <dt>Context</dt>
                       <dd></dd>
-                      <dt ng-repeat-start="(key, value) in t.trigger.actions">{{ key }}</dt>
+                      <dt ng-repeat-start="(key, value) in t.trigger.context">{{ key }}</dt>
                       <dd ng-repeat-end>{{ value }}</dd>
                     </dl>
                   </div>

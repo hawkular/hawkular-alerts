@@ -23,7 +23,7 @@ angular.module('hwk.dashboardModule').service('hwk.dashboardService', ['$resourc
     };
 
     this.Action = function (tenantId, eventId) {
-      return $resource(baseUrl + '/actions/history', {eventIds: eventId}, {
+      return $resource($rootScope.appConfig.server.baseUrl + '/actions/history', {eventIds: eventId}, {
         query: {
           method: 'GET',
           isArray: true,

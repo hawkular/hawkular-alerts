@@ -1,0 +1,319 @@
+= Elasticsearch Integration
+
+This example shows how to integrate Elasticsearch with Hawkular Alerting.
+
+====
+The scripts used for this example are written in *bash* and tested on Linux platforms. +
+Those are pretty simple and can be translated a different environment easily.
+====
+
+== Install Elasticsearch and Hawkular Alerting
+
+=== A) Manual Installation
+
+==== A.1) Install Elasticsearch
+
+Download and install Elasticsearch and Kibana
+
+[source,shell]
+----
+    ES_HOME= # Directory to install Elasticsearch products
+    cd $ES_HOME
+    wget https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/zip/elasticsearch/2.4.4/elasticsearch-2.4.4.zip
+    unzip elasticsearch-2.4.4.zip
+    # Kibana is platform dependent
+    # Adjust the package to your platform
+    wget https://download.elastic.co/kibana/kibana/kibana-4.6.4-linux-x86_64.tar.gz
+    tar xvfz kibana-4.6.4-linux-x86_64.tar.gz
+----
+
+Run Elasticsearch on localhost
+
+[source,shell]
+----
+    cd $ES_HOME
+    elasticsearch-2.4.4/bin/elasticsearch
+----
+
+Open a new shell and run Kibana on localhost
+
+[source,shell]
+----
+    kibana-4.6.4-linux-x86_64/bin/kibana
+----
+
+[TIP]
+Elasticsearch 2.4.4 and Kibana 4.6.4 versions are used in OpenShift 3.6 as logging system. +
+Hawkular Alerting is compatible with versions up to 5.2 versions.
+
+==== A.2) Install Hawkular Alerting
+
+Build a Hawkular Alerting standalone distribution
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts
+    mvn clean install -DskipTests
+----
+
+Start the standalone server
+
+[source,shell,subs="+attributes"]
+----
+    cd dist/target/hawkular-alerting*
+    ./hawkular.sh
+----
+
+
+[TIP]
+.Test Email server
+==================
+By default, Hawkular Alerting will send email notifications using a SMTP server on localhost:25, for demo purposes
+ a test smtp server can be used to validate the reception of the emails. +
+  +
+Hawkular Alerting has been tested using
+  https://nilhcem.github.io/FakeSMTP/[FakeSMTP]. +
+  +
+A GUI SMTP server can be set up with these steps:
+[source,shell,subs="+attributes"]
+----
+    git clone https://github.com/Nilhcem/FakeSMTP
+    cd FakeSMTP
+    mvn clean install -DskipTests
+    cd target
+    sudo java -jar fakeSMTP-*.jar
+----
+==================
+
+==== A.3) Run the example: Create Trigger definitions
+
+Run the definitions script
+
+[source,shell]
+----
+    ./create-definitions.sh
+----
+
+==== A.4) Run the example: Create random documents on Elasticsearch
+
+Run the log script
+
+[source,shell]
+----
+    ./create-logs.sh
+----
+
+=== B) Using Docker (Optional alternative)
+
+This tutorial can be followed as docker container.
+
+That can be done by the following commands:
+
+[source,shell,subs="+attributes"]
+----
+# Build docker image
+docker build -t hawkular-alerts-elasticsearch .
+docker run -i -t  hawkular-alerts-elasticsearch /bin/bash
+
+# Run Hawkular, Elasticsearch and Kibana
+nohup /opt/hawkular-alerts/dist/target/hawkular*/hawkular.sh
+nohup /opt/elasticsearch/bin/elasticsearch -Des.insecure.allow.root=true > elastic-search.out
+nohup /opt/kibana/bin/kibana > kibana.out
+
+# Run the example: Create the definitions
+/opt/create-definitions.sh
+
+# Run the example: Create random log
+/opt/create-logs.sh
+----
+
+== Visualize Alerts on Hawkular and Kibana
+
+Access to the link:http://localhost:5601/[Kibana Console] and add the indexes to visualize logs and alerts generated.
+
+----
+log
+alerts_summary
+alerts_full
+----
+
+Access to the link:http://localhost:8080/hawkular/alerts/ui[Hawkular Alerting Console] to get details of the Alerts and Triggers.
+
+== Understanding the example
+
+This scripts defines two triggers and three actions:
+
+=== Alert on any Backend ERROR log for AppA
+
+The goal of this trigger is to detect from Elasticsearch any ERROR message related to Backend from AppA.
+
+First, this trigger is tagged with _Elasticsearch_
+
+[source,json]
+----
+    "tags": {
+      "Elasticsearch": "Localhost instance"
+    }
+----
+
+Then the Elasticsearch alerter will start pulling log documents and convert them into Hawkular Alerting Events
+that will be evaluated by EventConditions.
+
+Context can be used to indicate paremeters of the Elasticsearch query and the Hawkular Events mapping
+
+[source]
+----
+    "context": {
+      // Time interval between queries to Elasticsearch
+      "interval": "30s",
+
+      // Field used to fetch documents in timeseries
+      "timestamp": "@timestamp",
+
+      // Documents will be queried from index log and filtered for AppA
+      // Filter is optional, then we could fetch all messages under index log
+      // On this case all messages would be evaluated
+      "index": "log",
+      "filter": "{\"match\":{\"app\":\"AppA\"}}",
+
+      // Documents are parsed into Hawkular Alerting Events using the following mapping
+      "mapping": "level:category,@timestamp:ctime,message:text,app:dataId,index:tags"
+    }
+----
+
+Once that we have the documents as Events inside Hawkular Alerting we can use an EventCondition to detect events coming
+from _AppA_ with category _ERROR_ and _Backend_ as part of the main text
+
+[source]
+----
+    "conditions":[
+        {
+          "type": "EVENT",
+          "dataId": "AppA",
+          "expression": "category == 'ERROR',text contains 'Backend'"
+        }
+    ]
+----
+
+=== Alert on WARN messages for AppB
+
+The goal of this trigger is to detect from Elasticsearch when the number of WARN messages for AppB exceeds some threshold.
+
+First, this trigger is tagged with _Elasticsearch_
+
+[source,json]
+----
+    "tags": {
+      "Elasticsearch": "Localhost instance"
+    }
+----
+
+Then the Elasticsearch alerter will start pulling log documents and convert them into Hawkular Alerting Events
+that will be evaluated by EventConditions.
+
+[source]
+----
+    "context": {
+      // Time interval between queries to Elasticsearch
+      "interval": "30s",
+
+      // Field used to fetch documents in timeseries
+      "timestamp": "@timestamp",
+
+      // Documents will be queried from index log and filtered for AppB
+      // Filter is optional, then we could fetch all messages under index log
+      // On this case all messages would be evaluated
+      "index": "log",
+      "filter": "{\"match\":{\"app\":\"AppB\"}}",
+
+      // Documents are parsed into Hawkular Alerting Events using the following mapping
+      "mapping": "level:category,@timestamp:ctime,message:text,app:dataId,index:tags"
+    }
+----
+
+Once that we have the documents as Events inside Hawkular Alerting we can use an EventCondition to detect events coming
+from _AppB_ with category _WARN_
+
+[source]
+----
+    "conditions":[
+        {
+          "type": "EVENT",
+          "dataId": "AppB",
+          "expression": "category == 'ERROR'"
+        }
+    ]
+----
+
+We do not want to be alerted on each WARN message, but when we have a suspicious increase of WARN messages.
+This could be modeled in several ways, for our example we are going to use a Dampening to detect when there are three
+or more WARN messages from a total of ten messages evaluated
+
+[source]
+----
+    "dampenings": [
+        {
+          "triggerMode": "FIRING",
+          "type":"RELAXED_COUNT",
+          "evalTrueSetting": 3,
+          "evalTotalSetting": 10
+        }
+    ]
+----
+
+=== Actions
+
+Two of the actions defined in the example show how to write the alerts generated into Elasticsearch.
+
+The action _write-full-alert_ writes full Hawkular Alert json into Elasticsearch. Properties can indicate under which
+index or type the alerts will be written.
+
+[source]
+----
+    {
+      "actionPlugin": "elasticsearch",
+      "actionId": "write-full-alert",
+      "properties": {
+        // Index under alerts will be written in Elasticsearch
+        "index": "alerts_full"
+      }
+    }
+----
+
+A full Hawkular Alert contains a lot of detailed information about the environment when an alert was generated (trigger,
+conditions, evaluations). In a second we are going to show how to map the Hawkular Alert into a custom format
+
+[source]
+----
+    {
+      "actionPlugin": "elasticsearch",
+      "actionId": "write-partial-alert",
+      "properties": {
+        // Index under alerts will be written in Elasticsearch
+        "index": "alerts_summary",
+
+        // If present timestamps fields from Alert will be parsed on this format
+        "timestamp_pattern": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ",
+
+        // A Shift JSON -> JSON transformation to convert Alert object into a light custom document
+        "transform": "{
+                \"tenantId\":\"tenant\",
+                \"ctime\":\"timestamp\",
+                \"text\":\"trigger\",
+                \"context\":{
+                    \"interval\":\"fetch-interval\"
+                },
+                \"evalSets\":{
+                    \"*\":{
+                        \"*\":{
+                            \"condition\":{
+                                \"expression\":\"details.[&3][&2].expression\",
+                                \"dataId\":\"details.[&3][&2].dataId\"
+                            },
+                            \"value\":\"details.[&2][&1].value\"
+                        }
+                    }
+                }
+            }"
+      }
+----

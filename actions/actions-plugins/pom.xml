@@ -85,6 +85,7 @@
         <module>actions-email</module>
         <module>actions-file</module>
         <module>actions-webhook</module>
+        <module>actions-elasticsearch</module>
       </modules>
     </profile>
   </profiles>
