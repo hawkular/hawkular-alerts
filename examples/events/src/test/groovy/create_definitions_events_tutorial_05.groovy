@@ -18,8 +18,9 @@ import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
 import net.sf.json.groovy.JsonSlurper
 
-def url = "http://localhost:8080/hawkular/alerts/"
-def tenant = "my-organization"
+def url = "http://" + System.getProperty("host", "localhost:8080") + "/hawkular/alerts/"
+def tenant = System.getProperty("tenant", "my-organization")
+println "Server: ${url}\nTenant: ${tenant}"
 
 def definitions = new File("src/test/resources/events-tutorial-05.json").text
 

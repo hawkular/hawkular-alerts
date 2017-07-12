@@ -20,8 +20,9 @@ import net.sf.json.groovy.JsonSlurper
 
 def definitionsFile = "$project.properties.definitions"
 
-def url = "http://localhost:8080/hawkular/alerts/"
-def tenant = "my-organization"
+def url = "http://" + System.getProperty("host", "localhost:8080") + "/hawkular/alerts/"
+def tenant = System.getProperty("tenant", "my-organization")
+println "Server: ${url}\nTenant: ${tenant}"
 
 println("Processing... ${definitionsFile}")
 def definitions = new File("src/test/resources/${definitionsFile}").text
