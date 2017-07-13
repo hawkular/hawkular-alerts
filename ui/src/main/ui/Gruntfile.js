@@ -85,7 +85,7 @@ module.exports = function (grunt) {
       },
       livereload: {
         options: {
-          open:       true,
+          open:       !grunt.option("nobrowser"),
           base:       [
             '.tmp',
             '<%= projectSettings.dist %>'
