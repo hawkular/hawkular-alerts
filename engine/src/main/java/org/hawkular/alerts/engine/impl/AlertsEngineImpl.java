@@ -135,7 +135,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
         disabledTriggers = new HashSet<>();
         missingStates = new HashSet<>();
 
-        wakeUpTimer = new Timer("CassAlertsServiceImpl-Timer");
+        wakeUpTimer = new Timer("AlertsEngineImpl-Timer");
 
         delay = new Integer(HawkularProperties.getProperty(ENGINE_DELAY, "1000"));
         period = new Integer(HawkularProperties.getProperty(ENGINE_PERIOD, "2000"));
