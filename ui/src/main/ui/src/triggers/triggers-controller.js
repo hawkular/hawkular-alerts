@@ -19,18 +19,24 @@ angular.module('hwk.triggersModule')
 
     $scope.pageSize = 5;
     $scope.triggers = [];
+    $scope.filterText = null;
 
     var selectedTenant = $rootScope.selectedTenant;
 
     var updateTriggers = function () {
-      console.log("[Triggers] Updating data for " + selectedTenant + " at " + new Date());
-
-      var promise1 = triggersService.Trigger(selectedTenant).query();
+      var promise1;
+      if ( $scope.filterText ) {
+        console.log("[Triggers] Updating triggers for " + selectedTenant + " at " + new Date() + " with filter=" + $scope.filterText);
+        promise1 = triggersService.Query(selectedTenant, $scope.filterText).query();
+      } else {
+        console.log("[Triggers] Updating triggers for " + selectedTenant + " at " + new Date());
+        promise1 = triggersService.Trigger(selectedTenant).query();
+      }
 
       $q.all([promise1.$promise]).then(function (result) {
         var updatedTriggers = result[0];
         var promises = [];
-
+        console.log("FOUND=" + updatedTriggers.length);
         for (var i = 0; i < updatedTriggers.length; i++) {
           var promiseX = triggersService.FullTrigger(selectedTenant, updatedTriggers[i].id).get();
           promises.push(promiseX.$promise);
@@ -38,6 +44,7 @@ angular.module('hwk.triggersModule')
 
         $q.all(promises).then(function (resultFullTriggers) {
           $scope.triggers = [];
+          console.log("FOUND FULL=" + resultFullTriggers.length);
           for (var i = 0; i < resultFullTriggers.length; i++) {
             $scope.triggers.push(resultFullTriggers[i]);
           }
@@ -77,11 +84,20 @@ angular.module('hwk.triggersModule')
       updateTriggers();
     }
 
-    // When dashboard controler is destroyed, the $interval and $watch are removed.
+    // When dashboard controller is destroyed, the $interval and $watch are removed.
     $scope.$on('$destroy', function() {
       watchRef();
       pageSizeRef();
       pageNumberRef();
     });
+
+    $scope.updateFilter = function() {
+      if (this.newFilter.text) {
+        $scope.filterText = this.newFilter.text;
+      } else {
+        $scope.filterText = null;
+      }
+      updateTriggers();
+    };
   }
 ]);

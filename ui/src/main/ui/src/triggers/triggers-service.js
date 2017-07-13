@@ -22,5 +22,16 @@ angular.module('hwk.triggersModule').service('hwk.triggersService', ['$resource'
         }
       });
     };
+
+    this.Query = function (tenantId, tagQuery) {
+      // TODO: This should change to tagQuery when it is supported on TriggersCriteria
+      return $resource($rootScope.appConfig.server.baseUrl + '/triggers', {tags: tagQuery}, {
+        query: {
+          method: 'GET',
+          isArray: true,
+          headers: {'Hawkular-Tenant': tenantId}
+        }
+      });
+    };
   }
 ]);
