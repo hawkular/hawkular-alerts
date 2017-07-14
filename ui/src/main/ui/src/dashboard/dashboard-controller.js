@@ -147,9 +147,19 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         dataTimeline[RESOLVED].data = [];
         dataTimeline[EVENTS].data = [];
 
+        var severity = new Map();
+
         var minDate = Number.MAX_VALUE, maxDate = 0;
         var i;
         for (i = 0; i < updatedAlerts.length; i++) {
+          // build counts of severities
+          var sevCount = severity.get(updatedAlerts[i].severity);
+          if (sevCount === undefined) {
+            sevCount = 0;
+          }
+          severity.set(updatedAlerts[i].severity, sevCount + 1);
+
+          // build timeline data that is also used for alert counts
           var status = updatedAlerts[i].status;
           var stime = updatedAlerts[i].lifecycle[updatedAlerts[i].lifecycle.length - 1].stime;
           if (stime < minDate) {
@@ -199,14 +209,14 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         $scope.resolvedAlerts = dataTimeline[RESOLVED].data;
         $scope.events = dataTimeline[EVENTS].data;
 
-        // donut chart
+        // active alerts donut chart
         $scope.activeAlertDonutConfig = {
           'chartId': 'activeAlertDonut',
           'legend': {"show": true},
           'color': {
             pattern: [
               '#CC0000', // Open == red
-              '#FFA500'  // Acknowledged == orange
+              '#FF8000'  // Acknowledged == orange
             ]
           },
           'donut': {
@@ -233,10 +243,50 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         var activeAndAcked = dataTimeline[OPEN].data.length + dataTimeline[ACKNOWLEDGED].data.length;
         $().pfSetDonutChartTitle("#active-alert-donut-chart", activeAndAcked, "Alerts");
 
+        // severity alerts chart - alert severities are fixed to either CRITICAL, HIGH, MEDIUM, or LOW
+        $scope.severityAlertChartConfig = {
+          'chartId': 'severityAlertChart',
+          'legend': {"show": true},
+          'color': {
+            'pattern': [
+              '#CC0000', // Critical == red
+              '#FF8000', // High == orange
+              '#EFE70D', // Medium == yellow
+              '#66B2FF'  // Low == blue
+            ]
+          },
+          'pie': {
+            'title': 'Severity'
+          }
+        };
+
+        var sevCritical = severity.has('CRITICAL') ? severity.get('CRITICAL') : 0;
+        var sevHigh = severity.has('HIGH') ? severity.get('HIGH') : 0;
+        var sevMedium = severity.has('MEDIUM') ? severity.get('MEDIUM') : 0;
+        var sevLow = severity.has('LOW') ? severity.get('LOW') : 0;
+
+        $scope.severityAlertChartData = {
+          'type': 'pie',
+          'rows': [
+            ['Critical', 'High', 'Medium', 'Low'],
+            [sevCritical, sevHigh, sevMedium, sevLow]
+          ],
+        };
+
+        var severityAlertChartConfig = $scope.severityAlertChartConfig;
+        severityAlertChartConfig.bindto = '#severity-alert-chart';
+        severityAlertChartConfig.data = $scope.severityAlertChartData;
+        severityAlertChartConfig.size = {
+          width: 200,
+          height: 200
+        };
+        var severityAlertChart = c3.generate(severityAlertChartConfig);
+
+        // prepare timeline
         console.log('[Dashboard] Update timeline data ' + new Date());
         // console.log(JSON.stringify(dataTimeline));
 
-      // [lponce] remove objects to re-draw
+        // [lponce] remove objects to re-draw
         d3.select('#pf-timeline').selectAll('div').remove();
 
         var startTimeline = minDate - ((maxDate - minDate) * 0.25);
