@@ -54,6 +54,15 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
       return '';
     };
 
+    var severityColorPatterns = {
+      pattern: [
+        $.pfPaletteColors.red, // Critical
+        $.pfPaletteColors.orange, // High
+        $.pfPaletteColors.cyan, // Medium
+        $.pfPaletteColors.blue // Low
+      ]
+    };
+
     function countEventSections(event) {
       var count = 0;
 
@@ -148,16 +157,41 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         dataTimeline[EVENTS].data = [];
 
         var severity = new Map();
+        var alertsByOpenAck = [
+          ['Critical', 0, 0],
+          ['High', 0, 0],
+          ['Medium', 0, 0],
+          ['Low', 0, 0]
+        ];
 
         var minDate = Number.MAX_VALUE, maxDate = 0;
         var i;
+
         for (i = 0; i < updatedAlerts.length; i++) {
+
           // build counts of severities
           var sevCount = severity.get(updatedAlerts[i].severity);
           if (sevCount === undefined) {
             sevCount = 0;
           }
           severity.set(updatedAlerts[i].severity, sevCount + 1);
+
+          // the outer array index for the severity into alertsByOpenAck object
+          var alertsByOpenAckIndex;
+          switch (updatedAlerts[i].severity) {
+          case 'CRITICAL':
+            alertsByOpenAckIndex = 0;
+            break;
+          case 'HIGH':
+            alertsByOpenAckIndex = 1;
+            break;
+          case 'MEDIUM':
+            alertsByOpenAckIndex = 2;
+            break;
+          case 'LOW':
+            alertsByOpenAckIndex = 3;
+            break;
+          }
 
           // build timeline data that is also used for alert counts
           var status = updatedAlerts[i].status;
@@ -174,12 +208,14 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
               date: new Date(stime),
               details: updatedAlerts[i]
             });
+            alertsByOpenAck[alertsByOpenAckIndex][1]++;
             break;
           case 'ACKNOWLEDGED':
             dataTimeline[ACKNOWLEDGED].data.push({
               date: new Date(stime),
               details: updatedAlerts[i]
             });
+            alertsByOpenAck[alertsByOpenAckIndex][2]++;
             break;
           case 'RESOLVED':
             dataTimeline[RESOLVED].data.push({
@@ -209,55 +245,42 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         $scope.resolvedAlerts = dataTimeline[RESOLVED].data;
         $scope.events = dataTimeline[EVENTS].data;
 
-        // active alerts donut chart
-        $scope.activeAlertDonutConfig = {
-          'chartId': 'activeAlertDonut',
-          'legend': {"show": true},
-          'color': {
-            pattern: [
-              '#CC0000', // Open == red
-              '#FF8000'  // Acknowledged == orange
-            ]
-          },
-          'donut': {
-            'title': 'Alerts'
+        // active alerts chart
+        $scope.activeAlertChartConfig = {};
+        $scope.activeAlertChartConfig.chartId = 'activeAlertChart';
+        $scope.activeAlertChartConfig.legend = {"show": true};
+        $scope.activeAlertChartConfig.color = severityColorPatterns;
+        $scope.activeAlertChartConfig.axis = {
+          rotated: false,
+          x: {
+            categories: ['Open', 'Acknowledged'],
+            type: 'category'
           }
         };
 
-        $scope.activeAlertDonutData = {
-          'type': 'donut',
-          'rows': [
-            ['Open', 'Acknowledged'],
-            [dataTimeline[OPEN].data.length, dataTimeline[ACKNOWLEDGED].data.length]
-          ]
+        $scope.activeAlertChartData = {
+          'type': 'bar',
+          'groups': [['Critical', 'High', 'Medium', 'Low']],
+          'columns': alertsByOpenAck
         };
 
-        var activeAlertDonutChartConfig = $scope.activeAlertDonutConfig;
-        activeAlertDonutChartConfig.bindto = '#active-alert-donut-chart';
-        activeAlertDonutChartConfig.data = $scope.activeAlertDonutData;
-        activeAlertDonutChartConfig.size = {
+        var activeAlertChartConfig = $scope.activeAlertChartConfig;
+        activeAlertChartConfig.bindto = '#active-alert-chart';
+        activeAlertChartConfig.data = $scope.activeAlertChartData;
+        activeAlertChartConfig.size = {
           width: 200,
           height: 200
         };
-        var activeAlertDonutChart = c3.generate(activeAlertDonutChartConfig);
-        var activeAndAcked = dataTimeline[OPEN].data.length + dataTimeline[ACKNOWLEDGED].data.length;
-        $().pfSetDonutChartTitle("#active-alert-donut-chart", activeAndAcked, "Alerts");
+        var activeAlertChart = c3.generate(activeAlertChartConfig);
+
+        // Total number of alerts being worked on. This was needed for the donut chart which has been removed
+        //var activeAndAcked = dataTimeline[OPEN].data.length + dataTimeline[ACKNOWLEDGED].data.length;
 
         // severity alerts chart - alert severities are fixed to either CRITICAL, HIGH, MEDIUM, or LOW
         $scope.severityAlertChartConfig = {
           'chartId': 'severityAlertChart',
           'legend': {"show": true},
-          'color': {
-            'pattern': [
-              '#CC0000', // Critical == red
-              '#FF8000', // High == orange
-              '#EFE70D', // Medium == yellow
-              '#66B2FF'  // Low == blue
-            ]
-          },
-          'pie': {
-            'title': 'Severity'
-          }
+          'color': severityColorPatterns
         };
 
         var sevCritical = severity.has('CRITICAL') ? severity.get('CRITICAL') : 0;
