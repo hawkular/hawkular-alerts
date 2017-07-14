@@ -64,7 +64,6 @@ Start the standalone server
     ./hawkular.sh
 ----
 
-
 [TIP]
 .Test Email server
 ==================

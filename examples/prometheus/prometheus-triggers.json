@@ -1,0 +1,67 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "prom-trigger",
+        "name": "Prometheus Trigger",
+        "description": "Alert on any prometheus http request with activity in the last 5 minutes, check every 5 seconds. AutoDisable after 1 alert.",
+        "severity": "HIGH",
+        "enabled": true,
+        "autoDisable": true,
+        "tags": {
+          "prometheus": "Test"
+        }
+      },
+      "conditions":[
+        {
+          "type": "EXTERNAL",
+          "alerterId": "prometheus",
+          "dataId": "prometheus-test",
+          "expression": "rate(http_requests_total{handler=\"query\",job=\"prometheus\"}[5m])>0"
+        }
+      ],
+      "actions":[
+        {
+          "actionPlugin": "email",
+          "actionId": "email-to-admins"
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "prom-alert-trigger",
+        "name": "Prometheus Alert Trigger",
+        "description": "Alert on any firing prometheus alert, check every 5 seconds. AutoDisable after 1 alert.",
+        "severity": "HIGH",
+        "enabled": true,
+        "autoDisable": true,
+        "tags": {
+          "prometheus": "Test"
+        }
+      },
+      "conditions":[
+        {
+          "type": "EXTERNAL",
+          "alerterId": "prometheus",
+          "dataId": "prometheus-alert-test",
+          "expression": "ALERTS{job=\"prometheus\",alertname=\"InstanceUp\",alertstate=\"firing\"}"
+        }
+      ],
+      "actions":[
+        {
+          "actionPlugin": "email",
+          "actionId": "email-to-admins"
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "email",
+      "actionId": "email-to-admins",
+      "properties": {
+        "to": "admins@hawkular.org"
+      }
+    }
+  ]
+}

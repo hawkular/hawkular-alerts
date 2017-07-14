@@ -1,0 +1,106 @@
+= Prometheus Integration
+
+Hawkular Alerting can integrate with Prometheus in two ways:
+
+- It can define an ExternalCondition that directly queries a Prometheus server.
+- It can be notified by Prometheus creating an Event in Hawkular Alerting.
+
+This mechanism allows to create Triggers in Hawkular Alerting with conditions defined from multiple sources.
+
+====
+The scripts used for this example are written in *bash* and tested on Linux platforms. +
+Those are pretty simple and can be translated a different environment easily.
+====
+
+== Install Prometheus and Hawkular Alerting
+
+=== 1) Install Prometheus
+
+Install Prometheus
+
+[source,shell]
+----
+  PS_HOME= # Directory to install Prometheus products
+  EXAMPLE_HOME= # Directory where this example is hosted
+  cd $PS_HOME
+  wget https://github.com/prometheus/prometheus/releases/download/v1.7.1/prometheus-1.7.1.linux-amd64.tar.gz
+  tar zxfv prometheus-1.7.1.linux-amd64.tar.gz
+  cd prometheus-1.7.1.linux-amd64
+
+  # Copy the rules for notification example
+  cp $EXAMPLE_HOME/prometheus-alerts.rules
+
+  # Edit prometheus.yml and add the prometheus-alerts.rules
+  #
+  # rule_files:
+  #   - "prometheus-alerts.rules"
+  #
+
+  ./prometheus
+----
+
+Install Prometheus AlertManager
+
+[source,shell]
+----
+  PS_HOME= # Directory to install Prometheus products
+  EXAMPLE_HOME= # Directory where this example is hosted
+  cd $PS_HOME
+  wget https://github.com/prometheus/alertmanager/releases/download/v0.7.1/alertmanager-0.7.1.linux-amd64.tar.gz
+  tar zxfv alertmanager-0.7.1.linux-amd64.tar.gz
+  cd alertmanager-0.7.1.linux-amd64.tar.gz
+
+  # Copy the notifier configuration to Hawkular Alerting
+  cp $EXAMPLE_HOME/alertmanager.yml .
+
+  ./alertmanager
+----
+
+=== 2) Install Hawkular Alerting
+
+Build a Hawkular Alerting standalone distribution
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts
+    mvn clean install -DskipTests
+----
+
+Start the standalone server
+
+[source,shell,subs="+attributes"]
+----
+    cd dist/target/hawkular-alerting*
+    ./hawkular.sh
+----
+
+[TIP]
+.Test Email server
+==================
+By default, Hawkular Alerting will send email notifications using a SMTP server on localhost:25, for demo purposes
+ a test smtp server can be used to validate the reception of the emails. +
+  +
+Hawkular Alerting has been tested using
+  https://nilhcem.github.io/FakeSMTP/[FakeSMTP]. +
+  +
+A GUI SMTP server can be set up with these steps:
+[source,shell,subs="+attributes"]
+----
+    git clone https://github.com/Nilhcem/FakeSMTP
+    cd FakeSMTP
+    mvn clean install -DskipTests
+    cd target
+    sudo java -jar fakeSMTP-*.jar
+----
+==================
+
+=== 3) Run the example: Create Trigger definitions
+
+Create Prometheus definitions
+
+[source,shell,subs="+attributes"]
+----
+    ./create-definitions.sh
+----
+
+Check out the Alerts generated on the link:http://localhost:8080/hawkular/alerts/ui[Hawkular Alerting UI].
