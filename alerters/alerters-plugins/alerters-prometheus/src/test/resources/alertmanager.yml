@@ -1,0 +1,17 @@
+global:
+  # The smarthost and SMTP sender used for mail notifications.
+  # smtp_smarthost: 'localhost:25'
+  # smtp_from: 'alertmanager@example.org'
+
+route:
+  receiver: "hawkular-alerts"
+  group_by: ['alertname', 'tenant']
+  group_wait:      10s
+  group_interval:  1m
+  repeat_interval: 2m
+
+receivers:
+- name: "hawkular-alerts"
+  webhook_configs:
+  - url: 'http://localhost:8080/hawkular/alerter/prometheus/notification'
+    send_resolved: false

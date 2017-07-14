@@ -16,11 +16,13 @@
  */
 package org.hawkular.alerter.prometheus;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -30,8 +32,15 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.hawkular.alerts.alerters.api.Alerter;
 import org.hawkular.alerts.alerters.api.AlerterPlugin;
+import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.event.Event;
@@ -41,11 +50,6 @@ import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.DistributedEvent;
 import org.hawkular.commons.properties.HawkularProperties;
 import org.jboss.logging.Logger;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 /**
  * Manages the Prometheus evaluations and interacts with the Alerts system.  Sets up fixed rate thread
@@ -69,7 +73,7 @@ public class PrometheusAlerter implements AlerterPlugin {
 
     private static final String PROMETHEUS_ALERTER = "hawkular-alerts.prometheus-alerter";
     private static final String PROMETHEUS_ALERTER_ENV = "PROMETHEUS_ALERTER";
-    private static final String PROMETHEUS_ALERTER_DEFAULT = "false";  // do not turn on prom-alerter by default
+    private static final String PROMETHEUS_ALERTER_DEFAULT = "true";
 
     private static final String PROMETHEUS_URL = "hawkular-alerts.prometheus-url";
     private static final String PROMETHEUS_URL_ENV = "PROMETHEUS_URL";
@@ -85,6 +89,7 @@ public class PrometheusAlerter implements AlerterPlugin {
     private static final String FREQUENCY_DEFAULT = "120";
 
     private static final String ALERTER_ID = "prometheus";
+    private static final String UTF_8 = "UTF-8";
 
     private Map<TriggerKey, Trigger> activeTriggers = new ConcurrentHashMap<>();
 
@@ -117,6 +122,7 @@ public class PrometheusAlerter implements AlerterPlugin {
         if (prometheusAlerter) {
             log.infof("Starting Hawkular Prometheus External Alerter");
             definitions.registerDistributedListener(events -> refresh(events));
+            initialRefresh();
         }
     }
 
@@ -129,6 +135,16 @@ public class PrometheusAlerter implements AlerterPlugin {
         if (null != expressionExecutor) {
             expressionExecutor.shutdown();
             expressionExecutor = null;
+        }
+    }
+
+    private void initialRefresh() {
+        try {
+            Collection<Trigger> triggers = definitions.getAllTriggersByTag(ALERTER_ID, "*");
+            triggers.stream().forEach(trigger -> activeTriggers.put(new TriggerKey(trigger.getTenantId(), trigger.getId()), trigger));
+            update();
+        } catch (Exception e) {
+            log.error("Failed to fetch Triggers for external conditions.", e);
         }
     }
 
@@ -257,23 +273,21 @@ public class PrometheusAlerter implements AlerterPlugin {
 
         @Override
         public void run() {
+            CloseableHttpClient httpClient = null;
             try {
-                HttpClientBuilder restClient = new HttpClientBuilder(false, "ignored", "ignored", false, null, null,
-                        "ignored", "ignored", 15, 600);
+                httpClient = HttpClients.createDefault();
+
                 StringBuffer url = new StringBuffer(properties.get(URL));
-                url.append("/api/v1/query?query=");
-                url.append(externalCondition.getExpression());
-                Request request = restClient.buildJsonGetRequest(url.toString(), null);
-                OkHttpClient httpClient = restClient.getHttpClient();
-                Response response = httpClient.newCall(request).execute();
-                if (response.code() >= 300) {
-                    log.warnf("Prometheus GET failed. Status=[%d], message=[%s], url=[%s]", response.code(),
-                            response.message(), url.toString());
+                BasicNameValuePair param = new BasicNameValuePair("query", externalCondition.getExpression());
+                url.append("/api/v1/query?").append(URLEncodedUtils.format(Arrays.asList(param), UTF_8));
+                HttpGet getRequest = new HttpGet(url.toString());
+                HttpResponse response = httpClient.execute(getRequest);
+                if (response.getStatusLine().getStatusCode() >= 300) {
+                    log.warnf("Prometheus GET failed. Status=[%d], message=[%s], url=[%s]", response.getStatusLine().getStatusCode(),
+                            response.getStatusLine().getReasonPhrase(), url.toString());
                 } else {
-                    String bodyString = response.body().string();
-                    ObjectMapper mapper = new ObjectMapper();
-                    QueryResponse queryResponse = mapper.readValue(bodyString, QueryResponse.class);
-                    if (isValid(queryResponse, bodyString)) {
+                    QueryResponse queryResponse = JsonUtil.getMapper().readValue(response.getEntity().getContent(), QueryResponse.class);
+                    if (isValid(queryResponse, response)) {
                         evaluate(queryResponse.getData().getResult());
                     }
                     return;
@@ -283,18 +297,26 @@ public class PrometheusAlerter implements AlerterPlugin {
                     t.printStackTrace();
                 }
                 log.warnf("Failed data fetch for %s: %s", externalCondition.getExpression(), t.getMessage());
+            } finally {
+                if (httpClient != null) {
+                    try {
+                        httpClient.close();
+                    } catch (IOException e) {
+                        log.debugf(e,"Failed closing http client");
+                    }
+                }
             }
         }
 
-        private boolean isValid(QueryResponse queryResponse, String bodyString) {
+        private boolean isValid(QueryResponse queryResponse, Object response) {
             if (!"success".equals(queryResponse.getStatus())) {
                 log.warnf("Prometheus query did not return success, can not process external condition: [%s]",
-                        bodyString);
+                        response);
                 return false;
             }
             if (!"vector".equals(queryResponse.getData().getResultType())) {
                 log.warnf("resultType [%s] is not yet supported. Supported resultTyes are [vector]: [%s]",
-                        queryResponse.getData().getResultType(), bodyString);
+                        queryResponse.getData().getResultType(), response);
                 return false;
             }
 

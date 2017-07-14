@@ -30,11 +30,11 @@ import org.junit.Test
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-class prometheusITest {
+class PrometheusITest {
 
-    def prometheus, hawkular, format, response
+    def hawkular, response
 
-    prometheusITest() {
+    PrometheusITest() {
         hawkular = new RESTClient(System.getProperty('hawkular.base-uri') ?: 'http://127.0.0.1:8080/hawkular/alerts/', ContentType.JSON)
         hawkular.handler.failure = { it }
         /*

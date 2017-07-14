@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerter.elasticsearch;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -218,6 +219,7 @@ public class ElasticsearchAlerter implements AlerterPlugin {
 
         if (elasticSearchAlerter) {
             this.definitions.registerDistributedListener(events -> refresh(events));
+            initialRefresh();
         }
     }
 
@@ -259,6 +261,16 @@ public class ElasticsearchAlerter implements AlerterPlugin {
             }
             update();
         });
+    }
+
+    private void initialRefresh() {
+        try {
+            Collection<Trigger> triggers = definitions.getAllTriggersByTag(ALERTER_NAME, "*");
+            triggers.stream().forEach(trigger -> activeTriggers.put(new TriggerKey(trigger.getTenantId(), trigger.getId()), trigger));
+            update();
+        } catch (Exception e) {
+            log.error("Failed to fetch Triggers for external conditions.", e);
+        }
     }
 
     private synchronized void update() {

@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.actions.standalone;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -53,18 +55,28 @@ public class StandaloneActionPluginRegister {
         definitions = StandaloneAlerts.getDefinitionsService();
         actions = StandaloneAlerts.getActionsService();
         Map<String, ActionPluginListener> plugins = ActionPlugins.getPlugins();
+        Collection<String> existingPlugins = Collections.EMPTY_LIST;
+        try {
+            existingPlugins = definitions.getActionPlugins();
+        } catch (Exception e) {
+            log.error("Error querying the existing plugins", e);
+        }
         for (String actionPlugin : plugins.keySet()) {
-            ActionPluginListener actionPluginListener = plugins.get(actionPlugin);
-            Set<String> properties = actionPluginListener.getProperties();
-            Map<String, String> defaultProperties = actionPluginListener.getDefaultProperties();
-            try {
-                if (defaultProperties != null && !defaultProperties.isEmpty() ) {
-                    definitions.addActionPlugin(actionPlugin, defaultProperties);
-                } else {
-                    definitions.addActionPlugin(actionPlugin, properties);
+            if (existingPlugins.contains(actionPlugin)) {
+                log.infof("Plugin [%s] is already registered", actionPlugin);
+            } else {
+                ActionPluginListener actionPluginListener = plugins.get(actionPlugin);
+                Set<String> properties = actionPluginListener.getProperties();
+                Map<String, String> defaultProperties = actionPluginListener.getDefaultProperties();
+                try {
+                    if (defaultProperties != null && !defaultProperties.isEmpty() ) {
+                        definitions.addActionPlugin(actionPlugin, defaultProperties);
+                    } else {
+                        definitions.addActionPlugin(actionPlugin, properties);
+                    }
+                } catch (Exception e) {
+                    log.errorCannotRegisterPlugin(actionPlugin, e.toString());
                 }
-            } catch (Exception e) {
-                log.errorCannotRegisterPlugin(actionPlugin, e.toString());
             }
         }
         ActionListener actionListener = new StandaloneActionPluginListener(ActionPlugins.getPlugins(), executor);

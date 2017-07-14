@@ -20,15 +20,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.Arrays;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.hawkular.alerts.api.json.JsonUtil;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 /**
  * @author Jay Shaughnessy
@@ -36,32 +38,26 @@ import okhttp3.Response;
  */
 public class PrometheusQueryTest {
 
-
     @Ignore // Requires manually running Prom on localhost:9090
     @Test
-    @SuppressWarnings("unchecked")
     public void queryTest() throws Exception {
+        CloseableHttpClient client = HttpClients.createDefault();
 
-        HttpClientBuilder restClient = new HttpClientBuilder(false, "ignored", "ignored", false, null, null,
-                "ignored", "ignored", 15, 600);
         StringBuffer url = new StringBuffer("http://localhost:9090");
         url.append("/api/v1/query?query=");
         url.append("up");
-        Request request = restClient.buildJsonGetRequest(url.toString(), null);
-        OkHttpClient httpClient = restClient.getHttpClient();
-        Response response = httpClient.newCall(request).execute();
-        if (response.code() != 200) {
-            String msg = String.format("Prometheus GET failed. Status=[%d], message=[%s], url=[%s]", response.code(),
-                    response.message(), url.toString());
+
+        HttpGet getRequest = new HttpGet(url.toString());
+        HttpResponse response = client.execute(getRequest);
+
+        if (response.getStatusLine().getStatusCode() != 200) {
+            String msg = String.format("Prometheus GET failed. Status=[%d], message=[%s], url=[%s]", response.getStatusLine().getStatusCode(),
+                    response.getStatusLine().getReasonPhrase(), url.toString());
             System.out.println(msg);
             fail();
         } else {
-            String bodyString = response.body().string();
-
-            ObjectMapper mapper = new ObjectMapper();
-            QueryResponse queryResponse = null;
             try {
-                queryResponse = mapper.readValue(bodyString, QueryResponse.class);
+                QueryResponse queryResponse = JsonUtil.getMapper().readValue(response.getEntity().getContent(), QueryResponse.class);
                 assertEquals("success", queryResponse.getStatus());
                 QueryResponse.Data data = queryResponse.getData();
                 assertEquals("vector", data.getResultType());
@@ -75,12 +71,28 @@ public class PrometheusQueryTest {
                 assertEquals(String.valueOf(r.getValue()[0]), String.valueOf(System.currentTimeMillis()).length(),
                         String.valueOf(tsMillis).length());
                 assertEquals("1", r.getValue()[1]);
-
             } catch (IOException e) {
-                String msg = String.format("Failed to Map prom response [%s]: %s", bodyString, e);
+                String msg = String.format("Failed to Map prom response [%s]: %s", response.getEntity(), e);
                 System.out.println(msg);
                 fail();
             }
         }
+        client.close();
     }
+
+    @Ignore
+    @Test
+    public void queryEncodedUrl() throws Exception {
+        CloseableHttpClient client = HttpClients.createDefault();
+
+        StringBuffer url = new StringBuffer("http://localhost:9090");
+        url.append("/api/v1/query?");
+        BasicNameValuePair param = new BasicNameValuePair("query", "rate(http_requests_total{handler=\"query\",job=\"prometheus\"}[5m])>0");
+        url.append(URLEncodedUtils.format(Arrays.asList(param), "UTF-8"));
+        HttpGet getRequest = new HttpGet(url.toString());
+        HttpResponse response = client.execute(getRequest);
+        assertEquals(200, response.getStatusLine().getStatusCode());
+        client.close();
+    }
+
 }

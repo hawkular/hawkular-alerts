@@ -34,15 +34,29 @@
   <dependencies>
 
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
-      <version>${version.com.squareup.okhttp3}</version>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>${version.org.apache.httpcomponents.httpclient}</version>
     </dependency>
 
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp-ws</artifactId>
-      <version>${version.com.squareup.okhttp3}</version>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
+      <version>${version.org.apache.httpcomponents.httpcore}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-all</artifactId>
+      <version>${version.org.codehaus.groovy}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.groovy.modules.http-builder</groupId>
+      <artifactId>http-builder</artifactId>
+      <version>${version.org.codehaus.groovy.modules.http-builder}</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
