@@ -1082,6 +1082,11 @@
   margin-right: 10px;
 }
 
+/* line 1017, scss/main.scss */
+.textarea-resize {
+  resize: vertical;
+}
+
 /*
  * Charts
  */

@@ -13,9 +13,7 @@ angular.module('hwk.triggersModule').service('hwk.triggersService', ['$resource'
     };
 
     this.FullTrigger = function (tenantId, triggerId) {
-      return $resource($rootScope.appConfig.server.baseUrl + '/triggers/trigger/:triggerId', {
-        triggerId: triggerId
-      }, {
+      return $resource($rootScope.appConfig.server.baseUrl + '/triggers/trigger/:triggerId', {triggerId: triggerId}, {
         get: {
           method: 'GET',
           headers: {'Hawkular-Tenant': tenantId}
@@ -33,5 +31,33 @@ angular.module('hwk.triggersModule').service('hwk.triggersService', ['$resource'
         }
       });
     };
+
+    this.NewTrigger = function (tenantId) {
+      return $resource($rootScope.appConfig.server.baseUrl + '/triggers/trigger', {}, {
+        save: {
+          method: 'POST',
+          headers: {'Hawkular-Tenant': tenantId, 'Content-Type': 'application/json'}
+        },
+      });
+    };
+
+    this.RemoveTrigger = function (tenantId, triggerId) {
+      return $resource($rootScope.appConfig.server.baseUrl + '/triggers/:triggerId', {triggerId: triggerId}, {
+        remove: {
+          method: 'DELETE',
+          headers: {'Hawkular-Tenant': tenantId}
+        },
+      });
+    };
+
+    this.EnableTriggers = function (tenantId, triggerIds, enabled) {
+      return $resource($rootScope.appConfig.server.baseUrl + '/triggers/enabled', {triggerIds: triggerIds, enabled: enabled}, {
+        update: {
+          method: 'PUT',
+          headers: {'Hawkular-Tenant': tenantId}
+        },
+      });
+    };
+
   }
 ]);

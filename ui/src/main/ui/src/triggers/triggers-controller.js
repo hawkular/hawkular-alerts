@@ -36,7 +36,6 @@ angular.module('hwk.triggersModule')
       $q.all([promise1.$promise]).then(function (result) {
         var updatedTriggers = result[0];
         var promises = [];
-        console.log("FOUND=" + updatedTriggers.length);
         for (var i = 0; i < updatedTriggers.length; i++) {
           var promiseX = triggersService.FullTrigger(selectedTenant, updatedTriggers[i].id).get();
           promises.push(promiseX.$promise);
@@ -44,7 +43,6 @@ angular.module('hwk.triggersModule')
 
         $q.all(promises).then(function (resultFullTriggers) {
           $scope.triggers = [];
-          console.log("FOUND FULL=" + resultFullTriggers.length);
           for (var i = 0; i < resultFullTriggers.length; i++) {
             $scope.triggers.push(resultFullTriggers[i]);
           }
@@ -99,5 +97,39 @@ angular.module('hwk.triggersModule')
       }
       updateTriggers();
     };
+
+    $scope.newTrigger = function() {
+      if (this.newTrigger.json) {
+        var promise1 = triggersService.NewTrigger(selectedTenant).save(this.newTrigger.json);
+
+        $q.all([promise1.$promise]).then(function (result) {
+          console.log("RESULT=" + result);
+          updateTriggers();
+        });
+      }
+    };
+
+    $scope.deleteTrigger = function(triggerId) {
+      if (triggerId) {
+        var promise1 = triggersService.RemoveTrigger(selectedTenant, triggerId).remove();
+
+        $q.all([promise1.$promise]).then(function (result) {
+          console.log("RESULT=" + result);
+          updateTriggers();
+        });
+      }
+    };
+
+    $scope.enableTriggers = function(triggerIds, enabled) {
+      if (triggerIds) {
+        var promise1 = triggersService.EnableTriggers(selectedTenant, triggerIds, enabled).update();
+
+        $q.all([promise1.$promise]).then(function (result) {
+          console.log("RESULT=" + result);
+          updateTriggers();
+        });
+      }
+    };
+
   }
 ]);
