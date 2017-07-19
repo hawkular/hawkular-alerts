@@ -1087,6 +1087,16 @@
   resize: vertical;
 }
 
+/* line 1021, scss/main.scss */
+.list-view-pf-description-25 {
+  -ms-flex-align: center;
+  align-items: center;
+  display: -ms-flexbox;
+  display: flex;
+  float: left;
+  width: 25%;
+}
+
 /*
  * Charts
  */

@@ -41,6 +41,15 @@ angular.module('hwk.triggersModule').service('hwk.triggersService', ['$resource'
       });
     };
 
+    this.UpdateTrigger = function (tenantId, triggerId) {
+      return $resource($rootScope.appConfig.server.baseUrl + '/triggers/:triggerId', {triggerId: triggerId}, {
+        update: {
+          method: 'PUT',
+          headers: {'Hawkular-Tenant': tenantId, 'Content-Type': 'application/json'}
+        },
+      });
+    };
+
     this.RemoveTrigger = function (tenantId, triggerId) {
       return $resource($rootScope.appConfig.server.baseUrl + '/triggers/:triggerId', {triggerId: triggerId}, {
         remove: {

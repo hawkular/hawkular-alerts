@@ -10,8 +10,8 @@ angular.module('hwk.triggersModule')
     return [];
   };
 })
-.controller( 'hwk.triggersController', ['$scope', '$rootScope', '$q', 'hwk.triggersService',
-  function ($scope, $rootScope, $q, triggersService) {
+.controller( 'hwk.triggersController', ['$scope', '$rootScope', '$q', '$modal', 'hwk.triggersService',
+  function ($scope, $rootScope, $q, $modal, triggersService) {
     'use strict';
 
     console.log("[Triggers] Start: " + new Date());
@@ -20,6 +20,11 @@ angular.module('hwk.triggersModule')
     $scope.pageSize = 5;
     $scope.triggers = [];
     $scope.filterText = null;
+    $scope.jsonModal = {
+      text: null,
+      title: null,
+      placeholder: null
+    };
 
     var selectedTenant = $rootScope.selectedTenant;
 
@@ -98,15 +103,72 @@ angular.module('hwk.triggersModule')
       updateTriggers();
     };
 
-    $scope.newTrigger = function() {
-      if (this.newTrigger.json) {
-        var promise1 = triggersService.NewTrigger(selectedTenant).save(this.newTrigger.json);
+    $scope.newTriggerModal = function() {
+      $scope.jsonModal.title = 'New Trigger';
+      $scope.jsonModal.placeholder = 'Enter New Full Trigger JSON Here...';
+      $scope.jsonModal.json = null;
 
-        $q.all([promise1.$promise]).then(function (result) {
-          console.log("RESULT=" + result);
-          updateTriggers();
-        });
-      }
+      var modalInstance = $modal.open({
+        templateUrl: 'jsonModal.html',
+        backdrop: false, // keep modal up if someone clicks outside of the modal
+        controller: function ($scope, $modalInstance, $log, jsonModal) {
+          $scope.jsonModal = jsonModal;
+          $scope.save = function () {
+            $modalInstance.dismiss('save');
+            var promise1 = triggersService.NewTrigger(selectedTenant).save($scope.jsonModal.json);
+
+            $q.all([promise1.$promise]).then(function (result) {
+              console.log("newTriggerResult=" + result);
+              updateTriggers();
+            });
+          };
+          $scope.cancel = function () {
+            $modalInstance.dismiss('cancel');
+          };
+          $scope.isValid = function () {
+            return ($scope.jsonModal.json && $scope.jsonModal.json.length > 0);
+          };
+        },
+        resolve: {
+          jsonModal: function () {
+            return $scope.jsonModal;
+          }
+        }
+      });
+    };
+
+    $scope.editTriggerModal = function(triggerId, trigger) {
+      $scope.jsonModal.title = 'View/Edit Trigger';
+      $scope.jsonModal.placeholder = 'Enter Updated Trigger JSON Here...';
+      $scope.jsonModal.json = angular.toJson(trigger,true);
+
+      var modalInstance = $modal.open({
+        templateUrl: 'jsonModal.html',
+        backdrop: false, // keep modal up if someone clicks outside of the modal
+        controller: function ($scope, $modalInstance, $log, jsonModal) {
+          $scope.jsonModal = jsonModal;
+          $scope.save = function () {
+            $modalInstance.dismiss('save');
+            var promise1 = triggersService.UpdateTrigger(selectedTenant, triggerId).update($scope.jsonModal.json);
+
+            $q.all([promise1.$promise]).then(function (result) {
+              console.log("updateTriggerResult=" + result);
+              updateTriggers();
+            });
+          };
+          $scope.cancel = function () {
+            $modalInstance.dismiss('cancel');
+          };
+          $scope.isValid = function () {
+            return ($scope.jsonModal.json && $scope.jsonModal.json.length > 0);
+          };
+        },
+        resolve: {
+          jsonModal: function () {
+            return $scope.jsonModal;
+          }
+        }
+      });
     };
 
     $scope.deleteTrigger = function(triggerId) {
@@ -114,7 +176,7 @@ angular.module('hwk.triggersModule')
         var promise1 = triggersService.RemoveTrigger(selectedTenant, triggerId).remove();
 
         $q.all([promise1.$promise]).then(function (result) {
-          console.log("RESULT=" + result);
+          console.log("deleteTriggerResult=" + result);
           updateTriggers();
         });
       }
@@ -125,7 +187,7 @@ angular.module('hwk.triggersModule')
         var promise1 = triggersService.EnableTriggers(selectedTenant, triggerIds, enabled).update();
 
         $q.all([promise1.$promise]).then(function (result) {
-          console.log("RESULT=" + result);
+          console.log("enableTriggersResult=" + result);
           updateTriggers();
         });
       }
