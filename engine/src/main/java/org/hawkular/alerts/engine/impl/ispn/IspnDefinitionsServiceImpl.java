@@ -421,6 +421,136 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     }
 
     @Override
+    public void updateFullTrigger(String tenantId, FullTrigger fullTrigger) throws Exception {
+        if (null == fullTrigger) {
+            throw new IllegalArgumentException("FullTrigger must be not null");
+        }
+        Trigger trigger = fullTrigger.getTrigger();
+        if (null == trigger) {
+            throw new IllegalArgumentException("FullTrigger.Trigger must be not null");
+        }
+        TriggerType type = trigger.getType();
+        if (TriggerType.MEMBER == type) {
+            throw new IllegalArgumentException("FullTrigger.Trigger is type MEMBER and must be updated via the group");
+        }
+
+        checkTenantId(tenantId, trigger);
+        String triggerId = trigger.getId();
+
+        // fetch the trigger (or throw NotFoundException)
+        FullTrigger existingFullTrigger = getFullTrigger(tenantId, triggerId);
+        Trigger existingTrigger = existingFullTrigger.getTrigger();
+
+        if (existingTrigger.getType() != type) {
+            throw new IllegalArgumentException(
+                    "It is not allowed to update trigger type. Current type: [" + existingTrigger.getType() + "]");
+        }
+        if (existingTrigger.isMember()) {
+            if (!existingTrigger.getMemberOf().equals(trigger.getMemberOf())) {
+                throw new IllegalArgumentException("A member trigger can not change groups.");
+            }
+            if (existingTrigger.isOrphan() != trigger.isOrphan()) {
+                throw new IllegalArgumentException("Orphan status can not be changed by this method.");
+            }
+        }
+
+        try {
+            deferNotifications();
+
+            // if changed then update the trigger definition
+            if (!trigger.isSame(existingTrigger)) {
+                log.debugf("Updating trigger definition from %s to %s", existingTrigger, trigger);
+                if (trigger.isGroup()) {
+                    updateGroupTrigger(tenantId, trigger);
+                } else {
+                    updateTrigger(trigger);
+                }
+            } else {
+                log.debugf("Skipping trigger update, no difference between old %s and new %s", existingTrigger,
+                        trigger);
+            }
+
+            // if changed then update the dampening definitions
+            List<Dampening> dampenings = fullTrigger.getDampenings();
+            List<Dampening> existingDampenings = existingFullTrigger.getDampenings();
+            if (!isSameDampenings(dampenings, existingDampenings)) {
+                log.debugf("Updating dampenings from %s to %s", existingDampenings, dampenings);
+                if (trigger.isGroup()) {
+                    for (Dampening d : existingDampenings) {
+                        removeGroupDampening(tenantId, d.getDampeningId());
+                    }
+                    for (Dampening d : dampenings) {
+                        addGroupDampening(tenantId, d);
+                    }
+                } else {
+                    for (Dampening d : existingDampenings) {
+                        removeDampening(tenantId, d.getDampeningId());
+                    }
+                    for (Dampening d : dampenings) {
+                        addDampening(tenantId, d);
+                    }
+                }
+            } else {
+                log.debugf("Skipping dampening update, no difference between old %s and new %s", existingDampenings,
+                        dampenings);
+            }
+
+            // if changed then update the condtion set
+            List<Condition> conditions = fullTrigger.getConditions();
+            List<Condition> existingConditions = existingFullTrigger.getConditions();
+            if (!isSameConditions(conditions, existingConditions)) {
+                log.debugf("Updating conditions from %s to %s", existingConditions, conditions);
+                List<Condition> firingConditions = conditions.stream()
+                        .filter(c -> Mode.FIRING == c.getTriggerMode())
+                        .collect(Collectors.toList());
+                List<Condition> resolveConditions = conditions.stream()
+                        .filter(c -> Mode.AUTORESOLVE == c.getTriggerMode())
+                        .collect(Collectors.toList());
+                if (trigger.isGroup()) {
+                    setGroupConditions(tenantId, triggerId, Mode.FIRING, firingConditions, null);
+                    setGroupConditions(tenantId, triggerId, Mode.AUTORESOLVE, resolveConditions, null);
+                } else {
+                    setConditions(tenantId, triggerId, Mode.FIRING, firingConditions);
+                    setConditions(tenantId, triggerId, Mode.AUTORESOLVE, resolveConditions);
+                }
+            } else {
+                log.debugf("Skipping condition update, no difference between old %s and new %s", existingConditions,
+                        conditions);
+            }
+        } finally {
+            releaseNotifications();
+        }
+    }
+
+    private boolean isSameDampenings(List<Dampening> dampenings, List<Dampening> existingDampenings) {
+        if (dampenings.size() != existingDampenings.size()) {
+            return false;
+        }
+        Collections.sort(dampenings, (d1, d2) -> d1.getDampeningId().compareTo(d2.getDampeningId()));
+        Collections.sort(existingDampenings, (d1, d2) -> d1.getDampeningId().compareTo(d2.getDampeningId()));
+        for (int i = 0; i < dampenings.size(); ++i) {
+            if (!dampenings.get(i).isSame(existingDampenings.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isSameConditions(List<Condition> conditions, List<Condition> existingConditions) {
+        if (conditions.size() != existingConditions.size()) {
+            return false;
+        }
+        Collections.sort(conditions, (d1, d2) -> d1.getConditionId().compareTo(d2.getConditionId()));
+        Collections.sort(existingConditions, (d1, d2) -> d1.getConditionId().compareTo(d2.getConditionId()));
+        for (int i = 0; i < conditions.size(); ++i) {
+            if (!conditions.get(i).isSame(existingConditions.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
     public Trigger updateTrigger(String tenantId, Trigger trigger) throws Exception {
         if (isEmpty(tenantId)) {
             throw new IllegalArgumentException("TenantId must be not null");
@@ -869,7 +999,6 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             releaseNotifications();
         }
     }
-
 
     @Override
     public Dampening updateDampening(String tenantId, Dampening dampening) throws Exception {
@@ -1890,6 +2019,30 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         return dampening;
     }
 
+    @Override
+    public void createFullTrigger(String tenantId, FullTrigger fullTrigger) throws Exception {
+        if (null == fullTrigger) {
+            throw new IllegalArgumentException("FullTrigger must be not null");
+        }
+        Trigger trigger = fullTrigger.getTrigger();
+        if (null == trigger) {
+            throw new IllegalArgumentException("FullTrigger.Trigger must be not null");
+        }
+        if (trigger.isMember()) {
+            throw new IllegalArgumentException("FullTrigger.Trigger.Type can not be a member trigger");
+        }
+
+        checkTenantId(tenantId, trigger);
+
+        try {
+            deferNotifications();
+            addFullTrigger(tenantId, fullTrigger);
+
+        } finally {
+            releaseNotifications();
+        }
+    }
+
     // caller should be deferring notifications
     private void addFullTrigger(String tenantId, FullTrigger fullTrigger) throws Exception {
         if (null == fullTrigger) {
@@ -1909,6 +2062,38 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             if (!isEmpty(fullTrigger.getConditions())) {
                 setAllConditions(tenantId, trigger.getId(), fullTrigger.getConditions());
             }
+        }
+    }
+
+    @Override
+    public FullTrigger getFullTrigger(String tenantId, String triggerId) throws Exception {
+        if (isEmpty(tenantId)) {
+            throw new IllegalArgumentException("TenantId must be not null");
+        }
+        try {
+            Trigger t = getTrigger(tenantId, triggerId);
+            List<Dampening> allDampenings = new ArrayList<>();
+            Collection<Dampening> firingDampenings = getTriggerDampenings(tenantId, t.getId(), Mode.FIRING);
+            Collection<Dampening> autoDampenings = getTriggerDampenings(tenantId, t.getId(), Mode.AUTORESOLVE);
+            if (!isEmpty(firingDampenings)) {
+                allDampenings.addAll(firingDampenings);
+            }
+            if (!isEmpty(autoDampenings)) {
+                allDampenings.addAll(autoDampenings);
+            }
+            List<Condition> allConditions = new ArrayList<>();
+            Collection<Condition> firingConditions = getTriggerConditions(tenantId, t.getId(), Mode.FIRING);
+            Collection<Condition> autoConditions = getTriggerConditions(tenantId, t.getId(), Mode.AUTORESOLVE);
+            if (!isEmpty(firingConditions)) {
+                allConditions.addAll(firingConditions);
+            }
+            if (!isEmpty(autoConditions)) {
+                allConditions.addAll(autoConditions);
+            }
+            return new FullTrigger(t, allDampenings, allConditions);
+        } catch (Exception e) {
+            log.errorDatabaseException(e.getMessage());
+            throw e;
         }
     }
 
@@ -2188,5 +2373,4 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                 .map(d -> d.getDampening())
                 .collect(Collectors.toList());
     }
-
 }

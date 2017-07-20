@@ -58,17 +58,12 @@ public class Trigger implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "Tenant id owner of this trigger.",
-            position = 0,
-            required = true,
-            allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
+    @ApiModelProperty(value = "Tenant id owner of this trigger.", position = 0, required = true, allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
     @JsonInclude
     private String tenantId;
 
     /** Unique within the tenant */
-    @ApiModelProperty(value = "Trigger identifier. Unique within the tenant.",
-            position = 1,
-            required = true,
+    @ApiModelProperty(value = "Trigger identifier. Unique within the tenant.", position = 1, required = true,
             // @ApiModelProperty doesnt support concept of "default" values
             // we are going to re-use the "example" attribute for that purpose and update that on apidoc.groovy
             example = "Auto-generated UUID if not explicitly defined.")
@@ -76,136 +71,105 @@ public class Trigger implements Serializable {
     private String id;
 
     /** For display */
-    @ApiModelProperty(value = "Trigger name. Used for display.",
-            position = 2,
-            required = true)
+    @ApiModelProperty(value = "Trigger name. Used for display.", position = 2, required = true)
     @JsonInclude
     private String name;
 
-    @ApiModelProperty(value = "Trigger description. Used for display.",
-            position = 3)
+    @ApiModelProperty(value = "Trigger description. Used for display.", position = 3)
     @JsonInclude(Include.NON_EMPTY)
     private String description;
 
     /** The type of trigger, standard, group, etc.. Defaults to TriggerType.STANDARD */
-    @ApiModelProperty(value = "The type of the trigger.",
-            position = 4,
-            example = "STANDARD")
+    @ApiModelProperty(value = "The type of the trigger.", position = 4, example = "STANDARD")
     @JsonInclude
     private TriggerType type;
 
     /** The type of event produced by the trigger. Defaults to EventType.ALERT */
-    @ApiModelProperty(value = "The type of event produced by the trigger.",
-            position = 5,
-            example = "ALERT")
+    @ApiModelProperty(value = "The type of event produced by the trigger.", position = 5, example = "ALERT")
     @JsonInclude
     private EventType eventType;
 
-    @ApiModelProperty(value = "The category of the event produced by the trigger.",
-            position = 6)
+    @ApiModelProperty(value = "The category of the event produced by the trigger.", position = 6)
     @JsonInclude
     private String eventCategory;
 
     /** Defaults to the Trigger Description if not null, otherwise the trigger name. */
     @JsonInclude
-    @ApiModelProperty(value = "The text of the event produced by the trigger.",
-            position = 7,
-            example = "If not eventText defined. Description will be used. If not description defined, trigger name " +
-                    "will be used.")
+    @ApiModelProperty(value = "The text of the event produced by the trigger.", position = 7, example = "If not eventText defined. Description will be used. If not description defined, trigger name "
+            +
+            "will be used.")
     private String eventText;
 
     // Ignored for Event Triggers
-    @ApiModelProperty(value = "Severity of a trigger.",
-            position = 8,
-            example = "MEDIUM")
+    @ApiModelProperty(value = "Severity of a trigger.", position = 8, example = "MEDIUM")
     @JsonInclude
     private Severity severity;
 
     @ApiModelProperty(value = "Properties defined by the user for this trigger. Context is propagated " +
-            "on generated Events/Alerts. Context cannot be used as criteria on finder methods.",
-            position = 9)
+            "on generated Events/Alerts. Context cannot be used as criteria on finder methods.", position = 9)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 
     @ApiModelProperty(value = "Tags defined by the user for this trigger. A tag is a [name, value] pair." +
             "Tags can be used as criteria on finder methods. + \n" +
-            "Tag value cannot be null.",
-            position = 10)
+            "Tag value cannot be null.", position = 10)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> tags;
 
     /** A list of links to actions represented by TriggerAction*/
-    @ApiModelProperty(value = "A list of links to actions.",
-            position = 11)
+    @ApiModelProperty(value = "A list of links to actions.", position = 11)
     @JsonInclude(Include.NON_EMPTY)
     private Set<TriggerAction> actions;
 
     /** Disable automatically after firing */
-    @ApiModelProperty(value = "Disable automatically after firing.",
-            position = 12,
-            example = "false")
+    @ApiModelProperty(value = "Disable automatically after firing.", position = 12, example = "false")
     @JsonInclude
     private boolean autoDisable;
 
     /** Enable automatically if disabled and resolved manually */
-    @ApiModelProperty(value = "Enable automatically if disabled and resolved manually.",
-            position = 13,
-            example = "false")
+    @ApiModelProperty(value = "Enable automatically if disabled and resolved manually.", position = 13, example = "false")
     @JsonInclude
     private boolean autoEnable;
 
     /** Switch to auto-resolve mode after firing */
-    @ApiModelProperty(value = "Switch to auto-resolve mode after firing.",
-            position = 14,
-            example = "false")
+    @ApiModelProperty(value = "Switch to auto-resolve mode after firing.", position = 14, example = "false")
     @JsonInclude
     private boolean autoResolve;
 
     /** Resolve all unresolved alerts when auto-resolve condition-set is satisfied */
-    @ApiModelProperty(value = "Resolve all unresolved alerts when auto-resolve condition-set is satisfied.",
-            position = 15,
-            example = "false")
+    @ApiModelProperty(value = "Resolve all unresolved alerts when auto-resolve condition-set is satisfied.", position = 15, example = "false")
     @JsonInclude
     private boolean autoResolveAlerts;
 
     @ApiModelProperty(value = "The policy used for deciding whether the trigger auto-resolved condition-set is " +
-            "satisfied. ALL conditions must evaluate to true or ANY one condition must evaluate to true.",
-            position = 16,
-            example = "ALL")
+            "satisfied. ALL conditions must evaluate to true or ANY one condition must evaluate to true.", position = 16, example = "ALL")
     @JsonInclude
     private Match autoResolveMatch;
 
     // Only set for MEMBER triggers, the dataIdMap used when adding the member. Is re-used
     // for group condition updates unless a new dataIdMap is provided.
     @ApiModelProperty(value = "Only set for MEMBER triggers, the dataIdMap used when adding the member. " +
-            "It is reused for group condition updates unless a new dataIdMap is provided.",
-            position = 17)
+            "It is reused for group condition updates unless a new dataIdMap is provided.", position = 17)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> dataIdMap;
 
     // Only set for MEMBER triggers, the group trigger for which this is a member.
-    @ApiModelProperty(value = "Only set for MEMBER triggers, the group trigger for which this is a member.",
-            position = 18)
+    @ApiModelProperty(value = "Only set for MEMBER triggers, the group trigger for which this is a member.", position = 18)
     @JsonInclude(Include.NON_EMPTY)
     private String memberOf;
 
-    @ApiModelProperty(value = "A enabled trigger is loaded into the engine for data evaluation.",
-            position = 19,
-            example = "false")
+    @ApiModelProperty(value = "A enabled trigger is loaded into the engine for data evaluation.", position = 19, example = "false")
     @JsonInclude
     private boolean enabled;
 
     @ApiModelProperty(value = "The policy used for deciding whether the trigger condition-set is satisfied. " +
-            "ALL conditions must evaluate to true or ANY one condition must evaluate to true.",
-            position = 20,
-            example = "ALL")
+            "ALL conditions must evaluate to true or ANY one condition must evaluate to true.", position = 20, example = "ALL")
     @JsonInclude
     private Match firingMatch;
 
     @ApiModelProperty(value = "Extended mechanism to match trigger conditions against Data with [source, dataId] " +
             "identifiers. In this way it is possible to qualify triggers and data with a source such that a trigger " +
-            "only evaluates data having the same source.",
-            position = 21)
+            "only evaluates data having the same source.", position = 21)
     @JsonInclude
     String source;
 
@@ -284,7 +248,7 @@ public class Trigger implements Serializable {
         this.severity = trigger.getSeverity();
 
         this.mode = trigger.getMode() != null ? trigger.getMode() : Mode.FIRING;
-        this.match = trigger.getMode() == Mode.FIRING ?  trigger.getFiringMatch() : trigger.getAutoResolveMatch();
+        this.match = trigger.getMode() == Mode.FIRING ? trigger.getFiringMatch() : trigger.getAutoResolveMatch();
     }
 
     public Trigger(String tenantId, String id, String name, Map<String, String> context, Map<String, String> tags) {
@@ -639,6 +603,36 @@ public class Trigger implements Serializable {
         int result = id != null ? id.hashCode() : 0;
         result = 31 * result + (tenantId != null ? tenantId.hashCode() : 0);
         return result;
+    }
+
+    public boolean isSame(Trigger t) {
+        if (this.equals(t) &&
+                same(actions, t.actions) &&
+                autoDisable == t.autoDisable &&
+                autoEnable == t.autoEnable &&
+                autoResolve == t.autoResolve &&
+                autoResolveAlerts == t.autoResolveAlerts &&
+                autoResolveMatch == t.autoResolveMatch &&
+                same(context, t.context) &&
+                same(description, t.description) &&
+                enabled == t.enabled &&
+                same(eventCategory, t.eventCategory) &&
+                same(eventText, t.eventText) &&
+                eventType == t.eventType &&
+                firingMatch == t.firingMatch &&
+                same(memberOf, t.memberOf) &&
+                same(name, t.name) &&
+                severity == t.severity &&
+                same(source, t.source) &&
+                same(tags, t.tags) &&
+                type == t.type) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean same(Object s1, Object s2) {
+        return null == s1 ? null == s2 : s1.equals(s2);
     }
 
     @Override

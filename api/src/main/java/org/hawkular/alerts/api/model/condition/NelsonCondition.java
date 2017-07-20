@@ -225,6 +225,7 @@ public class NelsonCondition extends Condition {
         int result = super.hashCode();
         result = prime * result + ((activeRules == null) ? 0 : activeRules.hashCode());
         result = prime * result + ((dataId == null) ? 0 : dataId.hashCode());
+        result = prime * result + sampleSize;
         return result;
     }
 
@@ -247,12 +248,15 @@ public class NelsonCondition extends Condition {
                 return false;
         } else if (!dataId.equals(other.dataId))
             return false;
+        if (sampleSize != other.sampleSize)
+            return false;
         return true;
     }
 
     @Override
     public String toString() {
-        return "NelsonCondition [dataId=" + dataId + ", activeRules=" + activeRules + "]";
+        return "NelsonCondition [dataId=" + dataId + ", activeRules=" + activeRules + ", sampleSize=" + sampleSize
+                + "]";
     }
 
 }

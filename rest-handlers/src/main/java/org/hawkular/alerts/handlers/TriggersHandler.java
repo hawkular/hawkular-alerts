@@ -9,13 +9,11 @@ import static org.hawkular.alerts.handlers.util.ResponseUtil.getCleanDampening;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.isEmpty;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.result;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -73,6 +71,7 @@ public class TriggersHandler implements RestHandler {
         router.post(path).handler(r -> createTrigger(r, false));
         router.get(path + "/:triggerId").handler(r -> getTrigger(r, false));
         router.post(path + "/trigger").handler(this::createFullTrigger);
+        router.put(path + "/trigger/:triggerId").handler(this::updateFullTrigger);
         router.post(path + "/groups").handler(r -> createTrigger(r, true));
         router.put(path + "/enabled").handler(r -> setTriggersEnabled(r, false));
         router.put(path + "/:triggerId").handler(r -> updateTrigger(r, false));
@@ -162,6 +161,7 @@ public class TriggersHandler implements RestHandler {
                     if (fullTrigger.getTrigger() == null) {
                         throw new BadRequestException("Trigger is empty");
                     }
+
                     Trigger trigger = fullTrigger.getTrigger();
                     trigger.setTenantId(tenantId);
                     if (isEmpty(trigger.getId())) {
@@ -184,47 +184,55 @@ public class TriggersHandler implements RestHandler {
                         throw new BadRequestException("Tags " + trigger.getTags() + " must be non empty.");
                     }
                     try {
-                        definitionsService.addTrigger(tenantId, trigger);
-                        log.debugf("Trigger: %s", trigger);
-                        for (Dampening dampening : fullTrigger.getDampenings()) {
-                            dampening.setTenantId(tenantId);
-                            dampening.setTriggerId(trigger.getId());
-                            boolean exist;
-                            try {
-                                exist = (definitionsService.getDampening(tenantId, dampening.getDampeningId()) != null);
-                            } catch (NotFoundException e) {
-                                exist = false;
-                            }
-                            if (exist) {
-                                definitionsService.removeDampening(tenantId, dampening.getDampeningId());
-                            }
-                            definitionsService.addDampening(tenantId, dampening);
-                            log.debugf("Dampening: %s", dampening);
-                        }
-                        fullTrigger.getConditions().stream().forEach(c -> {
-                            c.setTenantId(tenantId);
-                            c.setTriggerId(trigger.getId());
-                        });
-                        List<Condition> firingConditions = fullTrigger.getConditions().stream()
-                                .filter(c -> c.getTriggerMode() == Mode.FIRING)
-                                .collect(Collectors.toList());
-                        if (firingConditions != null && !firingConditions.isEmpty()) {
-                            definitionsService.setConditions(tenantId, trigger.getId(), Mode.FIRING, firingConditions);
-                            log.debugf("Conditions: %s", firingConditions);
-                        }
-                        List<Condition> autoResolveConditions = fullTrigger.getConditions().stream()
-                                .filter(c -> c.getTriggerMode() == Mode.AUTORESOLVE)
-                                .collect(Collectors.toList());
-                        if (autoResolveConditions != null && !autoResolveConditions.isEmpty()) {
-                            definitionsService.setConditions(tenantId, trigger.getId(), Mode.AUTORESOLVE, autoResolveConditions);
-                            log.debugf("Conditions: %s", autoResolveConditions);
-                        }
+                        definitionsService.createFullTrigger(tenantId, fullTrigger);
                         future.complete(fullTrigger);
+
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad arguments: " + e.getMessage());
                     } catch (Exception e) {
                         log.debug(e.getMessage(), e);
                         throw new InternalServerException(e);
+                    }
+                }, res -> result(routing, res));
+    }
+
+    void updateFullTrigger(RoutingContext routing) {
+        routing.vertx()
+                .executeBlocking(future -> {
+                    String tenantId = checkTenant(routing);
+                    String json = routing.getBodyAsString();
+                    String triggerId = routing.request().getParam("triggerId");
+                    FullTrigger fullTrigger;
+                    Trigger trigger;
+                    try {
+                        fullTrigger = fromJson(json, FullTrigger.class);
+                    } catch (Exception e) {
+                        log.errorf("Error parsing FullTrigger json: %s. Reason: %s", json, e.toString());
+                        throw new BadRequestException(e.toString(), e);
+                    }
+                    if (null == fullTrigger) {
+                        throw new BadRequestException("FullTrigger can not be null.");
+                    }
+                    trigger = fullTrigger.getTrigger();
+                    if (null == trigger) {
+                        throw new BadRequestException("FullTrigger.Trigger can not be null.");
+                    }
+                    trigger.setId(triggerId);
+                    if (!checkTags(trigger)) {
+                        throw new BadRequestException(
+                                "Tags " + trigger.getTags() + " must be non empty.");
+                    }
+                    try {
+                        definitionsService.updateFullTrigger(tenantId, fullTrigger);
+                        log.debugf("FullTrigger: %s", fullTrigger);
+                        future.complete();
+                    } catch (NotFoundException e) {
+                        throw new NotFoundException(e.getMessage());
+                    } catch (IllegalArgumentException e) {
+                        throw new BadRequestException("Bad arguments: " + e.getMessage());
+                    } catch (Exception e) {
+                        log.debug(e.getMessage(), e);
+                        throw new InternalServerException(e.toString());
                     }
                 }, res -> result(routing, res));
     }
@@ -460,9 +468,10 @@ public class TriggersHandler implements RestHandler {
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
                     String triggerId = routing.request().getParam("triggerId");
-                    Trigger found = null;
+                    Object found = null;
                     try {
-                        found = definitionsService.getTrigger(tenantId, triggerId);
+                        found = isFullTrigger ? definitionsService.getFullTrigger(tenantId, triggerId)
+                                : definitionsService.getTrigger(tenantId, triggerId);
                     } catch (NotFoundException e) {
                         // Expected
                     } catch (IllegalArgumentException e) {
@@ -475,20 +484,6 @@ public class TriggersHandler implements RestHandler {
                         throw new ResponseUtil.NotFoundException("triggerId: " + triggerId + " not found");
                     }
                     log.debugf("Trigger: %s", found);
-                    if (isFullTrigger) {
-                        try {
-                            List<Dampening> dampenings = new ArrayList<>(definitionsService.getTriggerDampenings(tenantId, found.getId(), null));
-                            List<Condition> conditions = new ArrayList<>(definitionsService.getTriggerConditions(tenantId, found.getId(), null));
-                            FullTrigger fullTrigger = new FullTrigger(found, dampenings, conditions);
-                            future.complete(fullTrigger);
-                            return;
-                        } catch (IllegalArgumentException e) {
-                            throw new BadRequestException("Bad arguments: " + e.getMessage());
-                        } catch (Exception e) {
-                            log.debug(e.getMessage(), e);
-                            throw new InternalServerException(e.toString());
-                        }
-                    }
                     future.complete(found);
                 }, res -> result(routing, res));
     }

@@ -536,6 +536,185 @@ class TriggersITest extends AbstractITestBase {
     }
 
     @Test
+    void updateFullTrigger() {
+        // CREATE the action definition
+        String actionPlugin = "email"
+        String actionId = "email-to-admin";
+
+        Map<String, String> actionProperties = new HashMap<>();
+        actionProperties.put("from", "from-alerts@company.org");
+        actionProperties.put("to", "to-admin@company.org");
+        actionProperties.put("cc", "cc-developers@company.org");
+
+        ActionDefinition actionDefinition = new ActionDefinition(null, actionPlugin, actionId, actionProperties);
+
+        def resp = client.post(path: "actions", body: actionDefinition)
+        assert(200 == resp.status || 400 == resp.status)
+
+        String jsonTrigger = "{\n" +
+                "      \"trigger\":{\n" +
+                "        \"id\": \"full-test-trigger-1\",\n" +
+                "        \"enabled\": true,\n" +
+                "        \"name\": \"NumericData-01-low\",\n" +
+                "        \"description\": \"description 1\",\n" +
+                "        \"severity\": \"HIGH\",\n" +
+                "        \"actions\": [\n" +
+                "          {\"actionPlugin\":\"email\", \"actionId\":\"email-to-admin\"}\n" +
+                "        ],\n" +
+                "        \"context\": {\n" +
+                "          \"name1\":\"value1\"\n" +
+                "        },\n" +
+                "        \"tags\": {\n" +
+                "          \"tname1\":\"tvalue1\",\n" +
+                "          \"tname2\":\"tvalue2\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      \"dampenings\":[\n" +
+                "        {\n" +
+                "          \"triggerMode\": \"FIRING\",\n" +
+                "          \"type\": \"STRICT\",\n" +
+                "          \"evalTrueSetting\": 2,\n" +
+                "          \"evalTotalSetting\": 2\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"conditions\":[\n" +
+                "        {\n" +
+                "          \"triggerMode\": \"FIRING\",\n" +
+                "          \"type\": \"threshold\",\n" +
+                "          \"dataId\": \"NumericData-01\",\n" +
+                "          \"operator\": \"LT\",\n" +
+                "          \"threshold\": 10.0,\n" +
+                "          \"context\": {\n" +
+                "            \"description\": \"Response Time\",\n" +
+                "            \"unit\": \"ms\"\n" +
+                "          }\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }";
+
+        // remove if it exists
+        resp = client.delete(path: "triggers/full-test-trigger-1")
+        assert(200 == resp.status || 404 == resp.status)
+
+        // create the test trigger
+        resp = client.post(path: "triggers/trigger", body: jsonTrigger)
+        assertEquals(200, resp.status)
+
+        // get the test trigger
+        resp = client.get(path: "triggers/trigger/full-test-trigger-1");
+        assertEquals(200, resp.status)
+        assertEquals("NumericData-01-low", resp.data.trigger.name)
+        assertEquals("description 1", resp.data.trigger.description)
+        assertEquals(true, resp.data.trigger.enabled)
+        assertEquals(testTenant, resp.data.trigger.tenantId)
+        assertEquals(1, resp.data.dampenings.size())
+        assertEquals(1, resp.data.conditions.size())
+
+        // try to update with null trigger
+        def fullTrigger = resp.data;
+        def trigger = fullTrigger.trigger;
+        fullTrigger.trigger = null;
+        resp = client.put(path: "triggers/trigger/full-test-trigger-1", body: fullTrigger)
+        assertEquals(400, resp.status)
+        fullTrigger.trigger = trigger;
+
+        // try to update trigger type
+        trigger.type = 'GROUP';
+        resp = client.put(path: "triggers/trigger/full-test-trigger-1", body: fullTrigger)
+        assertEquals(400, resp.status)
+        trigger.type = 'STANDARD';
+
+        // try an update with no changes (should succeed but not actually perform any updates, need to manually verify)
+        resp = client.put(path: "triggers/trigger/full-test-trigger-1", body: fullTrigger)
+        assertEquals(200, resp.status)
+
+        // re-get the test trigger
+        def prevFullTrigger = fullTrigger;
+        resp = client.get(path: "triggers/trigger/full-test-trigger-1");
+        assertEquals(200, resp.status)
+        fullTrigger = resp.data;
+        assertEquals(prevFullTrigger, fullTrigger);
+
+        // try an update with changes
+        trigger = fullTrigger.trigger;
+        trigger.description = "updated description";
+        trigger.enabled = false;
+        resp = client.put(path: "triggers/trigger/full-test-trigger-1", body: fullTrigger)
+        assertEquals(200, resp.status)
+
+        // re-get the test trigger
+        resp = client.get(path: "triggers/trigger/full-test-trigger-1");
+        assertEquals(200, resp.status)
+        fullTrigger = resp.data;
+        trigger = fullTrigger.trigger;
+        assertEquals("updated description", trigger.description)
+        assertEquals(false, trigger.enabled)
+
+        // try an update that removes the dampening and condition set
+        fullTrigger.dampenings = null;
+        fullTrigger.conditions = null;
+        resp = client.put(path: "triggers/trigger/full-test-trigger-1", body: fullTrigger)
+        assertEquals(200, resp.status)
+
+        // re-get the test trigger
+        resp = client.get(path: "triggers/trigger/full-test-trigger-1");
+        assertEquals(200, resp.status)
+        fullTrigger = resp.data;
+        assertEquals(null, fullTrigger.dampenings);
+        assertEquals(null, fullTrigger.conditions);
+
+        // add back dampening
+        fullTrigger.dampenings = "[\n" +
+                "        {\n" +
+                "          \"triggerMode\": \"FIRING\",\n" +
+                "          \"type\": \"STRICT\",\n" +
+                "          \"evalTrueSetting\": 2,\n" +
+                "          \"evalTotalSetting\": 2\n" +
+                "        }]";
+        resp = client.put(path: "triggers/trigger/full-test-trigger-1", body: fullTrigger)
+        assertEquals(200, resp.status)
+
+        // re-get the test trigger
+        resp = client.get(path: "triggers/trigger/full-test-trigger-1");
+        assertEquals(200, resp.status)
+        fullTrigger = resp.data;
+        assertTrue(null != fullTrigger.dampenings);
+        assertEquals(1, fullTrigger.dampenings.size());
+        assertEquals("STRICT", fullTrigger.dampenings[0].type);
+
+        // add back condition
+        fullTrigger.conditions = "[\n" +
+                "        {\n" +
+                "          \"triggerMode\": \"FIRING\",\n" +
+                "          \"type\": \"threshold\",\n" +
+                "          \"dataId\": \"NumericData-01\",\n" +
+                "          \"operator\": \"LT\",\n" +
+                "          \"threshold\": 10.0,\n" +
+                "          \"context\": {\n" +
+                "            \"description\": \"Response Time\",\n" +
+                "            \"unit\": \"ms\"\n" +
+                "          }\n" +
+                "        }]";
+        resp = client.put(path: "triggers/trigger/full-test-trigger-1", body: fullTrigger)
+        assertEquals(200, resp.status)
+
+        // re-get the test trigger
+        resp = client.get(path: "triggers/trigger/full-test-trigger-1");
+        assertEquals(200, resp.status)
+        fullTrigger = resp.data;
+        assertTrue(null != fullTrigger.conditions);
+        assertEquals(1, fullTrigger.conditions.size());
+        assertEquals("THRESHOLD", fullTrigger.conditions[0].type);
+
+        // remove the test trigger
+        resp = client.delete(path: "triggers/full-test-trigger-1")
+        assertEquals(200, resp.status)
+
+        resp = client.delete(path: "actions/" + actionPlugin + "/" + actionId)
+        assertEquals(200, resp.status)
+    }
+
+    @Test
     void failWithUnknownActionOrPluginFullTrigger() {
         String jsonTrigger = "{\n" +
                 "      \"trigger\":{\n" +

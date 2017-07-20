@@ -578,6 +578,20 @@ public class Dampening implements Serializable {
         return true;
     }
 
+    public boolean isSame(Dampening d) {
+        if (this.equals(d) &&
+                evalTimeSetting == d.evalTimeSetting &&
+                evalTotalSetting == d.evalTotalSetting &&
+                evalTrueSetting == d.evalTrueSetting &&
+                type == d.type) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean same(Object s1, Object s2) {
+        return null == s1 ? null == s2 : s1.equals(s2);
+    }
     @Override
     public String toString() {
         return "Dampening [satisfied=" + satisfied + ", triggerId=" + triggerId + ", triggerMode=" + triggerMode

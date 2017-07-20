@@ -258,4 +258,15 @@ public abstract class Condition implements Serializable {
             required = true,
             name = "dataId")
     public abstract String getDataId();
+
+    /**
+     * Used to determine whether two conditions have differences. The base implementation is equals(), subclassed
+     * should override if this is not sufficient.
+     *
+     * @param c the other Condition
+     * @return true if this Condition has the same persisted field values as the other condition.
+     */
+    public boolean isSame(Condition c) {
+        return this.equals(c);
+    }
 }
