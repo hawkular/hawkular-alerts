@@ -22,16 +22,17 @@ angular.module('hwk.actionsModule')
     var selectedTenant = $rootScope.selectedTenant;
 
     var updatePlugins = function () {
-      console.log("[Action Plugins] Updating data for " + selectedTenant + " at " + new Date());
+      console.log("[Action Plugins] Updating plugins for " + selectedTenant + " at " + new Date());
 
       // fetch current plugins
       var promise1 = actionsService.Plugins(selectedTenant).get();
 
       $q.all([promise1.$promise]).then(function (result) {
         $scope.plugins = result[0];
+        $scope.plugins.sort();
         $scope.pluginsFilter = {
-          options: ["Select Plugin Filter"],
-          filter: "Select Plugin Filter" // set as default
+          options: ["All Plugins"],
+          filter: "All Plugins" // set as default
         };
         for (var i = 0; i < $scope.plugins.length; i++) {
           console.log("$scope.plugins[i]=" + $scope.plugins[i]);
@@ -49,7 +50,12 @@ angular.module('hwk.actionsModule')
       will be needed sooner than later
     */
     var updateActionDefinitions = function () {
-      console.log("[Actions] Updating data for " + selectedTenant + " at " + new Date());
+      if ( $scope.pluginsFilter.filter && "All Plugins" !== $scope.pluginsFilter.filter ) {
+        updateFilteredActionDefinitions($scope.pluginsFilter.filter);
+        return;
+      }
+
+      console.log("[Action Plugins] Updating action defs for " + selectedTenant + " at " + new Date());
 
       // fetch map of actionPlugin->actionIds, for the tenant
       var promiseMap = actionsService.ActionPluginMap(selectedTenant).get();
@@ -65,6 +71,30 @@ angular.module('hwk.actionsModule')
               promises.push(promiseX.$promise);
             }
           }
+        }
+        $q.all(promises).then(function (resultActionDefinitions) {
+          $scope.actions = [];
+          for (var i = 0; i < resultActionDefinitions.length; i++) {
+            $scope.actions.push(resultActionDefinitions[i]);
+          }
+          console.log(resultActionDefinitions);
+          console.log($scope.actions);
+        });
+      });
+    };
+
+    var updateFilteredActionDefinitions = function (pluginFilter) {
+      console.log("[Action Plugins] Updating action defs for " + selectedTenant + " at " + new Date()  + " with filter=" + pluginFilter);
+
+      // fetch the action def ids for the selected plugin
+      var promiseIds = actionsService.ActionPluginActionDefinitionIds(selectedTenant, pluginFilter).get();
+
+      $q.all([promiseIds.$promise]).then(function (result) {
+        var actionDefinitionIds = result[0];
+        var promises = [];
+        for (var i = 0; i < actionDefinitionIds.length; i++) {
+          var promiseX = actionsService.ActionDefinition(selectedTenant, pluginFilter, actionDefinitionIds[i]).get();
+          promises.push(promiseX.$promise);
         }
         $q.all(promises).then(function (resultActionDefinitions) {
           $scope.actions = [];
@@ -189,6 +219,11 @@ angular.module('hwk.actionsModule')
         });
       }
     };
+
+    $scope.updateFilter = function() {
+      updateActionDefinitions();
+    };
+
     // When dashboard controller is destroyed, the $interval and $watch are removed.
     $scope.$on('$destroy', function() {
       watchRef();

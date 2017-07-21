@@ -32,6 +32,18 @@ angular.module('hwk.actionsModule').service('hwk.actionsService', ['$resource', 
       });
     };
 
+    this.ActionPluginActionDefinitionIds = function (tenantId, actionPlugin) {
+      return $resource($rootScope.appConfig.server.baseUrl + '/actions/plugin/:actionPlugin', {
+        actionPlugin: actionPlugin
+      }, {
+        get: {
+          method: 'GET',
+          isArray: true,
+          headers: {'Hawkular-Tenant': tenantId}
+        }
+      });
+    };
+
     this.ActionDefinition = function (tenantId, actionPlugin, actionId) {
       return $resource($rootScope.appConfig.server.baseUrl + '/actions/:actionPlugin/:actionId', {
         actionPlugin: actionPlugin,
