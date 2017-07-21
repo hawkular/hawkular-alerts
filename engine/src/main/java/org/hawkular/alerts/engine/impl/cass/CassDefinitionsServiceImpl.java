@@ -3360,7 +3360,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 if (trigger.isGroup()) {
                     updateGroupTrigger(tenantId, trigger);
                 } else {
-                    updateTrigger(tenantId, existingTrigger);
+                    updateTrigger(tenantId, trigger);
                 }
             }
 
@@ -3386,7 +3386,7 @@ public class CassDefinitionsServiceImpl implements DefinitionsService {
                 }
             }
 
-            // if changed then update the condtion set
+            // if changed then update the condition set
             List<Condition> conditions = fullTrigger.getConditions();
             List<Condition> existingConditions = existingFullTrigger.getConditions();
             if (!isSameConditions(conditions, existingConditions)) {

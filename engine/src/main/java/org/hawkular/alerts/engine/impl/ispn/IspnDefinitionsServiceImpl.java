@@ -495,7 +495,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                         dampenings);
             }
 
-            // if changed then update the condtion set
+            // if changed then update the condition set
             List<Condition> conditions = fullTrigger.getConditions();
             List<Condition> existingConditions = existingFullTrigger.getConditions();
             if (!isSameConditions(conditions, existingConditions)) {
