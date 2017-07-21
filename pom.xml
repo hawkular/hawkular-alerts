@@ -96,6 +96,7 @@
     <version.org.apache.maven.plugins.maven-failsafe-plugin>2.19.1</version.org.apache.maven.plugins.maven-failsafe-plugin>
     <version.org.apache.maven.plugins.maven-surefire-plugin>2.19.1</version.org.apache.maven.plugins.maven-surefire-plugin>
     <version.org.apache.maven.plugins.maven-jar-plugin>3.0.2</version.org.apache.maven.plugins.maven-jar-plugin>
+    <version.org.apache.maven.plugins.maven-resources-plugin>3.0.2</version.org.apache.maven.plugins.maven-resources-plugin>
     <version.org.cassalog>0.4.2</version.org.cassalog>
     <version.org.codehaus.buildnumber-maven-plugin>1.3</version.org.codehaus.buildnumber-maven-plugin>
     <version.org.codehaus.gmavenplus>1.5</version.org.codehaus.gmavenplus>

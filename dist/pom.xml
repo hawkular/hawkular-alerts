@@ -112,6 +112,7 @@
 
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
+        <version>${version.org.apache.maven.plugins.maven-resources-plugin}</version>
         <executions>
           <execution>
             <id>copy-resources</id>
