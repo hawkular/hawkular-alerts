@@ -23,7 +23,8 @@ angular.module('hwk.triggersModule')
     $scope.jsonModal = {
       text: null,
       title: null,
-      placeholder: null
+      placeholder: null,
+      readOnly: false
     };
 
     var selectedTenant = $rootScope.selectedTenant;
@@ -107,6 +108,7 @@ angular.module('hwk.triggersModule')
       $scope.jsonModal.title = 'New Trigger';
       $scope.jsonModal.placeholder = 'Enter New Full Trigger JSON Here...';
       $scope.jsonModal.json = null;
+      $scope.jsonModal.readOnly = false;
 
       var modalInstance = $modal.open({
         templateUrl: 'jsonModal.html',
@@ -137,10 +139,34 @@ angular.module('hwk.triggersModule')
       });
     };
 
-    $scope.editTriggerModal = function(triggerId, trigger) {
-      $scope.jsonModal.title = 'View/Edit Trigger';
-      $scope.jsonModal.placeholder = 'Enter Updated Trigger JSON Here...';
-      $scope.jsonModal.json = angular.toJson(trigger,true);
+    $scope.viewTriggerModal = function(fullTrigger) {
+      $scope.jsonModal.title = 'View Trigger';
+      $scope.jsonModal.placeholder = 'Full Trigger JSON...';
+      $scope.jsonModal.json = angular.toJson(fullTrigger,true);
+      $scope.jsonModal.readOnly = true;
+
+      var modalInstance = $modal.open({
+        templateUrl: 'jsonModal.html',
+        backdrop: false, // keep modal up if someone clicks outside of the modal
+        controller: function ($scope, $modalInstance, $log, jsonModal) {
+          $scope.jsonModal = jsonModal;
+          $scope.cancel = function () {
+            $modalInstance.dismiss('cancel');
+          };
+        },
+        resolve: {
+          jsonModal: function () {
+            return $scope.jsonModal;
+          }
+        }
+      });
+    };
+
+    $scope.editTriggerModal = function(triggerId, fullTrigger) {
+      $scope.jsonModal.title = 'Edit Trigger';
+      $scope.jsonModal.placeholder = 'Enter Updated Full Trigger JSON Here...';
+      $scope.jsonModal.json = angular.toJson(fullTrigger,true);
+      $scope.jsonModal.readOnly = false;
 
       var modalInstance = $modal.open({
         templateUrl: 'jsonModal.html',
