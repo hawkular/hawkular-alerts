@@ -8,7 +8,8 @@ angular.module ('hwk.appModule', [
   'patternfly.charts',
   'hwk.dashboardModule',
   'hwk.triggersModule',
-  'hwk.actionsModule'
+  'hwk.actionsModule',
+  'hwk.alertsModule'
 ]).config(['$routeProvider', '$translateProvider',
   function ($routeProvider, $translateProvider) {
     'use strict';
@@ -25,6 +26,9 @@ angular.module ('hwk.appModule', [
       })
       .when('/actions', {
         templateUrl: 'src/actions/actions.html'
+      })
+      .when('/alerts', {
+        templateUrl: 'src/alerts/alerts.html'
       })
 
       // Default

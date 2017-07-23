@@ -48,6 +48,11 @@ angular.module('hwk.appModule').controller( 'hwk.appController', ['$scope', '$ro
         title: "Actions",
         iconClass: "fa fa-bell-o",
         href: "#/actions"
+      },
+      {
+        title: "Alerts",
+        iconClass: "fa pficon-messages",
+        href: "#/alerts"
       }
     ];
 

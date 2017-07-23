@@ -1,0 +1,358 @@
+
+<div class="container-fluid container-cards-pf" ng-controller="hwk.alertsController">
+
+  <div class="row row-cards-pf" ng-hide="selectedTenant == null || selectedTenant == ''">
+
+    <!-- Toolbar -->
+
+    <div class="row toolbar-pf" id="toolbar">
+      <div class="col-md-12">
+        <form class="toolbar-pf-actions" ng-submit="updateFilter()">
+          <div class="form-group toolbar-pf-filter">
+            <div class="input-group">
+              <div class="input-group-btn">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Tag Query <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                  <li class="selected"><a href="#/alerts" id="filter1">Tag Query</a></li>
+                </ul>
+              </div>
+              <input type="text" class="form-control" ng-model="newFilter.text" id="filterText" placeholder="Filter By Tag Query..." />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="dropdown btn-group  dropdown-kebab-pf">
+              <button class="btn btn-link dropdown-toggle" type="button" id="alertsKebab" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <span class="fa fa-ellipsis-v"></span>
+              </button>
+              <ul class="dropdown-menu " aria-labelledby="alertsKebab">
+                <li ng-click="newXXXModal()"><a>New XXX</a></li>
+              </ul>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- List of rows -->
+
+    <div class="list-group list-view-pf list-view-pf-view">
+
+      <!-- Full Row details-->
+
+      <div class="list-group-item">
+
+        <!-- Action column found on the right of each row -->
+
+        <div class="list-view-pf-checkbox">
+          <input type="checkbox"/>
+        </div>
+        <div class="list-view-pf-actions">
+          <!-- a button that can trigger the default action -->
+          <button class="btn btn-default">Acknowledge</button>
+          <div class="dropdown pull-right dropdown-kebab-pf">
+            <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              <span class="fa fa-ellipsis-v"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight1">
+              <li><a href="#">Acknowledge</a></li>
+              <li><a href="#">Resolve</a></li>
+              <li><a href="#">Re-Open</a></li>
+              <li role="separator" class="divider"></li>
+              <li><a href="#">Delete</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Main Row -->
+
+        <div class="list-view-pf-main-info">
+
+          <!-- Alert type icon (open/ack/resolved/event) -->
+          <div class="list-view-pf-left">
+            <span class="pficon pficon-error-circle-o"></span> <!-- open alert -->
+            <!-- <span class="pficon pficon-warning-triangle-o"></span> <!-- acknowledged alert -->
+            <!-- <span class="pficon pficon-ok"></span> <!-- resolved alert -->
+            <!-- <span class="pficon pficon-topology"></span> <!-- event -->
+          </div>
+
+          <div class="list-view-pf-body">
+
+            <div class="list-view-pf-description">
+              <!-- Alert severity -->
+              <div class="list-group-item-heading">
+                Critical <!-- High, Medium, Low -->
+              </div>
+              <!-- Text description - a brief summary -->
+              <div class="list-group-item-text">
+                Alert of id '123-456-789' created on July 21, 2017 at 15:30 EDT.
+                This could contain the category as well.
+              </div>
+            </div>
+
+            <!-- Expandable sections -->
+
+            <div class="list-view-pf-additional-info">
+
+              <!-- Notes, text, and category -->
+              <div class="list-view-pf-additional-info-item">
+                <div class="list-view-pf-expand">
+                  <span class="fa fa-angle-right"></span>
+                  <span class="fa fa-list-alt"></span>
+                  <strong>3</strong> Notes
+                </div>
+              </div>
+
+              <!-- Tags -->
+              <div class="list-view-pf-additional-info-item">
+                <div class="list-view-pf-expand">
+                  <span class="fa fa-angle-right"></span>
+                  <span class="pficon pficon-repository"></span>
+                  <strong>1</strong> Tags
+                </div>
+              </div>
+
+              <!-- Lifecycle -->
+              <div class="list-view-pf-additional-info-item">
+                <div class="list-view-pf-expand">
+                  <span class="fa fa-angle-right"></span>
+                  <span class="pficon pficon-project"></span>
+                  <strong>2</strong> Lifecycle
+                </div>
+              </div>
+
+              <!-- Condition evaluations -->
+              <div class="list-view-pf-additional-info-item">
+                <div class="list-view-pf-expand">
+                  <span class="fa fa-angle-right"></span>
+                  <span class="fa fa-tachometer"></span>
+                  <strong>8</strong> Conditions
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- The expanded sections -->
+
+        <!-- Notes, text, and category -->
+        <div class="list-group-item-container container-fluid hidden">
+          <div class="close">
+            <span class="pficon pficon-close"></span>
+          </div>
+
+          <!-- category and main alert text -->
+          <div class="row">
+            <div class="col-md-12">
+              <p>
+                <b>Category:</b> Bananas
+                <br/>
+                <b>Alert Text:</b>
+                The alert "text" field content is here.
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+                tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+                quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+                consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+                cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+                proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+              </p>
+            </div>
+          </div>
+
+          <!-- notes from users -->
+          <div class="row">
+            <div class="col-md-12">
+              <p>
+                <b>User:</b> Jane
+                <br/>
+                <b>Time:</b> January 15, 2016 10:45:11 AM
+                <br/>
+                <b>Notes:</b>
+                <br/>
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+                tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+                quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+                consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+                cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+                proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+              </p>
+            </div>
+          </div>
+          <!-- repeat rows... -->
+          <div class="row">
+            <div class="col-md-12">
+              <p>
+                <b>User:</b> Bob
+                <br/>
+                <b>Time:</b> January 15, 2016 10:55:15 AM
+                <br/>
+                <b>Notes:</b>
+                <br/>
+                blahblah
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="list-group-item-container container-fluid hidden">
+          <div class="close">
+            <span class="pficon pficon-close"></span>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <dl class="dl-horizontal">
+                <dt>Tag1:</dt>
+                <dd>foo</dd>
+                <dt>Tag2:</dt>
+                <dd>bar</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lifecycle -->
+        <div class="list-group-item-container container-fluid hidden">
+          <div class="close">
+            <span class="pficon pficon-close"></span>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <p>
+                <b>User:</b> Jane
+                <br/>
+                <b>Time:</b> January 15, 2016 10:45:11 AM
+                <br/>
+                <b>Status:</b> Acknowledged
+              </p>
+            </div>
+          </div>
+
+          <!-- repeat rows... -->
+          <div class="row">
+            <div class="col-md-12">
+              <p>
+                <b>User:</b> Bob
+                <br/>
+                <b>Time:</b> January 15, 2016 10:55:15 AM
+                <br/>
+                <b>Status:</b> Resolved
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Condition Evals -->
+        <div class="list-group-item-container container-fluid hidden">
+          <div class="close">
+            <span class="pficon pficon-close"></span>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <p>
+                <b>A:</b> Wot gorilla?
+                <br/>
+                <b>B:</b> January 15, 2016 10:55:15 AM
+                <br/>
+                <b>C:</b> What say what?
+              </p>
+            </div>
+          </div>
+          <!-- repeat... -->
+          <div class="row">
+            <div class="col-md-12">
+              <p>
+                <b>X:</b> Wot gorilla?
+                <br/>
+                <b>Y:</b> January 15, 2016 10:55:15 AM
+                <br/>
+                <b>Z:</b> What say what?
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    $(document).ready(function () {
+      // Row Checkbox Selection
+      $("input[type='checkbox']").change(function (e) {
+        if ($(this).is(":checked")) {
+          $(this).closest('.list-group-item').addClass("active");
+        } else {
+          $(this).closest('.list-group-item').removeClass("active");
+        }
+      });
+      // toggle dropdown menu
+      $(".list-view-pf-actions").on("show.bs.dropdown", function () {
+        var $this = $(this);
+        var $dropdown = $this.find(".dropdown");
+        var space = $(window).height() - $dropdown[0].getBoundingClientRect().top - $this.find(".dropdown-menu").outerHeight(true);
+        $dropdown.toggleClass("dropup", space < 10);
+      });
+      // compound expansion
+      $(".list-view-pf-expand").on("click", function () {
+        var $this = $(this);
+        var $heading = $(this).parents(".list-group-item");
+        //var $row = $heading.parent();
+        var $subPanels = $heading.find(".list-group-item-container");
+        var index = $heading.find(".list-view-pf-expand").index(this);
+
+        //Remove all active status
+        $heading.find(".list-view-pf-expand.active").find(".fa-angle-right").removeClass("fa-angle-down")
+          .end().removeClass("active")
+            .end().removeClass("list-view-pf-expand-active");
+        // Add active to the clicked item
+        $(this).addClass("active")
+          .parents(".list-group-item").addClass("list-view-pf-expand-active")
+            .end().find(".fa-angle-right").addClass("fa-angle-down");
+        // check if it needs to hide
+        if($subPanels.eq(index).hasClass("hidden")){
+          $heading.find(".list-group-item-container:visible").addClass("hidden");
+          $subPanels.eq(index).removeClass("hidden");
+        } else {
+          $subPanels.eq(index).addClass("hidden");
+          $heading.find(".list-view-pf-expand.active").find(".fa-angle-right").removeClass("fa-angle-down")
+           .end().removeClass("active")
+            .end().removeClass("list-view-pf-expand-active");
+        }
+      });
+
+      // click close button to close the panel
+      $(".list-group-item-container .close").on("click", function (){
+        var $this = $(this);
+        var $panel = $this.parent();
+
+        // close the container and remove the active status
+        $panel.addClass("hidden")
+          .parent().removeClass("list-view-pf-expand-active")
+            .find(".list-view-pf-expand.active").removeClass("active")
+              .find(".fa-angle-right").removeClass("fa-angle-down")
+      });
+    });
+  </script>
+
+  <!-- small screen content when no tenant is entered -->
+
+  <div class="row row-cards-pf" ng-show="selectedTenant == null || selectedTenant == ''">
+    <div class="col-md-12">
+      <div class="card-pf">
+        <div class="card-pf-heading">
+          <p class="card-pf-heading-details"></p>
+          <h2 class="card-pf-title">
+            Select a Tenant
+          </h2>
+        </div>
+        <div class="card-pf-body">
+          Use the upper right form to select a tenant which fetch data from Hawkular Alerting.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
