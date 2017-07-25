@@ -1,0 +1,85 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "simple-generator-trigger-low",
+        "name": "Simple Generator Trigger LOW",
+        "description": "A trigger for LOW Severity alerts",
+        "severity": "LOW",
+        "enabled": true
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "range",
+          "dataId": "data-x",
+          "operatorLow": "INCLUSIVE",
+          "thresholdLow": 1,
+          "operatorHigh": "EXCLUSIVE",
+          "thresholdHigh": 5,
+          "inRange": true
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "simple-generator-trigger-medium",
+        "name": "Simple Generator Trigger MEDIUM",
+        "description": "A trigger for MEDIUM Severity alerts",
+        "severity": "MEDIUM",
+        "enabled": true
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "range",
+          "dataId": "data-x",
+          "operatorLow": "INCLUSIVE",
+          "thresholdLow": 5,
+          "operatorHigh": "EXCLUSIVE",
+          "thresholdHigh": 8,
+          "inRange": true
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "simple-generator-trigger-high",
+        "name": "Simple Generator Trigger HIGH",
+        "description": "A trigger for HIGH Severity alerts",
+        "severity": "HIGH",
+        "enabled": true
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "range",
+          "dataId": "data-x",
+          "operatorLow": "INCLUSIVE",
+          "thresholdLow": 8,
+          "operatorHigh": "EXCLUSIVE",
+          "thresholdHigh": 10,
+          "inRange": true
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "simple-generator-trigger-critical",
+        "name": "Simple Generator Trigger CRITICAL",
+        "description": "A trigger for CRITICAL Severity alerts",
+        "severity": "CRITICAL",
+        "enabled": true
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "data-x",
+          "operator": "GTE",
+          "threshold": 10
+        }
+      ]
+    }
+  ]
+}

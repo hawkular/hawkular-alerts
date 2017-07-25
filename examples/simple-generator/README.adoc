@@ -1,0 +1,51 @@
+= Simple Generator
+
+This example creates triggers to fire different severity of alerts based on a random number generated between the values 0 and 10.
+
+* When condition `X >= 1 && X < 5` it is LOW severity (4 numbers, 1-4)
+* When condition `X >= 5 && X < 8` it is MEDIUM severity (3 numbers, 5-7)
+* When condition `X >= 8 && X < 10` it is HIGH severity (2 numbers, 8-9)
+* When condition `X >= 10` it is CRITICAL severity (1 number, 10)
+
+X=0 will not generate an alert.
+
+[NOTE]
+====
+The scripts are written in groovy to make them work from maven in any platorm but those are pretty simple and can be translated to bash or a different environment easily.
+====
+
+== Running the example
+
+Build a Hawkular Alerting standalone distribution
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts
+    mvn clean install -DskipTests
+----
+
+Start the standalone server
+
+[source,shell,subs="+attributes"]
+----
+    cd dist/target/hawkular-alerting*
+    ./hawkular.sh
+----
+
+Next, let's run the example
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts/examples/simple-generator
+    mvn validate
+----
+
+Check out the Alerts generated on the link:http://localhost:8080/hawkular/alerts/ui[Hawkular Alerting UI].
+
+== create_definitions.groovy
+
+Creates triggers with conditions to fire an alert.
+
+== send_data.groovy
+
+Send random data for "data-x" and "data-y" over the REST API.
