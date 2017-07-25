@@ -41,7 +41,7 @@
 
       <!-- Full Row details-->
 
-      <div class="list-group-item">
+      <div class="list-group-item" ng-repeat="alertItem in alertsList">
 
         <!-- Action column found on the right of each row -->
 
@@ -71,9 +71,9 @@
 
           <!-- Alert type icon (open/ack/resolved/event) -->
           <div class="list-view-pf-left">
-            <span class="pficon pficon-error-circle-o"></span> <!-- open alert -->
-            <!-- <span class="pficon pficon-warning-triangle-o"></span> <!-- acknowledged alert -->
-            <!-- <span class="pficon pficon-ok"></span> <!-- resolved alert -->
+            <span class="pficon pficon-error-circle-o" ng-show="alertItem.status === 'OPEN'"></span>
+            <span class="pficon pficon-warning-triangle-o" ng-show="alertItem.status === 'ACKNOWLEDGED'"></span>
+            <span class="pficon pficon-ok" ng-show="alertItem.status === 'RESOLVED'"></span>
             <!-- <span class="pficon pficon-topology"></span> <!-- event -->
           </div>
 
@@ -82,12 +82,12 @@
             <div class="list-view-pf-description">
               <!-- Alert severity -->
               <div class="list-group-item-heading">
-                Critical <!-- High, Medium, Low -->
+                {{ alertItem.severity }} <!-- High, Medium, Low -->
               </div>
               <!-- Text description - a brief summary -->
               <div class="list-group-item-text">
-                Alert of id '123-456-789' created on July 21, 2017 at 15:30 EDT.
-                This could contain the category as well.
+                {{ alertItem.category }}<br/>
+                {{ alertItem.ctime | date:'yyyy-MM-dd HH:mm:ss Z' }}
               </div>
             </div>
 
@@ -100,7 +100,7 @@
                 <div class="list-view-pf-expand">
                   <span class="fa fa-angle-right"></span>
                   <span class="fa fa-list-alt"></span>
-                  <strong>3</strong> Notes
+                  <strong>{{ alertItem.notes ? alertItem.notes.length : 0 }}</strong> Notes
                 </div>
               </div>
 
@@ -109,7 +109,7 @@
                 <div class="list-view-pf-expand">
                   <span class="fa fa-angle-right"></span>
                   <span class="pficon pficon-repository"></span>
-                  <strong>1</strong> Tags
+                  <strong>{{ alertItem.tags ? alertItem.tags.length : 0 }}</strong> Tags
                 </div>
               </div>
 
@@ -118,7 +118,7 @@
                 <div class="list-view-pf-expand">
                   <span class="fa fa-angle-right"></span>
                   <span class="pficon pficon-project"></span>
-                  <strong>2</strong> Lifecycle
+                  <strong>{{ alertItem.lifecycle ? alertItem.lifecycle.length : 0 }}</strong> Lifecycle
                 </div>
               </div>
 
@@ -127,7 +127,7 @@
                 <div class="list-view-pf-expand">
                   <span class="fa fa-angle-right"></span>
                   <span class="fa fa-tachometer"></span>
-                  <strong>8</strong> Conditions
+                  <strong>{{ alertItem.evalSets ? alertItem.evalSets.length : 0 }}</strong> Conditions
                 </div>
               </div>
             </div>
@@ -146,50 +146,27 @@
           <div class="row">
             <div class="col-md-12">
               <p>
-                <b>Category:</b> Bananas
+                <b>Category:</b> {{ alertItem.category }}
+                <br/>
+                <b>Data ID:</b> {{ alertItem.dataId }}
                 <br/>
                 <b>Alert Text:</b>
-                The alert "text" field content is here.
-                Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-                quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-                consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-                cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-                proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                {{ alertItem.text }}
               </p>
             </div>
           </div>
 
           <!-- notes from users -->
-          <div class="row">
+          <div class="row" ng-repeat="note in alertItem.notes">
             <div class="col-md-12">
               <p>
-                <b>User:</b> Jane
+                <b>User:</b> {{ note.user }}
                 <br/>
-                <b>Time:</b> January 15, 2016 10:45:11 AM
+                <b>Time:</b> {{ note.ctime | date:'yyyy-MM-dd HH:mm:ss Z' }}
                 <br/>
                 <b>Notes:</b>
                 <br/>
-                Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-                quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-                consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-                cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-                proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-              </p>
-            </div>
-          </div>
-          <!-- repeat rows... -->
-          <div class="row">
-            <div class="col-md-12">
-              <p>
-                <b>User:</b> Bob
-                <br/>
-                <b>Time:</b> January 15, 2016 10:55:15 AM
-                <br/>
-                <b>Notes:</b>
-                <br/>
-                blahblah
+                {{ note.text }}
               </p>
             </div>
           </div>
@@ -203,10 +180,8 @@
           <div class="row">
             <div class="col-md-12">
               <dl class="dl-horizontal">
-                <dt>Tag1:</dt>
-                <dd>foo</dd>
-                <dt>Tag2:</dt>
-                <dd>bar</dd>
+                <dt ng-repeat-start="tag in alertItem.tags">{{tag.key}}:</dt>
+                <dd ng-repeat-end>{{tag.value}}</dd>
               </dl>
             </div>
           </div>
@@ -218,27 +193,14 @@
             <span class="pficon pficon-close"></span>
           </div>
 
-          <div class="row">
+          <div class="row" ng-repeat="lc in alertItem.lifecycle">
             <div class="col-md-12">
               <p>
-                <b>User:</b> Jane
+                <b>User:</b> {{ lc.user }}
                 <br/>
-                <b>Time:</b> January 15, 2016 10:45:11 AM
+                <b>Time:</b> {{ lc.stime | date:'yyyy-MM-dd HH:mm:ss Z' }}
                 <br/>
-                <b>Status:</b> Acknowledged
-              </p>
-            </div>
-          </div>
-
-          <!-- repeat rows... -->
-          <div class="row">
-            <div class="col-md-12">
-              <p>
-                <b>User:</b> Bob
-                <br/>
-                <b>Time:</b> January 15, 2016 10:55:15 AM
-                <br/>
-                <b>Status:</b> Resolved
+                <b>Status:</b> {{ lc.status }}
               </p>
             </div>
           </div>
@@ -250,26 +212,14 @@
           <div class="close">
             <span class="pficon pficon-close"></span>
           </div>
-          <div class="row">
-            <div class="col-md-12">
+          <div class="row" ng-repeat="evs in alertItem.evalSets">
+            <div class="col-md-12" ng-repeat="ev in evs">
               <p>
-                <b>A:</b> Wot gorilla?
+                <b>Time:</b> {{ ev.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}
                 <br/>
-                <b>B:</b> January 15, 2016 10:55:15 AM
+                <b>Type:</b> {{ ev.type }}
                 <br/>
-                <b>C:</b> What say what?
-              </p>
-            </div>
-          </div>
-          <!-- repeat... -->
-          <div class="row">
-            <div class="col-md-12">
-              <p>
-                <b>X:</b> Wot gorilla?
-                <br/>
-                <b>Y:</b> January 15, 2016 10:55:15 AM
-                <br/>
-                <b>Z:</b> What say what?
+                <b>Context:</b> {{ ev.context }}
               </p>
             </div>
           </div>
@@ -312,7 +262,7 @@
           .parents(".list-group-item").addClass("list-view-pf-expand-active")
             .end().find(".fa-angle-right").addClass("fa-angle-down");
         // check if it needs to hide
-        if($subPanels.eq(index).hasClass("hidden")){
+        if ($subPanels.eq(index).hasClass("hidden")) {
           $heading.find(".list-group-item-container:visible").addClass("hidden");
           $subPanels.eq(index).removeClass("hidden");
         } else {
@@ -324,7 +274,7 @@
       });
 
       // click close button to close the panel
-      $(".list-group-item-container .close").on("click", function (){
+      $(".list-group-item-container .close").on("click", function () {
         var $this = $(this);
         var $panel = $this.parent();
 
@@ -332,7 +282,7 @@
         $panel.addClass("hidden")
           .parent().removeClass("list-view-pf-expand-active")
             .find(".list-view-pf-expand.active").removeClass("active")
-              .find(".fa-angle-right").removeClass("fa-angle-down")
+              .find(".fa-angle-right").removeClass("fa-angle-down");
       });
     });
   </script>
