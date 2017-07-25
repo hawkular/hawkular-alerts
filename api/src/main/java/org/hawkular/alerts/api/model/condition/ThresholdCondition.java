@@ -143,6 +143,9 @@ public class ThresholdCondition extends Condition {
     }
 
     public boolean match(double value) {
+        if (threshold == null) {
+            throw new IllegalStateException("Invalid threshold for condition: " + this.toString());    		
+        }
         switch (operator) {
             case LT:
                 return value < threshold;
