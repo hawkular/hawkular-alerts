@@ -81,17 +81,20 @@
         </div>
         <div class="list-view-pf-actions">
           <!-- a button that can trigger the default action -->
-          <button class="btn btn-default">Acknowledge</button>
+          <!-- for open alerts, we show a button to ack; for acked alerts, show resolve button; for resolved alerts, show re-open button -->
+          <button ng-click="ackAlert(alertItem.id)" ng-show="alertItem.status === 'OPEN'" class="btn btn-default">Acknowledge</button>
+          <button ng-click="resolveAlert(alertItem.id)" ng-show="alertItem.status === 'ACKNOWLEDGE'" class="btn btn-default">Resolve</button>
+          <button ng-click="reopenAlert(alertItem.id)" ng-show="alertItem.status === 'RESOLVED'" class="btn btn-default">Re-Open</button>
           <div class="dropdown pull-right dropdown-kebab-pf">
             <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
               <span class="fa fa-ellipsis-v"></span>
             </button>
             <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight1">
-              <li><a href="#">Acknowledge</a></li>
-              <li><a href="#">Resolve</a></li>
-              <li><a href="#">Re-Open</a></li>
+              <li ng-show="alertItem.status === 'OPEN'"><a id="ack-alert-link" href ng-click="ackAlert(alertItem.id)">Acknowledge</a></li>
+              <li ng-show="alertItem.status === 'ACKNOWLEDGE' || alertItem.status === 'OPEN'"><a id="resolve-alert-link" href ng-click="resolveAlert(alertItem.id)">Resolve</a></li>
+              <li ng-show="alertItem.status === 'RESOLVED'"><a id="reopen-alert-link" href ng-click="reopenAlert(alertItem.id)">Re-Open</a></li>
               <li role="separator" class="divider"></li>
-              <li><a href="#">Delete</a></li>
+              <li><a id="delete-alert-link" href ng-click="deleteAlert(alertItem.id)">Delete</a></li>
             </ul>
           </div>
         </div>
@@ -117,7 +120,6 @@
               </div>
               <!-- Text description - a brief summary -->
               <div class="list-group-item-text">
-                {{ alertItem.category }}<br/>
                 {{ alertItem.ctime | date:'yyyy-MM-dd HH:mm:ss Z' }}
               </div>
             </div>
@@ -126,7 +128,16 @@
 
             <div class="list-view-pf-additional-info">
 
-              <!-- Notes, text, and category -->
+              <!-- Details -->
+              <div class="list-view-pf-additional-info-item">
+                <div class="list-view-pf-expand">
+                  <span class="fa fa-angle-right"></span>
+                  <span class="pficon pficon-info"></span>
+                  Details
+                </div>
+              </div>
+
+              <!-- Notes -->
               <div class="list-view-pf-additional-info-item">
                 <div class="list-view-pf-expand">
                   <span class="fa fa-angle-right"></span>
@@ -167,13 +178,13 @@
 
         <!-- The expanded sections -->
 
-        <!-- Notes, text, and category -->
+        <!-- Details -->
         <div class="list-group-item-container container-fluid hidden">
           <div class="close">
             <span class="pficon pficon-close"></span>
           </div>
 
-          <!-- category and main alert text -->
+          <!-- category and main alert details -->
           <div class="row">
             <div class="col-md-12">
               <p>
@@ -185,6 +196,28 @@
                 {{ alertItem.text }}
               </p>
             </div>
+          </div>
+
+          <!-- notes from users -->
+          <div class="row" ng-repeat="note in alertItem.notes">
+            <div class="col-md-12">
+              <p>
+                <b>User:</b> {{ note.user }}
+                <br/>
+                <b>Time:</b> {{ note.ctime | date:'yyyy-MM-dd HH:mm:ss Z' }}
+                <br/>
+                <b>Notes:</b>
+                <br/>
+                {{ note.text }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="list-group-item-container container-fluid hidden">
+          <div class="close">
+            <span class="pficon pficon-close"></span>
           </div>
 
           <!-- notes from users -->

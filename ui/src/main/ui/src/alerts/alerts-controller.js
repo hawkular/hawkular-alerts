@@ -26,6 +26,22 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
       }
     });
 
+    $scope.ackAlert = function (id) {
+      alert("TODO ACK: " + id);
+    };
+
+    $scope.resolveAlert = function (id) {
+      alert("TODO RESOLVE: " + id);
+    };
+
+    $scope.reopenAlert = function (id) {
+      alert("TODO REOPEN: " + id);
+    };
+
+    $scope.deleteAlert = function (id) {
+      alert("TODO DELETE: " + id);
+    };
+
     var updateAlerts = function () {
       if (selectedTenant && selectedTenant.length > 0) {
         var alertsCriteria = {
