@@ -2,6 +2,18 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
   function ($scope, $rootScope, $resource, $window, $interval, $q, alertsService) {
     'use strict';
 
+    var initStart = new Date();
+    initStart.setHours(0,0,0,0);
+    $scope.filter = {
+      start: new Date(),
+      end: new Date(),
+      severity: 'All Severity',
+      severityOptions: ['All Severity', 'Low', 'Medium', 'High', 'Critical'],
+      status: 'All Status',
+      statusOptions: ['All Status', 'Open', 'Acknowledged', 'Resolved'],
+      tagQuery: null
+    };
+
     var selectedTenant = $rootScope.selectedTenant;
 
     console.log("[Alerts] $rootScope.selectedTenant " + selectedTenant);
@@ -16,7 +28,30 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
 
     var updateAlerts = function () {
       if (selectedTenant && selectedTenant.length > 0) {
-        var alertsPromise = alertsService.Alert($rootScope.selectedTenant).query();
+        var alertsCriteria = {
+          'thin': false   // TODO: we need to add this, we should not initially fetch fat alerts
+        };
+        if ( $scope.filter.start ) {
+          var startTime = $scope.filter.start;
+          startTime.setHours(0,0,0,0);
+          alertsCriteria.startTime = startTime.getTime();
+        }
+        if ( $scope.filter.end ) {
+          var endTime = $scope.filter.end;
+          endTime.setHours(23,59,59,999);
+          alertsCriteria.endTime = endTime.getTime();
+        }
+        if ( $scope.filter.tagQuery && $scope.filter.tagQuery.length > 0 ) {
+          alertsCriteria.tags = $scope.filter.tagQuery;
+        }
+        if ( $scope.filter.severity && $scope.filter.severity !== 'All Severity' ) {
+          alertsCriteria.severities = $scope.filter.severity.toUpperCase();
+        }
+        if ( $scope.filter.status && $scope.filter.status !== 'All Status' ) {
+          alertsCriteria.statuses = $scope.filter.status.toUpperCase();
+        }
+
+        var alertsPromise = alertsService.Query($rootScope.selectedTenant, alertsCriteria).query();
         $q.all([alertsPromise.$promise]).then(function(results) {
           $scope.alertsList = results[0];
           console.log("[Alerts] Alerts query returned [" + $scope.alertsList.length + "] alerts");
@@ -83,5 +118,10 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
               .find(".fa-angle-right").removeClass("fa-angle-down");
       });
     });
+
+    $scope.updateFilter = function() {
+      updateAlerts();
+    };
+
   }
 ]);

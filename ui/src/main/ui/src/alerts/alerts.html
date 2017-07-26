@@ -3,22 +3,53 @@
 
   <div class="row row-cards-pf" ng-hide="selectedTenant == null || selectedTenant == ''">
 
-    <!-- Toolbar -->
+    <!-- Toolbar Datetime Range-->
+
+    <div class="row toolbar-pf" ng-hide="selectedTenant == null || selectedTenant == ''">
+      <div class="col-md-12">
+        <form class="toolbar-pf-actions">
+          <div class="form-group" ng-style="{'width':'40%'}">
+            <div>Date Range</div>
+            <div class="input-group input-daterange">
+              <input id="start" type="date" class="form-control bootstrap-datepicker" ng-model="filter.start" ng-change="updateFilter()" readonly />
+              <div class="input-group-addon">to</div>
+              <input id="end" type="date" class="form-control  bootstrap-datepicker" ng-model="filter.end" ng-change="updateFilter()" readonly />
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toolbar Filters-->
 
     <div class="row toolbar-pf" id="toolbar">
       <div class="col-md-12">
         <form class="toolbar-pf-actions" ng-submit="updateFilter()">
-          <div class="form-group toolbar-pf-filter">
+          <div class="form-group toolbar-pf-filter" ng-style="{'width':'40%'}">
             <div class="input-group">
               <div class="input-group-btn">
                 <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   Tag Query <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                  <li class="selected"><a href="#/alerts" id="filter1">Tag Query</a></li>
+                  <li class="selected"><a href="#/alerts">Tag Query</a></li>
                 </ul>
               </div>
-              <input type="text" class="form-control" ng-model="newFilter.text" id="filterText" placeholder="Filter By Tag Query..." />
+              <input type="text" class="form-control" ng-model="filter.tagQuery" id="filter.tagQuery" placeholder="Filter By Tag Query..." />
+            </div>
+          </div>
+          <div class="form-group toolbar-pf-filter">
+            <label class="col-md-5 control-label" for="filter.severity">Severity:</label>
+            <div class="input-group">
+              <select class="btn btn-default combobox" id="filter.severity" ng-options="opt as opt for opt in filter.severityOptions" ng-model="filter.severity"
+                ng-change="updateFilter()"></select>
+            </div>
+          </div>
+          <div class="form-group toolbar-pf-filter">
+            <label class="col-md-4 control-label" for="filter.status">Status:</label>
+            <div class="input-group">
+              <select class="btn btn-default combobox" id="filter.status" ng-options="opt as opt for opt in filter.statusOptions" ng-model="filter.status"
+                ng-change="updateFilter()"></select>
             </div>
           </div>
           <div class="form-group">
@@ -82,7 +113,7 @@
             <div class="list-view-pf-description">
               <!-- Alert severity -->
               <div class="list-group-item-heading">
-                {{ alertItem.severity }} <!-- High, Medium, Low -->
+                {{ alertItem.severity }}
               </div>
               <!-- Text description - a brief summary -->
               <div class="list-group-item-text">
@@ -235,15 +266,27 @@
       <div class="card-pf">
         <div class="card-pf-heading">
           <p class="card-pf-heading-details"></p>
-          <h2 class="card-pf-title">
-            Select a Tenant
-          </h2>
+          <h2 class="card-pf-title">Select a Tenant</h2>
         </div>
-        <div class="card-pf-body">
-          Use the upper right form to select a tenant which fetch data from Hawkular Alerting.
-        </div>
+        <div class="card-pf-body">Use the upper right form to select a tenant which fetch data from Hawkular Alerting.</div>
       </div>
     </div>
   </div>
 
-</div><!-- /container -->
+</div>
+<!-- /container -->
+<script>
+  // Initialize Boostrap-datepicker
+  $('#start').datepicker({
+    format: 'yyyy-mm-dd', // required to be declared like this
+    autoclose: true,
+    todayBtn: 'linked',
+    todayHighlight: true
+  });
+  $('#end').datepicker({
+    format: 'yyyy-mm-dd', // required to be declared like this
+    autoclose: true,
+    todayBtn: 'linked',
+    todayHighlight: true
+  });
+</script>

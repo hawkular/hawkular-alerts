@@ -376,6 +376,30 @@ module.exports = function (grunt) {
             cwd: '.',
             src: ['bower_components/patternfly-timeline/dist/timeline.css'],
             dest: '<%= projectSettings.dist %>'
+          },
+          {
+            expand: true,
+            cwd: '.',
+            src: ['bower_components/moment/min/moment.min.js'],
+            dest: '<%= projectSettings.dist %>'
+          },
+          {
+            expand: true,
+            cwd: '.',
+            src: ['bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js'],
+            dest: '<%= projectSettings.dist %>'
+          },
+          {
+            expand: true,
+            cwd: '.',
+            src: ['bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css'],
+            dest: '<%= projectSettings.dist %>'
+          },
+          {
+            expand: true,
+            cwd: '.',
+            src: ['bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js'],
+            dest: '<%= projectSettings.dist %>'
           }
         ]
       },

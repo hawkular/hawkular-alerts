@@ -12,12 +12,15 @@
     <link rel="shortcut icon" href="favicon.ico?v=1"/>
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
 
-     <!-- build:css styles/css/bower_components.css -->
+    <!-- build:css styles/css/bower_components.css -->
+    <!-- PatternFly Styles -->
+    <!-- Note: No other CSS files are needed regardless of what other JS packages located in patternfly/components that you decide to pull in -->
     <link rel="stylesheet" href="bower_components/patternfly/dist/css/patternfly.min.css"/>
     <link rel="stylesheet" href="bower_components/patternfly/dist/css/patternfly-additions.min.css"/>
+
     <link rel="stylesheet" href="bower_components/angular-patternfly/dist/styles/angular-patternfly.min.css">
     <link rel="stylesheet" href="bower_components/patternfly-timeline/dist/timeline.css">
-    <!-- endbuild -->
+    <link rel="stylesheet" href="bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css">
 
     <!-- build:css styles/css/app.css -->
     <link rel="stylesheet" href="styles/app.css"/>
@@ -68,6 +71,11 @@
   <script src="bower_components/angular-patternfly/dist/angular-patternfly.min.js"></script>
   <script src="bower_components/lodash/lodash.min.js"></script>
   <script src="bower_components/patternfly-timeline/dist/timeline.js"></script>
+  <!-- Moment - required by Bootstrap Date Time Picker -->
+  <script src="bower_components/moment/min/moment.min.js"></script>
+  <script src="bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
+  <script src="bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+
   <!-- endbuild -->
 
 
