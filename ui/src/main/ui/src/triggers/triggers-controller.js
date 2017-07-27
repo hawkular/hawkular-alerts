@@ -1,5 +1,4 @@
-angular.module('hwk.triggersModule')
-.filter('startFrom', function () {
+angular.module('hwk.triggersModule').filter('startFrom', function () {
   'use strict';
 
   return function(input, start) {
@@ -19,7 +18,9 @@ angular.module('hwk.triggersModule')
 
     $scope.pageSize = 5;
     $scope.triggers = [];
-    $scope.filterText = null;
+    $scope.filter = {
+      tags: null
+    };
     $scope.jsonModal = {
       text: null,
       title: null,
@@ -31,9 +32,9 @@ angular.module('hwk.triggersModule')
 
     var updateTriggers = function () {
       var promise1;
-      if ( $scope.filterText ) {
-        console.log("[Triggers] Updating triggers for " + selectedTenant + " at " + new Date() + " with filter=" + $scope.filterText);
-        promise1 = triggersService.Query(selectedTenant, $scope.filterText).query();
+      if ( $scope.filter.tags && $scope.filter.tags.length > 0 ) {
+        console.log("[Triggers] Updating triggers for " + selectedTenant + " at " + new Date() + " with filter=" + $scope.filter);
+        promise1 = triggersService.Query(selectedTenant, $scope.filter).query();
       } else {
         console.log("[Triggers] Updating triggers for " + selectedTenant + " at " + new Date());
         promise1 = triggersService.Trigger(selectedTenant).query();
@@ -96,11 +97,6 @@ angular.module('hwk.triggersModule')
     });
 
     $scope.updateFilter = function() {
-      if (this.newFilter.text) {
-        $scope.filterText = this.newFilter.text;
-      } else {
-        $scope.filterText = null;
-      }
       updateTriggers();
     };
 

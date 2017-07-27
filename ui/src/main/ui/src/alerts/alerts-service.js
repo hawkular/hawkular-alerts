@@ -22,5 +22,40 @@ angular.module('hwk.alertsModule').service('hwk.alertsService', ['$resource', '$
         }
       });
     };
+
+    this.Purge = function (tenantId, alertsCriteria) {
+      return $resource($rootScope.appConfig.server.baseUrl + "/delete", alertsCriteria, {
+        update: {
+          method: 'PUT',
+          headers: {'Hawkular-Tenant': tenantId}
+        }
+      });
+    };
+
+    this.Ack = function (tenantId, alertIds, ackBy, ackNotes) {
+      return $resource($rootScope.appConfig.server.baseUrl + "/ack", {
+        alertIds: alertIds,
+        ackBy: ackBy,
+        ackNotes: ackNotes
+      }, {
+        update: {
+          method: 'PUT',
+          headers: {'Hawkular-Tenant': tenantId}
+        }
+      });
+    };
+
+    this.Resolve = function (tenantId, alertIds, resolvedBy, resolvedNotes) {
+      return $resource($rootScope.appConfig.server.baseUrl + "/resolve", {
+        alertIds: alertIds,
+        resolvedBy: resolvedBy,
+        resolvedNotes: resolvedNotes
+      }, {
+        update: {
+          method: 'PUT',
+          headers: {'Hawkular-Tenant': tenantId}
+        }
+      });
+    };
   }
 ]);

@@ -21,9 +21,9 @@ angular.module('hwk.triggersModule').service('hwk.triggersService', ['$resource'
       });
     };
 
-    this.Query = function (tenantId, tagQuery) {
+    this.Query = function (tenantId, criteria) {
       // TODO: This should change to tagQuery when it is supported on TriggersCriteria
-      return $resource($rootScope.appConfig.server.baseUrl + '/triggers', {tags: tagQuery}, {
+      return $resource($rootScope.appConfig.server.baseUrl + '/triggers', criteria, {
         query: {
           method: 'GET',
           isArray: true,

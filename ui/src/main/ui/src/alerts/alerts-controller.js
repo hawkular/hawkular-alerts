@@ -1,5 +1,5 @@
-angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope', '$rootScope', '$resource', '$window', '$interval', '$q', 'hwk.alertsService',
-  function ($scope, $rootScope, $resource, $window, $interval, $q, alertsService) {
+angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope', '$rootScope', '$resource', '$window', '$interval', '$q', '$modal', 'hwk.alertsService',
+  function ($scope, $rootScope, $resource, $window, $interval, $q, $modal, alertsService) {
     'use strict';
 
     var initStart = new Date();
@@ -12,6 +12,14 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
       status: 'All Status',
       statusOptions: ['All Status', 'Open', 'Acknowledged', 'Resolved'],
       tagQuery: null
+    };
+    $scope.lifecycleModal = {
+      user: null,
+      notes: null,
+      title: null,
+      placeholder: null,
+      state: null,
+      readOnly: false
     };
 
     var selectedTenant = $rootScope.selectedTenant;
@@ -26,20 +34,79 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
       }
     });
 
-    $scope.ackAlert = function (id) {
-      alert("TODO ACK: " + id);
+    $scope.ackAlert = function (alertId) {
+      $scope.lifecycleModal.title = 'Acknowledge Alert';
+      $scope.lifecycleModal.user = null;
+      $scope.lifecycleModal.notes = null;
+      $scope.lifecycleModal.readOnly = false;
+      $scope.lifecycleModal.state = "Acknowledge";
+      changeState(alertId);
     };
 
-    $scope.resolveAlert = function (id) {
-      alert("TODO RESOLVE: " + id);
+    $scope.resolveAlert = function (alertId) {
+      $scope.lifecycleModal.title = 'Resolve Alert';
+      $scope.lifecycleModal.user = null;
+      $scope.lifecycleModal.notes = null;
+      $scope.lifecycleModal.readOnly = false;
+      $scope.lifecycleModal.state = "Resolve";
+      changeState(alertId);
+    };
+
+    var changeState = function(alertId) {
+      var modalInstance = $modal.open({
+        templateUrl: 'lifecycleModal.html',
+        backdrop: false, // keep modal up if someone clicks outside of the modal
+        controller: function ($scope, $modalInstance, $log, lifecycleModal) {
+          $scope.lifecycleModal = lifecycleModal;
+          $scope.save = function () {
+
+            $modalInstance.dismiss(lifecycleModal.state);
+            var promise1;
+            if ( lifecycleModal.state === 'Acknowledge') {
+              promise1 = alertsService.Ack(selectedTenant, alertId, lifecycleModal.user, lifecycleModal.notes).update();
+            } else {
+              promise1 = alertsService.Resolve(selectedTenant, alertId, lifecycleModal.user, lifecycleModal.notes).update();
+            }
+
+            $q.all([promise1.$promise]).then(function (result) {
+              console.log("Result[" + lifecycleModal.state + "]=" + result);
+              updateAlerts();
+            });
+          };
+          $scope.cancel = function () {
+            $modalInstance.dismiss('cancel');
+          };
+          $scope.isValid = function () {
+            return (
+              $scope.lifecycleModal.notes
+              && $scope.lifecycleModal.notes.length > 0
+              && $scope.lifecycleModal.user
+              && $scope.lifecycleModal.user.length > 0
+            );
+          };
+        },
+        resolve: {
+          lifecycleModal: function () {
+            return $scope.lifecycleModal;
+          }
+        }
+      });
     };
 
     $scope.reopenAlert = function (id) {
       alert("TODO REOPEN: " + id);
     };
 
-    $scope.deleteAlert = function (id) {
-      alert("TODO DELETE: " + id);
+    $scope.deleteAlert = function (alertId) {
+      var alertsCriteria = {
+        alertIds: alertId
+      };
+      var alertsPromise = alertsService.Purge($rootScope.selectedTenant, alertsCriteria).update();
+      $q.all([alertsPromise.$promise]).then(function(results) {
+        updateAlerts();
+      }, function(err) {
+        console.log("[Alerts] deleteAlert(" + alertId + ") failed: " + err);
+      });
     };
 
     var updateAlerts = function () {
