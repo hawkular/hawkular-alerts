@@ -156,11 +156,6 @@ public class StringCondition extends Condition {
         this.pattern = pattern;
     }
 
-    public String getLog(String value) {
-        return triggerId + " : " + value + " " + operator.name() + " " +
-                pattern + " " + "ignoreCase=" + ignoreCase;
-    }
-
     public boolean match(String value) {
 
         if (ignoreCase && operator != Operator.MATCH) {

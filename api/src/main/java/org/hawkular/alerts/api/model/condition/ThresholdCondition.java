@@ -138,10 +138,6 @@ public class ThresholdCondition extends Condition {
         this.threshold = threshold;
     }
 
-    public String getLog(double value) {
-        return triggerId + " : " + value + " " + operator.name() + " " + threshold;
-    }
-
     public boolean match(double value) {
         if (threshold == null) {
             throw new IllegalStateException("Invalid threshold for condition: " + this.toString());    		

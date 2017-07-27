@@ -36,13 +36,11 @@ public class ThresholdRangeConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "Threshold range condition linked with this state.",
-            position = 0)
+    @ApiModelProperty(value = "Threshold range condition linked with this state.", position = 0)
     @JsonInclude(Include.NON_NULL)
     private ThresholdRangeCondition condition;
 
-    @ApiModelProperty(value = "Numeric value for dataId used in the evaluation.",
-            position = 1)
+    @ApiModelProperty(value = "Numeric value for dataId used in the evaluation.", position = 1)
     @JsonInclude(Include.NON_NULL)
     private Double value;
 
@@ -95,8 +93,11 @@ public class ThresholdRangeConditionEval extends ConditionEval {
     }
 
     @Override
-    public String getLog() {
-        return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp;
+    public String buildLog() {
+        String log = String.format("Range: %s[%s] %s %s%s , %s%s", condition.getDataId(), value,
+                (condition.isInRange() ? " in " : " not in "), condition.getOperatorLow().getLow(),
+                condition.getThresholdLow(), condition.getThresholdHigh(), condition.getOperatorHigh().getHigh());
+        return log;
     }
 
     @Override

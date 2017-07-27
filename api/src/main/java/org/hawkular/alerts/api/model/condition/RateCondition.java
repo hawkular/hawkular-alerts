@@ -231,16 +231,6 @@ public class RateCondition extends Condition {
         this.threshold = threshold;
     }
 
-    public String getLog(long time, double value, long previousTime, double previousValue) {
-        long deltaTime = time - previousTime;
-        double deltaValue = (Direction.INCREASING == direction) ? (value - previousValue) : (previousValue - value);
-        double periods = deltaTime / period.milliseconds;
-        double rate = deltaValue / periods;
-
-        return triggerId + " : " + direction + " " + rate + " " + operator.name() + " " + threshold + " per "
-                + period;
-    }
-
     public boolean match(long time, double value, long previousTime, double previousValue) {
         double rate = getRate(time, value, previousTime, previousValue);
 

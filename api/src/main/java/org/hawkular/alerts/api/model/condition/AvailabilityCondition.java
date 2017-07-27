@@ -123,10 +123,6 @@ public class AvailabilityCondition extends Condition {
         this.operator = operator;
     }
 
-    public String getLog(AvailabilityType value) {
-        return triggerId + " : " + value + " " + operator.name();
-    }
-
     public boolean match(AvailabilityType value) {
         switch (operator) {
             case DOWN:

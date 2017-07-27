@@ -36,13 +36,11 @@ public class ThresholdConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "Threshold condition linked with this state.",
-            position = 0)
+    @ApiModelProperty(value = "Threshold condition linked with this state.", position = 0)
     @JsonInclude(Include.NON_NULL)
     private ThresholdCondition condition;
 
-    @ApiModelProperty(value = "Numeric value for dataId used in the evaluation.",
-            position = 1)
+    @ApiModelProperty(value = "Numeric value for dataId used in the evaluation.", position = 1)
     @JsonInclude(Include.NON_NULL)
     private Double value;
 
@@ -52,7 +50,8 @@ public class ThresholdConditionEval extends ConditionEval {
     }
 
     public ThresholdConditionEval(ThresholdCondition condition, Data data) {
-        super(Type.THRESHOLD, condition.match(Double.valueOf(data.getValue())), data.getTimestamp(), data.getContext());
+        super(Type.THRESHOLD, condition.match(Double.valueOf(data.getValue())), data.getTimestamp(),
+                data.getContext());
         this.condition = condition;
         this.value = Double.valueOf(data.getValue());
     }
@@ -94,8 +93,10 @@ public class ThresholdConditionEval extends ConditionEval {
     }
 
     @Override
-    public String getLog() {
-        return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp;
+    public String buildLog() {
+        String log = String.format("Threshold: %s[%s] %s %s", condition.getDataId(), value,
+                condition.getOperator().name(), condition.getThreshold());
+        return log;
     }
 
     @Override

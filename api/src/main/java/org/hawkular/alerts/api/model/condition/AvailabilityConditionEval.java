@@ -97,8 +97,10 @@ public class AvailabilityConditionEval extends ConditionEval {
     }
 
     @Override
-    public String getLog() {
-        return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp;
+    public String buildLog() {
+        String log = String.format("Avail: %s[%s] is %s", condition.getDataId(), value.name(),
+                condition.getOperator().name());
+        return log;
     }
 
     @Override

@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -182,23 +181,6 @@ public class NelsonCondition extends Condition {
 
     public void setSampleSize(Integer sampleSize) {
         this.sampleSize = (null == sampleSize || sampleSize < 1) ? DEFAULT_SAMPLE_SIZE : sampleSize;
-    }
-
-    public String getLog(List<NelsonRule> violations, Double mean, Double standardDeviation,
-            List<Data> violationsData) {
-
-        StringBuilder sb = new StringBuilder(triggerId);
-        sb.append(" : ");
-        sb.append(violations);
-        sb.append(", mean= ");
-        sb.append(mean);
-        sb.append(", standardDeviation=");
-        sb.append(standardDeviation);
-        sb.append(", sampleSize=");
-        sb.append(sampleSize);
-        sb.append(", violationsData=");
-        sb.append(violationsData);
-        return sb.toString();
     }
 
     public boolean match(List<NelsonRule> violations) {

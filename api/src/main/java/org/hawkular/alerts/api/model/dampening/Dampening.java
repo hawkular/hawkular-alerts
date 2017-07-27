@@ -390,11 +390,17 @@ public class Dampening implements Serializable {
     }
 
     public void addSatisfyingEvals(Set<ConditionEval> satisfyingEvals) {
+        // Make sure the log string is generated on each ConditionEval. This ensures that downstream we have the log
+        // string persisted and available via REST clients.  The log string is set on first request.  We don't do it
+        // ConditionEval construction so as not to slow down evals, most of which are negative and never persisted.
+        for (ConditionEval ce : satisfyingEvals) {
+            ce.getLog();
+        }
         this.satisfyingEvals.add(satisfyingEvals);
     }
 
     public void addSatisfyingEvals(ConditionEval... satisfyingEvals) {
-        this.satisfyingEvals.add(new HashSet<ConditionEval>(Arrays.asList(satisfyingEvals)));
+        addSatisfyingEvals(new HashSet<ConditionEval>(Arrays.asList(satisfyingEvals)));
     }
 
     public String getTenantId() {

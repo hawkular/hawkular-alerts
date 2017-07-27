@@ -213,11 +213,6 @@ public class ThresholdRangeCondition extends Condition {
         this.thresholdLow = thresholdLow;
     }
 
-    public String getLog(double value) {
-        String range = operatorLow.getLow() + thresholdLow + " , " + thresholdHigh + operatorHigh.getHigh();
-        return triggerId + " : " + value + " " + range;
-    }
-
     public boolean match(double value) {
         boolean aboveLow = false;
         boolean belowHigh = false;

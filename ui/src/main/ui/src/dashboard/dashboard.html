@@ -134,14 +134,10 @@
                               <div class="list-group-item list-view-pf-stacked" ng-repeat="eval in evalSet">
                                 <div class="list-view-pf-main-info">
                                   <div class="list-view-pf-description">
-                                    <div ng-if="eval.condition.type == 'THRESHOLD'">
-                                      {{ eval.condition.dataId }} [ {{ eval.value }} ] {{ eval.condition.operator }} {{ eval.condition.threshold }}
-                                    </div>
-                                    <div ng-if="eval.condition.type == 'AVAILABILITY'">
-                                      {{ eval.condition.dataId }} [ {{ eval.value }} ] is {{ eval.condition.operator }}
+                                    <div>
+                                      {{ eval.log }}
                                     </div>
                                     <div ng-if="eval.condition.type == 'EVENT'">
-                                      {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
                                       <dl class="dl-horizontal eval-set">
                                         <dt>Event</dt>
                                         <dd></dd>
@@ -160,7 +156,6 @@
                                       </dl>
                                     </div>
                                     <div ng-if="eval.condition.type == 'EXTERNAL'">
-                                      {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
                                       <hr />
                                       <dl class="dl-horizontal eval-set" ng-repeat="evalSetEvent in eval.context.parsed">
                                         <dt>Event</dt>

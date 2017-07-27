@@ -128,9 +128,11 @@ public class CompareConditionEval extends ConditionEval {
     }
 
     @Override
-    public String getLog() {
-        return condition.getLog(value1, value2) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp="
-                + dataTimestamp;
+    public String buildLog() {
+        String log = String.format("Compare: %s[%s] %s %s%% %s[%s]", condition.getDataId(), value1,
+                condition.getOperator().name(), (100 * condition.getData2Multiplier()), condition.getData2Id(),
+                value2);
+        return log;
     }
 
     @Override

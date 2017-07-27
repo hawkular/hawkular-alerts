@@ -281,9 +281,7 @@
               <p>
                 <b>Time:</b> {{ ev.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}
                 <br/>
-                <b>Type:</b> {{ ev.type }}
-                <br/>
-                <b>Context:</b> {{ ev.context }}
+                <b>{{ ev.log }}</b>
               </p>
             </div>
           </div>

@@ -118,14 +118,10 @@ public class ExternalConditionEval extends ConditionEval {
     }
 
     @Override
-    public String getLog() {
-        if (value != null) {
-            return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp +
-                    ", dataTimestamp=" + dataTimestamp;
-        } else {
-            return condition.getLog(event) + ", evalTimestamp=" + evalTimestamp +
-                    ", dataTimestamp=" + dataTimestamp;
-        }
+    public String buildLog() {
+        String log = String.format("External: %s[%s] matches [%s]", condition.getDataId(),
+                (value != null ? value : event.toString()), condition.getExpression());
+        return log;
     }
 
     @Override

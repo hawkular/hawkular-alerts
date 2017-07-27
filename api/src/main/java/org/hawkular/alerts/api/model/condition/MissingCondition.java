@@ -27,8 +27,8 @@ import io.swagger.annotations.ApiModelProperty;
 /**
  * A <code>MissingCondition</code> is used to evaluate when a data or an event has not been received on time interval.
  *
- * A MissingCondition will be evaluated to true when a data/event has not been received in the last interval time
- * starting to count from trigger was enabled or last received data/event.
+ * A MissingCondition will be evaluated to true when a data/event has not been received in the last interval time,
+ * in milliseconds, starting to count from trigger was enabled or last received data/event.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -37,7 +37,7 @@ import io.swagger.annotations.ApiModelProperty;
         "on time interval. + \n" +
         " + \n" +
         "A MissingCondition will be evaluated to true when a data/event has not been received in the " +
-        "last interval time starting to count from trigger was enabled or last received data/event.")
+        "last interval time, in milliseconds, starting to count from trigger was enabled or last received data/event.")
 public class MissingCondition extends Condition {
 
     private static final long serialVersionUID = 1L;
@@ -105,11 +105,6 @@ public class MissingCondition extends Condition {
 
     public boolean match(long previousTime, long time) {
         return (previousTime + interval) < time;
-    }
-
-    public String getLog(long previousTime, long time) {
-        return triggerId + " : " +  dataId + " at " + time + ". Previous time: " + previousTime + " . Interval: "
-                + interval;
     }
 
     @Override

@@ -191,10 +191,6 @@ public class EventCondition extends Condition {
         this.dataId = dataId;
     }
 
-    public String getLog(Event value) {
-        return triggerId + " " + dataId + " : " + value + " " + expression;
-    }
-
     @Override
     public String getDataId() {
         return dataId;

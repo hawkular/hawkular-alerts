@@ -163,12 +163,6 @@ public class CompareCondition extends Condition {
         this.operator = operator;
     }
 
-    public String getLog(double dataValue, double data2Value) {
-        Double val = data2Multiplier * data2Value;
-        return triggerId + " : " + dataValue + " " + operator.name() + " " +
-                val + " (" + data2Multiplier + "*" + data2Value + ")";
-    }
-
     public boolean match(double dataValue, double data2Value) {
         double threshold = (data2Multiplier * data2Value);
         switch (operator) {

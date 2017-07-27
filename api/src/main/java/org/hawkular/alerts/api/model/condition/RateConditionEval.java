@@ -17,6 +17,7 @@
 package org.hawkular.alerts.api.model.condition;
 
 import org.hawkular.alerts.api.model.condition.Condition.Type;
+import org.hawkular.alerts.api.model.condition.RateCondition.Direction;
 import org.hawkular.alerts.api.model.data.Data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -36,33 +37,27 @@ public class RateConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "Rate condition linked with this state.",
-            position = 0)
+    @ApiModelProperty(value = "Rate condition linked with this state.", position = 0)
     @JsonInclude(Include.NON_NULL)
     private RateCondition condition;
 
-    @ApiModelProperty(value = "First (older) value for dataId used in the evaluation.",
-            position = 1)
+    @ApiModelProperty(value = "First (older) value for dataId used in the evaluation.", position = 1)
     @JsonInclude(Include.NON_NULL)
     private Double previousValue;
 
-    @ApiModelProperty(value = "Second (newer) value for dataId used in the evaluation.",
-            position = 2)
+    @ApiModelProperty(value = "Second (newer) value for dataId used in the evaluation.", position = 2)
     @JsonInclude(Include.NON_NULL)
     private Double value;
 
-    @ApiModelProperty(value = "Time for first (older) value for dataId used in the evaluation.",
-            position = 3)
+    @ApiModelProperty(value = "Time for first (older) value for dataId used in the evaluation.", position = 3)
     @JsonInclude
     private long previousTime;
 
-    @ApiModelProperty(value = "Time for second (newer) value for dataId used in the evaluation.",
-            position = 4)
+    @ApiModelProperty(value = "Time for second (newer) value for dataId used in the evaluation.", position = 4)
     @JsonInclude
     private long time;
 
-    @ApiModelProperty(value = "Calculated rate for this evaluation.",
-            position = 5)
+    @ApiModelProperty(value = "Calculated rate for this evaluation.", position = 5)
     @JsonInclude(Include.NON_NULL)
     private Double rate;
 
@@ -159,9 +154,17 @@ public class RateConditionEval extends ConditionEval {
     }
 
     @Override
-    public String getLog() {
-        return condition.getLog(time, value, previousTime, previousValue) + ", evalTimestamp=" + evalTimestamp
-                + ", dataTimestamp=" + dataTimestamp;
+    public String buildLog() {
+        long deltaTime = time - previousTime;
+        double deltaValue = (Direction.INCREASING == condition.getDirection()) ? (value - previousValue)
+                : (previousValue - value);
+        double periods = deltaTime / condition.getPeriod().milliseconds;
+        double rate = deltaValue / periods;
+
+        String log = String.format("Rate: %s %s %s %s %s per %s", condition.getDataId(), rate,
+                condition.getDirection().name(), condition.getOperator().name(), condition.getThreshold(),
+                condition.getPeriod().name());
+        return log;
     }
 
     @Override
