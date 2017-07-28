@@ -118,9 +118,9 @@ public class ExternalConditionEval extends ConditionEval {
     }
 
     @Override
-    public String buildLog() {
-        String log = String.format("External: %s[%s] matches [%s]", condition.getDataId(),
-                (value != null ? value : event.toString()), condition.getExpression());
+    public String buildDisplayString() {
+        String log = String.format("External[%s]: %s[%s] matches [%s]", condition.getAlerterId(),
+                condition.getDataId(), (value != null ? value : event.toString()), condition.getExpression());
         return log;
     }
 

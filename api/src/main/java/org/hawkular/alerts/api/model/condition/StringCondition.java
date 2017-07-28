@@ -112,6 +112,7 @@ public class StringCondition extends Condition {
         this.operator = operator;
         this.pattern = pattern;
         this.ignoreCase = ignoreCase;
+        updateDisplayString();
     }
 
     public StringCondition(StringCondition condition) {
@@ -130,6 +131,7 @@ public class StringCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
+        updateDisplayString();
     }
 
     public boolean isIgnoreCase() {
@@ -138,6 +140,7 @@ public class StringCondition extends Condition {
 
     public void setIgnoreCase(boolean ignoreCase) {
         this.ignoreCase = ignoreCase;
+        updateDisplayString();
     }
 
     public Operator getOperator() {
@@ -146,6 +149,7 @@ public class StringCondition extends Condition {
 
     public void setOperator(Operator operator) {
         this.operator = operator;
+        updateDisplayString();
     }
 
     public String getPattern() {
@@ -154,6 +158,7 @@ public class StringCondition extends Condition {
 
     public void setPattern(String pattern) {
         this.pattern = pattern;
+        updateDisplayString();
     }
 
     public boolean match(String value) {
@@ -178,6 +183,13 @@ public class StringCondition extends Condition {
             default:
                 throw new IllegalStateException("Unknown operator: " + operator.name());
         }
+    }
+
+    private void updateDisplayString() {
+        String operator = null == this.operator ? null : this.operator.name();
+        String s = String.format("%s %s [%s]%s", this.dataId, operator, this.pattern,
+                (this.ignoreCase ? " Ignoring Case" : ""));
+        setDisplayString(s);
     }
 
     @Override

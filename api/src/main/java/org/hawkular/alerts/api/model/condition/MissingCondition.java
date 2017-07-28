@@ -77,6 +77,7 @@ public class MissingCondition extends Condition {
                 conditionSetIndex, Type.MISSING);
         this.dataId = dataId;
         this.interval = interval;
+        updateDisplayString();
     }
 
     public MissingCondition(MissingCondition condition) {
@@ -93,6 +94,7 @@ public class MissingCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
+        updateDisplayString();
     }
 
     public long getInterval() {
@@ -101,10 +103,16 @@ public class MissingCondition extends Condition {
 
     public void setInterval(long interval) {
         this.interval = interval;
+        updateDisplayString();
     }
 
     public boolean match(long previousTime, long time) {
         return (previousTime + interval) < time;
+    }
+
+    private void updateDisplayString() {
+        String s = String.format("%s missing GTE %dms", this.dataId, this.interval);
+        setDisplayString(s);
     }
 
     @Override

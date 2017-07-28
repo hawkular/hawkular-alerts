@@ -70,9 +70,9 @@ public abstract class ConditionEval implements Serializable {
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 
-    @ApiModelProperty(value = "A String log of the evaluation (the result of a call to #getLog()).", position = 5)
+    @ApiModelProperty(value = "A canonical display string of the evaluation (the result of a call to #getLog()).", position = 5)
     @JsonInclude(Include.NON_EMPTY)
-    protected String log;
+    protected String displayString;
 
     public ConditionEval() {
         // for json assembly
@@ -84,7 +84,7 @@ public abstract class ConditionEval implements Serializable {
         this.dataTimestamp = dataTimestamp;
         this.evalTimestamp = System.currentTimeMillis();
         this.context = context;
-        this.log = null; // for speed at construction, lazily build this String when requested or when serialized
+        this.displayString = null; // for construction speed, lazily update when requested or when serialized
     }
 
     public boolean isMatch() {
@@ -127,15 +127,15 @@ public abstract class ConditionEval implements Serializable {
         this.context = context;
     }
 
-    public String getLog() {
-        if (null == this.log) {
-            this.log = buildLog();
+    public String getDisplayString() {
+        if (null == this.displayString) {
+            this.displayString = buildDisplayString();
         }
-        return this.log;
+        return this.displayString;
     }
 
     public void setLog(String log) {
-        this.log = log;
+        this.displayString = log;
     }
 
     @JsonIgnore
@@ -155,7 +155,7 @@ public abstract class ConditionEval implements Serializable {
      * String does not include whether the match is true or false.  That can be determined via {@link #isMatch()}.
      */
     @JsonIgnore
-    public abstract String buildLog();
+    protected abstract String buildDisplayString();
 
     @Override
     public boolean equals(Object o) {

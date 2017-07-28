@@ -64,18 +64,12 @@
                   <dt>Fires when</dt>
                   <dt ng-repeat-start="c in t.conditions"></dt>
                   <dd ng-show="c.triggerMode == 'FIRING'" ng-repeat-end>
-                    <div ng-show="c.type == 'THRESHOLD'">{{ c.dataId }} {{ c.operator }} {{ c.threshold }}</div>
-                    <div ng-show="c.type == 'AVAILABILITY'">{{ c.dataId }} is {{ c.operator }}</div>
-                    <div ng-show="c.type == 'EVENT'">{{ c.dataId }} matches [ {{ c.expression }} ]</div>
-                    <div ng-show="c.type == 'EXTERNAL'">{{ c.dataId }} on Alerter [ {{ c.alerterId }} ] evaluates [ {{ c.expression }} ]</div>
+                    <div>{{ c.displayString }}</div>
                   </dd>
                   <dt ng-show="t.trigger.autoResolve">Resolves when</dt>
                   <dt ng-repeat-start="c in t.conditions"></dt>
                   <dd ng-show="c.triggerMode == 'AUTORESOLVE'" ng-repeat-end>
-                    <div ng-show="c.type == 'THRESHOLD'">{{ c.dataId }} {{ c.operator }} {{ c.threshold }}</div>
-                    <div ng-show="c.type == 'AVAILABILITY'">{{ c.dataId }} is {{ c.operator }}</div>
-                    <div ng-show="c.type == 'EVENT'">{{ c.dataId }} matches [ {{ c.expression }} ]</div>
-                    <div ng-show="c.type == 'EXTERNAL'">{{ c.dataId }} on Alerter [ {{ c.alerterId }} ] evaluates [ {{ c.expression }} ]</div>
+                    <div>{{ c.displayString }}</div>
                   </dd>
                 </dl>
               </div>

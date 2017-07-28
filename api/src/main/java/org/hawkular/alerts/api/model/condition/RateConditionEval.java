@@ -154,7 +154,7 @@ public class RateConditionEval extends ConditionEval {
     }
 
     @Override
-    public String buildLog() {
+    public String buildDisplayString() {
         long deltaTime = time - previousTime;
         double deltaValue = (Direction.INCREASING == condition.getDirection()) ? (value - previousValue)
                 : (previousValue - value);

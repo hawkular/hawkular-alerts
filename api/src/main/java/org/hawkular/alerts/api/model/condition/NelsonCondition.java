@@ -21,6 +21,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.hawkular.alerts.api.model.trigger.Mode;
 
@@ -148,6 +149,7 @@ public class NelsonCondition extends Condition {
         this.dataId = dataId;
         setActiveRules(activeRules);
         setSampleSize(sampleSize);
+        updateDisplayString();
     }
 
     public NelsonCondition(NelsonCondition condition) {
@@ -165,6 +167,7 @@ public class NelsonCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
+        updateDisplayString();
     }
 
     public Set<NelsonRule> getActiveRules() {
@@ -173,6 +176,7 @@ public class NelsonCondition extends Condition {
 
     public void setActiveRules(Set<NelsonRule> activeRules) {
         this.activeRules = (null == activeRules || activeRules.isEmpty()) ? DEFAULT_ACTIVE_RULES : activeRules;
+        updateDisplayString();
     }
 
     public int getSampleSize() {
@@ -181,6 +185,7 @@ public class NelsonCondition extends Condition {
 
     public void setSampleSize(Integer sampleSize) {
         this.sampleSize = (null == sampleSize || sampleSize < 1) ? DEFAULT_SAMPLE_SIZE : sampleSize;
+        updateDisplayString();
     }
 
     public boolean match(List<NelsonRule> violations) {
@@ -199,6 +204,12 @@ public class NelsonCondition extends Condition {
 
     private boolean isEmpty(Collection<?> c) {
         return null == c || c.isEmpty();
+    }
+
+    private void updateDisplayString() {
+        String s = String.format("%s activeNelsonRules=%s sampleSize=%d", this.dataId,
+                this.activeRules.stream().map(e -> e.name()).collect(Collectors.toSet()), this.sampleSize);
+        setDisplayString(s);
     }
 
     @Override

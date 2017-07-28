@@ -95,10 +95,10 @@ public class StringConditionEval extends ConditionEval {
     }
 
     @Override
-    public String buildLog() {
-        String log = String.format("String: %s[%s] %s [%s] %s", condition.getDataId(), value,
+    public String buildDisplayString() {
+        String log = String.format("String: %s[%s] %s [%s]%s", condition.getDataId(), value,
                 condition.getOperator().name(), condition.getPattern(),
-                (condition.isIgnoreCase() ? "Ignoring Case" : ""));
+                (condition.isIgnoreCase() ? " Ignoring Case" : ""));
         return log;
     }
 

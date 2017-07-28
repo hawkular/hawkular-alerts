@@ -233,7 +233,7 @@
           <div class="row" ng-repeat="evs in alertItem.evalSets">
             <div class="col-md-12" ng-repeat="ev in evs">
               <p>
-                <b>Time:</b> {{ ev.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }} <br /> <b>{{ ev.log }}</b>
+                <b>Time:</b> {{ ev.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }} <br /> <b>{{ ev.displayString }}</b>
               </p>
             </div>
           </div>

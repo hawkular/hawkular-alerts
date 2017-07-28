@@ -137,10 +137,10 @@ public class NelsonConditionEval extends ConditionEval {
     }
 
     @Override
-    public String buildLog() {
+    public String buildDisplayString() {
         String log = String.format(
                 "Nelson: %s violations=%s mean=%s, standardDeviation=%s, sampleSize=%d, violationsData=%s",
-                violations, condition.getDataId(), mean, standardDeviation, condition.getSampleSize(), violationsData);
+                condition.getDataId(), violations, mean, standardDeviation, condition.getSampleSize(), violationsData);
         return log;
     }
 

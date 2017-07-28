@@ -103,6 +103,7 @@ public class ThresholdCondition extends Condition {
         this.dataId = dataId;
         this.operator = operator;
         this.threshold = threshold;
+        updateDisplayString();
     }
 
     public ThresholdCondition(ThresholdCondition condition) {
@@ -120,6 +121,7 @@ public class ThresholdCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
+        updateDisplayString();
     }
 
     public Operator getOperator() {
@@ -128,6 +130,7 @@ public class ThresholdCondition extends Condition {
 
     public void setOperator(Operator operator) {
         this.operator = operator;
+        updateDisplayString();
     }
 
     public Double getThreshold() {
@@ -136,11 +139,12 @@ public class ThresholdCondition extends Condition {
 
     public void setThreshold(Double threshold) {
         this.threshold = threshold;
+        updateDisplayString();
     }
 
     public boolean match(double value) {
         if (threshold == null) {
-            throw new IllegalStateException("Invalid threshold for condition: " + this.toString());    		
+            throw new IllegalStateException("Invalid threshold for condition: " + this.toString());
         }
         switch (operator) {
             case LT:
@@ -154,6 +158,12 @@ public class ThresholdCondition extends Condition {
             default:
                 throw new IllegalStateException("Unknown operator: " + operator.name());
         }
+    }
+
+    private void updateDisplayString() {
+        String operator = null == this.operator ? null : this.operator.name();
+        String s = String.format("%s %s %s", this.dataId, operator, this.threshold);
+        setDisplayString(s);
     }
 
     @Override

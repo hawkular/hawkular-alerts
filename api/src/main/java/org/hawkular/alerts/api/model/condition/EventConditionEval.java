@@ -95,7 +95,7 @@ public class EventConditionEval extends ConditionEval {
     }
 
     @Override
-    public String buildLog() {
+    public String buildDisplayString() {
         String log = String.format("Event: %s[%s] matches [%s]", condition.getDataId(), value,
                 condition.getExpression());
         return log;

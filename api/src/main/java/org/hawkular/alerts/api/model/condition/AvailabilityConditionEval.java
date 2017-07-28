@@ -97,7 +97,7 @@ public class AvailabilityConditionEval extends ConditionEval {
     }
 
     @Override
-    public String buildLog() {
+    public String buildDisplayString() {
         String log = String.format("Avail: %s[%s] is %s", condition.getDataId(), value.name(),
                 condition.getOperator().name());
         return log;

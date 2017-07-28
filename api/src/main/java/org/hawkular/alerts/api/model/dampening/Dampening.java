@@ -390,11 +390,11 @@ public class Dampening implements Serializable {
     }
 
     public void addSatisfyingEvals(Set<ConditionEval> satisfyingEvals) {
-        // Make sure the log string is generated on each ConditionEval. This ensures that downstream we have the log
-        // string persisted and available via REST clients.  The log string is set on first request.  We don't do it
-        // ConditionEval construction so as not to slow down evals, most of which are negative and never persisted.
+        // Make sure the display string is generated on each ConditionEval. This ensures that downstream we have the
+        // display string persisted and available via REST clients.  We build the display string lazily on a
+        // get request, so as not to slow down construction of evals, most of which are negative and never persisted.
         for (ConditionEval ce : satisfyingEvals) {
-            ce.getLog();
+            ce.getDisplayString();
         }
         this.satisfyingEvals.add(satisfyingEvals);
     }
@@ -533,7 +533,7 @@ public class Dampening implements Serializable {
                 for (ConditionEval ce : ces) {
                     sb.append(space);
                     sb.append("[");
-                    sb.append(ce.getLog());
+                    sb.append(ce.getDisplayString());
                     sb.append("]");
                     space = " ";
                 }

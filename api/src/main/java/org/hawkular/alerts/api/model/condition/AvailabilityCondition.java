@@ -97,6 +97,7 @@ public class AvailabilityCondition extends Condition {
         super(tenantId, triggerId, triggerMode, conditionSetSize, conditionSetIndex, Type.AVAILABILITY);
         this.dataId = dataId;
         this.operator = operator;
+        updateDisplayString();
     }
 
     public AvailabilityCondition(AvailabilityCondition condition) {
@@ -113,6 +114,7 @@ public class AvailabilityCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
+        updateDisplayString();
     }
 
     public Operator getOperator() {
@@ -121,6 +123,7 @@ public class AvailabilityCondition extends Condition {
 
     public void setOperator(Operator operator) {
         this.operator = operator;
+        updateDisplayString();
     }
 
     public boolean match(AvailabilityType value) {
@@ -134,6 +137,12 @@ public class AvailabilityCondition extends Condition {
             default:
                 throw new IllegalStateException("Unknown operator: " + operator.name());
         }
+    }
+
+    private void updateDisplayString() {
+        String operator = null == this.operator ? null : this.getOperator().name();
+        String s = String.format("%s is %s", this.dataId, operator);
+        setDisplayString(s);
     }
 
     @Override

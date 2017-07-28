@@ -93,7 +93,7 @@ public class ThresholdConditionEval extends ConditionEval {
     }
 
     @Override
-    public String buildLog() {
+    public String buildDisplayString() {
         String log = String.format("Threshold: %s[%s] %s %s", condition.getDataId(), value,
                 condition.getOperator().name(), condition.getThreshold());
         return log;

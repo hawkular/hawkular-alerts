@@ -116,6 +116,12 @@ public abstract class Condition implements Serializable {
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 
+    @ApiModelProperty(value = "A canonical display string for the condition expression. Can be null until the " +
+            "condition is fully defined.",
+            position = 7)
+    @JsonInclude(Include.NON_EMPTY)
+    public String displayString;
+
     public Condition() {
         // for json assembly
     }
@@ -142,6 +148,7 @@ public abstract class Condition implements Serializable {
         this.conditionSetIndex = condition.conditionSetIndex;
         this.type = condition.getType();
         this.context = new HashMap<>(condition.getContext());
+        this.displayString = condition.displayString;
         updateId();
     }
 
@@ -203,6 +210,14 @@ public abstract class Condition implements Serializable {
 
     public void setContext(Map<String, String> context) {
         this.context = context;
+    }
+
+    public String getDisplayString() {
+        return displayString;
+    }
+
+    public void setDisplayString(String displayString) {
+        this.displayString = displayString;
     }
 
     private void updateId() {

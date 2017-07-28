@@ -117,6 +117,7 @@ public class ExternalCondition extends Condition {
         this.alerterId = alerterId;
         this.dataId = dataId;
         this.expression = expression;
+        updateDisplayString();
     }
 
     public ExternalCondition(ExternalCondition condition) {
@@ -133,6 +134,7 @@ public class ExternalCondition extends Condition {
 
     public void setAlerterId(String alerterId) {
         this.alerterId = alerterId;
+        updateDisplayString();
     }
 
     @Override
@@ -142,6 +144,7 @@ public class ExternalCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
+        updateDisplayString();
     }
 
     public String getExpression() {
@@ -150,6 +153,7 @@ public class ExternalCondition extends Condition {
 
     public void setExpression(String expression) {
         this.expression = expression;
+        updateDisplayString();
     }
 
     /**
@@ -160,6 +164,11 @@ public class ExternalCondition extends Condition {
     public boolean match(String value) {
 
         return true;
+    }
+
+    private void updateDisplayString() {
+        String s = String.format("%s: %s matches [%s]", this.alerterId, this.dataId, this.expression);
+        setDisplayString(s);
     }
 
     @Override
