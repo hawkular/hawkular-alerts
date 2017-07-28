@@ -1,8 +1,12 @@
-angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope', '$rootScope', '$resource', '$location', '$window', '$interval', '$q', '$modal', 'hwk.alertsService',
-  function ($scope, $rootScope, $resource, $location, $window, $interval, $q, $modal, alertsService) {
+angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope', '$rootScope', '$resource', '$location', '$window', '$interval', '$q', '$modal', 'hwk.alertsService', 'hwk.filterService',
+  function ($scope, $rootScope, $resource, $location, $window, $interval, $q, $modal, alertsService, filterService) {
     'use strict';
 
-    $scope.filter = alertsService.filter;
+    $scope.filter = {
+      'date': filterService.dateFilter,
+      'alert': filterService.alertFilter,
+      'tag': filterService.tagFilter
+    };
 
     $scope.lifecycleModal = {
       user: null,
@@ -105,24 +109,24 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
         var alertsCriteria = {
           'thin': false   // TODO: we need to add this, we should not initially fetch fat alerts
         };
-        if ( $scope.filter.start ) {
-          var startTime = $scope.filter.start;
+        if ( $scope.filter.date.start ) {
+          var startTime = $scope.filter.date.start;
           startTime.setHours(0,0,0,0);
           alertsCriteria.startTime = startTime.getTime();
         }
-        if ( $scope.filter.end ) {
-          var endTime = $scope.filter.end;
+        if ( $scope.filter.date.end ) {
+          var endTime = $scope.filter.date.end;
           endTime.setHours(23,59,59,999);
           alertsCriteria.endTime = endTime.getTime();
         }
-        if ( $scope.filter.tagQuery && $scope.filter.tagQuery.length > 0 ) {
-          alertsCriteria.tags = $scope.filter.tagQuery;
+        if ( $scope.filter.tag.tagQuery && $scope.filter.tag.tagQuery.length > 0 ) {
+          alertsCriteria.tags = $scope.filter.tag.tagQuery;
         }
-        if ( $scope.filter.severity && $scope.filter.severity !== 'All Severity' ) {
-          alertsCriteria.severities = $scope.filter.severity.toUpperCase();
+        if ( $scope.filter.alert.severity && $scope.filter.alert.severity !== 'All Severity' ) {
+          alertsCriteria.severities = $scope.filter.alert.severity.toUpperCase();
         }
-        if ( $scope.filter.status && $scope.filter.status !== 'All Status' ) {
-          alertsCriteria.statuses = $scope.filter.status.toUpperCase();
+        if ( $scope.filter.alert.status && $scope.filter.alert.status !== 'All Status' ) {
+          alertsCriteria.statuses = $scope.filter.alert.status.toUpperCase();
         }
 
         var alertsPromise = alertsService.Query($rootScope.selectedTenant, alertsCriteria).query();

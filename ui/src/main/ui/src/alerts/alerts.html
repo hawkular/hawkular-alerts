@@ -11,9 +11,9 @@
           <div class="form-group" ng-style="{'width':'40%'}">
             <div>Date Range</div>
             <div class="input-group input-daterange">
-              <input id="start" type="date" class="form-control bootstrap-datepicker" ng-model="filter.start" ng-change="updateFilter()" readonly />
+              <input id="start" type="date" class="form-control bootstrap-datepicker" ng-model="filter.date.start" ng-change="updateFilter()" readonly />
               <div class="input-group-addon">to</div>
-              <input id="end" type="date" class="form-control  bootstrap-datepicker" ng-model="filter.end" ng-change="updateFilter()" readonly />
+              <input id="end" type="date" class="form-control  bootstrap-datepicker" ng-model="filter.date.end" ng-change="updateFilter()" readonly />
             </div>
           </div>
         </form>
@@ -35,20 +35,20 @@
                   <li class="selected"><a href="#/alerts">Tag Query</a></li>
                 </ul>
               </div>
-              <input type="text" class="form-control" ng-model="filter.tagQuery" id="filter.tagQuery" placeholder="Filter By Tag Query..." />
+              <input type="text" class="form-control" ng-model="filter.tag.tagQuery" id="filter.tag.tagQuery" placeholder="Filter By Tag Query..." />
             </div>
           </div>
           <div class="form-group toolbar-pf-filter">
-            <label class="col-md-5 control-label" for="filter.severity">Severity:</label>
+            <label class="col-md-5 control-label" for="filter.alert.severity">Severity:</label>
             <div class="input-group">
-              <select class="btn btn-default combobox" id="filter.severity" ng-options="opt as opt for opt in filter.severityOptions" ng-model="filter.severity"
+              <select class="btn btn-default combobox" id="filter.alert.severity" ng-options="opt as opt for opt in filter.alert.severityOptions" ng-model="filter.alert.severity"
                 ng-change="updateFilter()"></select>
             </div>
           </div>
           <div class="form-group toolbar-pf-filter">
-            <label class="col-md-4 control-label" for="filter.status">Status:</label>
+            <label class="col-md-4 control-label" for="filter.alert.status">Status:</label>
             <div class="input-group">
-              <select class="btn btn-default combobox" id="filter.status" ng-options="opt as opt for opt in filter.statusOptions" ng-model="filter.status"
+              <select class="btn btn-default combobox" id="filter.alert.status" ng-options="opt as opt for opt in filter.alert.statusOptions" ng-model="filter.alert.status"
                 ng-change="updateFilter()"></select>
             </div>
           </div>

@@ -1,5 +1,5 @@
-angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$scope', '$rootScope', '$resource', '$window', '$location', '$interval', '$q', 'hwk.dashboardService', 'hwk.alertsService',
-  function ($scope, $rootScope, $resource, $window, $location, $interval, $q, dashboardService, alertsService) {
+angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$scope', '$rootScope', '$resource', '$window', '$location', '$interval', '$q', 'hwk.dashboardService', 'hwk.filterService',
+  function ($scope, $rootScope, $resource, $window, $location, $interval, $q, dashboardService, filterService) {
     'use strict';
 
     console.log("[Dashboard] Start: " + new Date());
@@ -391,8 +391,8 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
     };
 
     $scope.linkAlerts = function (statusFilter, severityFilter) {
-      alertsService.filter.severity = severityFilter;
-      alertsService.filter.status = statusFilter;
+      filterService.alertFilter.severity = severityFilter;
+      filterService.alertFilter.status = statusFilter;
       $location.url("/alerts");
     };
   }
