@@ -1,18 +1,9 @@
-angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope', '$rootScope', '$resource', '$window', '$interval', '$q', '$modal', 'hwk.alertsService',
-  function ($scope, $rootScope, $resource, $window, $interval, $q, $modal, alertsService) {
+angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope', '$rootScope', '$resource', '$location', '$window', '$interval', '$q', '$modal', 'hwk.alertsService',
+  function ($scope, $rootScope, $resource, $location, $window, $interval, $q, $modal, alertsService) {
     'use strict';
 
-    var initStart = new Date();
-    initStart.setHours(0,0,0,0);
-    $scope.filter = {
-      start: new Date(),
-      end: new Date(),
-      severity: 'All Severity',
-      severityOptions: ['All Severity', 'Low', 'Medium', 'High', 'Critical'],
-      status: 'All Status',
-      statusOptions: ['All Status', 'Open', 'Acknowledged', 'Resolved'],
-      tagQuery: null
-    };
+    $scope.filter = alertsService.filter;
+
     $scope.lifecycleModal = {
       user: null,
       notes: null,
@@ -205,6 +196,5 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
     $scope.updateFilter = function() {
       updateAlerts();
     };
-
   }
 ]);

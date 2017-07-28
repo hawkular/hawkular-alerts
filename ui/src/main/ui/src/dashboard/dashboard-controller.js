@@ -1,5 +1,5 @@
-angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$scope', '$rootScope', '$resource', '$window', '$interval', '$q', 'hwk.dashboardService',
-  function ($scope, $rootScope, $resource, $window, $interval, $q, dashboardService) {
+angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$scope', '$rootScope', '$resource', '$window', '$location', '$interval', '$q', 'hwk.dashboardService', 'hwk.alertsService',
+  function ($scope, $rootScope, $resource, $window, $location, $interval, $q, dashboardService, alertsService) {
     'use strict';
 
     console.log("[Dashboard] Start: " + new Date());
@@ -294,6 +294,9 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
             ['Critical', 'High', 'Medium', 'Low'],
             [sevCritical, sevHigh, sevMedium, sevLow]
           ],
+          'onclick': function (d, i) {
+            $scope.linkAlerts('All Status', d.name);
+          }
         };
 
         var severityAlertChartConfig = $scope.severityAlertChartConfig;
@@ -385,6 +388,12 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         }
         $scope.refresh = true;
       }
+    };
+
+    $scope.linkAlerts = function (statusFilter, severityFilter) {
+      alertsService.filter.severity = severityFilter;
+      alertsService.filter.status = statusFilter;
+      $location.url("/alerts");
     };
   }
 ]);
