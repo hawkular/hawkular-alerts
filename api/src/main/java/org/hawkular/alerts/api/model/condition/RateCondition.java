@@ -198,7 +198,6 @@ public class RateCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
-        updateDisplayString();
     }
 
     public Direction getDirection() {
@@ -207,7 +206,6 @@ public class RateCondition extends Condition {
 
     public void setDirection(Direction direction) {
         this.direction = direction;
-        updateDisplayString();
     }
 
     public Period getPeriod() {
@@ -216,7 +214,6 @@ public class RateCondition extends Condition {
 
     public void setPeriod(Period period) {
         this.period = period;
-        updateDisplayString();
     }
 
     public Operator getOperator() {
@@ -225,7 +222,6 @@ public class RateCondition extends Condition {
 
     public void setOperator(Operator operator) {
         this.operator = operator;
-        updateDisplayString();
     }
 
     public Double getThreshold() {
@@ -234,7 +230,6 @@ public class RateCondition extends Condition {
 
     public void setThreshold(Double threshold) {
         this.threshold = threshold;
-        updateDisplayString();
     }
 
     public boolean match(long time, double value, long previousTime, double previousValue) {
@@ -267,7 +262,8 @@ public class RateCondition extends Condition {
         return rate;
     }
 
-    private void updateDisplayString() {
+    @Override
+    public void updateDisplayString() {
         String direction = null == this.direction ? null : this.direction.name();
         String operator = null == this.operator ? null : this.operator.name();
         String period = null == this.period ? null : this.period.name();

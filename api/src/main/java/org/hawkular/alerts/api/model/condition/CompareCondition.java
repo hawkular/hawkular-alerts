@@ -138,7 +138,6 @@ public class CompareCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
-        updateDisplayString();
     }
 
     public String getData2Id() {
@@ -147,7 +146,6 @@ public class CompareCondition extends Condition {
 
     public void setData2Id(String data2Id) {
         this.data2Id = data2Id;
-        updateDisplayString();
     }
 
     public Double getData2Multiplier() {
@@ -156,7 +154,6 @@ public class CompareCondition extends Condition {
 
     public void setData2Multiplier(Double data2Multiplier) {
         this.data2Multiplier = data2Multiplier;
-        updateDisplayString();
     }
 
     public Operator getOperator() {
@@ -165,7 +162,6 @@ public class CompareCondition extends Condition {
 
     public void setOperator(Operator operator) {
         this.operator = operator;
-        updateDisplayString();
     }
 
     public boolean match(double dataValue, double data2Value) {
@@ -184,7 +180,8 @@ public class CompareCondition extends Condition {
         }
     }
 
-    private void updateDisplayString() {
+    @Override
+    public void updateDisplayString() {
         String operator = null == this.operator ? null : this.operator.name();
         Double data2Multiplier = (null == this.data2Multiplier) ? 0.0 : this.data2Multiplier;
         String s = String.format("%s %s %s%% %s", this.dataId, operator, (100 * data2Multiplier), this.data2Id);

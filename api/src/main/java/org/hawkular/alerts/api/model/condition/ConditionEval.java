@@ -129,13 +129,13 @@ public abstract class ConditionEval implements Serializable {
 
     public String getDisplayString() {
         if (null == this.displayString) {
-            this.displayString = buildDisplayString();
+            updateDisplayString();
         }
         return this.displayString;
     }
 
-    public void setLog(String log) {
-        this.displayString = log;
+    public void setDisplayString(String displayString) {
+        this.displayString = displayString;
     }
 
     @JsonIgnore
@@ -155,7 +155,7 @@ public abstract class ConditionEval implements Serializable {
      * String does not include whether the match is true or false.  That can be determined via {@link #isMatch()}.
      */
     @JsonIgnore
-    protected abstract String buildDisplayString();
+    public abstract void updateDisplayString();
 
     @Override
     public boolean equals(Object o) {

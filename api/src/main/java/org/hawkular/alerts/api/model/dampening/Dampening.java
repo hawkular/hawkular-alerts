@@ -391,10 +391,10 @@ public class Dampening implements Serializable {
 
     public void addSatisfyingEvals(Set<ConditionEval> satisfyingEvals) {
         // Make sure the display string is generated on each ConditionEval. This ensures that downstream we have the
-        // display string persisted and available via REST clients.  We build the display string lazily on a
-        // get request, so as not to slow down construction of evals, most of which are negative and never persisted.
+        // display string persisted and available via REST clients.  We generate the display string lazily so as not
+        // to slow down construction of evals, most of which are negative and never persisted.
         for (ConditionEval ce : satisfyingEvals) {
-            ce.getDisplayString();
+            ce.updateDisplayString();
         }
         this.satisfyingEvals.add(satisfyingEvals);
     }

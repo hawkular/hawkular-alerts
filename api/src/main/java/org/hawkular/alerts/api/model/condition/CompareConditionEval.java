@@ -128,11 +128,11 @@ public class CompareConditionEval extends ConditionEval {
     }
 
     @Override
-    public String buildDisplayString() {
-        String log = String.format("Compare: %s[%s] %s %s%% %s[%s]", condition.getDataId(), value1,
+    public void updateDisplayString() {
+        String s = String.format("Compare: %s[%s] %s %s%% %s[%s]", condition.getDataId(), value1,
                 condition.getOperator().name(), (100 * condition.getData2Multiplier()), condition.getData2Id(),
                 value2);
-        return log;
+        super.setDisplayString(s);
     }
 
     @Override

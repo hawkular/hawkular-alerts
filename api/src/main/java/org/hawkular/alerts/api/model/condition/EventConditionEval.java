@@ -95,10 +95,10 @@ public class EventConditionEval extends ConditionEval {
     }
 
     @Override
-    public String buildDisplayString() {
-        String log = String.format("Event: %s[%s] matches [%s]", condition.getDataId(), value,
+    public void updateDisplayString() {
+        String s = String.format("Event: %s[%s] matches [%s]", condition.getDataId(), value,
                 condition.getExpression());
-        return log;
+        setDisplayString(s);
     }
 
     @Override

@@ -306,6 +306,7 @@ public class JacksonDeserializer {
                     throw new ConditionEvalException(e);
                 }
             }
+            conditionEval.updateDisplayString();
             return conditionEval;
         }
     }
@@ -554,6 +555,7 @@ public class JacksonDeserializer {
                 throw new ConditionException(e);
             }
         }
+        condition.updateDisplayString();
         return condition;
     }
 

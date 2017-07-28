@@ -172,7 +172,6 @@ public class ThresholdRangeCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
-        updateDisplayString();
     }
 
     public boolean isInRange() {
@@ -181,7 +180,6 @@ public class ThresholdRangeCondition extends Condition {
 
     public void setInRange(boolean inRange) {
         this.inRange = inRange;
-        updateDisplayString();
     }
 
     public Operator getOperatorHigh() {
@@ -190,7 +188,6 @@ public class ThresholdRangeCondition extends Condition {
 
     public void setOperatorHigh(Operator operatorHigh) {
         this.operatorHigh = operatorHigh;
-        updateDisplayString();
     }
 
     public Operator getOperatorLow() {
@@ -199,7 +196,6 @@ public class ThresholdRangeCondition extends Condition {
 
     public void setOperatorLow(Operator operatorLow) {
         this.operatorLow = operatorLow;
-        updateDisplayString();
     }
 
     public Double getThresholdHigh() {
@@ -208,7 +204,6 @@ public class ThresholdRangeCondition extends Condition {
 
     public void setThresholdHigh(Double thresholdHigh) {
         this.thresholdHigh = thresholdHigh;
-        updateDisplayString();
     }
 
     public Double getThresholdLow() {
@@ -217,7 +212,6 @@ public class ThresholdRangeCondition extends Condition {
 
     public void setThresholdLow(Double thresholdLow) {
         this.thresholdLow = thresholdLow;
-        updateDisplayString();
     }
 
     public boolean match(double value) {
@@ -253,7 +247,8 @@ public class ThresholdRangeCondition extends Condition {
         return (belowHigh == inRange);
     }
 
-    private void updateDisplayString() {
+    @Override
+    public void updateDisplayString() {
         String operatorLow = null == this.operatorLow ? null : this.operatorLow.getLow();
         String operatorHigh = null == this.operatorHigh ? null : this.operatorHigh.getHigh();
         String s = String.format("%s %s %s%s , %s%s", this.dataId, (isInRange() ? "in" : "not in"), operatorLow,

@@ -114,7 +114,6 @@ public class AvailabilityCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
-        updateDisplayString();
     }
 
     public Operator getOperator() {
@@ -123,7 +122,6 @@ public class AvailabilityCondition extends Condition {
 
     public void setOperator(Operator operator) {
         this.operator = operator;
-        updateDisplayString();
     }
 
     public boolean match(AvailabilityType value) {
@@ -139,7 +137,8 @@ public class AvailabilityCondition extends Condition {
         }
     }
 
-    private void updateDisplayString() {
+    @Override
+    public void updateDisplayString() {
         String operator = null == this.operator ? null : this.getOperator().name();
         String s = String.format("%s is %s", this.dataId, operator);
         setDisplayString(s);

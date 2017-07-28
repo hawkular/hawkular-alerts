@@ -89,10 +89,10 @@ public class MissingConditionEval extends ConditionEval {
     }
 
     @Override
-    public String buildDisplayString() {
-        String log = String.format("Missing: %s[%tc] %dms GTE %dms", condition.getDataId(), time,
+    public void updateDisplayString() {
+        String s = String.format("Missing: %s[%tc] %dms GTE %dms", condition.getDataId(), time,
                 (time - previousTime), condition.getInterval());
-        return log;
+        setDisplayString(s);
     }
 
     public MissingCondition getCondition() {

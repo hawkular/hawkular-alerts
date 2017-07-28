@@ -154,17 +154,17 @@ public class RateConditionEval extends ConditionEval {
     }
 
     @Override
-    public String buildDisplayString() {
+    public void updateDisplayString() {
         long deltaTime = time - previousTime;
         double deltaValue = (Direction.INCREASING == condition.getDirection()) ? (value - previousValue)
                 : (previousValue - value);
         double periods = deltaTime / condition.getPeriod().milliseconds;
         double rate = deltaValue / periods;
 
-        String log = String.format("Rate: %s %s %s %s %s per %s", condition.getDataId(), rate,
+        String s = String.format("Rate: %s %s %s %s %s per %s", condition.getDataId(), rate,
                 condition.getDirection().name(), condition.getOperator().name(), condition.getThreshold(),
                 condition.getPeriod().name());
-        return log;
+        setDisplayString(s);
     }
 
     @Override

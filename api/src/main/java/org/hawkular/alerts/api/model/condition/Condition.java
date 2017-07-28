@@ -23,6 +23,7 @@ import java.util.Map;
 import org.hawkular.alerts.api.json.JacksonDeserializer;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -213,6 +214,9 @@ public abstract class Condition implements Serializable {
     }
 
     public String getDisplayString() {
+        if (null == displayString) {
+            updateDisplayString();
+        }
         return displayString;
     }
 
@@ -273,6 +277,15 @@ public abstract class Condition implements Serializable {
             required = true,
             name = "dataId")
     public abstract String getDataId();
+
+    /**
+     * Build displayString given the current field settings, and call {@link #setDisplayString(String)}.
+     * <p>
+     * NOTE that if, after construction, a client updated a relevant Condition field, he will also need to
+     * then call {@link #updateDisplayString()} to ensure the displayString is correct.</p>
+     */
+    @JsonIgnore
+    public abstract void updateDisplayString();
 
     /**
      * Used to determine whether two conditions have differences. The base implementation is equals(), subclassed

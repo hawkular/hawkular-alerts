@@ -167,7 +167,6 @@ public class NelsonCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
-        updateDisplayString();
     }
 
     public Set<NelsonRule> getActiveRules() {
@@ -176,7 +175,6 @@ public class NelsonCondition extends Condition {
 
     public void setActiveRules(Set<NelsonRule> activeRules) {
         this.activeRules = (null == activeRules || activeRules.isEmpty()) ? DEFAULT_ACTIVE_RULES : activeRules;
-        updateDisplayString();
     }
 
     public int getSampleSize() {
@@ -185,7 +183,6 @@ public class NelsonCondition extends Condition {
 
     public void setSampleSize(Integer sampleSize) {
         this.sampleSize = (null == sampleSize || sampleSize < 1) ? DEFAULT_SAMPLE_SIZE : sampleSize;
-        updateDisplayString();
     }
 
     public boolean match(List<NelsonRule> violations) {
@@ -206,7 +203,8 @@ public class NelsonCondition extends Condition {
         return null == c || c.isEmpty();
     }
 
-    private void updateDisplayString() {
+    @Override
+    public void updateDisplayString() {
         String s = String.format("%s activeNelsonRules=%s sampleSize=%d", this.dataId,
                 this.activeRules.stream().map(e -> e.name()).collect(Collectors.toSet()), this.sampleSize);
         setDisplayString(s);

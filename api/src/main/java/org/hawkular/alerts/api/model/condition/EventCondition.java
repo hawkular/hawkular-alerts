@@ -190,7 +190,6 @@ public class EventCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
-        updateDisplayString();
     }
 
     @Override
@@ -204,7 +203,6 @@ public class EventCondition extends Condition {
 
     public void setExpression(String expression) {
         this.expression = expression;
-        updateDisplayString();
     }
 
     private static Pattern cleanComma = Pattern.compile("\\\\,");
@@ -375,7 +373,8 @@ public class EventCondition extends Condition {
         return false;
     }
 
-    private void updateDisplayString() {
+    @Override
+    public void updateDisplayString() {
         String s = String.format("%s matches [%s]", this.dataId, this.expression);
         setDisplayString(s);
     }

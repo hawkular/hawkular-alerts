@@ -121,7 +121,6 @@ public class ThresholdCondition extends Condition {
 
     public void setDataId(String dataId) {
         this.dataId = dataId;
-        updateDisplayString();
     }
 
     public Operator getOperator() {
@@ -130,7 +129,6 @@ public class ThresholdCondition extends Condition {
 
     public void setOperator(Operator operator) {
         this.operator = operator;
-        updateDisplayString();
     }
 
     public Double getThreshold() {
@@ -139,7 +137,6 @@ public class ThresholdCondition extends Condition {
 
     public void setThreshold(Double threshold) {
         this.threshold = threshold;
-        updateDisplayString();
     }
 
     public boolean match(double value) {
@@ -160,7 +157,8 @@ public class ThresholdCondition extends Condition {
         }
     }
 
-    private void updateDisplayString() {
+    @Override
+    public void updateDisplayString() {
         String operator = null == this.operator ? null : this.operator.name();
         String s = String.format("%s %s %s", this.dataId, operator, this.threshold);
         setDisplayString(s);
