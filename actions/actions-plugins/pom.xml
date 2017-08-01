@@ -86,6 +86,7 @@
         <module>actions-file</module>
         <module>actions-webhook</module>
         <module>actions-elasticsearch</module>
+        <module>actions-kafka</module>
       </modules>
     </profile>
   </profiles>

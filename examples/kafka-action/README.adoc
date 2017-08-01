@@ -1,0 +1,97 @@
+= Kafka Action
+
+This example shows how Hawkular Alerting can send Actions over Apache Kafka topics.
+It reuses the HelloWorld where it is created a Trigger to fire an Alert when conditions 'X < 5' and 'Y > 5' are met.
+When an Alert is generated an Action will be sent to a Kafka Topic.
+
+[NOTE]
+====
+The scripts are written in groovy to make them work from maven in any platorm but those are pretty simple and can be
+translated to bash or a different environment easily.
+====
+
+== Prepare Apache Kafka
+
+link:https://www.apache.org/dyn/closer.cgi?path=/kafka/0.11.0.0/kafka_2.11-0.11.0.0.tgz[Download] Apache Kafka release and un-tar it.
+
+[source,shell,subs="+attributes"]
+----
+> tar -xzf kafka_2.11-0.11.0.0.tgz
+> cd kafka_2.11-0.11.0.0
+----
+
+Start ZooKeeper
+
+[source,shell,subs="+attributes"]
+----
+> bin/zookeeper-server-start.sh config/zookeeper.properties
+[2013-04-22 15:01:37,495] INFO Reading configuration from: config/zookeeper.properties (org.apache.zookeeper.server.quorum.QuorumPeerConfig)
+...
+----
+
+Start Kafka server
+
+[source,shell,subs="+attributes"]
+----
+> bin/kafka-server-start.sh config/server.properties
+[2013-04-22 15:01:47,028] INFO Verifying properties (kafka.utils.VerifiableProperties)
+[2013-04-22 15:01:47,051] INFO Property socket.send.buffer.bytes is overridden to 1048576 (kafka.utils.VerifiableProperties)
+...
+----
+
+Start a consumer in the _alerts-full_ topic
+
+[source,shell,subs="+attributes"]
+----
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic alerts-full --from-beginning
+----
+
+When Alerts will be generated they will be dumped into the console.
+
+Start another consumer in the _alerts-partial_ topic to test how generated Alerts can be transformed before being sent into Kafka.
+
+[source,shell,subs="+attributes"]
+----
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic alerts-partial --from-beginning
+----
+
+== Running the example
+
+Build a Hawkular Alerting standalone distribution
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts
+    mvn clean install -DskipTests
+----
+
+Start the standalone server
+
+[source,shell,subs="+attributes"]
+----
+    cd dist/target/hawkular-alerting*
+    ./hawkular.sh
+----
+
+Next, let's run the example
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts/examples/hello-world
+    mvn validate
+----
+
+Check out the Alerts generated on the link:http://localhost:8080/hawkular/alerts/ui[Hawkular Alerting UI] and in Kafka consumer consoles.
+
+== create_definitions.groovy
+
+Create a hello world trigger with two conditions to fire an alert everytime that:
+
+    . numeric data with id "data-x" is less than 5 and
+    . numeric data with id "data-y" is greater than 5
+
+Create an action definition to notify by email to admins group with cc to developers team.
+
+== send_data.groovy
+
+Send random data for "data-x" and "data-y" over the REST API.

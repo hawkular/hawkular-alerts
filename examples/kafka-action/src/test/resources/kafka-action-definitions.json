@@ -1,0 +1,73 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "hello-world-trigger",
+        "name": "Hello World Trigger",
+        "description": "A mandatory Hello World Trigger",
+        "severity": "HIGH",
+        "enabled": true,
+        "actions":[
+          {
+            "actionPlugin": "kafka",
+            "actionId": "send-full-alert"
+          },
+          {
+            "actionPlugin": "kafka",
+            "actionId": "send-partial-alert"
+          }
+        ]
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "data-x",
+          "operator": "LT",
+          "threshold": 5
+        },
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "data-y",
+          "operator": "GT",
+          "threshold": 5
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "kafka",
+      "actionId": "send-full-alert",
+      "properties": {
+        "kafka.bootstrap.servers": "localhost:9092",
+        "kafka.acks": "all",
+        "kafka.retries": 0,
+        "kafka.batch.size": 16384,
+        "kafka.linger.ms": 1,
+        "kafka.buffer.memory": 33554432,
+        "kafka.key.serializer": "org.apache.kafka.common.serialization.StringSerializer",
+        "kafka.value.serializer": "org.apache.kafka.common.serialization.StringSerializer",
+        "topic": "alerts-full"
+      }
+    },
+    {
+      "actionPlugin": "kafka",
+      "actionId": "send-partial-alert",
+      "properties": {
+        "kafka.bootstrap.servers": "localhost:9092",
+        "kafka.acks": "all",
+        "kafka.retries": 0,
+        "kafka.batch.size": 16384,
+        "kafka.linger.ms": 1,
+        "kafka.buffer.memory": 33554432,
+        "kafka.key.serializer": "org.apache.kafka.common.serialization.StringSerializer",
+        "kafka.value.serializer": "org.apache.kafka.common.serialization.StringSerializer",
+        "topic": "alerts-partial",
+        "timestamp_pattern": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ",
+        "transform": "{\"tenantId\":\"tenant\",\"ctime\":\"timestamp\",\"text\":\"trigger\",\"context\":{\"interval\":\"fetch-interval\"},\"evalSets\":{\"*\":{\"*\":{\"condition\":{\"expression\":\"details.[&3][&2].expression\",\"dataId\":\"details.[&3][&2].dataId\"},\"value\":\"details.[&2][&1].value\"}}}}"
+      }
+    }
+  ]
+}
