@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+# Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
 # and other contributors as indicated by the @author tags.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +15,16 @@
 # limitations under the License.
 #
 
-# Internal configuration registration, used to provide default values
-hawkular.port=8080
-hawkular.bind-address=0.0.0.0
-# To enable cors filtering uncomment the desired fields
-# hawkular.cors-origin-pattern=*
-# hawkular.cors-headers=
-# hawkular.cors-methods=
-hawkular.jmx-port=9080
+FROM jboss/base-jdk:8
 
-hawkular-alerts.backend=ispn
-hawkular-alerts.engine-delay=1000
-hawkular-alerts.engine-period=2000
-hawkular-alerts.base-url=/hawkular/alerts
-#hawkular-alerts.backend-reindex=true
-#hawkular-alerts.prometheus-alerter=true
+MAINTAINER Hawkular Alerting <hawkular-dev@lists.jboss.org>
+
+EXPOSE 8080 9080
+
+COPY target/hawkular-alerting* /opt/hawkular-alerting
+
+USER root
+RUN chmod -R 777 /opt
+
+USER jboss
+CMD /opt/hawkular-alerting/hawkular.sh console

@@ -94,6 +94,7 @@
     <version.org.apache.httpcomponents.httpcore>4.4.5</version.org.apache.httpcomponents.httpcore>
     <version.org.apache.logging.log4j-elasticsearch>2.8</version.org.apache.logging.log4j-elasticsearch>
     <version.org.apache.logging.log4j>2.8.1</version.org.apache.logging.log4j>
+    <version.org.apache.maven.plugins.maven-antrun-plugin>1.8</version.org.apache.maven.plugins.maven-antrun-plugin>
     <version.org.apache.maven.plugins.maven-failsafe-plugin>2.19.1</version.org.apache.maven.plugins.maven-failsafe-plugin>
     <version.org.apache.maven.plugins.maven-surefire-plugin>2.19.1</version.org.apache.maven.plugins.maven-surefire-plugin>
     <version.org.apache.maven.plugins.maven-jar-plugin>3.0.2</version.org.apache.maven.plugins.maven-jar-plugin>
