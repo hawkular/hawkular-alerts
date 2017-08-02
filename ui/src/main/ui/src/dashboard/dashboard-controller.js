@@ -244,7 +244,8 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
           if (sevCount === undefined) {
             sevCount = 0;
           }
-          severity.set(updatedAlerts[i].severity, sevCount + 1);
+          sevCount = sevCount + ((updatedAlerts[i].status !== 'RESOLVED') ? 1 : 0);
+          severity.set(updatedAlerts[i].severity, sevCount);
 
           // the outer array index for the severity into alertsByOpenAck object
           var alertsByOpenAckIndex;
