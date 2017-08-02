@@ -141,8 +141,86 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
     var element;
     var intervalRef;
 
+    var severityAlertChart;
+    var activeAlertChart;
+
+    var createCharts = function () {
+      // active alerts chart
+      var activeAlertChartConfig = {
+        'chartId': 'activeAlertChart',
+        'legend': {'show': true},
+        'color': severityColorPatterns,
+        'bindto': '#active-alert-chart',
+        'axis': {
+          'rotated': false,
+          'x': {
+            categories: ['Open', 'Acknowledged'],
+            type: 'category'
+          }
+        },
+        'size': {
+          'width': 200,
+          'height': 200
+        },
+        'data': {
+          'type': 'bar',
+          'groups': [['Critical', 'High', 'Medium', 'Low']],
+          'columns': [
+            ['Critical', 0, 0],
+            ['High', 0, 0],
+            ['Medium', 0, 0],
+            ['Low', 0, 0]
+          ]
+        }
+      };
+      activeAlertChart = c3.generate(activeAlertChartConfig);
+
+      // severity alerts chart - alert severities are fixed to either CRITICAL, HIGH, MEDIUM, or LOW
+      var severityAlertChartConfig = {
+        'chartId': 'severityAlertChart',
+        'legend': {"show": true},
+        'color': severityColorPatterns,
+        'bindto': '#severity-alert-chart',
+        'size': {
+          'width': 200,
+          'height': 200
+        },
+        'data': {
+          'type': 'pie',
+          'rows': [
+            ['Critical', 'High', 'Medium', 'Low'],
+            [0, 0, 0, 0]
+          ],
+          'onclick': function (d, i) {
+            $scope.linkAlerts('All Status', d.name);
+          }
+        },
+        'tooltip': {
+          'format': {
+            'value': function (value, ratio, id) {
+              return d3.format('%')(ratio) + " (" + d3.format('0')(value) + ")";
+            }
+          }
+        },
+        'pie': {
+          'label': {
+            'show': false // hide to avoid it 'flashing' during our constant reloads during update
+          }
+        }
+      };
+      severityAlertChart = c3.generate(severityAlertChartConfig);
+    };
+
     var updateDashboard = function () {
       console.log("[Dashboard] Updating data for " + selectedTenant + " at " + new Date());
+
+      var severity = new Map();
+      var alertsByOpenAck = [
+        ['Critical', 0, 0],
+        ['High', 0, 0],
+        ['Medium', 0, 0],
+        ['Low', 0, 0]
+      ];
 
       var promise1 = dashboardService.Alert(selectedTenant).query();
       var promise2 = dashboardService.Event(selectedTenant).query();
@@ -155,14 +233,6 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         dataTimeline[ACKNOWLEDGED].data = [];
         dataTimeline[RESOLVED].data = [];
         dataTimeline[EVENTS].data = [];
-
-        var severity = new Map();
-        var alertsByOpenAck = [
-          ['Critical', 0, 0],
-          ['High', 0, 0],
-          ['Medium', 0, 0],
-          ['Low', 0, 0]
-        ];
 
         var minDate = Number.MAX_VALUE, maxDate = 0;
         var i;
@@ -245,68 +315,27 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         $scope.resolvedAlerts = dataTimeline[RESOLVED].data;
         $scope.events = dataTimeline[EVENTS].data;
 
-        // active alerts chart
-        $scope.activeAlertChartConfig = {};
-        $scope.activeAlertChartConfig.chartId = 'activeAlertChart';
-        $scope.activeAlertChartConfig.legend = {"show": true};
-        $scope.activeAlertChartConfig.color = severityColorPatterns;
-        $scope.activeAlertChartConfig.axis = {
-          rotated: false,
-          x: {
-            categories: ['Open', 'Acknowledged'],
-            type: 'category'
-          }
-        };
+        // load the charts with the new data
 
-        $scope.activeAlertChartData = {
-          'type': 'bar',
-          'groups': [['Critical', 'High', 'Medium', 'Low']],
-          'columns': alertsByOpenAck
-        };
-
-        var activeAlertChartConfig = $scope.activeAlertChartConfig;
-        activeAlertChartConfig.bindto = '#active-alert-chart';
-        activeAlertChartConfig.data = $scope.activeAlertChartData;
-        activeAlertChartConfig.size = {
-          width: 200,
-          height: 200
-        };
-        var activeAlertChart = c3.generate(activeAlertChartConfig);
-
-        // Total number of alerts being worked on. This was needed for the donut chart which has been removed
-        //var activeAndAcked = dataTimeline[OPEN].data.length + dataTimeline[ACKNOWLEDGED].data.length;
-
-        // severity alerts chart - alert severities are fixed to either CRITICAL, HIGH, MEDIUM, or LOW
-        $scope.severityAlertChartConfig = {
-          'chartId': 'severityAlertChart',
-          'legend': {"show": true},
-          'color': severityColorPatterns
-        };
+        if (severityAlertChart === undefined) {
+          createCharts();
+        }
 
         var sevCritical = severity.has('CRITICAL') ? severity.get('CRITICAL') : 0;
         var sevHigh = severity.has('HIGH') ? severity.get('HIGH') : 0;
         var sevMedium = severity.has('MEDIUM') ? severity.get('MEDIUM') : 0;
         var sevLow = severity.has('LOW') ? severity.get('LOW') : 0;
 
-        $scope.severityAlertChartData = {
-          'type': 'pie',
+        severityAlertChart.load({
           'rows': [
             ['Critical', 'High', 'Medium', 'Low'],
             [sevCritical, sevHigh, sevMedium, sevLow]
           ],
-          'onclick': function (d, i) {
-            $scope.linkAlerts('All Status', d.name);
-          }
-        };
+        });
 
-        var severityAlertChartConfig = $scope.severityAlertChartConfig;
-        severityAlertChartConfig.bindto = '#severity-alert-chart';
-        severityAlertChartConfig.data = $scope.severityAlertChartData;
-        severityAlertChartConfig.size = {
-          width: 200,
-          height: 200
-        };
-        var severityAlertChart = c3.generate(severityAlertChartConfig);
+        activeAlertChart.load({
+          'columns': alertsByOpenAck
+        });
 
         // prepare timeline
         console.log('[Dashboard] Update timeline data ' + new Date());
