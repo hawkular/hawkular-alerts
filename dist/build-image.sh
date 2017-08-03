@@ -84,7 +84,7 @@ if [ "$verbose" = true ]; then
   set -x
 fi
 
-for component in hawkular-alerting; do
+for component in hawkular-alerts; do
   BUILD_STARTTIME=$(date +%s)
   comp_path=.
   docker_tag=${prefix}${component}:${version}
