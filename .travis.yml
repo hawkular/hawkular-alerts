@@ -1,6 +1,9 @@
 sudo: required
 dist: trusty
 
+services:
+  - docker
+
 language: java
 jdk:
 - oraclejdk8
@@ -48,8 +51,22 @@ before_cache:
 
 after_success:
 - PROJECT_VERSION=`./mvnw --batch-mode org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v '\['`
-- if [[ "$PROJECT_VERSION" =~ .*SNAPSHOT ]] && [[ "${TRAVIS_BRANCH}" = "master" ]] && [[ "${TRAVIS_PULL_REQUEST}" = "false" ]];
+- if [[ "$PROJECT_VERSION" =~ .*SNAPSHOT ]] && [[ "${TRAVIS_BRANCH}" == "master" ]] && [[ "${TRAVIS_PULL_REQUEST}" == "false" ]];
   then
     ./mvnw -s .travis.maven.settings.xml deploy -DskipTests ;
     ./.travis.swagger.sh ;
+  fi;
+- export COMMIT_HASH=${TRAVIS_COMMIT}
+- export DOCKER_VERSION=$(if [ "$TRAVIS_TAG" != "" ]; then echo $TRAVIS_TAG; elif [ "$TRAVIS_BRANCH" == "next" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi)
+- export DOCKER_USER=$(if [ "$DOCKER_USER" == "" ]; then echo "unknown"; else echo $DOCKER_USER ; fi)
+- export DOCKER_PASS=$(if [ "$DOCKER_PASS" == "" ]; then echo "unknown"; else echo $DOCKER_PASS ; fi)
+- echo DOCKER_VERSION=$DOCKER_VERSION
+- echo "${TRAVIS_BRANCH}"
+- if [[ "${TRAVIS_BRANCH}" == "next" ]];
+  then
+    cd dist ;
+    ./build-image.sh ;
+    docker --version ;
+    docker login -u "$DOCKER_USER" -p "$DOCKER_PASS" ;
+    docker push hawkular/hawkular-alerts ;
   fi;
