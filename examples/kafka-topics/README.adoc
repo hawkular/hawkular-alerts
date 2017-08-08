@@ -1,0 +1,126 @@
+= Kafka Topics
+
+This example shows how Hawkular Alerting can consume messages from several Apache Kafka topics to detect situations, generate events and fire alerts on a combination of events.
+
+A first topic called "data-x" will be created in Kafka to send numeric values, on Hawkular Alerting a trigger
+will be defined to listen on "data-x" topic and read records as Data. A condition is defined to generate an event when "data-x > 5" expression is met.
+
+A second topic called "data-y" will be created in Kafka to send numeric values too, in a similar way, a trigger is defined to listen on "data-y" topic and
+it will generate an event when "data-y > 10 and data-y < 20" expression is met.
+
+A third topic called "data-z" will be created in Kafka to send json values, on this case, a trigger is defined to listen on "data-z" topic and parse
+json values as Hawkular Alerting events. Also a condition is defined and an event will be generated when "category == 'LOG', text starts 'ERROR'" expression is met.
+
+Finally, a last trigger is defined to alert when all three events are detected in the system.
+
+[NOTE]
+====
+The scripts are written in groovy to make them work from maven in any platorm but those are pretty simple and can be
+translated to bash or a different environment easily.
+====
+
+== Prepare Apache Kafka
+
+link:https://www.apache.org/dyn/closer.cgi?path=/kafka/0.11.0.0/kafka_2.11-0.11.0.0.tgz[Download] Apache Kafka release and un-tar it.
+
+[source,shell,subs="+attributes"]
+----
+> tar -xzf kafka_2.11-0.11.0.0.tgz
+> cd kafka_2.11-0.11.0.0
+----
+
+Start ZooKeeper
+
+[source,shell,subs="+attributes"]
+----
+> bin/zookeeper-server-start.sh config/zookeeper.properties
+[2013-04-22 15:01:37,495] INFO Reading configuration from: config/zookeeper.properties (org.apache.zookeeper.server.quorum.QuorumPeerConfig)
+...
+----
+
+Start Kafka server
+
+[source,shell,subs="+attributes"]
+----
+> bin/kafka-server-start.sh config/server.properties
+[2013-04-22 15:01:47,028] INFO Verifying properties (kafka.utils.VerifiableProperties)
+[2013-04-22 15:01:47,051] INFO Property socket.send.buffer.bytes is overridden to 1048576 (kafka.utils.VerifiableProperties)
+...
+----
+
+Start a first producer in the _data-x_ topic
+
+[source,shell,subs="+attributes"]
+----
+bin/kafka-console-producer.sh --broker-list localhost:9092 --topic data-x
+----
+
+Start a second producer in the _data-y_ topic
+
+[source,shell,subs="+attributes"]
+----
+bin/kafka-console-producer.sh --broker-list localhost:9092 --topic data-y
+----
+
+Start a third producer in the _data-z_ topic
+
+[source,shell,subs="+attributes"]
+----
+bin/kafka-console-producer.sh --broker-list localhost:9092 --topic data-z
+----
+
+== Start Hawkular Alerting and prepare the example
+
+Build a Hawkular Alerting standalone distribution
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts
+    mvn clean install -DskipTests
+----
+
+Start the standalone server
+
+[source,shell,subs="+attributes"]
+----
+    cd dist/target/hawkular-alerting*
+    ./hawkular.sh
+----
+
+Next, let's create the example triggers
+
+[source,shell,subs="+attributes"]
+----
+    ./create-definitions.sh
+----
+
+== Send data and events through Kafka and check Hawkular Alerting
+
+On the data-x topic producer terminal sends a numeric data
+
+[source,shell,subs="+attributes"]
+----
+    8.5
+----
+
+Check out on the link:http://localhost:8080/hawkular/alerts/ui[Hawkular Alerting UI] that a new Event is generated from Kafka data-x topic.
+
+On the data-y topic producer terminal send a numeric data
+
+[source,shell,subs="+attributes"]
+----
+    16.5
+----
+
+Also checkout on the UI that a new Event is generated from Kafka data-y topic.
+
+Finally on the data-z topic producer terminal sends a json message like
+
+[source,shell,subs="+attributes"]
+----
+    {"app":"LOG","msg":"ERROR this is an error"}
+----
+
+Now in the UI a new Event will ge benerated from data-z topic, but also an Alert as a combination of events from data-x, data-y and data-z has been detected.
+
+

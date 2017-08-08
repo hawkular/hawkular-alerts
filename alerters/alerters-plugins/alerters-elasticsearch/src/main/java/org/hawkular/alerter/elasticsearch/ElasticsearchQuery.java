@@ -19,7 +19,7 @@ package org.hawkular.alerter.elasticsearch;
 import static java.util.Collections.EMPTY_LIST;
 import static org.hawkular.alerter.elasticsearch.ElasticsearchAlerter.getIntervalUnit;
 import static org.hawkular.alerter.elasticsearch.ElasticsearchAlerter.getIntervalValue;
-import static org.hawkular.alerter.elasticsearch.ElasticsearchQuery.EventField.DATAID;
+import static org.hawkular.alerts.api.model.event.EventField.DATAID;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -49,6 +49,7 @@ import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.hawkular.alerts.api.json.JsonUtil;
 import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.api.model.event.EventField;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.commons.log.MsgLogger;
@@ -102,43 +103,6 @@ public class ElasticsearchQuery implements Runnable {
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ")
     };
     private static final ZoneId UTC = ZoneId.of("UTC");
-
-    /*
-        Event fields
-     */
-    enum EventField {
-        ID ("id"),
-        CTIME ("ctime"),
-        DATASOURCE ("dataSource"),
-        DATAID ("dataId"),
-        CATEGORY ("category"),
-        TEXT ("text"),
-        CONTEXT ("context"),
-        TAGS ("tags");
-
-        private final String name;
-
-        EventField(String name) {
-            this.name = name;
-        }
-
-        public boolean equalsName(String name) {
-            return this.name.equals(name);
-        }
-
-        public static EventField fromString(String name) {
-            for (EventField field : EventField.values()) {
-                if (field.equalsName(name)) {
-                    return field;
-                }
-            }
-            return null;
-        }
-
-        public String toString() {
-            return this.name;
-        }
-    }
 
     private Trigger trigger;
     private Map<String, String> properties;

@@ -1,0 +1,123 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "TriggerDataX",
+        "name": "Kafka-X",
+        "description": "Alert when data-x > 5",
+        "eventType": "EVENT",
+        "enabled": true,
+        "tags": {
+          "Kafka": "Localhost instance"
+        },
+        "context": {
+          "topic": "data-x",
+          "kafka.bootstrap.servers": "localhost:9092",
+          "kafka.group.id": "hawkular-alerting"
+        },
+        "actions":[]
+      },
+      "conditions":[
+        {
+          "type": "THRESHOLD",
+          "dataId": "data-x",
+          "operator": "GT",
+          "threshold": 5
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "TriggerDataY",
+        "name": "Kafka-Y",
+        "description": "Alert when data-y > 10 && data-y < 20",
+        "eventType": "EVENT",
+        "enabled": true,
+        "tags": {
+          "Kafka": "Localhost instance"
+        },
+        "context": {
+          "topic": "data-y",
+          "kafka.bootstrap.servers": "localhost:9092",
+          "kafka.group.id": "hawkular-alerting"
+        },
+        "actions":[]
+      },
+      "conditions":[
+        {
+          "type": "RANGE",
+          "dataId": "data-y",
+          "operatorLow": "EXCLUSIVE",
+          "thresholdLow": 10,
+          "operatorHigh": "EXCLUSIVE",
+          "thresholdHigh": 20,
+          "inRange": true
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "TriggerEventZ",
+        "name": "Kafka-Z",
+        "description": "Alert when eventZ.category == 'LOG' and eventZ.text starts 'LOG'",
+        "eventType": "EVENT",
+        "enabled": true,
+        "tags": {
+          "Kafka": "Localhost instance"
+        },
+        "context": {
+          "topic": "data-z",
+          "kafka.bootstrap.servers": "localhost:9092",
+          "kafka.group.id": "hawkular-alerting",
+          "mapping":"source|'data-z':dataId,app:category,msg:text"
+        },
+        "actions":[]
+      },
+      "conditions":[
+        {
+          "type": "EVENT",
+          "dataId": "data-z",
+          "expression": "category == 'LOG', text starts 'ERROR'"
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "TriggerXYZ",
+        "name": "Combined Trigger",
+        "description": "Alert on TriggerDataX & TriggerDataY and TriggerEventZ",
+        "severity": "HIGH",
+        "enabled": true,
+        "actions":[
+          {
+            "actionPlugin": "email",
+            "actionId": "notify-to-admins"
+          }
+        ]
+      },
+      "conditions":[
+        {
+          "type": "EVENT",
+          "dataId": "TriggerDataX"
+        },
+        {
+          "type": "EVENT",
+          "dataId": "TriggerDataY"
+        },
+        {
+          "type": "EVENT",
+          "dataId": "TriggerEventZ"
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "email",
+      "actionId": "notify-to-admins",
+      "properties": {
+        "to": "admins@hawkular.org"
+      }
+    }
+  ]
+}

@@ -45,6 +45,7 @@ import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.condition.ExternalCondition;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Trigger;
+import org.hawkular.alerts.api.model.trigger.TriggerKey;
 import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.DistributedEvent;
@@ -335,37 +336,6 @@ public class PrometheusAlerter implements AlerterPlugin {
                 log.debugf("Sending External Condition Event to Alerting %s", externalEvent);
                 alertsService.sendEvents(Collections.singleton(externalEvent));
             }
-        }
-    }
-
-    private class TriggerKey {
-        private String tenantId;
-        private String triggerId;
-
-        public TriggerKey(String tenantId, String triggerId) {
-            this.tenantId = tenantId;
-            this.triggerId = triggerId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (o == null || getClass() != o.getClass())
-                return false;
-
-            TriggerKey that = (TriggerKey) o;
-
-            if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null)
-                return false;
-            return triggerId != null ? triggerId.equals(that.triggerId) : that.triggerId == null;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = tenantId != null ? tenantId.hashCode() : 0;
-            result = 31 * result + (triggerId != null ? triggerId.hashCode() : 0);
-            return result;
         }
     }
 }

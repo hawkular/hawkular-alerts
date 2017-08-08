@@ -47,8 +47,6 @@
         "kafka.batch.size": 16384,
         "kafka.linger.ms": 1,
         "kafka.buffer.memory": 33554432,
-        "kafka.key.serializer": "org.apache.kafka.common.serialization.StringSerializer",
-        "kafka.value.serializer": "org.apache.kafka.common.serialization.StringSerializer",
         "topic": "alerts-full"
       }
     },
@@ -62,8 +60,6 @@
         "kafka.batch.size": 16384,
         "kafka.linger.ms": 1,
         "kafka.buffer.memory": 33554432,
-        "kafka.key.serializer": "org.apache.kafka.common.serialization.StringSerializer",
-        "kafka.value.serializer": "org.apache.kafka.common.serialization.StringSerializer",
         "topic": "alerts-partial",
         "timestamp_pattern": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ",
         "transform": "{\"tenantId\":\"tenant\",\"ctime\":\"timestamp\",\"text\":\"trigger\",\"context\":{\"interval\":\"fetch-interval\"},\"evalSets\":{\"*\":{\"*\":{\"condition\":{\"expression\":\"details.[&3][&2].expression\",\"dataId\":\"details.[&3][&2].dataId\"},\"value\":\"details.[&2][&1].value\"}}}}"

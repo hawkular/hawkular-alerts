@@ -76,6 +76,7 @@
       <modules>
         <module>alerters-elasticsearch</module>
         <module>alerters-prometheus</module>
+        <module>alerters-kafka</module>
       </modules>
     </profile>
   </profiles>

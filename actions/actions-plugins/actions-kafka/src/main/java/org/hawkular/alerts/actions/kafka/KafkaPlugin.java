@@ -30,6 +30,7 @@ import java.util.Set;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.hawkular.alerts.actions.api.ActionMessage;
 import org.hawkular.alerts.actions.api.ActionPluginListener;
 import org.hawkular.alerts.actions.api.ActionPluginSender;
@@ -94,6 +95,8 @@ public class KafkaPlugin implements ActionPluginListener {
     private static final String KAFKA_TOPIC = "hawkular-alerts.kafka-topic";
     private static final String KAFKA_TOPIC_ENV = "KAFKA_TOPIC";
     private static final String KAFKA_TOPIC_DEFAULT = "alerts";
+    private static final String KEY_SERIALIZER = "key.serializer";
+    private static final String VALUE_SERIALIZER = "value.serializer";
 
     /*
         Timestamp fields
@@ -171,6 +174,13 @@ public class KafkaPlugin implements ActionPluginListener {
                 .forEach(e -> {
                     kafkaProperties.put(e.getKey().substring(6), e.getValue());
                 });
+        // Default serializers are handy to reduce verbosity on trigger definitions
+        if (!kafkaProperties.containsKey(KEY_SERIALIZER)) {
+            kafkaProperties.put(KEY_SERIALIZER, StringSerializer.class.getName());
+        }
+        if (!kafkaProperties.containsKey(VALUE_SERIALIZER)) {
+            kafkaProperties.put(VALUE_SERIALIZER, StringSerializer.class.getName());
+        }
         // TODO [lponce] implement a HawkularProperties.getAllProperties() and search all "kafka." properties there too
         return kafkaProperties;
     }
