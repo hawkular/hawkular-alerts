@@ -9,10 +9,7 @@ fi
 
 BACKEND=$1
 
-if [ "$BACKEND" == "ispn" ]
-then
-    JAVA_OPTS="$JAVA_OPTS -Dhawkular-alerts.backend=ispn -Dhawkular.data=$(pwd)/target/ispn-itests"
-fi
+JAVA_OPTS="$JAVA_OPTS -Dhawkular-alerts.backend=ispn -Dhawkular.data=$(pwd)/target/ispn-itests"
 
 JGROUPS_BIND_ADDR="127.0.0.1"
 JAVA_OPTS="$JAVA_OPTS -Xmx64m -Xms64m"

@@ -18,8 +18,6 @@ package org.hawkular.alerts.rest
 
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
-import org.hawkular.alerts.engine.CassPersistenceTest
-import org.hawkular.alerts.engine.IspnPersistenceTest
 import org.hawkular.commons.log.MsgLogger
 import org.hawkular.commons.log.MsgLogging
 import org.junit.AfterClass

@@ -84,23 +84,13 @@
       </exclusions>
     </dependency>
 
-    <dependency>
-      <groupId>org.cassalog</groupId>
-      <artifactId>cassalog</artifactId>
-      <version>${version.org.cassalog}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.datastax.cassandra</groupId>
-      <artifactId>cassandra-driver-core</artifactId>
-      <version>${version.com.datastax.cassandra}</version>
-    </dependency>
-
+    <!--
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>${version.com.google.guava}</version>
     </dependency>
+    -->
 
     <dependency>
       <groupId>org.apache.commons</groupId>

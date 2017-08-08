@@ -59,7 +59,7 @@ public class IspnPersistenceTest extends PersistenceTest {
 
         objectMapper = new ObjectMapper();
         Definitions definitions = objectMapper.readValue(
-                CassPersistenceTest.class.getResourceAsStream("/hawkular-alerts/alerts-data.json"), Definitions.class);
+                IspnPersistenceTest.class.getResourceAsStream("/hawkular-alerts/alerts-data.json"), Definitions.class);
         definitionsService.importDefinitions(TENANT, definitions, ImportType.DELETE);
     }
 
