@@ -1,0 +1,67 @@
+= Multiple Sources
+
+This example combines input from several different sources (Prometheus metrics, ElasticSearch logs, Kafka messages) and creates alerts based on this input.
+
+The main script is store.py - a Python script that simulates a store that sells widgets. The store sells widgets one at a time. When the store runs out of widgets, it will eventually restock the shelves but sometimes not before it loses sales due to widgets not being in stock. The store emits Prometheus metrics, logs messages to ElasticSearch, and sends messages to a Kafka topic.
+
+The Prometheus metrics it emits are:
+
+* `products_in_inventory{product="widget"}` - a gauge that tracks the number of widgets currently available for sale in the store.
+* `products_sold_total` - a counter that simply keeps track of the total number of all products sold by the store.
+
+The log messages stored to ElasticSearch have one of the following severity levels:
+
+* `INFO` - inventory levels are OK but will soon be low if more sales are made without restocking the shelves.
+* `WARN` - inventory levels are low - sales will be lost if the shelves are not restocked soon.
+* `ERROR` - out of stock - no sales can be made until shelves are restocked.
+* `CRITICAL` - an attempt to add more product to inventory failed - still out of stock.
+* `FATAL` - a sale was attempted but there was no inventory - that sale has been lost.
+
+The Kafka messages sent are:
+
+* When the store buys more product to stock on the shelves, the number of items added to inventory is sent to the topic "store".
+
+[NOTE]
+====
+The scripts are written in bash and python to make them work on any platorm.
+====
+
+== Running the example
+
+Build a Hawkular Alerting standalone distribution
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts
+    mvn clean install -DskipTests
+----
+
+Start the standalone server.
+
+*NOTE* This example will start an SMTP Server on port 2525, so before running it make sure to edit `hawkular.sh` and uncomment that line that sets the system property `mail.smtp.port` to `2525`.
+
+[source,shell,subs="+attributes"]
+----
+    cd dist/target/hawkular-alerting*
+    ./hawkular.sh
+----
+
+Next, let's run the example
+
+[source,shell,subs="+attributes"]
+----
+    cd hawkular-alerts/examples/multiple-sources
+    mvn test
+----
+
+The Maven command "mvn test" will run the scripts necessary to get everything up and running. This includes downloading, configuring, and running all the external components such as Prometheus, ElasticSearch, Kibana, Kafka, as well as a test SMTP server. Once these are running, the simulated store becomes open for business. Log messages will show the store selling product and when the store runs out of stock it will eventually purchase more product. Alerts should be triggered for things like running out of stock and when sales are lost due to demand outstripping supply.
+
+Check out the Alerts generated on the link:http://localhost:8080/hawkular/alerts/ui[Hawkular Alerting UI].
+
+== store.py
+
+Simulates a store selling items and restocking inventory to keep up with demand.
+
+== install.sh
+
+Downloads, installs, and configures all the necessary external components needed for the demo, such as Prometheus, ElasticSearch, and Kafka, among other things.

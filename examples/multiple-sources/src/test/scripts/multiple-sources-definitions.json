@@ -1,0 +1,233 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "large-inventory-purchase-kafka-trigger",
+        "name": "Large Inventory Purchase",
+        "description": "A large purchase was made to restock inventory.",
+        "severity": "LOW",
+        "enabled": true,
+        "tags": {
+          "Kafka": "Localhost instance"
+        },
+        "context": {
+          "topic": "store",
+          "kafka.bootstrap.servers": "localhost:9092",
+          "kafka.group.id": "hawkular-alerting"
+        },
+        "actions":[
+          {
+            "actionPlugin": "email",
+            "actionId": "email-notify-clerk"
+          }
+        ]
+      },
+      "conditions":[
+        {
+          "type": "THRESHOLD",
+          "dataId": "store",
+          "operator": "GT",
+          "threshold": 10
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "inventory-purchase-kafka-trigger",
+        "name": "An Inventory Purchase",
+        "description": "A purchase was made to restock inventory.",
+        "eventType": "EVENT",
+        "enabled": true,
+        "tags": {
+          "Kafka": "Localhost instance"
+        },
+        "context": {
+          "topic": "store",
+          "kafka.bootstrap.servers": "localhost:9092",
+          "kafka.group.id": "hawkular-alerting"
+        },
+        "actions":[ ]
+      },
+      "conditions":[
+        {
+          "type": "THRESHOLD",
+          "dataId": "store",
+          "operator": "GT",
+          "threshold": 0
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "low-stock-prometheus-trigger",
+        "name": "Low Stock",
+        "description": "The number of widgets in stock is consistently low.",
+        "severity": "MEDIUM",
+        "enabled": true,
+        "tags": {
+          "prometheus": "Test"
+        },
+        "actions":[
+          {
+            "actionPlugin": "email",
+            "actionId": "email-notify-owner"
+          }
+        ]
+      },
+      "conditions":[
+        {
+          "type": "EXTERNAL",
+          "alerterId": "prometheus",
+          "dataId": "prometheus-dataid",
+          "expression": "rate(products_in_inventory{product=\"widget\"}[30s])<2"
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "inventory-dropping-elasticsearch-trigger",
+        "name": "Inventory Is Dropping",
+        "description": "The number of widgets in stock is dropping and will soon be low.",
+        "severity": "LOW",
+        "enabled": true,
+        "tags": {
+          "Elasticsearch": "Localhost instance"
+        },
+        "context": {
+          "timestamp": "@timestamp",
+          "filter": "{\"match\":{\"category\":\"inventory\"}}",
+          "interval": "30s",
+          "index": "store",
+          "mapping": "level:category,@timestamp:ctime,message:text,category:dataId,index:tags"
+        },
+        "actions":[
+          {
+            "actionPlugin": "elasticsearch",
+            "actionId": "write-alert"
+          },
+          {
+            "actionPlugin": "email",
+            "actionId": "email-notify-clerk"
+          }
+        ]
+      },
+      "dampenings": [
+        {
+          "triggerMode": "FIRING",
+          "type":"STRICT",
+          "evalTrueSetting": 5
+        }
+      ],
+      "conditions":[
+        {
+          "type": "EVENT",
+          "dataId": "inventory",
+          "expression": "category == 'INFO'"
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "purchase-failure-elasticsearch-trigger",
+        "name": "Failed to Restock",
+        "description": "An attempt to restock inventory failed.",
+        "severity": "HIGH",
+        "enabled": true,
+        "tags": {
+          "Elasticsearch": "Localhost instance"
+        },
+        "context": {
+          "timestamp": "@timestamp",
+          "filter": "{\"match\":{\"category\":\"inventory\"}}",
+          "interval": "30s",
+          "index": "store",
+          "mapping": "level:category,@timestamp:ctime,message:text,category:dataId,index:tags"
+        },
+        "actions":[
+          {
+            "actionPlugin": "elasticsearch",
+            "actionId": "write-alert"
+          },
+          {
+            "actionPlugin": "email",
+            "actionId": "email-notify-owner"
+          }
+        ]
+      },
+      "dampenings": [
+        {
+          "triggerMode": "FIRING",
+          "type":"RELAXED_TIME",
+          "evalTrueSetting": 6,
+          "evalTimeSetting": 30000
+        }
+      ],
+      "conditions":[
+        {
+          "type": "EVENT",
+          "dataId": "inventory",
+          "expression": "category == 'CRITICAL'"
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "lost-sale-elasticsearch-trigger",
+        "name": "Lost Sale",
+        "description": "A sale was lost due to inventory out of stock.",
+        "severity": "CRITICAL",
+        "enabled": true,
+        "tags": {
+          "Elasticsearch": "Localhost instance"
+        },
+        "context": {
+          "timestamp": "@timestamp",
+          "filter": "{\"match\":{\"category\":\"inventory\"}}",
+          "interval": "30s",
+          "index": "store",
+          "mapping": "level:category,@timestamp:ctime,message:text,category:dataId,index:tags"
+        },
+        "actions":[
+          {
+            "actionPlugin": "elasticsearch",
+            "actionId": "write-alert"
+          },
+          {
+            "actionPlugin": "email",
+            "actionId": "email-notify-owner"
+          }
+        ]
+      },
+      "conditions":[
+        {
+          "type": "EVENT",
+          "dataId": "inventory",
+          "expression": "category == 'FATAL'"
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "email",
+      "actionId": "email-notify-clerk",
+      "properties": {
+        "to": "admin@WidgetStore.org"
+      }
+    },
+    {
+      "actionPlugin": "email",
+      "actionId": "email-notify-owner",
+      "properties": {
+        "to": "owner@WidgetStore.org"
+      }
+    },
+    {
+      "actionPlugin": "elasticsearch",
+      "actionId": "write-alert",
+      "properties": {
+        "index": "alerts"
+      }
+    }
+  ]
+}
