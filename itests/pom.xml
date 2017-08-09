@@ -189,7 +189,7 @@
   <profiles>
 
     <profile>
-      <id>itest-ispn</id>
+      <id>itest</id>
 
       <build>
         <plugins>

@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.services;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,8 +81,7 @@ public class TriggersCriteria {
     }
 
     public boolean hasTriggerIdCriteria() {
-        return null != triggerId
-                || (null != triggerIds && !triggerIds.isEmpty());
+        return !isEmpty(triggerId) || !isEmpty(triggerIds);
     }
 
     public boolean hasCriteria() {

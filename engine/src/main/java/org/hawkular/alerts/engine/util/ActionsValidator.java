@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.engine.util;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.TriggerAction;
@@ -48,7 +50,7 @@ public class ActionsValidator {
         if (triggerAction == null || event == null) {
             return true;
         }
-        if ((triggerAction.getStates() == null || triggerAction.getStates().isEmpty())
+        if ((isEmpty(triggerAction.getStates()))
                 && triggerAction.getCalendar() == null) {
             return true;
         }

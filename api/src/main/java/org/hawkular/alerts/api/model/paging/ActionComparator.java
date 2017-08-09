@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.paging;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Comparator;
 
 import org.hawkular.alerts.api.model.action.Action;
@@ -44,7 +46,7 @@ public class ActionComparator implements Comparator<Action> {
         }
 
         public static Field getField(String text) {
-            if (text == null || text.isEmpty()) {
+            if (isEmpty(text)) {
                 return ALERT_ID;
             }
             for (Field f : values()) {

@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.actions.email;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -311,7 +313,7 @@ public class EmailPlugin implements ActionPluginListener {
         Message email = new EmailMimeMessage(mailSession);
 
         Map<String, String> props = msg.getAction().getProperties();
-        if (null == props || props.isEmpty()) {
+        if (isEmpty(props)) {
             log.warnf("Properties empty on plugin %s.", PLUGIN_NAME);
         }
         Event event = msg.getAction() != null ? msg.getAction().getEvent() : null;
@@ -349,14 +351,14 @@ public class EmailPlugin implements ActionPluginListener {
 
         String to = props.get(PROP_TO + "." + statusStr);
         to = to == null ? props.get(PROP_TO) : to;
-        if (to != null && !to.isEmpty()) {
+        if (!isEmpty(to)) {
             Address toAddress = new InternetAddress(to);
             email.addRecipient(Message.RecipientType.TO, toAddress);
         }
 
         String ccs = props.get(PROP_CC + "." + statusStr);
         ccs = ccs == null ? props.get(PROP_CC) : ccs;
-        if (ccs != null && !ccs.isEmpty()) {
+        if (!isEmpty(ccs)) {
             String[] multipleCc = ccs.split(",");
             for (String cc : multipleCc) {
                 Address toAddress = new InternetAddress(cc);
@@ -367,7 +369,7 @@ public class EmailPlugin implements ActionPluginListener {
         Map<String, String> emailProcessed = emailTemplate.processTemplate(msg);
 
         String subject = emailProcessed.get("emailSubject");
-        if (null != subject && !subject.isEmpty()) {
+        if (!isEmpty(subject)) {
             email.setSubject(subject);
         } else {
             log.debugf("Subject not found processing email on message: %s", msg);
@@ -388,9 +390,5 @@ public class EmailPlugin implements ActionPluginListener {
             email.setContent(multipart);
         }
         return email;
-    }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
     }
 }

@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +40,6 @@ import org.hawkular.alerts.engine.service.PartitionDataListener;
 import org.hawkular.alerts.engine.service.PartitionManager;
 import org.hawkular.alerts.engine.service.PartitionTriggerListener;
 import org.hawkular.alerts.log.AlertingLogger;
-import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
 import org.hawkular.commons.properties.HawkularProperties;
 import org.infinispan.Cache;
@@ -358,13 +359,13 @@ public class PartitionManagerImpl implements PartitionManager {
      * @return a new table of nodes
      */
     public Map<Integer, Integer> updateBuckets(Map<Integer, Integer> oldBuckets, List<Integer> members) {
-        if (members == null || members.isEmpty()) {
+        if (isEmpty(members)) {
             throw new IllegalArgumentException("newMembers must be not null");
         }
         /*
             Create a new map
          */
-        if (oldBuckets == null || oldBuckets.isEmpty()) {
+        if (isEmpty(oldBuckets)) {
             Map<Integer, Integer> newBuckets = new HashMap<>();
             for (int i = 0; i < members.size(); i++) {
                 newBuckets.put(i, members.get(i));
@@ -409,7 +410,7 @@ public class PartitionManagerImpl implements PartitionManager {
         if (entries == null) {
             throw new IllegalArgumentException("entries must be not null");
         }
-        if (buckets == null || buckets.isEmpty()) {
+        if (isEmpty(buckets)) {
             throw new IllegalArgumentException("entries must be not null");
         }
         HashFunction md5 = Hashing.md5();
@@ -432,7 +433,7 @@ public class PartitionManagerImpl implements PartitionManager {
         if (newEntry == null) {
             throw new IllegalArgumentException("newEntry must be not null");
         }
-        if (buckets == null || buckets.isEmpty()) {
+        if (isEmpty(buckets)) {
             throw new IllegalArgumentException("buckets must be not null");
         }
         HashFunction md5 = Hashing.md5();
@@ -486,7 +487,7 @@ public class PartitionManagerImpl implements PartitionManager {
         output.put("added", new HashMap<>());
         output.put("removed", new HashMap<>());
 
-        if (previous == null || previous.isEmpty()) {
+        if (isEmpty(previous)) {
             current.entrySet().stream().forEach(entry -> {
                 add(output.get("added"), entry.getKey());
             });

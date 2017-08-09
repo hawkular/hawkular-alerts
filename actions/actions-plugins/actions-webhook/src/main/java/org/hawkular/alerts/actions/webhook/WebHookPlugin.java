@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.actions.webhook;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -164,9 +166,4 @@ public class WebHookPlugin implements ActionPluginListener {
             log.error("Error sending ActionResponseMessage", e);
         }
     }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
-    }
-
 }

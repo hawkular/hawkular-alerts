@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.event;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -527,10 +529,6 @@ public class Event implements Comparable<Event>, Serializable {
         } else if (!tenantId.equals(other.tenantId))
             return false;
         return true;
-    }
-
-    private static boolean isEmpty(String s) {
-        return null == s || s.trim().isEmpty();
     }
 
 }

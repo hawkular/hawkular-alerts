@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.actions.email;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
@@ -235,8 +237,7 @@ public class PluginMessageDescription {
         }
         if (event != null && event.getTrigger() != null) {
             trigger = event.getTrigger();
-            if (trigger.getContext() != null &&
-                    !trigger.getContext().isEmpty() &&
+            if (!isEmpty(trigger.getContext()) &&
                     trigger.getContext().containsKey(CONTEXT_PROPERTY_RESOURCE_TYPE) &&
                     trigger.getContext().containsKey(CONTEXT_PROPERTY_RESOURCE_NAME)) {
                 triggerDescription = trigger.getContext().get(CONTEXT_PROPERTY_RESOURCE_TYPE) + " " +

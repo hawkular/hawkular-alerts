@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -197,10 +199,6 @@ public class NelsonCondition extends Condition {
         }
 
         return false;
-    }
-
-    private boolean isEmpty(Collection<?> c) {
-        return null == c || c.isEmpty();
     }
 
     @Override

@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -180,16 +182,6 @@ public class DataDrivenGroupCacheManager {
 
         // otherwise, return the triggers that need a member for this source
         return triggersMap.get(key);
-    }
-
-    private boolean isEmpty(String... strings) {
-        for (String s : strings) {
-            if (null == s || s.trim().isEmpty()) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static class CacheKey {

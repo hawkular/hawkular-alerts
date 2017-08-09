@@ -4,6 +4,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hawkular.alerts.api.json.JsonUtil.collectionFromJson;
 import static org.hawkular.alerts.api.json.JsonUtil.fromJson;
 import static org.hawkular.alerts.api.json.JsonUtil.toJson;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -82,10 +83,10 @@ public class EventsHandler implements RestHandler {
                     if (event == null) {
                         throw new ResponseUtil.BadRequestException("Event null.");
                     }
-                    if (ResponseUtil.isEmpty(event.getId())) {
+                    if (isEmpty(event.getId())) {
                         throw new ResponseUtil.BadRequestException("Event with id null.");
                     }
-                    if (ResponseUtil.isEmpty(event.getCategory())) {
+                    if (isEmpty(event.getCategory())) {
                         throw new ResponseUtil.BadRequestException("Event with category null.");
                     }
                     event.setTenantId(tenantId);
@@ -126,7 +127,7 @@ public class EventsHandler implements RestHandler {
                         log.errorf("Error parsing Event json: %s. Reason: %s", json, e.toString());
                         throw new ResponseUtil.BadRequestException(e.toString());
                     }
-                    if (ResponseUtil.isEmpty(events)) {
+                    if (isEmpty(events)) {
                         throw new ResponseUtil.BadRequestException("Events is empty");
                     }
                     try {
@@ -154,7 +155,7 @@ public class EventsHandler implements RestHandler {
                     if (routing.request().params().get(PARAM_TAGS) != null) {
                         tags = routing.request().params().get(PARAM_TAGS);
                     }
-                    if (ResponseUtil.isEmpty(eventIds) || ResponseUtil.isEmpty(tags)) {
+                    if (isEmpty(eventIds) || isEmpty(tags)) {
                         throw new ResponseUtil.BadRequestException("EventIds and Tags required for adding tags");
                     }
                     try {
@@ -183,7 +184,7 @@ public class EventsHandler implements RestHandler {
                     if (routing.request().params().get(PARAM_TAG_NAMES) != null) {
                         tagNames = routing.request().params().get(PARAM_TAG_NAMES);
                     }
-                    if (ResponseUtil.isEmpty(eventIds) || ResponseUtil.isEmpty(tagNames)) {
+                    if (isEmpty(eventIds) || isEmpty(tagNames)) {
                         throw new ResponseUtil.BadRequestException("EventIds and Tags required for removing tags");
                     }
                     try {
@@ -330,7 +331,7 @@ public class EventsHandler implements RestHandler {
             tagQuery = params.get(PARAM_TAG_QUERY);
         }
         String unifiedTagQuery;
-        if (!ResponseUtil.isEmpty(tags)) {
+        if (!isEmpty(tags)) {
             unifiedTagQuery = ResponseUtil.parseTagQuery(ResponseUtil.parseTags(tags));
         } else {
             unifiedTagQuery = tagQuery;

@@ -18,8 +18,8 @@ package org.hawkular.alerts.engine.cache;
 
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_CONDITION_CHANGE;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.TRIGGER_REMOVE;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -208,9 +208,5 @@ public class PublishCacheManager {
             publishCache.endBatch(false);
             return;
         }
-    }
-
-    private boolean isEmpty(Collection c) {
-        return c == null || c.isEmpty();
     }
 }

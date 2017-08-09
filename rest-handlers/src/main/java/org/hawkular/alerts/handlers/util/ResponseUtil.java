@@ -5,6 +5,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERR
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hawkular.alerts.api.json.JsonUtil.toJson;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -188,18 +189,6 @@ public class ResponseUtil {
             }
         }
         return new Pager(page, perPage, ordering);
-    }
-
-    public static boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
-    }
-
-    public static boolean isEmpty(Collection c) {
-        return c == null || c.isEmpty();
-    }
-
-    public static boolean isEmpty(Map m) {
-        return m == null || m.isEmpty();
     }
 
     public static Map<String, String> parseTags(String tags) {

@@ -19,11 +19,11 @@ package org.hawkular.alerts.engine.impl.ispn;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_CREATE;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_REMOVE;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_UPDATE;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromDampeningId;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromTriggerId;
 import static org.hawkular.alerts.engine.util.Utils.checkTenantId;
-import static org.hawkular.alerts.engine.util.Utils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Arrays;

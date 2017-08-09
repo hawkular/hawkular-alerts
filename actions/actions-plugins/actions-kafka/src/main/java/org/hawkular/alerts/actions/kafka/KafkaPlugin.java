@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.actions.kafka;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -249,7 +251,4 @@ public class KafkaPlugin implements ActionPluginListener {
         }
     }
 
-    private boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
-    }
 }

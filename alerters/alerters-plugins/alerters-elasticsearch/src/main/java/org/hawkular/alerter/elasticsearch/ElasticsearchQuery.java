@@ -20,6 +20,7 @@ import static java.util.Collections.EMPTY_LIST;
 import static org.hawkular.alerter.elasticsearch.ElasticsearchAlerter.getIntervalUnit;
 import static org.hawkular.alerter.elasticsearch.ElasticsearchAlerter.getIntervalValue;
 import static org.hawkular.alerts.api.model.event.EventField.DATAID;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -508,9 +509,5 @@ public class ElasticsearchQuery implements Runnable {
         } catch (Exception e) {
             log.error("Error querying Elasticsearch.", e);
         }
-    }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
     }
 }

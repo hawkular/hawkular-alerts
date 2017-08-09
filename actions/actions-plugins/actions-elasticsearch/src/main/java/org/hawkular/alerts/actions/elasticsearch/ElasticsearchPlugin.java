@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.actions.elasticsearch;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -365,9 +367,5 @@ public class ElasticsearchPlugin implements ActionPluginListener {
         } catch (Exception e) {
             log.error("Error sending ActionResponseMessage", e);
         }
-    }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
     }
 }

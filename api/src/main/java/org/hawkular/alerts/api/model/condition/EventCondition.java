@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -211,7 +213,7 @@ public class EventCondition extends Condition {
         if (null == value) {
             return false;
         }
-        if (null == expression || expression.isEmpty()) {
+        if (isEmpty(expression)) {
             return true;
         }
         List<String> expressions = new ArrayList<>();
@@ -251,7 +253,7 @@ public class EventCondition extends Condition {
     private static final String GTE = ">=";
 
     private boolean processExpression(String expression, Event value) {
-        if (null == expression || expression.isEmpty() || null == value) {
+        if (isEmpty(expression) || null == value) {
             return false;
         }
         String[] tokens = expression.split(" ");
@@ -270,7 +272,7 @@ public class EventCondition extends Condition {
         String sConstantValue = null;
         Double dConstantValue = null;
 
-        if (eventField == null || eventField.isEmpty()) {
+        if (isEmpty(eventField)) {
             return false;
         }
         if (TENANT_ID.equals(eventField)) {

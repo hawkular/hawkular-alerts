@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -243,7 +245,7 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             log.errorDefinitionsService("Triggers", e.getMessage());
         }
 
-        if (triggers != null && !triggers.isEmpty()) {
+        if (!isEmpty(triggers)) {
 
             triggers.stream().filter(Trigger::isLoadable).forEach(t -> {
                 /*
@@ -859,9 +861,4 @@ public class AlertsEngineImpl implements AlertsEngine, PartitionTriggerListener,
             });
         }
     }
-
-    private boolean isEmpty(String s) {
-        return null == s || s.trim().isEmpty();
-    }
-
 }

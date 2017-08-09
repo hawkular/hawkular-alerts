@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.actions.standalone;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -69,7 +71,7 @@ public class StandaloneActionPluginRegister {
                 Set<String> properties = actionPluginListener.getProperties();
                 Map<String, String> defaultProperties = actionPluginListener.getDefaultProperties();
                 try {
-                    if (defaultProperties != null && !defaultProperties.isEmpty() ) {
+                    if (!isEmpty(defaultProperties)) {
                         definitions.addActionPlugin(actionPlugin, defaultProperties);
                     } else {
                         definitions.addActionPlugin(actionPlugin, properties);

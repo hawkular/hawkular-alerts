@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.dampening;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -416,7 +418,7 @@ public class Dampening implements Serializable {
         if (null == match) {
             throw new IllegalArgumentException("Match can not be null");
         }
-        if (null == conditionEvalSet || isEmpty(conditionEvalSet)) {
+        if (isEmpty(conditionEvalSet)) {
             throw new IllegalArgumentException("ConditionEval Set can not be null or empty");
         }
 
@@ -553,10 +555,6 @@ public class Dampening implements Serializable {
         sb.append("-").append(triggerId);
         sb.append("-").append(triggerMode.name());
         this.dampeningId = sb.toString();
-    }
-
-    private boolean isEmpty(Collection<?> c) {
-        return null == c || c.isEmpty();
     }
 
     @Override

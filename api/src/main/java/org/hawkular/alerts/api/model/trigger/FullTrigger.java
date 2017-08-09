@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.trigger;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -141,14 +143,6 @@ public class FullTrigger implements Serializable {
                 }
             }
         }
-    }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
-    }
-
-    private boolean isEmpty(Collection c) {
-        return c == null || c.isEmpty();
     }
 
     @Override

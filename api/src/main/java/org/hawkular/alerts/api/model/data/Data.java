@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.data;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -224,10 +226,6 @@ public class Data implements Comparable<Data>, Serializable {
     public static Data forAvailability(String tenantId, String source, String id, long timestamp,
             AvailabilityType value, Map<String, String> context) {
         return new Data(tenantId, source, id, timestamp, value.name(), null, context);
-    }
-
-    private boolean isEmpty(String s) {
-        return null == s || s.trim().isEmpty();
     }
 
     public String getTenantId() {

@@ -16,7 +16,7 @@
  */
 package org.hawkular.alerts.engine.impl.ispn;
 
-import static org.hawkular.alerts.engine.util.Utils.isEmpty;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import java.util.Collection;
 import java.util.Collections;

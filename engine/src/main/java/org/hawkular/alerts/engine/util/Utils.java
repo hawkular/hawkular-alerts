@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.engine.util;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,30 +38,6 @@ import org.hawkular.alerts.api.services.EventsCriteria;
  * @author Lucas Ponce
  */
 public class Utils {
-
-    public static boolean isEmpty(String id) {
-        return id == null || id.trim().isEmpty();
-    }
-
-    public static boolean isEmpty(Map<String, String> map) {
-        return map == null || map.isEmpty();
-    }
-
-    public static boolean isEmpty(Collection<?> collection) {
-        return collection == null || collection.isEmpty();
-    }
-
-    public static boolean isEmpty(ActionDefinition a) {
-        return a == null || isEmpty(a.getActionPlugin()) || isEmpty(a.getActionId());
-    }
-
-    public static boolean isEmpty(Dampening dampening) {
-        return dampening == null || isEmpty(dampening.getTriggerId()) || isEmpty(dampening.getDampeningId());
-    }
-
-    public static boolean isEmpty(Trigger trigger) {
-        return trigger == null || isEmpty(trigger.getId());
-    }
 
     public static void checkTenantId(String tenantId, Object obj) {
         if (isEmpty(tenantId)) {

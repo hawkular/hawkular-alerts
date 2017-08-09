@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerter.elasticsearch;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -321,7 +323,7 @@ public class ElasticsearchAlerter implements AlerterPlugin {
     }
 
     public static int getIntervalValue(String interval) {
-        if (interval == null || interval.isEmpty()) {
+        if (isEmpty(interval)) {
             interval = INTERVAL_DEFAULT;
         }
         try {

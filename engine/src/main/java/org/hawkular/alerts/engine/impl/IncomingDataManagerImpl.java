@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.engine.impl;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
@@ -234,10 +236,6 @@ public class IncomingDataManagerImpl implements IncomingDataManager {
                 }
             }
         }
-    }
-
-    private boolean isEmpty(String s) {
-        return null == s || s.isEmpty();
     }
 
     public static class IncomingData {

@@ -17,6 +17,7 @@
 package org.hawkular.alerts.extensions;
 
 import static org.hawkular.alerts.api.services.DistributedEvent.*;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -222,9 +223,5 @@ public class EventsAggregationExtension implements EventExtension {
             executor.submit(() -> cep.processEvents(retained));
         }
         return filtered;
-    }
-
-    private boolean isEmpty(Collection c) {
-        return c == null || c.isEmpty();
     }
 }

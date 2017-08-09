@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.extensions;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -403,14 +405,6 @@ public class Expression {
             newStr = newStr.replaceAll(original, map + "[\"" + field + "\"]");
         }
         return newStr;
-    }
-
-    private static boolean isEmpty(String s) {
-        return null == s || s.trim().isEmpty();
-    }
-
-    private static boolean isEmpty(Collection c) {
-        return null == c || c.isEmpty();
     }
 
     @Override

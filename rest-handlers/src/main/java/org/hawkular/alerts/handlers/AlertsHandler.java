@@ -3,7 +3,7 @@ package org.hawkular.alerts.handlers;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hawkular.alerts.api.json.JsonUtil.collectionFromJson;
 import static org.hawkular.alerts.api.json.JsonUtil.toJson;
-import static org.hawkular.alerts.handlers.util.ResponseUtil.isEmpty;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -140,7 +140,7 @@ public class AlertsHandler implements RestHandler {
                     if (routing.request().params().get(PARAM_TAGS) != null) {
                         tags = routing.request().params().get(PARAM_TAGS);
                     }
-                    if (ResponseUtil.isEmpty(alertIds) || ResponseUtil.isEmpty(tags)) {
+                    if (isEmpty(alertIds) || isEmpty(tags)) {
                         throw new ResponseUtil.BadRequestException("AlertIds and Tags required for adding tags");
                     }
                     try {
@@ -169,7 +169,7 @@ public class AlertsHandler implements RestHandler {
                     if (routing.request().params().get(PARAM_TAG_NAMES) != null) {
                         tagNames = routing.request().params().get(PARAM_TAG_NAMES);
                     }
-                    if (ResponseUtil.isEmpty(alertIds) || ResponseUtil.isEmpty(tagNames)) {
+                    if (isEmpty(alertIds) || isEmpty(tagNames)) {
                         throw new ResponseUtil.BadRequestException("AlertIds and Tags required for removing tags");
                     }
                     try {
@@ -202,7 +202,7 @@ public class AlertsHandler implements RestHandler {
                     if (routing.request().params().get(PARAM_ACK_NOTES) != null) {
                         ackNotes = routing.request().params().get(PARAM_ACK_NOTES);
                     }
-                    if (ResponseUtil.isEmpty(alertIds)) {
+                    if (isEmpty(alertIds)) {
                         throw new ResponseUtil.BadRequestException("AlertIds required for ack");
                     }
                     try {
@@ -263,7 +263,7 @@ public class AlertsHandler implements RestHandler {
                     if (routing.request().params().get(PARAM_RESOLVED_NOTES) != null) {
                         resolvedNotes = routing.request().params().get(PARAM_RESOLVED_NOTES);
                     }
-                    if (ResponseUtil.isEmpty(alertIds)) {
+                    if (isEmpty(alertIds)) {
                         throw new ResponseUtil.BadRequestException("AlertIds required for resolve");
                     }
                     try {
@@ -290,7 +290,7 @@ public class AlertsHandler implements RestHandler {
                         log.errorf("Error parsing Datums json: %s. Reason: %s", json, e.toString());
                         throw new ResponseUtil.BadRequestException(e.toString());
                     }
-                    if (ResponseUtil.isEmpty(datums)) {
+                    if (isEmpty(datums)) {
                         throw new ResponseUtil.BadRequestException("Data is empty");
                     }
                     try {
@@ -313,7 +313,7 @@ public class AlertsHandler implements RestHandler {
                     String ackBy = null;
                     String ackNotes = null;
                     String alertId = routing.request().getParam("alertId");
-                    if (ResponseUtil.isEmpty(alertId)) {
+                    if (isEmpty(alertId)) {
                         throw new ResponseUtil.BadRequestException("AlertId required for ack");
                     }
                     if (routing.request().params().get(PARAM_ACK_BY) != null) {
@@ -342,7 +342,7 @@ public class AlertsHandler implements RestHandler {
                     String user = null;
                     String text = null;
                     String alertId = routing.request().getParam("alertId");
-                    if (ResponseUtil.isEmpty(alertId)) {
+                    if (isEmpty(alertId)) {
                         throw new ResponseUtil.BadRequestException("AlertId required for adding notes");
                     }
                     if (routing.request().params().get(PARAM_USER) != null) {
@@ -432,7 +432,7 @@ public class AlertsHandler implements RestHandler {
             tagQuery = params.get(PARAM_TAG_QUERY);
         }
         String unifiedTagQuery;
-        if (!ResponseUtil.isEmpty(tags)) {
+        if (!isEmpty(tags)) {
             unifiedTagQuery = ResponseUtil.parseTagQuery(ResponseUtil.parseTags(tags));
         } else {
             unifiedTagQuery = tagQuery;

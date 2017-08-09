@@ -17,6 +17,7 @@
 package org.hawkular.alerter.kafka;
 
 import static org.hawkular.alerts.api.model.event.EventField.DATAID;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -287,11 +288,4 @@ public class KafkaQuery implements Runnable {
         return System.currentTimeMillis();
     }
 
-    private boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
-    }
-
-    private boolean isEmpty(Map m) {
-        return m == null || m.isEmpty();
-    }
 }

@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.services;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Collection;
 
 /**
@@ -164,19 +166,19 @@ public class ActionsCriteria {
     }
 
     public boolean hasActionIdCriteria() {
-        return null != actionId || (null != actionIds && !actionIds.isEmpty());
+        return !isEmpty(actionId) || !isEmpty(actionIds);
     }
 
     public boolean hasActionPluginCriteria() {
-        return null != actionPlugin || (null != actionPlugins && !actionPlugins.isEmpty());
+        return !isEmpty(actionPlugin) || !isEmpty(actionPlugins);
     }
 
     public boolean hasEventIdCriteria() {
-        return null != eventId || (null != eventIds && !eventIds.isEmpty());
+        return !isEmpty(eventId) || !isEmpty(eventIds);
     }
 
     public boolean hasResultCriteria() {
-        return null != result || (null != results && !results.isEmpty());
+        return !isEmpty(result) || !isEmpty(results);
     }
 
     public boolean hasStartCriteria() {

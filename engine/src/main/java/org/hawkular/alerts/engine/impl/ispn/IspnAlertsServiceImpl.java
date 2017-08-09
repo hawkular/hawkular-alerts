@@ -16,17 +16,16 @@
  */
 package org.hawkular.alerts.engine.impl.ispn;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromEventId;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.EQ;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NEQ;
-import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NOT;
 import static org.hawkular.alerts.engine.util.Utils.extractAlertIds;
 import static org.hawkular.alerts.engine.util.Utils.extractCategories;
 import static org.hawkular.alerts.engine.util.Utils.extractEventIds;
 import static org.hawkular.alerts.engine.util.Utils.extractStatus;
 import static org.hawkular.alerts.engine.util.Utils.extractTriggerIds;
-import static org.hawkular.alerts.engine.util.Utils.isEmpty;
 
 import java.util.Collection;
 import java.util.Collections;

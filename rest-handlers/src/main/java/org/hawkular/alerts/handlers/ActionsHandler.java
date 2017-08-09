@@ -1,6 +1,7 @@
 package org.hawkular.alerts.handlers;
 
 import static org.hawkular.alerts.api.json.JsonUtil.fromJson;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -94,13 +95,13 @@ public class ActionsHandler implements RestHandler {
                     if (actionDefinition == null) {
                         throw new ResponseUtil.BadRequestException("actionDefinition must be not null");
                     }
-                    if (ResponseUtil.isEmpty(actionDefinition.getActionPlugin())) {
+                    if (isEmpty(actionDefinition.getActionPlugin())) {
                         throw new ResponseUtil.BadRequestException("actionPlugin must be not null");
                     }
-                    if (ResponseUtil.isEmpty(actionDefinition.getActionId())) {
+                    if (isEmpty(actionDefinition.getActionId())) {
                         throw new ResponseUtil.BadRequestException("actionId must be not null");
                     }
-                    if (ResponseUtil.isEmpty(actionDefinition.getProperties())) {
+                    if (isEmpty(actionDefinition.getProperties())) {
                         throw new ResponseUtil.BadRequestException("properties must be not null");
                     }
                     actionDefinition.setTenantId(tenantId);
@@ -145,13 +146,13 @@ public class ActionsHandler implements RestHandler {
                     if (actionDefinition == null) {
                         throw new ResponseUtil.BadRequestException("actionDefinition must be not null");
                     }
-                    if (ResponseUtil.isEmpty(actionDefinition.getActionPlugin())) {
+                    if (isEmpty(actionDefinition.getActionPlugin())) {
                         throw new ResponseUtil.BadRequestException("actionPlugin must be not null");
                     }
-                    if (ResponseUtil.isEmpty(actionDefinition.getActionId())) {
+                    if (isEmpty(actionDefinition.getActionId())) {
                         throw new ResponseUtil.BadRequestException("actionId must be not null");
                     }
-                    if (ResponseUtil.isEmpty(actionDefinition.getProperties())) {
+                    if (isEmpty(actionDefinition.getProperties())) {
                         throw new ResponseUtil.BadRequestException("properties must be not null");
                     }
                     actionDefinition.setTenantId(tenantId);

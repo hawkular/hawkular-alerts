@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.services;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -293,22 +295,19 @@ public class AlertsCriteria {
     }
 
     public boolean hasAlertIdCriteria() {
-        return null != alertId
-                || (null != alertIds && !alertIds.isEmpty());
+        return !isEmpty(alertId) || !isEmpty(alertIds);
     }
 
     public boolean hasSeverityCriteria() {
-        return null != severity
-                || (null != severities && !severities.isEmpty());
+        return  null != severity || !isEmpty(severities);
     }
 
     public boolean hasStatusCriteria() {
-        return null != status
-                || (null != statusSet && !statusSet.isEmpty());
+        return null != status || !isEmpty(statusSet);
     }
 
     public boolean hasTagQueryCriteria() {
-        return (null != tagQuery && !isEmpty(tagQuery));
+        return !isEmpty(tagQuery);
     }
 
     public boolean hasCTimeCriteria() {
@@ -316,8 +315,7 @@ public class AlertsCriteria {
     }
 
     public boolean hasTriggerIdCriteria() {
-        return null != triggerId
-                || (null != triggerIds && !triggerIds.isEmpty());
+        return !isEmpty(triggerId) || !isEmpty(triggerIds);
     }
 
     public boolean hasResolvedTimeCriteria() {
@@ -366,10 +364,6 @@ public class AlertsCriteria {
                 ", tagQuery='" + tagQuery + '\'' +
                 ", thin=" + thin +
                 '}';
-    }
-
-    private static boolean isEmpty(String s) {
-        return s == null || s.trim().isEmpty();
     }
 
 }

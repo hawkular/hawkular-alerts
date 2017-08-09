@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.engine.tags;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.AND;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NOT;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.OR;
@@ -68,7 +69,7 @@ public class ExpressionTagQueryParser extends TagQueryBaseListener implements AN
         String IN = "in";
 
         static List<String> getTokens(String tagExpression) {
-            if (tagExpression == null || tagExpression.isEmpty()) {
+            if (isEmpty(tagExpression)) {
                 return null;
             }
             List<String> tokens = new ArrayList<>();
@@ -330,7 +331,7 @@ public class ExpressionTagQueryParser extends TagQueryBaseListener implements AN
             leftResult = resolver.resolve(left);
         }
         // Shorcutting the AND operator
-        if (isAnd && (leftResult == null || leftResult.isEmpty())) {
+        if (isAnd && isEmpty(leftResult)) {
             return leftResult;
         }
         Set<String> rightResult;

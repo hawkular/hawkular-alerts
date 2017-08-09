@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.action;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -737,10 +739,6 @@ public class TimeConstraint implements Serializable {
         } catch (ParseException e) {
             throw new IllegalArgumentException("Bad format on startTime and/or endTime: " + e.getMessage());
         }
-    }
-
-    private boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
     }
 
     @Override

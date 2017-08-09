@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.actions.email;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -155,14 +157,14 @@ public class EmailTemplate {
          */
         StringWriter writerPlain = new StringWriter();
         StringWriter writerHtml = new StringWriter();
-        if (plain != null && !plain.isEmpty()) {
+        if (!isEmpty(plain)) {
             StringReader plainReader = new StringReader(plain);
             ftlTemplate = new Template("plainTemplate", plainReader, ftlCfg);
             ftlTemplate.process(pmDesc, writerPlain);
         }  else {
             ftlTemplatePlain.process(pmDesc, writerPlain);
         }
-        if (html != null && !html.isEmpty()) {
+        if (!isEmpty(html)) {
             StringReader htmlReader = new StringReader(html);
             ftlTemplate = new Template("htmlTemplate", htmlReader, ftlCfg);
             ftlTemplate.process(pmDesc, writerHtml);

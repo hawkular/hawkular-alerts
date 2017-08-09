@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.services;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -238,9 +240,5 @@ public class EventsCriteria {
                 ", criteriaNoQuerySize=" + criteriaNoQuerySize +
                 ", eventType='" + eventType + '\'' +
                 '}';
-    }
-
-    private static boolean isEmpty(String s) {
-        return s == null || s.trim().isEmpty();
     }
 }

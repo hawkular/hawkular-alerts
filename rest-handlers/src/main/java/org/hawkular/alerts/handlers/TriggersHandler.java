@@ -2,11 +2,11 @@ package org.hawkular.alerts.handlers;
 
 import static org.hawkular.alerts.api.json.JsonUtil.collectionFromJson;
 import static org.hawkular.alerts.api.json.JsonUtil.fromJson;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.checkTags;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.checkTenant;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.extractPaging;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.getCleanDampening;
-import static org.hawkular.alerts.handlers.util.ResponseUtil.isEmpty;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.result;
 
 import java.util.Arrays;

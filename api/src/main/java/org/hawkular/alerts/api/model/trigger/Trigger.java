@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.trigger;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -252,7 +254,7 @@ public class Trigger implements Serializable {
     }
 
     public Trigger(String tenantId, String id, String name, Map<String, String> context, Map<String, String> tags) {
-        if (id == null || id.isEmpty()) {
+        if (isEmpty(id)) {
             throw new IllegalArgumentException("Trigger id must be non-empty");
         }
         this.tenantId = tenantId;
@@ -308,7 +310,7 @@ public class Trigger implements Serializable {
     }
 
     public void setName(String name) {
-        if (name == null || name.isEmpty()) {
+        if (isEmpty(name)) {
             throw new IllegalArgumentException("Trigger name must be non-empty.");
         }
         this.name = name;
