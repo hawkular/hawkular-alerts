@@ -170,4 +170,45 @@ class EventsITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(0, resp.data.size())
     }
+
+    // HWKALERTS-275
+    @Test
+    void testCreateAndQueryEvents() {
+        def numEvents = 20000
+        def resp
+        for (int i = 0; i < numEvents; i++) {
+            Event eventX = new Event()
+            eventX.setId("event" + i)
+            eventX.setCategory("test")
+            eventX.setText("Event message " + i)
+            eventX.getTags().put("tag" + (i % 3), "value" + (i % 3))
+            resp = client.post(path: "events", body: eventX)
+            assertEquals(200, resp.status)
+        }
+
+        def tags = "tag0|*"
+        resp = client.get(path: "events", query: [tags: tags])
+        assertEquals(200, resp.status)
+        assertEquals(6667, resp.data.size())
+
+        tags = "tag1|*"
+        resp = client.get(path: "events", query: [tags: tags])
+        assertEquals(200, resp.status)
+        assertEquals(6667, resp.data.size())
+
+        tags = "tag2|*"
+        resp = client.get(path: "events", query: [tags: tags])
+        assertEquals(200, resp.status)
+        assertEquals(6666, resp.data.size())
+
+        def eventIds = ""
+        for (int i = 0; i < 199; i++) {
+            eventIds += "event" + i + ",";
+        }
+        eventIds += "event199";
+
+        resp = client.get(path: "events", query: [eventIds: eventIds])
+        assertEquals(200, resp.status)
+        assertEquals(200, resp.data.size())
+    }
 }
