@@ -9,7 +9,8 @@ angular.module ('hwk.appModule', [
   'hwk.dashboardModule',
   'hwk.triggersModule',
   'hwk.actionsModule',
-  'hwk.alertsModule'
+  'hwk.alertsModule',
+  'hwk.eventsModule'
 ]).config(['$routeProvider', '$translateProvider',
   function ($routeProvider, $translateProvider) {
     'use strict';
@@ -29,6 +30,9 @@ angular.module ('hwk.appModule', [
       })
       .when('/alerts', {
         templateUrl: 'src/alerts/alerts.html'
+      })
+      .when('/events', {
+        templateUrl: 'src/events/events.html'
       })
 
       // Default

@@ -9,7 +9,7 @@ alertsModule.directive('repeatDone', function($timeout) {
     link: function (scope, element, attr) {
       if (scope.$last === true) {
         $timeout(function () {
-          scope.$emit('ngRepeatDone');
+          scope.$emit('ngRepeatDoneAlerts');
         }, 0);
       }
     }

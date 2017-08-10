@@ -425,5 +425,10 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
       filterService.alertFilter.status = statusFilter;
       $location.url("/alerts");
     };
+
+    $scope.linkEvents = function() {
+      // TODO [lponce] in future iterations dashboard filters can be propagated into events, too
+      $location.url("/events");
+    };
   }
 ]);

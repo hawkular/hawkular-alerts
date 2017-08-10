@@ -139,7 +139,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
       }
     };
 
-    $scope.$on('ngRepeatDone', function(ngRepeatDoneEvent) {
+    $scope.$on('ngRepeatDoneAlerts', function(ngRepeatDoneEvent) {
       // row checkbox selection
       $("input[type='checkbox']").change(function (e) {
         if ($(this).is(":checked")) {

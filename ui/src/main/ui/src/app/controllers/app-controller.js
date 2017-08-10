@@ -40,6 +40,16 @@ angular.module('hwk.appModule').controller( 'hwk.appController', ['$scope', '$ro
         href: "#/dashboard"
       },
       {
+        title: "Alerts",
+        iconClass: "pficon pficon-messages",
+        href: "#/alerts"
+      },
+      {
+        title: "Events",
+        iconClass: "pficon pficon-topology",
+        href: "#/events"
+      },
+      {
         title: "Triggers",
         iconClass: "fa fa-flash",
         href: "#/triggers"
@@ -48,11 +58,6 @@ angular.module('hwk.appModule').controller( 'hwk.appController', ['$scope', '$ro
         title: "Actions",
         iconClass: "fa fa-bell-o",
         href: "#/actions"
-      },
-      {
-        title: "Alerts",
-        iconClass: "fa pficon-messages",
-        href: "#/alerts"
       }
     ];
 
