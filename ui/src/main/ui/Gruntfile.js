@@ -400,6 +400,12 @@ module.exports = function (grunt) {
             cwd: '.',
             src: ['bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js'],
             dest: '<%= projectSettings.dist %>'
+          },
+          {
+            expand: true,
+            cwd: '.',
+            src: ['bower_components/bootstrap-touchspin/dist/jquery.bootstrap-touchspin.min.js'],
+            dest: '<%= projectSettings.dist %>'
           }
         ]
       },

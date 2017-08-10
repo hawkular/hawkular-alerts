@@ -3,7 +3,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
     'use strict';
 
     $scope.filter = {
-      'date': filterService.dateFilter,
+      'range': filterService.rangeFilter,
       'alert': filterService.alertFilter,
       'tag': filterService.tagFilter
     };
@@ -109,15 +109,37 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
         var alertsCriteria = {
           'thin': false   // TODO: we need to add this, we should not initially fetch fat alerts
         };
-        if ( $scope.filter.date.start ) {
-          var startTime = $scope.filter.date.start;
-          startTime.setHours(0,0,0,0);
-          alertsCriteria.startTime = startTime.getTime();
-        }
-        if ( $scope.filter.date.end ) {
-          var endTime = $scope.filter.date.end;
-          endTime.setHours(23,59,59,999);
-          alertsCriteria.endTime = endTime.getTime();
+        if ( $scope.filter.range.datetime ) {
+          var offset = $scope.filter.range.offset;
+          var start;
+          var end;
+          switch ( $scope.filter.range.unit ) {
+          case 'Minutes' :
+            offset *= (60 * 1000);
+            break;
+          case 'Hours' :
+            offset *= (60 * 60 * 1000);
+            break;
+          case 'Days' :
+            offset *= (60 * 60 * 24 * 1000);
+            break;
+          default :
+            console.log("Unsupported unit: " + $scope.filter.range.unit);
+          }
+          switch ( $scope.filter.range.direction ) {
+          case 'After' :
+            start = new Date($scope.filter.range.datetime).getTime();
+            end = start + offset;
+            break;
+          case 'Before':
+            end = new Date($scope.filter.range.datetime).getTime();
+            start = end - offset;
+            break;
+          default :
+            console.log("Unsupported direction: " + $scope.filter.range.direction);
+          }
+          alertsCriteria.startTime = start;
+          alertsCriteria.endTime = end;
         }
         if ( $scope.filter.tag.tagQuery && $scope.filter.tag.tagQuery.length > 0 ) {
           alertsCriteria.tags = $scope.filter.tag.tagQuery;
@@ -200,5 +222,54 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
     $scope.updateFilter = function() {
       updateAlerts();
     };
+
+    $scope.updateRange = function(range) {
+      switch ( range ) {
+      case '30m' :
+        $scope.filter.range.offset = 30;
+        $scope.filter.range.unit = 'Minutes';
+        break;
+      case '1h' :
+        $scope.filter.range.offset = 1;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '4h' :
+        $scope.filter.range.offset = 4;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '8h' :
+        $scope.filter.range.offset = 8;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '12h' :
+        $scope.filter.range.offset = 12;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '1d' :
+        $scope.filter.range.offset = 1;
+        $scope.filter.range.unit = 'Days';
+        break;
+      case '7d' :
+        $scope.filter.range.offset = 7;
+        $scope.filter.range.unit = 'Days';
+        break;
+      case '30d' :
+        $scope.filter.range.offset = 30;
+        $scope.filter.range.unit = 'Days';
+        break;
+      default :
+        console.log("Unsupported Range: " + range);
+      }
+      $scope.filter.range.datetime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
+      $scope.filter.range.direction = 'Before';
+
+      updateAlerts();
+    };
+
+    // this is here because the datetimepicker seems unable to handle standard ng-model binding.  See
+    // https://stackoverflow.com/questions/19316937/how-to-bind-bootstrap-datepicker-element-with-angularjs-ng-model
+    $("#datetime").on("dp.change", function (e) {
+      $scope.filter.range.datetime = $("#currentdatetime").val(); // pure magic
+    });
   }
 ]);
