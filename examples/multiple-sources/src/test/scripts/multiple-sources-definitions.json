@@ -27,7 +27,7 @@
           "type": "THRESHOLD",
           "dataId": "store",
           "operator": "GT",
-          "threshold": 10
+          "threshold": 17
         }
       ]
     },
@@ -96,7 +96,7 @@
         "context": {
           "timestamp": "@timestamp",
           "filter": "{\"match\":{\"category\":\"inventory\"}}",
-          "interval": "30s",
+          "interval": "25s",
           "index": "store",
           "mapping": "level:category,@timestamp:ctime,message:text,category:dataId,index:tags"
         },
@@ -114,8 +114,9 @@
       "dampenings": [
         {
           "triggerMode": "FIRING",
-          "type":"STRICT",
-          "evalTrueSetting": 5
+          "type":"RELAXED_TIME",
+          "evalTrueSetting": 9,
+          "evalTimeSetting": 35000
         }
       ],
       "conditions":[
@@ -139,7 +140,7 @@
         "context": {
           "timestamp": "@timestamp",
           "filter": "{\"match\":{\"category\":\"inventory\"}}",
-          "interval": "30s",
+          "interval": "10s",
           "index": "store",
           "mapping": "level:category,@timestamp:ctime,message:text,category:dataId,index:tags"
         },
@@ -158,7 +159,7 @@
         {
           "triggerMode": "FIRING",
           "type":"RELAXED_TIME",
-          "evalTrueSetting": 6,
+          "evalTrueSetting": 3,
           "evalTimeSetting": 30000
         }
       ],
@@ -183,7 +184,7 @@
         "context": {
           "timestamp": "@timestamp",
           "filter": "{\"match\":{\"category\":\"inventory\"}}",
-          "interval": "30s",
+          "interval": "10s",
           "index": "store",
           "mapping": "level:category,@timestamp:ctime,message:text,category:dataId,index:tags"
         },
@@ -198,6 +199,14 @@
           }
         ]
       },
+      "dampenings": [
+        {
+          "triggerMode": "FIRING",
+          "type":"RELAXED_TIME",
+          "evalTrueSetting": 3,
+          "evalTimeSetting": 20000
+        }
+      ],
       "conditions":[
         {
           "type": "EVENT",
