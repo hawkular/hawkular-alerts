@@ -16,7 +16,7 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
     console.log("[Triggers] Start: " + new Date());
     console.log("[Triggers] $rootScope.selectedTenant " + $rootScope.selectedTenant);
 
-    $scope.pageSize = 5;
+    $scope.pageSize = 10;
     $scope.triggers = [];
     $scope.filter = {
       tags: null

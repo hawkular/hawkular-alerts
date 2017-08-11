@@ -57,5 +57,18 @@ angular.module('hwk.alertsModule').service('hwk.alertsService', ['$resource', '$
         }
       });
     };
+
+    this.Note = function (tenantId, alertId, user, text) {
+      return $resource($rootScope.appConfig.server.baseUrl + "/note/" + alertId, {
+        alertId: alertId,
+        user: user,
+        text: text
+      }, {
+        update: {
+          method: 'PUT',
+          headers: {'Hawkular-Tenant': tenantId}
+        }
+      });
+    };
   }
 ]);

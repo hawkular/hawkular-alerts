@@ -116,10 +116,12 @@
               <span class="fa fa-ellipsis-v"></span>
             </button>
             <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight1">
-              <li ng-show="alertItem.status === 'OPEN' || alertItem.status === 'RESOLVED'"><a id="ack-alert-link" href ng-click="ackAlert(alertItem.id)">Acknowledge</a></li>
-              <li ng-show="alertItem.status === 'OPEN' || alertItem.status === 'ACKNOWLEDGED'"><a id="resolve-alert-link" href ng-click="resolveAlert(alertItem.id)">Resolve</a></li>
+              <li ng-show="alertItem.status === 'OPEN' || alertItem.status === 'RESOLVED'" ng-click="ackAlert(alertItem.id)"><a>Acknowledge</a></li>
+              <li ng-show="alertItem.status === 'OPEN' || alertItem.status === 'ACKNOWLEDGED'" ng-click="resolveAlert(alertItem.id)"><a>Resolve</a></li>
+              <li ng-click="annotateAlert(alertItem.id)"><a>Annotate</a></li>
               <li role="separator" class="divider"></li>
-              <li><a id="delete-alert-link" href ng-click="deleteAlert(alertItem.id)">Delete</a></li>
+              <li ng-click="viewAlert(alertItem)"><a>View</a></li>
+              <li ng-click="deleteAlert(alertItem.id)"><a>Delete</a></li>
             </ul>
           </div>
         </div>
@@ -286,36 +288,60 @@
 
 </div>
 <!-- /container -->
-<div ng-controller="hwk.actionsController">
-  <script type="text/ng-template" id="lifecycleModal.html">
-    <div class="modal-content modal-lg">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" ng-click="cancel()" aria-hidden="true">
-          <span class="pficon pficon-close"></span>
-        </button>
-        <h4 class="modal-title">{{ lifecycleModal.title }}</h4>
-      </div>
-      <div class="modal-body">
-        <form class="form-horizontal">
-          <div class="form-group">
-            <div class="col-md-4">
-              <input id="user" class="form-control" ng-model="lifecycleModal.user" ng-readonly="{{ lifecycleModal.readOnly }}" placeholder="Enter username here..." />
-            </div>
-          </div>
-          <div class="form-group">
-            <div class="col-md-12">
-              <textarea class="form-control textarea-resize" ng-model="lifecycleModal.notes" ng-readonly="{{ lifecycleModal.readOnly }}" rows="10" placeholder="Enter Note Here..." />
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="cancel()">Cancel</button>
-        <button type="button" class="btn btn-primary" data-dismiss="modal" ng-show="{{ !lifecycleModal.readOnly }}" ng-disabled="!isValid()" ng-click="save()">{{ lifecycleModal.state }}</button>
-      </div>
+
+<script type="text/ng-template" id="lifecycleModal.html">
+  <div class="modal-content modal-lg">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" ng-click="cancel()" aria-hidden="true">
+        <span class="pficon pficon-close"></span>
+      </button>
+      <h4 class="modal-title">{{ lifecycleModal.title }}</h4>
     </div>
-  </script>
-</div>
+    <div class="modal-body">
+      <form class="form-horizontal">
+        <div class="form-group">
+          <div class="col-md-4">
+            <input id="user" class="form-control" ng-model="lifecycleModal.user" ng-readonly="{{ lifecycleModal.readOnly }}" placeholder="Enter username here..." />
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="col-md-12">
+            <textarea class="form-control textarea-resize" ng-model="lifecycleModal.notes" ng-readonly="{{ lifecycleModal.readOnly }}" rows="10" placeholder="Enter Note Here..." />
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="cancel()">Cancel</button>
+      <button type="button" class="btn btn-primary" data-dismiss="modal" ng-show="{{ !lifecycleModal.readOnly }}" ng-disabled="!isValid()" ng-click="save()">{{ lifecycleModal.state }}</button>
+    </div>
+  </div>
+</script>
+
+<script type="text/ng-template" id="jsonModal.html">
+  <div class="modal-content modal-lg">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" ng-click="cancel()" aria-hidden="true">
+        <span class="pficon pficon-close"></span>
+      </button>
+      <h4 class="modal-title">{{ jsonModal.title }}</h4>
+    </div>
+    <div class="modal-body">
+      <form class="form-horizontal">
+        <div class="form-group">
+          <div class="col-md-12">
+            <textarea class="form-control textarea-resize" ng-model="jsonModal.json" ng-readonly="{{ jsonModal.readOnly }}" rows="20" placeholder="{{ jsonModal.placeholder }}" />
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="cancel()">Cancel</button>
+      <button type="button" class="btn btn-primary" data-dismiss="modal" ng-show="{{ !jsonModal.readOnly }}" ng-disabled="!isValid()" ng-click="save()">Save</button>
+    </div>
+  </div>
+</script>
+
 <script>
   $('#offset').TouchSpin({
     initval: 1

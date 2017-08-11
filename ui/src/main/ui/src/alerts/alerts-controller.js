@@ -16,6 +16,13 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
       readOnly: false
     };
 
+    $scope.jsonModal = {
+      text: null,
+      title: null,
+      placeholder: null,
+      readOnly: false
+    };
+
     var selectedTenant = $rootScope.selectedTenant;
 
     console.log("[Alerts] $rootScope.selectedTenant " + selectedTenant);
@@ -87,6 +94,48 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
       });
     };
 
+    $scope.annotateAlert = function (alertId) {
+      $scope.lifecycleModal.title = 'Annotate Alert';
+      $scope.lifecycleModal.user = null;
+      $scope.lifecycleModal.notes = null;
+      $scope.lifecycleModal.readOnly = false;
+      $scope.lifecycleModal.state = "Add Note";
+
+      var modalInstance = $modal.open({
+        templateUrl: 'lifecycleModal.html',
+        backdrop: false, // keep modal up if someone clicks outside of the modal
+        controller: function ($scope, $modalInstance, $log, lifecycleModal) {
+          $scope.lifecycleModal = lifecycleModal;
+          $scope.save = function () {
+
+            $modalInstance.dismiss(lifecycleModal.state);
+            var promise1 = alertsService.Note(selectedTenant, alertId, lifecycleModal.user, lifecycleModal.notes).update();
+
+            $q.all([promise1.$promise]).then(function (result) {
+              console.log("Result[" + lifecycleModal.state + "]=" + result);
+              updateAlerts();
+            });
+          };
+          $scope.cancel = function () {
+            $modalInstance.dismiss('cancel');
+          };
+          $scope.isValid = function () {
+            return (
+              $scope.lifecycleModal.notes
+              && $scope.lifecycleModal.notes.length > 0
+              && $scope.lifecycleModal.user
+              && $scope.lifecycleModal.user.length > 0
+            );
+          };
+        },
+        resolve: {
+          lifecycleModal: function () {
+            return $scope.lifecycleModal;
+          }
+        }
+      });
+    };
+
     $scope.reopenAlert = function (id) {
       alert("TODO REOPEN: " + id);
     };
@@ -100,6 +149,29 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
         updateAlerts();
       }, function(err) {
         console.log("[Alerts] deleteAlert(" + alertId + ") failed: " + err);
+      });
+    };
+
+    $scope.viewAlert = function(alert) {
+      $scope.jsonModal.title = 'View Alert';
+      $scope.jsonModal.placeholder = 'Alert JSON...';
+      $scope.jsonModal.json = angular.toJson(alert,true);
+      $scope.jsonModal.readOnly = true;
+
+      var modalInstance = $modal.open({
+        templateUrl: 'jsonModal.html',
+        backdrop: false, // keep modal up if someone clicks outside of the modal
+        controller: function ($scope, $modalInstance, $log, jsonModal) {
+          $scope.jsonModal = jsonModal;
+          $scope.cancel = function () {
+            $modalInstance.dismiss('cancel');
+          };
+        },
+        resolve: {
+          jsonModal: function () {
+            return $scope.jsonModal;
+          }
+        }
       });
     };
 

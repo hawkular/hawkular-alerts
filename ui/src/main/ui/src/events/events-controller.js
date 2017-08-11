@@ -7,12 +7,10 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
       'event': filterService.eventFilter
     };
 
-    $scope.lifecycleModal = {
-      user: null,
-      notes: null,
+    $scope.jsonModal = {
+      text: null,
       title: null,
       placeholder: null,
-      state: null,
       readOnly: false
     };
 
@@ -27,6 +25,29 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
         updateEvents();
       }
     });
+
+    $scope.viewEvent = function(event) {
+      $scope.jsonModal.title = 'View Event';
+      $scope.jsonModal.placeholder = 'Event JSON...';
+      $scope.jsonModal.json = angular.toJson(event,true);
+      $scope.jsonModal.readOnly = true;
+
+      var modalInstance = $modal.open({
+        templateUrl: 'jsonModal.html',
+        backdrop: false, // keep modal up if someone clicks outside of the modal
+        controller: function ($scope, $modalInstance, $log, jsonModal) {
+          $scope.jsonModal = jsonModal;
+          $scope.cancel = function () {
+            $modalInstance.dismiss('cancel');
+          };
+        },
+        resolve: {
+          jsonModal: function () {
+            return $scope.jsonModal;
+          }
+        }
+      });
+    };
 
     $scope.deleteEvent = function (eventId) {
       var eventsCriteria = {
