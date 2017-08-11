@@ -7,13 +7,19 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
 
     $scope.refresh = true;
 
+    $scope.filter = {
+      'range': filterService.rangeFilter,
+      'alert': filterService.alertFilter,
+      'event': filterService.eventFilter,
+    };
+
     var ONE_SECOND = 1000,
       ONE_HOUR = 60 * 60 * ONE_SECOND,
       ONE_DAY = 24 * ONE_HOUR,
       ONE_WEEK = 7 * ONE_DAY,
       ONE_MONTH = 30 * ONE_DAY;
 
-    var PING_INTERVAL = 2000;
+    var PING_INTERVAL = 5000;
 
     var selectedTenant = $rootScope.selectedTenant;
 
@@ -128,6 +134,9 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         $scope.timelineEvents.push(eventTimeline.details);
       }
       $q.all(actionPromises).then(function (result) {
+        if ( $scope.refresh === true ) {
+          $scope.updateRefresh();
+        }
         for (var i = 0; i < result.length; i++) {
           if ( result.length > 0 ) {
             $scope.timelineEvents[i].actions = result[i];
@@ -222,8 +231,55 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         ['Low', 0, 0]
       ];
 
-      var promise1 = dashboardService.Alert(selectedTenant).query();
-      var promise2 = dashboardService.Event(selectedTenant).query();
+      var alertsCriteria = {
+        'thin': false   // TODO: we need to add this, we should not initially fetch fat alerts
+      };
+      var eventsCriteria = {
+        'thin': false   // TODO: we need to add this, we should not initially fetch fat alerts
+      };
+
+      if ( $scope.refresh ) {
+        // update to now on each refresh to keep a sliding window
+        $scope.filter.range.datetime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
+      }
+
+      if ( $scope.filter.range.datetime ) {
+        var offset = $scope.filter.range.offset;
+        var start;
+        var end;
+        switch ( $scope.filter.range.unit ) {
+        case 'Minutes' :
+          offset *= (60 * 1000);
+          break;
+        case 'Hours' :
+          offset *= (60 * 60 * 1000);
+          break;
+        case 'Days' :
+          offset *= (60 * 60 * 24 * 1000);
+          break;
+        default :
+          console.log("Unsupported unit: " + $scope.filter.range.unit);
+        }
+        switch ( $scope.filter.range.direction ) {
+        case 'After' :
+          start = new Date($scope.filter.range.datetime).getTime();
+          end = start + offset;
+          break;
+        case 'Before':
+          end = new Date($scope.filter.range.datetime).getTime();
+          start = end - offset;
+          break;
+        default :
+          console.log("Unsupported direction: " + $scope.filter.range.direction);
+        }
+        alertsCriteria.startTime = start;
+        alertsCriteria.endTime = end;
+        eventsCriteria.startTime = start;
+        eventsCriteria.endTime = end;
+      }
+
+      var promise1 = dashboardService.Alert(selectedTenant, alertsCriteria).query();
+      var promise2 = dashboardService.Event(selectedTenant, eventsCriteria).query();
 
       $q.all([promise1.$promise, promise2.$promise]).then(function (result) {
         var updatedAlerts = result[0];
@@ -389,8 +445,12 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         $interval.cancel(intervalRef);
       }
       // Create an $interval only if tenant is valid
-      if (selectedTenant && selectedTenant.length > 0 && $scope.refresh) {
-        intervalRef = $interval(updateDashboard, PING_INTERVAL);
+      if (selectedTenant && selectedTenant.length > 0) {
+        if ($scope.refresh) {
+          intervalRef = $interval(updateDashboard, PING_INTERVAL);
+        } else {
+          updateDashboard();
+        }
       }
     });
 
@@ -416,19 +476,78 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         if (selectedTenant && selectedTenant.length > 0) {
           intervalRef = $interval(updateDashboard, PING_INTERVAL);
         }
+        $scope.timelineEvents = [];
         $scope.refresh = true;
       }
     };
 
     $scope.linkAlerts = function (statusFilter, severityFilter) {
-      filterService.alertFilter.severity = severityFilter;
-      filterService.alertFilter.status = statusFilter;
+      // note, range filter is global
+      if (! (statusFilter && statusFilter.length > 0 )) {
+        statusFilter = 'All Status';
+      }
+      if (! (severityFilter && severityFilter.length > 0 )) {
+        severityFilter = 'All Severity';
+      }
+      $scope.filter.alert.severity = severityFilter;
+      $scope.filter.alert.status = statusFilter;
+      $scope.filter.alert.tagQuery = null;
       $location.url("/alerts");
     };
 
     $scope.linkEvents = function() {
-      // TODO [lponce] in future iterations dashboard filters can be propagated into events, too
+      // note, range filter is global
+      $scope.filter.event.tagQuery = null;
       $location.url("/events");
     };
+
+    $scope.updateRange = function(range) {
+      switch ( range ) {
+      case '30m' :
+        $scope.filter.range.offset = 30;
+        $scope.filter.range.unit = 'Minutes';
+        break;
+      case '1h' :
+        $scope.filter.range.offset = 1;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '4h' :
+        $scope.filter.range.offset = 4;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '8h' :
+        $scope.filter.range.offset = 8;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '12h' :
+        $scope.filter.range.offset = 12;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '1d' :
+        $scope.filter.range.offset = 1;
+        $scope.filter.range.unit = 'Days';
+        break;
+      case '7d' :
+        $scope.filter.range.offset = 7;
+        $scope.filter.range.unit = 'Days';
+        break;
+      case '30d' :
+        $scope.filter.range.offset = 30;
+        $scope.filter.range.unit = 'Days';
+        break;
+      default :
+        console.log("Unsupported Range: " + range);
+      }
+      $scope.filter.range.datetime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
+      $scope.filter.range.direction = 'Before';
+
+      updateDashboard();
+    };
+
+    // this is here because the datetimepicker seems unable to handle standard ng-model binding.  See
+    // https://stackoverflow.com/questions/19316937/how-to-bind-bootstrap-datepicker-element-with-angularjs-ng-model
+    $("#datetime").on("dp.change", function (e) {
+      $scope.filter.range.datetime = $("#currentdatetime").val(); // pure magic
+    });
   }
 ]);

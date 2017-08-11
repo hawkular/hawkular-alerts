@@ -2,8 +2,8 @@ angular.module('hwk.dashboardModule').service('hwk.dashboardService', ['$resourc
   function ($resource, $rootScope) {
     'use strict';
 
-    this.Alert = function (tenantId) {
-      return $resource($rootScope.appConfig.server.baseUrl, {}, {
+    this.Alert = function (tenantId, alertsCriteria) {
+      return $resource($rootScope.appConfig.server.baseUrl, alertsCriteria, {
         query: {
           method: 'GET',
           isArray: true,
@@ -12,8 +12,8 @@ angular.module('hwk.dashboardModule').service('hwk.dashboardService', ['$resourc
       });
     };
 
-    this.Event = function (tenantId) {
-      return $resource($rootScope.appConfig.server.baseUrl + '/events', {eventType: 'EVENT'}, {
+    this.Event = function (tenantId, eventsCriteria) {
+      return $resource($rootScope.appConfig.server.baseUrl + '/events', eventsCriteria, {
         query: {
           method: 'GET',
           isArray: true,

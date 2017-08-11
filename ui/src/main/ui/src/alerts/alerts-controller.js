@@ -5,7 +5,6 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
     $scope.filter = {
       'range': filterService.rangeFilter,
       'alert': filterService.alertFilter,
-      'tag': filterService.tagFilter
     };
 
     $scope.lifecycleModal = {
@@ -141,8 +140,8 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
           alertsCriteria.startTime = start;
           alertsCriteria.endTime = end;
         }
-        if ( $scope.filter.tag.tagQuery && $scope.filter.tag.tagQuery.length > 0 ) {
-          alertsCriteria.tags = $scope.filter.tag.tagQuery;
+        if ( $scope.filter.alert.tagQuery && $scope.filter.alert.tagQuery.length > 0 ) {
+          alertsCriteria.tags = $scope.filter.alert.tagQuery;
         }
         if ( $scope.filter.alert.severity && $scope.filter.alert.severity !== 'All Severity' ) {
           alertsCriteria.severities = $scope.filter.alert.severity.toUpperCase();

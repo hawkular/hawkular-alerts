@@ -8,13 +8,41 @@
     <div class="row toolbar-pf" ng-hide="selectedTenant == null || selectedTenant == ''">
       <div class="col-md-12">
         <form class="toolbar-pf-actions">
-          <div class="form-group" ng-style="{'width':'40%'}">
-            <div>Date Range</div>
-            <div class="input-group input-daterange">
-              <input id="start" type="date" class="form-control bootstrap-datepicker" ng-model="filter.date.start" ng-change="updateFilter()" readonly />
-              <div class="input-group-addon">to</div>
-              <input id="end" type="date" class="form-control  bootstrap-datepicker" ng-model="filter.date.end" ng-change="updateFilter()" readonly />
+          <div class="btn-group toolbar-pf-filter pull-left" ng-style="{'width':'275px'}">
+            <button type="button" class="btn btn-default" ng-click="updateRange('30m')">30m</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('1h')">1h</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('4h')">4h</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('8h')">8h</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('12h')">12h</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('1d')">1d</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('7d')">7d</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('30d')">30d</button>
+          </div>
+          <div class="btn-group toolbar-pf-filter pull-left" ng-style="{'width':'100px'}">
+            <button type="button" class="btn btn-default" ng-click="updateFilter()">Set Range To:</button>
+          </div>
+          <div class="form-group toolbar-pf-filter" ng-style="{'width':'100px', 'padding-right':'0px'}">
+            <div class="input-group input-touchspin">
+              <input class="bootstrap-touchspin" type="text" id="offset" ng-model="filter.range.offset" />
             </div>
+          </div>
+          <div class="form-group toolbar-pf-filter" ng-style="{'width':'75px', 'padding-right':'0px'}">
+            <div class="input-group" >
+              <select class="btn btn-default form-control" id="filter.range.unit" ng-options="opt as opt for opt in filter.range.unitOptions" ng-model="filter.range.unit"></select>
+            </div>
+          </div>
+          <div class="form-group toolbar-pf-filter" ng-style="{'width':'75px', 'padding-right':'0px'}">
+            <div class="input-group">
+              <select class="btn btn-default form-control" id="filter.range.direction" ng-options="opt as opt for opt in filter.range.directionOptions" ng-model="filter.range.direction"></select>
+            </div>
+          </div>
+          <div class="form-group toolbar-pf-filter" ng-style="{'width':'220px'}">
+            <div class='input-group date' id="datetime" >
+              <input type='text' class="form-control" ng-model="filter.range.datetime" id="currentdatetime" name="currentdatetime"/>
+               <div class="input-group-addon btn btn-default">
+                 <span class="fa fa-calendar"></span>
+               </div>
+             </div>
           </div>
         </form>
       </div>
@@ -35,7 +63,7 @@
                   <li class="selected"><a href="#/events">Tag Query</a></li>
                 </ul>
               </div>
-              <input type="text" class="form-control" ng-model="filter.tag.tagQuery" id="filter.tag.tagQuery" placeholder="Filter By Tag Query..." />
+              <input type="text" class="form-control" ng-model="filter.event.tagQuery" id="filter.event.tagQuery" placeholder="Filter By Tag Query..." />
             </div>
           </div>
           <div class="form-group">
@@ -172,17 +200,25 @@
 </div>
 
 <script>
-  // Initialize Boostrap-datepicker
-  $('#start').datepicker({
-    format: 'yyyy-mm-dd', // required to be declared like this
-    autoclose: true,
-    todayBtn: 'linked',
-    todayHighlight: true
+  $('#offset').TouchSpin({
+    initval: 1
   });
-  $('#end').datepicker({
-    format: 'yyyy-mm-dd', // required to be declared like this
-    autoclose: true,
-    todayBtn: 'linked',
-    todayHighlight: true
+  $('#datetime').datetimepicker({
+    format: 'YYYY-MM-DD HH:mm:ss',
+    showTodayButton: true,
+    showClose: true,
+    icons: {
+      date: 'fa fa-calendar',
+      time: 'fa fa-clock-o',
+      up: 'fa fa-arrow-up',
+      down: 'fa fa-arrow-down',
+      previous: 'fa fa-arrow-left',
+      next: 'fa fa-arrow-right',
+      today: 'pficon pficon-home',
+      close: 'fa fa-close'
+    },
+    tooltips: {
+      today: 'Reset to Now',
+    }
   });
 </script>

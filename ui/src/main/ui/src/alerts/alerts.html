@@ -3,7 +3,7 @@
 
   <div class="row row-cards-pf" ng-hide="selectedTenant == null || selectedTenant == ''">
 
-    <!-- Toolbar Time Window -->
+    <!-- Toolbar Datetime Range-->
 
     <div class="row toolbar-pf" ng-hide="selectedTenant == null || selectedTenant == ''">
       <div class="col-md-12">
@@ -63,7 +63,7 @@
                   <li class="selected"><a href="#/alerts">Tag Query</a></li>
                 </ul>
               </div>
-              <input type="text" class="form-control" ng-model="filter.tag.tagQuery" id="filter.tag.tagQuery" placeholder="Filter By Tag Query..." />
+              <input type="text" class="form-control" ng-model="filter.alert.tagQuery" id="filter.alert.tagQuery" placeholder="Filter By Tag Query..." />
             </div>
           </div>
           <div class="form-group toolbar-pf-filter" ng-style="{'width':'220px'}">

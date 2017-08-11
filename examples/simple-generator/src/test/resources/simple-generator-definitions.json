@@ -69,7 +69,10 @@
         "name": "Simple Generator Trigger CRITICAL",
         "description": "A trigger for CRITICAL Severity alerts",
         "severity": "CRITICAL",
-        "enabled": true
+        "enabled": true,
+        "tags": {
+          "priority": "urgent"
+        }
       },
       "conditions":[
         {
@@ -78,6 +81,28 @@
           "dataId": "data-x",
           "operator": "GTE",
           "threshold": 10
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "simple-generator-trigger-event",
+        "name": "Simple Generator Trigger EVENT",
+        "description": "A trigger for EVENTS",
+        "eventType": "EVENT",
+        "eventText": "A 0-Level data-x has been generated",
+        "enabled": true,
+        "tags": {
+          "priority": "optional"
+        }
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "data-x",
+          "operator": "LTE",
+          "threshold": 0
         }
       ]
     }

@@ -4,7 +4,7 @@ angular.module('hwk.appModule').service('hwk.filterService', ['$rootScope',
 
     this.rangeFilter = {
       datetime: moment(new Date()).format('YYYY-MM-DD HH:mm:ss'),
-      offset: 1,
+      offset: 4,
       unit: 'Hours',
       unitOptions: ['Minutes', 'Hours', 'Days'],
       direction: 'Before',
@@ -16,9 +16,10 @@ angular.module('hwk.appModule').service('hwk.filterService', ['$rootScope',
       severityOptions: ['All Severity', 'Low', 'Medium', 'High', 'Critical'],
       status: 'All Status',
       statusOptions: ['All Status', 'Open', 'Acknowledged', 'Resolved'],
+      tagQuery: null
     };
 
-    this.tagFilter = {
+    this.eventFilter = {
       tagQuery: null
     };
 

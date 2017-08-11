@@ -3,8 +3,8 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
     'use strict';
 
     $scope.filter = {
-      'date': filterService.dateFilter,
-      'tag': filterService.tagFilter
+      'range': filterService.rangeFilter,
+      'event': filterService.eventFilter
     };
 
     $scope.lifecycleModal = {
@@ -43,21 +43,43 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
     var updateEvents = function () {
       if (selectedTenant && selectedTenant.length > 0) {
         var eventsCriteria = {
-          'thin': false,   // TODO: we need to add this, we should not initially fetch fat alerts
+          'thin': false,   // TODO: we need to add this, we should not initially fetch fat events
           'eventType': 'EVENT'
         };
-        if ( $scope.filter.date.start ) {
-          var startTime = $scope.filter.date.start;
-          startTime.setHours(0,0,0,0);
-          eventsCriteria.startTime = startTime.getTime();
+        if ( $scope.filter.range.datetime ) {
+          var offset = $scope.filter.range.offset;
+          var start;
+          var end;
+          switch ( $scope.filter.range.unit ) {
+          case 'Minutes' :
+            offset *= (60 * 1000);
+            break;
+          case 'Hours' :
+            offset *= (60 * 60 * 1000);
+            break;
+          case 'Days' :
+            offset *= (60 * 60 * 24 * 1000);
+            break;
+          default :
+            console.log("Unsupported unit: " + $scope.filter.range.unit);
+          }
+          switch ( $scope.filter.range.direction ) {
+          case 'After' :
+            start = new Date($scope.filter.range.datetime).getTime();
+            end = start + offset;
+            break;
+          case 'Before':
+            end = new Date($scope.filter.range.datetime).getTime();
+            start = end - offset;
+            break;
+          default :
+            console.log("Unsupported direction: " + $scope.filter.range.direction);
+          }
+          eventsCriteria.startTime = start;
+          eventsCriteria.endTime = end;
         }
-        if ( $scope.filter.date.end ) {
-          var endTime = $scope.filter.date.end;
-          endTime.setHours(23,59,59,999);
-          eventsCriteria.endTime = endTime.getTime();
-        }
-        if ( $scope.filter.tag.tagQuery && $scope.filter.tag.tagQuery.length > 0 ) {
-          eventsCriteria.tags = $scope.filter.tag.tagQuery;
+        if ( $scope.filter.event.tagQuery && $scope.filter.event.tagQuery.length > 0 ) {
+          eventsCriteria.tags = $scope.filter.event.tagQuery;
         }
 
         var eventsPromise = eventsService.Query($rootScope.selectedTenant, eventsCriteria).query();
@@ -135,5 +157,54 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
     $scope.updateFilter = function() {
       updateEvents();
     };
+
+    $scope.updateRange = function(range) {
+      switch ( range ) {
+      case '30m' :
+        $scope.filter.range.offset = 30;
+        $scope.filter.range.unit = 'Minutes';
+        break;
+      case '1h' :
+        $scope.filter.range.offset = 1;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '4h' :
+        $scope.filter.range.offset = 4;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '8h' :
+        $scope.filter.range.offset = 8;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '12h' :
+        $scope.filter.range.offset = 12;
+        $scope.filter.range.unit = 'Hours';
+        break;
+      case '1d' :
+        $scope.filter.range.offset = 1;
+        $scope.filter.range.unit = 'Days';
+        break;
+      case '7d' :
+        $scope.filter.range.offset = 7;
+        $scope.filter.range.unit = 'Days';
+        break;
+      case '30d' :
+        $scope.filter.range.offset = 30;
+        $scope.filter.range.unit = 'Days';
+        break;
+      default :
+        console.log("Unsupported Range: " + range);
+      }
+      $scope.filter.range.datetime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
+      $scope.filter.range.direction = 'Before';
+
+      updateEvents();
+    };
+
+    // this is here because the datetimepicker seems unable to handle standard ng-model binding.  See
+    // https://stackoverflow.com/questions/19316937/how-to-bind-bootstrap-datepicker-element-with-angularjs-ng-model
+    $("#datetime").on("dp.change", function (e) {
+      $scope.filter.range.datetime = $("#currentdatetime").val(); // pure magic
+    });
   }
 ]);
