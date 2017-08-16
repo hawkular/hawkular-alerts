@@ -1,10 +1,20 @@
 angular.module('hwk.actionsModule')
-  .controller( 'hwk.actionsController', ['$scope', '$rootScope', '$q', '$modal', 'hwk.actionsService',
-  function ($scope, $rootScope, $q, $modal, actionsService) {
+  .controller( 'hwk.actionsController', ['$scope', '$rootScope', '$q', '$modal', 'hwk.actionsService', 'Notifications',
+  function ($scope, $rootScope, $q, $modal, actionsService, Notifications) {
     'use strict';
 
     console.log("[Actions] Start: " + new Date());
     console.log("[Actions] $rootScope.selectedTenant " + $rootScope.selectedTenant);
+
+    var toastError = function (reason) {
+      console.log('[Actions] Backend error ' + new Date());
+      console.log(reason);
+      var errorMsg = new Date() + " Status [" + reason.status + "] " + reason.statusText;
+      if (reason.status === -1) {
+        errorMsg = new Date() + " Hawkular Alerting is not responding. Please review browser console for further details";
+      }
+      Notifications.error(errorMsg);
+    };
 
     $scope.plugins = [];
     $scope.actions = [];
@@ -35,10 +45,10 @@ angular.module('hwk.actionsModule')
           filter: "All Plugins" // set as default
         };
         for (var i = 0; i < $scope.plugins.length; i++) {
-          console.log("$scope.plugins[i]=" + $scope.plugins[i]);
+          console.log("[Action Plugins] $scope.plugins[i]=" + $scope.plugins[i]);
           $scope.pluginsFilter.options.push( $scope.plugins[i] );
         }
-      });
+      }, toastError);
     };
 
     /*
@@ -79,8 +89,8 @@ angular.module('hwk.actionsModule')
           }
           console.log(resultActionDefinitions);
           console.log($scope.actions);
-        });
-      });
+        }, toastError);
+      }, toastError);
     };
 
     var updateFilteredActionDefinitions = function (pluginFilter) {
@@ -103,8 +113,8 @@ angular.module('hwk.actionsModule')
           }
           console.log(resultActionDefinitions);
           console.log($scope.actions);
-        });
-      });
+        }, toastError);
+      }, toastError);
     };
 
     var watchRef = $rootScope.$watch('selectedTenant', function (newTenant, oldTenant) {
@@ -132,9 +142,9 @@ angular.module('hwk.actionsModule')
             var promise1 = actionsService.NewActionDefinition(selectedTenant).save($scope.jsonModal.json);
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("newActionDefinitionResult=" + result);
+              console.log("[Actions] newActionDefinitionResult=" + result);
               updateActionDefinitions();
-            });
+            }, toastError);
           };
           $scope.cancel = function () {
             $modalInstance.dismiss('cancel');
@@ -190,9 +200,9 @@ angular.module('hwk.actionsModule')
             var promise1 = actionsService.UpdateActionDefinition(selectedTenant).update($scope.jsonModal.json);
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("updateActionDefinitionResult=" + result);
+              console.log("[Actions] updateActionDefinitionResult=" + result);
               updateActionDefinitions();
-            });
+            }, toastError);
           };
           $scope.cancel = function () {
             $modalInstance.dismiss('cancel');
@@ -214,9 +224,9 @@ angular.module('hwk.actionsModule')
         var promise1 = actionsService.RemoveActionDefinition(selectedTenant, actionPlugin, actionId).remove();
 
         $q.all([promise1.$promise]).then(function (result) {
-          console.log("deleteActionDefinitionResult=" + result);
+          console.log("[Actions] deleteActionDefinitionResult=" + result);
           updateActionDefinitions();
-        });
+        }, toastError);
       }
     };
 

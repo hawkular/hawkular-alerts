@@ -6,13 +6,14 @@ angular.module ('hwk.appModule', [
   'patternfly',
   'patternfly.toolbars',
   'patternfly.charts',
+  'patternfly.notification',
   'hwk.dashboardModule',
   'hwk.triggersModule',
   'hwk.actionsModule',
   'hwk.alertsModule',
   'hwk.eventsModule'
-]).config(['$routeProvider', '$translateProvider',
-  function ($routeProvider, $translateProvider) {
+]).config(['$routeProvider', '$translateProvider', 'NotificationsProvider',
+  function ($routeProvider, $translateProvider, NotificationsProvider) {
     'use strict';
 
     $routeProvider
@@ -41,5 +42,7 @@ angular.module ('hwk.appModule', [
 
     $translateProvider.translations('default', 'en');
     $translateProvider.preferredLanguage('default');
+
+    NotificationsProvider.setDelay(10000).setVerbose(false).setPersist({'error': true, 'httpError': true, 'warn': true});
   }
 ]);

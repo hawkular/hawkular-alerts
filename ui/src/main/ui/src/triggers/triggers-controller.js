@@ -9,12 +9,22 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
     return [];
   };
 })
-.controller( 'hwk.triggersController', ['$scope', '$rootScope', '$q', '$modal', 'hwk.triggersService',
-  function ($scope, $rootScope, $q, $modal, triggersService) {
+.controller( 'hwk.triggersController', ['$scope', '$rootScope', '$q', '$modal', 'hwk.triggersService', 'Notifications',
+  function ($scope, $rootScope, $q, $modal, triggersService, Notifications) {
     'use strict';
 
     console.log("[Triggers] Start: " + new Date());
     console.log("[Triggers] $rootScope.selectedTenant " + $rootScope.selectedTenant);
+
+    var toastError = function (reason) {
+      console.log('[Triggers] Backend error ' + new Date());
+      console.log(reason);
+      var errorMsg = new Date() + " Status [" + reason.status + "] " + reason.statusText;
+      if (reason.status === -1) {
+        errorMsg = new Date() + " Hawkular Alerting is not responding. Please review browser console for further details";
+      }
+      Notifications.error(errorMsg);
+    };
 
     $scope.pageSize = 10;
     $scope.triggers = [];
@@ -58,9 +68,9 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
           $scope.pageNumber = 1;
           $scope.fromItem = ($scope.pageNumber - 1) * $scope.pageSize;
           $scope.toItem = ($scope.pageNumber * $scope.pageSize) < $scope.numTotalItems ? ($scope.pageNumber * $scope.pageSize) : $scope.numTotalItems;
-        });
+        }, toastError);
 
-      });
+      }, toastError);
     };
 
     var pageSizeRef = $scope.$watch('pageSize', function (newPageSize, oldPageSize) {
@@ -116,9 +126,9 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
             var promise1 = triggersService.NewTrigger(selectedTenant).save($scope.jsonModal.json);
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("newTriggerResult=" + result);
+              console.log("[Triggers] newTriggerResult=" + result);
               updateTriggers();
-            });
+            }, toastError);
           };
           $scope.cancel = function () {
             $modalInstance.dismiss('cancel');
@@ -174,9 +184,9 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
             var promise1 = triggersService.UpdateTrigger(selectedTenant, triggerId).update($scope.jsonModal.json);
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("updateTriggerResult=" + result);
+              console.log("[Triggers] updateTriggerResult=" + result);
               updateTriggers();
-            });
+            }, toastError);
           };
           $scope.cancel = function () {
             $modalInstance.dismiss('cancel');
@@ -198,9 +208,9 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
         var promise1 = triggersService.RemoveTrigger(selectedTenant, triggerId).remove();
 
         $q.all([promise1.$promise]).then(function (result) {
-          console.log("deleteTriggerResult=" + result);
+          console.log("[Triggers] deleteTriggerResult=" + result);
           updateTriggers();
-        });
+        }, toastError);
       }
     };
 
@@ -209,9 +219,9 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
         var promise1 = triggersService.EnableTriggers(selectedTenant, triggerIds, enabled).update();
 
         $q.all([promise1.$promise]).then(function (result) {
-          console.log("enableTriggersResult=" + result);
+          console.log("[Triggers] enableTriggersResult=" + result);
           updateTriggers();
-        });
+        }, toastError);
       }
     };
 

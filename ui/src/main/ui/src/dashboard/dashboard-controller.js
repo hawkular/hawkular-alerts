@@ -1,5 +1,5 @@
-angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$scope', '$rootScope', '$resource', '$window', '$location', '$interval', '$q', 'hwk.dashboardService', 'hwk.filterService',
-  function ($scope, $rootScope, $resource, $window, $location, $interval, $q, dashboardService, filterService) {
+angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$scope', '$rootScope', '$resource', '$window', '$location', '$interval', '$q', 'hwk.dashboardService', 'hwk.filterService', 'Notifications',
+  function ($scope, $rootScope, $resource, $window, $location, $interval, $q, dashboardService, filterService, Notifications) {
     'use strict';
 
     console.log("[Dashboard] Start: " + new Date());
@@ -67,6 +67,16 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         $.pfPaletteColors.cyan, // Medium
         $.pfPaletteColors.blue // Low
       ]
+    };
+
+    var toastError = function (reason) {
+      console.log('[Dashboard] Backend error ' + new Date());
+      console.log(reason);
+      var errorMsg = new Date() + " Status [" + reason.status + "] " + reason.statusText;
+      if (reason.status === -1) {
+        errorMsg = new Date() + " Hawkular Alerting is not responding. Please review browser console for further details";
+      }
+      Notifications.error(errorMsg);
     };
 
     function countEventSections(event) {
@@ -143,7 +153,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
           }
           $scope.timelineEvents[i].eventSections = countEventSections($scope.timelineEvents[i]);
         }
-      });
+      }, toastError);
     };
 
     var timeline;
@@ -259,7 +269,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
           offset *= (60 * 60 * 24 * 1000);
           break;
         default :
-          console.log("Unsupported unit: " + $scope.filter.range.unit);
+          console.log("[Dashboard] Unsupported unit: " + $scope.filter.range.unit);
         }
         switch ( $scope.filter.range.direction ) {
         case 'After' :
@@ -271,7 +281,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
           start = end - offset;
           break;
         default :
-          console.log("Unsupported direction: " + $scope.filter.range.direction);
+          console.log("[Dashboard] Unsupported direction: " + $scope.filter.range.direction);
         }
         alertsCriteria.startTime = start;
         alertsCriteria.endTime = end;
@@ -415,7 +425,8 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
           .eventGrouping(ONE_SECOND);
         element = d3.select('#pf-timeline').append('div').datum(dataTimeline);
         timeline(element);
-      });
+
+      }, toastError);
 
     };
 
@@ -537,7 +548,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         $scope.filter.range.unit = 'Days';
         break;
       default :
-        console.log("Unsupported Range: " + range);
+        console.log("[Dashboard] Unsupported Range: " + range);
       }
       $scope.filter.range.datetime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
       $scope.filter.range.direction = 'Before';

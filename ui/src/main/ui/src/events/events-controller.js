@@ -1,5 +1,5 @@
-angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope', '$rootScope', '$resource', '$location', '$window', '$interval', '$q', '$modal', 'hwk.eventsService', 'hwk.filterService',
-  function ($scope, $rootScope, $resource, $location, $window, $interval, $q, $modal, eventsService, filterService) {
+angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope', '$rootScope', '$resource', '$location', '$window', '$interval', '$q', '$modal', 'hwk.eventsService', 'hwk.filterService', 'Notifications',
+  function ($scope, $rootScope, $resource, $location, $window, $interval, $q, $modal, eventsService, filterService, Notifications) {
     'use strict';
 
     $scope.filter = {
@@ -17,6 +17,16 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
     var selectedTenant = $rootScope.selectedTenant;
 
     console.log("[Events] $rootScope.selectedTenant " + selectedTenant);
+
+    var toastError = function (reason) {
+      console.log('[Events] Backend error ' + new Date());
+      console.log(reason);
+      var errorMsg = new Date() + " Status [" + reason.status + "] " + reason.statusText;
+      if (reason.status === -1) {
+        errorMsg = new Date() + " Hawkular Alerting is not responding. Please review browser console for further details";
+      }
+      Notifications.error(errorMsg);
+    };
 
     var watchRef = $rootScope.$watch('selectedTenant', function (newTenant, oldTenant) {
       selectedTenant = newTenant;
@@ -56,9 +66,7 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
       var eventsPromise = eventsService.Purge($rootScope.selectedTenant, eventsCriteria).update();
       $q.all([eventsPromise.$promise]).then(function(results) {
         updateEvents();
-      }, function(err) {
-        console.log("[Events] deleteEvent(" + eventId + ") failed: " + err);
-      });
+      }, toastError);
     };
 
     var updateEvents = function () {
@@ -82,7 +90,7 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
             offset *= (60 * 60 * 24 * 1000);
             break;
           default :
-            console.log("Unsupported unit: " + $scope.filter.range.unit);
+            console.log("[Events] Unsupported unit: " + $scope.filter.range.unit);
           }
           switch ( $scope.filter.range.direction ) {
           case 'After' :
@@ -94,7 +102,7 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
             start = end - offset;
             break;
           default :
-            console.log("Unsupported direction: " + $scope.filter.range.direction);
+            console.log("[Events] Unsupported direction: " + $scope.filter.range.direction);
           }
           eventsCriteria.startTime = start;
           eventsCriteria.endTime = end;
@@ -107,9 +115,7 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
         $q.all([eventsPromise.$promise]).then(function(results) {
           $scope.eventsList = results[0];
           console.log("[Events] Events query returned [" + $scope.eventsList.length + "] events");
-        }, function(err) {
-          console.log("[Events] Events query failed: " + err);
-        });
+        }, toastError);
       }
     };
 
@@ -214,7 +220,7 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
         $scope.filter.range.unit = 'Days';
         break;
       default :
-        console.log("Unsupported Range: " + range);
+        console.log("[Events] Unsupported Range: " + range);
       }
       $scope.filter.range.datetime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
       $scope.filter.range.direction = 'Before';

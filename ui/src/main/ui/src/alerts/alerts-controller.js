@@ -1,5 +1,5 @@
-angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope', '$rootScope', '$resource', '$location', '$window', '$interval', '$q', '$modal', 'hwk.alertsService', 'hwk.filterService',
-  function ($scope, $rootScope, $resource, $location, $window, $interval, $q, $modal, alertsService, filterService) {
+angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope', '$rootScope', '$resource', '$location', '$window', '$interval', '$q', '$modal', 'hwk.alertsService', 'hwk.filterService', 'Notifications',
+  function ($scope, $rootScope, $resource, $location, $window, $interval, $q, $modal, alertsService, filterService, Notifications) {
     'use strict';
 
     $scope.filter = {
@@ -26,6 +26,16 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
     var selectedTenant = $rootScope.selectedTenant;
 
     console.log("[Alerts] $rootScope.selectedTenant " + selectedTenant);
+
+    var toastError = function (reason) {
+      console.log('[Alerts] Backend error ' + new Date());
+      console.log(reason);
+      var errorMsg = new Date() + " Status [" + reason.status + "] " + reason.statusText;
+      if (reason.status === -1) {
+        errorMsg = new Date() + " Hawkular Alerting is not responding. Please review browser console for further details";
+      }
+      Notifications.error(errorMsg);
+    };
 
     var watchRef = $rootScope.$watch('selectedTenant', function (newTenant, oldTenant) {
       selectedTenant = newTenant;
@@ -70,9 +80,9 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
             }
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("Result[" + lifecycleModal.state + "]=" + result);
+              console.log("[Alerts] Result[" + lifecycleModal.state + "]=" + result);
               updateAlerts();
-            });
+            }, toastError);
           };
           $scope.cancel = function () {
             $modalInstance.dismiss('cancel');
@@ -112,9 +122,9 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
             var promise1 = alertsService.Note(selectedTenant, alertId, lifecycleModal.user, lifecycleModal.notes).update();
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("Result[" + lifecycleModal.state + "]=" + result);
+              console.log("[Alerts] Result[" + lifecycleModal.state + "]=" + result);
               updateAlerts();
-            });
+            }, toastError);
           };
           $scope.cancel = function () {
             $modalInstance.dismiss('cancel');
@@ -147,9 +157,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
       var alertsPromise = alertsService.Purge($rootScope.selectedTenant, alertsCriteria).update();
       $q.all([alertsPromise.$promise]).then(function(results) {
         updateAlerts();
-      }, function(err) {
-        console.log("[Alerts] deleteAlert(" + alertId + ") failed: " + err);
-      });
+      }, toastError);
     };
 
     $scope.viewAlert = function(alert) {
@@ -195,7 +203,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
             offset *= (60 * 60 * 24 * 1000);
             break;
           default :
-            console.log("Unsupported unit: " + $scope.filter.range.unit);
+            console.log("[Alerts] Unsupported unit: " + $scope.filter.range.unit);
           }
           switch ( $scope.filter.range.direction ) {
           case 'After' :
@@ -207,7 +215,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
             start = end - offset;
             break;
           default :
-            console.log("Unsupported direction: " + $scope.filter.range.direction);
+            console.log("[Alerts] Unsupported direction: " + $scope.filter.range.direction);
           }
           alertsCriteria.startTime = start;
           alertsCriteria.endTime = end;
@@ -226,9 +234,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
         $q.all([alertsPromise.$promise]).then(function(results) {
           $scope.alertsList = results[0];
           console.log("[Alerts] Alerts query returned [" + $scope.alertsList.length + "] alerts");
-        }, function(err) {
-          console.log("[Alerts] Alerts query failed: " + err);
-        });
+        }, toastError);
       }
     };
 
@@ -329,7 +335,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
         $scope.filter.range.unit = 'Days';
         break;
       default :
-        console.log("Unsupported Range: " + range);
+        console.log("[Alerts] Unsupported Range: " + range);
       }
       $scope.filter.range.datetime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
       $scope.filter.range.direction = 'Before';
