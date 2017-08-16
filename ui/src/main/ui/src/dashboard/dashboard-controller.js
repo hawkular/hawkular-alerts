@@ -235,7 +235,8 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         'thin': false   // TODO: we need to add this, we should not initially fetch fat alerts
       };
       var eventsCriteria = {
-        'thin': false   // TODO: we need to add this, we should not initially fetch fat alerts
+        'thin': false,   // TODO: we need to add this, we should not initially fetch fat alerts
+        'eventType': 'EVENT' // In UI, we should not duplicate Alerts and Events
       };
 
       if ( $scope.refresh ) {
