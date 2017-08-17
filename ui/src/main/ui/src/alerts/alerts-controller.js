@@ -25,11 +25,11 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
 
     var selectedTenant = $rootScope.selectedTenant;
 
-    console.log("[Alerts] $rootScope.selectedTenant " + selectedTenant);
+    console.debug("[Alerts] $rootScope.selectedTenant " + selectedTenant);
 
     var toastError = function (reason) {
-      console.log('[Alerts] Backend error ' + new Date());
-      console.log(reason);
+      console.debug('[Alerts] Backend error ' + new Date());
+      console.debug(reason);
       var errorMsg = new Date() + " Status [" + reason.status + "] " + reason.statusText;
       if (reason.status === -1) {
         errorMsg = new Date() + " Hawkular Alerting is not responding. Please review browser console for further details";
@@ -39,7 +39,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
 
     var watchRef = $rootScope.$watch('selectedTenant', function (newTenant, oldTenant) {
       selectedTenant = newTenant;
-      console.log('[Alerts] New Tenant: ' + selectedTenant);
+      console.debug('[Alerts] New Tenant: ' + selectedTenant);
       if (selectedTenant && selectedTenant.length > 0) {
         updateAlerts();
       }
@@ -80,7 +80,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
             }
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("[Alerts] Result[" + lifecycleModal.state + "]=" + result);
+              console.debug("[Alerts] Result[" + lifecycleModal.state + "]=" + result);
               updateAlerts();
             }, toastError);
           };
@@ -122,7 +122,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
             var promise1 = alertsService.Note(selectedTenant, alertId, lifecycleModal.user, lifecycleModal.notes).update();
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("[Alerts] Result[" + lifecycleModal.state + "]=" + result);
+              console.debug("[Alerts] Result[" + lifecycleModal.state + "]=" + result);
               updateAlerts();
             }, toastError);
           };
@@ -203,7 +203,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
             offset *= (60 * 60 * 24 * 1000);
             break;
           default :
-            console.log("[Alerts] Unsupported unit: " + $scope.filter.range.unit);
+            console.debug("[Alerts] Unsupported unit: " + $scope.filter.range.unit);
           }
           switch ( $scope.filter.range.direction ) {
           case 'After' :
@@ -215,7 +215,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
             start = end - offset;
             break;
           default :
-            console.log("[Alerts] Unsupported direction: " + $scope.filter.range.direction);
+            console.debug("[Alerts] Unsupported direction: " + $scope.filter.range.direction);
           }
           alertsCriteria.startTime = start;
           alertsCriteria.endTime = end;
@@ -233,7 +233,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
         var alertsPromise = alertsService.Query($rootScope.selectedTenant, alertsCriteria).query();
         $q.all([alertsPromise.$promise]).then(function(results) {
           $scope.alertsList = results[0];
-          console.log("[Alerts] Alerts query returned [" + $scope.alertsList.length + "] alerts");
+          console.debug("[Alerts] Alerts query returned [" + $scope.alertsList.length + "] alerts");
         }, toastError);
       }
     };
@@ -335,7 +335,7 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
         $scope.filter.range.unit = 'Days';
         break;
       default :
-        console.log("[Alerts] Unsupported Range: " + range);
+        console.debug("[Alerts] Unsupported Range: " + range);
       }
       $scope.filter.range.datetime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
       $scope.filter.range.direction = 'Before';

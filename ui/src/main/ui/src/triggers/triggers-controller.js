@@ -13,12 +13,12 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
   function ($scope, $rootScope, $q, $modal, triggersService, Notifications) {
     'use strict';
 
-    console.log("[Triggers] Start: " + new Date());
-    console.log("[Triggers] $rootScope.selectedTenant " + $rootScope.selectedTenant);
+    console.debug("[Triggers] Start: " + new Date());
+    console.debug("[Triggers] $rootScope.selectedTenant " + $rootScope.selectedTenant);
 
     var toastError = function (reason) {
-      console.log('[Triggers] Backend error ' + new Date());
-      console.log(reason);
+      console.debug('[Triggers] Backend error ' + new Date());
+      console.debug(reason);
       var errorMsg = new Date() + " Status [" + reason.status + "] " + reason.statusText;
       if (reason.status === -1) {
         errorMsg = new Date() + " Hawkular Alerting is not responding. Please review browser console for further details";
@@ -43,10 +43,10 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
     var updateTriggers = function () {
       var promise1;
       if ( $scope.filter.tags && $scope.filter.tags.length > 0 ) {
-        console.log("[Triggers] Updating triggers for " + selectedTenant + " at " + new Date() + " with filter=" + $scope.filter);
+        console.debug("[Triggers] Updating triggers for " + selectedTenant + " at " + new Date() + " with filter=" + $scope.filter);
         promise1 = triggersService.Query(selectedTenant, $scope.filter).query();
       } else {
-        console.log("[Triggers] Updating triggers for " + selectedTenant + " at " + new Date());
+        console.debug("[Triggers] Updating triggers for " + selectedTenant + " at " + new Date());
         promise1 = triggersService.Trigger(selectedTenant).query();
       }
 
@@ -89,7 +89,7 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
 
     var watchRef = $rootScope.$watch('selectedTenant', function (newTenant, oldTenant) {
       selectedTenant = newTenant;
-      console.log('[Triggers] New Tenant: ' + selectedTenant);
+      console.debug('[Triggers] New Tenant: ' + selectedTenant);
       if (selectedTenant && selectedTenant.length > 0) {
         updateTriggers();
       }
@@ -126,7 +126,7 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
             var promise1 = triggersService.NewTrigger(selectedTenant).save($scope.jsonModal.json);
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("[Triggers] newTriggerResult=" + result);
+              console.debug("[Triggers] newTriggerResult=" + result);
               updateTriggers();
             }, toastError);
           };
@@ -184,7 +184,7 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
             var promise1 = triggersService.UpdateTrigger(selectedTenant, triggerId).update($scope.jsonModal.json);
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("[Triggers] updateTriggerResult=" + result);
+              console.debug("[Triggers] updateTriggerResult=" + result);
               updateTriggers();
             }, toastError);
           };
@@ -208,7 +208,7 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
         var promise1 = triggersService.RemoveTrigger(selectedTenant, triggerId).remove();
 
         $q.all([promise1.$promise]).then(function (result) {
-          console.log("[Triggers] deleteTriggerResult=" + result);
+          console.debug("[Triggers] deleteTriggerResult=" + result);
           updateTriggers();
         }, toastError);
       }
@@ -219,7 +219,7 @@ angular.module('hwk.triggersModule').filter('startFrom', function () {
         var promise1 = triggersService.EnableTriggers(selectedTenant, triggerIds, enabled).update();
 
         $q.all([promise1.$promise]).then(function (result) {
-          console.log("[Triggers] enableTriggersResult=" + result);
+          console.debug("[Triggers] enableTriggersResult=" + result);
           updateTriggers();
         }, toastError);
       }

@@ -27,7 +27,7 @@ angular.module('hwk.appModule').controller( 'hwk.appController', ['$scope', '$ro
       + ":"
       + $rootScope.appConfig.server.port
       + "/hawkular/alerts";
-    console.log('[App Config] ' + angular.toJson($rootScope.appConfig));
+    console.debug('[App Config] ' + angular.toJson($rootScope.appConfig));
 
     //
     // Hawkular Alerting Navigation

@@ -3,12 +3,12 @@ angular.module('hwk.actionsModule')
   function ($scope, $rootScope, $q, $modal, actionsService, Notifications) {
     'use strict';
 
-    console.log("[Actions] Start: " + new Date());
-    console.log("[Actions] $rootScope.selectedTenant " + $rootScope.selectedTenant);
+    console.debug("[Actions] Start: " + new Date());
+    console.debug("[Actions] $rootScope.selectedTenant " + $rootScope.selectedTenant);
 
     var toastError = function (reason) {
-      console.log('[Actions] Backend error ' + new Date());
-      console.log(reason);
+      console.debug('[Actions] Backend error ' + new Date());
+      console.debug(reason);
       var errorMsg = new Date() + " Status [" + reason.status + "] " + reason.statusText;
       if (reason.status === -1) {
         errorMsg = new Date() + " Hawkular Alerting is not responding. Please review browser console for further details";
@@ -32,7 +32,7 @@ angular.module('hwk.actionsModule')
     var selectedTenant = $rootScope.selectedTenant;
 
     var updatePlugins = function () {
-      console.log("[Action Plugins] Updating plugins for " + selectedTenant + " at " + new Date());
+      console.debug("[Action Plugins] Updating plugins for " + selectedTenant + " at " + new Date());
 
       // fetch current plugins
       var promise1 = actionsService.Plugins(selectedTenant).get();
@@ -45,7 +45,7 @@ angular.module('hwk.actionsModule')
           filter: "All Plugins" // set as default
         };
         for (var i = 0; i < $scope.plugins.length; i++) {
-          console.log("[Action Plugins] $scope.plugins[i]=" + $scope.plugins[i]);
+          console.debug("[Action Plugins] $scope.plugins[i]=" + $scope.plugins[i]);
           $scope.pluginsFilter.options.push( $scope.plugins[i] );
         }
       }, toastError);
@@ -65,7 +65,7 @@ angular.module('hwk.actionsModule')
         return;
       }
 
-      console.log("[Action Plugins] Updating action defs for " + selectedTenant + " at " + new Date());
+      console.debug("[Action Plugins] Updating action defs for " + selectedTenant + " at " + new Date());
 
       // fetch map of actionPlugin->actionIds, for the tenant
       var promiseMap = actionsService.ActionPluginMap(selectedTenant).get();
@@ -87,14 +87,14 @@ angular.module('hwk.actionsModule')
           for (var i = 0; i < resultActionDefinitions.length; i++) {
             $scope.actions.push(resultActionDefinitions[i]);
           }
-          console.log(resultActionDefinitions);
-          console.log($scope.actions);
+          console.debug(resultActionDefinitions);
+          console.debug($scope.actions);
         }, toastError);
       }, toastError);
     };
 
     var updateFilteredActionDefinitions = function (pluginFilter) {
-      console.log("[Action Plugins] Updating action defs for " + selectedTenant + " at " + new Date()  + " with filter=" + pluginFilter);
+      console.debug("[Action Plugins] Updating action defs for " + selectedTenant + " at " + new Date()  + " with filter=" + pluginFilter);
 
       // fetch the action def ids for the selected plugin
       var promiseIds = actionsService.ActionPluginActionDefinitionIds(selectedTenant, pluginFilter).get();
@@ -111,15 +111,15 @@ angular.module('hwk.actionsModule')
           for (var i = 0; i < resultActionDefinitions.length; i++) {
             $scope.actions.push(resultActionDefinitions[i]);
           }
-          console.log(resultActionDefinitions);
-          console.log($scope.actions);
+          console.debug(resultActionDefinitions);
+          console.debug($scope.actions);
         }, toastError);
       }, toastError);
     };
 
     var watchRef = $rootScope.$watch('selectedTenant', function (newTenant, oldTenant) {
       selectedTenant = newTenant;
-      console.log('[Actions] New Tenant: ' + selectedTenant);
+      console.debug('[Actions] New Tenant: ' + selectedTenant);
       if (selectedTenant && selectedTenant.length > 0) {
         updatePlugins();
         updateActionDefinitions();
@@ -142,7 +142,7 @@ angular.module('hwk.actionsModule')
             var promise1 = actionsService.NewActionDefinition(selectedTenant).save($scope.jsonModal.json);
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("[Actions] newActionDefinitionResult=" + result);
+              console.debug("[Actions] newActionDefinitionResult=" + result);
               updateActionDefinitions();
             }, toastError);
           };
@@ -200,7 +200,7 @@ angular.module('hwk.actionsModule')
             var promise1 = actionsService.UpdateActionDefinition(selectedTenant).update($scope.jsonModal.json);
 
             $q.all([promise1.$promise]).then(function (result) {
-              console.log("[Actions] updateActionDefinitionResult=" + result);
+              console.debug("[Actions] updateActionDefinitionResult=" + result);
               updateActionDefinitions();
             }, toastError);
           };
@@ -224,7 +224,7 @@ angular.module('hwk.actionsModule')
         var promise1 = actionsService.RemoveActionDefinition(selectedTenant, actionPlugin, actionId).remove();
 
         $q.all([promise1.$promise]).then(function (result) {
-          console.log("[Actions] deleteActionDefinitionResult=" + result);
+          console.debug("[Actions] deleteActionDefinitionResult=" + result);
           updateActionDefinitions();
         }, toastError);
       }

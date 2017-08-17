@@ -2,8 +2,8 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
   function ($scope, $rootScope, $resource, $window, $location, $interval, $q, dashboardService, filterService, Notifications) {
     'use strict';
 
-    console.log("[Dashboard] Start: " + new Date());
-    console.log("[Dashboard] $rootScope.selectedTenant " + $rootScope.selectedTenant);
+    console.debug("[Dashboard] Start: " + new Date());
+    console.debug("[Dashboard] $rootScope.selectedTenant " + $rootScope.selectedTenant);
 
     $scope.refresh = true;
 
@@ -70,8 +70,8 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
     };
 
     var toastError = function (reason) {
-      console.log('[Dashboard] Backend error ' + new Date());
-      console.log(reason);
+      console.debug('[Dashboard] Backend error ' + new Date());
+      console.debug(reason);
       var errorMsg = new Date() + " Status [" + reason.status + "] " + reason.statusText;
       if (reason.status === -1) {
         errorMsg = new Date() + " Hawkular Alerting is not responding. Please review browser console for further details";
@@ -231,7 +231,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
     };
 
     var updateDashboard = function () {
-      console.log("[Dashboard] Updating data for " + selectedTenant + " at " + new Date());
+      console.debug("[Dashboard] Updating data for " + selectedTenant + " at " + new Date());
 
       var severity = new Map();
       var alertsByOpenAck = [
@@ -269,7 +269,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
           offset *= (60 * 60 * 24 * 1000);
           break;
         default :
-          console.log("[Dashboard] Unsupported unit: " + $scope.filter.range.unit);
+          console.debug("[Dashboard] Unsupported unit: " + $scope.filter.range.unit);
         }
         switch ( $scope.filter.range.direction ) {
         case 'After' :
@@ -281,7 +281,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
           start = end - offset;
           break;
         default :
-          console.log("[Dashboard] Unsupported direction: " + $scope.filter.range.direction);
+          console.debug("[Dashboard] Unsupported direction: " + $scope.filter.range.direction);
         }
         alertsCriteria.startTime = start;
         alertsCriteria.endTime = end;
@@ -406,8 +406,8 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         });
 
         // prepare timeline
-        console.log('[Dashboard] Update timeline data ' + new Date());
-        // console.log(JSON.stringify(dataTimeline));
+        console.debug('[Dashboard] Update timeline data ' + new Date());
+        // console.debug(JSON.stringify(dataTimeline));
 
         // [lponce] remove objects to re-draw
         d3.select('#pf-timeline').selectAll('div').remove();
@@ -452,7 +452,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
     // Watch for tenant changes
     var watchRef = $rootScope.$watch('selectedTenant', function (newTenant, oldTenant) {
       selectedTenant = newTenant;
-      console.log('[Dashboard] New Tenant: ' + selectedTenant);
+      console.debug('[Dashboard] New Tenant: ' + selectedTenant);
       if (intervalRef) {
         $interval.cancel(intervalRef);
       }
@@ -480,11 +480,11 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
 
     $scope.updateRefresh = function () {
       if ($scope.refresh) {
-        console.log('[Dashboard] Stopping refresh');
+        console.debug('[Dashboard] Stopping refresh');
         $interval.cancel(intervalRef);
         $scope.refresh = false;
       } else {
-        console.log('[Dashboard] Starting refresh');
+        console.debug('[Dashboard] Starting refresh');
         if (selectedTenant && selectedTenant.length > 0) {
           intervalRef = $interval(updateDashboard, PING_INTERVAL);
         }
@@ -548,7 +548,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         $scope.filter.range.unit = 'Days';
         break;
       default :
-        console.log("[Dashboard] Unsupported Range: " + range);
+        console.debug("[Dashboard] Unsupported Range: " + range);
       }
       $scope.filter.range.datetime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
       $scope.filter.range.direction = 'Before';

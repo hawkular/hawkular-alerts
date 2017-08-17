@@ -7,9 +7,9 @@ eventsModule.directive('repeatDone', function($timeout) {
   return {
     restrict: 'A',
     link: function (scope, element, attr) {
-      console.log("[Events] Inside directive " + new Date());
+      console.debug("[Events] Inside directive " + new Date());
       if (scope.$last === true) {
-        console.log("[Events] $last");
+        console.debug("[Events] $last");
         $timeout(function () {
           scope.$emit('ngRepeatDoneEvents');
         }, 0);

@@ -16,11 +16,11 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
 
     var selectedTenant = $rootScope.selectedTenant;
 
-    console.log("[Events] $rootScope.selectedTenant " + selectedTenant);
+    console.debug("[Events] $rootScope.selectedTenant " + selectedTenant);
 
     var toastError = function (reason) {
-      console.log('[Events] Backend error ' + new Date());
-      console.log(reason);
+      console.debug('[Events] Backend error ' + new Date());
+      console.debug(reason);
       var errorMsg = new Date() + " Status [" + reason.status + "] " + reason.statusText;
       if (reason.status === -1) {
         errorMsg = new Date() + " Hawkular Alerting is not responding. Please review browser console for further details";
@@ -30,7 +30,7 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
 
     var watchRef = $rootScope.$watch('selectedTenant', function (newTenant, oldTenant) {
       selectedTenant = newTenant;
-      console.log('[Events] New Tenant: ' + selectedTenant);
+      console.debug('[Events] New Tenant: ' + selectedTenant);
       if (selectedTenant && selectedTenant.length > 0) {
         updateEvents();
       }
@@ -90,7 +90,7 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
             offset *= (60 * 60 * 24 * 1000);
             break;
           default :
-            console.log("[Events] Unsupported unit: " + $scope.filter.range.unit);
+            console.debug("[Events] Unsupported unit: " + $scope.filter.range.unit);
           }
           switch ( $scope.filter.range.direction ) {
           case 'After' :
@@ -102,7 +102,7 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
             start = end - offset;
             break;
           default :
-            console.log("[Events] Unsupported direction: " + $scope.filter.range.direction);
+            console.debug("[Events] Unsupported direction: " + $scope.filter.range.direction);
           }
           eventsCriteria.startTime = start;
           eventsCriteria.endTime = end;
@@ -114,13 +114,13 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
         var eventsPromise = eventsService.Query($rootScope.selectedTenant, eventsCriteria).query();
         $q.all([eventsPromise.$promise]).then(function(results) {
           $scope.eventsList = results[0];
-          console.log("[Events] Events query returned [" + $scope.eventsList.length + "] events");
+          console.debug("[Events] Events query returned [" + $scope.eventsList.length + "] events");
         }, toastError);
       }
     };
 
     $scope.$on('ngRepeatDoneEvents', function(ngRepeatDoneEvent) {
-      console.log("[Events] Inside ngRepeatDone " + new Date());
+      console.debug("[Events] Inside ngRepeatDone " + new Date());
 
       // row checkbox selection
       $("input[type='checkbox']").change(function (e) {
@@ -146,7 +146,7 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
         var $subPanels = $heading.find(".list-group-item-container");
         var index = $heading.find(".list-view-pf-expand").index(this);
 
-        console.log("[Events] Debug text: " + $this.text());
+        console.debug("[Events] Debug text: " + $this.text());
 
         // remove all active status
         $heading.find(".list-view-pf-expand.active").find(".fa-angle-right").removeClass("fa-angle-down")
@@ -220,7 +220,7 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
         $scope.filter.range.unit = 'Days';
         break;
       default :
-        console.log("[Events] Unsupported Range: " + range);
+        console.debug("[Events] Unsupported Range: " + range);
       }
       $scope.filter.range.datetime = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
       $scope.filter.range.direction = 'Before';
