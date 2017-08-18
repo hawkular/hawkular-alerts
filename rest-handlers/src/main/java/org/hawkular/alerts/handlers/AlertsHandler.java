@@ -4,13 +4,17 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hawkular.alerts.api.json.JsonUtil.collectionFromJson;
 import static org.hawkular.alerts.api.json.JsonUtil.toJson;
 import static org.hawkular.alerts.api.util.Util.isEmpty;
+import static org.hawkular.alerts.handlers.util.ResponseUtil.PARAMS_PAGING;
+import static org.hawkular.alerts.handlers.util.ResponseUtil.checkForUnknownQueryParams;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
@@ -38,6 +42,7 @@ public class AlertsHandler implements RestHandler {
     private static final MsgLogger log = MsgLogging.getMsgLogger(AlertsHandler.class);
     private static final String PARAM_START_TIME = "startTime";
     private static final String PARAM_END_TIME = "endTime";
+    private static final String PARAM_ALERT_ID = "alertId";
     private static final String PARAM_ALERT_IDS = "alertIds";
     private static final String PARAM_TRIGGER_IDS = "triggerIds";
     private static final String PARAM_STATUSES = "statuses";
@@ -59,6 +64,34 @@ public class AlertsHandler implements RestHandler {
     private static final String PARAM_THIN = "thin";
     private static final String PARAM_RESOLVED_BY = "resolvedBy";
     private static final String PARAM_RESOLVED_NOTES = "resolvedNotes";
+
+    protected static final String FIND_ALERTS = "findAlerts";
+    protected static final String WATCH_ALERTS = "watchAlerts";
+    private static final String DELETE_ALERTS = "deleteAlerts";
+    protected static final Map<String, Set<String>> queryParamValidationMap = new HashMap<>();
+    static {
+        Collection<String> ALERTS_CRITERIA = Arrays.asList(PARAM_START_TIME,
+                PARAM_END_TIME,
+                PARAM_ALERT_IDS,
+                PARAM_TRIGGER_IDS,
+                PARAM_STATUSES,
+                PARAM_SEVERITIES,
+                PARAM_TAGS,
+                PARAM_TAG_QUERY,
+                PARAM_START_RESOLVED_TIME,
+                PARAM_END_RESOLVED_TIME,
+                PARAM_START_ACK_TIME,
+                PARAM_END_ACK_TIME,
+                PARAM_START_STATUS_TIME,
+                PARAM_END_STATUS_TIME,
+                PARAM_THIN);
+        queryParamValidationMap.put(FIND_ALERTS, new HashSet<>(ALERTS_CRITERIA));
+        queryParamValidationMap.get(FIND_ALERTS).addAll(PARAMS_PAGING);
+        queryParamValidationMap.put(WATCH_ALERTS, new HashSet<>(ALERTS_CRITERIA));
+        queryParamValidationMap.get(WATCH_ALERTS).add(PARAM_WATCH_INTERVAL);
+        queryParamValidationMap.put(DELETE_ALERTS, new HashSet<>(ALERTS_CRITERIA));
+        queryParamValidationMap.get(DELETE_ALERTS).add(PARAM_ALERT_ID);
+    }
 
     AlertsService alertsService;
 
@@ -88,6 +121,7 @@ public class AlertsHandler implements RestHandler {
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
                     try {
+                        checkForUnknownQueryParams(routing.request().params(), queryParamValidationMap.get(FIND_ALERTS));
                         Pager pager = ResponseUtil.extractPaging(routing.request().params());
                         AlertsCriteria criteria = buildCriteria(routing.request().params());
                         Page<Alert> alertPage = alertsService.getAlerts(tenantId, criteria, pager);
@@ -104,6 +138,12 @@ public class AlertsHandler implements RestHandler {
 
     void watchAlerts(RoutingContext routing) {
         String tenantId = ResponseUtil.checkTenant(routing);
+        try {
+            checkForUnknownQueryParams(routing.request().params(), queryParamValidationMap.get(WATCH_ALERTS));
+        } catch (IllegalArgumentException e) {
+            ResponseUtil.badRequest(routing, e.getMessage());
+            return;
+        }
         AlertsCriteria criteria = buildCriteria(routing.request().params());
         Long watchInterval = null;
         if (routing.request().params().get(PARAM_WATCH_INTERVAL) != null) {
@@ -222,10 +262,11 @@ public class AlertsHandler implements RestHandler {
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
                     AlertsCriteria criteria = buildCriteria(routing.request().params());
-                    String alertId = routing.request().getParam("alertId");
+                    String alertId = routing.request().getParam(PARAM_ALERT_ID);
                     criteria.setAlertId(alertId);
                     int numDeleted;
                     try {
+                        checkForUnknownQueryParams(routing.request().params(), queryParamValidationMap.get(DELETE_ALERTS));
                         numDeleted = alertsService.deleteAlerts(tenantId, criteria);
                         log.debugf("Alerts deleted: %s", numDeleted);
                     } catch (IllegalArgumentException e) {
@@ -250,7 +291,7 @@ public class AlertsHandler implements RestHandler {
                     String alertIds = null;
                     String resolvedBy = null;
                     String resolvedNotes = null;
-                    String alertId = routing.request().getParam("alertId");
+                    String alertId = routing.request().getParam(PARAM_ALERT_ID);
                     if (routing.request().params().get(PARAM_ALERT_IDS) != null) {
                         alertIds = routing.request().params().get(PARAM_ALERT_IDS);
                     }

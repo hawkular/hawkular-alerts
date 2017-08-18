@@ -2,6 +2,7 @@ package org.hawkular.alerts.handlers;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.hawkular.alerts.api.json.JsonUtil.toJson;
+import static org.hawkular.alerts.handlers.util.ResponseUtil.checkForUnknownQueryParams;
 
 import java.util.Set;
 
@@ -52,6 +53,7 @@ public class CrossTenantHandler implements RestHandler {
                     String tenantId = ResponseUtil.checkTenant(routing);
                     Set<String> tenantIds = ResponseUtil.getTenants(tenantId);
                     try {
+                        checkForUnknownQueryParams(routing.request().params(), AlertsHandler.queryParamValidationMap.get(AlertsHandler.FIND_ALERTS));
                         Pager pager = ResponseUtil.extractPaging(routing.request().params());
                         AlertsCriteria criteria = AlertsHandler.buildCriteria(routing.request().params());
                         Page<Alert> alertPage = alertsService.getAlerts(tenantIds, criteria, pager);
@@ -72,6 +74,7 @@ public class CrossTenantHandler implements RestHandler {
                     String tenantId = ResponseUtil.checkTenant(routing);
                     Set<String> tenantIds = ResponseUtil.getTenants(tenantId);
                     try {
+                        // TODO checkForUnknownQueryParams(routing.request().params(), EventsHandler.queryParamValidationMap.get(EventsHandler.FIND_EVENTS));
                         Pager pager = ResponseUtil.extractPaging(routing.request().params());
                         EventsCriteria criteria = EventsHandler.buildCriteria(routing.request().params());
                         Page<Event> eventPage = alertsService.getEvents(tenantIds, criteria, pager);
@@ -89,6 +92,12 @@ public class CrossTenantHandler implements RestHandler {
     void watchAlerts(RoutingContext routing) {
         String tenantId = ResponseUtil.checkTenant(routing);
         Set<String> tenantIds = ResponseUtil.getTenants(tenantId);
+        try {
+            checkForUnknownQueryParams(routing.request().params(), AlertsHandler.queryParamValidationMap.get(AlertsHandler.WATCH_ALERTS));
+        } catch (IllegalArgumentException e) {
+            ResponseUtil.badRequest(routing, e.getMessage());
+            return;
+        }
         AlertsCriteria criteria = AlertsHandler.buildCriteria(routing.request().params());
         Long watchInterval = null;
         if (routing.request().params().get(PARAM_WATCH_INTERVAL) != null) {

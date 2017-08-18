@@ -62,7 +62,7 @@ class AlertsITest extends AbstractITestBase {
         assert resp.status == 200 : resp.status
     }
 
-    //@Test reactivate after hNext has query param validation
+    @Test
     void findAlertsUnknownParams() {
         String now = String.valueOf(System.currentTimeMillis());
         def resp = client.get(path: "", query: [

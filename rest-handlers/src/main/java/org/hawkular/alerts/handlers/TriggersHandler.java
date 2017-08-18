@@ -3,6 +3,8 @@ package org.hawkular.alerts.handlers;
 import static org.hawkular.alerts.api.json.JsonUtil.collectionFromJson;
 import static org.hawkular.alerts.api.json.JsonUtil.fromJson;
 import static org.hawkular.alerts.api.util.Util.isEmpty;
+import static org.hawkular.alerts.handlers.util.ResponseUtil.PARAMS_PAGING;
+import static org.hawkular.alerts.handlers.util.ResponseUtil.checkForUnknownQueryParams;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.checkTags;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.checkTenant;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.extractPaging;
@@ -15,6 +17,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.hawkular.alerts.api.exception.NotFoundException;
@@ -57,6 +60,17 @@ public class TriggersHandler implements RestHandler {
     private static final String PARAM_TAGS = "tags";
     private static final String PARAM_THIN = "thin";
     private static final String PARAM_ENABLED = "enabled";
+
+    private static final String FIND_TRIGGERS = "findTriggers";
+    private static final Map<String, Set<String>> queryParamValidationMap = new HashMap<>();
+    static {
+        Collection<String> TRIGGERS_CRITERIA = Arrays.asList(PARAM_TRIGGER_IDS,
+                PARAM_TAGS,
+                PARAM_TRIGGER_IDS,
+                PARAM_THIN);
+        queryParamValidationMap.put(FIND_TRIGGERS, new HashSet<>(TRIGGERS_CRITERIA));
+        queryParamValidationMap.get(FIND_TRIGGERS).addAll(PARAMS_PAGING);
+    }
 
     DefinitionsService definitionsService;
 
@@ -427,6 +441,7 @@ public class TriggersHandler implements RestHandler {
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
                     try {
+                        checkForUnknownQueryParams(routing.request().params(), queryParamValidationMap.get(FIND_TRIGGERS));
                         Pager pager = extractPaging(routing.request().params());
                         TriggersCriteria criteria = buildCriteria(routing.request().params());
                         Page<Trigger> triggerPage = definitionsService.getTriggers(tenantId, criteria, pager);

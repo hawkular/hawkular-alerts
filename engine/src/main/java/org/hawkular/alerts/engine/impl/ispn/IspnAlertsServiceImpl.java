@@ -117,8 +117,11 @@ public class IspnAlertsServiceImpl implements AlertsService {
                         op = tokens.get(1);
                         value = tokens.get(2);
                         boolean isRegexp = value.startsWith("'");
-                        String regexp = value.substring(1, value.length() - 1);
-                        regexp = regexp.equals("*") ? ".*" : regexp;
+                        String regexp = "";
+                        if (isRegexp) {
+                            regexp = value.substring(1, value.length() - 1);
+                            regexp = regexp.equals("*") ? ".*" : regexp;
+                        }
                         if (op.equalsIgnoreCase(EQ)) {
                             // tag =
                             if (isRegexp) {

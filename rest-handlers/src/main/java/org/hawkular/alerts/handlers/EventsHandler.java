@@ -5,13 +5,17 @@ import static org.hawkular.alerts.api.json.JsonUtil.collectionFromJson;
 import static org.hawkular.alerts.api.json.JsonUtil.fromJson;
 import static org.hawkular.alerts.api.json.JsonUtil.toJson;
 import static org.hawkular.alerts.api.util.Util.isEmpty;
+import static org.hawkular.alerts.handlers.util.ResponseUtil.PARAMS_PAGING;
+import static org.hawkular.alerts.handlers.util.ResponseUtil.checkForUnknownQueryParams;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.paging.Page;
@@ -38,6 +42,7 @@ public class EventsHandler implements RestHandler {
     private static final MsgLogger log = MsgLogging.getMsgLogger(EventsHandler.class);
     private static final String PARAM_START_TIME = "startTime";
     private static final String PARAM_END_TIME = "endTime";
+    private static final String PARAM_EVENT_ID = "eventId";
     private static final String PARAM_EVENT_IDS = "eventIds";
     private static final String PARAM_TRIGGER_IDS = "triggerIds";
     private static final String PARAM_CATEGORIES = "categories";
@@ -47,6 +52,28 @@ public class EventsHandler implements RestHandler {
     private static final String PARAM_WATCH_INTERVAL = "watchInterval";
     private static final String PARAM_TAG_NAMES = "tagNames";
     private static final String PARAM_EVENT_TYPE = "eventType";
+
+    protected static final String FIND_EVENTS = "findEvents";
+    protected static final String WATCH_EVENTS = "watchEvents";
+    private static final String DELETE_EVENTS = "deleteEvents";
+    protected static final Map<String, Set<String>> queryParamValidationMap = new HashMap<>();
+    static {
+        Collection<String> EVENTS_CRITERIA = Arrays.asList(PARAM_START_TIME,
+                PARAM_END_TIME,
+                PARAM_EVENT_IDS,
+                PARAM_TRIGGER_IDS,
+                PARAM_CATEGORIES,
+                PARAM_TAGS,
+                PARAM_TAG_QUERY,
+                PARAM_EVENT_TYPE,
+                PARAM_THIN);
+        queryParamValidationMap.put(FIND_EVENTS, new HashSet<>(EVENTS_CRITERIA));
+        queryParamValidationMap.get(FIND_EVENTS).addAll(PARAMS_PAGING);
+        queryParamValidationMap.put(WATCH_EVENTS, new HashSet<>(EVENTS_CRITERIA));
+        queryParamValidationMap.get(WATCH_EVENTS).add(PARAM_WATCH_INTERVAL);
+        queryParamValidationMap.put(DELETE_EVENTS, new HashSet<>(EVENTS_CRITERIA));
+        queryParamValidationMap.get(DELETE_EVENTS).add(PARAM_EVENT_ID);
+    }
 
     AlertsService alertsService;
 
@@ -206,6 +233,7 @@ public class EventsHandler implements RestHandler {
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
                     try {
+                        checkForUnknownQueryParams(routing.request().params(), queryParamValidationMap.get(FIND_EVENTS));
                         Pager pager = ResponseUtil.extractPaging(routing.request().params());
                         EventsCriteria criteria = buildCriteria(routing.request().params());
                         Page<Event> eventPage = alertsService.getEvents(tenantId, criteria, pager);
@@ -222,6 +250,12 @@ public class EventsHandler implements RestHandler {
 
     void watchEvents(RoutingContext routing) {
         String tenantId = ResponseUtil.checkTenant(routing);
+        try {
+            checkForUnknownQueryParams(routing.request().params(), queryParamValidationMap.get(WATCH_EVENTS));
+        } catch (IllegalArgumentException e) {
+            ResponseUtil.badRequest(routing, e.getMessage());
+            return;
+        }
         EventsCriteria criteria = buildCriteria(routing.request().params());
         Long watchInterval = null;
         if (routing.request().params().get(PARAM_WATCH_INTERVAL) != null) {
@@ -250,9 +284,10 @@ public class EventsHandler implements RestHandler {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
-                    String eventId = routing.request().getParam("eventId");
+                    String eventId = routing.request().getParam(PARAM_EVENT_ID);
                     int numDeleted;
                     try {
+                        checkForUnknownQueryParams(routing.request().params(), queryParamValidationMap.get(DELETE_EVENTS));
                         EventsCriteria criteria = buildCriteria(routing.request().params());
                         criteria.setEventId(eventId);
                         numDeleted = alertsService.deleteEvents(tenantId, criteria);
@@ -276,7 +311,7 @@ public class EventsHandler implements RestHandler {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
-                    String eventId = routing.request().getParam("eventId");
+                    String eventId = routing.request().getParam(PARAM_EVENT_ID);
                     boolean thin = false;
                     if (routing.request().params().get(PARAM_THIN) != null) {
                         thin = Boolean.valueOf(routing.request().params().get(PARAM_THIN));

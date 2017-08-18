@@ -2,10 +2,13 @@ package org.hawkular.alerts.handlers;
 
 import static org.hawkular.alerts.api.json.JsonUtil.fromJson;
 import static org.hawkular.alerts.api.util.Util.isEmpty;
+import static org.hawkular.alerts.handlers.util.ResponseUtil.PARAMS_PAGING;
+import static org.hawkular.alerts.handlers.util.ResponseUtil.checkForUnknownQueryParams;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,6 +46,22 @@ public class ActionsHandler implements RestHandler {
     private static final String PARAM_EVENT_IDS = "eventIds";
     private static final String PARAM_RESULTS = "results";
     private static final String COMMA = ",";
+
+    private static final String DELETE_ACTIONS_HISTORY = "deleteActionsHistory";
+    private static final String FIND_ACTIONS_HISTORY = "findActionsHistory";
+    private static final Map<String, Set<String>> queryParamValidationMap = new HashMap<>();
+    static {
+        Collection<String> ACTIONS_CRITERIA = Arrays.asList(PARAM_START_TIME,
+                PARAM_END_TIME,
+                PARAM_ACTION_PLUGINS,
+                PARAM_ACTION_IDS,
+                PARAM_ALERTS_IDS,
+                PARAM_EVENT_IDS,
+                PARAM_RESULTS);
+        queryParamValidationMap.put(FIND_ACTIONS_HISTORY, new HashSet<>(ACTIONS_CRITERIA));
+        queryParamValidationMap.get(FIND_ACTIONS_HISTORY).addAll(PARAMS_PAGING);
+        queryParamValidationMap.put(DELETE_ACTIONS_HISTORY, new HashSet<>(ACTIONS_CRITERIA));
+    }
 
     ActionsService actionsService;
     DefinitionsService definitionsService;
@@ -187,6 +206,7 @@ public class ActionsHandler implements RestHandler {
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
                     try {
+                        checkForUnknownQueryParams(routing.request().params(), queryParamValidationMap.get(FIND_ACTIONS_HISTORY));
                         Pager pager = ResponseUtil.extractPaging(routing.request().params());
                         ActionsCriteria criteria = buildCriteria(routing.request().params());
                         Page<Action> actionPage = actionsService.getActions(tenantId, criteria, pager);
@@ -206,6 +226,7 @@ public class ActionsHandler implements RestHandler {
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
                     try {
+                        checkForUnknownQueryParams(routing.request().params(), queryParamValidationMap.get(DELETE_ACTIONS_HISTORY));
                         ActionsCriteria criteria = buildCriteria(routing.request().params());
                         int numDeleted = actionsService.deleteActions(tenantId, criteria);
                         log.debugf("Actions deleted: %s", numDeleted);

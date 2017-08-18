@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.json.UnorphanMemberInfo;
@@ -41,6 +42,15 @@ public class ResponseUtil {
     public final static String CONTENT_TYPE = "Content-Type";
     public final static String APPLICATION_JSON = "application/json";
     public static final String TENANT_HEADER_NAME = "Hawkular-Tenant";
+    public static final String PARAM_PAGE = "page";
+    public static final String PARAM_PER_PAGE = "per_page";
+    public static final String PARAM_SORT = "sort";
+    public static final String PARAM_ORDER = "order";
+    public static final String PARAM_IGNORE_UNKNOWN_QUERY_PARAMS = "ignoreUnknownQueryParams";
+    public static final Collection<String> PARAMS_PAGING;
+    static {
+        PARAMS_PAGING = Arrays.asList(PARAM_PAGE, PARAM_PER_PAGE, PARAM_SORT, PARAM_ORDER);
+    }
 
     public static class ApiError {
         @JsonInclude
@@ -226,6 +236,19 @@ public class ResponseUtil {
             }
         }
         return tagQuery.toString();
+    }
+
+    public static void checkForUnknownQueryParams(MultiMap params, final Set<String> expected) {
+        if (params.contains(PARAM_IGNORE_UNKNOWN_QUERY_PARAMS)) {
+            return;
+        }
+        Set<String> unknown = params.names().stream()
+                .filter(p -> !expected.contains(p))
+                .collect(Collectors.toSet());
+        if (!unknown.isEmpty()) {
+            String message = "Unknown Query Parameter(s): " + unknown.toString();
+            throw new IllegalArgumentException(message);
+        }
     }
 
     public static boolean checkTags(Event event) {
