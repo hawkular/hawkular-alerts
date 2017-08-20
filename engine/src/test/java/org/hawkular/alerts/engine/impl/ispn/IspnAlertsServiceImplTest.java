@@ -101,52 +101,52 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         String e3 = "tagA  =      'abc'";
         query = new StringBuilder();
         alerts.parseTagQuery(e3, query);
-        assertEquals("('tagA' and (/abc/))", query.toString().trim());
+        assertEquals("(/tagA_abc/)", query.toString().trim());
 
         String e4 = " tagA !=   'abc'";
         query = new StringBuilder();
         alerts.parseTagQuery(e4, query);
-        assertEquals("('tagA' and (not /abc/))", query.toString().trim());
+        assertEquals("('tagA' and not /tagA_abc/)", query.toString().trim());
 
         String e5 = "tagA IN ['abc', 'def', 'ghi']";
         query = new StringBuilder();
         alerts.parseTagQuery(e5, query);
-        assertEquals("('tagA' and (/abc/ or /def/ or /ghi/))", query.toString().trim());
+        assertEquals("(/tagA_abc/ or /tagA_def/ or /tagA_ghi/)", query.toString().trim());
 
         String e5s1 = "tagA IN ['abc','def','ghi']";
         query = new StringBuilder();
         alerts.parseTagQuery(e5s1, query);
-        assertEquals("('tagA' and (/abc/ or /def/ or /ghi/))", query.toString().trim());
+        assertEquals("(/tagA_abc/ or /tagA_def/ or /tagA_ghi/)", query.toString().trim());
 
         String e6 = "tagA NOT IN ['abc', 'def', 'ghi']";
         query = new StringBuilder();
         alerts.parseTagQuery(e6, query);
-        assertEquals("(('tagA' and not /abc/) and ('tagA' and not /def/) and ('tagA' and not /ghi/))", query.toString().trim());
+        assertEquals("('tagA' and (not /tagA_abc/) and (not /tagA_def/) and (not /tagA_ghi/))", query.toString().trim());
 
         String e7 = "tagA  =      '*'";
         query = new StringBuilder();
         alerts.parseTagQuery(e7, query);
-        assertEquals("('tagA' and (/.*/))", query.toString().trim());
+        assertEquals("(/tagA_.*/)", query.toString().trim());
 
         String e8 = "tagA  =      abc";
         query = new StringBuilder();
         alerts.parseTagQuery(e8, query);
-        assertEquals("('tagA' and ('abc'))", query.toString().trim());
+        assertEquals("('tagA_abc')", query.toString().trim());
 
         String e9 = " tagA !=   abc";
         query = new StringBuilder();
         alerts.parseTagQuery(e9, query);
-        assertEquals("('tagA' and (not 'abc'))", query.toString().trim());
+        assertEquals("('tagA' and not 'tagA_abc')", query.toString().trim());
 
         String e10 = "tagA IN [abc, def, ghi]";
         query = new StringBuilder();
         alerts.parseTagQuery(e10, query);
-        assertEquals("('tagA' and ('abc' or 'def' or 'ghi'))", query.toString().trim());
+        assertEquals("('tagA_abc' or 'tagA_def' or 'tagA_ghi')", query.toString().trim());
 
         String e11 = "tagA NOT IN [abc, def, ghi]";
         query = new StringBuilder();
         alerts.parseTagQuery(e11, query);
-        assertEquals("(('tagA' and not 'abc') and ('tagA' and not 'def') and ('tagA' and not 'ghi'))", query.toString().trim());
+        assertEquals("('tagA' and (not 'tagA_abc') and (not 'tagA_def') and (not 'tagA_ghi'))", query.toString().trim());
 
         String e12 = "tagA  =      *";
         query = new StringBuilder();
@@ -180,7 +180,7 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         String e17 = "tagA = 'abc' and tagB = 'def'";
         query = new StringBuilder();
         alerts.parseTagQuery(e17, query);
-        assertEquals("(('tagA' and (/abc/)) and ('tagB' and (/def/)))", query.toString().trim());
+        assertEquals("((/tagA_abc/) and (/tagB_def/))", query.toString().trim());
 
         String e18 = "tagA and not tagB or tagC";
         query = new StringBuilder();

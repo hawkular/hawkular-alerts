@@ -2203,7 +2203,7 @@ public abstract class PersistenceTest {
     }
 
     @Test
-    public void test131AlertTagQuery() throws Exception {
+    public void test0131AlertTagQuery() throws Exception {
         Trigger t = new Trigger("t131", "trigger 131");
 
         List<Alert> alerts = new ArrayList<>();
@@ -2650,7 +2650,7 @@ public abstract class PersistenceTest {
     }
 
     @Test
-    public void test141EventTagQuery() throws Exception {
+    public void test0141EventTagQuery() throws Exception {
         Trigger t = new Trigger("t141", "trigger 141");
 
         List<Event> events = new ArrayList<>();
@@ -2967,6 +2967,48 @@ public abstract class PersistenceTest {
         }
     }
 
+    @Test
+    public void test0142EventTagQuerySpecialChars() throws Exception {
+
+        EventsCriteria criteria = new EventsCriteria();
+
+        alertsService.deleteEvents("test0142", criteria);
+
+        Event e1 = new Event();
+        e1.setTenantId("test0142");
+        e1.setId("test_1");
+        e1.setCtime(1499452337498L);
+        e1.setCategory("test");
+        e1.setText("Avail-changed:[UP] WildFly Server");
+        e1.getContext().put("resource_path", "/t;hawkular/f;my-agent/r;Local%20DMR~~");
+        e1.getContext().put("message", "Avail-changed:[UP] WildFly Server");
+        e1.getTags().put("test_tag", "/t;hawkular/f;my-agent/r;Local%20DMR~~_Server Availability");
+
+        Event e2 = new Event();
+        e2.setTenantId("test0142");
+        e2.setId("test_2");
+        e2.setCtime(1499445265683L);
+        e2.setCategory("test");
+        e2.setText("Avail-changed:[DOWN] Deployment");
+        e2.getContext().put("resource_path", "/t;hawkular/f;my-agent/r;Local%20DMR~%2Fdeployment%3Dcfme_test_ear_middleware.ear");
+        e2.getContext().put("message", "Avail-changed:[DOWN] Deployment");
+        e2.getTags().put("test_tag", "/t;hawkular/f;my-agent/r;Local%20DMR~%2Fdeployment%3Dcfme_test_ear_middleware.ear_Deployment Status");
+
+        alertsService.persistEvents(Arrays.asList(e1, e2));
+
+        List<Event> events = alertsService.getEvents("test0142", criteria, null);
+
+        assertEquals(2, events.size());
+
+        String tagQuery = "test_tag = '\\/t;hawkular\\/f;my-agent\\/r;Local%20DMR\\~\\~_Server Availability'";
+
+        criteria.setCategory("test");
+        criteria.setTagQuery(tagQuery);
+
+        events = alertsService.getEvents("test0142", criteria, null);
+
+        assertEquals(1, events.size());
+    }
 
     // These tests would be nice in a separate class but I couldn't figure how to get multiple test classes
     // running together without hitting Cassandra life-cycle issues.

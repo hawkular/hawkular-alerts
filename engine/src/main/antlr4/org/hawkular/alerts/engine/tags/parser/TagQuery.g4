@@ -98,7 +98,7 @@ WS  :   [ \t\n\r]+ -> skip ;
 
 
 //fragments
-fragment ESC : '\\' ([\'\\/bfnrt] | UNICODE) ;
+fragment ESC : '\\' ([\'\\/bfnrt] | UNICODE | NEG_OP) ;
 fragment UNICODE : 'u' HEX HEX HEX HEX ;
 fragment HEX : [0-9a-fA-F] ;
 
@@ -128,3 +128,5 @@ fragment W: [wW];
 fragment X: [xX];
 fragment Y: [yY];
 fragment Z: [zZ];
+
+fragment NEG_OP: '~';

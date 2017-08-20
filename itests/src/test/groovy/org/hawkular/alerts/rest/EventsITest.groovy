@@ -167,4 +167,41 @@ class EventsITest extends AbstractITestBase {
         assertEquals(200, resp.status)
         assertEquals(0, resp.data.size())
     }
+
+    @Test
+    void testQueryEventsWithSpacesInValues() {
+        Event e1 = new Event();
+        e1.setId("test_1");
+        e1.setCtime(1499452337498L);
+        e1.setCategory("test");
+        e1.setText("Avail-changed:[UP] WildFly Server");
+        e1.getContext().put("resource_path", "/t;hawkular/f;my-agent/r;Local%20DMR~~");
+        e1.getContext().put("message", "Avail-changed:[UP] WildFly Server");
+        e1.getTags().put("test_tag", "/t;hawkular/f;my-agent/r;Local%20DMR~~_Server Availability");
+
+        def resp = client.post(path: "events", body: e1)
+        assertEquals(200, resp.status)
+        def event = resp.data
+        assertEquals("test_1", event.id)
+
+        Event e2 = new Event();
+        e2.setId("test_2");
+        e2.setCtime(1499445265683L);
+        e2.setCategory("test");
+        e2.setText("Avail-changed:[DOWN] Deployment");
+        e2.getContext().put("resource_path", "/t;hawkular/f;my-agent/r;Local%20DMR~%2Fdeployment%3Dcfme_test_ear_middleware.ear");
+        e2.getContext().put("message", "Avail-changed:[DOWN] Deployment");
+        e2.getTags().put("test_tag", "/t;hawkular/f;my-agent/r;Local%20DMR~%2Fdeployment%3Dcfme_test_ear_middleware.ear_Deployment Status");
+
+        resp = client.post(path: "events", body: e2)
+        assertEquals(200, resp.status)
+        event = resp.data
+        assertEquals("test_2", event.id)
+
+        def tagQuery = "test_tag = '\\/t;hawkular\\/f;my-agent\\/r;Local%20DMR\\~\\~_Server Availability'"
+
+        resp = client.get(path: "events", query: [tagQuery: tagQuery] )
+        assertEquals(200, resp.status)
+        assertEquals(1, resp.data.size())
+    }
 }

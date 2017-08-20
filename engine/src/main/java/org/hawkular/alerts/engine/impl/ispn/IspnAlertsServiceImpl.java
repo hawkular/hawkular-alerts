@@ -59,6 +59,7 @@ import org.hawkular.alerts.api.services.PropertiesService;
 import org.hawkular.alerts.cache.IspnCacheManager;
 import org.hawkular.alerts.engine.impl.IncomingDataManagerImpl;
 import org.hawkular.alerts.engine.impl.ispn.model.IspnEvent;
+import org.hawkular.alerts.engine.impl.ispn.model.TagsBridge;
 import org.hawkular.alerts.engine.service.AlertsEngine;
 import org.hawkular.alerts.engine.service.IncomingDataManager;
 import org.hawkular.alerts.log.AlertingLogger;
@@ -113,7 +114,6 @@ public class IspnAlertsServiceImpl implements AlertsService {
                     String op;
                     String value;
                     if (tokens.size() == 3) {
-                        query.append("'").append(tag).append("' and (");
                         op = tokens.get(1);
                         value = tokens.get(2);
                         boolean isRegexp = value.startsWith("'");
@@ -125,17 +125,17 @@ public class IspnAlertsServiceImpl implements AlertsService {
                         if (op.equalsIgnoreCase(EQ)) {
                             // tag =
                             if (isRegexp) {
-                                query.append("/").append(regexp).append("/");
+                                query.append("/").append(tag).append(TagsBridge.SEPARATOR).append(regexp).append("/");
                             } else {
-                                query.append("'").append(value).append("'");
+                                query.append("'").append(tag).append(TagsBridge.SEPARATOR).append(value).append("'");
                             }
                         } else if (op.equalsIgnoreCase(NEQ)) {
                             // tag !=
-                            query.append("not ");
+                            query.append("'").append(tag).append("' and ").append("not ");
                             if (isRegexp) {
-                                query.append("/").append(regexp).append("/");
+                                query.append("/").append(tag).append(TagsBridge.SEPARATOR).append(regexp).append("/");
                             } else {
-                                query.append("'").append(value).append("'");
+                                query.append("'").append(tag).append(TagsBridge.SEPARATOR).append(value).append("'");
                             }
                         } else {
                             // tag in []
@@ -147,30 +147,30 @@ public class IspnAlertsServiceImpl implements AlertsService {
                                 regexp = item.substring(1, item.length() - 1);
                                 regexp = regexp.equals("*") ? ".*" : regexp;
                                 if (isRegexp) {
-                                    query.append("/").append(regexp).append("/");
+                                    query.append("/").append(tag).append(TagsBridge.SEPARATOR).append(regexp).append("/");
                                 } else {
-                                    query.append("'").append(item).append("'");
+                                    query.append("'").append(tag).append(TagsBridge.SEPARATOR).append(item).append("'");
                                 }
                                 if (i + 1 < values.length) {
                                     query.append(" or ");
                                 }
                             }
                         }
-                        query.append(")");
                     } else {
                         // not in array
                         String array = tokens.get(3).substring(1, tokens.get(3).length() - 1);
                         String[] values = array.split(",");
+                        query.append("'").append(tag).append("' and ");
                         for (int i = 0; i < values.length; i++) {
                             String item = values[i];
                             boolean isRegexp = item.startsWith("'");
                             String regexp = item.substring(1, item.length() - 1);
                             regexp = regexp.equals("*") ? ".*" : regexp;
-                            query.append("('").append(tag).append("' and ");
+                            query.append("(");
                             if (isRegexp) {
-                                query.append("not /").append(regexp).append("/");
+                                query.append("not /").append(tag).append(TagsBridge.SEPARATOR).append(regexp).append("/");
                             } else {
-                                query.append("not '").append(item).append("'");
+                                query.append("not '").append(tag).append(TagsBridge.SEPARATOR).append(item).append("'");
                             }
                             query.append(")");
                             if (i + 1 < values.length) {

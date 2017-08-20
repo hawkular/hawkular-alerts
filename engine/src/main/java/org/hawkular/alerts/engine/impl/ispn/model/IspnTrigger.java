@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hibernate.search.annotations.Analyze;
+import org.hibernate.search.annotations.Analyzer;
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.FieldBridge;
 import org.hibernate.search.annotations.Indexed;

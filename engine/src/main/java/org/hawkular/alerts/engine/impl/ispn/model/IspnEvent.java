@@ -7,6 +7,7 @@ import java.util.Map;
 import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hibernate.search.annotations.Analyze;
+import org.hibernate.search.annotations.Analyzer;
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.FieldBridge;
 import org.hibernate.search.annotations.Indexed;
@@ -30,6 +31,7 @@ public class IspnEvent implements Serializable {
 
     @Field(store = Store.YES, analyze = Analyze.YES)
     @FieldBridge(impl = TagsBridge.class)
+    @Analyzer(impl = TagsBridge.TagsAnalyzer.class)
     private Map<String, String> tags;
 
     @Field(store = Store.YES, analyze = Analyze.NO)

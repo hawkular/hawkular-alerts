@@ -67,29 +67,49 @@ public class ExpressionTagQueryParser extends TagQueryBaseListener implements AN
         String EQ = "=";
         String NEQ = "!=";
         String IN = "in";
+        char SPACE = ' ';
+        char QUOTE = '\'';
+        char LEFT_BRACKET =  '[';
+        char RIGHT_BRACKET = ']';
 
         static List<String> getTokens(String tagExpression) {
-            if (isEmpty(tagExpression)) {
+            if (tagExpression == null || tagExpression.isEmpty()) {
                 return null;
             }
             List<String> tokens = new ArrayList<>();
             StringBuilder token = new StringBuilder();
-            for (int i=0; i<tagExpression.length(); i++) {
-                char ch = tagExpression.charAt(i);
-                if (ch != ' ') {
+
+            int marker = 0;
+            boolean separatorChanged = false;
+            while (marker < tagExpression.length() && !separatorChanged) {
+                char ch = tagExpression.charAt(marker);
+                if (!separatorChanged && ch == QUOTE) {
+                    separatorChanged = true;
+                }
+                if (!separatorChanged && ch == LEFT_BRACKET) {
+                    separatorChanged = true;
+                }
+
+                if (ch != SPACE) {
                     token.append(ch);
                 }
+
                 if (token.toString().equals(NOT)) {
                     tokens.add(token.toString());
                     token = new StringBuilder();
-                } else if (ch == ' ') {
+                } else if (ch == SPACE) {
                     if (token.length() > 0) {
                         tokens.add(token.toString());
                     }
                     token = new StringBuilder();
                 }
+                marker++;
             }
-            tokens.add(token.toString());
+            if (separatorChanged) {
+                tokens.add(tagExpression.substring(marker - 1));
+            } else if (token.toString().length() > 0) {
+                tokens.add(token.toString());
+            }
             return tokens;
         }
 
