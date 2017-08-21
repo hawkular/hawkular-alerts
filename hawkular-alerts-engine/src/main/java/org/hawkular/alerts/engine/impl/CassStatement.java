@@ -115,6 +115,7 @@ public class CassStatement {
     public static final String SELECT_ALERT_CTIME_START;
     public static final String SELECT_ALERT_CTIME_START_END;
     public static final String SELECT_ALERT_IDS_BY_TENANT;
+    public static final String SELECT_ALERT_IN;
     public static final String SELECT_ALERT_LIFECYCLE_END;
     public static final String SELECT_ALERT_LIFECYCLE_START;
     public static final String SELECT_ALERT_LIFECYCLE_START_END;
@@ -135,6 +136,7 @@ public class CassStatement {
     public static final String SELECT_EVENT_CTIME_START;
     public static final String SELECT_EVENT_CTIME_START_END;
     public static final String SELECT_EVENT_IDS_BY_TENANT;
+    public static final String SELECT_EVENT_IN;
     public static final String SELECT_EVENT_TRIGGER;
     public static final String SELECT_EVENTS_BY_TENANT;
     //public static final String SELECT_EVENTS_BY_PARTITION;
@@ -408,6 +410,9 @@ public class CassStatement {
 
         SELECT_ALERT_IDS_BY_TENANT = "SELECT alertId FROM " + keyspace + ".alerts " + "WHERE tenantId = ? ";
 
+        SELECT_ALERT_IN = "SELECT payload FROM " + keyspace + ".alerts "
+                + "WHERE tenantId = ? AND alertId IN ? ";
+
         SELECT_ALERT_LIFECYCLE_END = "SELECT alertId FROM " + keyspace + ".alerts_lifecycle "
                 + "WHERE tenantId = ? AND status = ? AND stime <= ? ";
 
@@ -482,6 +487,9 @@ public class CassStatement {
 
         SELECT_EVENT_IDS_BY_TENANT = "SELECT id FROM " + keyspace + ".events " +
                 "WHERE tenantId = ? ";
+
+        SELECT_EVENT_IN = "SELECT payload FROM " + keyspace + ".events "
+                + "WHERE tenantId = ? AND  id IN ? ";
 
         SELECT_EVENT_TRIGGER = "SELECT id FROM " + keyspace + ".events_triggers "
                 + "WHERE tenantId = ? AND triggerId = ? ";

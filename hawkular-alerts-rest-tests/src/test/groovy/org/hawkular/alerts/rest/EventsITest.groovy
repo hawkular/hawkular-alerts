@@ -16,6 +16,9 @@
  */
 package org.hawkular.alerts.rest
 
+import groovyx.net.http.ContentType
+import groovyx.net.http.RESTClient
+
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.assertFalse
@@ -174,41 +177,35 @@ class EventsITest extends AbstractITestBase {
     // HWKALERTS-275
     @Test
     void testCreateAndQueryEvents() {
+        def resp = client.put(path: "events/delete")
+        assertEquals(200, resp.status)
+
         def numEvents = 20000
-        def resp
         for (int i = 0; i < numEvents; i++) {
             Event eventX = new Event()
             eventX.setId("event" + i)
             eventX.setCategory("test")
             eventX.setText("Event message " + i)
             eventX.getTags().put("tag" + (i % 3), "value" + (i % 3))
+            eventX.getTags().put("miq.event_type", "type" + (i % 3))
             resp = client.post(path: "events", body: eventX)
             assertEquals(200, resp.status)
         }
 
-        def tags = "tag0|*"
-        resp = client.get(path: "events", query: [tags: tags])
-        assertEquals(200, resp.status)
-        assertEquals(6667, resp.data.size())
+        def concurrentQueries = 10
 
-        tags = "tag1|*"
-        resp = client.get(path: "events", query: [tags: tags])
-        assertEquals(200, resp.status)
-        assertEquals(6667, resp.data.size())
-
-        tags = "tag2|*"
-        resp = client.get(path: "events", query: [tags: tags])
-        assertEquals(200, resp.status)
-        assertEquals(6666, resp.data.size())
-
-        def eventIds = ""
-        for (int i = 0; i < 199; i++) {
-            eventIds += "event" + i + ",";
+        for (int i = 0; i < concurrentQueries; i++) {
+            Thread.start {
+                def clientX = new RESTClient(baseURI, ContentType.JSON)
+                clientX.handler.failure = { it }
+                clientX.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
+                clientX.headers.put("Hawkular-Tenant", testTenant)
+                def tags = "miq.event_type|*"
+                def respX = clientX.get(path: "events", query: [tags: tags])
+                assertEquals(200, respX.status)
+                assertEquals(20000, respX.data.size())
+            }
         }
-        eventIds += "event199";
 
-        resp = client.get(path: "events", query: [eventIds: eventIds])
-        assertEquals(200, resp.status)
-        assertEquals(200, resp.data.size())
     }
 }
