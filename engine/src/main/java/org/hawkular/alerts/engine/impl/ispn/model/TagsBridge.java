@@ -7,6 +7,8 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 import org.hibernate.search.bridge.ContainerBridge;
 import org.hibernate.search.bridge.FieldBridge;
 import org.hibernate.search.bridge.LuceneOptions;
@@ -39,6 +41,7 @@ import org.hibernate.search.bridge.StringBridge;
  * @author Lucas Ponce
  */
 public class TagsBridge implements FieldBridge, ContainerBridge, StringBridge {
+    private static final MsgLogger log = MsgLogging.getMsgLogger(TagsBridge.class);
 
     public static final String VALUE = "<V>";
     public static final String SEPARATOR = "_";
@@ -128,7 +131,7 @@ public class TagsBridge implements FieldBridge, ContainerBridge, StringBridge {
                 }
                 tags = buffer.toString();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error(e);
             }
             if (tags != null && !tags.isEmpty()) {
                 int iValue = tags.indexOf(TagsBridge.VALUE);
