@@ -18,41 +18,41 @@ package org.hawkular.alerts.api.model.condition;
 
 import java.util.Map;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.data.Data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 /**
  * An evaluation state for compare condition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An evaluation state for compare condition.")
+@DocModel(description = "An evaluation state for compare condition.")
 public class CompareConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "Compare condition linked with this state.",
+    @DocModelProperty(description = "Compare condition linked with this state.",
             position = 0)
     @JsonInclude(Include.NON_NULL)
     private CompareCondition condition;
 
-    @ApiModelProperty(value = "Numeric value used for dataId.",
+    @DocModelProperty(description = "Numeric value used for dataId.",
             position = 1)
     @JsonInclude(Include.NON_NULL)
     private Double value1;
 
-    @ApiModelProperty(value = "Numeric value used for data2Id.",
+    @DocModelProperty(description = "Numeric value used for data2Id.",
             position = 2)
     @JsonInclude(Include.NON_NULL)
     private Double value2;
 
-    @ApiModelProperty(value = "Properties defined by the user at Data level on the data2Id used for this evaluation.",
+    @DocModelProperty(description = "Properties defined by the user at Data level on the data2Id used for this evaluation.",
             position = 3)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context2;

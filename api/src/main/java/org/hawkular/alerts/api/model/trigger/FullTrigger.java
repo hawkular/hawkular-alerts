@@ -20,17 +20,15 @@ import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Representation of a Trigger with Dampening and Condition objects.
@@ -38,24 +36,24 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "Representation of a <<Trigger>> with <<Dampening>> and <<Condition>> objects.")
+@DocModel(description = "Representation of a <<Trigger>> with <<Dampening>> and <<Condition>> objects.")
 public class FullTrigger implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "The trigger.",
+    @DocModelProperty(description = "The trigger.",
             position = 0,
             required = true)
     @JsonInclude(Include.NON_NULL)
     private Trigger trigger;
 
-    @ApiModelProperty(value = "A list of dampenings linked with the trigger.",
+    @DocModelProperty(description = "A list of dampenings linked with the trigger.",
             position = 1,
             required = false)
     @JsonInclude(Include.NON_EMPTY)
     private List<Dampening> dampenings;
 
-    @ApiModelProperty(value = "A list of conditions linked with the trigger.",
+    @DocModelProperty(description = "A list of conditions linked with the trigger.",
             position = 2,
             required = false)
     @JsonInclude(Include.NON_EMPTY)

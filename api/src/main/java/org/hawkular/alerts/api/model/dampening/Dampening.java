@@ -21,13 +21,14 @@ import static org.hawkular.alerts.api.util.Util.isEmpty;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.ConditionEval;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
@@ -35,16 +36,13 @@ import org.hawkular.alerts.api.model.trigger.Mode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
 /**
  * A representation of dampening status.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "A representation of dampening status. + \n" +
+@DocModel(description = "A representation of dampening status. + \n" +
         " + \n" +
         "It’s often the case that you don’t want a trigger to fire every time a condition set is met. + \n" +
         "Instead, you want to ensure that the issue is not a spike of activity. + \n" +
@@ -86,50 +84,50 @@ public class Dampening implements Serializable {
         STRICT, RELAXED_COUNT, RELAXED_TIME, STRICT_TIME, STRICT_TIMEOUT
     };
 
-    @ApiModelProperty(value = "Tenant id owner of this dampening.",
+    @DocModelProperty(description = "Tenant id owner of this dampening.",
             position = 0,
             required = false,
             allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
     @JsonInclude
     private String tenantId;
 
-    @ApiModelProperty(value = "The owning trigger.",
+    @DocModelProperty(description = "The owning trigger.",
             position = 1,
             allowableValues = "triggerId is set up from REST request parameters")
     @JsonInclude
     private String triggerId;
 
-    @ApiModelProperty(value = "The owning trigger's mode when this dampening is active.",
+    @DocModelProperty(description = "The owning trigger's mode when this dampening is active.",
             position = 2,
             required = true)
     @JsonInclude
     private Mode triggerMode;
 
-    @ApiModelProperty(value = "The type of the dampening.",
+    @DocModelProperty(description = "The type of the dampening.",
             position = 3,
             required = true)
     @JsonInclude
     private Type type;
 
     @JsonInclude
-    @ApiModelProperty(value = "Number of required true evaluations for STRICT, RELAXED_COUNT, RELAXED_TIME",
+    @DocModelProperty(description = "Number of required true evaluations for STRICT, RELAXED_COUNT, RELAXED_TIME",
             position = 4,
             allowableValues = ">= 1")
     private int evalTrueSetting;
 
     @JsonInclude
-    @ApiModelProperty(value = "Number of allowed evaluation attempts for RELAXED_COUNT",
+    @DocModelProperty(description = "Number of allowed evaluation attempts for RELAXED_COUNT",
             position = 5,
             allowableValues = "> evalTrueSetting")
     private int evalTotalSetting;
 
     @JsonInclude
-    @ApiModelProperty(value = "Time period in milliseconds for RELAXED_TIME, STRICT_TIME, STRICT_TIMEOUT",
+    @DocModelProperty(description = "Time period in milliseconds for RELAXED_TIME, STRICT_TIME, STRICT_TIMEOUT",
             position = 6,
             allowableValues = "> 0")
     private long evalTimeSetting;
 
-    @ApiModelProperty(value = "A composed key for the dampening. This is a read-only value defined by the system.",
+    @DocModelProperty(description = "A composed key for the dampening. This is a read-only value defined by the system.",
             position = 7,
             required = false)
     @JsonInclude

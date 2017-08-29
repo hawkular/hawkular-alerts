@@ -51,21 +51,6 @@
       <version>${version.com.fasterxml.jackson}</version>
     </dependency>
 
-    <!-- Documentation dependencies -->
-    <dependency>
-      <groupId>io.swagger</groupId>
-      <artifactId>swagger-annotations</artifactId>
-      <scope>provided</scope>
-      <version>${version.io.swagger}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>io.swagger</groupId>
-      <artifactId>swagger-core</artifactId>
-      <scope>provided</scope>
-      <version>${version.io.swagger}</version>
-    </dependency>
-
     <!-- Tests -->
     <dependency>
       <groupId>junit</groupId>

@@ -18,20 +18,18 @@ package org.hawkular.alerts.api.model.condition;
 
 import static org.hawkular.alerts.api.util.Util.isEmpty;
 
-import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * A condition that uses historically collected data to perform a variety of tests for value instability. See:
@@ -40,7 +38,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "A condition to detect instability based on historical data. + \n" +
+@DocModel(description = "A condition to detect instability based on historical data. + \n" +
         " + \n" +
         "From one to all of the defined Nelson rules can be evaluated. See + \n" +
         "https://en.wikipedia.org/wiki/Nelson_rules for a description of the rules.")
@@ -75,16 +73,16 @@ public class NelsonCondition extends Condition {
     @JsonInclude(Include.NON_NULL)
     private String dataId;
 
-    @ApiModelProperty(value = "Set of NelsonRule to evaluate.",
+    @DocModelProperty(description = "Set of NelsonRule to evaluate.",
             position = 1,
-            example = "All Rules",
+            defaultValue = "All Rules",
             required = false)
     @JsonInclude(Include.NON_NULL)
     private Set<NelsonRule> activeRules;
 
-    @ApiModelProperty(value = "Number of samples used to establish baseline information (mean, standard deviation).",
+    @DocModelProperty(description = "Number of samples used to establish baseline information (mean, standard deviation).",
             position = 2,
-            example = "50",
+            defaultValue = "50",
             required = false)
     @JsonInclude(Include.NON_NULL)
     private int sampleSize;

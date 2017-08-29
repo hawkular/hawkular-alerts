@@ -19,6 +19,8 @@ package org.hawkular.alerts.api.model.condition;
 import java.io.Serializable;
 import java.util.Map;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.json.JacksonDeserializer;
 import org.hawkular.alerts.api.model.condition.Condition.Type;
 
@@ -27,16 +29,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
 /**
  * An evaluation state of a specific condition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "A base class to represent an evaluation state of a specific condition.", subTypes = {
+@DocModel(description = "A base class to represent an evaluation state of a specific condition.", subTypes = {
         AvailabilityConditionEval.class, CompareConditionEval.class, EventConditionEval.class,
         ExternalConditionEval.class, MissingConditionEval.class, RateConditionEval.class, StringConditionEval.class,
         ThresholdConditionEval.class, ThresholdRangeConditionEval.class })
@@ -46,31 +45,31 @@ public abstract class ConditionEval implements Serializable {
     private static final long serialVersionUID = 1L;
 
     // result of the condition evaluation
-    @ApiModelProperty(value = "Result of the condition evaluation.", position = 0)
+    @DocModelProperty(description = "Result of the condition evaluation.", position = 0)
     @JsonIgnore
     protected boolean match;
 
     // time of condition evaluation (i.e. creation time)
-    @ApiModelProperty(value = "Time of condition evaluation.", position = 1)
+    @DocModelProperty(description = "Time of condition evaluation.", position = 1)
     @JsonInclude
     protected long evalTimestamp;
 
     // time stamped on the data used in the eval
-    @ApiModelProperty(value = "Time stamped on the data used in the evaluation.", position = 2)
+    @DocModelProperty(description = "Time stamped on the data used in the evaluation.", position = 2)
     @JsonInclude
     protected long dataTimestamp;
 
-    @ApiModelProperty(value = "The type of the condition eval defined. Each type has its specific properties defined "
+    @DocModelProperty(description = "The type of the condition eval defined. Each type has its specific properties defined "
             +
             "on its subtype of condition eval.", position = 3)
     @JsonInclude
     protected Condition.Type type;
 
-    @ApiModelProperty(value = "Properties defined by the user at Data level on the dataId used for this evaluation.", position = 4)
+    @DocModelProperty(description = "Properties defined by the user at Data level on the dataId used for this evaluation.", position = 4)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 
-    @ApiModelProperty(value = "A canonical display string of the evaluation (the result of a call to #getLog()).", position = 5)
+    @DocModelProperty(description = "A canonical display string of the evaluation (the result of a call to #getLog()).", position = 5)
     @JsonInclude(Include.NON_EMPTY)
     protected String displayString;
 

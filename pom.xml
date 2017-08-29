@@ -83,7 +83,6 @@
     <version.io.netty>4.1.8.Final</version.io.netty>
     <version.io.projectreactor>3.0.7.RELEASE</version.io.projectreactor>
     <version.io.projectreactor.ipc>0.6.2.RELEASE</version.io.projectreactor.ipc>
-    <version.io.swagger>1.5.8</version.io.swagger>
     <version.io.vertx>3.4.1</version.io.vertx>
     <version.log4j>1.2.17</version.log4j>
     <version.maven-patch-plugin>1.2</version.maven-patch-plugin>

@@ -18,13 +18,12 @@ package org.hawkular.alerts.api.model.condition;
 
 import static org.hawkular.alerts.api.model.trigger.Mode.FIRING;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * A numeric comparison condition. Examples:
@@ -36,7 +35,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "A numeric comparison condition. + \n" +
+@DocModel(description = "A numeric comparison condition. + \n" +
         " + \n" +
         "Examples: + \n" +
         "X > 80% of Y, FreeSpace < 20% of TotalSpace + \n")
@@ -51,19 +50,19 @@ public class CompareCondition extends Condition {
     @JsonInclude(Include.NON_NULL)
     private String dataId;
 
-    @ApiModelProperty(value = "Compare operator [LT (<), GT (>), LTE (<=), GTE (>=)].",
+    @DocModelProperty(description = "Compare operator [LT (<), GT (>), LTE (<=), GTE (>=)].",
             position = 0,
             required = true)
     @JsonInclude(Include.NON_NULL)
     private Operator operator;
 
-    @ApiModelProperty(value = "Data identifier of the metric used for comparison.",
+    @DocModelProperty(description = "Data identifier of the metric used for comparison.",
             position = 1,
             required = true)
     @JsonInclude(Include.NON_NULL)
     private String data2Id;
 
-    @ApiModelProperty(value = "Straight multiplier to be applied to data2Id on the comparison. " +
+    @DocModelProperty(description = "Straight multiplier to be applied to data2Id on the comparison. " +
             "Final comparison expression can be read as \"dataId <operator> data2Multiplier*data2Id\".",
             position = 2,
             required = true)

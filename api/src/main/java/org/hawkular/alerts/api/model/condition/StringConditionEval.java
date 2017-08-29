@@ -16,14 +16,13 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.data.Data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * An evaluation state for string condition.
@@ -31,17 +30,17 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An evaluation state for string condition.")
+@DocModel(description = "An evaluation state for string condition.")
 public class StringConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "String condition linked with this state.",
+    @DocModelProperty(description = "String condition linked with this state.",
             position = 0)
     @JsonInclude(Include.NON_NULL)
     private StringCondition condition;
 
-    @ApiModelProperty(value = "String value for dataId used in the evaluation.",
+    @DocModelProperty(description = "String value for dataId used in the evaluation.",
             position = 1)
     @JsonInclude(Include.NON_NULL)
     private String value;

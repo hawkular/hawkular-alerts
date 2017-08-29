@@ -18,6 +18,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.json.UnorphanMemberInfo;
 import org.hawkular.alerts.api.model.dampening.Dampening;
@@ -52,7 +54,10 @@ public class ResponseUtil {
         PARAMS_PAGING = Arrays.asList(PARAM_PAGE, PARAM_PER_PAGE, PARAM_SORT, PARAM_ORDER);
     }
 
+    @DocModel(description = "Payload for a REST error response.")
     public static class ApiError {
+
+        @DocModelProperty(description = "The error message.")
         @JsonInclude
         private final String errorMsg;
 
@@ -62,6 +67,22 @@ public class ResponseUtil {
 
         public String getErrorMsg() {
             return errorMsg;
+        }
+    }
+
+    @DocModel(description = "Payload for a simple REST deleted number response.")
+    public static class ApiDeleted {
+
+        @DocModelProperty(description = "Deleted items.")
+        @JsonInclude
+        private final Integer deleted;
+
+        public ApiDeleted(Integer deleted) {
+            this.deleted = deleted != null  ? deleted : 0;
+        }
+
+        public Integer getDeleted() {
+            return deleted;
         }
     }
 

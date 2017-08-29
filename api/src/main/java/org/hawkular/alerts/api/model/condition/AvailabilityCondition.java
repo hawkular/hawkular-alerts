@@ -18,14 +18,13 @@ package org.hawkular.alerts.api.model.condition;
 
 import static org.hawkular.alerts.api.model.trigger.Mode.FIRING;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * An availability condition definition.
@@ -33,7 +32,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An availability condition definition. + \n" +
+@DocModel(description = "An availability condition definition. + \n" +
         " + \n" +
         "Examples: + \n" +
         "X is DOWN")
@@ -48,7 +47,7 @@ public class AvailabilityCondition extends Condition {
     @JsonInclude(Include.NON_NULL)
     private String dataId;
 
-    @ApiModelProperty(value = "Availability operator.",
+    @DocModelProperty(description = "Availability operator.",
             position = 0,
             required = true)
     @JsonInclude(Include.NON_NULL)

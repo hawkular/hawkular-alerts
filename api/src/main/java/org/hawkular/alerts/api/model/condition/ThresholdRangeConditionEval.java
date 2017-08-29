@@ -16,14 +16,13 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.data.Data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * An evaluation state for threshold range condition.
@@ -31,16 +30,16 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An evaluation state for threshold range condition.")
+@DocModel(description = "An evaluation state for threshold range condition.")
 public class ThresholdRangeConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "Threshold range condition linked with this state.", position = 0)
+    @DocModelProperty(description = "Threshold range condition linked with this state.", position = 0)
     @JsonInclude(Include.NON_NULL)
     private ThresholdRangeCondition condition;
 
-    @ApiModelProperty(value = "Numeric value for dataId used in the evaluation.", position = 1)
+    @DocModelProperty(description = "Numeric value for dataId used in the evaluation.", position = 1)
     @JsonInclude(Include.NON_NULL)
     private Double value;
 

@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
@@ -23,26 +25,23 @@ import org.hawkular.alerts.api.model.data.Data;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
 /**
  * An evaluation state for availability condition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An evaluation state for availability condition.")
+@DocModel(description = "An evaluation state for availability condition.")
 public class AvailabilityConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "Availability condition linked with this state.",
+    @DocModelProperty(description = "Availability condition linked with this state.",
             position = 0)
     @JsonInclude(Include.NON_NULL)
     private AvailabilityCondition condition;
 
-    @ApiModelProperty(value = "Availability value used for dataId.",
+    @DocModelProperty(description = "Availability value used for dataId.",
             position = 1)
     @JsonInclude(Include.NON_NULL)
     private AvailabilityType value;

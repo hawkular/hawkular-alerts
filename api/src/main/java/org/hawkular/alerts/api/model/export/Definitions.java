@@ -20,14 +20,13 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import java.util.List;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.trigger.FullTrigger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Representation of a list of full triggers (trigger, dampenings and conditions) and actions definitions.
@@ -35,24 +34,24 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "Representation of a list of full triggers (trigger, dampenings and conditions)," +
+@DocModel(description = "Representation of a list of full triggers (trigger, dampenings and conditions)," +
         "group members triggers and actions definitions. + \n" +
         "Used for bulk import/export operations.")
 public class Definitions {
 
-    @ApiModelProperty(value = "List of full triggers.",
+    @DocModelProperty(description = "List of full triggers.",
             position = 0,
             required = false)
     @JsonInclude(Include.NON_EMPTY)
     private List<FullTrigger> triggers;
 
-    @ApiModelProperty(value = "List of group member triggers information.",
+    @DocModelProperty(description = "List of group member triggers information.",
             position = 1,
             required = false)
     @JsonInclude(Include.NON_EMPTY)
     private List<GroupMemberInfo> groupMembersInfo;
 
-    @ApiModelProperty(value = "List of action definitions.",
+    @DocModelProperty(description = "List of action definitions.",
             position = 2,
             required = false)
     @JsonInclude(Include.NON_EMPTY)

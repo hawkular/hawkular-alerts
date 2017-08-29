@@ -20,13 +20,12 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.action.TimeConstraint;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Links an ActionDefinition with a Trigger.
@@ -43,45 +42,44 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "Links an <<ActionDefinition>> with a <<Trigger>>. + \n" +
+@DocModel(description = "Links an <<ActionDefinition>> with a <<Trigger>>. + \n" +
         " + \n" +
         "The TriggerAction can override the constraints set on the <<ActionDefintion>>. + \n" +
         "If a <<TriggerAction>> defines any constraints the <<ActionDefinition>> constraints will be ignored. + \n" +
         "If a <<TriggerAction>> defines no constraints the <<ActionDefinition>> constraints will be used. + \n")
-
 public class TriggerAction implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "Tenant id owner of this trigger.",
+    @DocModelProperty(description = "Tenant id owner of this trigger.",
             position = 0,
             required = false,
             allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
     @JsonInclude(Include.NON_NULL)
     private String tenantId;
 
-    @ApiModelProperty(value = "Action plugin identifier.",
+    @DocModelProperty(description = "Action plugin identifier.",
             position = 1,
             required = true,
             allowableValues = "Only plugins deployed on the system are valid.")
     @JsonInclude
     private String actionPlugin;
 
-    @ApiModelProperty(value = "Action definition identifier.",
+    @DocModelProperty(description = "Action definition identifier.",
             position = 2,
             required = true,
             allowableValues = "Only existing action definitions on the system are valid.")
     @JsonInclude
     private String actionId;
 
-    @ApiModelProperty(value = "A list of Alert.Status restricting active states for this action.",
+    @DocModelProperty(description = "A list of Alert.Status restricting active states for this action.",
             position = 3,
             required = false,
             allowableValues = "OPEN, ACKNOWLEDGED, RESOLVED")
     @JsonInclude(Include.NON_EMPTY)
     private Set<String> states;
 
-    @ApiModelProperty(value = "A TimeConstraint restricting active times for this action.",
+    @DocModelProperty(description = "A TimeConstraint restricting active times for this action.",
             position = 4,
             required = false)
     @JsonInclude(Include.NON_NULL)

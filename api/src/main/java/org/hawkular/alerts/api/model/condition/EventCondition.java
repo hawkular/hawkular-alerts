@@ -22,14 +22,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * An <code>EventCondition</code> is used for condition evaluations over Event data using expressions.
@@ -75,7 +74,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An EventCondition is used for condition evaluations over Event data using expressions. + \n" +
+@DocModel(description = "An EventCondition is used for condition evaluations over Event data using expressions. + \n" +
         " + \n" +
         "Expression is a comma separated list of the following 3 tokens structure: + \n" +
         " + \n" +
@@ -121,7 +120,7 @@ public class EventCondition extends Condition {
     @JsonInclude
     private String dataId;
 
-    @ApiModelProperty(value = "Event expression used for this condition.",
+    @DocModelProperty(description = "Event expression used for this condition.",
             position = 0,
             required = true)
     @JsonInclude(Include.NON_NULL)

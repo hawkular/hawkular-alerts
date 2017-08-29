@@ -1,11 +1,20 @@
 package org.hawkular.alerts.handlers;
 
+import static org.hawkular.alerts.api.doc.DocConstants.GET;
+
 import java.util.Collection;
 import java.util.Set;
 
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
+import org.hawkular.alerts.api.doc.DocEndpoint;
+import org.hawkular.alerts.api.doc.DocParameter;
+import org.hawkular.alerts.api.doc.DocParameters;
+import org.hawkular.alerts.api.doc.DocPath;
+import org.hawkular.alerts.api.doc.DocResponse;
+import org.hawkular.alerts.api.doc.DocResponses;
 import org.hawkular.alerts.handlers.util.ResponseUtil;
+import org.hawkular.alerts.handlers.util.ResponseUtil.ApiError;
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
 import org.hawkular.handlers.RestEndpoint;
@@ -19,6 +28,7 @@ import io.vertx.ext.web.RoutingContext;
  * @author Lucas Ponce
  */
 @RestEndpoint(path = "/plugins")
+@DocEndpoint(value = "/plugins", description = "Query operations for action plugins")
 public class ActionPluginHandler implements RestHandler {
     private static final MsgLogger log = MsgLogging.getMsgLogger(ActionPluginHandler.class);
 
@@ -35,7 +45,14 @@ public class ActionPluginHandler implements RestHandler {
         router.get(path + "/:actionPlugin").handler(this::getActionPlugin);
     }
 
-    void findActionPlugins(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/",
+            name = "Find all action plugins.")
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Successfully fetched list of actions plugins.", response = String.class, responseContainer = "List"),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void findActionPlugins(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                    ResponseUtil.checkTenant(routing);
@@ -50,7 +67,21 @@ public class ActionPluginHandler implements RestHandler {
                 }, res -> ResponseUtil.result(routing, res));
     }
 
-    void getActionPlugin(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/{actionPlugin}",
+            name = "Find list of properties to fill for a specific action plugin.",
+            notes = "Each action plugin can have a different and variable number of properties. + \n" +
+                    "This method should be invoked before of a creation of a new action.")
+    @DocParameters(value = {
+            @DocParameter(name = "actionPlugin", required = true, path = true,
+                    description = "Action plugin to query.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Action Plugin found.", response = String.class, responseContainer = "List"),
+            @DocResponse(code = 404, message = "Action Plugin not found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void getActionPlugin(RoutingContext routing) {
         String actionPlugin = routing.request().getParam("actionPlugin");
         routing.vertx()
                 .executeBlocking(future -> {

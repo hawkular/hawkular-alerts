@@ -22,11 +22,11 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * A base class for incoming data into alerts subsystem.  All {@link Data} has TenantId, Id and a timestamp. An Id
@@ -36,7 +36,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "A base class for incoming data into alerts subsystem. + \n" +
+@DocModel(description = "A base class for incoming data into alerts subsystem. + \n" +
         "All Data has TenantId, Id and a timestamp. + \n" +
         "An Id should be unique within the tenant. + \n" +
         "The timestamp is used to ensure that data is time-ordered when being sent into the alerting engine. + \n" +
@@ -47,32 +47,32 @@ public class Data implements Comparable<Data>, Serializable {
 
     public static final String SOURCE_NONE = "_none_";
 
-    @ApiModelProperty(value = "Tenant id owner of this data.",
+    @DocModelProperty(description = "Tenant id owner of this data.",
             position = 0,
             allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
     @JsonInclude
     protected String tenantId;
 
-    @ApiModelProperty(value = "Extended mechanism to match trigger conditions against Data with [source, dataId] " +
+    @DocModelProperty(description = "Extended mechanism to match trigger conditions against Data with [source, dataId] " +
             "identifiers. In this way it is possible to qualify triggers and data with a source such that a trigger " +
             "only evaluates data having the same source.",
             position = 1)
     @JsonInclude
     protected String source;
 
-    @ApiModelProperty(value = "Data id unique within the tenant.",
+    @DocModelProperty(description = "Data id unique within the tenant.",
             position = 2,
             required = true)
     @JsonInclude
     protected String id;
 
-    @ApiModelProperty(value = "Timestamp for the data.",
+    @DocModelProperty(description = "Timestamp for the data.",
             position = 3,
-            example = "If not assigned, timestamp will be assigned to current time.")
+            defaultValue = "If not assigned, timestamp will be assigned to current time.")
     @JsonInclude
     protected long timestamp;
 
-    @ApiModelProperty(value = "Value for single-value condition types.",
+    @DocModelProperty(description = "Value for single-value condition types.",
             position = 4)
     /** For single-value condition types. Null otherwise */
     @JsonInclude(Include.NON_EMPTY)
@@ -86,7 +86,7 @@ public class Data implements Comparable<Data>, Serializable {
     //protected Map<String, String> values;
 
     /** Optional, non-evaluated contextual data to be kept with the datum */
-    @ApiModelProperty(value = "Properties defined by the user for this data. Context is propagated " +
+    @DocModelProperty(description = "Properties defined by the user for this data. Context is propagated " +
             "on generated Events/Alerts.",
             position = 5)
     @JsonInclude(Include.NON_EMPTY)

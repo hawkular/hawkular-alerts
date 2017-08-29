@@ -18,6 +18,8 @@ package org.hawkular.alerts.api.model.condition;
 
 import java.util.List;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.condition.NelsonCondition.NelsonRule;
 import org.hawkular.alerts.api.model.data.Data;
@@ -25,37 +27,34 @@ import org.hawkular.alerts.api.model.data.Data;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
 /**
  * An evaluation state for nelson condition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An evaluation state for nelson condition.")
+@DocModel(description = "An evaluation state for nelson condition.")
 public class NelsonConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "Nelson condition linked with this state.", position = 0)
+    @DocModelProperty(description = "Nelson condition linked with this state.", position = 0)
     @JsonInclude(Include.NON_NULL)
     private NelsonCondition condition;
 
-    @ApiModelProperty(value = "Mean applied to NelsonRules.", position = 1)
+    @DocModelProperty(description = "Mean applied to NelsonRules.", position = 1)
     @JsonInclude(Include.NON_NULL)
     private Double mean;
 
-    @ApiModelProperty(value = "Standard Deviation applied to NelsonRules.", position = 2)
+    @DocModelProperty(description = "Standard Deviation applied to NelsonRules.", position = 2)
     @JsonInclude(Include.NON_NULL)
     private Double standardDeviation;
 
-    @ApiModelProperty(value = "Data used to determine violations.", position = 3)
+    @DocModelProperty(description = "Data used to determine violations.", position = 3)
     @JsonInclude(Include.NON_NULL)
     private List<Data> violationsData;
 
-    @ApiModelProperty(value = "NelsonRule violations for the data.", position = 4)
+    @DocModelProperty(description = "NelsonRule violations for the data.", position = 4)
     @JsonInclude(Include.NON_NULL)
     private List<NelsonRule> violations;
 

@@ -3,6 +3,10 @@ package org.hawkular.alerts.handlers;
 import static org.hawkular.alerts.api.json.JsonUtil.collectionFromJson;
 import static org.hawkular.alerts.api.json.JsonUtil.fromJson;
 import static org.hawkular.alerts.api.util.Util.isEmpty;
+import static org.hawkular.alerts.api.doc.DocConstants.DELETE;
+import static org.hawkular.alerts.api.doc.DocConstants.GET;
+import static org.hawkular.alerts.api.doc.DocConstants.POST;
+import static org.hawkular.alerts.api.doc.DocConstants.PUT;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.PARAMS_PAGING;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.checkForUnknownQueryParams;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.checkTags;
@@ -34,7 +38,14 @@ import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.TriggersCriteria;
 import org.hawkular.alerts.engine.StandaloneAlerts;
+import org.hawkular.alerts.api.doc.DocEndpoint;
+import org.hawkular.alerts.api.doc.DocParameter;
+import org.hawkular.alerts.api.doc.DocParameters;
+import org.hawkular.alerts.api.doc.DocPath;
+import org.hawkular.alerts.api.doc.DocResponse;
+import org.hawkular.alerts.api.doc.DocResponses;
 import org.hawkular.alerts.handlers.util.ResponseUtil;
+import org.hawkular.alerts.handlers.util.ResponseUtil.ApiError;
 import org.hawkular.alerts.handlers.util.ResponseUtil.BadRequestException;
 import org.hawkular.alerts.handlers.util.ResponseUtil.InternalServerException;
 import org.hawkular.commons.log.MsgLogger;
@@ -51,6 +62,7 @@ import io.vertx.ext.web.RoutingContext;
  * @author Lucas Ponce
  */
 @RestEndpoint(path = "/triggers")
+@DocEndpoint(value = "/triggers", description = "Triggers Definitions Handling")
 public class TriggersHandler implements RestHandler {
     private static final MsgLogger log = MsgLogging.getMsgLogger(TriggersHandler.class);
     private static final String PARAM_KEEP_NON_ORPHANS = "keepNonOrphans";
@@ -82,36 +94,74 @@ public class TriggersHandler implements RestHandler {
     public void initRoutes(String baseUrl, Router router) {
         String path = baseUrl + "/triggers";
         router.get(path).handler(this::findTriggers);
-        router.post(path).handler(r -> createTrigger(r, false));
-        router.get(path + "/:triggerId").handler(r -> getTrigger(r, false));
+        router.post(path).handler(this::createTrigger);
+        router.get(path + "/:triggerId").handler(this::getTrigger);
         router.post(path + "/trigger").handler(this::createFullTrigger);
         router.put(path + "/trigger/:triggerId").handler(this::updateFullTrigger);
-        router.post(path + "/groups").handler(r -> createTrigger(r, true));
-        router.put(path + "/enabled").handler(r -> setTriggersEnabled(r, false));
-        router.put(path + "/:triggerId").handler(r -> updateTrigger(r, false));
+        router.post(path + "/groups").handler(this::createGroupTrigger);
+        router.put(path + "/enabled").handler(this::setTriggersEnabled);
+        router.put(path + "/:triggerId").handler(this::updateTrigger);
         router.delete(path + "/:triggerId").handler(this::deleteTrigger);
-        router.get(path + "/trigger/:triggerId").handler(r -> getTrigger(r, true));
+        router.get(path + "/trigger/:triggerId").handler(this::getFullTrigger);
         router.get(path + "/:triggerId/dampenings").handler(this::getTriggerDampenings);
         router.get(path + "/:triggerId/conditions").handler(this::getTriggerConditions);
         router.post(path + "/groups/members").handler(this::createGroupMember);
-        router.post(path + "/:triggerId/dampenings").handler(r -> createDampening(r, false));
-        router.put(path + "/groups/enabled").handler(r -> setTriggersEnabled(r, true));
-        router.put(path + "/groups/:groupId").handler(r -> updateTrigger(r, true));
+        router.post(path + "/:triggerId/dampenings").handler(this::createDampening);
+        router.put(path + "/groups/enabled").handler(this::setGroupTriggersEnabled);
+        router.put(path + "/groups/:groupId").handler(this::updateGroupTrigger);
         router.put(path + "/:triggerId/conditions").handler(this::setAllConditions);
         router.delete(path + "/groups/:groupId").handler(this::deleteGroupTrigger);
         router.get(path + "/:triggerId/dampenings/:dampeningId").handler(this::getDampening);
         router.get(path + "/groups/:groupId/members").handler(this::findGroupMembers);
-        router.post(path + "/groups/:groupId/dampenings").handler(r -> createDampening(r, true));
-        router.put(path + "/:triggerId/dampenings/:dampeningId").handler(r -> updateDampening(r, false));
+        router.post(path + "/groups/:groupId/dampenings").handler(this::createGroupDampening);
+        router.put(path + "/:triggerId/dampenings/:dampeningId").handler(this::updateDampening);
         router.put(path + "/:triggerId/conditions/:triggerMode").handler(this::setConditions);
         router.put(path + "/groups/:groupId/conditions").handler(this::setGroupConditions);
-        router.delete(path + "/:triggerId/dampenings/:dampeningId").handler(r -> deleteDampening(r, false));
-        router.get(path + "/:triggerId/dampenings/mode/:triggerMode").handler(this::getTriggerDampenings);
+        router.delete(path + "/:triggerId/dampenings/:dampeningId").handler(this::deleteDampening);
+        router.get(path + "/:triggerId/dampenings/mode/:triggerMode").handler(this::getTriggerModeDampenings);
         router.post(path + "/groups/members/:memberId/orphan").handler(this::orphanMemberTrigger);
         router.post(path + "/groups/members/:memberId/unorphan").handler(this::unorphanMemberTrigger);
-        router.put(path + "/groups/:groupId/dampenings/:dampeningId").handler(r -> updateDampening(r, true));
-        router.put(path + "/groups/:groupId/conditions/:triggerMode").handler(this::setGroupConditions);
-        router.delete(path + "/groups/:groupId/dampenings/:dampeningId").handler(r -> deleteDampening(r, true));
+        router.put(path + "/groups/:groupId/dampenings/:dampeningId").handler(this::updateGroupDampening);
+        router.put(path + "/groups/:groupId/conditions/:triggerMode").handler(this::setGroupConditionsTriggerMode);
+        router.delete(path + "/groups/:groupId/dampenings/:dampeningId").handler(this::deleteGroupDampening);
+    }
+
+    @DocPath(method = POST,
+            path = "/{triggerId}/dampenings",
+            name = "Create a new dampening.",
+            notes = "Return Dampening created.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id attached to dampening."),
+            @DocParameter(required = true, body = true, type = Dampening.class,
+                    description = "Dampening definition to be created.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Dampening created.", response = Dampening.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void createDampening(RoutingContext routing) {
+        createDampening(routing, false);
+    }
+
+    @DocPath(method = POST,
+            path = "/groups/{groupId}/dampenings",
+            name = "Create a new group dampening.",
+            notes = "Return group Dampening created.")
+    @DocParameters(value = {
+            @DocParameter(name = "groupId", required = true, path = true,
+                    description = "Group Trigger definition id attached to dampening."),
+            @DocParameter(required = true, body = true, type = Dampening.class,
+                    description = "Dampening definition to be created.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Dampening created.", response = Dampening.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void createGroupDampening(RoutingContext routing) {
+        createDampening(routing, true);
     }
 
     void createDampening(RoutingContext routing, boolean isGroup) {
@@ -160,7 +210,20 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void createFullTrigger(RoutingContext routing) {
+    @DocPath(method = POST,
+            path = "/trigger",
+            name = "Create a new full trigger (trigger, dampenings and conditions).",
+            notes = "Return created full trigger.")
+    @DocParameters(value = {
+            @DocParameter(required = true, body = true, type = FullTrigger.class,
+                    description = "FullTrigger (trigger, dampenings, conditions) to be created.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, FullTrigger created.", response = FullTrigger.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void createFullTrigger(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -210,7 +273,22 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void updateFullTrigger(RoutingContext routing) {
+    @DocPath(method = PUT,
+            path = "/trigger/{triggerId}",
+            name = "Update an existing full trigger (trigger, dampenings and conditions).",
+            notes = "Return updated full trigger.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id to be updated."),
+            @DocParameter(required = true, body = true, type = FullTrigger.class,
+                    description = "FullTrigger (trigger, dampenings, conditions) to be created.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, FullTrigger updated.", response = FullTrigger.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void updateFullTrigger(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -251,7 +329,21 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void createGroupMember(RoutingContext routing) {
+    @DocPath(method = POST,
+            path = "/groups/members",
+            name = "Create a new member trigger for a parent trigger.",
+            notes = "Returns Member Trigger created if operation finished correctly.")
+    @DocParameters(value = {
+            @DocParameter(required = true, body = true, type = GroupMemberInfo.class,
+                    description = "Group member trigger to be created.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Member Trigger Created.", response = Trigger.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "Group trigger not found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void createGroupMember(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -286,6 +378,40 @@ public class TriggersHandler implements RestHandler {
                         throw new InternalServerException(e.toString());
                     }
                 }, res -> result(routing, res));
+    }
+
+    @DocPath(method = POST,
+            path = "/",
+            name = "Create a new trigger.",
+            notes = "Returns created trigger.")
+    @DocParameters(value = {
+            @DocParameter(required = true, body = true, type = Trigger.class,
+                    description = "Trigger definition to be created.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Trigger Created.", response = Trigger.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void createTrigger(RoutingContext routing) {
+        createTrigger(routing, false);
+    }
+
+    @DocPath(method = POST,
+            path = "/groups",
+            name = "Create a new group trigger.",
+            notes = "Returns created group trigger.")
+    @DocParameters(value = {
+            @DocParameter(required = true, body = true, type = Trigger.class,
+                    description = "Group member trigger to be created.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Group Trigger Created.", response = Trigger.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void createGroupTrigger(RoutingContext routing) {
+        createTrigger(routing, true);
     }
 
     void createTrigger(RoutingContext routing, boolean isGroup) {
@@ -336,6 +462,42 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
+    @DocPath(method = DELETE,
+            path = "/{triggerId}/dampenings/{dampeningId}",
+            name = "Delete an existing dampening definition.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id to be deleted."),
+            @DocParameter(name = "dampeningId", required = true, path = true,
+                    description = "Dampening id for dampening definition to be deleted.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Dampening updated.", response = FullTrigger.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void deleteDampening(RoutingContext routing) {
+        deleteDampening(routing, false);
+    }
+
+    @DocPath(method = DELETE,
+            path = "/groups/{groupId}/dampenings/{dampeningId}",
+            name = "Delete an existing group dampening definition.")
+    @DocParameters(value = {
+            @DocParameter(name = "groupId", required = true, path = true,
+                    description = "Trigger definition id to be deleted."),
+            @DocParameter(name = "dampeningId", required = true, path = true,
+                    description = "Dampening id for dampening definition to be deleted.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Dampening updated.", response = FullTrigger.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void deleteGroupDampening(RoutingContext routing) {
+        deleteDampening(routing, true);
+    }
+
     void deleteDampening(RoutingContext routing, boolean isGroup) {
         routing.vertx()
                 .executeBlocking(future -> {
@@ -364,7 +526,24 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void deleteGroupTrigger(RoutingContext routing) {
+    @DocPath(method = DELETE,
+            path = "/groups/{groupId}",
+            name = "Delete a group trigger.")
+    @DocParameters(value = {
+            @DocParameter(name = "groupId", required = true, path = true,
+                    description = "Group Trigger id."),
+            @DocParameter(name = "keepNonOrphans", required = true, type = Boolean.class,
+                    description = "Convert the non-orphan member triggers to standard triggers."),
+            @DocParameter(name = "keepOrphans", required = true, type = Boolean.class,
+                    description = "Convert the orphan member triggers to standard triggers.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Group Trigger Removed."),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "Group Trigger not found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void deleteGroupTrigger(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -394,7 +573,20 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void deleteTrigger(RoutingContext routing) {
+    @DocPath(method = DELETE,
+            path = "/{triggerId}",
+            name = "Delete an existing standard or group member trigger definition.",
+            notes = "This can not be used to delete a group trigger definition.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id to be deleted.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Trigger deleted."),
+            @DocResponse(code = 404, message = "Trigger not found", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void deleteTrigger(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -414,7 +606,22 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void findGroupMembers(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/groups/{groupId}/members",
+            name = "Find all group member trigger definitions.",
+            notes = "No pagination.")
+    @DocParameters(value = {
+            @DocParameter(name = "groupId", required = true, path = true,
+                    description = "Group TriggerId."),
+            @DocParameter(name = "includeOrphans",
+                    description = "include Orphan members? No if omitted."),
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Successfully fetched list of triggers.", response = Trigger.class, responseContainer = "List"),
+            @DocResponse(code = 404, message = "Trigger not found", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void findGroupMembers(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -436,7 +643,27 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void findTriggers(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/",
+            name = "Get triggers with optional filtering.",
+            notes = "If not criteria defined, it fetches all triggers stored in the system.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerIds",
+                    description = "Filter out triggers for unspecified triggerIds.",
+                    allowableValues = "Comma separated list of trigger IDs."),
+            @DocParameter(name = "tags",
+                    description = "Filter out triggers for unspecified tags.",
+                    allowableValues = "Comma separated list of tags, each tag of format 'name\\|description'. + \n" +
+                            "Specify '*' for description to match all values."),
+            @DocParameter(name = "thin", type = Boolean.class,
+                    description = "Return only thin triggers. Currently Ignored.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Successfully fetched list of triggers.", response = Trigger.class, responseContainer = "List"),
+            @DocResponse(code = 404, message = "Trigger not found", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void findTriggers(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -456,7 +683,21 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void getDampening(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/{triggerId}/dampenings/{dampeningId}",
+            name = "Get an existing dampening.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id to be retrieved."),
+            @DocParameter(name = "dampeningId", required = true, path = true,
+                    description = "Dampening id")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Successfully fetched list of triggers.", response = Dampening.class),
+            @DocResponse(code = 404, message = "Damppening not found", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void getDampening(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -476,6 +717,38 @@ public class TriggersHandler implements RestHandler {
                     }
                     throw new ResponseUtil.NotFoundException("No dampening found for dampeningId:" + dampeningId);
                 }, res -> result(routing, res));
+    }
+
+    @DocPath(method = GET,
+            path = "/{triggerId}",
+            name = "Get an existing trigger definition.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id to be retrieved.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Trigger found.", response = Trigger.class),
+            @DocResponse(code = 404, message = "Trigger not found", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void getTrigger(RoutingContext routing) {
+        getTrigger(routing, false);
+    }
+
+    @DocPath(method = GET,
+            path = "/trigger/{triggerId}",
+            name = "Get an existing full trigger definition (trigger, dampenings and conditions).")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id to be retrieved.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Trigger found.", response = FullTrigger.class),
+            @DocResponse(code = 404, message = "Trigger not found", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void getFullTrigger(RoutingContext routing) {
+        getTrigger(routing, true);
     }
 
     void getTrigger(RoutingContext routing, boolean isFullTrigger) {
@@ -503,7 +776,18 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void getTriggerConditions(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/{triggerId}/conditions",
+            name = "Get all conditions for a specific trigger.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id to be retrieved.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Successfully fetched list of conditions.", response = Condition.class, responseContainer = "List"),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void getTriggerConditions(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -521,7 +805,18 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void getTriggerDampenings(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/{triggerId}/dampenings",
+            name = "Get all Dampenings for a Trigger (1 Dampening per mode).")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id to be retrieved.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Trigger found.", response = Dampening.class, responseContainer = "List"),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void getTriggerDampenings(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -542,6 +837,62 @@ public class TriggersHandler implements RestHandler {
                         throw new InternalServerException(e.toString());
                     }
                 }, res -> result(routing, res));
+    }
+
+    @DocPath(method = GET,
+            path = "/{triggerId}/dampenings/mode/{triggerMode}",
+            name = "Get dampening using triggerId and triggerMode.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id to be retrieved."),
+            @DocParameter(name = "triggerMode", required = true, path = true,
+                    description = "Trigger mode.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Trigger found.", response = Dampening.class, responseContainer = "List"),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void getTriggerModeDampenings(RoutingContext routing) {
+        getTriggerDampenings(routing);
+    }
+
+    @DocPath(method = PUT,
+            path = "/{triggerId}",
+            name = "Update an existing trigger definition.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id to be updated."),
+            @DocParameter(required = true, body = true, type = Trigger.class,
+                    description = "Updated trigger definition.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Trigger updated.", response = Trigger.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void updateTrigger(RoutingContext routing) {
+        updateTrigger(routing, false);
+    }
+
+    @DocPath(method = PUT,
+            path = "/groups/{groupId}",
+            name = "Update an existing group trigger definition and its member definitions.")
+    @DocParameters(value = {
+            @DocParameter(name = "groupId", required = true, path = true,
+                    description = "Group Trigger definition id to be updated."),
+            @DocParameter(required = true, body = true, type = Trigger.class,
+                    description = "Updated group trigger definition.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Group Trigger updated.", response = Trigger.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void updateGroupTrigger(RoutingContext routing) {
+        updateTrigger(routing, true);
     }
 
     void updateTrigger(RoutingContext routing, boolean isGroup) {
@@ -583,7 +934,19 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void orphanMemberTrigger(RoutingContext routing) {
+    @DocPath(method = POST,
+            path = "/groups/members/{memberId}/orphan",
+            name = "Make a non-orphan member trigger into an orphan.")
+    @DocParameters(value = {
+            @DocParameter(name = "memberId", required = true, path = true,
+                    description = "Member Trigger id to be made an orphan.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Trigger updated.", response = Trigger.class),
+            @DocResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void orphanMemberTrigger(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -601,6 +964,52 @@ public class TriggersHandler implements RestHandler {
                         throw new InternalServerException(e.toString());
                     }
                 }, res -> result(routing, res));
+    }
+
+    @DocPath(method = PUT,
+            path = "/{triggerId}/dampenings/{dampeningId}",
+            name = "Update an existing dampening definition.",
+            notes = "Note that the trigger mode can not be changed. + \n" +
+                    "Return Dampening updated.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "Trigger definition id to be retrieved."),
+            @DocParameter(name = "dampeningId", required = true, path = true,
+                    description = "Updated dampening definition."),
+            @DocParameter(required = true, body = true, type = Dampening.class,
+                    description = "Updated dampening definition.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Dampening Updated.", response = Dampening.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "No Dampening Found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void updateDampening(RoutingContext routing) {
+        updateDampening(routing, false);
+    }
+
+    @DocPath(method = PUT,
+            path = "/groups/{groupId}/dampenings/{dampeningId}",
+            name = "Update an existing group dampening definition.",
+            notes = "Note that the trigger mode can not be changed. + \n" +
+                    "Return Dampening updated.")
+    @DocParameters(value = {
+            @DocParameter(name = "groupId", required = true, path = true,
+                    description = "Trigger definition id to be retrieved."),
+            @DocParameter(name = "dampeningId", required = true, path = true,
+                    description = "Updated dampening definition."),
+            @DocParameter(required = true, body = true, type = Dampening.class,
+                    description = "Updated dampening definition.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Dampening Updated.", response = Dampening.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "No Dampening Found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void updateGroupDampening(RoutingContext routing) {
+        updateDampening(routing, true);
     }
 
     void updateDampening(RoutingContext routing, boolean isGroup) {
@@ -647,7 +1056,21 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void unorphanMemberTrigger(RoutingContext routing) {
+    @DocPath(method = POST,
+            path = "/groups/members/{memberId}/unorphan",
+            name = "Make an orphan member trigger into an group trigger.")
+    @DocParameters(value = {
+            @DocParameter(name = "memberId", required = true, path = true,
+                    description = "Orphan Member Trigger id to be assigned into a group trigger"),
+            @DocParameter(name = "memberTrigger", required = true, body = true, type = UnorphanMemberInfo.class,
+                    description = "Only context and dataIdMap are used when changing back to a non-orphan.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Trigger updated.", response = Trigger.class),
+            @DocResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void unorphanMemberTrigger(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -681,7 +1104,24 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void setAllConditions(RoutingContext routing) {
+    @DocPath(method = PUT,
+            path = "/{triggerId}/conditions",
+            name = "Set the conditions for the trigger. ",
+            notes = "This sets the conditions for all trigger modes, " +
+                    "replacing existing conditions for all trigger modes. Returns the new conditions.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "The relevant Trigger."),
+            @DocParameter(required = true, body = true, type = Condition.class, typeContainer = "List",
+                    description = "Collection of Conditions to set.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Condition Set created.", response = Condition.class, responseContainer = "List"),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void setAllConditions(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -710,7 +1150,27 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    void setConditions(RoutingContext routing) {
+    @DocPath(method = PUT,
+            path = "/{triggerId}/conditions/{triggerMode}",
+            name = "Set the conditions for the trigger. ",
+            notes = "This sets the conditions for the trigger. " +
+                    "This replaces any existing conditions. Returns the new conditions.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "The relevant Trigger."),
+            @DocParameter(name = "triggerMode", required = true, path = true,
+                    description = "The trigger mode.",
+                    allowableValues = "FIRING or AUTORESOLVE (not case sensitive)"),
+            @DocParameter(required = true, body = true, type = Condition.class, typeContainer = "List",
+                    description = "Collection of Conditions to set.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Condition Set created.", response = Condition.class, responseContainer = "List"),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void setConditions(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -748,8 +1208,26 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
+    @DocPath(method = PUT,
+            path = "/groups/{groupId}/conditions",
+            name = "Set the conditions for the group trigger. ",
+            notes = "This replaces any existing conditions on the group and member conditions " +
+                    "for all trigger modes. + \n" +
+                    "Return the new group conditions.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "The relevant Trigger."),
+            @DocParameter(required = true, body = true, type = GroupConditionsInfo.class, typeContainer = "List",
+                    description = "Collection of Conditions to set and Map with tokens per dataId on members.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Group Condition Set created.", response = Condition.class, responseContainer = "List"),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
     @SuppressWarnings("unchecked")
-    void setGroupConditions(RoutingContext routing) {
+    public void setGroupConditions(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = checkTenant(routing);
@@ -826,6 +1304,69 @@ public class TriggersHandler implements RestHandler {
                         throw new InternalServerException(e.toString());
                     }
                 }, res -> result(routing, res));
+    }
+
+    @DocPath(method = PUT,
+            path = "/groups/{groupId}/conditions/{triggerMode}",
+            name = "Set the conditions for the group trigger. ",
+            notes = "This replaces any existing conditions on the group and member conditions. " +
+                    "Return the new group conditions.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerId", required = true, path = true,
+                    description = "The relevant Trigger."),
+            @DocParameter(name = "triggerMode", required = true, path = true,
+                    description = "FIRING or AUTORESOLVE (not case sensitive)"),
+            @DocParameter(required = true, body = true, type = GroupConditionsInfo.class, typeContainer = "List",
+                    description = "Collection of Conditions to set and Map with tokens per dataId on members.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Group Condition Set created.", response = Condition.class, responseContainer = "List"),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "Trigger not found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void setGroupConditionsTriggerMode(RoutingContext routing) {
+        setGroupConditions(routing);
+    }
+
+    @DocPath(method = PUT,
+            path = "/enabled",
+            name = "Update triggers to be enabled or disabled.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerIds", required = true,
+                    description = "List of trigger ids to enable or disable",
+                    allowableValues = "Comma separated list of triggerIds to be enabled or disabled."),
+            @DocParameter(name = "enabled", required = true, type = Boolean.class,
+                    description = "Set enabled or disabled."),
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Triggers updated."),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "Trigger not found", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void setTriggersEnabled(RoutingContext routingContext) {
+        setTriggersEnabled(routingContext, false);
+    }
+
+    @DocPath(method = PUT,
+            path = "/groups/enabled",
+            name = "Update group triggers and their member triggers to be enabled or disabled.")
+    @DocParameters(value = {
+            @DocParameter(name = "triggerIds", required = true,
+                    description = "List of group trigger ids to enable or disable",
+                    allowableValues = "Comma separated list of group triggerIds to be enabled or disabled."),
+            @DocParameter(name = "enabled", required = true, type = Boolean.class,
+                    description = "Set enabled or disabled."),
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Group Triggers updated."),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "Group Trigger not found", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void setGroupTriggersEnabled(RoutingContext routingContext) {
+        setTriggersEnabled(routingContext, true);
     }
 
     void setTriggersEnabled(RoutingContext routing, boolean isGroup) {

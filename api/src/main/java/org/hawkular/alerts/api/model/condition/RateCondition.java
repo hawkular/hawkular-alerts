@@ -16,13 +16,12 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * A threshold condition against rate of change over time. Typically used for "counter" metrics, that continuously
@@ -50,7 +49,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "A threshold condition against rate of change over time. + \n" +
+@DocModel(description = "A threshold condition against rate of change over time. + \n" +
         " + \n" +
         "Typically used for \"counter\" metrics, that continuously increase or decrease. + \n" +
         "Given the last two datums for dataId: + \n" +
@@ -100,25 +99,25 @@ public class RateCondition extends Condition {
     @JsonInclude(Include.NON_NULL)
     private String dataId;
 
-    @ApiModelProperty(value = "Indicate if a metric is increasing/decreasing.",
+    @DocModelProperty(description = "Indicate if a metric is increasing/decreasing.",
             position = 0,
             required = true)
     @JsonInclude(Include.NON_NULL)
     private Direction direction;
 
-    @ApiModelProperty(value = "Time period used for the evaluation.",
+    @DocModelProperty(description = "Time period used for the evaluation.",
             position = 1,
             required = true)
     @JsonInclude(Include.NON_NULL)
     private Period period;
 
-    @ApiModelProperty(value = "Compare operator [LT (<), GT (>), LTE (<=), GTE (>=)].",
+    @DocModelProperty(description = "Compare operator [LT (<), GT (>), LTE (<=), GTE (>=)].",
             position = 2,
             required = true)
     @JsonInclude(Include.NON_NULL)
     private Operator operator;
 
-    @ApiModelProperty(value = "Condition threshold.",
+    @DocModelProperty(description = "Condition threshold.",
             position = 3,
             required = true)
     @JsonInclude(Include.NON_NULL)

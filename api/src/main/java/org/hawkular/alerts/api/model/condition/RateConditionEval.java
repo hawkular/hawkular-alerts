@@ -16,6 +16,8 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.condition.RateCondition.Direction;
 import org.hawkular.alerts.api.model.data.Data;
@@ -23,41 +25,38 @@ import org.hawkular.alerts.api.model.data.Data;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
 /**
  * An evaluation state for rate condition.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An evaluation state for rate condition.")
+@DocModel(description = "An evaluation state for rate condition.")
 public class RateConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "Rate condition linked with this state.", position = 0)
+    @DocModelProperty(description = "Rate condition linked with this state.", position = 0)
     @JsonInclude(Include.NON_NULL)
     private RateCondition condition;
 
-    @ApiModelProperty(value = "First (older) value for dataId used in the evaluation.", position = 1)
+    @DocModelProperty(description = "First (older) value for dataId used in the evaluation.", position = 1)
     @JsonInclude(Include.NON_NULL)
     private Double previousValue;
 
-    @ApiModelProperty(value = "Second (newer) value for dataId used in the evaluation.", position = 2)
+    @DocModelProperty(description = "Second (newer) value for dataId used in the evaluation.", position = 2)
     @JsonInclude(Include.NON_NULL)
     private Double value;
 
-    @ApiModelProperty(value = "Time for first (older) value for dataId used in the evaluation.", position = 3)
+    @DocModelProperty(description = "Time for first (older) value for dataId used in the evaluation.", position = 3)
     @JsonInclude
     private long previousTime;
 
-    @ApiModelProperty(value = "Time for second (newer) value for dataId used in the evaluation.", position = 4)
+    @DocModelProperty(description = "Time for second (newer) value for dataId used in the evaluation.", position = 4)
     @JsonInclude
     private long time;
 
-    @ApiModelProperty(value = "Calculated rate for this evaluation.", position = 5)
+    @DocModelProperty(description = "Calculated rate for this evaluation.", position = 5)
     @JsonInclude(Include.NON_NULL)
     private Double rate;
 

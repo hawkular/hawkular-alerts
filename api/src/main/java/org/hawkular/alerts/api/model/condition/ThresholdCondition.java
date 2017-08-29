@@ -16,13 +16,12 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * A numeric threshold condition.
@@ -30,7 +29,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "A numeric threshold condition.")
+@DocModel(description = "A numeric threshold condition.")
 public class ThresholdCondition extends Condition {
 
     private static final long serialVersionUID = 1L;
@@ -42,13 +41,13 @@ public class ThresholdCondition extends Condition {
     @JsonInclude(Include.NON_NULL)
     private String dataId;
 
-    @ApiModelProperty(value = "Compare operator [LT (<), GT (>), LTE (<=), GTE (>=)].",
+    @DocModelProperty(description = "Compare operator [LT (<), GT (>), LTE (<=), GTE (>=)].",
             position = 0,
             required = true)
     @JsonInclude(Include.NON_NULL)
     private Operator operator;
 
-    @ApiModelProperty(value = "Condition threshold.",
+    @DocModelProperty(description = "Condition threshold.",
             position = 1,
             required = true)
     @JsonInclude(Include.NON_NULL)

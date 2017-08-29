@@ -2,6 +2,10 @@ package org.hawkular.alerts.handlers;
 
 import static org.hawkular.alerts.api.json.JsonUtil.fromJson;
 import static org.hawkular.alerts.api.util.Util.isEmpty;
+import static org.hawkular.alerts.api.doc.DocConstants.DELETE;
+import static org.hawkular.alerts.api.doc.DocConstants.GET;
+import static org.hawkular.alerts.api.doc.DocConstants.POST;
+import static org.hawkular.alerts.api.doc.DocConstants.PUT;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.PARAMS_PAGING;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.checkForUnknownQueryParams;
 
@@ -20,7 +24,15 @@ import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
+import org.hawkular.alerts.api.doc.DocEndpoint;
+import org.hawkular.alerts.api.doc.DocParameter;
+import org.hawkular.alerts.api.doc.DocParameters;
+import org.hawkular.alerts.api.doc.DocPath;
+import org.hawkular.alerts.api.doc.DocResponse;
+import org.hawkular.alerts.api.doc.DocResponses;
 import org.hawkular.alerts.handlers.util.ResponseUtil;
+import org.hawkular.alerts.handlers.util.ResponseUtil.ApiDeleted;
+import org.hawkular.alerts.handlers.util.ResponseUtil.ApiError;
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
 import org.hawkular.handlers.RestEndpoint;
@@ -35,6 +47,7 @@ import io.vertx.ext.web.RoutingContext;
  * @author Lucas Ponce
  */
 @RestEndpoint(path = "/actions")
+@DocEndpoint(value = "/actions", description = "Actions Handling")
 public class ActionsHandler implements RestHandler {
     private static final MsgLogger log = MsgLogging.getMsgLogger(ActionsHandler.class);
     private static final String PARAM_START_TIME = "startTime";
@@ -84,7 +97,16 @@ public class ActionsHandler implements RestHandler {
         router.delete(path + "/:actionPlugin/:actionId").handler(this::deleteActionDefinition);
     }
 
-    void findActionIds(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/",
+            name = "Find all action ids grouped by plugin.",
+            notes = "Return a map[string, array of string]] where key is the plugin id and description " +
+                    "a collection of actionIds.")
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Successfully fetched map of action ids grouped by plugin.", response = Collection.class, responseContainer = "Map"),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void findActionIds(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
@@ -99,7 +121,20 @@ public class ActionsHandler implements RestHandler {
                 }, res -> ResponseUtil.result(routing, res));
     }
 
-    void createActionDefinition(RoutingContext routing) {
+    @DocPath(method = POST,
+            path = "/",
+            name = "Create a new ActionDefinition.",
+            notes = "Returns created ActionDefinition")
+    @DocParameters(value = {
+            @DocParameter(required = true, body = true, type = ActionDefinition.class,
+                    description = "ActionDefinition to be created.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, ActionDefinition Created.", response = String.class, responseContainer = "List"),
+            @DocResponse(code = 400, message = "Existing ActionDefinition/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void createActionDefinition(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
@@ -150,7 +185,21 @@ public class ActionsHandler implements RestHandler {
                 }, res -> ResponseUtil.result(routing, res));
     }
 
-    void updateActionDefinition(RoutingContext routing) {
+    @DocPath(method = PUT,
+            path = "/",
+            name = "Update an existing ActionDefinition.",
+            notes = "Returns updated ActionDefinition.")
+    @DocParameters(value = {
+            @DocParameter(required = true, body = true, type = ActionDefinition.class,
+                    description = "ActionDefinition to be created.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, ActionDefinition Updated.", response = ActionDefinition.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 404, message = "ActionDefinition not found for update.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void updateActionDefinition(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
@@ -201,7 +250,35 @@ public class ActionsHandler implements RestHandler {
                 }, res -> ResponseUtil.result(routing, res));
     }
 
-    void findActionsHistory(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/history",
+            name = "Get actions from history with optional filtering.",
+            notes = "If not criteria defined, it fetches all actions stored in the system.")
+    @DocParameters(value = {
+            @DocParameter(name = "startTime",
+                    description = "Filter out actions created before this time.",
+                    allowableValues = "Timestamp in millisecond since epoch."),
+            @DocParameter(name = "endTime",
+                    description = "Filter out actions created after this time.",
+                    allowableValues = "Timestamp in millisecond since epoch."),
+            @DocParameter(name = "actionPlugins",
+                    description = "Filter out actions for unspecified actionPlugin.",
+                    allowableValues = "Comma separated list of plugin names."),
+            @DocParameter(name = "actionIds",
+                    description = "Filter out actions for unspecified actionId.",
+                    allowableValues = "Comma separated list of actions IDs."),
+            @DocParameter(name = "results",
+                    description = "Filter out alerts for unspecified result.",
+                    allowableValues = "Comma separated list of action results."),
+            @DocParameter(name = "thin", type = Boolean.class,
+                    description = "Return only thin actions, do not include full alert, only alertId.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Successfully fetched list of actions.", response = Action.class, responseContainer = "List"),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void findActionsHistory(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
@@ -221,7 +298,36 @@ public class ActionsHandler implements RestHandler {
                 }, res -> ResponseUtil.result(routing, res));
     }
 
-    void deleteActionsHistory(RoutingContext routing) {
+    @DocPath(method = PUT,
+            path = "/history/delete",
+            name = "Delete actions from history with optional filtering.",
+            notes = "WARNING: If not criteria defined, it deletes all actions history stored in the system.")
+    @DocParameters(value = {
+            @DocParameter(name = "startTime",
+                    description = "Filter out actions created before this time.",
+                    allowableValues = "Timestamp in millisecond since epoch."),
+            @DocParameter(name = "endTime",
+                    description = "Filter out actions created after this time.",
+                    allowableValues = "Timestamp in millisecond since epoch."),
+            @DocParameter(name = "actionPlugins",
+                    description = "Filter out actions for unspecified actionPlugin.",
+                    allowableValues = "Comma separated list of plugin names."),
+            @DocParameter(name = "actionIds",
+                    description = "Filter out actions for unspecified actionId.",
+                    allowableValues = "Comma separated list of actions IDs."),
+            @DocParameter(name = "results",
+                    description = "Filter out alerts for unspecified result.",
+                    allowableValues = "Comma separated list of action results."),
+            @DocParameter(name = "results",
+                    description = "Filter out alerts for unspecified result.",
+                    allowableValues = "Comma separated list of action results.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, Actions deleted.", response = ApiDeleted.class),
+            @DocResponse(code = 400, message = "Bad Request/Invalid Parameters.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void deleteActionsHistory(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
@@ -242,7 +348,18 @@ public class ActionsHandler implements RestHandler {
                 }, res -> ResponseUtil.result(routing, res));
     }
 
-    void findActionIdsByPlugin(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/plugin/{actionPlugin}",
+            name = "Find all action ids of an specific action plugin.")
+    @DocParameters(value = {
+            @DocParameter(name = "actionPlugin", required = true, path = true,
+                    description = "Action plugin to filter query for action ids.")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Successfully fetched list of action ids.", response = ApiDeleted.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void findActionIdsByPlugin(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
@@ -258,7 +375,21 @@ public class ActionsHandler implements RestHandler {
                 }, res -> ResponseUtil.result(routing, res));
     }
 
-    void getActionDefinition(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/{actionPlugin}/{actionId}",
+            name = "Get an existing action definition.")
+    @DocParameters(value = {
+            @DocParameter(name = "actionPlugin", required = true, path = true,
+                    description = "Action plugin."),
+            @DocParameter(name = "actionId", required = true, path = true,
+                    description = "Action id to be retrieved")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Success, ActionDefinition found.", response = ActionDefinition.class),
+            @DocResponse(code = 404, message = "No ActionDefinition found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void getActionDefinition(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);
@@ -279,7 +410,21 @@ public class ActionsHandler implements RestHandler {
                 }, res -> ResponseUtil.result(routing, res));
     }
 
-    void deleteActionDefinition(RoutingContext routing) {
+    @DocPath(method = DELETE,
+            path = "/{actionPlugin}/{actionId}",
+            name = "Delete an existing action definition.")
+    @DocParameters(value = {
+            @DocParameter(name = "actionPlugin", required = true, path = true,
+                    description = "Action plugin."),
+            @DocParameter(name = "actionId", required = true, path = true,
+                    description = "Action id to be retrieved")
+    })
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "ActionDefinition Deleted.", response = ActionDefinition.class),
+            @DocResponse(code = 404, message = "No Action found.", response = ApiError.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ApiError.class)
+    })
+    public void deleteActionDefinition(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);

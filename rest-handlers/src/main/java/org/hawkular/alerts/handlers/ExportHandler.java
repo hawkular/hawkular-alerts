@@ -1,8 +1,18 @@
 package org.hawkular.alerts.handlers;
 
+import static org.hawkular.alerts.api.doc.DocConstants.GET;
+import static org.hawkular.alerts.api.doc.DocConstants.POST;
+
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
+import org.hawkular.alerts.api.doc.DocEndpoint;
+import org.hawkular.alerts.api.doc.DocParameter;
+import org.hawkular.alerts.api.doc.DocParameters;
+import org.hawkular.alerts.api.doc.DocPath;
+import org.hawkular.alerts.api.doc.DocResponse;
+import org.hawkular.alerts.api.doc.DocResponses;
 import org.hawkular.alerts.handlers.util.ResponseUtil;
 import org.hawkular.handlers.RestEndpoint;
 import org.hawkular.handlers.RestHandler;
@@ -17,6 +27,7 @@ import io.vertx.ext.web.RoutingContext;
  * @author Lucas Ponce
  */
 @RestEndpoint(path = "/export")
+@DocEndpoint(value = "/export", description = "Export of triggers and actions definitions")
 public class ExportHandler implements RestHandler {
     private static final MsgLogger log = MsgLogging.getMsgLogger(ExportHandler.class);
     private static final String ROOT = "/";
@@ -33,7 +44,14 @@ public class ExportHandler implements RestHandler {
         router.get(path).handler(this::exportDefinitions);
     }
 
-    void exportDefinitions(RoutingContext routing) {
+    @DocPath(method = GET,
+            path = "/",
+            name = "Export a list of full triggers and action definitions.")
+    @DocResponses(value = {
+            @DocResponse(code = 200, message = "Successfully exported list of full triggers and action definitions.", response = Definitions.class),
+            @DocResponse(code = 500, message = "Internal server error.", response = ResponseUtil.ApiError.class)
+    })
+    public void exportDefinitions(RoutingContext routing) {
         routing.vertx()
                 .executeBlocking(future -> {
                     String tenantId = ResponseUtil.checkTenant(routing);

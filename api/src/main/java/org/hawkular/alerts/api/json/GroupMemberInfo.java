@@ -18,8 +18,8 @@ package org.hawkular.alerts.api.json;
 
 import java.util.Map;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 
 /**
  * A convenience class used in the REST API to POST a new group Member Trigger.
@@ -33,7 +33,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author jay shaughnessy
  * @author lucas ponce
  */
-@ApiModel(description = "A convenience class used in the REST API to POST a new group Member Trigger. + \n" +
+@DocModel(description = "A convenience class used in the REST API to POST a new group Member Trigger. + \n" +
         " + \n" +
         "A group-level condition uses dataId tokens for the dataIds defined in the condition. + \n" +
         "The group members must then replace the tokens with actual dataIds. + \n" +
@@ -59,37 +59,37 @@ import io.swagger.annotations.ApiModelProperty;
         "This allows the expression of a group external condition to be automatically customized to the member.")
 public class GroupMemberInfo {
 
-    @ApiModelProperty(value = "Trigger id for parent Group Trigger.",
+    @DocModelProperty(description = "Trigger id for parent Group Trigger.",
             position = 0,
             required = true)
     private String groupId;
 
-    @ApiModelProperty(value = "Trigger id for member Trigger.",
+    @DocModelProperty(description = "Trigger id for member Trigger.",
             position = 1,
             required = true)
     private String memberId;
 
-    @ApiModelProperty(value = "Trigger name for member Trigger.",
+    @DocModelProperty(description = "Trigger name for member Trigger.",
             position = 2,
             required = true)
     private String memberName;
 
-    @ApiModelProperty(value = "Trigger description for member Trigger.",
+    @DocModelProperty(description = "Trigger description for member Trigger.",
             position = 3,
             required = true)
     private String memberDescription;
 
-    @ApiModelProperty(value = "Trigger context for member Trigger.",
+    @DocModelProperty(description = "Trigger context for member Trigger.",
             position = 4,
             required = true)
     private Map<String, String> memberContext;
 
-    @ApiModelProperty(value = "Trigger tags for member Trigger.",
+    @DocModelProperty(description = "Trigger tags for member Trigger.",
             position = 5,
             required = true)
     private Map<String, String> memberTags;
 
-    @ApiModelProperty(value = "A map of the dataId tokens in the group conditions to the actual dataIds to " +
+    @DocModelProperty(description = "A map of the dataId tokens in the group conditions to the actual dataIds to " +
             "be used for the member being added. + \n" +
             "Can be empty if the group has no current conditions.",
             position = 6,

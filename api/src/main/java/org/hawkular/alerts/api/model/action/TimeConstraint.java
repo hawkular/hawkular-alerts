@@ -26,12 +26,12 @@ import java.util.Date;
 import java.util.IllegalFormatException;
 import java.util.TimeZone;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Define a time interval (startTime, endTime) used as a constraint for action execution.
@@ -125,7 +125,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "Define a time interval (startTime, endTime) used as a constraint for action execution. + \n" +
+@DocModel(description = "Define a time interval (startTime, endTime) used as a constraint for action execution. + \n" +
         "Time interval can be defined in an absolute or relative expression. + \n" +
         " + \n" +
         "An absolute time interval uses the pattern yyyy.MM.dd[,HH:mm] for startTime and endTime properties. + \n" +
@@ -293,7 +293,7 @@ public class TimeConstraint implements Serializable {
      * Define the start of the time interval.
      * It can be in absolute or relative format.
      */
-    @ApiModelProperty(value = "Define the start of the time interval. It can be in absolute or relative format.",
+    @DocModelProperty(description = "Define the start of the time interval. It can be in absolute or relative format.",
             position = 0,
             required = true)
     @JsonInclude
@@ -303,7 +303,7 @@ public class TimeConstraint implements Serializable {
      * Define the end of the time interval.
      * It can be in absolute or relative format.
      */
-    @ApiModelProperty(value = "Define the end of the time interval. It can be in absolute or relative format.",
+    @DocModelProperty(description = "Define the end of the time interval. It can be in absolute or relative format.",
             position = 1,
             required = true)
     @JsonInclude
@@ -312,19 +312,19 @@ public class TimeConstraint implements Serializable {
     /**
      * Define if startTime and endTime properties are defined in absolute or relative format.
      */
-    @ApiModelProperty(value = "Define if startTime and endTime properties are defined in absolute or relative format.",
+    @DocModelProperty(description = "Define if startTime and endTime properties are defined in absolute or relative format.",
             position = 2,
-            example = "true")
+            defaultValue = "true")
     @JsonInclude(Include.NON_NULL)
     private boolean relative;
 
     /**
      * Indicate if time constraint is satisfied when a given timestamp is inside or outside the interval.
      */
-    @ApiModelProperty(value = "Indicate if time constraint is satisfied when a given timestamp is inside or outside " +
+    @DocModelProperty(description = "Indicate if time constraint is satisfied when a given timestamp is inside or outside " +
             "the interval.",
             position = 3,
-            example = "true")
+            defaultValue = "true")
     @JsonInclude(Include.NON_NULL)
     private boolean inRange;
 
@@ -333,7 +333,7 @@ public class TimeConstraint implements Serializable {
      * applied. Time zone is expressed in standard <i>Area/Location</i> format. It is recommended to specify the time
      * zone unless you are sure of the server environment.
      */
-    @ApiModelProperty(value = "Indicate the time zone in which the times are expressed. If not specified the " +
+    @DocModelProperty(description = "Indicate the time zone in which the times are expressed. If not specified the " +
             "server's default time zone is applied. Time zone is expressed in standard Area/Location format. " +
             "It is recommended to specify the time zone unless you are sure of the server environment.",
             position = 4,

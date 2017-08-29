@@ -16,14 +16,13 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.event.Event;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * An evaluation state for event condition.
@@ -31,17 +30,17 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An evaluation state for event condition.")
+@DocModel(description = "An evaluation state for event condition.")
 public class EventConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "Event condition linked with this state.",
+    @DocModelProperty(description = "Event condition linked with this state.",
             position = 0)
     @JsonInclude(Include.NON_NULL)
     private EventCondition condition;
 
-    @ApiModelProperty(value = "Event value used for dataId.",
+    @DocModelProperty(description = "Event value used for dataId.",
             position = 1)
     @JsonInclude(Include.NON_NULL)
     private Event value;

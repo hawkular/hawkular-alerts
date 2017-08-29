@@ -22,10 +22,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * An action is the abstract concept of a consequence of an event.
@@ -40,7 +41,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An action represents a consequence of an event. + \n" +
+@DocModel(description = "An action represents a consequence of an event. + \n" +
         " + \n" +
         "Actions are processed by plugins, and plugins offer a map of properties to personalize an action. + \n" +
         "An ActionDefinition stores which properties will be used for a specific action in a specific plugin. + \n" +
@@ -64,46 +65,45 @@ import io.swagger.annotations.ApiModelProperty;
         "If a <<TriggerAction>> defines no constraints the <<ActionDefinition>> constraints will be used. + \n")
 public class ActionDefinition implements Serializable {
 
-    @ApiModelProperty(value = "Tenant id owner of this trigger.",
+    @DocModelProperty(description = "Tenant id owner of this trigger.",
             position = 0,
             allowableValues = "Tenant is overwritten from Hawkular-Tenant HTTP header parameter request")
     @JsonInclude
     private String tenantId;
 
-    @ApiModelProperty(value = "Action plugin identifier.",
+    @DocModelProperty(description = "Action plugin identifier.",
             position = 1,
             required = true,
             allowableValues = "Only plugins deployed on the system are valid.")
     @JsonInclude
     private String actionPlugin;
 
-    @ApiModelProperty(value = "Action definition identifier.",
+    @DocModelProperty(description = "Action definition identifier.",
             position = 2,
             required = true)
     @JsonInclude
     private String actionId;
 
-    @ApiModelProperty(value = "Flag to indicate this is a global action.",
-            position = 3,
-            required = false)
+    @DocModelProperty(description = "Flag to indicate this is a global action.",
+            position = 3)
     @JsonInclude
     private boolean global;
 
-    @ApiModelProperty(value = "Plugin properties. Each plugin defines its own specific properties that can be " +
+    @DocModelProperty(description = "Plugin properties. Each plugin defines its own specific properties that can be " +
             "supplied at action definition level.",
             position = 4,
             required = true)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Map<String, String> properties;
 
-    @ApiModelProperty(value = "A list of Alert.Status restricting active states for this action. <<TriggerAction>> " +
+    @DocModelProperty(description = "A list of Alert.Status restricting active states for this action. <<TriggerAction>> " +
             "constraints take precedence, if defined",
             position = 5,
             allowableValues = "OPEN, ACKNOWLEDGED, RESOLVED")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<String> states;
 
-    @ApiModelProperty(value = "A TimeConstraint restricting active times for this action. <<TriggerAction>> " +
+    @DocModelProperty(description = "A TimeConstraint restricting active times for this action. <<TriggerAction>> " +
             "constraints take precedence, if defined.",
             position = 6)
     @JsonInclude(JsonInclude.Include.NON_NULL)

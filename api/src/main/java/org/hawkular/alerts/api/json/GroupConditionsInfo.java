@@ -22,12 +22,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.Condition;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * A convenience class used in the REST API to POST a new Group Condition.
@@ -41,7 +40,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author jay shaughnessy
  * @author lucas ponce
  */
-@ApiModel(description = "A convenience class used in the REST API to POST a new Group Condition. + \n" +
+@DocModel(description = "A convenience class used in the REST API to POST a new Group Condition. + \n" +
         " + \n" +
         "A group-level condition uses dataId tokens for the dataIds defined in the condition.  + \n" +
         "The group members must then replace the tokens with actual dataIds. + \n" +
@@ -81,13 +80,13 @@ import io.swagger.annotations.ApiModelProperty;
         "automatically customized to the member.")
 public class GroupConditionsInfo {
 
-    @ApiModelProperty(value = "A list of conditions for a Group Trigger.",
+    @DocModelProperty(description = "A list of conditions for a Group Trigger.",
             position = 0,
             required = true)
     @JsonInclude(Include.NON_EMPTY)
     private Collection<Condition> conditions;
 
-    @ApiModelProperty(value = "A map of the dataId tokens in the group conditions to the actual dataIds " +
+    @DocModelProperty(description = "A map of the dataId tokens in the group conditions to the actual dataIds " +
             "used for the current member triggers. Can be empty if the group has no existing members.",
             position = 1,
             required = true)

@@ -16,13 +16,13 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 /**
  * An <code>ExternalCondition</code> is used for condition evaluations performed outside of the Alerts engine.
  * The external engine will send <code>StringData</code> providing the data for which the external evaluation
@@ -34,7 +34,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An ExternalCondition is used for condition evaluations performed outside of the " +
+@DocModel(description = "An ExternalCondition is used for condition evaluations performed outside of the " +
         "Alerting engine. + \n" +
         " + \n" +
         "The external engine will send StringData providing the data for which the external evaluation " +
@@ -53,7 +53,7 @@ public class ExternalCondition extends Condition {
      * An identifier assigned by the external alerter to identify this condition as being handled by that
      * alerter. It should be unique enough such that external AlerterIds are unique.
      */
-    @ApiModelProperty(value = "An identifier assigned by the external alerter to identify this condition as being " +
+    @DocModelProperty(description = "An identifier assigned by the external alerter to identify this condition as being " +
             "handled by that. It should be unique enough such that external AlerterIds are unique.",
             position = 0,
             required = true)
@@ -72,7 +72,7 @@ public class ExternalCondition extends Condition {
      * the external engine, It may be a pattern, expression or operator used to configure/drive an
      * external evaluation engine or may just be a static description of the externally defined event.
      */
-    @ApiModelProperty(value = "The operator/pattern/expression/description of the external condition. The use of " +
+    @DocModelProperty(description = "The operator/pattern/expression/description of the external condition. The use of " +
             "this field is up to the external engine, It may be a pattern, expression or operator used to " +
             "configure/drive an external evaluation engine or may just be a static description of the externally " +
             "defined event.",

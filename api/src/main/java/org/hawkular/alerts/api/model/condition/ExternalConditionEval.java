@@ -16,15 +16,14 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
+import org.hawkular.alerts.api.doc.DocModel;
+import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.Condition.Type;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 /**
  * An evaluation state for an external condition.  Note that external conditions may report a <code>Data</code> value
@@ -33,23 +32,23 @@ import io.swagger.annotations.ApiModelProperty;
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-@ApiModel(description = "An evaluation state for an external condition. + \n" +
+@DocModel(description = "An evaluation state for an external condition. + \n" +
         "Note that external conditions may report a Data value or an Event.")
 public class ExternalConditionEval extends ConditionEval {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "External condition linked with this state.",
+    @DocModelProperty(description = "External condition linked with this state.",
             position = 0)
     @JsonInclude(Include.NON_NULL)
     private ExternalCondition condition;
 
-    @ApiModelProperty(value = "String value used for dataId.",
+    @DocModelProperty(description = "String value used for dataId.",
             position = 1)
     @JsonInclude(Include.NON_NULL)
     private String value;
 
-    @ApiModelProperty(value = "Event value used for dataId.",
+    @DocModelProperty(description = "Event value used for dataId.",
             position = 2)
     @JsonInclude(Include.NON_NULL)
     private Event event;
