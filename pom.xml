@@ -27,7 +27,7 @@
 
   <name>Hawkular Alerting</name>
   <description>Alerting subsystem for Hawkular</description>
-  <url>https://github.com/hawkular/hawkular-alerts/tree/next</url>
+  <url>https://github.com/hawkular/hawkular-alerts</url>
   <inceptionYear>2015</inceptionYear>
   <organization>
     <name>Red Hat, Inc.</name>

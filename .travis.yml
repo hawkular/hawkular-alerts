@@ -59,12 +59,12 @@ after_success:
     ./.travis.swagger.sh ;
   fi;
 - export COMMIT_HASH=${TRAVIS_COMMIT}
-- export DOCKER_VERSION=$(if [ "$TRAVIS_TAG" != "" ]; then echo $TRAVIS_TAG; elif [ "$TRAVIS_BRANCH" == "next" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi)
+- export DOCKER_VERSION=$(if [ "$TRAVIS_TAG" != "" ]; then echo $TRAVIS_TAG; elif [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi)
 - export DOCKER_USER=$(if [ "$DOCKER_USER" == "" ]; then echo "unknown"; else echo $DOCKER_USER ; fi)
 - export DOCKER_PASS=$(if [ "$DOCKER_PASS" == "" ]; then echo "unknown"; else echo $DOCKER_PASS ; fi)
 - echo DOCKER_VERSION=$DOCKER_VERSION
 - echo "${TRAVIS_BRANCH}"
-- if [[ "${TRAVIS_BRANCH}" == "next" ]];
+- if [[ "${TRAVIS_BRANCH}" == "master" ]];
   then
     cd dist ;
     ./build-image.sh ;
