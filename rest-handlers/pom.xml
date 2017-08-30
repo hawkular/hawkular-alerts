@@ -115,7 +115,7 @@
                 <classesDir>${classesDirectory}</classesDir>
                 <baseFile>${restDocDirectory}/base.adoc</baseFile>
                 <generatedFile>${generatedDocDirectory}/generated-doc.json</generatedFile>
-                <outputFile>${project.build.directory}/generated/rest-alerts.adoc</outputFile>
+                <outputFile>${project.build.directory}/generated/rest-alerts-v2.adoc</outputFile>
               </properties>
               <scripts>
                 <script>file:///${restDocDirectory}/generate-api.groovy</script>
