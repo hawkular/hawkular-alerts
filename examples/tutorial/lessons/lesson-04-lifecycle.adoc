@@ -1,0 +1,363 @@
+
+== Lesson 04 - Alert Life-cycle and Auto-Resolve
+
+The past two lessons taught the basics of defining triggers and firing alerts.  Now that you can create alerts we recommend reading this brief snippet about our http://www.hawkular.org/community/docs/developer-guide/alerts.html#_alerting_philosophy[alerting philosophy].  When an alert is generated it typically requires human intervention and it begins a simple life-cycle:
+
+image::image-alert-lifecycle.png[Alert Life-cycle]
+
+In a typical alert life-cycle it is first acknowledged by a user, usually marking the start time of the resolution process, and then at some point resolved.  As seen in the diagram we also allow a few more status transitions, skipping `Acknowledged` and also iterating.  If you recall the alerts we created in the previous lessons, their JSON included:
+
+----
+"lifecycle": [{
+   "status": "OPEN",
+   "user": "system",
+   "stime": 1488233569253
+   }],
+----
+
+This is a list of `LifeCycle` entities recording the progression of the alert.  Additionally, if we were to have added notes to an alert,  we would see a list of note entries recording user-entered notes about the resolution:
+
+----
+"notes": [{
+   "text": "A textual note...",
+   "user": "system",
+   "ctime": 1488233569253
+   }],
+----
+
+=== AutoEnable Trigger Option
+
+A trigger option we have not yet discussed is _AutoEnable_.  By default AutoEnable is off.  But it can be useful to set `AutoEnable=true`, especially when `AutoDisable=true`.  With AutoEnable activated, a disabled trigger will automatically be enabled when the trigger no longer has unresolved alerts.  This relieves a user from manually having to re-enable a trigger after resolving the issue. Instead, hAlerting will automatically start evaluating the trigger conditions again, looking for any new anomaly.
+
+Let's continue where we left off with lesson 03 to show this in action.  Just run through lesson 03 if you don't already have that environment running.  Lesson 03 left us with one alert for trigger lesson-03, which used AutoDisable to disable itself after firing.
+
+You can use the following requests to confirm the trigger and alert exist, respectively:
+
+[cols="1,5l"]
+|===
+|Request
+|GET http://localhost:8080/hawkular/alerts/triggers/lesson-03
+
+|HTTP Headers
+|Hawkular-Tenant: tutorial
+Content-Type: application/json
+|===
+
+You should see that the lesson-03 trigger has:
+
+* `autoDisable = true`
+* `autoEnable = false`
+* `enabled = false`
+
+[cols="1,5l"]
+|===
+|Request
+|GET http://localhost:8080/hawkular/alerts?triggerIds=lesson-03
+
+|HTTP Headers
+|Hawkular-Tenant: tutorial
+Content-Type: application/json
+|===
+
+You should see that the lesson-03 alert has:
+
+* current life-cycle status = `OPEN`
+* no notes
+* a unique alertId (NOTE: we will need this below and refer to it as [red]*$AlertID$*)
+
+First, let's activate the AutoEnable option for trigger lesson-03. Remember, because this is an update of the trigger, we need to maintain any editable, non-default settings (often done by fetching the trigger, making the edit, and then updating):
+
+[cols="1,5l"]
+|===
+|Request
+|PUT http://localhost:8080/hawkular/alerts/triggers/lesson-03
+
+|HTTP Headers
+|Hawkular-Tenant: tutorial
+Content-Type: application/json
+
+|Body
+|
+{
+"id":"lesson-03",
+"name":"Lesson 03",
+"description": "A useful description that can also include resolution instructions or links",
+"autoDisable":true,
+"autoEnable":true
+}
+|===
+
+Next, let's simulate movement of the alert through a typical life-cycle. First, we'll acknowledge the alert, then resolve it, adding a note.
+
+[cols="1,5l"]
+|===
+|Request
+|PUT http://localhost:8080/hawkular/alerts/ack/[red]*$AlertID$*?ackBy=RacerX&ackNotes=I%20will%20resolve%20this%20alert
+
+|HTTP Headers
+|Hawkular-Tenant: tutorial
+Content-Type: application/json
+|===
+[cols="1,5l"]
+|===
+|Request
+|PUT http://localhost:8080/hawkular/alerts/resolve/[red]*$AlertID$*?resolvedBy=RacerX&resolvedNotes=I%20resolved%20it!
+
+|HTTP Headers
+|Hawkular-Tenant: tutorial
+Content-Type: application/json
+|===
+
+Now, fetch the alert again (the request URL is above) and you should see more life-cycle entries as well as the associated notes, something like:
+
+----
+"notes": [
+  {
+  "user": "RacerX",
+  "ctime": 1488549940660,
+  "text": "I will resolve this alert"
+  },
+  {
+  "user": "RacerX",
+  "ctime": 1488551286972,
+  "text": "I did it!"
+  }
+],
+"lifecycle": [
+  {
+  "status": "OPEN",
+  "user": "system",
+  "stime": 1488484795014
+  },
+  {
+  "status": "ACKNOWLEDGED",
+  "user": "RacerX",
+  "stime": 148854994066
+  },
+  {
+  "status": "RESOLVED",
+  "user": "racerX",
+  "stime": 1488551286972
+  }
+]
+----
+
+Now that our alert is resolved, let's check back on the lesson-03 trigger.  Fetch the lesson-03 trigger (the request URL is above).  You should see that the trigger has been auto-enabled and now shows `"enabled": true`.
+
+=== Auto-Resolve
+
+Hawkular Alerting provides a powerful feature called _Auto-Resolve_.  We have already learned about _FIRING_ conditions, the condition set that defines when we have detected an anomaly and a trigger can fire.  We can also define _AUTORESOLVE_ conditions, the condition set that defines when the anomaly has been resolved.  Triggers with `autoResolve=true` alternate between FIRING mode and AUTORESOLVE mode.  As long as an issue is fixed and a system returns to acceptable behavior, it is not necessary to worry about manually updating alert life-cycle.
+
+Note that when `autoResolve=true` the `autoDisable` and `autoEnable` options are *ignored*. An auto-resolve trigger toggles between FIRING mode and AUTORESOLVE mode so by its nature it autoDisables and autoEnables.
+
+The AUTORESOLVE condition set can logically be thought of as the opposite of the FIRING condition set. But in practice it is often not just the negation of the FIRING condition set.  Also, the AUTORESOLVE condition set can define its own dampening.  For example, an alert may be raised due to a shorter spike of high response times but we may not want to declare the issue resolved until we have a longer period of acceptable response times. http://www.hawkular.org/community/docs/developer-guide/alerts.html#_autoresolve[See here for more detail] on the auto resolve feature.  Now, let's try an example to see it in action.
+
+First, let's delete the lesson-03 trigger, so we don't get any more lesson-03 alerts.
+
+[cols="1,5l"]
+|===
+|Request
+|DELETE http://localhost:8080/hawkular/alerts/triggers/lesson-03
+
+|HTTP Headers
+|Hawkular-Tenant: tutorial
+Content-Type: application/json
+|===
+
+Now, let's define a lesson-04 trigger that fires if the gauge-1 metric falls outside of the range [20..50], and resolves automatically when gauge-1 stays within the desired range of [25..45], at least 2 times out of 3 evaluations. We'll use a full trigger definition:
+
+[cols="1,5l"]
+|===
+|Request
+|POST http://localhost:8080/hawkular/alerts/triggers/trigger
+
+|HTTP Headers
+|Hawkular-Tenant: tutorial
+Content-Type: application/json
+
+|Body
+|
+{
+"trigger": {
+  "tenantId": "tutorial",
+  "id": "lesson-04",
+  "name": "Lesson 03",
+  "description": "An Auto-Resolving Trigger",
+  "autoResolve": true,
+  "autoResolveAlerts": true,
+  "enabled": true,
+  "firingMatch": "ALL",
+  "autoResolveMatch": "ALL"
+},
+"conditions": [
+  {
+    "triggerMode": "FIRING",
+    "type": "RANGE",
+    "dataId": "hm_g_gauge-1",
+    "operatorLow": "INCLUSIVE",
+    "thresholdLow": 20,
+    "operatorHigh": "INCLUSIVE",
+    "thresholdHigh": 50,
+    "inRange": false
+  },
+  {
+    "triggerMode": "AUTORESOLVE",
+    "type": "RANGE",
+    "dataId": "hm_g_gauge-1",
+    "operatorLow": "INCLUSIVE",
+    "thresholdLow": 25,
+    "operatorHigh": "INCLUSIVE",
+    "thresholdHigh": 45,
+    "inRange": true
+  }
+],
+"dampenings": [
+  {
+     "triggerMode": "AUTORESOLVE",
+     "type": "RELAXED_COUNT",
+     "evalTrueSetting": 2,
+     "evalTotalSetting": 3
+  }
+]
+}
+|===
+
+Either look at the definition above or the more verbose, fully-defined full trigger in the response. Notice that we've introduced a few new things:
+
+* Trigger
+** `autoResolve=true`
+*** This turns on autoResolve so that hAlerting will look for the AUTORESOLVE conditions and dampening.
+** `autoResolveAlerts=true`
+*** This option is true by default, but we explicitly set here for the example.  If true, all unresolved alerts for the trigger will be set resolved when the trigger fires in AUTORESOLVE mode.  Otherwise the trigger is simply enabled and the alerts are left as-is.
+** `autoResolveMatch=ALL`
+*** The condition matching for AUTORESOLVE mode can be set independently. If desired it could be set to ANY, meaning only one condition must evaluate to true to satisfy
+the condition set.
+* Conditions
+** `triggerMode=AUTORESOLVE`
+
+*** Note that each condition can declare a triggerMode.
+*** `triggerMode=FIRING` is the default.
+** `type=RANGE`
+*** Note that ranges can have inclusive and exclusive endpoints, and can be tested for values in or out of the declared range.
+* Dampenings
+** `triggerMode=AUTORESOLVE`
+*** Dampening also declares its trigger mode.
+** `type=RELAXED_COUNT`
+*** Relaxed-count dampening does not have to evaluate to true every time, typically only "most of the time".
+*** We declare _Relaxed-2/3_ dampening.
+** On this trigger we use default dampening for FIRING mode.
+
+OK, it's time to turn on the data pump until we fire an alert, and then auto-resolve.
+
+`> ./tutorial-data.sh`
+
+Let's intermittently check for resolved lesson-04 alerts. We can do this by adding one more fetch criteria to the request:
+
+[cols="1,5l"]
+|===
+|Request
+|GET http://localhost:8080/hawkular/alerts?triggerIds=lesson-04&statuses=RESOLVED
+
+|HTTP Headers
+|Hawkular-Tenant: tutorial
+Content-Type: application/json
+|===
+
+When you get a hit turn off the data pump, unless you want to generate more than one alert.  Remember, the trigger will be enabled for firing after it is auto-resolved. Let's look at a few snippets from the fetched alert:
+
+----
+"evalSets": [
+  [{
+   "evalTimestamp": 1488568924813,
+   "dataTimestamp": 1488568924334,
+   "type": "RANGE",
+   "condition": {
+     "tenantId": "tutorial",
+     "triggerId": "lesson-04",
+     "triggerMode": "FIRING",
+     "type": "RANGE",
+     "conditionSetSize": 1,
+     "conditionSetIndex": 1,
+     "conditionId": "tutorial-lesson-04-FIRING-1-1",
+     "dataId": "hm_g_gauge-1",
+     "operatorLow": "INCLUSIVE",
+     "operatorHigh": "INCLUSIVE",
+     "thresholdLow": 20,
+     "thresholdHigh": 50,
+     "inRange": false
+     },
+  "value": 94
+  }],
+]
+----
+
+We've seen evalSets before, and we can see that our firing condition was met with a value outside the [20..50] range, in this case 94.  but here is something new:
+
+----
+"resolvedEvalSets": [
+  [{
+   "evalTimestamp": 1488568940823,
+   "dataTimestamp": 1488568939537,
+   "type": "RANGE",
+   "condition": {
+     "tenantId": "tutorial",
+     "triggerId": "lesson-04",
+     "triggerMode": "AUTORESOLVE",
+     "type": "RANGE",
+     "conditionSetSize": 1,
+     "conditionSetIndex": 1,
+     "conditionId": "tutorial-lesson-04-AUTORESOLVE-1-1",
+     "dataId": "hm_g_gauge-1",
+     "operatorLow": "INCLUSIVE",
+     "operatorHigh": "INCLUSIVE",
+     "thresholdLow": 25,
+     "thresholdHigh": 45,
+     "inRange": true
+     },
+   "value": 32
+   }],,
+  [{
+   "evalTimestamp": 1488568950828,
+   "dataTimestamp": 1488568949706,
+   "type": "RANGE",
+   "condition": {
+      omitted, same as above
+   }
+  "value": 34
+  }],
+]
+----
+
+We also have _resolvedEvalSets_.  Whereas evalSets explains why the trigger fired in FIRING mode, resolvedEvalSets explains why it auto-resolved. In this case we received gauge-1 datapoints of 32 and 34, both in range, and within 3 consecutive evaluations.  Because it auto-resolved the alert, we should expect some life-cycle information; and here it is:
+
+----
+"notes": [
+  {
+  "user": "AutoResolve",
+  "ctime": 1488568950848,
+  "text": "Trigger AutoResolve=True"
+  }
+],
+"lifecycle": [
+  {
+  "status": "OPEN",
+  "user": "system",
+  "stime": 1488568924814
+  },
+  {
+  "status": "RESOLVED",
+  "user": "AutoResolve",
+  "stime": 1488568950848
+  }
+]
+----
+
+We can see in the notes that the user and text reflect the fact that hAlerting resolved the alert in an automated way, based on the trigger settings. And we can similarly see that he _AutoResolve_ user set the alert RESOLVED.
+
+When you are ready, move on to the next lesson.  Or, if you want to work more with auto-resolve, https://github.com/hawkular/hawkular-alerts/tree/master/examples/autoresolve-process[check out this example].
+
+link:lesson-05-actions.adoc[Lesson 05 - Actions]
+
+link:../README.adoc[Tutorial Home]
+
+

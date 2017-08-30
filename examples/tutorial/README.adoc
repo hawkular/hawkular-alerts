@@ -1,0 +1,29 @@
+
+== Hawkular Alerting Tutorial
+
+Welcome to the Hawkular Alerting (hAlerting) tutorial!  This step by step lesson guide will help you quickly become productive with hAlerting.  The lessons are designed to build knowledge by going through then in order. Of course it's also fine to jump around to brush up on a specific topic as needed. Even if you've been here before you'll probably want to check in with lesson-01, just to make sure your tutorial environment is where you need it to be. Thanks, and Enjoy!
+
+There are two directories here:
+----
+./tutorial/docker
+./tutorial/lessons
+----
+
+All of the student materials are in `./lessons` and that is where you will want your home directory to be while working with the tutorial.  You can ignore the `./docker` directory, it is the source code for building the tutorial's docker container.  The docker container is already published and should be freely available for use.  Just follow the directions in lesson-01.
+
+We are adding lessons as time permits, there is plenty here to get started!  The tutorial today:
+
+. link:lessons/lesson-01-plumbing.adoc[Lesson 01 - Plumbing]
+. link:lessons/lesson-02-first-alert.adoc[Lesson 02 - First Alert]
+. link:lessons/lesson-03-dampening.adoc[Lesson 03 - Dampening]
+. link:lessons/lesson-04-lifecycle.adoc[Lesson 04 - Alert Life-cycle]
+. link:lessons/lesson-05-actions.adoc[Lesson 05 - Actions]
+. link:lessons/lesson-06-events.adoc[Lesson 06 - Events]
+. link:lessons/lesson-07-alerters.adoc[Lesson 07 - External Alerters]
+
+On Deck (want to contribute?):
+
+. Lesson 08 - Group Triggers
+. Lesson 09 - Clustering
+. more...
+
