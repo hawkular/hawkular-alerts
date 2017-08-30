@@ -80,6 +80,7 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 
 /**
@@ -107,12 +108,17 @@ public class CassAlertsServiceImpl implements AlertsService {
     private static final String BATCH_SIZE_ENV = "BATCH_SIZE";
     private static final String BATCH_SIZE_DEFAULT = "10";
 
+    private static final String MAX_ITEMS_IN_QUERY = "hawkular-alerts.max-items-in-query";
+    private static final String MAX_ITEMS_IN_QUERY_ENV = "MAX_ITEMS_IN_QUERY";
+    private static final String MAX_ITEMS_IN_QUERY_DEFAULT = "10000";
+
     private static final MsgLogger msgLog = MsgLogger.LOGGER;
     private static final Logger log = Logger.getLogger(CassAlertsServiceImpl.class);
 
     private int criteriaNoQuerySize;
     private int batchSize;
     private final BatchStatement.Type batchType = BatchStatement.Type.LOGGED;
+    private int maxItemsInQuery;
 
     @EJB
     AlertsEngine alertsEngine;
@@ -145,6 +151,8 @@ public class CassAlertsServiceImpl implements AlertsService {
                 CRITERIA_NO_QUERY_SIZE_ENV, CRITERIA_NO_QUERY_SIZE_DEFAULT));
         batchSize = Integer.valueOf(properties.getProperty(BATCH_SIZE,
                 BATCH_SIZE_ENV, BATCH_SIZE_DEFAULT));
+        maxItemsInQuery = Integer.valueOf(properties.getProperty(MAX_ITEMS_IN_QUERY,
+                MAX_ITEMS_IN_QUERY_ENV, MAX_ITEMS_IN_QUERY_DEFAULT));
     }
 
     public void setSession(Session session) {
@@ -734,9 +742,10 @@ public class CassAlertsServiceImpl implements AlertsService {
                  */
                 if (activeFilter) {
                     PreparedStatement selectAlertsByTenantAndAlert = CassStatement
-                            .get(session, CassStatement.SELECT_ALERT);
-                    List<ResultSetFuture> futures = alertIds.stream()
-                            .map(alertId -> session.executeAsync(selectAlertsByTenantAndAlert.bind(tenantId, alertId)))
+                            .get(session, CassStatement.SELECT_ALERT_IN);
+                    List<List<String>> alertIdList = Lists.partition(new ArrayList(alertIds), maxItemsInQuery);
+                    List<ResultSetFuture> futures = alertIdList.stream()
+                            .map(idList -> session.executeAsync(selectAlertsByTenantAndAlert.bind(tenantId, idList)))
                             .collect(Collectors.toList());
                     List<ResultSet> rsAlerts = Futures.allAsList(futures).get();
                     rsAlerts.stream().forEach(r -> {
@@ -1481,10 +1490,11 @@ public class CassAlertsServiceImpl implements AlertsService {
 
     private void fetchEvents(String tenantId, Set<String> eventIds, boolean thin, List<Event> events)
             throws Exception {
-        PreparedStatement selectEvent = CassStatement
-                .get(session, CassStatement.SELECT_EVENT);
-        List<ResultSetFuture> futures = eventIds.stream()
-                .map(id -> session.executeAsync(selectEvent.bind(tenantId, id)))
+        PreparedStatement selectEventIn = CassStatement
+                .get(session, CassStatement.SELECT_EVENT_IN);
+        List<List<String>> eventIdList = Lists.partition(new ArrayList(eventIds), maxItemsInQuery);
+        List<ResultSetFuture> futures = eventIdList.stream()
+                .map(idList -> session.executeAsync(selectEventIn.bind(tenantId, idList)))
                 .collect(Collectors.toList());
         List<ResultSet> rsEvents = Futures.allAsList(futures).get();
         rsEvents.stream().forEach(r -> {
