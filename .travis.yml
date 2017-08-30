@@ -45,7 +45,7 @@ before_cache:
 
 after_success:
 - PROJECT_VERSION=`./mvnw --batch-mode org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v '\['`
-- if [[ "$PROJECT_VERSION" =~ .*SNAPSHOT ]] && [[ "${TRAVIS_BRANCH}" = "master" ]] && [[ "${TRAVIS_PULL_REQUEST}" = "false" ]];
+- if [[ "$PROJECT_VERSION" =~ .*SNAPSHOT ]] && [[ "${TRAVIS_BRANCH}" = "1.8.x" ]] && [[ "${TRAVIS_PULL_REQUEST}" = "false" ]];
   then
     ./mvnw -s .travis.maven.settings.xml deploy -DskipTests ;
     ./.travis.swagger.sh ;

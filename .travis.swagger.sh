@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+# Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
 # and other contributors as indicated by the @author tags.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +21,7 @@ set -x
 # generate the docs
 ./mvnw clean compile -Pdocgen -DskipTests -Dcheckstyle.skip -Dlicense.skip
 
-FILE_NAME="rest-alerts.adoc"
+FILE_NAME="rest-alerts-v1.adoc"
 FILE_PATH="hawkular-alerts-rest/hawkular-alerts-rest-api/target/generated/$FILE_NAME"
 
 # don't push the empty docs
