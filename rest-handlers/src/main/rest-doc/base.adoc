@@ -1,6 +1,10 @@
 
 == Version 2
 
+=== Version
+
+This is the version 2.x API. Find the version 1.x API link:rest-alerts-v1.html[here].
+
 === Media Type
 
 The API uses *JSON* to communicate with clients.
