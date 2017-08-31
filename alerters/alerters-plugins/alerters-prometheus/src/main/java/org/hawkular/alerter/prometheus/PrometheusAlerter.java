@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -60,6 +59,7 @@ import org.jboss.logging.Logger;
  *   [Required]    trigger.tags["prometheus"] // the value is ignored
  *   [Optional]    trigger.context["prometheus.frequency"] = "<seconds between queries to Prometheus, default = 120>"
  *                 - note that the same frequency will apply to all Prometheus external conditions on the trigger
+ *   [Optional]    trigger.context["prometheus.url"] = "<url, default = global setting>"
  *
  * Defining an ExternalCondition to be processed by the Prometheus External Alerter:
  *   [Required]    the owning trigger must be defined as specified above.
@@ -76,6 +76,7 @@ public class PrometheusAlerter implements AlerterPlugin {
     private static final String PROMETHEUS_ALERTER_ENV = "PROMETHEUS_ALERTER";
     private static final String PROMETHEUS_ALERTER_DEFAULT = "true";
 
+    // Note, the globally set URL can be overridden in the trigger context
     private static final String PROMETHEUS_URL = "hawkular-alerts.prometheus-url";
     private static final String PROMETHEUS_URL_ENV = "PROMETHEUS_URL";
     private static final String PROMETHEUS_URL_DEFAULT = "http://localhost:9090";
@@ -86,8 +87,9 @@ public class PrometheusAlerter implements AlerterPlugin {
     private static final String PROMETHEUS_THREAD_POOL_SIZE_DEFAULT = "20";
     private static final String THREAD_POOL_SIZE = "thread-pool-size";
 
-    private static final String FREQUENCY = "interval";
-    private static final String FREQUENCY_DEFAULT = "120";
+    private static final String CONTEXT_URL = "prometheus.url";
+    private static final String CONTEXT_FREQUENCY = "prometheus.frequency";
+    private static final String CONTEXT_FREQUENCY_DEFAULT = "120";
 
     private static final String ALERTER_ID = "prometheus";
     private static final String UTF_8 = "UTF-8";
@@ -104,6 +106,7 @@ public class PrometheusAlerter implements AlerterPlugin {
 
     private ExecutorService executor;
 
+    @Override
     public void init(DefinitionsService definitions, AlertsService alerts, ExecutorService executor) {
         if (definitions == null || alerts == null || executor == null) {
             throw new IllegalStateException("Prometheus Alerter cannot connect with Hawkular Alerting");
@@ -127,6 +130,7 @@ public class PrometheusAlerter implements AlerterPlugin {
         }
     }
 
+    @Override
     public void stop() {
         log.infof("Stopping Hawkular Prometheus External Alerter");
 
@@ -220,10 +224,15 @@ public class PrometheusAlerter implements AlerterPlugin {
                                     // start the job. TODO: Do we need a delay for any reason?
                                     log.debugf("Adding runner for %s", externalCondition);
 
-                                    ExpressionRunner runner = new ExpressionRunner(alerts, defaultProperties,
+                                    Map<String, String> properties = new HashMap<>(defaultProperties);
+                                    if (trigger.getContext().containsKey(CONTEXT_URL)) {
+                                        properties.put(URL, trigger.getContext().get(CONTEXT_URL));
+                                    }
+                                    String frequency = trigger.getContext().containsKey(CONTEXT_FREQUENCY)
+                                            ? trigger.getContext().get(CONTEXT_FREQUENCY) : CONTEXT_FREQUENCY_DEFAULT;
+
+                                    ExpressionRunner runner = new ExpressionRunner(alerts, properties,
                                             externalCondition);
-                                    String frequency = trigger.getContext().get(FREQUENCY) == null ? FREQUENCY_DEFAULT
-                                            : trigger.getContext().get(FREQUENCY);
                                     expressionFutures.put(
                                             externalCondition,
                                             expressionExecutor.scheduleAtFixedRate(runner, 0L, Long.valueOf(frequency),
