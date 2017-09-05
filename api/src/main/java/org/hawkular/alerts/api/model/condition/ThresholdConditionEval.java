@@ -93,7 +93,7 @@ public class ThresholdConditionEval extends ConditionEval {
 
     @Override
     public void updateDisplayString() {
-        String s = String.format("Threshold: %s[%s] %s %s", condition.getDataId(), value,
+        String s = String.format("Threshold: %s[%.2f] %s %.2f", condition.getDataId(), value,
                 condition.getOperator().name(), condition.getThreshold());
         setDisplayString(s);
     }

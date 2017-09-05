@@ -183,7 +183,7 @@ public class CompareCondition extends Condition {
     public void updateDisplayString() {
         String operator = null == this.operator ? null : this.operator.name();
         Double data2Multiplier = (null == this.data2Multiplier) ? 0.0 : this.data2Multiplier;
-        String s = String.format("%s %s %s%% %s", this.dataId, operator, (100 * data2Multiplier), this.data2Id);
+        String s = String.format("%s %s %.2f%% %s", this.dataId, operator, (100 * data2Multiplier), this.data2Id);
         setDisplayString(s);
     }
 

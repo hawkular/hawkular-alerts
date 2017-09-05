@@ -250,7 +250,7 @@ public class ThresholdRangeCondition extends Condition {
     public void updateDisplayString() {
         String operatorLow = null == this.operatorLow ? null : this.operatorLow.getLow();
         String operatorHigh = null == this.operatorHigh ? null : this.operatorHigh.getHigh();
-        String s = String.format("%s %s %s%s , %s%s", this.dataId, (isInRange() ? "in" : "not in"), operatorLow,
+        String s = String.format("%s %s %s%.2f , %.2f%s", this.dataId, (isInRange() ? "in" : "not in"), operatorLow,
                 this.thresholdLow, this.thresholdHigh, operatorHigh);
         setDisplayString(s);
     }

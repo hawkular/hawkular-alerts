@@ -138,7 +138,7 @@ public class NelsonConditionEval extends ConditionEval {
     @Override
     public void updateDisplayString() {
         String s = String.format(
-                "Nelson: %s violations=%s mean=%s, standardDeviation=%s, sampleSize=%d, violationsData=%s",
+                "Nelson: %s violations=%s mean=%.2f, standardDeviation=%.2f, sampleSize=%d, violationsData=%s",
                 condition.getDataId(), violations, mean, standardDeviation, condition.getSampleSize(), violationsData);
         setDisplayString(s);
     }

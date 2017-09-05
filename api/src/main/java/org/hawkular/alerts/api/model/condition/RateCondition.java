@@ -266,7 +266,7 @@ public class RateCondition extends Condition {
         String direction = null == this.direction ? null : this.direction.name();
         String operator = null == this.operator ? null : this.operator.name();
         String period = null == this.period ? null : this.period.name();
-        String s = String.format("%s %s %s %s per %s", this.dataId, direction, operator, this.threshold, period);
+        String s = String.format("%s %s %s %.2f per %s", this.dataId, direction, operator, this.threshold, period);
         setDisplayString(s);
     }
 

@@ -19,7 +19,6 @@ package org.hawkular.alerts.api.model.condition;
 import org.hawkular.alerts.api.doc.DocModel;
 import org.hawkular.alerts.api.doc.DocModelProperty;
 import org.hawkular.alerts.api.model.condition.Condition.Type;
-import org.hawkular.alerts.api.model.condition.RateCondition.Direction;
 import org.hawkular.alerts.api.model.data.Data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -154,13 +153,7 @@ public class RateConditionEval extends ConditionEval {
 
     @Override
     public void updateDisplayString() {
-        long deltaTime = time - previousTime;
-        double deltaValue = (Direction.INCREASING == condition.getDirection()) ? (value - previousValue)
-                : (previousValue - value);
-        double periods = deltaTime / condition.getPeriod().milliseconds;
-        double rate = deltaValue / periods;
-
-        String s = String.format("Rate: %s %s %s %s %s per %s", condition.getDataId(), rate,
+        String s = String.format("Rate: %s[%.2f] %s %s %s per %s", condition.getDataId(), this.rate,
                 condition.getDirection().name(), condition.getOperator().name(), condition.getThreshold(),
                 condition.getPeriod().name());
         setDisplayString(s);

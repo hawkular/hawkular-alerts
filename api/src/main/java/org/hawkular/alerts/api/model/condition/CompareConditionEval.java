@@ -129,7 +129,7 @@ public class CompareConditionEval extends ConditionEval {
 
     @Override
     public void updateDisplayString() {
-        String s = String.format("Compare: %s[%s] %s %s%% %s[%s]", condition.getDataId(), value1,
+        String s = String.format("Compare: %s[%.2f] %s %.2f%% %s[%.2f]", condition.getDataId(), value1,
                 condition.getOperator().name(), (100 * condition.getData2Multiplier()), condition.getData2Id(),
                 value2);
         super.setDisplayString(s);

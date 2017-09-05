@@ -300,7 +300,7 @@ public class JsonTest {
     public void jsonCompareConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"COMPARE\"," +
                 "\"conditionSetSize\":1,\"conditionSetIndex\":1,\"conditionId\":\"test-test-FIRING-1-1\"," +
-                "\"displayString\":\"Default1 LT 120.0% Default2\"," +
+                "\"displayString\":\"Default1 LT 120.00% Default2\"," +
                 "\"dataId\":\"Default1\",\"operator\":\"LT\",\"data2Id\":\"Default2\",\"data2Multiplier\":1.2}";
         CompareCondition condition = objectMapper.readValue(str, CompareCondition.class);
 
@@ -508,7 +508,7 @@ public class JsonTest {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\"," +
                 "\"type\":\"THRESHOLD\",\"conditionSetSize\":1,\"conditionSetIndex\":1," +
                 "\"conditionId\":\"test-test-FIRING-1-1\"," +
-                "\"displayString\":\"Default LT 10.5\"," +
+                "\"displayString\":\"Default LT 10.50\"," +
                 "\"dataId\":\"Default\",\"operator\":\"LT\",\"threshold\":10.5}";
         ThresholdCondition condition = objectMapper.readValue(str, ThresholdCondition.class);
 
@@ -599,7 +599,7 @@ public class JsonTest {
     public void jsonThresholdRangeConditionTest() throws Exception {
         String str = "{\"tenantId\":\"test\",\"triggerId\":\"test\",\"triggerMode\":\"FIRING\",\"type\":\"RANGE\"," +
                 "\"conditionSetSize\":1,\"conditionSetIndex\":1,\"conditionId\":\"test-test-FIRING-1-1\"," +
-                "\"displayString\":\"Default in [10.5 , 20.5]\"," +
+                "\"displayString\":\"Default in [10.50 , 20.50]\"," +
                 "\"dataId\":\"Default\",\"operatorLow\":\"INCLUSIVE\",\"operatorHigh\":\"INCLUSIVE\"," +
                 "\"thresholdLow\":10.5,\"thresholdHigh\":20.5,\"inRange\":true}";
         ThresholdRangeCondition condition = objectMapper.readValue(str, ThresholdRangeCondition.class);
@@ -947,7 +947,7 @@ public class JsonTest {
                 + "\"conditionSetSize\":1," //
                 + "\"conditionSetIndex\":1," //
                 + "\"conditionId\":\"test-test-FIRING-1-1\"," //
-                + "\"displayString\":\"Default DECREASING GT 10.5 per HOUR\","
+                + "\"displayString\":\"Default DECREASING GT 10.50 per HOUR\","
                 + "\"dataId\":\"Default\"," //
                 + "\"direction\":\"DECREASING\"," //
                 + "\"period\":\"HOUR\"," //

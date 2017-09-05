@@ -159,7 +159,7 @@ public class ThresholdCondition extends Condition {
     @Override
     public void updateDisplayString() {
         String operator = null == this.operator ? null : this.operator.name();
-        String s = String.format("%s %s %s", this.dataId, operator, this.threshold);
+        String s = String.format("%s %s %.2f", this.dataId, operator, this.threshold);
         setDisplayString(s);
     }
 

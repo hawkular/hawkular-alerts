@@ -93,7 +93,7 @@ public class ThresholdRangeConditionEval extends ConditionEval {
 
     @Override
     public void updateDisplayString() {
-        String s = String.format("Range: %s[%s] %s %s%s , %s%s", condition.getDataId(), value,
+        String s = String.format("Range: %s[%.2f] %s %s%.2f , %.2f%s", condition.getDataId(), value,
                 (condition.isInRange() ? "in" : "not in"), condition.getOperatorLow().getLow(),
                 condition.getThresholdLow(), condition.getThresholdHigh(), condition.getOperatorHigh().getHigh());
         setDisplayString(s);
