@@ -76,36 +76,9 @@ angular.module('hwk.eventsModule').controller( 'hwk.eventsController', ['$scope'
           'eventType': 'EVENT'
         };
         if ( $scope.filter.range.datetime ) {
-          var offset = $scope.filter.range.offset;
-          var start;
-          var end;
-          switch ( $scope.filter.range.unit ) {
-          case 'Minutes' :
-            offset *= (60 * 1000);
-            break;
-          case 'Hours' :
-            offset *= (60 * 60 * 1000);
-            break;
-          case 'Days' :
-            offset *= (60 * 60 * 24 * 1000);
-            break;
-          default :
-            console.debug("[Events] Unsupported unit: " + $scope.filter.range.unit);
-          }
-          switch ( $scope.filter.range.direction ) {
-          case 'After' :
-            start = new Date($scope.filter.range.datetime).getTime();
-            end = start + offset;
-            break;
-          case 'Before':
-            end = new Date($scope.filter.range.datetime).getTime();
-            start = end - offset;
-            break;
-          default :
-            console.debug("[Events] Unsupported direction: " + $scope.filter.range.direction);
-          }
-          eventsCriteria.startTime = start;
-          eventsCriteria.endTime = end;
+          var range = filterService.getRange();
+          eventsCriteria.startTime = range[0];
+          eventsCriteria.endTime = range[1];
         }
         if ( $scope.filter.event.tagQuery && $scope.filter.event.tagQuery.length > 0 ) {
           eventsCriteria.tags = $scope.filter.event.tagQuery;

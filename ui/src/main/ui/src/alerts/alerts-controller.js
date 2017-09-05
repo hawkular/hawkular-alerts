@@ -189,36 +189,9 @@ angular.module('hwk.alertsModule').controller( 'hwk.alertsController', ['$scope'
           'thin': false   // TODO: we need to add this, we should not initially fetch fat alerts
         };
         if ( $scope.filter.range.datetime ) {
-          var offset = $scope.filter.range.offset;
-          var start;
-          var end;
-          switch ( $scope.filter.range.unit ) {
-          case 'Minutes' :
-            offset *= (60 * 1000);
-            break;
-          case 'Hours' :
-            offset *= (60 * 60 * 1000);
-            break;
-          case 'Days' :
-            offset *= (60 * 60 * 24 * 1000);
-            break;
-          default :
-            console.debug("[Alerts] Unsupported unit: " + $scope.filter.range.unit);
-          }
-          switch ( $scope.filter.range.direction ) {
-          case 'After' :
-            start = new Date($scope.filter.range.datetime).getTime();
-            end = start + offset;
-            break;
-          case 'Before':
-            end = new Date($scope.filter.range.datetime).getTime();
-            start = end - offset;
-            break;
-          default :
-            console.debug("[Alerts] Unsupported direction: " + $scope.filter.range.direction);
-          }
-          alertsCriteria.startTime = start;
-          alertsCriteria.endTime = end;
+          var range = filterService.getRange();
+          alertsCriteria.startTime = range[0];
+          alertsCriteria.endTime = range[1];
         }
         if ( $scope.filter.alert.tagQuery && $scope.filter.alert.tagQuery.length > 0 ) {
           alertsCriteria.tags = $scope.filter.alert.tagQuery;

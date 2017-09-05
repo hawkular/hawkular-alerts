@@ -255,38 +255,11 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
       }
 
       if ( $scope.filter.range.datetime ) {
-        var offset = $scope.filter.range.offset;
-        var start;
-        var end;
-        switch ( $scope.filter.range.unit ) {
-        case 'Minutes' :
-          offset *= (60 * 1000);
-          break;
-        case 'Hours' :
-          offset *= (60 * 60 * 1000);
-          break;
-        case 'Days' :
-          offset *= (60 * 60 * 24 * 1000);
-          break;
-        default :
-          console.debug("[Dashboard] Unsupported unit: " + $scope.filter.range.unit);
-        }
-        switch ( $scope.filter.range.direction ) {
-        case 'After' :
-          start = new Date($scope.filter.range.datetime).getTime();
-          end = start + offset;
-          break;
-        case 'Before':
-          end = new Date($scope.filter.range.datetime).getTime();
-          start = end - offset;
-          break;
-        default :
-          console.debug("[Dashboard] Unsupported direction: " + $scope.filter.range.direction);
-        }
-        alertsCriteria.startTime = start;
-        alertsCriteria.endTime = end;
-        eventsCriteria.startTime = start;
-        eventsCriteria.endTime = end;
+        var range = filterService.getRange();
+        alertsCriteria.startTime = range[0];
+        alertsCriteria.endTime = range[1];
+        eventsCriteria.startTime = range[0];
+        eventsCriteria.endTime = range[1];
       }
 
       var promise1 = dashboardService.Alert(selectedTenant, alertsCriteria).query();
@@ -301,9 +274,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         dataTimeline[RESOLVED].data = [];
         dataTimeline[EVENTS].data = [];
 
-        var minDate = Number.MAX_VALUE, maxDate = 0;
         var i;
-
         for (i = 0; i < updatedAlerts.length; i++) {
 
           // build counts of severities
@@ -334,12 +305,6 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
           // build timeline data that is also used for alert counts
           var status = updatedAlerts[i].status;
           var stime = updatedAlerts[i].lifecycle[updatedAlerts[i].lifecycle.length - 1].stime;
-          if (stime < minDate) {
-            minDate = stime;
-          }
-          if (stime > maxDate) {
-            maxDate = stime;
-          }
           switch (status) {
           case 'OPEN':
             dataTimeline[OPEN].data.push({
@@ -365,13 +330,6 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         }
 
         for (i = 0; i < updatedEvents.length; i++) {
-          var ctime = updatedEvents[i].ctime;
-          if (ctime < minDate) {
-            minDate = ctime;
-          }
-          if (ctime > maxDate) {
-            maxDate = ctime;
-          }
           dataTimeline[EVENTS].data.push({
             date: new Date(updatedEvents[i].ctime),
             details: updatedEvents[i]
@@ -412,8 +370,9 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         // [lponce] remove objects to re-draw
         d3.select('#pf-timeline').selectAll('div').remove();
 
-        var startTimeline = minDate - ((maxDate - minDate) * 0.25);
-        var endTimeline = maxDate + ((maxDate - minDate) * 0.25);
+        var range = filterService.getRange();
+        var startTimeline = range[0] - ((range[1] - range[0]) * 0.25);
+        var endTimeline = range[1] + ((range[1] - range[0]) * 0.25);
 
         timeline = d3.chart.timeline()
           .end(new Date(endTimeline))
@@ -427,7 +386,6 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         timeline(element);
 
       }, toastError);
-
     };
 
     // Init scope to show at least an empty chart
