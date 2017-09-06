@@ -274,6 +274,8 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         dataTimeline[RESOLVED].data = [];
         dataTimeline[EVENTS].data = [];
 
+        $scope.timelineEmpty = ( updatedAlerts.length === 0 && updatedEvents.length === 0 );
+
         var i;
         for (i = 0; i < updatedAlerts.length; i++) {
 
@@ -363,6 +365,10 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
           'columns': alertsByOpenAck
         });
 
+        if ($scope.timelineEmpty) {
+          return;
+        }
+
         // prepare timeline
         console.debug('[Dashboard] Update timeline data ' + new Date());
         // console.debug(JSON.stringify(dataTimeline));
@@ -380,6 +386,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
           .minScale(ONE_WEEK / ONE_MONTH)
           .maxScale(ONE_WEEK / ONE_HOUR)
           .eventLineColor(onTimelineColor)
+          .eventShape('\u2b24')
           .eventClick(onTimelineClick)
           .eventGrouping(ONE_SECOND);
         element = d3.select('#pf-timeline').append('div').datum(dataTimeline);
