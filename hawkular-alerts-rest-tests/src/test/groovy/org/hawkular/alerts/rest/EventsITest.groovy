@@ -231,8 +231,9 @@ class EventsITest extends AbstractITestBase {
 
         def concurrentQueries = 10
 
+        Thread[] clients = new Thread[concurrentQueries]
         for (int i = 0; i < concurrentQueries; i++) {
-            Thread.start {
+            clients[i] = Thread.start {
                 def clientX = new RESTClient(baseURI, ContentType.JSON)
                 clientX.handler.failure = { it }
                 clientX.defaultRequestHeaders.Authorization = "Basic amRvZTpwYXNzd29yZA=="
@@ -242,6 +243,10 @@ class EventsITest extends AbstractITestBase {
                 assertEquals(200, respX.status)
                 assertEquals(20000, respX.data.size())
             }
+        }
+
+        for (int i = 0; i < clients.size(); i++) {
+            clients[i].join()
         }
 
     }
