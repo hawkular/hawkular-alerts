@@ -50,7 +50,7 @@ import com.bazaarvoice.jolt.Shiftr;
 /**
  * Action Kafka Plugin.
  *
- * It processes Actions writing Event/Alerts into an ElasticSearch system.
+ * It processes Actions writing Event/Alerts into an Apache Kafka system.
  *
  * It supports optional JOLT Shiftr transformations to process Events/Alerts into custom JSON formats.
  *
