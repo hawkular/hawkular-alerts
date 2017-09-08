@@ -15,9 +15,9 @@
 # limitations under the License.
 #
 
-# Hawkular Metrics+Alerting
-hawkularMetrics:
-  image: "jshaughn/hawkular-alerting-tutorial:1.7.0.Final"
+# Hawkular Alerting
+hawkularAlerts:
+  image: "hawkular/hawkular-alerts:latest"
   ports:
     - "8080:8080"
     - "8787:8787"
@@ -25,20 +25,9 @@ hawkularMetrics:
   volumes:
     - /tmp/opt/hawkular/server:/opt/data
     - ./config.properties:/opt/hawkular-alerting-tutorial/scripts/config.properties
-  links:
-    - cassandra
   environment:
     - TZ=$TZ
     - JAVA_OPTS=$JAVA_OPTS
-    - CASSANDRA_NODES=cassandra
     - HAWKULAR_USER=jdoe
     - HAWKULAR_PASSWORD=password
-# The used Cassandra container
-cassandra:
-  image: cassandra:3.0.12
-  environment:
-    - TZ=$TZ
-    - CASSANDRA_START_RPC=true
-  volumes:
-    - /tmp/opt/hawkular/cassandra:/var/lib/cassandra
 

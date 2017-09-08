@@ -25,8 +25,8 @@ STARTTIME=$(date +%s)
 source_root=$(dirname "${0}")/..
 
 prefix="jshaughn/"
-# set to the alerting version in the target metrics ear
-version="1.7.0.Final"
+# set to the alerting version
+version="2.0.0.Final"
 verbose=false
 options=""
 help=false
@@ -66,7 +66,7 @@ if [ "$help" = true ]; then
   echo
   echo "  --version=VERSION"
   echo "  The version used to tag the image"
-  echo "  default: 1.7.0.Final"
+  echo "  default: 2.0.0.Final"
   echo 
   echo "  --no-cache"
   echo "  If set will perform the build without a cache."

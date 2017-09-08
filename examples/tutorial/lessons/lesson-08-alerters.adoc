@@ -1,5 +1,5 @@
 
-== Lesson 07 - External Alerters
+== Lesson 08 - External Alerters
 
 We've now learned how Hawkular Alerting (hAlerting) processes incoming data to generate alerts and events.  In the previous lesson we also saw how events can be injected directly from clients, adding an external element to our processing.  In this lesson we learn how to further extend our processing model by introducing __External Alerters__.
 
@@ -13,7 +13,7 @@ An external alerter is an hAlerting client responsible for pushing data that alr
 
 === ExternalCondition
 
-External integration begins with standard triggers. In this way we immediately get everything that triggers offer: actions, dampening, lifecycle, auto-resolve, etc. The difference is that instead of the typical condition types (e.g. Threshold), we can use an ExternalCondition. An ExternalCondition is like other conditions in that it has a `dataId` with which it matches data sent into Hawkular Alerting. But ExternalCondition also has `alerterId` and `expression` fields. The `alerterId` is used to identify the external alerter for which the condition is relevant. The `expression` field is an alerter-specific expression that defines what the alerter is looking for. For example, let's say we have an alerter that interfaces with a series of temperature sensors. It may know how to handle something like: `ExternalCondition(alerterId:"TempSensor", expression:"SensorHot", dataId:"sensorAlarm"`).  If the sensor07 alarm is detected the alerter would send something like `Data(dataId:"sensorAlarm", value:"Sensor 07 Temperature 212F").
+External integration begins with standard triggers. In this way we immediately get everything that triggers offer: actions, dampening, lifecycle, auto-resolve, etc. The difference is that instead of the typical condition types (e.g. Threshold), we can use an ExternalCondition. An ExternalCondition is like other conditions in that it has a `dataId` with which it matches data sent into Hawkular Alerting. But ExternalCondition also has `alerterId` and `expression` fields. The `alerterId` is used to identify the external alerter for which the condition is relevant. The `expression` field is an alerter-specific expression that defines what the alerter is looking for. For example, let's say we have an alerter that interfaces with a series of temperature sensors. It may know how to handle something like: `ExternalCondition(alerterId:"TempSensor", expression:"SensorHot", dataId:"sensorAlarm"`).  If the sensor08 alarm is detected the alerter would send something like `Data(dataId:"sensorAlarm", value:"Sensor 08 Temperature 212F").
 
 === Metrics Alerter Example
 
@@ -68,15 +68,15 @@ Content-Type: application/json
 {
 "trigger": {
   "tenantId": "tutorial",
-  "id": "lesson-07-trigger",
-  "name": "Lesson 07 Trigger",
+  "id": "lesson-08-trigger",
+  "name": "Lesson 08 Trigger",
   "description": "Generates an alert on low median and high data point",
   "autoDisable": true,
   "enabled": true,
   "firingMatch": "ALL",
   "tags": {
     "HawkularMetrics": "MetricsCondition",
-    "lesson": "7"
+    "lesson": "8"
   }
 },
 "conditions": [
@@ -90,7 +90,7 @@ Content-Type: application/json
   {
     "triggerMode": "FIRING",
     "type": "THRESHOLD",
-    "dataId": "hm_g_gauge-2",
+    "dataId": "gauge-2",
     "operator": "GTE",
     "threshold": 70
   }
@@ -122,7 +122,7 @@ It may take a few minutes to generate an alert. Given the two conditions we need
 [cols="1,5l"]
 |===
 |Request
-|GET http://localhost:8080/hawkular/alerts?tagQuery=lesson=7
+|GET http://localhost:8080/hawkular/alerts?tagQuery=lesson=8
 
 |HTTP Headers
 |Hawkular-Tenant: tutorial
@@ -141,12 +141,12 @@ When an alert is fired take a good look at the evalSets.  You will see something
   "type": "EXTERNAL",
   "condition": {
     "tenantId": "tutorial",
-    "triggerId": "lesson-07-trigger",
+    "triggerId": "lesson-08-trigger",
     "triggerMode": "FIRING",
     "type": "EXTERNAL",
     "conditionSetSize": 2,
     "conditionSetIndex": 1,
-    "conditionId": "tutorial-lesson-07-trigger-FIRING-2-1",
+    "conditionId": "tutorial-lesson-08-trigger-FIRING-2-1",
     "alerterId": "HawkularMetrics",
     "dataId": "alerterExpression01",
     "expression": "{
@@ -195,7 +195,7 @@ The hMetrics alerter used in this lesson is available as an example.  It is an i
 
 When you are ready, move on to the next lesson.  It introduces Group Triggers, a way to define a single template-level trigger to manage a set of member triggers.
 
-__Coming Soon! Lesson 08 - Group Triggers__
+__Coming Soon! Lesson 09 - Group Triggers__
 
 link:../README.adoc[Tutorial Home]
 

@@ -26,15 +26,15 @@
 # tutorial container is to be built, typically by a developer.
 
 
-FROM jboss/wildfly:10.1.0.Final
+FROM hawkular/hawkular-alerts:latest
 
 MAINTAINER Hawkular Alerting <hawkular-dev@lists.jboss.org>
 
-ENV HAWKULAR_METRICS_ENDPOINT_PORT="8080" \
-    HAWKULAR_METRICS_VERSION="0.27.0.Final" \
-    HAWKULAR_METRICS_DIRECTORY="/opt/hawkular-alerting-tutorial" \
-    HAWKULAR_METRICS_SCRIPT_DIRECTORY="/opt/hawkular-alerting-tutorial/scripts/" \
-    PATH=$PATH:$HAWKULAR_METRICS_SCRIPT_DIRECTORY \
+ENV HAWKULAR_ALERTS_ENDPOINT_PORT="8080" \
+    HAWKULAR_ALERTS_VERSION="2.0.0.Final" \
+    HAWKULAR_ALERTS_DIRECTORY="/opt/hawkular-alerting-tutorial" \
+    HAWKULAR_ALERTS_SCRIPT_DIRECTORY="/opt/hawkular-alerting-tutorial/scripts/" \
+    PATH=$PATH:$HAWKULAR_ALERTS_SCRIPT_DIRECTORY \
     JAVA_OPTS_APPEND="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump"
 
 

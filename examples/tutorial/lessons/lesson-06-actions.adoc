@@ -1,5 +1,5 @@
 
-== Lesson 05 - Actions
+== Lesson 06 - Actions
 
 In the previous lessons we've learned how to define a trigger, have it fire an alert, and then how to move that alert through its life-cycle to resolution.  But in most cases we need to perform some actions in response to an alert.  Some examples:
 
@@ -11,7 +11,7 @@ In the previous lessons we've learned how to define a trigger, have it fire an a
 
 Hawkular Alerting provides all of the above (and more) as action plugins.  It is also possible to create custom action plugins.
 
-Actions are tied to life-cycle.  Most actions are performed when an alert is created and moved to OPEN.  But hAlerting also allows actions to be performed on any life-cycle state transistion.  Revisiting the diagram from lesson-04, we can perform actions on any of the arrow transitions:
+Actions are tied to life-cycle.  Most actions are performed when an alert is created and moved to OPEN.  But hAlerting also allows actions to be performed on any life-cycle state transistion.  Revisiting the diagram from lesson-05, we can perform actions on any of the arrow transitions:
 
 image::image-alert-lifecycle.png[Alert Life-cycle]
 
@@ -129,8 +129,8 @@ Content-Type: application/json
 {
 "trigger": {
   "tenantId": "tutorial",
-  "id": "lesson-05",
-  "name": "Lesson 05",
+  "id": "lesson-06",
+  "name": "Lesson 06",
   "description": "Use COMPARE condition to fire alerts with e-mail actions.",
   "autoResolve": true,
   "enabled": true,
@@ -149,18 +149,18 @@ Content-Type: application/json
   {
     "triggerMode": "FIRING",
     "type": "COMPARE",
-    "dataId": "hm_g_gauge-1",
+    "dataId": "gauge-1",
     "operator": "LT",
     "data2Multiplier": 0.25,
-    "data2Id": "hm_g_gauge-2"
+    "data2Id": "gauge-2"
   },
   {
     "triggerMode": "AUTORESOLVE",
     "type": "COMPARE",
-    "dataId": "hm_g_gauge-1",
+    "dataId": "gauge-1",
     "operator": "GT",
     "data2Multiplier": 2.00,
-    "data2Id": "hm_g_gauge-2"
+    "data2Id": "gauge-2"
   }
 ]
 }
@@ -170,12 +170,12 @@ OK, it's time to turn on the data pump until we fire an alert, and then auto-res
 
 `> ./tutorial-data.sh`
 
-Let's intermittently check for resolved lesson-05 alerts. We can do this by adding one more fetch criteria to the request:
+Let's intermittently check for resolved lesson-06 alerts. We can do this by adding one more fetch criteria to the request:
 
 [cols="1,5l"]
 |===
 |Request
-|GET http://localhost:8080/hawkular/alerts?triggerIds=lesson-05&statuses=RESOLVED
+|GET http://localhost:8080/hawkular/alerts?triggerIds=lesson-06&statuses=RESOLVED
 
 |HTTP Headers
 |Hawkular-Tenant: tutorial
@@ -253,7 +253,7 @@ Now, let's add the new action to our trigger:
 [cols="1,5l"]
 |===
 |Request
-|PUT http://localhost:8080/hawkular/alerts/triggers/lesson-05
+|PUT http://localhost:8080/hawkular/alerts/triggers/lesson-06
 
 |HTTP Headers
 |Hawkular-Tenant: tutorial
@@ -263,8 +263,8 @@ Content-Type: application/json
 |
 {
   "tenantId": "tutorial",
-  "id": "lesson-05",
-  "name": "Lesson 05",
+  "id": "lesson-06",
+  "name": "Lesson 06",
   "description": "Use COMPARE condition to fire alerts with e-mail actions.",
   "autoResolve": true,
   "enabled": true,
@@ -321,7 +321,7 @@ Content-Type: application/json
 }
 |===
 
-We won't assign this to any trigger, just go ahead and turn on the data pump, then look at the SMTP GUI for new email...  You should now see that every time we get an e-mail for one of our lesson-05 trigger actions, we're also now seeing an audit e-mail.  Note that if you had triggers lying around from older lessons you may even get some audit e-mails for those as well, if they fire.
+We won't assign this to any trigger, just go ahead and turn on the data pump, then look at the SMTP GUI for new email...  You should now see that every time we get an e-mail for one of our lesson-06 trigger actions, we're also now seeing an audit e-mail.  Note that if you had triggers lying around from older lessons you may even get some audit e-mails for those as well, if they fire.
 
 Global actions can also be very useful for custom plugins where you'd like to have every alert processed in some way, custom to your use cases.
 
@@ -336,7 +336,7 @@ Here are some instructions for http://www.hawkular.org/community/docs/developer-
 
 Otherwise, it's time to move on...
 
-link:lesson-06-events.adoc[Lesson 06 - Events]
+link:lesson-07-events.adoc[Lesson 07 - Events]
 
 link:../README.adoc[Tutorial Home]
 

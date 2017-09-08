@@ -37,50 +37,34 @@ case "`uname`" in
         ;;
 esac
 
-counter=0;
-gauge1Url="http://localhost:8080/hawkular/metrics/gauges/gauge-1/raw"
-gauge2Url="http://localhost:8080/hawkular/metrics/gauges/gauge-2/raw"
-counterUrl="http://localhost:8080/hawkular/metrics/counters/counter-1/raw"
+counter1=0;
+dataUrl="http://localhost:8080/hawkular/alerts/data"
 
 while true
 do 
   gauge1=$(echo "scale=0; $RANDOM % 101" | bc -l)
   gauge2=$(echo "scale=0; $RANDOM % 101" | bc -l)
-  counter=$(echo "scale=0; $counter + ($RANDOM % 6)" | bc -l)
+  counter1=$(echo "scale=0; $counter1 + ($RANDOM % 6)" | bc -l)
   if $darwin; then
     timestamp=$(gdate +%s%3N)
   else
     timestamp=$(date +%s%3N)
   fi
 
-  gauge1Metric="[{'timestamp':$timestamp,'value':$gauge1}]"
-  gauge2Metric="[{'timestamp':$timestamp,'value':$gauge2}]"
-  counterMetric="[{'timestamp':$timestamp,'value':$counter}]"
+  gauge1Metric="{\"timestamp\":$timestamp,\"id\":\"gauge-1\",\"value\":$gauge1}"
+  gauge2Metric="{\"timestamp\":$timestamp,\"id\":\"gauge-2\",\"value\":$gauge2}"
+  counter1Metric="{\"timestamp\":$timestamp,\"id\":\"counter-1\",\"value\":$counter1}"
+
+  data="[$gauge1Metric,$gauge2Metric,$counter1Metric]"
 
   echo Sending gauge-1 $gauge1Metric
-  response=$(curl --write-out %{http_code}  --output /dev/null -s -i -HContent-Type:application/json -HHawkular-Tenant:tutorial $gauge1Url -X POST -d $gauge1Metric)
-  echo $response
-  if [ 200 -ne $response ]
-  then
-    echo Exiting on response=$response, requestUrl=$gauge1Url
-    exit 1
-  fi
-
   echo Sending gauge-2 $gauge2Metric
-  response=$(curl --write-out %{http_code}  --output /dev/null -s -i -HContent-Type:application/json -HHawkular-Tenant:tutorial $gauge2Url -X POST -d $gauge2Metric)
+  echo Sending counter-1 $counter1Metric
+  response=$(curl --write-out %{http_code}  --output /dev/null -s -i -HContent-Type:application/json -HHawkular-Tenant:tutorial $dataUrl -X POST -d $data)
   echo $response
   if [ 200 -ne $response ]
   then
-    echo Exiting on response=$response, requestUrl=$gauge2Url
-    exit 1
-  fi
-
-  echo Sending counter-1 $counterMetric
-  response=$(curl --write-out %{http_code}  --output /dev/null -s -i -HContent-Type:application/json -HHawkular-Tenant:tutorial $counterUrl -X POST -d $counterMetric)
-  echo $response
-  if [ 200 -ne $response ]
-  then
-    echo Exiting on response=$response, requestUrl=$counterUrl
+    echo Exiting on response=$response, requestUrl=$dataUrl
     exit 1
   fi
 

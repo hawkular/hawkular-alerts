@@ -1,7 +1,7 @@
 
 == Hawkular Alerting Tutorial
 
-Welcome to the Hawkular Alerting (hAlerting) tutorial!  This step by step lesson guide will help you quickly become productive with hAlerting.  The lessons are designed to build knowledge by going through then in order. Of course it's also fine to jump around to brush up on a specific topic as needed. Even if you've been here before you'll probably want to check in with lesson-01, just to make sure your tutorial environment is where you need it to be. Thanks, and Enjoy!
+Welcome to the Hawkular Alerting (hAlerting) tutorial!  This step by step lesson guide will help you quickly become productive with hAlerting.  The lessons are designed to build knowledge by going through them in order. Of course it's also fine to jump around to brush up on a specific topic as needed. Even if you've been here before you'll probably want to check in with lesson-01, just to make sure your tutorial environment is where you need it to be. Thanks, and Enjoy!
 
 There are two directories here:
 ----
@@ -16,14 +16,15 @@ We are adding lessons as time permits, there is plenty here to get started!  The
 . link:lessons/lesson-01-plumbing.adoc[Lesson 01 - Plumbing]
 . link:lessons/lesson-02-first-alert.adoc[Lesson 02 - First Alert]
 . link:lessons/lesson-03-dampening.adoc[Lesson 03 - Dampening]
-. link:lessons/lesson-04-lifecycle.adoc[Lesson 04 - Alert Life-cycle]
-. link:lessons/lesson-05-actions.adoc[Lesson 05 - Actions]
-. link:lessons/lesson-06-events.adoc[Lesson 06 - Events]
-. link:lessons/lesson-07-alerters.adoc[Lesson 07 - External Alerters]
+. link:lessons/lesson-04-ui.adoc[Lesson 04 - UI]
+. link:lessons/lesson-05-lifecycle.adoc[Lesson 05 - Alert Life-cycle]
+. link:lessons/lesson-06-actions.adoc[Lesson 06 - Actions]
+. link:lessons/lesson-07-events.adoc[Lesson 07 - Events]
+. link:lessons/lesson-08-alerters.adoc[Lesson 08 - External Alerters]
 
 On Deck (want to contribute?):
 
-. Lesson 08 - Group Triggers
-. Lesson 09 - Clustering
+. Lesson 09 - Group Triggers
+. Lesson 10 - Clustering
 . more...
 

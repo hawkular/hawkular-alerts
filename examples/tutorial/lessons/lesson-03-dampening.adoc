@@ -1,9 +1,8 @@
-
 == Lesson 03 - Dampening
 
 In lesson 02 we created a trigger and fired an alert.  We created a threshold condition to look for gauge-1 datapoints GTE 50.  And the first datapoint that evaluated true fired the trigger.  But often we, and especially an engineer on call, don't want an alert based on a single outlier. Instead, we want to identify a sustained or degrading issue.  In Hawkular Alerting (hAlerting) we do this via _Trigger Dampening_.
 
-Under the covers every trigger has dampening applied, it's just that by default we apply _Strict-1_ dampening, meaning that we just need 1 consecutive true evaluation of the conditions. In orther words, _Strict-1_ dampening means the trigger fires every time the condition set evaluates to true. _Strict_ dampening means we need consecutive true evaluations in order to fire the trigger.  This is commonly used to prevent alerting on a sudden spike.  We can apply strict-count or strict-time based dampening.  Strict-count means N consecutive true evaluations.  Strict-time means all true evaluations for some minimum period of time.
+Under the covers every trigger has dampening applied, it's just that by default we apply _Strict-1_ dampening, meaning that we just need 1 consecutive true evaluation of the conditions. In other words, _Strict-1_ dampening means the trigger fires every time the condition set evaluates to true. _Strict_ dampening means we need consecutive true evaluations in order to fire the trigger.  This is commonly used to prevent alerting on a sudden spike.  We can apply strict-count or strict-time based dampening.  Strict-count means N consecutive true evaluations.  Strict-time means all true evaluations for some minimum period of time.
 
 === Condition Evaluations
 
@@ -64,14 +63,14 @@ Content-Type: application/json
   {
     "triggerMode": "FIRING",
     "type": "THRESHOLD",
-    "dataId": "hm_g_gauge-1",
+    "dataId": "gauge-1",
     "operator": "GTE",
     "threshold": 50
   },
   {
     "triggerMode": "FIRING",
     "type": "RATE",
-    "dataId": "hm_c_counter-1",
+    "dataId": "counter-1",
     "direction": "INCREASING",
     "period": "MINUTE",
     "operator": "GTE",
@@ -131,7 +130,7 @@ Content-Type: application/json
    "dataTimestamp": 1488378571537,
    "type": "RATE",
    "condition": {
-     "dataId": "hm_c_counter-1",
+     "dataId": "counter-1",
      "direction": "INCREASING",
      "period": "MINUTE",
      "operator": "GTE",
@@ -148,7 +147,7 @@ Content-Type: application/json
    "dataTimestamp": 1488378571537,
    "type": "THRESHOLD",
    "condition": {
-     "dataId": "hm_g_gauge-1",
+     "dataId": "gauge-1",
      "operator": "GTE",
      "threshold": 50
    },
@@ -191,7 +190,7 @@ The important thing to see in this response is that the _evalSets_ field now has
 
 When you are ready, move on to the next lesson.
 
-link:lesson-04-lifecycle.adoc[Lesson 04 - Alert Lifecycle and Auto-Resolve]
+link:lesson-04-ui.adoc[Lesson 04 - UI]
 
 link:../README.adoc[Tutorial Home]
 

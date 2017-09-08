@@ -1,32 +1,37 @@
 
 == Lesson 01 - Plumbing
 
-Hawkular Alerting (hAlerting) is a standalone alerting system, written in Java, designed to be embedded into other software products to give them alerting abilities. It is delivered as a WAR file and deployed on a JBoss WildFly application server.  It uses a Cassandra database for persistence. It is already embedded into the Hawkular Metrics project, which is a high volume Time Series Database, built on Cassandra, and used for system monitoring.  You don't need to know much about Cassandra for this tutorial, only that it needs to be running to support hAlerting (and hMetrics for that matter).
+Hawkular Alerting (hAlerting) is a standalone alerting system, written in Java, designed to be embedded into other software products to give them alerting abilities. It is delivered as a JAR file or Docker container. It uses a built-in Infinispan back-end and file-based persistence.  It doesn't need anything else out of the box, so you can get started right away.
 
-If you are comfortable with Maven, Git, WildFly, Cassandra and want to build and run hAlerting, you can certainly do so by following guidelines at the https://github.com/hawkular/hawkular-alerts[hAlerting github site].  But hopefully faster will be to use the docker containers available for running hMetrics and Cassandra.  Remember that hMetrics embeds hAlerting, so it will give us the full alerting system as well as a metrics tool we can use to help demonstrate features.
+If you are comfortable with Maven and Git and want to build and run hAlerting, you can certainly do so by following the guidelines at https://github.com/hawkular/hawkular-alerts[github].  But likely faster and easier will be to use the published docker container.
 
-If you already have Docker running, great,  If not you'll want to https://docs.docker.com/engine/installation/[install Docker now].  Additionally, we use Docker-Compose to combine the hMetrics and Cassandra containers, so you'll want to also https://docs.docker.com/compose/install/[install Docker-Compose now].
+If you already have Docker running, great,  If not you'll want to https://docs.docker.com/engine/installation/[install Docker now].  Additionally, we use Docker-Compose to configure things, so you'll want to also https://docs.docker.com/compose/install/[install Docker-Compose now].
 
-When you have docker running you can start the tutorial containers.  Note that the the tutorial will want to use port 8080, so make sure it is free.  Also, if you haven't seen already, running docker will likely need "root" user permission.
+When you have docker running you can start the tutorial container.  Note that the the tutorial will want to use port 8080, so make sure it is free.  Also, if you haven't seen already, running docker will likely need "root" user permission.
 
 ----
 > cd TUTORIAL_HOME/lessons
 > docker-compose up -d
 ----
 
-This should start two containers, one for the tutorial (hMetrics) and one for Cassandra.  You should see these running with:
+This should start the hAlerting container.  You should see it running with:
 
 `> docker ps`
 
 Let's check to see if things are running via a simple REST request.  In a browser try url http://localhost:8080/hawkular/alerts/status. It should return some JSON, if you see: "status":"STARTED" in the response then we should be good to go.
 
-Because hAlerting is REST based we'll be submitting a lot of REST HTTP requests as part of the tutorial.  You can do this in various ways, such as curl, but a nice tool is the Chrome Advanced REST Client (ARC).  For Chrome users you may want to install this app now via chrome://apps.
+Because hAlerting is REST based we'll be submitting a lot of REST HTTP requests as part of the tutorial. You can do this in various ways, such as curl, but a nice tool is the Chrome Advanced REST Client (ARC).  For Chrome users you may want to install this app now via chrome://apps.  We'll also introduce the UI as an alternative to submitting requests manually.
 
 The last bit of plumbing is data.  We'll need some incoming data on which we can generate alerts.
 
+TIP: If you are running this tutorial on OS X. You should install `coreutils` on https://brew.sh/[Homebrew] by `brew install coreutils`
+
 TIP: By default hAlerting has a 1 second minimum for data using the same dataId.  This is to protect against data floods. Data violating the minimum will be discarded.  The default is configurable via the `hawkular-alerts.min-reporting-interval-data` system property or `HAWKULAR_MIN_REPORTING_INTERVAL_DATA` environment variable. The tutorial data pump generates metric data at 5 second intervals, which is fine.
 
-TIP: If you are running this tutorial on OS X. You should install `coreutils` on https://brew.sh/[Homebrew] by `brew install coreutils`
+The script will generate data for three metrics (at 5s intervals):
+. gauge-1   random values between 0 and 100
+. gauge-2   random values between 0 and 100
+. counter-1 increasing counter, incremented 0..5 each time
 
 To start pumping in some data, run the provided script:
 
