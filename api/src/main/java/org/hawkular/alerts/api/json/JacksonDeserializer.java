@@ -19,6 +19,7 @@ package org.hawkular.alerts.api.json;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -619,10 +620,12 @@ public class JacksonDeserializer {
 
     public static class AlertThinDeserializer extends BeanDeserializerModifier {
 
+        private static final List<Class<?>> thinnables = Arrays.asList(Event.class, Alert.class, Action.class);
+
         List<String> ignorables = new ArrayList<>();
 
         public AlertThinDeserializer() {
-            for (Class clazz = Alert.class; (null != clazz); clazz = clazz.getSuperclass()) {
+            for (Class<?> clazz = Alert.class; (null != clazz); clazz = clazz.getSuperclass()) {
                 for (Field field : clazz.getDeclaredFields()) {
                     if (field.isAnnotationPresent(Thin.class)) {
                         ignorables.add(field.getName());
@@ -639,7 +642,7 @@ public class JacksonDeserializer {
         @Override
         public BeanDeserializerBuilder updateBuilder(DeserializationConfig config, BeanDescription beanDesc,
                 BeanDeserializerBuilder builder) {
-            if (!beanDesc.getBeanClass().equals(Alert.class) && !beanDesc.getBeanClass().equals(Action.class)) {
+            if (!thinnables.contains(beanDesc.getBeanClass())) {
                 return builder;
             }
             for (String ignore : ignorables) {
@@ -651,7 +654,7 @@ public class JacksonDeserializer {
         @Override
         public List<BeanPropertyDefinition> updateProperties(DeserializationConfig config,
                 BeanDescription beanDesc, List<BeanPropertyDefinition> propDefs) {
-            if (!beanDesc.getBeanClass().equals(Alert.class) && !beanDesc.getBeanClass().equals(Action.class)) {
+            if (!thinnables.contains(beanDesc.getBeanClass())) {
                 return propDefs;
             }
             List<BeanPropertyDefinition> newPropDefs = new ArrayList<>();

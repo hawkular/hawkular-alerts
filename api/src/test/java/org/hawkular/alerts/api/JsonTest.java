@@ -58,6 +58,7 @@ import org.hawkular.alerts.api.model.dampening.Dampening;
 import org.hawkular.alerts.api.model.data.AvailabilityType;
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Alert;
+import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Match;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
@@ -155,7 +156,6 @@ public class JsonTest {
                     "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}" +
                     "}," +
                 "\"ctime\":1436964192878," +
-                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}," +
                 "\"text\":\"trigger-test\"," +
                 "\"evalSets\":[" +
                     "[{\"evalTimestamp\":1436964294055," +
@@ -218,6 +218,76 @@ public class JsonTest {
         mapper.registerModule(simpleModule);
         alert = mapper.readValue(jsonAlert, Alert.class);
         assertNull(alert.getEvalSets());
+    }
+
+    @Test
+    public void jsonToEventTest() throws Exception {
+        String jsonEvent = "{\"tenantId\":\"jdoe\"," +
+                "\"id\":\"trigger-test|1436964192878\"," +
+                "\"eventType\":\"EVENT\"," +
+                "\"trigger\":{\"tenantId\":\"jdoe\"," +
+                "\"id\":\"trigger-test\"," +
+                "\"name\":\"trigger-test\"," +
+                "\"description\":\"trigger-test\"," +
+                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}" +
+                "}," +
+                "\"ctime\":1436964192878," +
+                "\"eventType\":\"EVENT\"," +
+                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}," +
+                "\"text\":\"trigger-test\"," +
+                "\"category\":\"TRIGGER\"," +
+                "\"evalSets\":[" +
+                "[{\"evalTimestamp\":1436964294055," +
+                "\"dataTimestamp\":2," +
+                "\"type\":\"THRESHOLD\"," +
+                "\"condition\":{\"tenantId\":\"jdoe\"," +
+                "\"triggerId\":\"trigger-test\"," +
+                "\"triggerMode\":\"FIRING\"," +
+                "\"type\":\"THRESHOLD\"," +
+                "\"conditionId\":\"my-organization-trigger-test-FIRING-1-1\"," +
+                "\"dataId\":\"Default\"," +
+                "\"operator\":\"LTE\"," +
+                "\"threshold\":50.0" +
+                "}," +
+                "\"value\":25.5}," +
+                "{\"evalTimestamp\":1436964284965," +
+                "\"dataTimestamp\":1," +
+                "\"type\":\"AVAILABILITY\"," +
+                "\"condition\":{\"tenantId\":\"jdoe\"," +
+                "\"triggerId\":\"trigger-test\"," +
+                "\"triggerMode\":\"FIRING\"," +
+                "\"type\":\"AVAILABILITY\"," +
+                "\"conditionId\":\"my-organization-trigger-test-FIRING-1-1\"," +
+                "\"dataId\":\"Default\"," +
+                "\"operator\":\"UP\"" +
+                "}," +
+                "\"value\":\"UP\"}]" +
+                "]," +
+                "\"context\":{\"n1\":\"v1\",\"n2\":\"v2\"}}";
+
+        ObjectMapper mapper = new ObjectMapper();
+        Event event = mapper.readValue(jsonEvent, Event.class);
+        assertNotNull(event);
+        assertNotNull(event.getEvalSets());
+        assertEquals(1, event.getEvalSets().size());
+        assertEquals(2, event.getEvalSets().get(0).size());
+        assertNotNull(event.getContext());
+        assertEquals(2, event.getContext().size());
+        assertEquals("v1", event.getContext().get("n1"));
+        assertEquals("v2", event.getContext().get("n2"));
+        assertEquals("trigger-test", event.getText());
+        assertEquals("EVENT", event.getEventType());
+        assertEquals("TRIGGER", event.getCategory());
+
+        /*
+            Testing thin deserializer
+         */
+        SimpleModule simpleModule = new SimpleModule();
+        simpleModule.setDeserializerModifier(new JacksonDeserializer.AlertThinDeserializer());
+        mapper = new ObjectMapper();
+        mapper.registerModule(simpleModule);
+        event = mapper.readValue(jsonEvent, Event.class);
+        assertNull(event.getEvalSets());
     }
 
     @Test
