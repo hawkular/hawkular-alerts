@@ -5,6 +5,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
     console.debug("[Dashboard] Start: " + new Date());
     console.debug("[Dashboard] $rootScope.selectedTenant " + $rootScope.selectedTenant);
 
+    $scope.showTimeline = false;
     $scope.refresh = true;
 
     $scope.filter = {
@@ -255,11 +256,11 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
       }
 
       if ( $scope.filter.range.datetime ) {
-        var range = filterService.getRange();
-        alertsCriteria.startTime = range[0];
-        alertsCriteria.endTime = range[1];
-        eventsCriteria.startTime = range[0];
-        eventsCriteria.endTime = range[1];
+        var r = filterService.getRange();
+        alertsCriteria.startTime = r[0];
+        alertsCriteria.endTime = r[1];
+        eventsCriteria.startTime = r[0];
+        eventsCriteria.endTime = r[1];
       }
 
       var promise1 = dashboardService.Alert(selectedTenant, alertsCriteria).query();
@@ -274,7 +275,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         dataTimeline[RESOLVED].data = [];
         dataTimeline[EVENTS].data = [];
 
-        $scope.timelineEmpty = ( updatedAlerts.length === 0 && updatedEvents.length === 0 );
+        $scope.showTimeline = ( updatedAlerts.length !== 0 || updatedEvents.length !== 0 );
 
         var i;
         for (i = 0; i < updatedAlerts.length; i++) {
@@ -365,10 +366,6 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
           'columns': alertsByOpenAck
         });
 
-        if ($scope.timelineEmpty) {
-          return;
-        }
-
         // prepare timeline
         console.debug('[Dashboard] Update timeline data ' + new Date());
         // console.debug(JSON.stringify(dataTimeline));
@@ -376,21 +373,23 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
         // [lponce] remove objects to re-draw
         d3.select('#pf-timeline').selectAll('div').remove();
 
-        var range = filterService.getRange();
-        var startTimeline = range[0] - ((range[1] - range[0]) * 0.25);
-        var endTimeline = range[1] + ((range[1] - range[0]) * 0.25);
+        if ( $scope.showTimeline ) {
+          var r = filterService.getRange();
+          var startTimeline = r[0] - ((r[1] - r[0]) * 0.10);
+          var endTimeline = r[1] + ((r[1] - r[0]) * 0.10);
 
-        timeline = d3.chart.timeline()
-          .end(new Date(endTimeline))
-          .start(new Date(startTimeline))
-          .minScale(ONE_WEEK / ONE_MONTH)
-          .maxScale(ONE_WEEK / ONE_HOUR)
-          .eventLineColor(onTimelineColor)
-          .eventShape('\u2b24')
-          .eventClick(onTimelineClick)
-          .eventGrouping(ONE_SECOND);
-        element = d3.select('#pf-timeline').append('div').datum(dataTimeline);
-        timeline(element);
+          timeline = d3.chart.timeline()
+            .end(new Date(endTimeline))
+            .start(new Date(startTimeline))
+            .minScale(ONE_WEEK / ONE_MONTH)
+            .maxScale(ONE_WEEK / ONE_HOUR)
+            .eventLineColor(onTimelineColor)
+            .eventShape('\u2b24')
+            .eventClick(onTimelineClick)
+            .eventGrouping(ONE_SECOND);
+          element = d3.select('#pf-timeline').append('div').datum(dataTimeline);
+          timeline(element);
+        }
 
       }, toastError);
     };
@@ -403,11 +402,6 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
 
     // Initial dashboard if tenant is valid
     if (selectedTenant && selectedTenant.length > 0) {
-      // Initial blank timeline
-      timeline = d3.chart.timeline();
-      element = d3.select('#pf-timeline').append('div').datum(dataTimeline);
-      timeline(element);
-
       updateDashboard();
       if ($scope.refresh) {
         intervalRef = $interval(updateDashboard, PING_INTERVAL);
@@ -438,7 +432,7 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
     });
 
     angular.element($window).bind('resize', function () {
-      if (selectedTenant && selectedTenant.length > 0) {
+      if (selectedTenant && selectedTenant.length > 0 && timeline !== undefined) {
         timeline(element);
       }
     });
@@ -476,6 +470,10 @@ angular.module('hwk.dashboardModule').controller( 'hwk.dashboardController', ['$
       // note, range filter is global
       $scope.filter.event.tagQuery = null;
       $location.url("/events");
+    };
+
+    $scope.setRange = function() {
+      updateDashboard();
     };
 
     $scope.updateRange = function(range) {

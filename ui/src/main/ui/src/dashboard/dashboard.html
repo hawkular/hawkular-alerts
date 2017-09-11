@@ -1,16 +1,14 @@
-
 <div class="container-fluid container-cards-pf" ng-controller="hwk.dashboardController">
 
   <!-- TOAST NOTIFICATIONS -->
 
   <pf-notification-list></pf-notification-list>
 
-  <!-- GRAPHS -->
+  <div class="row row-cards-pf" ng-hide="selectedTenant == null || selectedTenant == ''">
 
-  <div class="row row-cards-pf" ng-if="selectedTenant != null && selectedTenant != ''">
-    <!-- Toolbar Datetime Range-->
+    <!-- Range Filter -->
 
-    <div class="row toolbar-pf" ng-hide="selectedTenant == null || selectedTenant == ''">
+    <div class="row toolbar-pf">
       <div class="col-md-12">
         <form class="toolbar-pf-actions">
           <div class="btn-group toolbar-pf-filter pull-left" ng-style="{'width':'275px'}">
@@ -24,7 +22,7 @@
             <button type="button" class="btn btn-default" ng-click="updateRange('30d')">30d</button>
           </div>
           <div class="btn-group toolbar-pf-filter pull-left" ng-style="{'width':'100px'}">
-            <button type="button" class="btn btn-default" ng-click="updateFilter()">Set Range To:</button>
+            <button type="button" class="btn btn-default" ng-click="setRange()">Set Range To:</button>
           </div>
           <div class="form-group toolbar-pf-filter" ng-style="{'width':'100px', 'padding-right':'0px'}">
             <div class="input-group input-touchspin">
@@ -41,7 +39,7 @@
               <select class="btn btn-default form-control" id="filter.range.direction" ng-options="opt as opt for opt in filter.range.directionOptions" ng-model="filter.range.direction"></select>
             </div>
           </div>
-          <div class="form-group toolbar-pf-filter" ng-style="{'width':'220px'}">
+          <div class="form-group toolbar-pf-filter" ng-style="{'width':'250px'}">
             <div class='input-group date' id="datetime" >
               <input type='text' class="form-control" ng-model="filter.range.datetime" id="currentdatetime" name="currentdatetime"/>
                <div class="input-group-addon btn btn-default">
@@ -58,6 +56,8 @@
         </form>
       </div>
     </div>
+
+  <!-- GRAPHS -->
 
     <!-- Important:  if you need to nest additional .row within a .row.row-cards-pf, do *not* use .row-cards-pf on the nested .row  -->
     <div class="col-sm-6 col-md-3">
@@ -114,7 +114,7 @@
 
   <!-- TIMELINE -->
 
-  <div class="row row-cards-pf" ng-if="selectedTenant != null && selectedTenant != '' && !timelineEmpty">
+  <div class="row row-cards-pf" ng-if="selectedTenant != null && selectedTenant != ''">
     <!-- Important:  if you need to nest additional .row within a .row.row-cards-pf, do *not* use .row-cards-pf on the nested .row  -->
     <div class="col-md-12">
       <div class="card-pf">
@@ -124,7 +124,7 @@
       </div>
     </div>
   </div><!-- /row -->
-  <div class="row row-cards-pf" ng-if="selectedTenant != null && selectedtenant != '' && timelineEvents != null" ng-repeat="eventSelected in timelineEvents">
+  <div class="row row-cards-pf" ng-repeat="eventSelected in timelineEvents">
     <!-- Important:  if you need to nest additional .row within a .row.row-cards-pf, do *not* use .row-cards-pf on the nested .row  -->
     <div class="col-md-12">
       <div class="card-pf">
@@ -377,10 +377,8 @@
     </div>
   </div>
 </div><!-- /container -->
-<script>
-  $('#offset').TouchSpin({
-    initval: 1
-  });
+<script type="text/javascript">
+  $('#offset').TouchSpin();
   $('#datetime').datetimepicker({
     format: 'YYYY-MM-DD HH:mm:ss',
     showTodayButton: true,
@@ -400,3 +398,4 @@
     }
   });
 </script>
+
