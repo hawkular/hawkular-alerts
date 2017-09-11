@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts-actions-webhook</artifactId>
-    <version>1.6.3.Final-SNAPSHOT</version>
+    <version>1.6.3.Final</version>
   </parent>
 
   <artifactId>hawkular-alerts-actions-webhook-plugin</artifactId>
