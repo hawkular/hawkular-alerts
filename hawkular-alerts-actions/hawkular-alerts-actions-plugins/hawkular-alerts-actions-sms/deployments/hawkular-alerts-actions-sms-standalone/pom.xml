@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular.alerts</groupId>
     <artifactId>hawkular-alerts-actions-sms</artifactId>
-    <version>1.7.1.Final</version>
+    <version>1.7.2.Final-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
