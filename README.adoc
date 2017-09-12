@@ -11,11 +11,9 @@ in their own GitHub repositories and integrated in this project.
 
 link:http://www.slideshare.net/ponceballesteros/hawkular-alerting[Hawkular Alerting Introduction].
 
-== Playground for technologies
+link:http://www.hawkular.org/community/docs/developer-guide/alerts-v2.html[Hawkular Alerting User Guide].
 
-- Netty
-- Reactor/Vert.X
-- Plain jar package
+link:http://www.hawkular.org/docs/rest/rest-alerts-v2.html[Hawkular Alerting REST API]
 
 == License
 
