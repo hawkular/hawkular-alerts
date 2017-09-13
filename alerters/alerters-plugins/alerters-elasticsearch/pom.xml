@@ -47,6 +47,20 @@
       <version>${version.junit}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-all</artifactId>
+      <version>${version.org.codehaus.groovy}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.groovy.modules.http-builder</groupId>
+      <artifactId>http-builder</artifactId>
+      <version>${version.org.codehaus.groovy.modules.http-builder}</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
 </project>

@@ -1,11 +1,27 @@
+/*
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.hawkular.alerts.handlers;
 
-import static org.hawkular.alerts.api.json.JsonUtil.fromJson;
-import static org.hawkular.alerts.api.util.Util.isEmpty;
 import static org.hawkular.alerts.api.doc.DocConstants.DELETE;
 import static org.hawkular.alerts.api.doc.DocConstants.GET;
 import static org.hawkular.alerts.api.doc.DocConstants.POST;
 import static org.hawkular.alerts.api.doc.DocConstants.PUT;
+import static org.hawkular.alerts.api.json.JsonUtil.fromJson;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.PARAMS_PAGING;
 import static org.hawkular.alerts.handlers.util.ResponseUtil.checkForUnknownQueryParams;
 
@@ -16,6 +32,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.hawkular.alerts.api.doc.DocEndpoint;
+import org.hawkular.alerts.api.doc.DocParameter;
+import org.hawkular.alerts.api.doc.DocParameters;
+import org.hawkular.alerts.api.doc.DocPath;
+import org.hawkular.alerts.api.doc.DocResponse;
+import org.hawkular.alerts.api.doc.DocResponses;
 import org.hawkular.alerts.api.model.action.Action;
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.paging.Page;
@@ -24,12 +46,6 @@ import org.hawkular.alerts.api.services.ActionsCriteria;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.StandaloneAlerts;
-import org.hawkular.alerts.api.doc.DocEndpoint;
-import org.hawkular.alerts.api.doc.DocParameter;
-import org.hawkular.alerts.api.doc.DocParameters;
-import org.hawkular.alerts.api.doc.DocPath;
-import org.hawkular.alerts.api.doc.DocResponse;
-import org.hawkular.alerts.api.doc.DocResponses;
 import org.hawkular.alerts.handlers.util.ResponseUtil;
 import org.hawkular.alerts.handlers.util.ResponseUtil.ApiDeleted;
 import org.hawkular.alerts.handlers.util.ResponseUtil.ApiError;

@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -331,8 +330,8 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         tenantIds.add("tenant0");
 
         AlertsCriteria criteria = new AlertsCriteria();
-        criteria.setStartTime(2l);
-        criteria.setEndTime(2l);
+        criteria.setStartTime(2L);
+        criteria.setEndTime(2L);
 
         List<Alert> ctime2Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(5, ctime2Alerts.size());
@@ -355,7 +354,7 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         tenantIds.add("tenant0");
 
         AlertsCriteria criteria = new AlertsCriteria();
-        criteria.setStartResolvedTime(1l);
+        criteria.setStartResolvedTime(1L);
 
         // Alerts on stime 1 and 4 are RESOLVED
         List<Alert> stimeGTE2Alerts = alerts.getAlerts(tenantIds, criteria, null);
@@ -375,7 +374,7 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         tenantIds.add("tenant0");
 
         AlertsCriteria criteria = new AlertsCriteria();
-        criteria.setStartAckTime(1l);
+        criteria.setStartAckTime(1L);
 
         // Alerts on stime 2 and 5 are ACKNOWLEDGED
         List<Alert> stimeGTE2Alerts = alerts.getAlerts(tenantIds, criteria, null);
@@ -395,8 +394,8 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         tenantIds.add("tenant0");
 
         AlertsCriteria criteria = new AlertsCriteria();
-        criteria.setStartStatusTime(5l);
-        criteria.setEndStatusTime(5l);
+        criteria.setStartStatusTime(5L);
+        criteria.setEndStatusTime(5L);
 
         List<Alert> stimeGTE5Alerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(5, stimeGTE5Alerts.size());
@@ -482,7 +481,7 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         AlertsCriteria criteria = new AlertsCriteria();
         criteria.setStatus(Alert.Status.RESOLVED);
         criteria.setTriggerId("trigger0");
-        criteria.setStartTime(3l);
+        criteria.setStartTime(3L);
 
         List<Alert> resolvedAlerts = alerts.getAlerts(tenantIds, criteria, null);
         assertEquals(1, resolvedAlerts.size());
@@ -762,8 +761,8 @@ public class IspnAlertsServiceImplTest extends IspnBaseServiceImplTest {
         tenantIds.add("tenant0");
 
         EventsCriteria criteria = new EventsCriteria();
-        criteria.setStartTime(2l);
-        criteria.setEndTime(2l);
+        criteria.setStartTime(2L);
+        criteria.setEndTime(2L);
 
         List<Event> ctime2Events = alerts.getEvents(tenantIds, criteria, null);
         assertEquals(5, ctime2Events.size());

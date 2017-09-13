@@ -1,11 +1,28 @@
+/*
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.hawkular.alerts.handlers.util;
+
+import static org.hawkular.alerts.api.json.JsonUtil.toJson;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR;
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
-import static org.hawkular.alerts.api.json.JsonUtil.toJson;
-import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +48,7 @@ import org.hawkular.alerts.api.model.paging.Pager;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.MultiMap;
 import io.vertx.ext.web.RoutingContext;
@@ -40,9 +58,9 @@ import io.vertx.ext.web.RoutingContext;
  * @author Lucas Ponce
  */
 public class ResponseUtil {
-    public final static String ACCEPT = "Accept";
-    public final static String CONTENT_TYPE = "Content-Type";
-    public final static String APPLICATION_JSON = "application/json";
+    public static final String ACCEPT = "Accept";
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String APPLICATION_JSON = "application/json";
     public static final String TENANT_HEADER_NAME = "Hawkular-Tenant";
     public static final String PARAM_PAGE = "page";
     public static final String PARAM_PER_PAGE = "per_page";
@@ -78,7 +96,7 @@ public class ResponseUtil {
         private final Integer deleted;
 
         public ApiDeleted(Integer deleted) {
-            this.deleted = deleted != null  ? deleted : 0;
+            this.deleted = deleted != null ? deleted : 0;
         }
 
         public Integer getDeleted() {
@@ -247,7 +265,7 @@ public class ResponseUtil {
         StringBuilder tagQuery = new StringBuilder();
         Iterator it = tags.entrySet().iterator();
         while (it.hasNext()) {
-            Map.Entry<String, String> tag = (Map.Entry<String, String>)it.next();
+            Map.Entry<String, String> tag = (Map.Entry<String, String>) it.next();
             tagQuery.append(tag.getKey());
             if (!"*".equals(tag.getValue())) {
                 tagQuery.append(" = ").append("").append(tag.getValue());
@@ -355,7 +373,7 @@ public class ResponseUtil {
                 return;
             }
             if (result.result() instanceof Page) {
-                paginatedOk(routing, (Page)result.result());
+                paginatedOk(routing, (Page) result.result());
                 return;
             }
             ok(routing, result.result());

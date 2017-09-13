@@ -18,15 +18,11 @@ package org.hawkular.alerts.engine.util;
 
 import static org.hawkular.alerts.api.util.Util.isEmpty;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
-import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.model.dampening.Dampening;
-import org.hawkular.alerts.api.model.event.Alert;
 import org.hawkular.alerts.api.model.event.Alert.Status;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.model.trigger.TriggerAction;

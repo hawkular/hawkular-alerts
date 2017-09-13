@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2016-2017 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,8 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -121,7 +122,6 @@
 
   <build>
     <plugins>
-
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
         <version>${version.org.apache.maven.plugins.maven-resources-plugin}</version>
@@ -154,8 +154,8 @@
             <phase>package</phase>
             <configuration>
               <tasks>
-                <property name="target-to-run" value="${project.build.directory}/${distribution.name}-${project.version}"/>
-                <chmod file="${target-to-run}/hawkular.sh" perm="755"/>
+                <property name="target-to-run" value="${project.build.directory}/${distribution.name}-${project.version}" />
+                <chmod file="${target-to-run}/hawkular.sh" perm="755" />
               </tasks>
             </configuration>
             <goals>
@@ -180,6 +180,16 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <configuration>
+          <excludes combine.children="append">
+            <exclude>**/*.dockerignore</exclude>
+          </excludes>
+        </configuration>
       </plugin>
 
     </plugins>

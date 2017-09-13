@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerter.elasticsearch;
 
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -25,7 +26,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -166,8 +166,8 @@ public class ElasticsearchQueryTest {
         List<Map<String, Object>> results = query.query("[]", "log");
         List<Event> events = query.parseEvents(results);
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ");
-        Calendar calendar = Calendar.getInstance();
         for (int i=0; i<results.size(); i++) {
+            @SuppressWarnings("unchecked")
             Map<String, Object> source = (Map<String,Object>)results.get(i).get("_source");
             String timestamp = (String) source.get("@timestamp");
             System.out.println(timestamp);

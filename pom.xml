@@ -17,13 +17,21 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.hawkular</groupId>
+    <artifactId>hawkular-parent</artifactId>
+    <version>55</version>
+  </parent>
 
   <groupId>org.hawkular.alerts</groupId>
   <artifactId>hawkular-alerts</artifactId>
   <version>2.0.0.Final-SNAPSHOT</version>
   <packaging>pom</packaging>
+
 
   <name>Hawkular Alerting</name>
   <description>Alerting subsystem for Hawkular</description>
@@ -142,6 +150,21 @@
         <module>dist</module>
         <module>ui</module>
       </modules>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.mycila</groupId>
+            <artifactId>license-maven-plugin</artifactId>
+            <configuration>
+              <excludes combine.children="append">
+                <exclude>**/*.rules</exclude>
+                <exclude>**/*.tokens</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
 
     <profile>
@@ -153,6 +176,21 @@
         <module>actions</module>
       </modules>
     </profile>
+
+    <profile>
+      <id>skip-check</id>
+      <activation>
+        <property>
+          <name>!check</name>
+        </property>
+      </activation>
+      <properties>
+        <checkstyle.skip>true</checkstyle.skip>
+        <license.skip>true</license.skip>
+        <xml.skip>true</xml.skip>
+      </properties>
+    </profile>
+
   </profiles>
 
 </project>

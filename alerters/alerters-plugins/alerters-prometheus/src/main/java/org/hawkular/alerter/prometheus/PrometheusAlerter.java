@@ -146,7 +146,8 @@ public class PrometheusAlerter implements AlerterPlugin {
     private void initialRefresh() {
         try {
             Collection<Trigger> triggers = definitions.getAllTriggersByTag(ALERTER_ID, "*");
-            triggers.stream().forEach(trigger -> activeTriggers.put(new TriggerKey(trigger.getTenantId(), trigger.getId()), trigger));
+            triggers.stream().forEach(
+                    trigger -> activeTriggers.put(new TriggerKey(trigger.getTenantId(), trigger.getId()), trigger));
             update();
         } catch (Exception e) {
             log.error("Failed to fetch Triggers for external conditions.", e);
@@ -274,7 +275,7 @@ public class PrometheusAlerter implements AlerterPlugin {
         private ExternalCondition externalCondition;
 
         public ExpressionRunner(AlertsService alerts, Map<String, String> properties,
-                                ExternalCondition externalCondition) {
+                ExternalCondition externalCondition) {
             super();
             this.alertsService = alerts;
             this.externalCondition = externalCondition;
@@ -293,10 +294,12 @@ public class PrometheusAlerter implements AlerterPlugin {
                 HttpGet getRequest = new HttpGet(url.toString());
                 HttpResponse response = httpClient.execute(getRequest);
                 if (response.getStatusLine().getStatusCode() >= 300) {
-                    log.warnf("Prometheus GET failed. Status=[%d], message=[%s], url=[%s]", response.getStatusLine().getStatusCode(),
+                    log.warnf("Prometheus GET failed. Status=[%d], message=[%s], url=[%s]",
+                            response.getStatusLine().getStatusCode(),
                             response.getStatusLine().getReasonPhrase(), url.toString());
                 } else {
-                    QueryResponse queryResponse = JsonUtil.getMapper().readValue(response.getEntity().getContent(), QueryResponse.class);
+                    QueryResponse queryResponse = JsonUtil.getMapper().readValue(response.getEntity().getContent(),
+                            QueryResponse.class);
                     if (isValid(queryResponse, response)) {
                         evaluate(queryResponse.getData().getResult());
                     }
@@ -312,7 +315,7 @@ public class PrometheusAlerter implements AlerterPlugin {
                     try {
                         httpClient.close();
                     } catch (IOException e) {
-                        log.debugf(e,"Failed closing http client");
+                        log.debugf(e, "Failed closing http client");
                     }
                 }
             }

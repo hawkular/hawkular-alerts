@@ -17,6 +17,7 @@
 package org.hawkular.alerter.elasticsearch;
 
 import static java.util.Collections.EMPTY_LIST;
+
 import static org.hawkular.alerter.elasticsearch.ElasticsearchAlerter.getIntervalUnit;
 import static org.hawkular.alerter.elasticsearch.ElasticsearchAlerter.getIntervalValue;
 import static org.hawkular.alerts.api.model.event.EventField.DATAID;
@@ -501,7 +502,7 @@ public class ElasticsearchQuery implements Runnable {
             connect(properties.get(URL));
             String preparedQuery = prepareQuery();
             log.debugf("Fetching documents from Elasticsearch [%s] %s", preparedQuery, trigger.getContext());
-            List<Event> events = parseEvents(query(preparedQuery, (String) properties.get(INDEX)));
+            List<Event> events = parseEvents(query(preparedQuery, properties.get(INDEX)));
             log.debugf("Found [%s]", events.size());
             disconnect();
             events.stream().forEach(e -> e.setTenantId(trigger.getTenantId()));
