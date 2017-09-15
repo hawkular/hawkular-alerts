@@ -32,7 +32,6 @@
   <version>2.0.0.Final-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-
   <name>Hawkular Alerting</name>
   <description>Alerting subsystem for Hawkular</description>
   <url>https://github.com/hawkular/hawkular-alerts</url>
@@ -136,7 +135,9 @@
     <profile>
       <id>default</id>
       <activation>
-        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>!dummy</name>
+        </property>
       </activation>
       <modules>
         <module>alerters</module>
@@ -170,7 +171,9 @@
     <profile>
       <id>actions</id>
       <activation>
-        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>!dummy</name>
+        </property>
       </activation>
       <modules>
         <module>actions</module>
