@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,6 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -24,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+
 /**
  * An <code>ExternalCondition</code> is used for condition evaluations performed outside of the Alerts engine.
  * The external engine will send <code>StringData</code> providing the data for which the external evaluation
@@ -118,6 +118,15 @@ public class ExternalCondition extends Condition {
         this.alerterId = alerterId;
         this.dataId = dataId;
         this.expression = expression;
+        updateDisplayString();
+    }
+
+    public ExternalCondition(ExternalCondition condition) {
+        super(condition);
+
+        this.alerterId = condition.getAlerterId();
+        this.dataId = condition.getDataId();
+        this.expression = condition.getExpression();
     }
 
     public String getAlerterId() {
@@ -145,14 +154,6 @@ public class ExternalCondition extends Condition {
         this.expression = expression;
     }
 
-    public String getLog(String value) {
-        return triggerId + " : " + value + " " + expression;
-    }
-
-    public String getLog(Event event) {
-        return triggerId + " : " + event + " " + expression;
-    }
-
     /**
      * @param value the value, format is defined by the external engine
      * @return true in all cases because it is expected that the provided value was already determined to
@@ -161,6 +162,12 @@ public class ExternalCondition extends Condition {
     public boolean match(String value) {
 
         return true;
+    }
+
+    @Override
+    public void updateDisplayString() {
+        String s = String.format("%s: %s matches [%s]", this.alerterId, this.dataId, this.expression);
+        setDisplayString(s);
     }
 
     @Override

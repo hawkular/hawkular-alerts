@@ -28,6 +28,7 @@ import org.hawkular.alerts.api.model.export.Definitions;
 import org.hawkular.alerts.api.model.export.ImportType;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.Pager;
+import org.hawkular.alerts.api.model.trigger.FullTrigger;
 import org.hawkular.alerts.api.model.trigger.Mode;
 import org.hawkular.alerts.api.model.trigger.Trigger;
 import org.hawkular.alerts.api.services.DefinitionsEvent.Type;
@@ -47,29 +48,73 @@ public interface DefinitionsService {
      */
 
     /**
+     * <p>
+     * The preferred mechanism for creating a standard or group <code>Trigger</code>.
+     * </p>
+     * Create a new <code>FullTrigger</code>. A <code>FullTrigger</code> includes <code>Trigger, Conditions</code> and
+     * <code>Dampenings</code>.  Set <code>FullTrigger.trigger.type</code> to <code>STANDARD</code> or
+     * <code>GROUP</code> depending on the desired trigger type.  The new <code>Trigger</code> will be persisted.
+     * If not set the triggerId will be set to a UUID.
+     *
+     * @param tenantId Tenant where trigger is created
+     * @param fullTrigger New full trigger definition to be created
+     * @throws Exception If the <code>Trigger</code> already exists.
+     *
+     */
+    void createFullTrigger(String tenantId, FullTrigger fullTrigger) throws Exception;
+
+    /**
+     * Get a stored FullTrigger for a specific Tenant.
+     * @param tenantId Tenant where trigger is stored
+     * @param triggerId Given trigger to be retrieved
+     * @throws NotFoundException if not found
+     * @throws Exception on any problem
+     */
+    FullTrigger getFullTrigger(String tenantId, String triggerId) throws Exception;
+
+    /**
+     * <p>
+     * The preferred mechanism for updating a standard or group <code>Trigger</code>.
+     * </p>
+     * Update a new <code>FullTrigger</code>. Unchanged parts of the <code>FullTrigger</code> are ignored.
+     * <p>
+     * Note: This service can not be uses to update a group trigger when introducing new dataIds into the condition
+     * set.  That requires a new dataIdMap.  See {@link #setGroupConditions(String, String, Mode, Collection, Map)}.
+     *
+     * @param tenantId Tenant where trigger is created
+     * @param fullTrigger New full trigger definition to be created
+     * @throws Exception If the <code>Trigger</code> does not exist.
+     */
+    void updateFullTrigger(String tenantId, FullTrigger fullTrigger) throws Exception;
+
+    /**
+     * <p>
+     * <code>createFullTrigger(String, Trigger)</code> is the preferred way to create a trigger.
+     * </p>
      * Create a new <code>Trigger</code>. <code>Conditions</code> and <code>Dampening</code> are
      * manipulated in separate calls. The new <code>Trigger</code> will be persisted.  When fully defined a call to
-     * {@link #updateTrigger(String, Trigger)} is needed to enable the <code>Trigger</code>.
-     * <p>
-     * A non-group trigger can never be made into a group trigger, and vice-versa.
-     * </p>
+     * {@link #updateTrigger(String, Trigger)} may be needed to enable the <code>Trigger</code>.
+     *
      * @param tenantId Tenant where trigger is created
      * @param trigger New trigger definition to be added
      * @throws Exception If the <code>Trigger</code> already exists.
+     * @see {@link #createFullTrigger(String, Trigger)} for the preferred way to create a trigger.
      * @see {@link #addGroupTrigger(String, Trigger)} for adding a group trigger.
      */
     void addTrigger(String tenantId, Trigger trigger) throws Exception;
 
     /**
+     * <p>
+     * <code>createFullTrigger(String, Trigger)</code> is the preferred way to create a trigger.
+     * </p>
      * Create a new Group <code>Trigger</code>. <code>Conditions</code> and <code>Dampening</code> are
      * manipulated in separate calls. The new <code>Group Trigger</code> will be persisted.  When fully
      * defined a call to {@link #updateGroupTrigger(String, Trigger)} is needed to enable the <code>Trigger</code>.
-     * <p>
-     * A non-group trigger can never be made into a group trigger, and vice-versa.
-     * </p>
+     *
      * @param tenantId Tenant where trigger is created
      * @param groupTrigger New trigger definition to be added
      * @throws Exception If the <code>Trigger</code> already exists.
+     * @see {@link #createFullTrigger(String, Trigger)} for the preferred way to create a trigger.
      * @see {@link #addTrigger(String, Trigger)} for adding a non-group trigger.
      */
     void addGroupTrigger(String tenantId, Trigger groupTrigger) throws Exception;
@@ -141,6 +186,9 @@ public interface DefinitionsService {
      * Update the <code>Trigger</code>. <code>Conditions</code> and <code>Dampening</code> are
      * manipulated in separate calls. The updated <code>Trigger</code> will be persisted.  If enabled the
      * <code>Trigger</code> will be [re-]inserted into the Alerts engine and any prior dampening will be reset.
+     * <p>
+     * A non-group trigger can never be made into a group trigger, and vice-versa.
+     * </p>
      * @param tenantId Tenant where trigger is updated
      * @param trigger Existing trigger to be updated
      * @throws NotFoundException if trigger is not found
@@ -155,6 +203,8 @@ public interface DefinitionsService {
      * <code>Trigger</code> will be [re-]inserted into the Alerts engine and any prior dampening will be reset.
      * <p>
      * The group's non-orphan member triggers will be similarly updated.
+     * </p><p>
+     * A non-group trigger can never be made into a group trigger, and vice-versa.
      * </p>
      * @param tenantId Tenant where trigger is updated
      * @param groupTrigger Existing trigger to be updated
@@ -192,6 +242,7 @@ public interface DefinitionsService {
      * Get a stored Trigger for a specific Tenant.
      * @param tenantId Tenant where trigger is stored
      * @param triggerId Given trigger to be retrieved
+     * @throws NotFoundException if not found
      * @throws Exception on any problem
      */
     Trigger getTrigger(String tenantId, String triggerId) throws Exception;
@@ -215,7 +266,7 @@ public interface DefinitionsService {
     Collection<Trigger> getMemberTriggers(String tenantId, String groupId, boolean includeOrphans) throws Exception;
 
     /**
-     * Get all stored Triggers for all Tenants
+     * Get all stored Triggers for all Tenants. Be careful.
      * @throws Exception on any problem
      */
     Collection<Trigger> getAllTriggers() throws Exception;
@@ -352,7 +403,7 @@ public interface DefinitionsService {
             throws Exception;
 
     /**
-     * @return The existing dampenings stored under a tenant
+     * @return get all dampenings for all tenants. Be careful.
      * @throws Exception on any problem
      */
     Collection<Dampening> getAllDampenings() throws Exception;
@@ -469,9 +520,6 @@ public interface DefinitionsService {
             Collection<Condition> groupConditions, Map<String, Map<String, String>> dataIdMemberMap) throws Exception;
 
 
-    @Deprecated
-    Condition getCondition(String tenantId, String conditionId) throws Exception;
-
     /**
      * @param tenantId Tenant where trigger and his conditions are stored
      * @param triggerId Trigger where conditions are stored
@@ -484,6 +532,10 @@ public interface DefinitionsService {
 
     Collection<Condition> getConditions(String tenantId) throws Exception;
 
+    /**
+     * @return returns all conditions for all tenants. Be careful.
+     * @throws Exception on any problem
+     */
     Collection<Condition> getAllConditions() throws Exception;
 
     /*

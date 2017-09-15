@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -159,9 +159,11 @@ public class RateConditionEval extends ConditionEval {
     }
 
     @Override
-    public String getLog() {
-        return condition.getLog(time, value, previousTime, previousValue) + ", evalTimestamp=" + evalTimestamp
-                + ", dataTimestamp=" + dataTimestamp;
+    public void updateDisplayString() {
+        String s = String.format("Rate: %s[%.2f] %s %s %s per %s", condition.getDataId(), this.rate,
+                condition.getDirection().name(), condition.getOperator().name(), condition.getThreshold(),
+                condition.getPeriod().name());
+        setDisplayString(s);
     }
 
     @Override

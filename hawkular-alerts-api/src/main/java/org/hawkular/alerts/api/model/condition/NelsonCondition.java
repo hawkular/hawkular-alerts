@@ -16,12 +16,14 @@
  */
 package org.hawkular.alerts.api.model.condition;
 
-import java.util.Collection;
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -148,6 +150,15 @@ public class NelsonCondition extends Condition {
         this.dataId = dataId;
         setActiveRules(activeRules);
         setSampleSize(sampleSize);
+        updateDisplayString();
+    }
+
+    public NelsonCondition(NelsonCondition condition) {
+        super(condition);
+
+        this.activeRules = new HashSet<>(condition.getActiveRules());
+        this.dataId = condition.getDataId();
+        this.sampleSize = condition.getSampleSize();
     }
 
     @Override
@@ -175,23 +186,6 @@ public class NelsonCondition extends Condition {
         this.sampleSize = (null == sampleSize || sampleSize < 1) ? DEFAULT_SAMPLE_SIZE : sampleSize;
     }
 
-    public String getLog(List<NelsonRule> violations, Double mean, Double standardDeviation,
-            List<Data> violationsData) {
-
-        StringBuilder sb = new StringBuilder(triggerId);
-        sb.append(" : ");
-        sb.append(violations);
-        sb.append(", mean= ");
-        sb.append(mean);
-        sb.append(", standardDeviation=");
-        sb.append(standardDeviation);
-        sb.append(", sampleSize=");
-        sb.append(sampleSize);
-        sb.append(", violationsData=");
-        sb.append(violationsData);
-        return sb.toString();
-    }
-
     public boolean match(List<NelsonRule> violations) {
         if (isEmpty(violations) || isEmpty(activeRules)) {
             return false;
@@ -206,8 +200,11 @@ public class NelsonCondition extends Condition {
         return false;
     }
 
-    private boolean isEmpty(Collection<?> c) {
-        return null == c || c.isEmpty();
+    @Override
+    public void updateDisplayString() {
+        String s = String.format("%s activeNelsonRules=%s sampleSize=%d", this.dataId,
+                this.activeRules.stream().map(e -> e.name()).collect(Collectors.toSet()), this.sampleSize);
+        setDisplayString(s);
     }
 
     @Override
@@ -216,6 +213,7 @@ public class NelsonCondition extends Condition {
         int result = super.hashCode();
         result = prime * result + ((activeRules == null) ? 0 : activeRules.hashCode());
         result = prime * result + ((dataId == null) ? 0 : dataId.hashCode());
+        result = prime * result + sampleSize;
         return result;
     }
 
@@ -238,12 +236,15 @@ public class NelsonCondition extends Condition {
                 return false;
         } else if (!dataId.equals(other.dataId))
             return false;
+        if (sampleSize != other.sampleSize)
+            return false;
         return true;
     }
 
     @Override
     public String toString() {
-        return "NelsonCondition [dataId=" + dataId + ", activeRules=" + activeRules + "]";
+        return "NelsonCondition [dataId=" + dataId + ", activeRules=" + activeRules + ", sampleSize=" + sampleSize
+                + "]";
     }
 
 }

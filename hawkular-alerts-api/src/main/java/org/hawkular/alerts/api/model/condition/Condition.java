@@ -23,6 +23,7 @@ import java.util.Map;
 import org.hawkular.alerts.api.json.JacksonDeserializer;
 import org.hawkular.alerts.api.model.trigger.Mode;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -87,8 +88,7 @@ public abstract class Condition implements Serializable {
      */
     @ApiModelProperty(value = "Number of conditions associated with a particular trigger. This is a read-only value " +
             "defined by the system.",
-            position = 4,
-            required = false)
+            position = 4)
     @JsonInclude
     protected int conditionSetSize;
 
@@ -97,8 +97,7 @@ public abstract class Condition implements Serializable {
      * i.e. 1 [ of 2 conditions ]
      */
     @ApiModelProperty(value = "Index of the current condition. This is a read-only value defined by the system.",
-            position = 5,
-            required = false)
+            position = 5)
     @JsonInclude
     protected int conditionSetIndex;
 
@@ -106,8 +105,7 @@ public abstract class Condition implements Serializable {
      * A composed key for the condition
      */
     @ApiModelProperty(value = "A composed key for the condition. This is a read-only value defined by the system.",
-            position = 6,
-            required = false)
+            position = 6)
     @JsonInclude
     protected String conditionId;
 
@@ -115,6 +113,12 @@ public abstract class Condition implements Serializable {
             position = 7)
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
+
+    @ApiModelProperty(value = "A canonical display string for the condition expression. Can be null until the " +
+            "condition is fully defined.",
+            position = 7)
+    @JsonInclude(Include.NON_EMPTY)
+    public String displayString;
 
     public Condition() {
         // for json assembly
@@ -128,6 +132,21 @@ public abstract class Condition implements Serializable {
         this.conditionSetSize = conditionSetSize;
         this.conditionSetIndex = conditionSetIndex;
         this.type = type;
+        updateId();
+    }
+
+    public Condition(Condition condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("condition must be not null");
+        }
+        this.tenantId = condition.getTenantId();
+        this.triggerId = condition.getTriggerId();
+        this.triggerMode = condition.getTriggerMode();
+        this.conditionSetSize = condition.getConditionSetSize();
+        this.conditionSetIndex = condition.conditionSetIndex;
+        this.type = condition.getType();
+        this.context = new HashMap<>(condition.getContext());
+        this.displayString = condition.displayString;
         updateId();
     }
 
@@ -191,6 +210,17 @@ public abstract class Condition implements Serializable {
         this.context = context;
     }
 
+    public String getDisplayString() {
+        if (null == displayString) {
+            updateDisplayString();
+        }
+        return displayString;
+    }
+
+    public void setDisplayString(String displayString) {
+        this.displayString = displayString;
+    }
+
     private void updateId() {
         StringBuilder sb = new StringBuilder(tenantId);
         sb.append("-").append(triggerId);
@@ -244,4 +274,24 @@ public abstract class Condition implements Serializable {
             required = true,
             name = "dataId")
     public abstract String getDataId();
+
+    /**
+     * Build displayString given the current field settings, and call {@link #setDisplayString(String)}.
+     * <p>
+     * NOTE that if, after construction, a client updated a relevant Condition field, he will also need to
+     * then call {@link #updateDisplayString()} to ensure the displayString is correct.</p>
+     */
+    @JsonIgnore
+    public abstract void updateDisplayString();
+
+    /**
+     * Used to determine whether two conditions have differences. The base implementation is equals(), subclassed
+     * should override if this is not sufficient.
+     *
+     * @param c the other Condition
+     * @return true if this Condition has the same persisted field values as the other condition.
+     */
+    public boolean isSame(Condition c) {
+        return this.equals(c);
+    }
 }

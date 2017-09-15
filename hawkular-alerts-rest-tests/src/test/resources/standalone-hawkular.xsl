@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,21 +33,6 @@
   <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
   <xsl:strip-space elements="*"/>
 
-  <xsl:template match="node()[name(.)='cache-container'][1]">
-    <xsl:copy>
-      <xsl:copy-of select="node()|@*"/>
-    </xsl:copy>
-    <cache-container name="hawkular-alerts" default-cache="triggers" statistics-enabled="true">
-      <local-cache name="partition"/>
-      <local-cache name="triggers"/>
-      <local-cache name="data"/>
-      <local-cache name="publish"/>
-      <local-cache name="dataIds" />
-      <local-cache name="schema"/>
-      <local-cache name="globalActions" />
-    </cache-container>
-  </xsl:template>
-
   <xsl:template match="//*[*[local-name()='root-logger']]">
     <xsl:copy>
       <xsl:copy-of select="node()|@*"/>
@@ -63,10 +48,6 @@
       <jms-topic name="HawkularAlertData" entries="java:/topic/HawkularAlertData"/>
       <jms-topic name="HawkularCommandEvent" entries="java:/topic/HawkularCommandEvent"/>
 
-      <jms-queue name="hawkular/metrics/gauges/new" entries="java:/queue/hawkular/metrics/gauges/new java:jboss/exported/queue/hawkular/metrics/gauges/new"/>
-      <jms-queue name="hawkular/metrics/counters/new" entries="java:/queue/hawkular/metrics/counters/new java:jboss/exported/queue/hawkular/metrics/counters/new"/>
-      <jms-queue name="hawkular/metrics/availability/new" entries="java:/queue/hawkular/metrics/availability/new java:jboss/exported/queue/hawkular/metrics/availability/new"/>
-      <jms-queue name="MetricsPublish" entries="java:/queue/hawkular/metrics/publish"/>
     </xsl:copy>
   </xsl:template>
 

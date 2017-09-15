@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,11 +20,11 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 
 import org.hawkular.alerts.api.model.data.Data;
 import org.hawkular.alerts.api.model.event.Event;
+import org.hawkular.alerts.cache.IspnCacheManager;
 import org.infinispan.Cache;
 
 /**
@@ -41,9 +41,8 @@ import org.infinispan.Cache;
 public class CacheClient {
 
     // It stores a list of triggerIds used per key (tenantId, dataId).
-    // This cache is used by CacheClient to check wich dataIds are published and forwarded from metrics.
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/publish")
-    private Cache<CacheKey, Set<String>> cache;
+    // This cache is used by CacheClient to check which dataIds are published.
+    private Cache<CacheKey, Set<String>> cache = IspnCacheManager.getCacheManager().getCache("publish");
 
     public Set<CacheKey> keySet() {
         return cache.keySet();

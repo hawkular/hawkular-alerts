@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.engine.tags;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.AND;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.NOT;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.OR;
@@ -42,14 +43,15 @@ import org.hawkular.alerts.engine.tags.parser.TagQueryBaseListener;
 import org.hawkular.alerts.engine.tags.parser.TagQueryLexer;
 import org.hawkular.alerts.engine.tags.parser.TagQueryParser;
 import org.hawkular.alerts.engine.tags.parser.TagQueryParser.TagexpContext;
-import org.jboss.logging.Logger;
+import org.hawkular.commons.log.MsgLogger;
+import org.hawkular.commons.log.MsgLogging;
 
 /**
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class ExpressionTagQueryParser extends TagQueryBaseListener implements ANTLRErrorListener {
-    private static final Logger log = Logger.getLogger(ExpressionTagQueryParser.class);
+    private static final MsgLogger log = MsgLogging.getMsgLogger(ExpressionTagQueryParser.class);
 
     private ExpressionTagResolver resolver;
 
@@ -284,11 +286,11 @@ public class ExpressionTagQueryParser extends TagQueryBaseListener implements AN
     }
 
     // Analysis
-    private String left(String exp) {
+    protected String left(String exp) {
         return getOperand(true, exp);
     }
 
-    private String right(String exp) {
+    protected String right(String exp) {
         return getOperand(false, exp);
     }
 
@@ -349,7 +351,7 @@ public class ExpressionTagQueryParser extends TagQueryBaseListener implements AN
             leftResult = resolver.resolve(left);
         }
         // Shorcutting the AND operator
-        if (isAnd && (leftResult == null || leftResult.isEmpty())) {
+        if (isAnd && isEmpty(leftResult)) {
             return leftResult;
         }
         Set<String> rightResult;

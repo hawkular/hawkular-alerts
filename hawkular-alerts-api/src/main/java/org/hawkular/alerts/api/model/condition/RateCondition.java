@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -178,8 +178,20 @@ public class RateCondition extends Condition {
         this.period = (null == period) ? Period.MINUTE : period;
         this.operator = operator;
         this.threshold = threshold;
+        updateDisplayString();
     }
 
+    public RateCondition(RateCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.direction = condition.getDirection();
+        this.operator = condition.getOperator();
+        this.period = condition.getPeriod();
+        this.threshold = condition.getThreshold();
+    }
+
+    @Override
     public String getDataId() {
         return dataId;
     }
@@ -220,16 +232,6 @@ public class RateCondition extends Condition {
         this.threshold = threshold;
     }
 
-    public String getLog(long time, double value, long previousTime, double previousValue) {
-        long deltaTime = time - previousTime;
-        double deltaValue = (Direction.INCREASING == direction) ? (value - previousValue) : (previousValue - value);
-        double periods = deltaTime / period.milliseconds;
-        double rate = deltaValue / periods;
-
-        return triggerId + " : " + direction + " " + rate + " " + operator.name() + " " + threshold + " per "
-                + period;
-    }
-
     public boolean match(long time, double value, long previousTime, double previousValue) {
         double rate = getRate(time, value, previousTime, previousValue);
 
@@ -252,12 +254,21 @@ public class RateCondition extends Condition {
     }
 
     public double getRate(long time, double value, long previousTime, double previousValue) {
-        double deltaTime = (double) (time - previousTime);
+        double deltaTime = time - previousTime;
         double deltaValue = (Direction.INCREASING == direction) ? (value - previousValue) : (previousValue - value);
         double periods = deltaTime / period.milliseconds;
         double rate = deltaValue / periods;
 
         return rate;
+    }
+
+    @Override
+    public void updateDisplayString() {
+        String direction = null == this.direction ? null : this.direction.name();
+        String operator = null == this.operator ? null : this.operator.name();
+        String period = null == this.period ? null : this.period.name();
+        String s = String.format("%s %s %s %.2f per %s", this.dataId, direction, operator, this.threshold, period);
+        setDisplayString(s);
     }
 
     @Override

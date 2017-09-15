@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,15 +30,6 @@ public class NotFoundApplicationException extends NotFoundException {
 
     // Default no-arg constructor required by JAXB
     public NotFoundApplicationException() {
-    }
-
-    /**
-     * Create an exception indicating the resource with the specified id was not found.
-     *
-     * @param resourceId a resource id
-     */
-    public NotFoundApplicationException(String type, String tenantId, String id) {
-        super("Failed to fetch [" + type + "] with tenant/id [" + tenantId + "/" + id + "]");
     }
 
     public NotFoundApplicationException(String message) {

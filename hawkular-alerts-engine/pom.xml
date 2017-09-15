@@ -17,7 +17,8 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -32,11 +33,40 @@
   <name>Hawkular Alerting: Engine</name>
 
   <dependencies>
+    <!-- Provided deps via Wildfly/Nest -->
+    <dependency>
+      <groupId>javax</groupId>
+      <artifactId>javaee-api</artifactId>
+      <version>${version.javaee.spec}</version>
+      <scope>provided</scope>
+    </dependency>
 
-    <!-- Hawkular Alerting dependencies -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${version.com.google.guava}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Alerts deps -->
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-events-aggregation</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -45,6 +75,7 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!-- Drools deps -->
     <dependency>
       <groupId>org.kie</groupId>
       <artifactId>kie-api</artifactId>
@@ -71,23 +102,39 @@
       </exclusions>
     </dependency>
 
+    <!-- Infinispan/Hibernate Search deps -->
     <dependency>
-      <groupId>org.cassalog</groupId>
-      <artifactId>cassalog</artifactId>
-      <version>${version.org.cassalog}</version>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-query</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-search-engine</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
-      <groupId>com.datastax.cassandra</groupId>
-      <artifactId>cassandra-driver-core</artifactId>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-core</artifactId>
+    </dependency>
+
+    <!-- infinispan-query 9.1.1 pulls the wrong version of deps. Override here (below) -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-search-engine</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${version.com.google.guava}</version>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-search-elasticsearch</artifactId>
     </dependency>
 
+    <!-- Other packaged deps -->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-math3</artifactId>
@@ -100,112 +147,12 @@
       <version>${version.org.antlr}</version>
     </dependency>
 
-    <!-- Wildfly dependencies -->
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-annotations</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>jboss-logging-processor</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>javax</groupId>
-      <artifactId>javaee-api</artifactId>
-      <version>${version.javaee.spec}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-annotations</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.infinispan</groupId>
-      <artifactId>infinispan-core</artifactId>
-      <scope>provided</scope>
-      <version>${version.org.infinispan.wildfly}</version>
-    </dependency>
-
-    <!-- Tests -->
+    <!-- Test Deps -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>${version.org.slf4j}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.hawkular.commons</groupId>
-      <artifactId>hawkular-commons-embedded-cassandra-service</artifactId>
-      <version>${version.org.hawkular.commons}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <version>${version.org.yaml}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- A workaround for CASSANDRA-10071 -->
-    <dependency>
-      <groupId>com.thinkaurelius.thrift</groupId>
-      <artifactId>thrift-server</artifactId>
-      <version>0.3.7</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.cassandra</groupId>
-      <artifactId>cassandra-all</artifactId>
-      <scope>test</scope>
-      <exclusions>
-        <!-- A workaround for CASSANDRA-10071 -->
-        <exclusion>
-          <groupId>com.thinkaurelius.thrift</groupId>
-          <artifactId>thrift-server</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
   </dependencies>
 
   <build>
@@ -284,10 +231,13 @@
                   <name>testOutput</name>
                   <value>${project.build.testOutputDirectory}</value>
                 </property>
+                <property>
+                  <name>jboss.server.data.dir</name>
+                  <value>${project.build.directory}/ispn</value>
+                </property>
               </systemProperties>
               <excludes>
                 <exclude>**/*/PerfRulesEngineTest.java</exclude>
-                <exclude>**/*/CassPersistenceTest.java</exclude>
               </excludes>
             </configuration>
           </plugin>
@@ -313,6 +263,10 @@
                 <property>
                   <name>testOutput</name>
                   <value>${project.build.testOutputDirectory}</value>
+                </property>
+                <property>
+                  <name>jboss.server.data.dir</name>
+                  <value>${project.build.directory}/ispn</value>
                 </property>
               </systemProperties>
             </configuration>

@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.hawkular</groupId>
     <artifactId>hawkular-parent</artifactId>
-    <version>50</version>
+    <version>56</version>
   </parent>
 
   <groupId>org.hawkular.alerts</groupId>
@@ -78,17 +78,17 @@
     <version.org.antlr>4.6</version.org.antlr>
     <version.org.apache.commons.commons-math3>3.4.1</version.org.apache.commons.commons-math3>
     <version.org.apache.logging.log4j-elasticsearch>2.8</version.org.apache.logging.log4j-elasticsearch>
-    <version.org.cassalog>0.4.2</version.org.cassalog>
     <version.org.codehaus.jsr166-mirror>1.7.0</version.org.codehaus.jsr166-mirror>
     <version.org.codehaus.gpars>1.2.0</version.org.codehaus.gpars>
     <version.org.codehaus.groovy.maven>1.0</version.org.codehaus.groovy.maven>
     <version.org.drools>6.4.0.Final</version.org.drools>
     <version.org.elasticsearch.client>5.2.2</version.org.elasticsearch.client>
     <version.org.freemarker>2.3.23</version.org.freemarker>
-    <version.org.hawkular.commons>0.9.6.Final</version.org.hawkular.commons>
-    <version.org.infinispan.wildfly>8.0.1.Final</version.org.infinispan.wildfly>
-    <version.org.infinispan.eap64>5.2.9.Final</version.org.infinispan.eap64>
-    <version.org.jboss.jboss-vfs>3.2.10.Final</version.org.jboss.jboss-vfs>
+    <version.org.hawkular.commons>0.9.8.Final-SRC-revision-4e2b056736d1f31ae3efe1df69c17f6a27173629</version.org.hawkular.commons>
+    <version.org.hibernate.search>5.8.0.Final</version.org.hibernate.search>
+    <version.org.infinispan.community>9.1.1.Final</version.org.infinispan.community>
+    <version.org.infinispan.product>8.5.0.Final</version.org.infinispan.product>
+    <version.org.jboss.jboss-vfs>3.2.12.Final</version.org.jboss.jboss-vfs> <!-- match WF version -->
     <version.org.schwering>2.0.0.Alpha3</version.org.schwering>
     <version.org.slf4j>1.7.2</version.org.slf4j>
     <version.org.yaml>1.11</version.org.yaml>
@@ -104,6 +104,32 @@
         <version>${version.org.wildfly.bom}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+
+      <!-- WildFly does not package the ispn versions we need. Override the wf bom versions
+           and make it explicit here what we want for ispn and hibernate search -->
+      <dependency>
+        <groupId>org.infinispan</groupId>
+        <artifactId>infinispan-query</artifactId>
+        <version>${version.org.infinispan.community}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.infinispan</groupId>
+        <artifactId>infinispan-core</artifactId>
+        <version>${version.org.infinispan.community}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-search-engine</artifactId>
+        <version>${version.org.hibernate.search}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-search-elasticsearch</artifactId>
+        <version>${version.org.hibernate.search}</version>
       </dependency>
 
     </dependencies>
@@ -133,6 +159,7 @@
       </activation>
       <modules>
         <module>hawkular-alerts-api</module>
+        <module>hawkular-alerts-commons</module>
         <module>hawkular-alerts-filter-api</module>
         <module>hawkular-alerts-engine</module>
         <module>hawkular-alerts-engine-extensions</module>
@@ -159,6 +186,7 @@
       </properties>
       <modules>
         <module>hawkular-alerts-api</module>
+        <module>hawkular-alerts-commons</module>
         <module>hawkular-alerts-filter-api</module>
         <module>hawkular-alerts-engine</module>
         <module>hawkular-alerts-engine-extensions</module>

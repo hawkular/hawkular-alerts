@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,7 @@
  */
 package org.hawkular.alerts.api.model.event;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -95,6 +96,22 @@ public class Alert extends Event {
         // for json assembly
         this.eventType = EventType.ALERT.name();
         this.status = Status.OPEN;
+    }
+
+    public Alert(Alert alert) {
+        super((Event) alert);
+
+        this.status = alert.getStatus();
+        this.severity = alert.getSeverity();
+        this.eventType = alert.getEventType();
+        this.lifecycle = new ArrayList<>();
+        for (LifeCycle item : alert.getLifecycle()) {
+            this.lifecycle.add(new LifeCycle(item));
+        }
+        for (Note note : alert.getNotes()) {
+            this.notes.add(note);
+        }
+        this.resolvedEvalSets = alert.getResolvedEvalSets();
     }
 
     /**
@@ -236,7 +253,7 @@ public class Alert extends Event {
     }
 
     @ApiModel(description = "A simple note representation.")
-    public static class Note {
+    public static class Note implements Serializable {
 
         @ApiModelProperty(value = "The user who creates the note.",
                 position = 0,
@@ -330,7 +347,7 @@ public class Alert extends Event {
     }
 
     @ApiModel(description = "A lifecycle state representation.")
-    public static class LifeCycle {
+    public static class LifeCycle implements Serializable {
 
         @ApiModelProperty(value = "The status of this lifecycle.",
                 position = 0,
@@ -353,6 +370,15 @@ public class Alert extends Event {
 
         public LifeCycle() {
             // for json assembly
+        }
+
+        public LifeCycle(LifeCycle lifeCycle) {
+            if (lifeCycle == null) {
+                throw new IllegalArgumentException("lifeCycle must be not null");
+            }
+            this.status = lifeCycle.getStatus();
+            this.user = lifeCycle.getUser();
+            this.stime = lifeCycle.getStime();
         }
 
         public LifeCycle(Status status, String user, long stime) {

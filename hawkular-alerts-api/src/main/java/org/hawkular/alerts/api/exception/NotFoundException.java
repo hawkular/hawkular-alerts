@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,8 +18,7 @@ package org.hawkular.alerts.api.exception;
 
 
 /**
- * Indicates a query for expected data did not return any results. Declared an {@link ApplicationException} because
- * we don't want these to be wrapped or to rollback an ongoing transaction.
+ * Indicates a query for expected data did not return any results.
  */
 public class NotFoundException extends RuntimeException {
     private static final long serialVersionUID = 1L;

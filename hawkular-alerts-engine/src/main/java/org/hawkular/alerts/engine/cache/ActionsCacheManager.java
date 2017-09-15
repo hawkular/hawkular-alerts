@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
@@ -35,6 +34,7 @@ import javax.ejb.TransactionAttributeType;
 
 import org.hawkular.alerts.api.model.action.ActionDefinition;
 import org.hawkular.alerts.api.services.DefinitionsService;
+import org.hawkular.alerts.cache.IspnCacheManager;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
@@ -55,12 +55,13 @@ public class ActionsCacheManager {
     @EJB
     DefinitionsService definitions;
 
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/globalActions")
     private Cache<ActionKey, ActionDefinition> globalActionsCache;
 
     @PostConstruct
     public void init() {
         msgLog.infoInitActionsCache();
+
+        globalActionsCache = IspnCacheManager.getCacheManager().getCache("globalActions");
 
         globalActionsCache.clear();
 
@@ -82,6 +83,14 @@ public class ActionsCacheManager {
                 }
             });
         }, ACTION_DEFINITION_CREATE, ACTION_DEFINITION_REMOVE, ACTION_DEFINITION_UPDATE);
+    }
+
+    public void setDefinitions(DefinitionsService definitions) {
+        this.definitions = definitions;
+    }
+
+    public void setGlobalActionsCache(Cache<ActionKey, ActionDefinition> globalActionsCache) {
+        this.globalActionsCache = globalActionsCache;
     }
 
     public boolean hasGlobalActions() {

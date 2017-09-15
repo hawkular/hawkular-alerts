@@ -31,21 +31,6 @@
   <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
   <xsl:strip-space elements="*"/>
 
-  <xsl:template match="node()[name(.)='cache-container'][1]">
-    <xsl:copy>
-      <xsl:copy-of select="node()|@*"/>
-    </xsl:copy>
-    <cache-container name="hawkular-alerts" default-cache="triggers" statistics-enabled="true">
-      <local-cache name="partition"/>
-      <local-cache name="triggers"/>
-      <local-cache name="data"/>
-      <local-cache name="publish"/>
-      <local-cache name="dataIds" />
-      <local-cache name="schema"/>
-      <local-cache name="globalActions" />
-    </cache-container>
-  </xsl:template>
-
   <xsl:template match="node()[name(.)='periodic-rotating-file-handler']">
     <xsl:copy>
       <xsl:copy-of select="node()|@*"/>
@@ -65,8 +50,6 @@
   <xsl:template name="system-properties">
     <system-properties>
       <property>
-        <xsl:attribute name="name">hawkular.backend</xsl:attribute>
-        <xsl:attribute name="value">&#36;{hawkular.backend:embedded_cassandra}</xsl:attribute>
       </property>
     </system-properties>
   </xsl:template>

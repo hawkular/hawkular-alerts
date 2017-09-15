@@ -106,6 +106,8 @@ class EventsITest extends AbstractITestBase {
         Event event = new Event("test-tenant", "test-event-id", System.currentTimeMillis(), "test-event-data-id",
                 "test-category", "test event text", context, tags);
 
+        client.delete(path: "events/test-event-id" )
+
         def resp = client.post(path: "events", body: event )
         assertEquals(200, resp.status)
         event = resp.data
@@ -204,7 +206,7 @@ class EventsITest extends AbstractITestBase {
         event = resp.data
         assertEquals("test_2", event.id)
 
-        def tagQuery = "test_tag = '/t;hawkular/f;my-agent/r;Local%20DMR~~_Server Availability'"
+        def tagQuery = "test_tag = '\\/t;hawkular\\/f;my-agent\\/r;Local%20DMR\\~\\~_Server Availability'"
 
         resp = client.get(path: "events", query: [tagQuery: tagQuery] )
         assertEquals(200, resp.status)

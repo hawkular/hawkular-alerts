@@ -33,13 +33,6 @@
 
   <xsl:template match="node()[name(.)='servers']">
     <servers>
-      <server name="cassandra" group="cassandra-group" auto-start="true">
-        <jvm name="default">
-          <jvm-options>
-            <option value="-Dhawkular.backend=embedded_cassandra"/>
-          </jvm-options>
-        </jvm>
-      </server>
       <server name="alerts1" group="hawkular-alerts-group" auto-start="true">
         <socket-bindings port-offset="150"/>
       </server>

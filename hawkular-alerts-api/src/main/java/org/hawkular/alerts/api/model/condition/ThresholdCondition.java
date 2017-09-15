@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -103,8 +103,18 @@ public class ThresholdCondition extends Condition {
         this.dataId = dataId;
         this.operator = operator;
         this.threshold = threshold;
+        updateDisplayString();
     }
 
+    public ThresholdCondition(ThresholdCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.operator = condition.getOperator();
+        this.threshold = condition.getThreshold();
+    }
+
+    @Override
     public String getDataId() {
         return dataId;
     }
@@ -129,11 +139,10 @@ public class ThresholdCondition extends Condition {
         this.threshold = threshold;
     }
 
-    public String getLog(double value) {
-        return triggerId + " : " + value + " " + operator.name() + " " + threshold;
-    }
-
     public boolean match(double value) {
+        if (threshold == null) {
+            throw new IllegalStateException("Invalid threshold for condition: " + this.toString());
+        }
         switch (operator) {
             case LT:
                 return value < threshold;
@@ -146,6 +155,13 @@ public class ThresholdCondition extends Condition {
             default:
                 throw new IllegalStateException("Unknown operator: " + operator.name());
         }
+    }
+
+    @Override
+    public void updateDisplayString() {
+        String operator = null == this.operator ? null : this.operator.name();
+        String s = String.format("%s %s %.2f", this.dataId, operator, this.threshold);
+        setDisplayString(s);
     }
 
     @Override

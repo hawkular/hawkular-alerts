@@ -36,6 +36,7 @@ public class EventsCriteria {
     String tagQuery = null;
     boolean thin = false;
     Integer criteriaNoQuerySize = null;
+    String eventType = null;
 
     public EventsCriteria() {
         super();
@@ -181,6 +182,14 @@ public class EventsCriteria {
                 || (null != eventIds && !eventIds.isEmpty());
     }
 
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+
     public boolean hasCategoryCriteria() {
         return null != category
                 || (null != categories && !categories.isEmpty());
@@ -199,12 +208,17 @@ public class EventsCriteria {
                 || (null != triggerIds && !triggerIds.isEmpty());
     }
 
+    public boolean hasEventTypeCriteria() {
+        return !isEmpty(eventType);
+    }
+
     public boolean hasCriteria() {
         return hasEventIdCriteria()
                 || hasCategoryCriteria()
                 || hasTagQueryCriteria()
                 || hasCTimeCriteria()
-                || hasTriggerIdCriteria();
+                || hasTriggerIdCriteria()
+                || hasEventTypeCriteria();
     }
 
     @Override
@@ -221,6 +235,7 @@ public class EventsCriteria {
                 ", tagQuery='" + tagQuery + '\'' +
                 ", thin=" + thin +
                 ", criteriaNoQuerySize=" + criteriaNoQuerySize +
+                ", eventType='" + eventType + '\'' +
                 '}';
     }
 

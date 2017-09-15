@@ -38,6 +38,12 @@
       <version>${project.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <!-- Wildfly dependencies -->
     <dependency>
       <groupId>org.jboss.logging</groupId>
@@ -67,8 +73,6 @@
     <dependency>
       <groupId>org.infinispan</groupId>
       <artifactId>infinispan-core</artifactId>
-      <scope>provided</scope>
-      <version>${version.org.infinispan.wildfly}</version>
     </dependency>
 
     <dependency>

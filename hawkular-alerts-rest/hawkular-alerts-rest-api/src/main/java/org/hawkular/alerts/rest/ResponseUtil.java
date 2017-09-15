@@ -30,6 +30,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import org.hawkular.alerts.api.exception.FoundException;
 import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.model.paging.Page;
 import org.hawkular.alerts.api.model.paging.PageContext;
@@ -97,6 +98,12 @@ public class ResponseUtil {
         }
         if (null != e.getCause() && e.getCause() instanceof NotFoundException) {
             return notFound(e.getCause().getMessage());
+        }
+        if (e instanceof FoundException) {
+            return badRequest(e.getMessage());
+        }
+        if (null != e.getCause() && e.getCause() instanceof FoundException) {
+            return badRequest(e.getCause().getMessage());
         }
         if (e instanceof IllegalArgumentException) {
             return badRequest(e.getMessage());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -151,8 +151,21 @@ public class ThresholdRangeCondition extends Condition {
         this.thresholdLow = thresholdLow;
         this.thresholdHigh = thresholdHigh;
         this.inRange = inRange;
+        updateDisplayString();
     }
 
+    public ThresholdRangeCondition(ThresholdRangeCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.operatorHigh = condition.getOperatorHigh();
+        this.operatorLow = condition.getOperatorLow();
+        this.thresholdHigh = condition.getThresholdHigh();
+        this.thresholdLow = condition.getThresholdLow();
+        this.inRange = condition.isInRange();
+    }
+
+    @Override
     public String getDataId() {
         return dataId;
     }
@@ -201,11 +214,6 @@ public class ThresholdRangeCondition extends Condition {
         this.thresholdLow = thresholdLow;
     }
 
-    public String getLog(double value) {
-        String range = operatorLow.getLow() + thresholdLow + " , " + thresholdHigh + operatorHigh.getHigh();
-        return triggerId + " : " + value + " " + range;
-    }
-
     public boolean match(double value) {
         boolean aboveLow = false;
         boolean belowHigh = false;
@@ -237,6 +245,15 @@ public class ThresholdRangeCondition extends Condition {
         }
 
         return (belowHigh == inRange);
+    }
+
+    @Override
+    public void updateDisplayString() {
+        String operatorLow = null == this.operatorLow ? null : this.operatorLow.getLow();
+        String operatorHigh = null == this.operatorHigh ? null : this.operatorHigh.getHigh();
+        String s = String.format("%s %s %s%.2f , %.2f%s", this.dataId, (isInRange() ? "in" : "not in"), operatorLow,
+                this.thresholdLow, this.thresholdHigh, operatorHigh);
+        setDisplayString(s);
     }
 
     @Override

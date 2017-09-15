@@ -37,16 +37,6 @@
 
   <profiles>
     <profile>
-      <id>metrics</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <modules>
-        <module>deployments/hawkular-alerts-actions-aerogear-metrics</module>
-      </modules>
-    </profile>
-
-    <profile>
       <id>standalone</id>
       <activation>
         <activeByDefault>true</activeByDefault>

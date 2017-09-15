@@ -41,17 +41,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.hawkular.commons</groupId>
-      <artifactId>hawkular-bus-common</artifactId>
-      <version>${version.org.hawkular.commons}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.wildfly</groupId>
-      <artifactId>wildfly-jms-client-bom</artifactId>
-      <version>${version.org.wildfly}</version>
-      <type>pom</type>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-engine</artifactId>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -64,18 +56,18 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <scope>provided</scope>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <scope>provided</scope>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>hawkular-alerts-actions-email-standalone</artifactId>
+      <artifactId>hawkular-alerts-actions-aerogear-standalone</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <scope>test</scope>
@@ -84,6 +76,14 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>hawkular-alerts-actions-elasticsearch-standalone</artifactId>
+      <version>${project.version}</version>
+      <type>war</type>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>hawkular-alerts-actions-email-standalone</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <scope>test</scope>
@@ -100,6 +100,22 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>hawkular-alerts-actions-irc-standalone</artifactId>
+      <version>${project.version}</version>
+      <type>war</type>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>hawkular-alerts-actions-pagerduty-standalone</artifactId>
+      <version>${project.version}</version>
+      <type>war</type>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>hawkular-alerts-actions-sms-standalone</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <scope>test</scope>
@@ -132,13 +148,6 @@
     <dependency>
       <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>${version.org.slf4j}</version>
       <scope>test</scope>
     </dependency>
 
@@ -219,56 +228,13 @@
 
   <profiles>
 
-    <!-- This profile requires an external running server of hawkular or hawkular-alerts/standalone -->
-    <profile>
-      <id>itest-external</id>
-      <properties>
-        <!-- IMPORTANT: The port must be the port offset + 8080. -->
-        <hawkular.host>127.0.0.1</hawkular.host>
-        <hawkular.port>8080</hawkular.port>
-        <hawkular.path>/hawkular/alerts/</hawkular.path>
-        <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
-        <!-- IMPORTANT: The management port must be the port offset + 9990. -->
-        <wildfly.management.port>11887</wildfly.management.port>
-      </properties>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <configuration>
-              <includes>
-                <include>**/*ITest*</include>
-              </includes>
-              <excludes>
-                <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
-                <excludeFile>org/hawkular/alerts/rest/PerfCrudITest.class</excludeFile>
-                <excludeFile>org/hawkular/alerts/rest/PerfImportITest.class</excludeFile>
-                <excludeFile>org/hawkular/alerts/rest/CORSITest.class</excludeFile>
-                <exclude>${hawkular.itest-exclude}</exclude>
-              </excludes>
-              <systemPropertyVariables>
-                <hawkular.host>${hawkular.host}</hawkular.host>
-                <hawkular.port>${hawkular.port}</hawkular.port>
-                <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
-              </systemPropertyVariables>
-            </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
     <profile>
       <id>itest</id>
       <properties>
+        <hawkular.home>${project.build.directory}</hawkular.home>
+        <hawkular.wildfly>${hawkular.home}/wildfly-${version.org.wildfly}</hawkular.wildfly>
+        <hawkular.conf>${hawkular.wildfly}/standalone/configuration</hawkular.conf>
+        <hawkular.deployments>${hawkular.wildfly}/standalone/deployments</hawkular.deployments>
         <hawkular.host>127.0.0.1</hawkular.host>
         <hawkular.port>8080</hawkular.port>
         <hawkular.port.offset>0</hawkular.port.offset>
@@ -279,62 +245,32 @@
       </properties>
       <dependencies>
         <dependency>
-          <groupId>org.hawkular.commons</groupId>
-          <artifactId>hawkular-nest-feature-pack</artifactId>
-          <version>${version.org.hawkular.commons}</version>
-          <type>pom</type>
-          <scope>provided</scope>
-          <exclusions>
-            <exclusion>
-              <groupId>*</groupId>
-              <artifactId>*</artifactId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-        <dependency>
-          <groupId>org.hawkular.commons</groupId>
-          <artifactId>hawkular-nest-feature-pack</artifactId>
-          <version>${version.org.hawkular.commons}</version>
-          <type>zip</type>
-          <exclusions>
-            <exclusion>
-              <groupId>*</groupId>
-              <artifactId>*</artifactId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-        <dependency>
-          <groupId>org.hawkular.commons</groupId>
-          <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
-          <version>${version.org.hawkular.commons}</version>
-          <type>war</type>
+          <groupId>org.wildfly</groupId>
+          <artifactId>wildfly-dist</artifactId>
+          <version>${version.org.wildfly}</version>
+          <type>tar.gz</type>
+          <scope>test</scope>
         </dependency>
       </dependencies>
       <build>
         <plugins>
-          <!-- Build a wildfly + bus + accounts distro from feature packs -->
-          <plugin>
-            <groupId>org.wildfly.build</groupId>
-            <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>server-provisioning</id>
-                <goals>
-                  <goal>build</goal>
-                </goals>
-                <phase>compile</phase>
-                <configuration>
-                  <config-file>server-provisioning.xml</config-file>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
-          <!-- Install hawkular-alerts -->
+          <!-- Setup WildFly with hAlerts -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
             <executions>
+              <execution>
+                <id>unpack-wildfly</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>unpack-dependencies</goal>
+                </goals>
+                <configuration>
+                  <includeGroupIds>org.wildfly</includeGroupIds>
+                  <includeArtifactIds>wildfly-dist</includeArtifactIds>
+                  <outputDirectory>${hawkular.home}</outputDirectory>
+                </configuration>
+              </execution>
               <execution>
                 <id>install-hawkular-alerts</id>
                 <phase>pre-integration-test</phase>
@@ -349,15 +285,16 @@
                       <version>${project.version}</version>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts.war</destFileName>
                     </artifactItem>
+                    <!-- include only plugins required for itests. Deploy everything in perf-itest -->
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
                       <artifactId>hawkular-alerts-actions-email-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts-actions-email.war</destFileName>
                     </artifactItem>
                     <artifactItem>
@@ -365,16 +302,8 @@
                       <artifactId>hawkular-alerts-actions-file-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts-actions-file.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.commons</groupId>
-                      <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
-                      <destFileName>hawkular-commons-embedded-cassandra-war.war</destFileName>
                     </artifactItem>
                   </artifactItems>
                 </configuration>
@@ -394,7 +323,7 @@
                   <goal>copy-resources</goal>
                 </goals>
                 <configuration>
-                  <outputDirectory>${project.build.directory}/${project.build.finalName}/standalone/configuration</outputDirectory>
+                  <outputDirectory>${hawkular.conf}</outputDirectory>
                   <overwrite>true</overwrite>
                   <resources>
                     <resource>
@@ -410,7 +339,7 @@
             </executions>
           </plugin>
 
-          <!-- Configure hawkular-alerts -->
+          <!-- Configure hawkular-alerts in standalone.xml -->
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>xml-maven-plugin</artifactId>
@@ -423,14 +352,14 @@
                 </goals>
                 <configuration>
                   <transformationSets>
-                    <!-- standalone.xml -->
+                    <!-- standalone.xml (note, standalone-ha.xml transformation performed in perf-itest) -->
                     <transformationSet>
-                      <dir>${project.build.directory}/${project.build.finalName}/standalone/configuration</dir>
+                      <dir>${hawkular.conf}</dir>
                       <stylesheet>src/test/resources/standalone-hawkular.xsl</stylesheet>
                       <includes>
                         <include>standalone.xml</include>
                       </includes>
-                      <outputDir>${project.build.directory}/${project.build.finalName}/standalone/configuration</outputDir>
+                      <outputDir>${hawkular.conf}</outputDir>
                     </transformationSet>
                   </transformationSets>
                 </configuration>
@@ -443,7 +372,7 @@
             <groupId>org.wildfly.plugins</groupId>
             <artifactId>wildfly-maven-plugin</artifactId>
             <configuration>
-              <jboss-home>${project.build.directory}/${project.build.finalName}</jboss-home>
+              <jboss-home>${hawkular.wildfly}</jboss-home>
               <skip>${skipTests}</skip>
               <startupTimeout>240</startupTimeout>
               <port>${hawkular.management.port}</port>
@@ -459,7 +388,6 @@
                 <javaOpt>-Dkeycloak.import=${project.build.directory}/${project.build.finalName}/standalone/configuration/hawkular-realm-for-dev.json</javaOpt>
                 <javaOpt>-Dmail.smtp.host=localhost</javaOpt>
                 <javaOpt>-Dmail.smtp.port=2525</javaOpt>
-                <javaOpt>-Dhawkular.backend=embedded_cassandra</javaOpt>
                 <javaOpt>-Dhawkular.log.alerts=${hawkular.log.alerts}</javaOpt>
                 <javaOpt>-Dhawkular.allowed-cors-origins=http://test.hawkular.org,https://secure.hawkular.io</javaOpt>
                 <javaOpt>-Dhawkular.allowed-cors-access-control-allow-headers=random-header1,random-header2</javaOpt>
@@ -536,6 +464,10 @@
     <profile>
       <id>perf-itest</id>
       <properties>
+        <hawkular.home>${project.build.directory}</hawkular.home>
+        <hawkular.wildfly>${hawkular.home}/wildfly-${version.org.wildfly}</hawkular.wildfly>
+        <hawkular.conf>${hawkular.wildfly}/standalone/configuration</hawkular.conf>
+        <hawkular.deployments>${hawkular.wildfly}/standalone/deployments</hawkular.deployments>
         <hawkular.host>127.0.0.1</hawkular.host>
         <hawkular.port>8080</hawkular.port>
         <hawkular.port.offset>0</hawkular.port.offset>
@@ -546,62 +478,32 @@
       </properties>
       <dependencies>
         <dependency>
-          <groupId>org.hawkular.commons</groupId>
-          <artifactId>hawkular-nest-feature-pack</artifactId>
-          <version>${version.org.hawkular.commons}</version>
-          <type>pom</type>
-          <scope>provided</scope>
-          <exclusions>
-            <exclusion>
-              <groupId>*</groupId>
-              <artifactId>*</artifactId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-        <dependency>
-          <groupId>org.hawkular.commons</groupId>
-          <artifactId>hawkular-nest-feature-pack</artifactId>
-          <version>${version.org.hawkular.commons}</version>
-          <type>zip</type>
-          <exclusions>
-            <exclusion>
-              <groupId>*</groupId>
-              <artifactId>*</artifactId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-        <dependency>
-          <groupId>org.hawkular.commons</groupId>
-          <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
-          <version>${version.org.hawkular.commons}</version>
-          <type>war</type>
+          <groupId>org.wildfly</groupId>
+          <artifactId>wildfly-dist</artifactId>
+          <version>${version.org.wildfly}</version>
+          <type>tar.gz</type>
+          <scope>test</scope>
         </dependency>
       </dependencies>
       <build>
         <plugins>
-          <!-- Build a wildfly + bus + accounts distro from feature packs -->
-          <plugin>
-            <groupId>org.wildfly.build</groupId>
-            <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>server-provisioning</id>
-                <goals>
-                  <goal>build</goal>
-                </goals>
-                <phase>compile</phase>
-                <configuration>
-                  <config-file>server-provisioning.xml</config-file>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
-          <!-- Install hawkular-alerts -->
+          <!-- Setup WildFly with hAlerts -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
             <executions>
+              <execution>
+                <id>unpack-wildfly</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>unpack-dependencies</goal>
+                </goals>
+                <configuration>
+                  <includeGroupIds>org.wildfly</includeGroupIds>
+                  <includeArtifactIds>wildfly-dist</includeArtifactIds>
+                  <outputDirectory>${hawkular.home}</outputDirectory>
+                </configuration>
+              </execution>
               <execution>
                 <id>install-hawkular-alerts</id>
                 <phase>pre-integration-test</phase>
@@ -616,15 +518,32 @@
                       <version>${project.version}</version>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts.war</destFileName>
+                    </artifactItem>
+                    <!-- include all plugins to validate deployment -->
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-aerogear-standalone</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-aerogear.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-elasticsearch-standalone</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-elasticsearch.war</destFileName>
                     </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
                       <artifactId>hawkular-alerts-actions-email-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts-actions-email.war</destFileName>
                     </artifactItem>
                     <artifactItem>
@@ -632,16 +551,57 @@
                       <artifactId>hawkular-alerts-actions-file-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts-actions-file.war</destFileName>
                     </artifactItem>
                     <artifactItem>
-                      <groupId>org.hawkular.commons</groupId>
-                      <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-irc-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}/${project.build.finalName}/modules/system/layers/hawkular/org/hawkular/nest/main/deployments</outputDirectory>
-                      <destFileName>hawkular-commons-embedded-cassandra-war.war</destFileName>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-irc.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-pagerduty-standalone</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-pagerduty.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-sms-standalone</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-sms.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-webhook-standalone</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-webhook.war</destFileName>
+                    </artifactItem>
+                    <!-- include all alerters to validate deployment -->
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-elasticsearch-alerter-standalone</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-elasticsearch-alerter.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-prometheus-alerter-standalone</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-prometheus-alerter.war</destFileName>
                     </artifactItem>
                   </artifactItems>
                 </configuration>
@@ -661,7 +621,7 @@
                   <goal>copy-resources</goal>
                 </goals>
                 <configuration>
-                  <outputDirectory>${project.build.directory}/${project.build.finalName}/standalone/configuration</outputDirectory>
+                  <outputDirectory>${hawkular.conf}</outputDirectory>
                   <overwrite>true</overwrite>
                   <resources>
                     <resource>
@@ -677,7 +637,7 @@
             </executions>
           </plugin>
 
-          <!-- Configure hawkular-alerts -->
+          <!-- Configure hawkular-alerts in standalone.xml -->
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>xml-maven-plugin</artifactId>
@@ -692,12 +652,21 @@
                   <transformationSets>
                     <!-- standalone.xml -->
                     <transformationSet>
-                      <dir>${project.build.directory}/${project.build.finalName}/standalone/configuration</dir>
-                      <stylesheet>src/test/resources/standalone-hawkular.xsl</stylesheet>
+                      <dir>${hawkular.conf}</dir>
+                      <stylesheet>src/test/resources/standalone.xsl</stylesheet>
                       <includes>
                         <include>standalone.xml</include>
                       </includes>
-                      <outputDir>${project.build.directory}/${project.build.finalName}/standalone/configuration</outputDir>
+                      <outputDir>${hawkular.standalone.conf}</outputDir>
+                    </transformationSet>
+                    <!-- standalone-ha.xml -->
+                    <transformationSet>
+                      <dir>${hawkular.conf}</dir>
+                      <stylesheet>src/test/resources/standalone-ha.xsl</stylesheet>
+                      <includes>
+                        <include>standalone-ha.xml</include>
+                      </includes>
+                      <outputDir>${hawkular.conf}</outputDir>
                     </transformationSet>
                   </transformationSets>
                 </configuration>
@@ -710,7 +679,7 @@
             <groupId>org.wildfly.plugins</groupId>
             <artifactId>wildfly-maven-plugin</artifactId>
             <configuration>
-              <jboss-home>${project.build.directory}/${project.build.finalName}</jboss-home>
+              <jboss-home>${hawkular.wildfly}</jboss-home>
               <skip>${skipTests}</skip>
               <startupTimeout>240</startupTimeout>
               <port>${hawkular.management.port}</port>
@@ -726,14 +695,11 @@
                 <javaOpt>-Dkeycloak.import=${project.build.directory}/${project.build.finalName}/standalone/configuration/hawkular-realm-for-dev.json</javaOpt>
                 <javaOpt>-Dmail.smtp.host=localhost</javaOpt>
                 <javaOpt>-Dmail.smtp.port=2525</javaOpt>
-                <javaOpt>-Dhawkular.backend=embedded_cassandra</javaOpt>
                 <javaOpt>-Dhawkular.log.alerts=${hawkular.log.alerts}</javaOpt>
                 <javaOpt>-Dhawkular.allowed-cors-origins=http://test.hawkular.org,https://secure.hawkular.io</javaOpt>
                 <javaOpt>-Dhawkular.allowed-cors-access-control-allow-headers=random-header1,random-header2</javaOpt>
-                <javaOpt>-Dhawkular-alerts.data-driven-triggers-enabled=false</javaOpt>
-                <!--<javaOpt>-Xdebug</javaOpt>-->
-                <!--<javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt>-->
-                <!--javaOpt>-agentpath:${jprofiler.path}/bin/linux-x64/libjprofilerti.so</javaOpt-->
+                <!-- <javaOpt>-Xdebug</javaOpt>  -->
+                <!-- <javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt> -->
               </javaOpts>
             </configuration>
             <executions>
@@ -780,7 +746,7 @@
                   <includes>
                     <include>org/hawkular/alerts/rest/PerfCrudITest.class</include>
                     <include>org/hawkular/alerts/rest/PerfSendITest.class</include>
-                    <include>org/hawkular/alerts/rest/PerfImportITest.class</include>
+                    <!-- <include>org/hawkular/alerts/rest/PerfImportITest.class</include> -->
                   </includes>
                   <excludes>
                     <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
@@ -804,184 +770,6 @@
 
     <!-- This profile prepares a standalone distribution of hawkular-alerts on top of a Wildfly Server -->
     <profile>
-      <id>build-standalone</id>
-      <activation>
-        <property>
-          <name>!env</name>
-        </property>
-      </activation>
-      <properties>
-        <hawkular.home>${project.build.directory}</hawkular.home>
-        <hawkular.standalone.conf>${hawkular.home}/wildfly-${version.org.wildfly}/standalone/configuration</hawkular.standalone.conf>
-        <hawkular.data>${hawkular.home}/wildfly-${version.org.wildfly}/standalone/data</hawkular.data>
-        <hawkular.deployments>${hawkular.home}/wildfly-${version.org.wildfly}/standalone/deployments</hawkular.deployments>
-      </properties>
-      <dependencies>
-
-        <dependency>
-          <groupId>org.hawkular.commons</groupId>
-          <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
-          <version>${version.org.hawkular.commons}</version>
-          <type>war</type>
-        </dependency>
-
-        <dependency>
-          <groupId>org.wildfly</groupId>
-          <artifactId>wildfly-dist</artifactId>
-          <version>${version.org.wildfly}</version>
-          <type>tar.gz</type>
-          <scope>test</scope>
-        </dependency>
-
-      </dependencies>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>unpack-hawkular-on-standalone</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>unpack-dependencies</goal>
-                </goals>
-                <configuration>
-                  <includeGroupIds>org.wildfly</includeGroupIds>
-                  <includeArtifactIds>wildfly-dist</includeArtifactIds>
-                  <outputDirectory>
-                    ${hawkular.home}
-                  </outputDirectory>
-                </configuration>
-              </execution>
-              <execution>
-                <id>update-hawkular-alerts-on-standalone</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>copy</goal>
-                </goals>
-                <configuration>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>org.hawkular.commons</groupId>
-                      <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-commons-embedded-cassandra-war.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-rest-standalone</artifactId>
-                      <version>${project.version}</version>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-alerts.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-elasticsearch-standalone</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-alerts-actions-elasticsearch.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-email-standalone</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-alerts-actions-email.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-file-standalone</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-alerts-actions-file.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-irc-standalone</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-alerts-actions-irc.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-alerts-actions-webhook-standalone</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-alerts-actions-webhook.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-elasticsearch-alerter-standalone</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-elasticsearch-alerter.war</destFileName>
-                    </artifactItem>
-                    <artifactItem>
-                      <groupId>org.hawkular.alerts</groupId>
-                      <artifactId>hawkular-prometheus-alerter-standalone</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${hawkular.deployments}</outputDirectory>
-                      <destFileName>hawkular-prometheus-alerter.war</destFileName>
-                    </artifactItem>
-                  </artifactItems>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>xml-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>transform-standalone-xml-on-standalone</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>transform</goal>
-                </goals>
-                <configuration>
-                  <transformationSets>
-                    <!-- standalone.xml -->
-                    <transformationSet>
-                      <dir>${hawkular.standalone.conf}</dir>
-                      <stylesheet>src/test/resources/standalone.xsl</stylesheet>
-                      <includes>
-                        <include>standalone.xml</include>
-                      </includes>
-                      <outputDir>${hawkular.standalone.conf}</outputDir>
-                    </transformationSet>
-                    <!-- standalone-ha.xml -->
-                    <transformationSet>
-                      <dir>${hawkular.standalone.conf}</dir>
-                      <stylesheet>src/test/resources/standalone-ha.xsl</stylesheet>
-                      <includes>
-                        <include>standalone-ha.xml</include>
-                      </includes>
-                      <outputDir>${hawkular.standalone.conf}</outputDir>
-                    </transformationSet>
-                  </transformationSets>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
-    <!-- This profile prepares a standalone distribution of hawkular-alerts on top of a Wildfly Server -->
-    <profile>
       <id>build-domain-cluster</id>
       <activation>
         <property>
@@ -999,13 +787,6 @@
         <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
       </properties>
       <dependencies>
-
-        <dependency>
-          <groupId>org.hawkular.commons</groupId>
-          <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
-          <version>${version.org.hawkular.commons}</version>
-          <type>war</type>
-        </dependency>
 
         <dependency>
           <groupId>org.hawkular.alerts</groupId>
@@ -1051,14 +832,6 @@
                 </goals>
                 <configuration>
                   <artifactItems>
-                    <artifactItem>
-                      <groupId>org.hawkular.commons</groupId>
-                      <artifactId>hawkular-commons-embedded-cassandra-war</artifactId>
-                      <type>war</type>
-                      <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}</outputDirectory>
-                      <destFileName>hawkular-commons-embedded-cassandra-war.war</destFileName>
-                    </artifactItem>
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
                       <artifactId>hawkular-alerts-rest-standalone</artifactId>
@@ -1137,21 +910,6 @@
                 <goals>
                   <goal>start</goal>
                 </goals>
-              </execution>
-              <execution>
-                <id>deploy-embedded-cassandra</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>deploy</goal>
-                </goals>
-                <configuration>
-                  <domain>
-                    <server-groups>
-                      <server-group>cassandra-group</server-group>
-                    </server-groups>
-                  </domain>
-                  <filename>hawkular-commons-embedded-cassandra-war.war</filename>
-                </configuration>
               </execution>
               <execution>
                 <id>deploy-hawkular-alerts</id>
@@ -1243,6 +1001,7 @@
                 <configuration>
                   <includes>
                     <include>org/hawkular/alerts/rest/IntegrationSuite.class</include>
+                    <include>org/hawkular/alerts/engine/IspnPersistenceTest.class</include>
                   </includes>
                 </configuration>
               </execution>

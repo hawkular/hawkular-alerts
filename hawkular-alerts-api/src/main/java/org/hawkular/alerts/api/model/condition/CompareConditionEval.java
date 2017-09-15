@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+
 /**
  * An evaluation state for compare condition.
  *
@@ -128,9 +129,11 @@ public class CompareConditionEval extends ConditionEval {
     }
 
     @Override
-    public String getLog() {
-        return condition.getLog(value1, value2) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp="
-                + dataTimestamp;
+    public void updateDisplayString() {
+        String s = String.format("Compare: %s[%.2f] %s %.2f%% %s[%.2f]", condition.getDataId(), value1,
+                condition.getOperator().name(), (100 * condition.getData2Multiplier()), condition.getData2Id(),
+                value2);
+        super.setDisplayString(s);
     }
 
     @Override

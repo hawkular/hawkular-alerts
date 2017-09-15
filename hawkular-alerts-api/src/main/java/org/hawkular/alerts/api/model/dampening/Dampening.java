@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,11 @@
  */
 package org.hawkular.alerts.api.model.dampening;
 
+import static org.hawkular.alerts.api.util.Util.isEmpty;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -127,9 +128,6 @@ public class Dampening implements Serializable {
             allowableValues = "> 0")
     private long evalTimeSetting;
 
-    /**
-     * tenantId-UUID
-     */
     @ApiModelProperty(value = "A composed key for the dampening. This is a read-only value defined by the system.",
             position = 7,
             required = false)
@@ -258,6 +256,22 @@ public class Dampening implements Serializable {
         return new Dampening(tenantId, triggerId, triggerMode, Type.STRICT_TIMEOUT, 0, 0, evalPeriod);
     }
 
+    public Dampening(Dampening dampening) {
+        if (dampening == null) {
+            throw new IllegalArgumentException("dampening must be not null");
+        }
+        this.tenantId = dampening.getTenantId();
+        this.triggerId = dampening.getTriggerId();
+        this.triggerMode = dampening.getTriggerMode();
+        this.type = dampening.getType();
+        this.evalTrueSetting = dampening.getEvalTrueSetting();
+        this.evalTotalSetting = dampening.getEvalTotalSetting();
+        this.evalTimeSetting = dampening.getEvalTimeSetting();
+        updateId();
+
+        reset();
+    }
+
     public Dampening(String tenantId, String triggerId, Mode triggerMode, Type type, int evalTrueSetting,
             int evalTotalSetting, long evalTimeSetting) {
         super();
@@ -377,11 +391,17 @@ public class Dampening implements Serializable {
     }
 
     public void addSatisfyingEvals(Set<ConditionEval> satisfyingEvals) {
+        // Make sure the display string is generated on each ConditionEval. This ensures that downstream we have the
+        // display string persisted and available via REST clients.  We generate the display string lazily so as not
+        // to slow down construction of evals, most of which are negative and never persisted.
+        for (ConditionEval ce : satisfyingEvals) {
+            ce.updateDisplayString();
+        }
         this.satisfyingEvals.add(satisfyingEvals);
     }
 
     public void addSatisfyingEvals(ConditionEval... satisfyingEvals) {
-        this.satisfyingEvals.add(new HashSet<ConditionEval>(Arrays.asList(satisfyingEvals)));
+        addSatisfyingEvals(new HashSet<ConditionEval>(Arrays.asList(satisfyingEvals)));
     }
 
     public String getTenantId() {
@@ -397,7 +417,7 @@ public class Dampening implements Serializable {
         if (null == match) {
             throw new IllegalArgumentException("Match can not be null");
         }
-        if (null == conditionEvalSet || isEmpty(conditionEvalSet)) {
+        if (isEmpty(conditionEvalSet)) {
             throw new IllegalArgumentException("ConditionEval Set can not be null or empty");
         }
 
@@ -514,7 +534,7 @@ public class Dampening implements Serializable {
                 for (ConditionEval ce : ces) {
                     sb.append(space);
                     sb.append("[");
-                    sb.append(ce.getLog());
+                    sb.append(ce.getDisplayString());
                     sb.append("]");
                     space = " ";
                 }
@@ -534,10 +554,6 @@ public class Dampening implements Serializable {
         sb.append("-").append(triggerId);
         sb.append("-").append(triggerMode.name());
         this.dampeningId = sb.toString();
-    }
-
-    private boolean isEmpty(Collection<?> c) {
-        return null == c || c.isEmpty();
     }
 
     @Override
@@ -565,6 +581,20 @@ public class Dampening implements Serializable {
         return true;
     }
 
+    public boolean isSame(Dampening d) {
+        if (this.equals(d) &&
+                evalTimeSetting == d.evalTimeSetting &&
+                evalTotalSetting == d.evalTotalSetting &&
+                evalTrueSetting == d.evalTrueSetting &&
+                type == d.type) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean same(Object s1, Object s2) {
+        return null == s1 ? null == s2 : s1.equals(s2);
+    }
     @Override
     public String toString() {
         return "Dampening [satisfied=" + satisfied + ", triggerId=" + triggerId + ", triggerMode=" + triggerMode

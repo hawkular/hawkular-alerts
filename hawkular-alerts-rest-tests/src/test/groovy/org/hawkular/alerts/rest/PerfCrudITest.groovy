@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -181,9 +181,9 @@ class PerfCrudITest extends AbstractITestBase {
             // Conditions
 
             ThresholdCondition testCond1 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
-                    "No-Metric", ThresholdCondition.Operator.GT, 10.12);
+                    "No-Metric", ThresholdCondition.Operator.LT, 10.12);
             ThresholdCondition testCond2 = new ThresholdCondition("test-crud-" + i, Mode.FIRING,
-                    "No-Metric", ThresholdCondition.Operator.LT, 4.10);
+                    "No-Metric", ThresholdCondition.Operator.GT, 4.10);
             Collection<Condition> conditions = new ArrayList<>(2);
             conditions.add( testCond1 );
             conditions.add( testCond2 );
@@ -234,7 +234,10 @@ class PerfCrudITest extends AbstractITestBase {
             resp = client.get(path: "triggers/test-crud-" + i + "/conditions")
             endCall = System.currentTimeMillis();
             assertEquals(2, resp.data.size())
-            assertEquals("LTE", resp.data[0].operator)
+            def ops = [resp.data[0].operator, resp.data[1].operator]
+            ops.sort()
+            assertEquals("GT", ops[0])
+            assertEquals("LTE", ops[1])
             numCalls++;
             timeCall = (endCall - startCall);
             numGetConditions++;

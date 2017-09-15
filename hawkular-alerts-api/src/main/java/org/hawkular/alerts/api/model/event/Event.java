@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -225,6 +225,27 @@ public class Event implements Comparable<Event>, Serializable {
     public Event(String tenantId, String id, long ctime, String dataId, String category,
             String text, Map<String, String> context, Map<String, String> tags) {
         this(tenantId, id, ctime, null, dataId, category, text, context, tags);
+    }
+
+    // TODO [lponce] validate if this constructor is enough
+    public Event(Event event) {
+        if (event == null) {
+            throw new IllegalArgumentException("event must be not null");
+        }
+        this.tenantId = event.getTenantId();
+        this.trigger = event.getTrigger();
+        this.dampening = event.getDampening() != null ? new Dampening(event.getDampening()) : null;
+        // evalSets are maintained as reference as it is a mostly read-only field
+        this.evalSets = event.getEvalSets();
+        this.eventType = event.getEventType();
+        this.ctime = event.getCtime();
+        this.id = event.getId();
+        this.dataSource = event.getDataSource();
+        this.dataId = event.getDataId();
+        this.context = new HashMap<>(event.getContext());
+        this.category = event.getCategory();
+        this.text = event.getText();
+        this.tags = new HashMap<>(event.getTags());
     }
 
     public Event(String tenantId, String id, long ctime, String dataSource, String dataId, String category,

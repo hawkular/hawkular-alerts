@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,7 +52,8 @@ public class ThresholdConditionEval extends ConditionEval {
     }
 
     public ThresholdConditionEval(ThresholdCondition condition, Data data) {
-        super(Type.THRESHOLD, condition.match(Double.valueOf(data.getValue())), data.getTimestamp(), data.getContext());
+        super(Type.THRESHOLD, condition.match(Double.valueOf(data.getValue())), data.getTimestamp(),
+                data.getContext());
         this.condition = condition;
         this.value = Double.valueOf(data.getValue());
     }
@@ -94,8 +95,10 @@ public class ThresholdConditionEval extends ConditionEval {
     }
 
     @Override
-    public String getLog() {
-        return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp;
+    public void updateDisplayString() {
+        String s = String.format("Threshold: %s[%.2f] %s %.2f", condition.getDataId(), value,
+                condition.getOperator().name(), condition.getThreshold());
+        setDisplayString(s);
     }
 
     @Override

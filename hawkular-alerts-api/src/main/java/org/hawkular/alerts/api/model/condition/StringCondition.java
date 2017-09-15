@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -112,8 +112,19 @@ public class StringCondition extends Condition {
         this.operator = operator;
         this.pattern = pattern;
         this.ignoreCase = ignoreCase;
+        updateDisplayString();
     }
 
+    public StringCondition(StringCondition condition) {
+        super(condition);
+
+        this.dataId = condition.getDataId();
+        this.ignoreCase = condition.isIgnoreCase();
+        this.operator = condition.getOperator();
+        this.pattern = condition.getPattern();
+    }
+
+    @Override
     public String getDataId() {
         return dataId;
     }
@@ -146,11 +157,6 @@ public class StringCondition extends Condition {
         this.pattern = pattern;
     }
 
-    public String getLog(String value) {
-        return triggerId + " : " + value + " " + operator.name() + " " +
-                pattern + " " + "ignoreCase=" + ignoreCase;
-    }
-
     public boolean match(String value) {
 
         if (ignoreCase && operator != Operator.MATCH) {
@@ -173,6 +179,14 @@ public class StringCondition extends Condition {
             default:
                 throw new IllegalStateException("Unknown operator: " + operator.name());
         }
+    }
+
+    @Override
+    public void updateDisplayString() {
+        String operator = null == this.operator ? null : this.operator.name();
+        String s = String.format("%s %s [%s]%s", this.dataId, operator, this.pattern,
+                (this.ignoreCase ? " Ignoring Case" : ""));
+        setDisplayString(s);
     }
 
     @Override

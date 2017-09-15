@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,10 +33,8 @@ public class ServiceNames {
     public static String HAWKULAR_ALERTS_ACTIONS_ENV = "hawkular-alerts.plugins-deployment";
     public static String STANDALONE = "standalone";
 
-    private static String JNDI_ACTIONS_METRICS = "java:global/hawkular-metrics/hawkular-alerts/CassActionsServiceImpl";
-    private static String JNDI_ACTIONS_STANDALONE = "java:global/hawkular-alerts/CassActionsServiceImpl";
-    private static String JNDI_DEFINITIONS_METRICS = "java:global/hawkular-metrics/hawkular-alerts/CassDefinitionsServiceImpl";
-    private static String JNDI_DEFINITIONS_STANDALONE = "java:global/hawkular-alerts/CassDefinitionsServiceImpl";
+    private static String JNDI_ACTIONS_STANDALONE = "java:global/hawkular-alerts/IspnActionsServiceImpl";
+    private static String JNDI_DEFINITIONS_STANDALONE = "java:global/hawkular-alerts/IspnDefinitionsServiceImpl";
 
     public enum Service {
         ACTIONS_SERVICE, DEFINITIONS_SERVICE
@@ -52,13 +50,8 @@ public class ServiceNames {
         } catch (Exception e) {
             // env does not need to be set, we'll default to METRICS
         }
-        if (STANDALONE.equals(env)) {
-            services.put(Service.ACTIONS_SERVICE, JNDI_ACTIONS_STANDALONE);
-            services.put(Service.DEFINITIONS_SERVICE, JNDI_DEFINITIONS_STANDALONE);
-        } else {
-            services.put(Service.ACTIONS_SERVICE, JNDI_ACTIONS_METRICS);
-            services.put(Service.DEFINITIONS_SERVICE, JNDI_DEFINITIONS_METRICS);
-        }
+        services.put(Service.ACTIONS_SERVICE, JNDI_ACTIONS_STANDALONE);
+        services.put(Service.DEFINITIONS_SERVICE, JNDI_DEFINITIONS_STANDALONE);
     }
 
     public static String getServiceName(Service service) {

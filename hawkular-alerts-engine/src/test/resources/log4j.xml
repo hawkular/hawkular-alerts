@@ -42,7 +42,7 @@
   </appender>
 
   <root>
-    <priority value ="INFO" />
+    <priority value ="TRACE" />
     <appender-ref ref="console" />
     <appender-ref ref="file" />
   </root>

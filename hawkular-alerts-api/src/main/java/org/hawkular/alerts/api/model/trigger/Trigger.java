@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 package org.hawkular.alerts.api.model.trigger;
+
+import static org.hawkular.alerts.api.util.Util.isEmpty;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -253,15 +255,49 @@ public class Trigger implements Serializable {
         this(tenantId, id, name, context, null);
     }
 
+    public Trigger(Trigger trigger) {
+        if (trigger == null) {
+            throw new IllegalArgumentException("trigger must be not null");
+        }
+        this.tenantId = trigger.getTenantId();
+        this.id = trigger.getId();
+        this.name = trigger.getName();
+        this.context = new HashMap<>(trigger.getContext());
+        this.tags = new HashMap<>(trigger.getTags());
+        this.actions = new HashSet<>();
+        for (TriggerAction action : trigger.getActions()) {
+            this.actions.add(new TriggerAction(action));
+        }
+        this.autoDisable = trigger.isAutoDisable();
+        this.autoEnable = trigger.isAutoEnable();
+        this.autoResolve = trigger.isAutoResolve();
+        this.autoResolveAlerts = trigger.isAutoResolveAlerts();
+        this.autoResolveMatch = trigger.getAutoResolveMatch();
+        this.dataIdMap = new HashMap<>(trigger.getDataIdMap() != null ? trigger.getDataIdMap() : new HashMap<>());
+        this.eventCategory = trigger.getEventCategory();
+        this.eventText = trigger.getEventText();
+        this.eventType = trigger.getEventType();
+        this.memberOf = trigger.getMemberOf();
+        this.description = trigger.getDescription();
+        this.enabled = trigger.isEnabled();
+        this.firingMatch = trigger.getFiringMatch();
+        this.type = trigger.getType();
+        this.source = trigger.getSource();
+        this.severity = trigger.getSeverity();
+
+        this.mode = trigger.getMode() != null ? trigger.getMode() : Mode.FIRING;
+        this.match = trigger.getMode() == Mode.FIRING ? trigger.getFiringMatch() : trigger.getAutoResolveMatch();
+    }
+
     public Trigger(String tenantId, String id, String name, Map<String, String> context, Map<String, String> tags) {
-        if (id == null || id.isEmpty()) {
+        if (isEmpty(id)) {
             throw new IllegalArgumentException("Trigger id must be non-empty");
         }
         this.tenantId = tenantId;
         this.id = id;
         this.name = name;
         this.context = context;
-        this.tags = tags;
+        this.tags = tags != null ? tags : new HashMap<>();
 
         this.actions = new HashSet<>();
         this.autoDisable = false;
@@ -310,7 +346,7 @@ public class Trigger implements Serializable {
     }
 
     public void setName(String name) {
-        if (name == null || name.isEmpty()) {
+        if (isEmpty(name)) {
             throw new IllegalArgumentException("Trigger name must be non-empty.");
         }
         this.name = name;
@@ -467,6 +503,7 @@ public class Trigger implements Serializable {
     }
 
     public void addAction(TriggerAction triggerAction) {
+        triggerAction.setTenantId(this.getTenantId());
         getActions().add(triggerAction);
     }
 
@@ -604,6 +641,36 @@ public class Trigger implements Serializable {
         int result = id != null ? id.hashCode() : 0;
         result = 31 * result + (tenantId != null ? tenantId.hashCode() : 0);
         return result;
+    }
+
+    public boolean isSame(Trigger t) {
+        if (this.equals(t) &&
+                same(actions, t.actions) &&
+                autoDisable == t.autoDisable &&
+                autoEnable == t.autoEnable &&
+                autoResolve == t.autoResolve &&
+                autoResolveAlerts == t.autoResolveAlerts &&
+                autoResolveMatch == t.autoResolveMatch &&
+                same(context, t.context) &&
+                same(description, t.description) &&
+                enabled == t.enabled &&
+                same(eventCategory, t.eventCategory) &&
+                same(eventText, t.eventText) &&
+                eventType == t.eventType &&
+                firingMatch == t.firingMatch &&
+                same(memberOf, t.memberOf) &&
+                same(name, t.name) &&
+                severity == t.severity &&
+                same(source, t.source) &&
+                same(tags, t.tags) &&
+                type == t.type) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean same(Object s1, Object s2) {
+        return null == s1 ? null == s2 : s1.equals(s2);
     }
 
     @Override

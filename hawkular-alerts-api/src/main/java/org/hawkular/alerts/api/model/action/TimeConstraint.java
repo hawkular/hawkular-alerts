@@ -390,6 +390,17 @@ public class TimeConstraint implements Serializable {
         this(startTime, endTime, null, relative, inRange);
     }
 
+    public TimeConstraint(TimeConstraint timeConstraint) {
+        if (timeConstraint == null) {
+            throw new IllegalArgumentException("timeConstraint must be not null");
+        }
+        this.startTime = timeConstraint.getStartTime();
+        this.endTime = timeConstraint.getEndTime();
+        this.relative = timeConstraint.isRelative();
+        this.inRange = timeConstraint.isInRange();
+        setTimeZoneName(timeConstraint.getTimeZoneName());
+    }
+
     public TimeConstraint(String startTime, String endTime, String timeZoneName, boolean relative, boolean inRange) {
         if (isEmpty(startTime)) {
             throw new IllegalArgumentException("startTime must be not null");

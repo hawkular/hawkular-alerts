@@ -1,6 +1,6 @@
 <!--
 
-    Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,45 +20,5 @@
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
       version="3.0">
-
-  <resource-env-ref>
-    <resource-env-ref-name>container/hawkular-alerts</resource-env-ref-name>
-    <lookup-name>java:jboss/infinispan/container/hawkular-alerts</lookup-name>
-  </resource-env-ref>
-
-  <resource-env-ref>
-    <resource-env-ref-name>cache/partition</resource-env-ref-name>
-    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/partition</lookup-name>
-  </resource-env-ref>
-
-  <resource-env-ref>
-    <resource-env-ref-name>cache/triggers</resource-env-ref-name>
-    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/triggers</lookup-name>
-  </resource-env-ref>
-
-  <resource-env-ref>
-    <resource-env-ref-name>cache/data</resource-env-ref-name>
-    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/data</lookup-name>
-  </resource-env-ref>
-
-  <resource-env-ref>
-    <resource-env-ref-name>cache/publish</resource-env-ref-name>
-    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/publish</lookup-name>
-  </resource-env-ref>
-
-  <resource-env-ref>
-    <resource-env-ref-name>cache/dataIds</resource-env-ref-name>
-    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/dataIds</lookup-name>
-  </resource-env-ref>
-
-  <resource-env-ref>
-    <resource-env-ref-name>cache/schema</resource-env-ref-name>
-    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/schema</lookup-name>
-  </resource-env-ref>
-
-  <resource-env-ref>
-    <resource-env-ref-name>cache/globalActions</resource-env-ref-name>
-    <lookup-name>java:jboss/infinispan/cache/hawkular-alerts/globalActions</lookup-name>
-  </resource-env-ref>
 
 </web-app>

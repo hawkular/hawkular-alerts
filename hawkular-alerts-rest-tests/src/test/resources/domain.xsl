@@ -31,37 +31,6 @@
   <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
   <xsl:strip-space elements="*"/>
 
-  <xsl:template match="node()[name(.)='cache-container'][1]">
-    <xsl:copy>
-      <xsl:copy-of select="node()|@*"/>
-    </xsl:copy>
-    <cache-container name="hawkular-alerts" default-cache="triggers" statistics-enabled="true">
-      <transport lock-timeout="60000"/>
-      <replicated-cache name="partition" mode="SYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-      <replicated-cache name="triggers" mode="ASYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-      <replicated-cache name="data" mode="ASYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-      <replicated-cache name="publish" mode="ASYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-      <replicated-cache name="dataIds" mode="ASYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-      <replicated-cache name="schema" mode="SYNC">
-        <transaction mode="NON_XA"/>
-        <locking acquire-timeout="100000" />
-      </replicated-cache>
-      <replicated-cache name="globalActions" mode="ASYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-    </cache-container>
-  </xsl:template>
-
   <xsl:template match="node()[name(.)='periodic-rotating-file-handler']">
     <xsl:copy>
       <xsl:copy-of select="node()|@*"/>
@@ -79,12 +48,6 @@
 
   <xsl:template match="node()[name(.)='server-groups']">
     <server-groups>
-      <server-group name="cassandra-group" profile="default" >
-        <jvm name="default">
-          <heap size="64m" max-size="512m"/>
-        </jvm>
-        <socket-binding-group ref="standard-sockets"/>
-      </server-group>
       <server-group name="hawkular-alerts-group" profile="ha" >
         <jvm name="default">
           <heap size="64m" max-size="512m"/>

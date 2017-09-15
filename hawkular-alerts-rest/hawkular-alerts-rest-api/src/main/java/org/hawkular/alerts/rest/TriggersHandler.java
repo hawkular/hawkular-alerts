@@ -47,6 +47,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.hawkular.alerts.api.exception.NotFoundException;
 import org.hawkular.alerts.api.json.GroupConditionsInfo;
 import org.hawkular.alerts.api.json.GroupMemberInfo;
 import org.hawkular.alerts.api.json.UnorphanMemberInfo;
@@ -211,13 +212,11 @@ public class TriggersHandler {
             final Trigger trigger) {
         try {
             if (null != trigger) {
+                if (!checkTags(trigger)) {
+                    return ResponseUtil.badRequest("Tags " + trigger.getTags() + " are invalid.");
+                }
                 if (isEmpty(trigger.getId())) {
                     trigger.setId(Trigger.generateId());
-                } else if (definitions.getTrigger(tenantId, trigger.getId()) != null) {
-                    return ResponseUtil.badRequest("Trigger with ID [" + trigger.getId() + "] exists.");
-                }
-                if (!checkTags(trigger)) {
-                    return ResponseUtil.badRequest("Tags " + trigger.getTags() + " must be non empty.");
                 }
                 definitions.addTrigger(tenantId, trigger);
                 log.debugf("Trigger: %s", trigger);
@@ -252,23 +251,22 @@ public class TriggersHandler {
         try {
             Trigger trigger = fullTrigger.getTrigger();
             trigger.setTenantId(tenantId);
+            if (!checkTags(trigger)) {
+                return ResponseUtil.badRequest("Tags " + trigger.getTags() + " are invalid.");
+            }
             if (isEmpty(trigger.getId())) {
                 trigger.setId(Trigger.generateId());
-            } else if (definitions.getTrigger(tenantId, trigger.getId()) != null) {
-                return ResponseUtil.badRequest("Trigger with ID [" + trigger.getId() + "] exists.");
             }
-            if (!checkTags(trigger)) {
-                return ResponseUtil.badRequest("Tags " + trigger.getTags() + " must be non empty.");
-            }
+
+            // can throw FoundException
             definitions.addTrigger(tenantId, trigger);
             log.debugf("Trigger: %s", trigger);
+
             for (Dampening dampening : fullTrigger.getDampenings()) {
                 dampening.setTenantId(tenantId);
                 dampening.setTriggerId(trigger.getId());
-                boolean exist = (definitions.getDampening(tenantId, dampening.getDampeningId()) != null);
-                if (exist) {
-                    definitions.removeDampening(tenantId, dampening.getDampeningId());
-                }
+                // remove if exists
+                definitions.removeDampening(tenantId, dampening.getDampeningId());
                 definitions.addDampening(tenantId, dampening);
                 log.debugf("Dampening: %s", dampening);
             }
@@ -301,13 +299,11 @@ public class TriggersHandler {
             final Trigger groupTrigger) {
         try {
             if (null != groupTrigger) {
+                if (!checkTags(groupTrigger)) {
+                    return ResponseUtil.badRequest("Tags " + groupTrigger.getTags() + " are invalid.");
+                }
                 if (isEmpty(groupTrigger.getId())) {
                     groupTrigger.setId(Trigger.generateId());
-                } else if (definitions.getTrigger(tenantId, groupTrigger.getId()) != null) {
-                    return ResponseUtil.badRequest("Trigger with ID [" + groupTrigger.getId() + "] exists.");
-                }
-                if (!checkTags(groupTrigger)) {
-                    return ResponseUtil.badRequest("Tags " + groupTrigger.getTags() + " must be non empty.");
                 }
                 definitions.addGroupTrigger(tenantId, groupTrigger);
                 log.debugf("Group Trigger: %s", groupTrigger);
@@ -672,6 +668,7 @@ public class TriggersHandler {
             @PathParam("dampeningId")
             final String dampeningId) {
         try {
+            // can throw NotFoundException
             Dampening found = definitions.getDampening(tenantId, dampeningId);
             log.debugf("Dampening: %s", found);
             if (found == null) {
@@ -706,16 +703,17 @@ public class TriggersHandler {
         try {
             dampening.setTenantId(tenantId);
             dampening.setTriggerId(triggerId);
-            boolean exists = (definitions.getDampening(tenantId, dampening.getDampeningId()) != null);
-            if (!exists) {
+
+            try {
+                definitions.getDampening(tenantId, dampening.getDampeningId());
+                return ResponseUtil.badRequest("Existing dampening for dampeningId: " + dampening.getDampeningId());
+            } catch (NotFoundException e) {
                 // make sure we have the best chance of clean data..
                 Dampening d = getCleanDampening(dampening);
                 definitions.addDampening(tenantId, d);
                 log.debugf("Dampening: %s", d);
                 return ResponseUtil.ok(d);
             }
-            return ResponseUtil.badRequest("Existing dampening for dampeningId: " + dampening.getDampeningId());
-
         } catch (Exception e) {
             return ResponseUtil.onException(e, log);
         }
@@ -741,16 +739,17 @@ public class TriggersHandler {
             final Dampening dampening) {
         try {
             dampening.setTriggerId(groupId);
-            boolean exists = (definitions.getDampening(tenantId, dampening.getDampeningId()) != null);
-            if (!exists) {
+
+            try {
+                definitions.getDampening(tenantId, dampening.getDampeningId());
+                return ResponseUtil.badRequest("Existing dampening for dampeningId: " + dampening.getDampeningId());
+            } catch (NotFoundException e) {
                 // make sure we have the best chance of clean data..
                 Dampening d = getCleanDampening(dampening);
                 definitions.addGroupDampening(tenantId, d);
                 log.debugf("Dampening: %s", d);
                 return ResponseUtil.ok(d);
             }
-            return ResponseUtil.badRequest("Existing dampening for dampeningId: " + dampening.getDampeningId());
-
         } catch (Exception e) {
             return ResponseUtil.onException(e, log);
         }
@@ -810,17 +809,15 @@ public class TriggersHandler {
             @ApiParam(value = "Updated dampening definition", required = true)
             final Dampening dampening) {
         try {
-            boolean exists = (definitions.getDampening(tenantId, dampeningId) != null);
-            if (exists) {
-                // make sure we have the best chance of clean data..
-                dampening.setTriggerId(triggerId);
-                Dampening d = getCleanDampening(dampening);
-                definitions.updateDampening(tenantId, d);
-                log.debugf("Dampening: %s", d);
-                return ResponseUtil.ok(d);
-            }
-            return ResponseUtil.notFound("No dampening found for dampeningId: " + dampeningId);
+            // can throw NotFoundException
+            definitions.getDampening(tenantId, dampeningId);
 
+            // make sure we have the best chance of clean data..
+            dampening.setTriggerId(triggerId);
+            Dampening d = getCleanDampening(dampening);
+            definitions.updateDampening(tenantId, d);
+            log.debugf("Dampening: %s", d);
+            return ResponseUtil.ok(d);
         } catch (Exception e) {
             return ResponseUtil.onException(e, log);
         }
@@ -849,17 +846,15 @@ public class TriggersHandler {
             @ApiParam(value = "Updated dampening definition.", required = true)
             final Dampening dampening) {
         try {
-            boolean exists = (definitions.getDampening(tenantId, dampeningId) != null);
-            if (exists) {
-                // make sure we have the best chance of clean data..
-                dampening.setTriggerId(groupId);
-                Dampening d = getCleanDampening(dampening);
-                definitions.updateGroupDampening(tenantId, d);
-                log.debugf("Group Dampening: %s", d);
-                return ResponseUtil.ok(d);
-            }
-            return ResponseUtil.notFound("No dampening found for dampeningId: " + dampeningId);
+            // can throw NotFoundException
+            definitions.getDampening(tenantId, dampeningId);
 
+            // make sure we have the best chance of clean data..
+            dampening.setTriggerId(groupId);
+            Dampening d = getCleanDampening(dampening);
+            definitions.updateGroupDampening(tenantId, d);
+            log.debugf("Group Dampening: %s", d);
+            return ResponseUtil.ok(d);
         } catch (Exception e) {
             return ResponseUtil.onException(e, log);
         }
@@ -882,14 +877,12 @@ public class TriggersHandler {
             @PathParam("dampeningId")
             final String dampeningId) {
         try {
-            boolean exists = (definitions.getDampening(tenantId, dampeningId) != null);
-            if (exists) {
-                definitions.removeDampening(tenantId, dampeningId);
-                log.debugf("DampeningId: %s", dampeningId);
-                return ResponseUtil.ok();
-            }
-            return ResponseUtil.notFound("Dampening not found for dampeningId: " + dampeningId);
+            // can throw NotFoundException
+            definitions.getDampening(tenantId, dampeningId);
 
+            definitions.removeDampening(tenantId, dampeningId);
+            log.debugf("DampeningId: %s", dampeningId);
+            return ResponseUtil.ok();
         } catch (Exception e) {
             return ResponseUtil.onException(e, log);
         }
@@ -912,14 +905,12 @@ public class TriggersHandler {
             @PathParam("dampeningId")
             final String dampeningId) {
         try {
-            boolean exists = (definitions.getDampening(tenantId, dampeningId) != null);
-            if (exists) {
-                definitions.removeGroupDampening(tenantId, dampeningId);
-                log.debugf("Group DampeningId: %s", dampeningId);
-                return ResponseUtil.ok();
-            }
-            return ResponseUtil.notFound("Dampening not found for dampeningId: " + dampeningId);
+            // can throw NotFoundException
+            definitions.getDampening(tenantId, dampeningId);
 
+            definitions.removeGroupDampening(tenantId, dampeningId);
+            log.debugf("Group DampeningId: %s", dampeningId);
+            return ResponseUtil.ok();
         } catch (Exception e) {
             return ResponseUtil.onException(e, log);
         }

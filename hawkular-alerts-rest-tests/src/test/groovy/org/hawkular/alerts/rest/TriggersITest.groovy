@@ -217,9 +217,10 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(2, resp.data.size());
         groupConditions = (Collection<Condition>)resp.data;
         cond1 = resp.data[0];
-        assertEquals("DataId1-Token", cond1.getDataId());
         cond2 = resp.data[1];
-        assertEquals("DataId2-Token", cond2.getDataId());
+        def dataIds = [cond1.getDataId(), cond2.getDataId()].sort();
+        assertEquals("DataId1-Token", dataIds[0]);
+        assertEquals("DataId2-Token", dataIds[1]);
 
         // get the member1 trigger
         resp = client.get(path: "triggers/member1")

@@ -37,29 +37,12 @@
 
   <profiles>
     <profile>
-      <id>metrics</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <modules>
-        <module>deployments/hawkular-alerts-actions-email-metrics</module>
-      </modules>
-    </profile>
-
-    <profile>
       <id>standalone</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
         <module>deployments/hawkular-alerts-actions-email-standalone</module>
-      </modules>
-    </profile>
-
-    <profile>
-      <id>openshift</id>
-      <modules>
-        <module>deployments/hawkular-alerts-actions-email-metrics</module>
       </modules>
     </profile>
   </profiles>

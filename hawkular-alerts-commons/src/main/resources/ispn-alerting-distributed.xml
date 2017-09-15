@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
+    and other contributors as indicated by the @author tags.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<infinispan
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="urn:infinispan:config:9.0 http://www.infinispan.org/schemas/infinispan-config-9.0.xsd"
+      xmlns="urn:infinispan:config:9.0">
+
+  <cache-container name="hawkular-alerts" default-cache="partition">
+    <transport />
+    <replicated-cache name="partition" remote-timeout="150000">
+      <locking acquire-timeout="100000" />
+      <transaction mode="BATCH" locking="PESSIMISTIC"/>
+    </replicated-cache>
+    <replicated-cache name="triggers" mode="ASYNC" />
+    <replicated-cache name="data" mode="ASYNC" />
+    <replicated-cache name="publish">
+      <transaction mode="BATCH"/>
+    </replicated-cache>
+    <replicated-cache name="dataIds">
+      <transaction mode="BATCH"/>
+    </replicated-cache>
+    <replicated-cache name="globalActions">
+      <transaction mode="BATCH"/>
+    </replicated-cache>
+  </cache-container>
+</infinispan>

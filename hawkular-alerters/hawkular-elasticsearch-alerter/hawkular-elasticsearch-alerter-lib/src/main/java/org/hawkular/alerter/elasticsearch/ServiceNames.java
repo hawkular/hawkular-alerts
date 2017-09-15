@@ -32,13 +32,9 @@ public class ServiceNames {
     public static String HAWKULAR_ALERTER_ENV = "hawkular-alerts.alerter-deployment";
     public static String STANDALONE = "standalone";
 
-    private static String JNDI_ALERTS_STANDALONE = "java:global/hawkular-alerts/CassAlertsServiceImpl";
-    private static String JNDI_DEFINITIONS_STANDALONE = "java:global/hawkular-alerts/CassDefinitionsServiceImpl";
+    private static String JNDI_ALERTS_STANDALONE = "java:global/hawkular-alerts/IspnAlertsServiceImpl";
+    private static String JNDI_DEFINITIONS_STANDALONE = "java:global/hawkular-alerts/IspnDefinitionsServiceImpl";
     private static String JNDI_PROPERTIES_STANDALONE = "java:global/hawkular-alerts/PropertiesServiceImpl";
-
-    private static String JNDI_ALERTS_METRICS = "java:global/hawkular-metrics/hawkular-alerts/CassAlertsServiceImpl";
-    private static String JNDI_DEFINITIONS_METRICS = "java:global/hawkular-metrics/hawkular-alerts/CassDefinitionsServiceImpl";
-    private static String JNDI_PROPERTIES_METRICS = "java:global/hawkular-metrics/hawkular-alerts/PropertiesServiceImpl";
 
     public enum Service {
         ALERTS_SERVICE, DEFINITIONS_SERVICE, PROPERTIES_SERVICE
@@ -54,15 +50,9 @@ public class ServiceNames {
         } catch (Exception e) {
             // env does not need to be set, we'll default to METRICS
         }
-        if (STANDALONE.equals(env)) {
-            services.put(Service.ALERTS_SERVICE, JNDI_ALERTS_STANDALONE);
-            services.put(Service.DEFINITIONS_SERVICE, JNDI_DEFINITIONS_STANDALONE);
-            services.put(Service.PROPERTIES_SERVICE, JNDI_PROPERTIES_STANDALONE);
-        } else {
-            services.put(Service.ALERTS_SERVICE, JNDI_ALERTS_METRICS);
-            services.put(Service.DEFINITIONS_SERVICE, JNDI_DEFINITIONS_METRICS);
-            services.put(Service.PROPERTIES_SERVICE, JNDI_PROPERTIES_METRICS);
-        }
+        services.put(Service.ALERTS_SERVICE, JNDI_ALERTS_STANDALONE);
+        services.put(Service.DEFINITIONS_SERVICE, JNDI_DEFINITIONS_STANDALONE);
+        services.put(Service.PROPERTIES_SERVICE, JNDI_PROPERTIES_STANDALONE);
     }
 
     public static String getServiceName(Service service) {

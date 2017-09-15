@@ -122,6 +122,21 @@ public class ActionDefinition implements Serializable {
         this(tenantId, actionPlugin, actionId, false, properties, null, null);
     }
 
+    public ActionDefinition(ActionDefinition actionDefinition) {
+        if (actionDefinition == null) {
+            throw new IllegalArgumentException("actionDefinition must be not null");
+        }
+        this.tenantId = actionDefinition.getTenantId();
+        this.actionPlugin = actionDefinition.getActionPlugin();
+        this.actionId = actionDefinition.getActionId();
+        this.global = actionDefinition.isGlobal();
+        this.properties = actionDefinition.getProperties() != null ? new HashMap<>(actionDefinition.getProperties())
+                : new HashMap<>();
+        this.states = new HashSet<>(actionDefinition.getStates());
+        this.calendar = actionDefinition.getCalendar() != null ? new TimeConstraint(actionDefinition.getCalendar())
+                : null;
+    }
+
     public ActionDefinition(String tenantId, String actionPlugin, String actionId, boolean global,
                             Map<String, String> properties, Set<String> states, TimeConstraint calendar) {
         this.tenantId = tenantId;

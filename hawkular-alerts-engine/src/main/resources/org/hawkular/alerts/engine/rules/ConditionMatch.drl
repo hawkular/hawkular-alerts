@@ -96,7 +96,7 @@ rule Threshold
     then
         ThresholdConditionEval ce = new ThresholdConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Threshold Eval: %s %s", (ce.isMatch() ? "Match!" : "no match "), ce.getLog());
+            log.debugf("Threshold Eval: %s %s", (ce.isMatch() ? "Match!" : "no match "), ce.getDisplayString());
         }
         insert( ce );
 end
@@ -109,7 +109,7 @@ rule ThresholdRange
     then
         ThresholdRangeConditionEval ce = new ThresholdRangeConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("ThresholdRange Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debugf("ThresholdRange Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getDisplayString());
         }
         insert( ce );
 end
@@ -177,7 +177,7 @@ rule Compare
     then
         CompareConditionEval ce = new CompareConditionEval($c, $cd1.data, $cd2.data);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Compare Eval: %s %s", (ce.isMatch() ? "Match!" : "no match "), ce.getLog());
+            log.debugf("Compare Eval: %s %s", (ce.isMatch() ? "Match!" : "no match "), ce.getDisplayString());
         }
         insert( ce );
 end
@@ -190,7 +190,7 @@ rule Availability
     then
         AvailabilityConditionEval ce = new AvailabilityConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Availability Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debugf("Availability Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getDisplayString());
         }
         insert( ce );
 end
@@ -203,7 +203,7 @@ rule String
     then
         StringConditionEval ce = new StringConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("String Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debugf("String Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getDisplayString());
         }
         insert( ce );
 end
@@ -216,7 +216,7 @@ rule ExternalData
     then
         ExternalConditionEval ce = new ExternalConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("ExternalData Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debugf("ExternalData Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getDisplayString());
         }
         insert( ce );
 end
@@ -229,7 +229,7 @@ rule ExternalEvent
     then
         ExternalConditionEval ce = new ExternalConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("ExternalEvent Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debugf("ExternalEvent Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getDisplayString());
         }
         insert( ce );
 end
@@ -242,7 +242,7 @@ rule Event
     then
         EventConditionEval ce = new EventConditionEval($c, $d);
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Event Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debugf("Event Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getDisplayString());
         }
         insert( ce );
 end
@@ -275,7 +275,7 @@ rule Rate
     then
         RateConditionEval ce = new RateConditionEval($c, $d, $rd.getData());
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Rate Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debugf("Rate Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getDisplayString());
         }
         insert( ce );
 end
@@ -311,7 +311,7 @@ rule Nelson
         NelsonConditionEval ce = new NelsonConditionEval($c, $d, $nd.getViolations(), $nd.getMeanResult(),
             $nd.getStandardDeviationResult(), $nd.getViolationsData());
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("Nelson Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getLog());
+            log.debugf("Nelson Eval: %s %s", (ce.isMatch() ? "Match!" : "no match"), ce.getDisplayString());
         }
         insert( ce );
 end
@@ -344,7 +344,7 @@ rule UpdateMissingStateFromData
         // An eval is needed for Dampening
         MissingConditionEval mce = new MissingConditionEval( $ms.getCondition(), $ms.getPreviousTime(), $ms.getTime());
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("MissingConditionEval : %s %s", (mce.isMatch() ? "Match!" : "no match"), mce.getLog());
+            log.debugf("MissingConditionEval : %s %s", (mce.isMatch() ? "Match!" : "no match"), mce.getDisplayString());
         }
         insert( mce );
 end
@@ -365,7 +365,7 @@ rule UpdateMissingStateFromEvent
         // An eval is needed for Dampening
         MissingConditionEval mce = new MissingConditionEval( $ms.getCondition(), $ms.getPreviousTime(), $ms.getTime());
         if (log != null && log.isDebugEnabled()) {
-            log.debugf("MissingConditionEval : %s %s", (mce.isMatch() ? "Match!" : "no match"), mce.getLog());
+            log.debugf("MissingConditionEval : %s %s", (mce.isMatch() ? "Match!" : "no match"), mce.getDisplayString());
         }
         insert( mce );
 end

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -118,14 +118,10 @@ public class ExternalConditionEval extends ConditionEval {
     }
 
     @Override
-    public String getLog() {
-        if (value != null) {
-            return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp +
-                    ", dataTimestamp=" + dataTimestamp;
-        } else {
-            return condition.getLog(event) + ", evalTimestamp=" + evalTimestamp +
-                    ", dataTimestamp=" + dataTimestamp;
-        }
+    public void updateDisplayString() {
+        String s = String.format("External[%s]: %s[%s] matches [%s]", condition.getAlerterId(),
+                condition.getDataId(), (value != null ? value : event.toString()), condition.getExpression());
+        setDisplayString(s);
     }
 
     @Override

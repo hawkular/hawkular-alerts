@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -74,6 +74,11 @@ public abstract class ConditionEval implements Serializable {
     @JsonInclude(Include.NON_EMPTY)
     protected Map<String, String> context;
 
+    @ApiModelProperty(value = "A canonical display string of the evaluation (the result of a call to #getLog()).",
+            position = 5)
+    @JsonInclude(Include.NON_EMPTY)
+    protected String displayString;
+
     public ConditionEval() {
         // for json assembly
     }
@@ -84,6 +89,7 @@ public abstract class ConditionEval implements Serializable {
         this.dataTimestamp = dataTimestamp;
         this.evalTimestamp = System.currentTimeMillis();
         this.context = context;
+        this.displayString = null; // for construction speed, lazily update when requested or when serialized
     }
 
     public boolean isMatch() {
@@ -126,6 +132,17 @@ public abstract class ConditionEval implements Serializable {
         this.context = context;
     }
 
+    public String getDisplayString() {
+        if (null == this.displayString) {
+            updateDisplayString();
+        }
+        return this.displayString;
+    }
+
+    public void setDisplayString(String displayString) {
+        this.displayString = displayString;
+    }
+
     @JsonIgnore
     public abstract String getTenantId();
 
@@ -138,19 +155,28 @@ public abstract class ConditionEval implements Serializable {
     @JsonIgnore
     public abstract int getConditionSetIndex();
 
+    /**
+     * @return The condition expression with the values used to determine the match. Note that this
+     * String does not include whether the match is true or false.  That can be determined via {@link #isMatch()}.
+     */
     @JsonIgnore
-    public abstract String getLog();
+    public abstract void updateDisplayString();
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
 
         ConditionEval that = (ConditionEval) o;
 
-        if (evalTimestamp != that.evalTimestamp) return false;
-        if (dataTimestamp != that.dataTimestamp) return false;
-        if (type != that.type) return false;
+        if (evalTimestamp != that.evalTimestamp)
+            return false;
+        if (dataTimestamp != that.dataTimestamp)
+            return false;
+        if (type != that.type)
+            return false;
         return !(context != null ? !context.equals(that.context) : that.context != null);
 
     }

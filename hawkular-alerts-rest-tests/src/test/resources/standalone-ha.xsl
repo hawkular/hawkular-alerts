@@ -34,10 +34,6 @@
   <!-- add system properties -->
   <xsl:template name="system-properties">
     <system-properties>
-      <property>
-        <xsl:attribute name="name">hawkular.backend</xsl:attribute>
-        <xsl:attribute name="value">&#36;{hawkular.backend:embedded_cassandra}</xsl:attribute>
-      </property>
     </system-properties>
   </xsl:template>
 
@@ -47,37 +43,6 @@
       <xsl:apply-templates select="node()|@*"/>
     </xsl:copy>
     <xsl:call-template name="system-properties"/>
-  </xsl:template>
-
-  <xsl:template match="node()[name(.)='cache-container'][1]">
-    <xsl:copy>
-      <xsl:copy-of select="node()|@*"/>
-    </xsl:copy>
-    <cache-container name="hawkular-alerts" default-cache="triggers" statistics-enabled="true">
-      <transport lock-timeout="60000"/>
-      <replicated-cache name="partition" mode="SYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-      <replicated-cache name="triggers" mode="ASYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-      <replicated-cache name="data" mode="ASYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-      <replicated-cache name="publish" mode="ASYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-      <replicated-cache name="dataIds" mode="ASYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-      <replicated-cache name="schema" mode="SYNC">
-        <transaction mode="NON_XA"/>
-        <locking acquire-timeout="100000" />
-      </replicated-cache>
-      <replicated-cache name="globalActions" mode="ASYNC">
-        <transaction mode="BATCH"/>
-      </replicated-cache>
-    </cache-container>
   </xsl:template>
 
   <xsl:template match="node()[name(.)='periodic-rotating-file-handler']">

@@ -31,6 +31,7 @@ import org.junit.Test;
  */
 public class ExpressionTagQueryParserTest {
 
+    @SuppressWarnings("unchecked")
     ExpressionTagQueryParser parser = new ExpressionTagQueryParser(prefix -> Collections.EMPTY_SET);
 
     @Test
@@ -55,6 +56,10 @@ public class ExpressionTagQueryParserTest {
         String e5 = "tagA IN ['abc', 'def', 'ghi']";
         assertEquals("tagA in ['abc','def','ghi']", parser.parse(e5));
         assertEquals("[tagA, in, ['abc','def','ghi']]", getTokens(parser.parse(e5)).toString());
+
+        String e5s1 = "tagA IN ['abc','def','ghi']";
+        assertEquals("tagA in ['abc','def','ghi']", parser.parse(e5s1));
+        assertEquals("[tagA, in, ['abc','def','ghi']]", getTokens(parser.parse(e5s1)).toString());
 
         String e6 = "tagA NOT IN ['abc', 'def', 'ghi']";
         assertEquals("tagA not in ['abc','def','ghi']", parser.parse(e6));
@@ -177,5 +182,18 @@ public class ExpressionTagQueryParserTest {
         String e2 = "tagA IN ['a b', 'c d'] ";
 
         assertEquals("[tagA, in, ['a b','c d']]", getTokens(parser.parse(e2)).toString());
+    }
+
+    @Test
+    public void t09_checkSpecialCharsInValue() throws Exception {
+        String e1 = "test_tag = '/t;hawkular/f;my-agent/r;Local%20DMR~~_Server Availability'";
+
+        assertEquals("[test_tag, =, '/t;hawkular/f;my-agent/r;Local%20DMR~~_Server Availability']",
+                getTokens(parser.parse(e1)).toString());
+
+        String e2 = "test_tag = '\\/t;hawkular\\/f;my-agent\\/r;Local%20DMR\\~\\~_Server Availability'";
+
+        assertEquals("[test_tag, =, '\\/t;hawkular\\/f;my-agent\\/r;Local%20DMR\\~\\~_Server Availability']",
+                getTokens(parser.parse(e2)).toString());
     }
 }

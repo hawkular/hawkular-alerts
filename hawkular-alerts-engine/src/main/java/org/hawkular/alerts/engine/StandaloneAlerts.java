@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,14 +33,12 @@ import org.hawkular.alerts.api.services.AlertsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.engine.impl.AlertsContext;
 import org.hawkular.alerts.engine.impl.AlertsEngineImpl;
-import org.hawkular.alerts.engine.impl.CassActionsServiceImpl;
-import org.hawkular.alerts.engine.impl.CassAlertsServiceImpl;
-import org.hawkular.alerts.engine.impl.CassDefinitionsServiceImpl;
 import org.hawkular.alerts.engine.impl.DroolsRulesEngineImpl;
 import org.hawkular.alerts.engine.impl.PropertiesServiceImpl;
+import org.hawkular.alerts.engine.impl.ispn.IspnActionsServiceImpl;
+import org.hawkular.alerts.engine.impl.ispn.IspnAlertsServiceImpl;
+import org.hawkular.alerts.engine.impl.ispn.IspnDefinitionsServiceImpl;
 import org.jboss.logging.Logger;
-
-import com.datastax.driver.core.Session;
 
 /**
  * Factory helper for standalone use cases.
@@ -57,36 +55,30 @@ public class StandaloneAlerts {
 
     private PropertiesServiceImpl propertiesService = null;
     private AlertsContext alertsContext = null;
-    private CassActionsServiceImpl actions = null;
-    private CassAlertsServiceImpl alerts = null;
-    private CassDefinitionsServiceImpl definitions = null;
+    private IspnActionsServiceImpl actions = null;
+    private IspnAlertsServiceImpl alerts = null;
+    private IspnDefinitionsServiceImpl definitions = null;
     private AlertsEngineImpl engine = null;
     private DroolsRulesEngineImpl rules = null;
-    private StandaloneExecutorService executor = new StandaloneExecutorService();
 
-    private StandaloneAlerts(Session session) {
-        actions = new CassActionsServiceImpl();
+    private StandaloneAlerts() {
+        actions = new IspnActionsServiceImpl();
         rules = new DroolsRulesEngineImpl();
         engine = new AlertsEngineImpl();
-        definitions = new CassDefinitionsServiceImpl();
+        definitions = new IspnDefinitionsServiceImpl();
         propertiesService = new PropertiesServiceImpl();
-        alerts = new CassAlertsServiceImpl();
-        alerts.setSession(session);
-        alerts.setExecutor(executor);
+        alerts = new IspnAlertsServiceImpl();
         alerts.setProperties(propertiesService);
         alerts.init();
         alertsContext = new AlertsContext();
 
-        definitions.setSession(session);
         definitions.setAlertsEngine(engine);
         definitions.setAlertsContext(alertsContext);
         definitions.setProperties(propertiesService);
         definitions.init();
 
-        actions.setSession(session);
         actions.setAlertsContext(alertsContext);
         actions.setDefinitions(definitions);
-        actions.setExecutor(executor);
 
         engine.setDefinitions(definitions);
         engine.setActions(actions);
@@ -103,23 +95,23 @@ public class StandaloneAlerts {
         }
     }
 
-    public static synchronized DefinitionsService getDefinitionsService(Session session) {
+    public static synchronized DefinitionsService getDefinitionsService() {
         if (instance == null) {
-            instance = new StandaloneAlerts(session);
+            instance = new StandaloneAlerts();
         }
         return instance.definitions;
     }
 
-    public static synchronized AlertsService getAlertsService(Session session) {
+    public static synchronized AlertsService getAlertsService() {
         if (instance == null) {
-            instance = new StandaloneAlerts(session);
+            instance = new StandaloneAlerts();
         }
         return instance.alerts;
     }
 
-    public static synchronized ActionsService getActionsService(Session session) {
+    public static synchronized ActionsService getActionsService() {
         if (instance == null) {
-            instance = new StandaloneAlerts(session);
+            instance = new StandaloneAlerts();
         }
         return instance.actions;
     }

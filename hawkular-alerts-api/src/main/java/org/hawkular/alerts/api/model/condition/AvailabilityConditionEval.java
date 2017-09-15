@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -97,8 +97,10 @@ public class AvailabilityConditionEval extends ConditionEval {
     }
 
     @Override
-    public String getLog() {
-        return condition.getLog(value) + ", evalTimestamp=" + evalTimestamp + ", dataTimestamp=" + dataTimestamp;
+    public void updateDisplayString() {
+        String s = String.format("Avail: %s[%s] is %s", condition.getDataId(), value.name(),
+                condition.getOperator().name());
+        setDisplayString(s);
     }
 
     @Override

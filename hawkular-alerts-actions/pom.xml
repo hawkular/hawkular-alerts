@@ -39,6 +39,7 @@
       <groupId>org.hawkular.alerts</groupId>
       <artifactId>hawkular-alerts-api</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
 
   </dependencies>

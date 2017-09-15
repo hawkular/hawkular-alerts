@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
@@ -37,6 +36,7 @@ import org.hawkular.alerts.api.model.condition.CompareCondition;
 import org.hawkular.alerts.api.model.condition.Condition;
 import org.hawkular.alerts.api.services.DefinitionsService;
 import org.hawkular.alerts.api.services.PropertiesService;
+import org.hawkular.alerts.cache.IspnCacheManager;
 import org.hawkular.alerts.engine.log.MsgLogger;
 import org.hawkular.alerts.filter.CacheKey;
 import org.infinispan.Cache;
@@ -74,16 +74,17 @@ public class PublishCacheManager {
     DefinitionsService definitions;
 
     // It stores a list of dataIds used per key (tenantId, triggerId).
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/dataIds")
     private Cache<TriggerKey, Set<String>> publishDataIdsCache;
 
     // It stores a list of triggerIds used per key (tenantId, dataId).
-    // This cache is used by CacheClient to check which dataIds are published and forwarded from metrics.
-    @Resource(lookup = "java:jboss/infinispan/cache/hawkular-alerts/publish")
+    // This cache is used by CacheClient to check which dataIds are active
     private Cache<CacheKey, Set<String>> publishCache;
 
     @PostConstruct
     public void init() {
+        publishDataIdsCache = IspnCacheManager.getCacheManager().getCache("dataIds");
+        publishCache = IspnCacheManager.getCacheManager().getCache("publish");
+
         boolean disablePublish = Boolean.parseBoolean(properties.getProperty(DISABLE_PUBLISH_FILTERING_PROP,
                 DISABLE_PUBLISH_FILTERING_ENV, "false"));
         boolean resetCache = Boolean.parseBoolean(properties.getProperty(RESET_PUBLISH_CACHE_PROP,

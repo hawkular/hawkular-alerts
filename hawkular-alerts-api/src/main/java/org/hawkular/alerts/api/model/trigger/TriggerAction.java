@@ -107,6 +107,17 @@ public class TriggerAction implements Serializable {
         this(tenantId, actionPlugin, actionId, new HashSet<>(), calendar);
     }
 
+    public TriggerAction(TriggerAction triggerAction) {
+        if (triggerAction == null) {
+            throw new IllegalArgumentException("triggerAction must be not null");
+        }
+        this.tenantId = triggerAction.getTenantId();
+        this.actionPlugin = triggerAction.getActionPlugin();
+        this.actionId = triggerAction.getActionId();
+        this.states = new HashSet<>(triggerAction.getStates());
+        this.calendar = triggerAction.getCalendar() != null ? new TimeConstraint(triggerAction.getCalendar()) : null;
+    }
+
     public TriggerAction(String tenantId, String actionPlugin, String actionId, Set<String> states,
                          TimeConstraint calendar) {
         this.tenantId = tenantId;
