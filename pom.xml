@@ -21,16 +21,11 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.hawkular</groupId>
-    <artifactId>hawkular-parent</artifactId>
-    <version>55</version>
-  </parent>
-
   <groupId>org.hawkular.alerts</groupId>
   <artifactId>hawkular-alerts</artifactId>
   <version>2.0.0.Final-SNAPSHOT</version>
   <packaging>pom</packaging>
+
 
   <name>Hawkular Alerting</name>
   <description>Alerting subsystem for Hawkular</description>
@@ -129,16 +124,233 @@
     <version.org.wildfly.plugins>1.2.0.Alpha1</version.org.wildfly.plugins>
     <version.pl.project13.maven>2.2.1</version.pl.project13.maven>
     <distribution.name>hawkular-alerting</distribution.name>
+
+    <!-- hawkular-build-tools are used by both maven-checkstyle-plugin and license-plugin -->
+    <version.org.hawkular.hawkular-build-tools>17</version.org.hawkular.hawkular-build-tools>
+
+    <!-- license-maven-plugin -->
+    <version.com.mycila.license-maven-plugin>2.11</version.com.mycila.license-maven-plugin>
+    <license.headerTemplatePath>hawkular-license/jboss-apache-2-template.txt</license.headerTemplatePath>
+    <license.failIfMissing>true</license.failIfMissing>
+    <license.failIfUnknown>true</license.failIfUnknown>
+
+    <!-- Checkstyle and maven-checkstyle-plugin -->
+    <version.maven-checkstyle-plugin>2.17</version.maven-checkstyle-plugin>
+    <version.com.puppycrawl.tools.checkstyle>6.8</version.com.puppycrawl.tools.checkstyle>
+    <!-- the default value pointing at checkstyle.xml in hawkular-build-tools -->
+    <checkstyle.configLocation>hawkular-checkstyle/checkstyle.xml</checkstyle.configLocation>
+    <checkstyle.consoleOutput>true</checkstyle.consoleOutput>
+    <checkstyle.failOnError>true</checkstyle.failOnError>
+    <hawkular.checkstyle.includes>
+      src/**/*.java,
+      *.xml,
+      src/**/*.xml,
+      src/**/*.js,
+      *.adoc,
+      src/**/*.adoc,
+      *.conf,
+      src/**/*.conf,
+      src/**/*.css,
+      Dockerfile,
+      src/**/Dockerfile,
+      src/**/*.groovy,
+      *.html,
+      src/**/*.html,
+      src/**/*.json,
+      src/**/*.js.map,
+      *.md,
+      src/**/*.md,
+      *.properties,
+      src/**/*.properties,
+      *.sh,
+      src/**/*.sh,
+      *.txt,
+      src/**/*.txt,
+      *.yml,
+      src/**/*.yml,
+      src/**/*.xsl,
+      src/**/*.yaml,
+    </hawkular.checkstyle.includes>
+    <hawkular.checkstyle.excludes>
+      release.properties,
+      **/*.d.ts,
+      **/vendor/*.js,
+    </hawkular.checkstyle.excludes>
+    <!-- the default value pointing at suppressions.xml in hawkular-build-tools -->
+    <checkstyle.suppressions.file>hawkular-checkstyle/suppressions.xml</checkstyle.suppressions.file>
+
+    <!-- XML Plugin -->
+    <version.org.codehaus.mojo.xml-maven-plugin>1.0.1</version.org.codehaus.mojo.xml-maven-plugin>
   </properties>
 
+  <build>
+
+    <pluginManagement>
+      <plugins>
+
+        <plugin>
+          <groupId>com.mycila</groupId>
+          <artifactId>license-maven-plugin</artifactId>
+          <version>${version.com.mycila.license-maven-plugin}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${version.maven-checkstyle-plugin}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>xml-maven-plugin</artifactId>
+          <version>${version.org.codehaus.mojo.xml-maven-plugin}</version>
+        </plugin>
+
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <configuration>
+          <header>${license.headerTemplatePath}</header>
+          <excludes combine.children="append">
+            <exclude>**/.bowerrc</exclude>
+            <exclude>**/.jshintrc</exclude>
+            <exclude>**/LICENSE</exclude>
+            <exclude>**/README</exclude>
+            <exclude>**/README.*</exclude>
+            <exclude>**/.travis.force.build</exclude>
+            <exclude>**/*.adoc</exclude>
+            <exclude>**/*.d.ts</exclude>
+            <exclude>**/*.eot</exclude>
+            <exclude>**/*.otf</exclude>
+            <exclude>**/*.ttf</exclude>
+            <exclude>**/*.svg</exclude>
+            <exclude>**/*.woff</exclude>
+            <exclude>**/*.html</exclude>
+            <exclude>**/*.htm</exclude>
+            <exclude>.mvn/jvm.config</exclude>
+            <exclude>.mvn/maven.config</exclude>
+            <exclude>mvnw</exclude>
+            <exclude>mvnw.cmd</exclude>
+            <exclude>**/*.rules</exclude>
+            <exclude>**/*.tokens</exclude>
+          </excludes>
+          <mapping>
+            <conf>SCRIPT_STYLE</conf>
+            <css>SLASHSTAR_STYLE</css>
+            <Dockerfile>SCRIPT_STYLE</Dockerfile>
+            <drl>SLASHSTAR_STYLE</drl>
+            <g4>SLASHSTAR_STYLE</g4>
+            <groovy>SLASHSTAR_STYLE</groovy>
+            <java>SLASHSTAR_STYLE</java>
+            <yaml>SCRIPT_STYLE</yaml>
+            <yml>SCRIPT_STYLE</yml>
+          </mapping>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.mycila</groupId>
+            <artifactId>license-maven-plugin-git</artifactId>
+            <version>${version.com.mycila.license-maven-plugin}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.hawkular</groupId>
+            <artifactId>hawkular-build-tools</artifactId>
+            <version>${version.org.hawkular.hawkular-build-tools}</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <configLocation>${checkstyle.configLocation}</configLocation>
+          <consoleOutput>${checkstyle.consoleOutput}</consoleOutput>
+          <failsOnError>${checkstyle.failOnError}</failsOnError>
+          <!-- Make includes relative to ${basedir} -->
+          <sourceDirectory>${basedir}</sourceDirectory>
+          <!-- in <includes>, it is necessary to avoid using an item-initial **/ wildcard
+               which pulls in also files from all submodules and target folders. We do not want
+               that. We rather have to name specific root folder patterns like *.extension
+               or directory/**/*.extension -->
+          <includes>${hawkular.checkstyle.includes}</includes>
+          <excludes>${hawkular.checkstyle.excludes}</excludes>
+          <!-- to override in a submodule, just redefine the checkstyle.suppressions.file property
+               in the given submodule's pom -->
+          <suppressionsLocation>${checkstyle.suppressions.file}</suppressionsLocation>
+          <useFile />
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${version.com.puppycrawl.tools.checkstyle}</version>
+            <exclusions>
+              <exclusion>
+                <groupId>com.sun</groupId>
+                <artifactId>tools</artifactId>
+              </exclusion>
+            </exclusions>
+          </dependency>
+          <dependency>
+            <groupId>org.hawkular</groupId>
+            <artifactId>hawkular-build-tools</artifactId>
+            <version>${version.org.hawkular.hawkular-build-tools}</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>check-style</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>xml-maven-plugin</artifactId>
+        <!-- *.xml and *.xsl are included by default -->
+        <executions>
+          <execution>
+            <id>xml-check-format</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check-format</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+
+  </build>
+
   <profiles>
+
     <profile>
       <id>default</id>
       <activation>
-        <property>
-          <name>!dummy</name>
-        </property>
+        <activeByDefault>true</activeByDefault>
       </activation>
+      <properties>
+        <checkstyle.skip>true</checkstyle.skip>
+        <license.skip>true</license.skip>
+        <xml.skip>true</xml.skip>
+      </properties>
       <modules>
         <module>alerters</module>
         <module>api</module>
@@ -151,29 +363,12 @@
         <module>dist</module>
         <module>ui</module>
       </modules>
-
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.mycila</groupId>
-            <artifactId>license-maven-plugin</artifactId>
-            <configuration>
-              <excludes combine.children="append">
-                <exclude>**/*.rules</exclude>
-                <exclude>**/*.tokens</exclude>
-              </excludes>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
 
     <profile>
       <id>actions</id>
       <activation>
-        <property>
-          <name>!dummy</name>
-        </property>
+        <activeByDefault>true</activeByDefault>
       </activation>
       <modules>
         <module>actions</module>
@@ -181,17 +376,25 @@
     </profile>
 
     <profile>
-      <id>skip-check</id>
-      <activation>
-        <property>
-          <name>!check</name>
-        </property>
-      </activation>
+      <id>check</id>
       <properties>
-        <checkstyle.skip>true</checkstyle.skip>
-        <license.skip>true</license.skip>
-        <xml.skip>true</xml.skip>
+        <checkstyle.skip>false</checkstyle.skip>
+        <license.skip>false</license.skip>
+        <xml.skip>false</xml.skip>
       </properties>
+      <modules>
+        <module>actions</module>
+        <module>alerters</module>
+        <module>api</module>
+        <module>commons</module>
+        <module>engine</module>
+        <module>engine-extensions</module>
+        <module>filter-api</module>
+        <module>itests</module>
+        <module>rest-handlers</module>
+        <module>dist</module>
+        <module>ui</module>
+      </modules>
     </profile>
 
   </profiles>
