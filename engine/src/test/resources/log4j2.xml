@@ -24,11 +24,8 @@
     </Console>
   </Appenders>
   <Loggers>
-    <Logger name="com.datastax.driver" level="warn" />
     <Logger name="com.thinkaurelius" level="warn" />
     <Logger name="io.netty" level="warn" />
-    <Logger name="org.apache.cassandra" level="warn" />
-    <Logger name="org.cassalog" level="warn" />
     <Logger name="org.drools" level="warn" />
     <Logger name="org.hawkular" level="warn" />
     <Logger name="org.hibernate" level="warn" />

@@ -60,7 +60,6 @@ public class StandaloneAlerts {
     private static final String ISPN_BACKEND_REINDEX_DEFAULT = "false";
     private static StandaloneAlerts instance;
     private static ExecutorService executor;
-    private static boolean cass;
     private static boolean ispnReindex;
 
     private boolean distributed;

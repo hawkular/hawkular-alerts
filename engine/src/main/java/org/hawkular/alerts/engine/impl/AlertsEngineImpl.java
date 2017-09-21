@@ -61,7 +61,7 @@ import org.hawkular.commons.log.MsgLogging;
 import org.hawkular.commons.properties.HawkularProperties;
 
 /**
- * Cassandra implementation for {@link org.hawkular.alerts.api.services.AlertsService}.
+ * Implementation for {@link org.hawkular.alerts.api.services.AlertsService}.
  * This implementation processes data asynchronously using a buffer queue.
  *
  * The engine may run in single-node or distributed (i.e. multi-node/clustered) mode.

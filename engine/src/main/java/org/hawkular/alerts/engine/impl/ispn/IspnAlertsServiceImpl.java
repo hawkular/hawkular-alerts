@@ -24,6 +24,7 @@ import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.Expressio
 import static org.hawkular.alerts.engine.util.Utils.extractAlertIds;
 import static org.hawkular.alerts.engine.util.Utils.extractCategories;
 import static org.hawkular.alerts.engine.util.Utils.extractEventIds;
+import static org.hawkular.alerts.engine.util.Utils.extractSeverity;
 import static org.hawkular.alerts.engine.util.Utils.extractStatus;
 import static org.hawkular.alerts.engine.util.Utils.extractTriggerIds;
 
@@ -516,7 +517,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
            }
            if (criteria.hasSeverityCriteria()) {
                query.append("and (");
-               Iterator<Severity> iterSev = criteria.getSeverities().iterator();
+                Iterator<Severity> iterSev = extractSeverity(criteria).iterator();
                while (iterSev.hasNext()) {
                    Severity severity = iterSev.next();
                    query.append("severity = '").append(severity.name()).append("' ");

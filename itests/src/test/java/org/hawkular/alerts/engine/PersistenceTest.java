@@ -3011,7 +3011,7 @@ public abstract class PersistenceTest {
     }
 
     // These tests would be nice in a separate class but I couldn't figure how to get multiple test classes
-    // running together without hitting Cassandra life-cycle issues.
+    // running together without hitting issues.
 
     private long nqs100Time = 0L;
 

@@ -48,13 +48,13 @@
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-filter-api</artifactId>
+      <artifactId>hawkular-alerts-events-aggregation</artifactId>
       <version>${project.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.hawkular.alerts</groupId>
-      <artifactId>hawkular-alerts-events-aggregation</artifactId>
+      <artifactId>hawkular-alerts-filter-api</artifactId>
       <version>${project.version}</version>
     </dependency>
 
