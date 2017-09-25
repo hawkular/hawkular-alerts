@@ -32,7 +32,6 @@
     <local-cache name="dataIds">
       <transaction mode="BATCH"/>
     </local-cache>
-    <local-cache name="schema"/>
     <local-cache name="globalActions">
       <transaction mode="BATCH"/>
     </local-cache>

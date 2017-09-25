@@ -36,10 +36,6 @@
     <replicated-cache name="dataIds">
       <transaction mode="BATCH"/>
     </replicated-cache>
-    <replicated-cache name="schema" remote-timeout="150000">
-      <locking acquire-timeout="100000" />
-      <transaction mode="NON_XA" locking="PESSIMISTIC"/>
-    </replicated-cache>
     <replicated-cache name="globalActions">
       <transaction mode="BATCH"/>
     </replicated-cache>
