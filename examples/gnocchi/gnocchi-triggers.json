@@ -1,0 +1,113 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "high-load",
+        "name": "High Load",
+        "description": "Alert when mean of load is > 2. Resolved automatically.",
+        "severity": "HIGH",
+        "enabled": true,
+        "autoResolve": true,
+        "autoResolveAlerts": true,
+        "tags": {
+          "Gnocchi": "Localhost instance"
+        },
+        "context": {
+          "metric.names": "load@load-0,load@load-1,load@load-2",
+          "metric.aggregation":"load=mean(load@load-0,load@load-1,load@load-2)"
+        },
+        "actions":[
+          {
+            "actionPlugin": "email",
+            "actionId": "email-to-admins"
+          }
+        ]
+      },
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "THRESHOLD",
+          "dataId": "load",
+          "operator": "GT",
+          "threshold": 2
+        },
+        {
+          "triggerMode": "AUTORESOLVE",
+          "type": "THRESHOLD",
+          "dataId": "load",
+          "operator": "LTE",
+          "threshold": 2
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "high-user-cpu",
+        "name": "High User CPU",
+        "description": "Alert when mean of user cpu is > 3.7M. Investigate manually.",
+        "severity": "MEDIUM",
+        "enabled": true,
+        "tags": {
+          "Gnocchi": "Localhost instance"
+        },
+        "context": {
+          "metric.names.regexp": "cpu-.@cpu-user-.*",
+          "metric.aggregation":"cpu-user=mean(cpu-.@cpu-user-.*)"
+        },
+        "actions":[
+          {
+            "actionPlugin": "email",
+            "actionId": "email-to-admins"
+          }
+        ]
+      },
+      "conditions":[
+        {
+          "type": "THRESHOLD",
+          "dataId": "cpu-user",
+          "operator": "GT",
+          "threshold": 3700000
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "id": "low-free-memory",
+        "name": "Low Free Memory",
+        "description": "Alert when Free Memory < 20% Memory Used.",
+        "severity": "CRITICAL",
+        "enabled": true,
+        "tags": {
+          "Gnocchi": "Localhost instance"
+        },
+        "context": {
+          "metric.names": "memory@memory-used-0,memory@memory-free-0"
+        },
+        "actions":[
+          {
+            "actionPlugin": "email",
+            "actionId": "email-to-admins"
+          }
+        ]
+      },
+      "conditions":[
+        {
+          "type": "COMPARE",
+          "dataId": "memory@memory-free-0",
+          "operator": "LT",
+          "dataId2": "memory@memory-used-0",
+          "data2Multiplier": 0.2
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "actionPlugin": "email",
+      "actionId": "email-to-admins",
+      "properties": {
+        "to": "admins@hawkular.org"
+      }
+    }
+  ]
+}
