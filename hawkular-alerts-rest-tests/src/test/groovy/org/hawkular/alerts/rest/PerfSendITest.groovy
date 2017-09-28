@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,22 +16,15 @@
  */
 package org.hawkular.alerts.rest
 
-import groovyx.gpars.dataflow.Promise
-import groovyx.net.http.ContentType
-import groovyx.net.http.RESTClient
 import org.hawkular.alerts.api.model.condition.Condition
 import org.hawkular.alerts.api.model.condition.ThresholdCondition
-import org.hawkular.alerts.api.model.dampening.Dampening
-import org.hawkular.alerts.api.model.dampening.Dampening.Type
 import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
-import org.hawkular.alerts.rest.AbstractITestBase
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
-import static groovyx.gpars.dataflow.Dataflow.task
 import static org.junit.Assert.assertEquals
 
 /**
@@ -42,7 +35,7 @@ import static org.junit.Assert.assertEquals
  */
 class PerfSendITest extends AbstractITestBase {
 
-    static Logger logger = LoggerFactory.getLogger(PerfSendITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(PerfSendITest.class)
 
     int numTriggers = 5000;
 

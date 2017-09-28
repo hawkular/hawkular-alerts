@@ -25,9 +25,10 @@ import org.hawkular.alerts.api.model.dampening.Dampening
 import org.hawkular.alerts.api.model.dampening.Dampening.Type
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+
 
 import static groovyx.gpars.dataflow.Dataflow.task
 import static org.junit.Assert.assertEquals
@@ -40,7 +41,7 @@ import static org.junit.Assert.assertEquals
  */
 class PerfCrudITest extends AbstractITestBase {
 
-    static Logger logger = LoggerFactory.getLogger(PerfCrudITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(PerfCrudITest.class)
 
     /*
         This test is designed to study performance on REST endpoints.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,9 +23,10 @@ import org.hawkular.alerts.api.model.data.Data
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.trigger.TriggerAction
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertTrue
  */
 class ClusterITest extends AbstractITestBase {
 
-    static Logger logger = LoggerFactory.getLogger(ClusterITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(ClusterITest.class)
 
     long startCall = 0, endCall = 0, timeCall = 0, totalCalls = 0, totalTime = 0, moreThan1Sec = 0;
 

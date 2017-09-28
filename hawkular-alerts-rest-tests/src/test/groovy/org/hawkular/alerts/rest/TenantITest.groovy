@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,9 +25,9 @@ import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.api.model.trigger.TriggerAction
 import org.hawkular.alerts.rest.AbstractITestBase
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import static org.hawkular.alerts.api.model.event.Alert.Status
 import static org.junit.Assert.assertEquals
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue
  */
 class TenantITest extends AbstractITestBase {
 
-    static Logger logger = LoggerFactory.getLogger(TenantITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(TenantITest.class)
 
     @Test
     void findPlugins() {

@@ -77,6 +77,7 @@
     <version.maven-patch-plugin>1.2</version.maven-patch-plugin>
     <version.org.antlr>4.6</version.org.antlr>
     <version.org.apache.commons.commons-math3>3.4.1</version.org.apache.commons.commons-math3>
+    <version.org.apache.logging.log4j>2.8.1</version.org.apache.logging.log4j>
     <version.org.apache.logging.log4j-elasticsearch>2.8</version.org.apache.logging.log4j-elasticsearch>
     <version.org.codehaus.jsr166-mirror>1.7.0</version.org.codehaus.jsr166-mirror>
     <version.org.codehaus.gpars>1.2.0</version.org.codehaus.gpars>
@@ -90,7 +91,6 @@
     <version.org.infinispan.product>8.5.0.Final</version.org.infinispan.product>
     <version.org.jboss.jboss-vfs>3.2.12.Final</version.org.jboss.jboss-vfs> <!-- match WF version -->
     <version.org.schwering>2.0.0.Alpha3</version.org.schwering>
-    <version.org.slf4j>1.7.2</version.org.slf4j>
     <version.org.yaml>1.11</version.org.yaml>
     <version.org.wildfly.plugins>1.2.0.Alpha1</version.org.wildfly.plugins>
   </properties>

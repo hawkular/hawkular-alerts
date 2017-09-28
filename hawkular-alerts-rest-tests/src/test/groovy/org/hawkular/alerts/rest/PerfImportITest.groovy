@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,9 +29,10 @@ import org.hawkular.alerts.api.model.trigger.FullTrigger
 import org.hawkular.alerts.api.model.trigger.Mode
 import org.hawkular.alerts.api.model.trigger.Trigger
 import org.hawkular.alerts.rest.AbstractITestBase
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+
 
 import static groovyx.gpars.dataflow.Dataflow.task
 import static org.junit.Assert.assertEquals
@@ -44,7 +45,7 @@ import static org.junit.Assert.assertEquals
  */
 class PerfImportITest extends AbstractITestBase {
 
-    static Logger logger = LoggerFactory.getLogger(PerfImportITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(PerfImportITest.class)
 
     Definitions prepareDefinitions(String prefix, int numTriggers) {
         Definitions definitions = new Definitions();

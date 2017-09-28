@@ -16,9 +16,10 @@
  */
 package org.hawkular.alerts.rest
 
+import org.hawkular.commons.log.MsgLogger
+import org.hawkular.commons.log.MsgLogging
 import org.junit.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+
 
 import static org.junit.Assert.assertEquals
 
@@ -29,7 +30,7 @@ import static org.junit.Assert.assertEquals
  */
 class ImportExportITest extends AbstractITestBase {
 
-    static Logger logger = LoggerFactory.getLogger(ImportExportITest.class)
+    static MsgLogger logger = MsgLogging.getMsgLogger(ImportExportITest.class)
 
     @Test
     void importExportTest() {
