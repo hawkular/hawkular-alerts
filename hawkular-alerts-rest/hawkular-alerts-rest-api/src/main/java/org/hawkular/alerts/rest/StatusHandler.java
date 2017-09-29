@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,8 +47,8 @@ import io.swagger.annotations.ApiOperation;
 @TenantRequired(false)
 public class StatusHandler {
     private static final String STATUS = "status";
-    private static final String STARTED = "STARTED";
-    private static final String FAILED = "FAILED";
+    private static final String UP = "UP";
+    private static final String DOWN = "DOWN";
     private static final String DISTRIBUTED = "distributed";
 
     @EJB
@@ -64,7 +64,7 @@ public class StatusHandler {
             notes = "Status fields:" +
                     " + \n" +
                     "{ + \n" +
-                    "\"status\":\"<STARTED>|<FAILED>\", + \n" +
+                    "\"status\":\"<UP>|<DOWN>\", + \n" +
                     "\"Implementation-Version\":\"<Version>\", + \n" +
                     "\"Built-From-Git-SHA1\":\"<Git-SHA1>\", + \n" +
                     "\"distributed\":\"<true|false>\", + \n" +
@@ -76,9 +76,9 @@ public class StatusHandler {
         status.putAll(manifestUtil.getFrom(servletContext));
         try {
             if (statusService.isStarted()) {
-                status.put(STATUS, STARTED);
+                status.put(STATUS, UP);
             } else {
-                status.put(STATUS, FAILED);
+                status.put(STATUS, DOWN);
             }
             boolean distributed = statusService.isDistributed();
             status.put(DISTRIBUTED, Boolean.toString(distributed));
@@ -86,7 +86,7 @@ public class StatusHandler {
                 status.putAll(statusService.getDistributedStatus());
             }
         } catch (Exception e) {
-            status.put(STATUS, FAILED);
+            status.put(STATUS, DOWN);
         }
         return ResponseUtil.ok(status);
     }

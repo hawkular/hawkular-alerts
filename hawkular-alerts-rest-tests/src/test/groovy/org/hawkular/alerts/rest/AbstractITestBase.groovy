@@ -81,7 +81,7 @@ class AbstractITestBase {
 
         def resp = client.get(path: "status")
         def tries = 100
-        while (tries > 0 && resp.data.status != "STARTED") {
+        while (tries > 0 && resp.data.status != "UP") {
             Thread.sleep(500);
             resp = client.get(path: "status")
             tries--
