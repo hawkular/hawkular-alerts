@@ -65,12 +65,22 @@ import okhttp3.Response;
  * Defining a Trigger to be processed by the Prometheus External Alerter:
  *   [Required]    trigger.tags["prometheus"] // the value is ignored
  *   [Optional]    trigger.context["prometheus.frequency"] = "<seconds between queries to Prometheus, default = 120>"
- *                 - note that the same frequency will apply to all Prometheus external conditions on the trigger
+ *                 - note: the same frequency will apply to all Prometheus external conditions on the trigger
+ *   [Optional]    trigger.context["prometheus.url"] = "<url, default = global setting>"
+ *   [Optional]    trigger.context["$<ExpressionToken>"] = "<ExpressionTokenReplacement>"
+ *                 - note: useful for group triggers
+ *                 -     : replace token (key) with (value) in all ExternalConditions
+ *                 -     : token keys must be prefixed with '$'
+ *                 -     : for example:
+ *                 -     :   trigger.context["$Handler"] = "query"
+ *                 -     :   expression = "rate(http_requests_total{handler="$Handler",code=\"200\"}[5m])>0"
+ *                 -     :   resolved expression: "rate(http_requests_total{handler="query",code=\"200\"}[5m])>0"
  *
  * Defining an ExternalCondition to be processed by the Prometheus External Alerter:
  *   [Required]    the owning trigger must be defined as specified above.
  *   [Required]    externalcondition.alerterId = "prometheus"
  *   [Required]    externalcondition.expression = <BooleanExpression> | <ALERTSExpression>
+ *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
@@ -81,7 +91,7 @@ public class ConditionManager {
 
     private static final String PROMETHEUS_ALERTER = "hawkular-alerts.prometheus-alerter";
     private static final String PROMETHEUS_ALERTER_ENV = "PROMETHEUS_ALERTER";
-    private static final String PROMETHEUS_ALERTER_DEFAULT = "false";  // do not turn on prom-alerter by default
+    private static final String PROMETHEUS_ALERTER_DEFAULT = "true";
 
     private static final String PROMETHEUS_URL = "hawkular-alerts.prometheus-url";
     private static final String PROMETHEUS_URL_ENV = "PROMETHEUS_URL";
@@ -138,6 +148,7 @@ public class ConditionManager {
         if (prometheusAlerter) {
             log.infof("Starting Hawkular Prometheus External Alerter");
             definitions.registerDistributedListener(events -> refresh(events));
+            initialRefresh();
         }
     }
 
@@ -151,6 +162,18 @@ public class ConditionManager {
         if (null != expressionExecutor) {
             expressionExecutor.shutdown();
             expressionExecutor = null;
+        }
+    }
+
+    private void initialRefresh() {
+        try {
+            Collection<Trigger> triggers = definitions.getAllTriggersByTag(ALERTER_ID, "*");
+            triggers.stream()
+                    .filter(t -> t.isLoadable())
+                    .forEach(t -> activeTriggers.put(new TriggerKey(t.getTenantId(), t.getId()), t));
+            update();
+        } catch (Exception e) {
+            log.error("Failed to fetch Triggers for external conditions.", e);
         }
     }
 
@@ -171,7 +194,7 @@ public class ConditionManager {
                         case UPDATE:
                             Trigger trigger = definitions.getTrigger(distEvent.getTenantId(),
                                     distEvent.getTriggerId());
-                            if (trigger != null && trigger.getTags().containsKey(ALERTER_ID)) {
+                            if (trigger != null && trigger.getTags().containsKey(ALERTER_ID) && !trigger.isGroup()) {
                                 if (!trigger.isLoadable()) {
                                     activeTriggers.remove(triggerKey);
                                     break;
@@ -216,6 +239,20 @@ public class ConditionManager {
                         ExternalCondition externalCondition = (ExternalCondition) condition;
                         if (ALERTER_ID.equals(externalCondition.getAlerterId())) {
                             log.debugf("Found Prometheus ExternalCondition %s", externalCondition);
+
+                            // replace tokens in the expression with any provided in the condition context
+                            // ExternalCondition.expession is part of the hash, so make sure it is updated now,
+                            // before being used as a key
+                            trigger.getContext().entrySet().stream()
+                                    .filter(e -> e.getKey().startsWith("$"))
+                                    .forEach(e -> {
+                                        String updated = externalCondition.getExpression().replace(e.getKey(),
+                                                e.getValue());
+                                        externalCondition.setExpression(updated);
+                                        log.debugf("Replaced token `%s` with `%s`. Updated expression: `%s`",
+                                                e.getKey(), e.getValue(), externalCondition.getExpression());
+                                    });
+
                             activeConditions.add(externalCondition);
                             if (expressionFutures.containsKey(externalCondition)) {
                                 log.debugf("Skipping, already evaluating %s", externalCondition);
@@ -285,6 +322,7 @@ public class ConditionManager {
                 StringBuffer url = new StringBuffer(properties.get(URL));
                 url.append("/api/v1/query?query=");
                 url.append(externalCondition.getExpression());
+                log.warnf("URL: %s", url.toString());
                 Request request = restClient.buildJsonGetRequest(url.toString(), null);
                 OkHttpClient httpClient = restClient.getHttpClient();
                 Response response = httpClient.newCall(request).execute();

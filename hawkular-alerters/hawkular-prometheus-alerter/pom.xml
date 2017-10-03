@@ -33,16 +33,14 @@
 
   <modules>
     <module>hawkular-prometheus-alerter-lib</module>
+    <module>deployments/hawkular-prometheus-alerter-standalone</module>
   </modules>
 
   <profiles>
     <profile>
-      <id>standalone</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
+      <id>prometheus</id>
       <modules>
-        <module>deployments/hawkular-prometheus-alerter-standalone</module>
+        <module>hawkular-prometheus-alerter-itest</module>
       </modules>
     </profile>
   </profiles>

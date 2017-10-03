@@ -2,9 +2,10 @@
   "triggers":[
     {
       "trigger":{
-        "id": "prom-alert-trigger",
-        "name": "Prometheus Alert Trigger",
-        "description": "Alert on any firing prometheus alert, check every 5 seconds. AutoDisable after 1 alert.",
+        "type": "GROUP",
+        "id": "prom-group-trigger",
+        "name": "Prometheus Group Trigger",
+        "description": "Alert on any http GET with activity in the last 5 minutes, check every 5 seconds. AutoDisable after 1 alert.",
         "severity": "HIGH",
         "enabled": true,
         "autoDisable": true,
@@ -19,8 +20,8 @@
         {
           "type": "EXTERNAL",
           "alerterId": "prometheus",
-          "dataId": "prometheus-alert-test",
-          "expression": "ALERTS{job=\"prometheus\",alertname=\"InstanceUp\",alertstate=\"firing\"}"
+          "dataId": "group-dataId",
+          "expression": "rate(http_requests_total{handler=\"query\",code=\"$CODE\",job=\"$JOB\"}[5m])>0"
         }
       ]
     }

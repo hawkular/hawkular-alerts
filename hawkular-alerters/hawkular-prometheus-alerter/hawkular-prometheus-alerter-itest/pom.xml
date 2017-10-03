@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
+    and other contributors as indicated by the @author tags.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.hawkular.alerts</groupId>
+    <artifactId>hawkular-prometheus-alerter</artifactId>
+    <version>1.8.0.Final-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>hawkular-prometheus-alerter-itest</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Hawkular Alerting: Prometheus Alerter ITests</name>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>org.hawkular.alerts</groupId>
+      <artifactId>hawkular-alerts-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- Wildfly dependencies -->
+
+    <dependency>
+      <groupId>javax</groupId>
+      <artifactId>javaee-api</artifactId>
+      <version>${version.javaee.spec}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
+      <artifactId>jboss-logging</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
+      <artifactId>jboss-logging-annotations</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
+      <artifactId>jboss-logging-processor</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>3.4.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp-ws</artifactId>
+      <version>3.4.2</version>
+    </dependency>
+
+    <!-- Tests -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>${version.org.apache.logging.log4j}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${version.org.apache.logging.log4j}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-all</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.codehaus.groovy.modules.http-builder</groupId>
+      <artifactId>http-builder</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>hawkular-prometheus-alerter-standalone</artifactId>
+      <version>${project.version}</version>
+      <type>war</type>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+
+    <profile>
+      <id>prometheus</id>
+      <properties>
+        <hawkular.home>${project.build.directory}</hawkular.home>
+        <hawkular.wildfly>${hawkular.home}/wildfly-${version.org.wildfly}</hawkular.wildfly>
+        <hawkular.conf>${hawkular.wildfly}/standalone/configuration</hawkular.conf>
+        <hawkular.deployments>${hawkular.wildfly}/standalone/deployments</hawkular.deployments>
+        <hawkular.host>127.0.0.1</hawkular.host>
+        <hawkular.port>8080</hawkular.port>
+        <hawkular.port.offset>0</hawkular.port.offset>
+        <hawkular.path>/hawkular/alerts/</hawkular.path>
+        <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
+        <hawkular.management.port>9990</hawkular.management.port>
+        <hawkular.log.alerts>INFO</hawkular.log.alerts>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.wildfly</groupId>
+          <artifactId>wildfly-dist</artifactId>
+          <version>${version.org.wildfly}</version>
+          <type>tar.gz</type>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <!-- Setup WildFly with hAlerts -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>unpack-wildfly</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>unpack-dependencies</goal>
+                </goals>
+                <configuration>
+                  <includeGroupIds>org.wildfly</includeGroupIds>
+                  <includeArtifactIds>wildfly-dist</includeArtifactIds>
+                  <outputDirectory>${hawkular.home}</outputDirectory>
+                </configuration>
+              </execution>
+              <execution>
+                <id>install-hawkular-alerts</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>copy</goal>
+                </goals>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-rest-standalone</artifactId>
+                      <version>${project.version}</version>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-prometheus-alerter-standalone</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-prometheus-alerter.war</destFileName>
+                    </artifactItem>
+                  </artifactItems>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Install hawkular-alerts demo data for itests -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>copy-users-data</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${hawkular.conf}</outputDirectory>
+                  <overwrite>true</overwrite>
+                  <resources>
+                    <resource>
+                      <directory>${project.basedir}/src/test/resources</directory>
+                      <includes>
+                        <include>application-roles.properties</include>
+                        <include>application-users.properties</include>
+                      </includes>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Configure hawkular-alerts in standalone.xml -->
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>xml-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>transform-standalone-xml</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>transform</goal>
+                </goals>
+                <configuration>
+                  <transformationSets>
+                    <transformationSet>
+                      <dir>${hawkular.conf}</dir>
+                      <stylesheet>src/test/resources/standalone-hawkular.xsl</stylesheet>
+                      <includes>
+                        <include>standalone.xml</include>
+                      </includes>
+                      <outputDir>${hawkular.conf}</outputDir>
+                    </transformationSet>
+                  </transformationSets>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Start wildfly -->
+          <plugin>
+            <groupId>org.wildfly.plugins</groupId>
+            <artifactId>wildfly-maven-plugin</artifactId>
+            <configuration>
+              <jboss-home>${hawkular.wildfly}</jboss-home>
+              <skip>${skipTests}</skip>
+              <startupTimeout>240</startupTimeout>
+              <port>${hawkular.management.port}</port>
+              <javaOpts>
+                <javaOpt>-server</javaOpt>
+                <javaOpt>-Xms64m</javaOpt>
+                <javaOpt>-Xmx512m</javaOpt>
+                <javaOpt>-Djava.net.preferIPv4Stack=true</javaOpt>
+                <javaOpt>-Djboss.modules.system.pkgs=org.jboss.byteman</javaOpt>
+                <javaOpt>-Djava.awt.headless=true</javaOpt>
+                <javaOpt>-Djboss.bind.address=${hawkular.host}</javaOpt>
+                <javaOpt>-Djboss.socket.binding.port-offset=${hawkular.port.offset}</javaOpt>
+                <javaOpt>-Dkeycloak.import=${project.build.directory}/${project.build.finalName}/standalone/configuration/hawkular-realm-for-dev.json</javaOpt>
+                <javaOpt>-Dmail.smtp.host=localhost</javaOpt>
+                <javaOpt>-Dmail.smtp.port=2525</javaOpt>
+                <javaOpt>-Dhawkular.log.alerts=${hawkular.log.alerts}</javaOpt>
+                <javaOpt>-Dhawkular.allowed-cors-origins=http://test.hawkular.org,https://secure.hawkular.io</javaOpt>
+                <javaOpt>-Dhawkular.allowed-cors-access-control-allow-headers=random-header1,random-header2</javaOpt>
+                <!-- <javaOpt>-Xdebug</javaOpt>  -->
+                <!-- <javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt> -->
+              </javaOpts>
+            </configuration>
+            <executions>
+              <execution>
+                <id>start-wildfly</id>
+                <phase>pre-integration-test</phase>
+                <configuration>
+                  <server-config>standalone.xml</server-config>
+                </configuration>
+                <goals>
+                  <goal>start</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>stop-wildfly</id>
+                <phase>post-integration-test</phase>
+                <goals>
+                  <goal>shutdown</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Configure integration tests -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <systemPropertyVariables>
+                <hawkular.host>${hawkular.host}</hawkular.host>
+                <hawkular.port>${hawkular.port}</hawkular.port>
+                <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
+                <hawkular.test.origin>http://test.hawkular.org</hawkular.test.origin>
+                <hawkular.test.access-control-allow-headers>random-header1,random-header2</hawkular.test.access-control-allow-headers>
+              </systemPropertyVariables>
+            </configuration>
+            <executions>
+              <execution>
+                <id>exec-rest-tests</id>
+                <goals>
+                  <goal>integration-test</goal>
+                </goals>
+                <configuration>
+                  <includes>
+                    <include>org/hawkular/alerter/prometheus/PrometheusITest.class</include>
+                  </includes>
+                </configuration>
+              </execution>
+              <execution>
+                <id>final-verify</id>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

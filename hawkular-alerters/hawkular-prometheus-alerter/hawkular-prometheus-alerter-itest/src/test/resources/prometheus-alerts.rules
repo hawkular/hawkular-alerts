@@ -1,5 +1,5 @@
 # The prometheus config.yml should be edited to point at this rules file for the manual itest to work
-ALERT InstanceUp
+ALERT GlobalInstanceUp
   IF up == 1
   ANNOTATIONS {
     summary = "Instance {{ $labels.instance }} down",

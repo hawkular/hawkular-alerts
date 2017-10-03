@@ -4,7 +4,7 @@
       "trigger":{
         "id": "prom-trigger",
         "name": "Prometheus Trigger",
-        "description": "Alert on any prometheus http request with activity in the last 5 minutes, check every 5 seconds. AutoDisable after 1 alert.",
+        "description": "Alert on any successful prometheus http GET with activity in the last 5 minutes, check every 5 seconds. AutoDisable after 1 alert.",
         "severity": "HIGH",
         "enabled": true,
         "autoDisable": true,
@@ -20,7 +20,7 @@
           "type": "EXTERNAL",
           "alerterId": "prometheus",
           "dataId": "prometheus-test",
-          "expression": "rate(http_requests_total{handler=\"query\",job=\"prometheus\"}[5m])>0"
+          "expression": "rate(http_requests_total{handler=\"query\",code=\"200\",job=\"prometheus\"}[5m])>0"
         }
       ]
     }

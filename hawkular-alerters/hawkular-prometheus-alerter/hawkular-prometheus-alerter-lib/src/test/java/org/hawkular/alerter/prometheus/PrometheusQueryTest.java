@@ -20,8 +20,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.Arrays;
 
-import org.junit.Ignore;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,15 +33,14 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 /**
+ * Requires manually running Prom on localhost:9090
+ *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
 public class PrometheusQueryTest {
 
-
-    @Ignore // Requires manually running Prom on localhost:9090
     @Test
-    @SuppressWarnings("unchecked")
     public void queryTest() throws Exception {
 
         HttpClientBuilder restClient = new HttpClientBuilder(false, "ignored", "ignored", false, null, null,
@@ -83,4 +84,19 @@ public class PrometheusQueryTest {
             }
         }
     }
+
+    @Test
+    public void queryEncodedUrl() throws Exception {
+        HttpClientBuilder restClient = new HttpClientBuilder(false, "ignored", "ignored", false, null, null,
+                "ignored", "ignored", 15, 600);
+        StringBuffer url = new StringBuffer("http://localhost:9090/api/v1/query?");
+        BasicNameValuePair param = new BasicNameValuePair("query",
+                "rate(http_requests_total{handler=\"query\",job=\"prometheus\"}[5m])>0");
+        url.append(URLEncodedUtils.format(Arrays.asList(param), "UTF-8"));
+        Request request = restClient.buildJsonGetRequest(url.toString(), null);
+        OkHttpClient client = restClient.getHttpClient();
+        Response response = client.newCall(request).execute();
+        assertEquals(200, response.code());
+    }
+
 }

@@ -26,11 +26,11 @@ import io.swagger.annotations.ApiModelProperty;
 
 /**
  * An <code>ExternalCondition</code> is used for condition evaluations performed outside of the Alerts engine.
- * The external engine will send <code>StringData</code> providing the data for which the external evaluation
- * <b>has already evaluated to <code>True</code></b>. The Alerts engine assumes a true evaluation for the data being
- * sent in from the external engine. In other words, every <code>ExternalConditionEvaluation</code> will have
- * a true evaluation and therefore, for triggers with only a single external condition, and with default dampening,
- * an alert will be fired for each data submission.
+ * The external engine will send a <code>Data</code> or <code>Event</code> providing the data for which the external
+ * evaluation <b>has already evaluated to <code>True</code></b>. The Alerts engine assumes a true evaluation for the
+ * data being sent in from the external engine. In other words, every <code>ExternalConditionEvaluation</code> will
+ * have a true evaluation and therefore, for triggers with only a single external condition, and with default
+ * dampening, the trigger will fire for each submission.
  *
  * @author Jay Shaughnessy
  * @author Lucas Ponce
@@ -62,8 +62,9 @@ public class ExternalCondition extends Condition {
     private String alerterId;
 
     /**
-     * The ID of a StringData.  StringData is used with an ExternalCondition to provide any free-form value
-     * justifying the implicit "true" ConditionEvaluation.
+     * The Data.id or Event.dataId that will match the ExternalCondition and generate a "true" ConditionEvaluation.
+     * It is assumed the Data.value or Event fields will be populated as needed by the external alerter in order
+     * to explain the condition match.
      */
     @JsonInclude(Include.NON_NULL)
     private String dataId;

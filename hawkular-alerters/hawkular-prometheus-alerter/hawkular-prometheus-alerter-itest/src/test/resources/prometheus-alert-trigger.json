@@ -1,0 +1,28 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "id": "prom-alert-trigger",
+        "name": "Prometheus Alert Trigger",
+        "description": "Alert on any firing prometheus alert, check every 5 seconds. AutoDisable after 1 alert.",
+        "severity": "HIGH",
+        "enabled": true,
+        "autoDisable": true,
+        "tags": {
+          "prometheus": "Test"
+        },
+        "context": {
+          "prometheus.frequency": "5"
+        }
+      },
+      "conditions":[
+        {
+          "type": "EXTERNAL",
+          "alerterId": "prometheus",
+          "dataId": "prometheus-alert-test",
+          "expression": "ALERTS{job=\"prometheus\",alertname=\"GlobalInstanceUp\",alertstate=\"firing\"}"
+        }
+      ]
+    }
+  ]
+}

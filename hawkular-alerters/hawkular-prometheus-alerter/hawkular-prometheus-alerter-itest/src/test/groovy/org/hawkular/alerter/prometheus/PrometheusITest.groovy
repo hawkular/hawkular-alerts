@@ -26,15 +26,19 @@ import groovyx.net.http.RESTClient
 import org.junit.Ignore
 import org.junit.Test
 
+import org.hawkular.alerts.api.json.GroupMemberInfo
+
 /**
+ * These tests need an external prometheus instance configured with the prometheus-alerts.rules file in /resources.
+
  * @author Jay Shaughnessy
  * @author Lucas Ponce
  */
-class prometheusITest {
+class PrometheusITest {
 
     def prometheus, hawkular, format, response
 
-    prometheusITest() {
+    PrometheusITest() {
         hawkular = new RESTClient(System.getProperty('hawkular.base-uri') ?: 'http://127.0.0.1:8080/hawkular/alerts/', ContentType.JSON)
         hawkular.handler.failure = { it }
         /*
@@ -50,12 +54,6 @@ class prometheusITest {
         hawkular.headers.put("Hawkular-Tenant", "test")
     }
 
-    /*
-        These tests are ignored as they need an external prometheus instance.
-        Used for manual testing
-     */
-
-    @Ignore
     @Test
     void prometheusAlerterQueryTest() {
         def start = String.valueOf(System.currentTimeMillis())
@@ -75,7 +73,7 @@ class prometheusITest {
                 break;
             }
             assertEquals(200, response.status)
-            System.out.println("NOTE!!!! May need to manually perform a get request on Prometheus to ge this to pass...")
+            System.out.println("NOTE!!!! May need to manually perform a get request on Prometheus to get this to pass...")
         }
         assertEquals(200, response.status)
         assertEquals(1, response.data.size())
@@ -84,11 +82,10 @@ class prometheusITest {
         assertEquals(200, response.status)
     }
 
-    @Ignore
     @Test
     void prometheusAlerterAlertTest() {
         def start = String.valueOf(System.currentTimeMillis())
-        // load external trigger
+        // load external group trigger
         def definitions = new File("src/test/resources/prometheus-alert-trigger.json").text
         response = hawkular.post(path: "import/all", body: definitions)
         assertTrue(response.status < 300)
@@ -111,6 +108,44 @@ class prometheusITest {
         assertEquals(1, response.data.size())
 
         response = hawkular.delete(path: "triggers/prom-alert-trigger")
+        assertEquals(200, response.status)
+    }
+
+    @Test
+    void prometheusAlerterGroupTest() {
+        def start = String.valueOf(System.currentTimeMillis())
+        // load external group trigger
+        def definitions = new File("src/test/resources/prometheus-group-trigger.json").text
+        response = hawkular.post(path: "import/all", body: definitions)
+        assertTrue(response.status < 300)
+
+        // add member trigger
+        Map context = new java.util.HashMap();
+        context.put("\$CODE", "200");
+        context.put("\$JOB", "prometheus");
+        Map dataIdMap = new java.util.HashMap();
+        dataIdMap.put("group-dataId", "member-dataId");
+        GroupMemberInfo gmi = new GroupMemberInfo("prom-group-trigger","prom-member-trigger","prom-member-trigger", null, context, null, dataIdMap);
+        response = hawkular.post(path: "triggers/groups/members", body: gmi)
+        assertEquals(200, response.status)
+
+        for ( int i=0; i < 60; ++i ) {
+            Thread.sleep(1000);
+
+            response = hawkular.get(path: "", query: [startTime:start,triggerIds:"prom-member-trigger"] )
+            /*
+                We should have only 1 alert
+             */
+            if ( response.status == 200 && response.data.size() == 1 ) {
+                break;
+            }
+            assertEquals(200, response.status)
+            System.out.println("NOTE!!!! May need to manually perform a get request on Prometheus to get this to pass...")
+        }
+        assertEquals(200, response.status)
+        assertEquals(1, response.data.size())
+
+        response = hawkular.delete(path: "triggers/groups/prom-group-trigger")
         assertEquals(200, response.status)
     }
 
