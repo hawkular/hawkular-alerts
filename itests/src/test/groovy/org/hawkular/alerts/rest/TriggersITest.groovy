@@ -128,7 +128,7 @@ class TriggersITest extends AbstractITestBase {
         assertEquals(200, resp.status)
 
         // orphan member2, it should no longer get updates
-        resp = client.post(path: "triggers/groups/members/member2/orphan");
+        resp = client.put(path: "triggers/groups/members/member2/orphan");
         assertEquals(200, resp.status)
 
         // add dampening to the group
@@ -273,7 +273,7 @@ class TriggersITest extends AbstractITestBase {
         dataIdMap.put("DataId1-Token", "DataId1-Child2");
         dataIdMap.put("DataId2-Token", "DataId2-Child2");
         UnorphanMemberInfo unorphanMemberInfo = new UnorphanMemberInfo(null, null, dataIdMap);
-        resp = client.post(path: "triggers/groups/members/member2/unorphan", body: unorphanMemberInfo);
+        resp = client.put(path: "triggers/groups/members/member2/unorphan", body: unorphanMemberInfo);
         assertEquals(200, resp.status)
 
         // get the member2 trigger

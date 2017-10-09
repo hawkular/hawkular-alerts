@@ -135,8 +135,8 @@ public class TriggersHandler implements RestHandler {
         router.put(path + "/groups/:groupId/conditions").handler(this::setGroupConditions);
         router.delete(path + "/:triggerId/dampenings/:dampeningId").handler(this::deleteDampening);
         router.get(path + "/:triggerId/dampenings/mode/:triggerMode").handler(this::getTriggerModeDampenings);
-        router.post(path + "/groups/members/:memberId/orphan").handler(this::orphanMemberTrigger);
-        router.post(path + "/groups/members/:memberId/unorphan").handler(this::unorphanMemberTrigger);
+        router.put(path + "/groups/members/:memberId/orphan").handler(this::orphanMemberTrigger);
+        router.put(path + "/groups/members/:memberId/unorphan").handler(this::unorphanMemberTrigger);
         router.put(path + "/groups/:groupId/dampenings/:dampeningId").handler(this::updateGroupDampening);
         router.put(path + "/groups/:groupId/conditions/:triggerMode").handler(this::setGroupConditionsTriggerMode);
         router.delete(path + "/groups/:groupId/dampenings/:dampeningId").handler(this::deleteGroupDampening);
@@ -950,7 +950,7 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    @DocPath(method = POST,
+    @DocPath(method = PUT,
             path = "/groups/members/{memberId}/orphan",
             name = "Make a non-orphan member trigger into an orphan.")
     @DocParameters(value = {
@@ -1072,7 +1072,7 @@ public class TriggersHandler implements RestHandler {
                 }, res -> result(routing, res));
     }
 
-    @DocPath(method = POST,
+    @DocPath(method = PUT,
             path = "/groups/members/{memberId}/unorphan",
             name = "Make an orphan member trigger into an group trigger.")
     @DocParameters(value = {
