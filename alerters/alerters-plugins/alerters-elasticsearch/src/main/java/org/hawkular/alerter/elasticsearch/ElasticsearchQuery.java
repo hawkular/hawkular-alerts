@@ -396,6 +396,9 @@ public class ElasticsearchQuery implements Runnable {
             if (value instanceof String) {
                 return (String) value;
             }
+            if (value instanceof Number) {
+                return String.valueOf(value);
+            }
             if (value instanceof Map) {
                 source = (Map<String, Object>) value;
             }
