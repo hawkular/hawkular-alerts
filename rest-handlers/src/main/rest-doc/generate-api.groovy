@@ -160,7 +160,7 @@ try {
                     DocPath docPath = method.getAnnotation(DocPath.class)
 
                     def path = (endPointPath == '/' && docPath.path() != '/' ? '' : endPointPath) + (docPath.path() == '/' ? '' : docPath.path())
-                    if (!json["paths"].hasProperty(path)) {
+                    if (!json["paths"].containsKey(path)) {
                         json["paths"][path] = [:]
                     }
                     json["paths"][path][docPath.method()] = [:]
