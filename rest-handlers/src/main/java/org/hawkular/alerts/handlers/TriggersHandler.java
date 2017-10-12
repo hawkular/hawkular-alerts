@@ -501,7 +501,7 @@ public class TriggersHandler implements RestHandler {
             name = "Delete an existing group dampening definition.")
     @DocParameters(value = {
             @DocParameter(name = "groupId", required = true, path = true,
-                    description = "Trigger definition id to be deleted."),
+                    description = "Group Trigger definition id to be deleted."),
             @DocParameter(name = "dampeningId", required = true, path = true,
                     description = "Dampening id for dampening definition to be deleted.")
     })
@@ -547,7 +547,7 @@ public class TriggersHandler implements RestHandler {
             name = "Delete a group trigger.")
     @DocParameters(value = {
             @DocParameter(name = "groupId", required = true, path = true,
-                    description = "Group Trigger id."),
+                    description = "Group Trigger definition id to be deleted."),
             @DocParameter(name = "keepNonOrphans", required = true, type = Boolean.class,
                     description = "Convert the non-orphan member triggers to standard triggers."),
             @DocParameter(name = "keepOrphans", required = true, type = Boolean.class,
@@ -628,7 +628,7 @@ public class TriggersHandler implements RestHandler {
             notes = "No pagination.")
     @DocParameters(value = {
             @DocParameter(name = "groupId", required = true, path = true,
-                    description = "Group TriggerId."),
+                    description = "Group Trigger definition id."),
             @DocParameter(name = "includeOrphans",
                     description = "include Orphan members? No if omitted."),
     })
@@ -1012,7 +1012,7 @@ public class TriggersHandler implements RestHandler {
                     "Return Dampening updated.")
     @DocParameters(value = {
             @DocParameter(name = "groupId", required = true, path = true,
-                    description = "Trigger definition id to be retrieved."),
+                    description = "Group trigger definition id to be retrieved."),
             @DocParameter(name = "dampeningId", required = true, path = true,
                     description = "Updated dampening definition."),
             @DocParameter(required = true, body = true, type = Dampening.class,
@@ -1231,8 +1231,8 @@ public class TriggersHandler implements RestHandler {
                     "for all trigger modes. + \n" +
                     "Return the new group conditions.")
     @DocParameters(value = {
-            @DocParameter(name = "triggerId", required = true, path = true,
-                    description = "The relevant Trigger."),
+            @DocParameter(name = "groupId", required = true, path = true,
+                    description = "The relevant Group definition id"),
             @DocParameter(required = true, body = true, type = GroupConditionsInfo.class, typeContainer = "List",
                     description = "Collection of Conditions to set and Map with tokens per dataId on members.")
     })
@@ -1328,8 +1328,8 @@ public class TriggersHandler implements RestHandler {
             notes = "This replaces any existing conditions on the group and member conditions. " +
                     "Return the new group conditions.")
     @DocParameters(value = {
-            @DocParameter(name = "triggerId", required = true, path = true,
-                    description = "The relevant Trigger."),
+            @DocParameter(name = "groupId", required = true, path = true,
+                    description = "The relevant Group definition id."),
             @DocParameter(name = "triggerMode", required = true, path = true,
                     description = "FIRING or AUTORESOLVE (not case sensitive)"),
             @DocParameter(required = true, body = true, type = GroupConditionsInfo.class, typeContainer = "List",
