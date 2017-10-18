@@ -255,7 +255,12 @@ public class CrossTenantHandler {
             final Long endTime,
             @ApiParam(required = false, value = "Filter out events for unspecified eventIds.",
                     allowableValues = "Comma separated list of event IDs.")
-            @QueryParam("eventIds") final String eventIds,
+            @QueryParam("eventIds")
+            final String eventIds,
+            @ApiParam(required = false, value = "Filter out events for unspecified eventType.",
+                    allowableValues = "Valid EventType.")
+            @QueryParam("eventType")
+            final String eventType,
             @ApiParam(required = false, value = "Filter out events for unspecified triggers.",
                     allowableValues = "Comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
@@ -293,8 +298,8 @@ public class CrossTenantHandler {
             } else {
                 unifiedTagQuery = tagQuery;
             }
-            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
-                    unifiedTagQuery, thin);
+            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, eventType, triggerIds,
+                    categories, unifiedTagQuery, thin);
             Page<Event> eventPage = alertsService.getEvents(tenantIds, criteria, pager);
             log.debugf("Events: %s", eventPage);
             if (isEmpty(eventPage)) {
@@ -490,7 +495,12 @@ public class CrossTenantHandler {
             final Long endTime,
             @ApiParam(required = false, value = "Filter out events for unspecified eventIds.",
                     allowableValues = "Comma separated list of event IDs.")
-            @QueryParam("eventIds") final String eventIds,
+            @QueryParam("eventIds")
+            final String eventIds,
+            @ApiParam(required = false, value = "Filter out events for unspecified eventType.",
+                    allowableValues = "Valid EventType.")
+            @QueryParam("eventType")
+            final String eventType,
             @ApiParam(required = false, value = "Filter out events for unspecified triggers.",
                     allowableValues = "Comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
@@ -527,8 +537,8 @@ public class CrossTenantHandler {
             } else {
                 unifiedTagQuery = tagQuery;
             }
-            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
-                    unifiedTagQuery, thin);
+            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, eventType, triggerIds,
+                    categories, unifiedTagQuery, thin);
             return Response.ok(streamWatcher.watchEvents(tenantIds, criteria, watchInterval)).build();
 
         } catch (Exception e) {

@@ -42,10 +42,11 @@ public class EventsCriteria {
         super();
     }
 
-    public EventsCriteria(Long startTime, Long endTime, String eventIds, String triggerIds, String categories,
-                          String tagQuery, Boolean thin) {
+    public EventsCriteria(Long startTime, Long endTime, String eventIds, String eventType, String triggerIds,
+            String categories, String tagQuery, Boolean thin) {
         setStartTime(startTime);
         setEndTime(endTime);
+        setEventType(eventType);
         if (!isEmpty(eventIds)) {
             setEventIds(Arrays.asList(eventIds.split(",")));
         }

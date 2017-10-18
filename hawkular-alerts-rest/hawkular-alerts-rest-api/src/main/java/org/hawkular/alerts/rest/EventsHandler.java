@@ -282,6 +282,10 @@ public class EventsHandler {
                 allowableValues = "Comma separated list of event IDs.")
             @QueryParam("eventIds")
             final String eventIds,
+            @ApiParam(required = false, value = "Filter out events for unspecified eventType.",
+                allowableValues = "Valid EventType.")
+            @QueryParam("eventType")
+            final String eventType,
             @ApiParam(required = false, value = "Filter out events for unspecified triggers.",
                 allowableValues = "Comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
@@ -318,8 +322,8 @@ public class EventsHandler {
             } else {
                 unifiedTagQuery = tagQuery;
             }
-            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
-                    unifiedTagQuery, thin);
+            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, eventType, triggerIds,
+                    categories, unifiedTagQuery, thin);
             Page<Event> eventPage = alertsService.getEvents(tenantId, criteria, pager);
             log.debugf("Events: %s", eventPage);
             if (isEmpty(eventPage)) {
@@ -380,7 +384,12 @@ public class EventsHandler {
             final Long endTime,
             @ApiParam(required = false, value = "Filter out events for unspecified eventIds.",
                     allowableValues = "Comma separated list of event IDs.")
-            @QueryParam("eventIds") final String eventIds,
+            @QueryParam("eventIds")
+            final String eventIds,
+            @ApiParam(required = false, value = "Filter out events for unspecified eventType.",
+                    allowableValues = "Valid EventType.")
+            @QueryParam("eventType")
+            final String eventType,
             @ApiParam(required = false, value = "Filter out events for unspecified triggers.",
                     allowableValues = "Comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
@@ -416,8 +425,8 @@ public class EventsHandler {
             } else {
                 unifiedTagQuery = tagQuery;
             }
-            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
-                    unifiedTagQuery, thin);
+            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, eventType, triggerIds,
+                    categories, unifiedTagQuery, thin);
             return Response.ok(streamWatcher.watchEvents(Collections.singleton(tenantId), criteria, watchInterval))
                     .build();
 
@@ -503,6 +512,10 @@ public class EventsHandler {
                 allowableValues = "Comma separated list of event IDs.")
             @QueryParam("eventIds")
             final String eventIds,
+            @ApiParam(required = false, value = "Filter out events for unspecified eventType.",
+                allowableValues = "Valid EventType.")
+            @QueryParam("eventType")
+            final String eventType,
             @ApiParam(required = false, value = "Filter out events for unspecified triggers. ",
                 allowableValues = "Comma separated list of trigger IDs.")
             @QueryParam("triggerIds")
@@ -536,8 +549,8 @@ public class EventsHandler {
             } else {
                 unifiedTagQuery = tagQuery;
             }
-            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, triggerIds, categories,
-                    unifiedTagQuery, null);
+            EventsCriteria criteria = new EventsCriteria(startTime, endTime, eventIds, eventType, triggerIds,
+                    categories, unifiedTagQuery, null);
             int numDeleted = alertsService.deleteEvents(tenantId, criteria);
             log.debugf("Events deleted: %d", numDeleted);
             return ResponseUtil.ok(new ApiDeleted(numDeleted));
