@@ -1,0 +1,91 @@
+<!doctype html>
+<html ng-app="hwk.appModule" class="layout-pf layout-pf-fixed transitions">
+<head>
+    <meta charset="utf-8"/>
+
+    <title>Hawkular Alerting</title>
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="description" content=""/>
+    <meta name="viewport" content="width=device-width"/>
+
+    <link rel="shortcut icon" href="favicon.ico?v=1"/>
+    <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+
+    <!-- build:css styles/css/bower_components.css -->
+    <!-- PatternFly Styles -->
+    <!-- Note: No other CSS files are needed regardless of what other JS packages located in patternfly/components that you decide to pull in -->
+    <link rel="stylesheet" href="bower_components/patternfly/dist/css/patternfly.min.css"/>
+    <link rel="stylesheet" href="bower_components/patternfly/dist/css/patternfly-additions.min.css"/>
+
+    <link rel="stylesheet" href="bower_components/angular-patternfly/dist/styles/angular-patternfly.min.css">
+    <link rel="stylesheet" href="bower_components/patternfly-timeline/dist/timeline.css">
+    <link rel="stylesheet" href="bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css">
+
+    <!-- build:css styles/css/app.css -->
+    <link rel="stylesheet" href="styles/app.css"/>
+    <!-- endbuild -->
+
+</head>
+<body id="pf-app" class="pf-body apf-body ng-cloak">
+
+  <div ng-controller="hwk.appController">
+    <div pf-vertical-navigation items="navigationItems" brand-src="hawkular-alerting.svg" brand-alt="Hawkular Alerting">
+      <div>
+        <div class="navbar-header">
+          <h2 class="navbar-tenant">{{ selectedTenant == null ? "&lt; Select a Tenant &gt;" : selectedTenant }}</h2>
+        </div>
+        <div class="nav navbar-nav navbar-right">
+          <form class="navbar-form" ng-submit="updateTenant()">
+            <div class="form-group">
+              <input name="newTenant" type="text" class="form-control" autocomplete="off" placeholder="New Tenant" ng-model="newTenant.tenant">
+              <button type="submit" class="btn btn-default">Change</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="centralPanel" class="container-pf-nav-pf-vertical container-pf-nav-pf-vertical-with-tertiary">
+    <div class="pf-framework-content">
+        <main ng-view class="pf-framework-view"></main>
+    </div>
+  </div>
+
+  <!-- build:js js/bower_components.js -->
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="bower_components/bootstrap-select/js/bootstrap-select.js"></script>
+  <script src="bower_components/moment/min/moment.min.js"></script>
+  <script src="bower_components/angular/angular.min.js"></script>
+  <script src="bower_components/angular-route/angular-route.min.js"></script>
+  <script src="bower_components/angular-resource/angular-resource.min.js"></script>
+  <script src="bower_components/angular-sanitize/angular-sanitize.min.js"></script>
+  <script src="bower_components/patternfly/dist/js/patternfly.min.js"></script>
+  <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+  <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="bower_components/angular-translate/angular-translate.min.js"></script>
+  <script src="bower_components/angular-translate-loader-static-files/angular-translate-loader-static-files.min.js"></script>
+  <script src="bower_components/d3/d3.min.js"></script>
+  <script src="bower_components/c3/c3.min.js"></script>
+  <script src="bower_components/angular-patternfly/dist/angular-patternfly.min.js"></script>
+  <script src="bower_components/lodash/lodash.min.js"></script>
+  <script src="bower_components/patternfly-timeline/dist/timeline.js"></script>
+  <!-- Moment - required by Bootstrap Date Time Picker -->
+  <script src="bower_components/moment/min/moment.min.js"></script>
+  <script src="bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
+  <script src="bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
+  <script src="bower_components/bootstrap-touchspin/dist/jquery.bootstrap-touchspin.min.js"></script>
+
+  <!-- endbuild -->
+
+
+
+  <!-- angular -->
+  <!-- endangular -->
+
+
+
+
+</body>
+</html>

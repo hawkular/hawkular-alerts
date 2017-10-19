@@ -1,0 +1,435 @@
+<div class="container-fluid container-cards-pf" ng-controller="hwk.dashboardController">
+
+  <!-- TOAST NOTIFICATIONS -->
+
+  <pf-notification-list></pf-notification-list>
+
+  <div class="row row-cards-pf" ng-hide="selectedTenant == null || selectedTenant == ''">
+
+    <!-- Range Filter -->
+
+    <div class="row toolbar-pf">
+      <div class="col-md-12">
+        <form class="toolbar-pf-actions">
+          <div class="btn-group toolbar-pf-filter pull-left" ng-style="{'width':'275px'}">
+            <button type="button" class="btn btn-default" ng-click="updateRange('30m')">30m</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('1h')">1h</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('4h')">4h</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('8h')">8h</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('12h')">12h</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('1d')">1d</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('7d')">7d</button>
+            <button type="button" class="btn btn-default" ng-click="updateRange('30d')">30d</button>
+          </div>
+          <div class="btn-group toolbar-pf-filter pull-left" ng-style="{'width':'100px'}">
+            <button type="button" class="btn btn-default" ng-click="setRange()">Set Range To:</button>
+          </div>
+          <div class="form-group toolbar-pf-filter" ng-style="{'width':'100px', 'padding-right':'0px'}">
+            <div class="input-group input-touchspin">
+              <input class="bootstrap-touchspin" type="text" id="offset" ng-model="filter.range.offset" />
+            </div>
+          </div>
+          <div class="form-group toolbar-pf-filter" ng-style="{'width':'75px', 'padding-right':'0px'}">
+            <div class="input-group" >
+              <select class="btn btn-default form-control" id="filter.range.unit" ng-options="opt as opt for opt in filter.range.unitOptions" ng-model="filter.range.unit"></select>
+            </div>
+          </div>
+          <div class="form-group toolbar-pf-filter" ng-style="{'width':'75px', 'padding-right':'0px'}">
+            <div class="input-group">
+              <select class="btn btn-default form-control" id="filter.range.direction" ng-options="opt as opt for opt in filter.range.directionOptions" ng-model="filter.range.direction"></select>
+            </div>
+          </div>
+          <div class="form-group toolbar-pf-filter" ng-style="{'width':'250px'}">
+            <div class='input-group date' id="datetime" >
+              <input type='text' class="form-control" ng-model="filter.range.datetime" id="currentdatetime" name="currentdatetime"/>
+               <div class="input-group-addon btn btn-default">
+                 <span class="fa fa-calendar"></span>
+               </div>
+             </div>
+          </div>
+          <div class="toolbar-pf-action-left">
+            <div class="form-group toolbar-pf-view-selector">
+              <button class="btn btn-link" ng-show="refresh" ng-click="updateRefresh()"><div class="spinner spinner-sm"></div></button>
+              <button class="btn btn-link" ng-show="!refresh" ng-click="updateRefresh()"><span class="fa fa-refresh"></span></button>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="dropdown btn-group dropdown-kebab-pf pull-right">
+              <button class="btn btn-link dropdown-toggle" type="button" id="dashKebab" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <span class="fa fa-ellipsis-v"></span>
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="dashKebab">
+                <li ng-click="about()"><a>About...</a></li>
+              </ul>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  <!-- GRAPHS -->
+
+    <!-- Important:  if you need to nest additional .row within a .row.row-cards-pf, do *not* use .row-cards-pf on the nested .row  -->
+    <div class="col-sm-6 col-md-3">
+      <div id="active-alert-chart" ng-if="selectedTenant != null && selectedTenant != ''"></div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div id="severity-alert-chart" ng-if="selectedTenant != null && selectedTenant != ''"></div>
+    </div>
+
+  <!-- CARDS -->
+
+    <div class="col-sm-6 col-md-3">
+      <div class="card-pf card-pf-accented card-pf-aggregate-status card-pf-aggregate-status-mini">
+        <h2 class="card-pf-title">
+          <span class="pficon pficon-error-circle-o"></span>
+          <a id="link-open-alerts" href ng-click="linkAlerts('Open', 'All Severity')">
+            <span class="card-pf-aggregate-status-count">{{ openAlerts.length }}</span>Open Alerts
+          </a>
+        </h2>
+      </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div class="card-pf card-pf-accented card-pf-aggregate-status card-pf-aggregate-status-mini">
+        <h2 class="card-pf-title">
+          <span class="pficon pficon-warning-triangle-o"></span>
+          <a id="link-ack-alerts" href ng-click="linkAlerts('Acknowledged', 'All Severity')">
+            <span class="card-pf-aggregate-status-count">{{ acknowledgedAlerts.length }}</span>Acknowledged Alerts
+          </a>
+        </h2>
+      </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div class="card-pf card-pf-accented card-pf-aggregate-status card-pf-aggregate-status-mini">
+        <h2 class="card-pf-title">
+          <span class="pficon pficon-ok"></span>
+          <a id="link-resolved-alerts" href ng-click="linkAlerts('Resolved', 'All Severity')">
+            <span class="card-pf-aggregate-status-count">{{ resolvedAlerts.length }}</span>Resolved Alerts
+          </a>
+        </h2>
+      </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div class="card-pf card-pf-accented card-pf-aggregate-status card-pf-aggregate-status-mini">
+        <h2 class="card-pf-title">
+          <span class="pficon pficon-topology"></span>
+          <a href ng-click="linkEvents()">
+            <span class="card-pf-aggregate-status-count">{{ events.length }}</span>Events
+          </a>
+        </h2>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TIMELINE -->
+
+  <div class="row row-cards-pf" ng-if="selectedTenant != null && selectedTenant != ''">
+    <!-- Important:  if you need to nest additional .row within a .row.row-cards-pf, do *not* use .row-cards-pf on the nested .row  -->
+    <div class="col-md-12">
+      <div class="card-pf">
+        <div class="row">
+          <div id="pf-timeline"></div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /row -->
+  <div class="row row-cards-pf" ng-repeat="eventSelected in timelineEvents">
+    <!-- Important:  if you need to nest additional .row within a .row.row-cards-pf, do *not* use .row-cards-pf on the nested .row  -->
+    <div class="col-md-12">
+      <div class="card-pf">
+        <div class="card-pf-heading">
+          <p class="card-pf-heading-details"></p>
+          <h2 class="card-pf-title">
+            {{ eventSelected.eventType }} on
+            <span ng-if="eventSelected.eventType == 'ALERT'">{{ eventSelected.trigger.name }}</span>
+            <span ng-if="eventSelected.eventType == 'EVENT'">{{ eventSelected.category }}</span>
+            <span class="pull-right" ng-if="eventSelected.eventType == 'ALERT'">{{ eventSelected.lifecycle[eventSelected.lifecycle.length -1].stime | date:'yyyy-MM-dd HH:mm:ss Z'}}</span>
+            <span class="pull-right" ng-if="eventSelected.eventType == 'EVENT'">{{ eventSelected.ctime | date:'yyyy-MM-dd HH:mm:ss Z'}}</span>
+          </h2>
+        </div>
+        <div class="card-pf-body">
+          <div class="row" ng-if="eventSelected.eventType == 'EVENT'">
+            <div class="col-md-6">{{ eventSelected.text }}</div>
+            <div class="col-md-3">
+              <dl class="dl-horizontal" ng-show="eventSelected.tags != null">
+                <dt>Tags</dt>
+                <dd></dd>
+                <dt ng-repeat-start="(key, value) in eventSelected.tags">{{ key }}</dt>
+                <dd ng-repeat-end>{{ value }}</dd>
+              </dl>
+            </div>
+            <div class="col-md-3">
+              <dl class="dl-horizontal" ng-show="eventSelected.context != null">
+                <dt>Context</dt>
+                <dd></dd>
+                <dt ng-repeat-start="(key, value) in eventSelected.context">{{ key }}</dt>
+                <dd ng-repeat-end>{{ value }}</dd>
+              </dl>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-{{ 12 / eventSelected.eventSections }}" ng-if="eventSelected.evalSets != null">
+              <h3>
+                Eval Sets
+              </h3>
+              <div class="list-group list-view-pf list-view-pf-view">
+                <div class="list-group-item" ng-repeat="evalSet in eventSelected.evalSets">
+                  <div class="list-group-item-header">
+                    <div class="list-view-pf-main-info">
+                      <div class="list-view-pf-left">
+                        <span class="fa fa-map-marker list-view-pf-icon-sm"></span>
+                      </div>
+                      <div class="list-view-pf-body">
+                        <div class="list-view-pf-description">
+                          <div class="list-group-item-text">
+                            <div class="list-group list-view-pf list-view-pf-view">
+                              <div class="list-group-item list-view-pf-stacked" ng-repeat="eval in evalSet">
+                                <div class="list-view-pf-main-info">
+                                  <div class="list-view-pf-description">
+                                    <div>
+                                      {{ eval.displayString }}
+                                    </div>
+                                    <div ng-if="eval.condition.type == 'EVENT'">
+                                      <dl class="dl-horizontal eval-set">
+                                        <dt>Event</dt>
+                                        <dd></dd>
+                                        <dt>category</dt>
+                                        <dd>{{ eval.value.category }}</dd>
+                                        <dt>text</dt>
+                                        <dd>{{ eval.value.text}}</dd>
+                                        <dt ng-if="eval.value.tags != null">Tags</dt>
+                                        <dd ng-if="eval.value.tags != null"></dd>
+                                        <dt ng-if="eval.value.tags != null" ng-repeat-start="(key, value) in eval.value.tags">{{ key }}</dt>
+                                        <dd ng-if="eval.value.tags != null" ng-repeat-end>{{ value }}</dd>
+                                        <dt ng-if="eval.value.context != null">Context</dt>
+                                        <dd ng-if="eval.value.context != null"></dd>
+                                        <dt ng-if="eval.value.context != null" ng-repeat-start="(key, value) in eval.value.context">{{ key }}</dt>
+                                        <dd ng-if="eval.value.context != null" ng-repeat-end>{{ value }}</dd>
+                                      </dl>
+                                    </div>
+                                    <div ng-if="eval.condition.type == 'EXTERNAL'">
+                                      <hr />
+                                      <dl class="dl-horizontal eval-set" ng-repeat="evalSetEvent in eval.context.parsed">
+                                        <dt>Event</dt>
+                                        <dd></dd>
+                                        <dt>category</dt>
+                                        <dd>{{ evalSetEvent.category }}</dd>
+                                        <dt>text</dt>
+                                        <dd>{{ evalSetEvent.text}}</dd>
+                                        <dt ng-if="evalSetEvent.tags != null">Tags</dt>
+                                        <dd ng-if="evalSetEvent.tags != null"></dd>
+                                        <dt ng-if="evalSetEvent.tags != null" ng-repeat-start="(key, value) in evalSetEvent.tags">{{ key }}</dt>
+                                        <dd ng-if="evalSetEvent.tags != null" ng-repeat-end>{{ value }}</dd>
+                                        <dt ng-if="evalSetEvent.context != null">Context</dt>
+                                        <dd ng-if="evalSetEvent.context != null"></dd>
+                                        <dt ng-if="evalSetEvent.context != null" ng-repeat-start="(key, value) in evalSetEvent.context">{{ key }}</dt>
+                                        <dd ng-if="evalSetEvent.context != null" ng-repeat-end>{{ value }}</dd>
+                                      </dl>
+                                    </div>
+                                    <small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-{{ 12 / eventSelected.eventSections }}" ng-if="eventSelected.resolvedEvalSets != null">
+              <h3>
+                Resolved Eval Sets
+              </h3>
+              <div class="list-group list-view-pf list-view-pf-view">
+                <div class="list-group-item" ng-repeat="evalSet in eventSelected.resolvedEvalSets">
+                  <div class="list-group-item-header">
+                    <div class="list-view-pf-main-info">
+                      <div class="list-view-pf-left">
+                        <span class="fa fa-check list-view-pf-icon-sm"></span>
+                      </div>
+                      <div class="list-view-pf-body">
+                        <div class="list-view-pf-description">
+                          <div class="list-group-item-text">
+                            <div class="list-group list-view-pf list-view-pf-view">
+                              <div class="list-group-item list-view-pf-stacked" ng-repeat="eval in evalSet">
+                                <div class="list-view-pf-main-info">
+                                  <div class="list-view-pf-description">
+                                    <div ng-if="eval.condition.type == 'THRESHOLD'">
+                                      {{ eval.condition.dataId }} [ {{ eval.value }} ] {{ eval.condition.operator }} {{ eval.condition.threshold }}
+                                    </div>
+                                    <div ng-if="eval.condition.type == 'AVAILABILITY'">
+                                      {{ eval.condition.dataId }} [ {{ eval.value }} ] is {{ eval.condition.operator }}
+                                    </div>
+                                    <div ng-if="eval.condition.type == 'EVENT'">
+                                      {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
+                                      <dl class="dl-horizontal eval-set">
+                                        <dt>Event</dt>
+                                        <dd></dd>
+                                        <dt>category</dt>
+                                        <dd>{{ eval.value.category }}</dd>
+                                        <dt>text</dt>
+                                        <dd>{{ eval.value.text}}</dd>
+                                        <dt ng-show="eval.value.tags != null">Tags</dt>
+                                        <dd ng-show="eval.value.tags != null"></dd>
+                                        <dt ng-show="eval.value.tags != null" ng-repeat-start="(key, value) in eval.value.tags">{{ key }}</dt>
+                                        <dd ng-show="eval.value.tags != null" ng-repeat-end>{{ value }}</dd>
+                                        <dt ng-show="eval.value.context != null">Context</dt>
+                                        <dd ng-show="eval.value.context != null"></dd>
+                                        <dt ng-show="eval.value.context != null" ng-repeat-start="(key, value) in eval.value.context">{{ key }}</dt>
+                                        <dd ng-show="eval.value.context != null" ng-repeat-end>{{ value }}</dd>
+                                      </dl>
+                                    </div>
+                                    <div ng-if="eval.condition.type == 'EXTERNAL'">
+                                      {{ eval.condition.dataId }} matches [ {{ eval.condition.expression }} ]
+                                      <hr />
+                                      <dl class="dl-horizontal eval-set" ng-repeat="evalSetEvent in eval.context.parsed">
+                                        <dt>Event</dt>
+                                        <dd></dd>
+                                        <dt>category</dt>
+                                        <dd>{{ evalSetEvent.category }}</dd>
+                                        <dt>text</dt>
+                                        <dd>{{ evalSetEvent.text}}</dd>
+                                        <dt ng-if="evalSetEvent.tags != null">Tags</dt>
+                                        <dd ng-if="evalSetEvent.tags != null"></dd>
+                                        <dt ng-if="evalSetEvent.tags != null" ng-repeat-start="(key, value) in evalSetEvent.tags">{{ key }}</dt>
+                                        <dd ng-if="evalSetEvent.tags != null" ng-repeat-end>{{ value }}</dd>
+                                        <dt ng-if="evalSetEvent.context != null">Context</dt>
+                                        <dd ng-if="evalSetEvent.context != null"></dd>
+                                        <dt ng-if="evalSetEvent.context != null" ng-repeat-start="(key, value) in evalSetEvent.context">{{ key }}</dt>
+                                        <dd ng-if="evalSetEvent.context != null" ng-repeat-end>{{ value }}</dd>
+                                      </dl>
+                                    </div>
+                                    <small>{{ eval.evalTimestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</small>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-{{ 12 / eventSelected.eventSections }}" ng-if="eventSelected.lifecycle != null" >
+              <h3>
+                Lifecycle
+              </h3>
+              <div class="list-group list-view-pf list-view-pf-view">
+                <div class="list-group-item" ng-repeat="cycle in eventSelected.lifecycle">
+                  <div class="list-group-item-header">
+                    <div class="list-view-pf-main-info">
+                      <div class="list-view-pf-left">
+                        <span ng-show="cycle.status == 'OPEN'" class="pficon pficon-error-circle-o"></span>
+                        <span ng-show="cycle.status == 'ACKNOWLEDGED'" class="pficon pficon-warning-triangle-o"></span>
+                        <span ng-show="cycle.status == 'RESOLVED'" class="pficon pficon-ok"></span>
+                      </div>
+                      <div class="list-view-pf-body">
+                        <div class="list-view-pf-description">
+                          <div class="list-group-item-text">
+                            <span class="pf pficon-user"></span> {{ cycle.user }}
+                            <span class="pull-right"><small>{{ cycle.stime | date:'yyyy-MM-dd HH:mm:ss Z' }}</small></span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-{{ 12 / eventSelected.eventSections }}" ng-if="eventSelected.actions != null" >
+              <h3>
+                Actions
+              </h3>
+              <div class="list-group list-view-pf list-view-pf-view">
+                <div class="list-group-item" ng-repeat="action in eventSelected.actions">
+                  <div class="list-group-item-header">
+                    <div>
+                      <span class="fa fa-envelope list-view-pf-icon-lg" ng-show="action.actionPlugin == 'email'"></span>
+                      <span class="fa fa-code list-view-pf-icon-lg" ng-show="action.actionPlugin == 'webhook'"></span>
+                      <span class="fa fa-file-code-o list-view-pf-icon-lg" ng-show="action.actionPlugin == 'elasticsearch'"></span>
+                      &nbsp;
+                      <b>{{ action.actionId }}</b>
+                    </div>
+                    <div>
+                      <small>{{ action.ctime | date:'yyyy-MM-dd HH:mm:ss Z' }}</small>
+                    </div>
+                    <div>
+                      <small>{{ action.result }}</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /row -->
+  <div class="row row-cards-pf" ng-show="selectedTenant == null || selectedTenant == ''">
+    <div class="col-md-12">
+      <div class="card-pf">
+        <div class="card-pf-heading">
+          <p class="card-pf-heading-details"></p>
+          <h2 class="card-pf-title">
+            Select a Tenant
+          </h2>
+        </div>
+        <div class="card-pf-body">
+          Use the upper right form to select a tenant which fetch data from Hawkular Alerting.
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /container -->
+
+<script type="text/ng-template" id="aboutModal.html">
+  <div class="modal-content modal-lg">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" ng-click="cancel()" aria-hidden="true">
+        <span class="pficon pficon-close"></span>
+      </button>
+      <h4 class="modal-title">{{ aboutModal.title }}</h4>
+    </div>
+    <div class="modal-body">
+      <form class="form-horizontal">
+        <div class="form-group">
+          <div class="col-md-12">
+            <textarea class="form-control textarea-resize" ng-model="aboutModal.json" ng-readonly="{{ aboutModal.readOnly }}" rows="10" placeholder="{{ aboutModal.placeholder }}" />
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="cancel()">Cancel</button>
+    </div>
+  </div>
+</script>
+
+<script type="text/javascript">
+  $('#offset').TouchSpin();
+  $('#datetime').datetimepicker({
+    format: 'YYYY-MM-DD HH:mm:ss',
+    showTodayButton: true,
+    showClose: true,
+    icons: {
+      date: 'fa fa-calendar',
+      time: 'fa fa-clock-o',
+      up: 'fa fa-arrow-up',
+      down: 'fa fa-arrow-down',
+      previous: 'fa fa-arrow-left',
+      next: 'fa fa-arrow-right',
+      today: 'pficon pficon-home',
+      close: 'fa fa-close'
+    },
+    tooltips: {
+      today: 'Reset to Now',
+    }
+  });
+</script>
+

@@ -1,0 +1,114 @@
+
+<div class="container-fluid container-cards-pf" ng-controller="hwk.actionsController">
+
+  <!-- TOAST NOTIFICATIONS -->
+
+  <pf-notification-list></pf-notification-list>
+
+  <!-- Toolbar -->
+  <div class="row toolbar-pf" id="toolbar" ng-show="selectedTenant != null && selectedTenant != ''">
+    <div class="col-md-12">
+      <form class="toolbar-pf-actions">
+        <div class="form-group toolbar-pf-filter">
+          <label class="col-md-4 control-label" for="filter">Plugin:</label>
+          <div class="input-group">
+            <select class="btn btn-default combobox" id="filter" ng-options="opt as opt for opt in pluginsFilter.options" ng-model="pluginsFilter.filter" ng-change="updateFilter()"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="dropdown btn-group  dropdown-kebab-pf">
+            <button class="btn btn-link dropdown-toggle" type="button" id="triggersKebab" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              <span class="fa fa-ellipsis-v"></span>
+            </button>
+            <ul class="dropdown-menu " aria-labelledby="actionDefinitionsKebab">
+              <li ng-click="newActionDefinitionModal()"><a>New Action Definition</a></li>
+            </ul>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="row" ng-show="selectedTenant != null && selectedTenant != ''">
+    <div class="col-md-12">
+      <div class="list-group list-view-pf">
+          <div class="list-group-item" ng-repeat="a in actions">
+            <div class="list-view-pf-actions">
+                <div class="dropdown pull-right dropdown-kebab-pf">
+                    <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight15" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                        <span class="fa fa-ellipsis-v"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownKebabRight15">
+                      <li ng-click="viewActionDefinitionModal(a)"><a>View</a></li>
+                      <li ng-click="editActionDefinitionModal(a)"><a>Edit</a></li>
+                      <li ng-click="deleteActionDefinition(a.actionPlugin, a.actionId)"><a>Delete</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="list-view-pf-main-info">
+              <div class="list-view-pf-left">
+                <span class="fa fa-envelope list-view-pf-icon-lg" ng-show="a.actionPlugin == 'email'"></span>
+                <span class="fa fa-code list-view-pf-icon-lg" ng-show="a.actionPlugin == 'webhook'"></span>
+                <span class="fa fa-file-code-o list-view-pf-icon-lg" ng-show="a.actionPlugin == 'elasticsearch'"></span>
+              </div>
+              <div class="list-view-pf-body">
+                <div class="list-view-pf-description">
+                  <div class="list-group-item-heading">
+                      {{ a.actionId }}
+                      <small>{{ a.actionPlugin }}</small>
+                  </div>
+                  <div class="list-group-item-text">
+                    <dl class="dl-horizontal">
+                      <dt>Properties</dt>
+                      <dd></dd>
+                      <dt ng-repeat-start="(key, value) in a.properties">{{ key }}</dt>
+                      <dd ng-repeat-end>{{ value }}</dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row row-cards-pf" ng-show="selectedTenant == null || selectedTenant == ''">
+    <div class="col-md-12">
+      <div class="card-pf">
+        <div class="card-pf-heading">
+          <p class="card-pf-heading-details"></p>
+          <h2 class="card-pf-title">
+            Select a Tenant
+          </h2>
+        </div>
+        <div class="card-pf-body">
+          Use the upper right form to select a tenant which fetch data from Hawkular Alerting.
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /container -->
+<div ng-controller="hwk.actionsController">
+  <script type="text/ng-template" id="jsonModal.html">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" ng-click="cancel()" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title">{{ jsonModal.title }}</h4>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal">
+          <div class="form-group">
+            <div class="col-md-12">
+              <textarea class="form-control textarea-resize" ng-model="jsonModal.json" ng-readonly="{{ jsonModal.readOnly }}" rows="20" placeholder="{{ jsonModal.placeholder }}" />
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="cancel()">Cancel</button>
+        <button type="button" class="btn btn-primary" data-dismiss="modal" ng-show="{{ !jsonModal.readOnly }}" ng-disabled="!isValid()" ng-click="save()">Save</button>
+      </div>
+    </div>
+  </script>
+</div>

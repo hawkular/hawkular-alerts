@@ -1,0 +1,125 @@
+/*
+ * Charts
+ */
+
+/* Percentage Used Chart */
+.percentageUsedBarChartWrapper {
+  padding-bottom: 10px;
+}
+
+.percentageUsedBarChart {
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.percentageUsedBarChart:last-of-type {
+  margin-bottom: 0;
+}
+
+.percentageUsedBar {
+  position: absolute;
+  top: 0;
+  left: 100px;
+  right: 100px;
+  height: 15px;
+  padding-left: 5px;
+  padding-right:5px;
+}
+
+.percentageUsedBarFilled {
+  background-color: #0088CE;
+  height: 15px;
+  position: relative;
+  z-index: 1001;
+  -webkit-transition: width .75s ease-in-out;
+  -moz-transition: width .75s ease-in-out;
+  -o-transition: width .75s ease-in-out;
+  transition: width .75s ease-in-out;
+}
+
+.percentageUsedBarFilled.animate {
+  width: 0% !important;
+}
+
+.percentageUsedBarUnused {
+  background-color: #D1D1D1;
+  width: 100%;
+  height: 15px;
+  position: relative;
+  top: -15px;
+  z-index: 1000;
+}
+
+.percentageUsedBarTitle {
+  position: relative;
+  text-align: right;
+  top: 0;
+  left: 0;
+  float: left;
+  width: 100px;
+  text-align: right;
+  padding-left: 5px;
+  padding-right:5px;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 15px;
+  margin-bottom: 5px;
+}
+
+.percentageUsedBarSuffix {
+  position:absolute;
+  top: 0;
+  right: 0;
+  text-align: left;
+  width: 100px;
+  padding-left: 5px;
+  padding-right:5px;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 15px;
+  margin-bottom: 5px;
+}
+
+.empty-info {
+  color: #999;
+  font-size: 24px;
+  text-align: center;
+  width: 100%;
+}
+
+
+.utilization-chart-pf.empty-utilization-chart {
+
+  .available-count {
+    color: transparent;
+  }
+
+  .empty-info {
+    padding-top: 50px;
+    padding-bottom: 110px;
+
+    .info-text {
+      font-size: 16px;
+    }
+  }
+}
+
+.empty-trends-chart {
+
+  .empty-info {
+    padding-top: 15px;
+    padding-bottom: 22px;
+
+    .info-text {
+      font-size: 16px;
+    }
+  }
+}
+
+.chart-transparent-text {
+  color: transparent;
+}
+
+.multi-chart-body {
+  margin-top: -20px;
+}
