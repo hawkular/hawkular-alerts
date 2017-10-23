@@ -18,3 +18,12 @@ target/
 
 # KDE
 .directory
+
+hawkular-alerts-ui/src/main/ui/node_modules
+hawkular-alerts-ui/src/main/ui/bower_components
+hawkular-alerts-ui/src/main/ui/.sass-cache
+hawkular-alerts-ui/src/main/ui/dist
+hawkular-alerts-ui/src/main/ui/index.html
+hawkular-alerts-ui/src/main/ui/src/templates/appModuleTemplates.js
+hawkular-alerts-ui/src/main/ui/package-lock.json
+
