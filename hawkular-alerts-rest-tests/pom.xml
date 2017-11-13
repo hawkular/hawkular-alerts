@@ -440,6 +440,7 @@
                 <configuration>
                   <includes>
                     <include>org/hawkular/alerts/rest/IntegrationSuite.class</include>
+                    <include>org/hawkular/alerts/engine/IspnPersistenceTest.class</include>
                   </includes>
                   <excludes>
                     <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
@@ -770,64 +771,31 @@
       </build>
     </profile>
 
-    <!-- This profile prepares a standalone distribution of hawkular-alerts on top of a Wildfly Server -->
     <profile>
-      <id>build-domain-cluster</id>
-      <activation>
-        <property>
-          <name>env</name>
-          <value>cluster</value>
-        </property>
-      </activation>
+      <id>itest-eap</id>
       <properties>
-        <hawkular.home>${project.build.directory}/cluster</hawkular.home>
-        <hawkular.domain.conf>${hawkular.home}/wildfly-${version.org.wildfly}/domain/configuration</hawkular.domain.conf>
-        <hawkular.alerts1.data>${hawkular.home}/wildfly-${version.org.wildfly}/domain/servers/alerts1/data</hawkular.alerts1.data>
+        <hawkular.home>${project.build.directory}</hawkular.home>
+        <hawkular.wildfly>${eap.home}</hawkular.wildfly>
+        <hawkular.conf>${hawkular.wildfly}/standalone/configuration</hawkular.conf>
+        <hawkular.deployments>${hawkular.wildfly}/standalone/deployments</hawkular.deployments>
         <hawkular.host>127.0.0.1</hawkular.host>
-        <hawkular.port>8230</hawkular.port>
+        <hawkular.port>8080</hawkular.port>
+        <hawkular.port.offset>0</hawkular.port.offset>
         <hawkular.path>/hawkular/alerts/</hawkular.path>
         <hawkular.base-uri>http://${hawkular.host}:${hawkular.port}${hawkular.path}</hawkular.base-uri>
+        <hawkular.management.port>9990</hawkular.management.port>
+        <hawkular.log.alerts>INFO</hawkular.log.alerts>
       </properties>
-      <dependencies>
 
-        <dependency>
-          <groupId>org.hawkular.alerts</groupId>
-          <artifactId>hawkular-alerts-rest-standalone</artifactId>
-          <version>${project.version}</version>
-          <type>war</type>
-        </dependency>
-
-        <dependency>
-          <groupId>org.wildfly</groupId>
-          <artifactId>wildfly-dist</artifactId>
-          <version>${version.org.wildfly}</version>
-          <type>tar.gz</type>
-          <scope>test</scope>
-        </dependency>
-
-      </dependencies>
       <build>
         <plugins>
+          <!-- Setup WildFly with hAlerts -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
             <executions>
               <execution>
-                <id>unpack-hawkular</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>unpack-dependencies</goal>
-                </goals>
-                <configuration>
-                  <includeGroupIds>org.wildfly</includeGroupIds>
-                  <includeArtifactIds>wildfly-dist</includeArtifactIds>
-                  <outputDirectory>
-                    ${hawkular.home}
-                  </outputDirectory>
-                </configuration>
-              </execution>
-              <execution>
-                <id>update-hawkular-alerts</id>
+                <id>install-hawkular-alerts</id>
                 <phase>pre-integration-test</phase>
                 <goals>
                   <goal>copy</goal>
@@ -840,16 +808,25 @@
                       <version>${project.version}</version>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}</outputDirectory>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts.war</destFileName>
                     </artifactItem>
+                    <!-- include only plugins required for itests. Deploy everything in perf-itest -->
                     <artifactItem>
                       <groupId>org.hawkular.alerts</groupId>
                       <artifactId>hawkular-alerts-actions-email-standalone</artifactId>
                       <type>war</type>
                       <overWrite>true</overWrite>
-                      <outputDirectory>${project.build.directory}</outputDirectory>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
                       <destFileName>hawkular-alerts-actions-email.war</destFileName>
+                    </artifactItem>
+                    <artifactItem>
+                      <groupId>org.hawkular.alerts</groupId>
+                      <artifactId>hawkular-alerts-actions-file-standalone</artifactId>
+                      <type>war</type>
+                      <overWrite>true</overWrite>
+                      <outputDirectory>${hawkular.deployments}</outputDirectory>
+                      <destFileName>hawkular-alerts-actions-file.war</destFileName>
                     </artifactItem>
                   </artifactItems>
                 </configuration>
@@ -857,6 +834,35 @@
             </executions>
           </plugin>
 
+          <!-- Install hawkular-alerts demo data for itests -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>copy-users-data</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>copy-resources</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${hawkular.conf}</outputDirectory>
+                  <overwrite>true</overwrite>
+                  <resources>
+                    <resource>
+                      <directory>${project.basedir}/src/test/resources</directory>
+                      <includes>
+                        <include>application-roles.properties</include>
+                        <include>application-users.properties</include>
+                      </includes>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Configure hawkular-alerts in standalone.xml -->
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>xml-maven-plugin</artifactId>
@@ -869,23 +875,14 @@
                 </goals>
                 <configuration>
                   <transformationSets>
-                    <!-- domain.xml -->
+                    <!-- standalone.xml (note, standalone-ha.xml transformation performed in perf-itest) -->
                     <transformationSet>
-                      <dir>${hawkular.domain.conf}</dir>
-                      <stylesheet>src/test/resources/domain.xsl</stylesheet>
+                      <dir>${hawkular.conf}</dir>
+                      <stylesheet>src/test/resources/standalone-hawkular.xsl</stylesheet>
                       <includes>
-                        <include>domain.xml</include>
+                        <include>standalone.xml</include>
                       </includes>
-                      <outputDir>${hawkular.domain.conf}</outputDir>
-                    </transformationSet>
-                    <!-- host.xml -->
-                    <transformationSet>
-                      <dir>${hawkular.domain.conf}</dir>
-                      <stylesheet>src/test/resources/host.xsl</stylesheet>
-                      <includes>
-                        <include>host.xml</include>
-                      </includes>
-                      <outputDir>${hawkular.domain.conf}</outputDir>
+                      <outputDir>${hawkular.conf}</outputDir>
                     </transformationSet>
                   </transformationSets>
                 </configuration>
@@ -893,87 +890,50 @@
             </executions>
           </plugin>
 
+          <!-- Start wildfly -->
           <plugin>
             <groupId>org.wildfly.plugins</groupId>
             <artifactId>wildfly-maven-plugin</artifactId>
-            <version>${version.org.wildfly.plugins}</version>
             <configuration>
-              <jboss-home>${hawkular.home}/wildfly-${version.org.wildfly}</jboss-home>
+              <jboss-home>${hawkular.wildfly}</jboss-home>
               <skip>${skipTests}</skip>
-              <startupTimeout>300</startupTimeout>
-              <serverType>DOMAIN</serverType>
-              <domain-config>domain.xml</domain-config>
-              <host-config>host.xml</host-config>
+              <startupTimeout>240</startupTimeout>
+              <port>${hawkular.management.port}</port>
+              <javaOpts>
+                <javaOpt>-server</javaOpt>
+                <javaOpt>-Xms64m</javaOpt>
+                <javaOpt>-Xmx512m</javaOpt>
+                <javaOpt>-Djava.net.preferIPv4Stack=true</javaOpt>
+                <javaOpt>-Djboss.modules.system.pkgs=org.jboss.byteman</javaOpt>
+                <javaOpt>-Djava.awt.headless=true</javaOpt>
+                <javaOpt>-Djboss.bind.address=${hawkular.host}</javaOpt>
+                <javaOpt>-Djboss.socket.binding.port-offset=${hawkular.port.offset}</javaOpt>
+                <javaOpt>-Dkeycloak.import=${project.build.directory}/${project.build.finalName}/standalone/configuration/hawkular-realm-for-dev.json</javaOpt>
+                <javaOpt>-Dmail.smtp.host=localhost</javaOpt>
+                <javaOpt>-Dmail.smtp.port=2525</javaOpt>
+                <javaOpt>-Dhawkular.log.alerts=${hawkular.log.alerts}</javaOpt>
+                <javaOpt>-Dhawkular.allowed-cors-origins=http://test.hawkular.org,https://secure.hawkular.io</javaOpt>
+                <javaOpt>-Dhawkular.allowed-cors-access-control-allow-headers=random-header1,random-header2</javaOpt>
+                <!-- <javaOpt>-Xdebug</javaOpt>  -->
+                <!-- <javaOpt>-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y</javaOpt> -->
+              </javaOpts>
             </configuration>
             <executions>
               <execution>
-                <id>start-domain</id>
+                <id>start-wildfly</id>
                 <phase>pre-integration-test</phase>
+                <configuration>
+                  <server-config>standalone.xml</server-config>
+                </configuration>
                 <goals>
                   <goal>start</goal>
                 </goals>
               </execution>
               <execution>
-                <id>deploy-hawkular-alerts</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>deploy</goal>
-                </goals>
-                <configuration>
-                  <domain>
-                    <server-groups>
-                      <server-group>hawkular-alerts-group</server-group>
-                    </server-groups>
-                  </domain>
-                  <filename>hawkular-alerts.war</filename>
-                </configuration>
-              </execution>
-              <execution>
-                <id>deploy-email-plugin</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>deploy</goal>
-                </goals>
-                <configuration>
-                  <domain>
-                    <server-groups>
-                      <server-group>hawkular-alerts-group</server-group>
-                    </server-groups>
-                  </domain>
-                  <filename>hawkular-alerts-actions-email.war</filename>
-                </configuration>
-              </execution>
-              <execution>
-                <id>stop-domain</id>
+                <id>stop-wildfly</id>
                 <phase>post-integration-test</phase>
                 <goals>
-                  <goal>execute-commands</goal>
-                </goals>
-                <configuration>
-                  <commands>
-                    <command>/host=master:shutdown</command>
-                  </commands>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
-          <!-- Adding a delay to let the server to process initial data at deployment -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <configuration>
-              <tasks>
-                <echo message="Giving some time to the cluster to finish deployment and process initial data..." />
-                <sleep seconds="10" />
-              </tasks>
-            </configuration>
-            <executions>
-              <execution>
-                <id>sleep-for-a-while</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>run</goal>
+                  <goal>shutdown</goal>
                 </goals>
               </execution>
             </executions>
@@ -990,21 +950,25 @@
                 <hawkular.base-uri>${hawkular.base-uri}</hawkular.base-uri>
                 <hawkular.test.origin>http://test.hawkular.org</hawkular.test.origin>
                 <hawkular.test.access-control-allow-headers>random-header1,random-header2</hawkular.test.access-control-allow-headers>
-                <hawkular-alerts.data-driven-triggers-enabled>false</hawkular-alerts.data-driven-triggers-enabled>
-                <cluster>true</cluster>
               </systemPropertyVariables>
             </configuration>
             <executions>
               <execution>
-                <id>exec-cluster-tests</id>
+                <id>exec-rest-tests</id>
                 <goals>
                   <goal>integration-test</goal>
                 </goals>
                 <configuration>
                   <includes>
                     <include>org/hawkular/alerts/rest/IntegrationSuite.class</include>
-                    <include>org/hawkular/alerts/engine/IspnPersistenceTest.class</include>
                   </includes>
+                  <excludes>
+                    <excludeFile>org/hawkular/alerts/rest/ClusterITest.class</excludeFile>
+                    <excludeFile>org/hawkular/alerts/rest/PerfCrudITest.class</excludeFile>
+                    <excludeFile>org/hawkular/alerts/rest/PerfSendITest.class</excludeFile>
+                    <excludeFile>org/hawkular/alerts/rest/PerfImportITest.class</excludeFile>
+                    <exclude>${hawkular.itest-exclude}</exclude>
+                  </excludes>
                 </configuration>
               </execution>
               <execution>
@@ -1018,6 +982,90 @@
 
         </plugins>
       </build>
+    </profile>
+
+    <profile>
+      <id>upstream-ispn-packaged-inside-war</id>
+      <activation>
+        <property>
+          <name>!eap.home</name>
+        </property>
+      </activation>
+
+      <dependencies>
+
+        <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-query</artifactId>
+          <version>${version.org.infinispan.upstream}</version>
+          <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-core</artifactId>
+          <version>${version.org.infinispan.upstream}</version>
+          <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-search-engine</artifactId>
+          <version>${version.org.hibernate.search.upstream}</version>
+          <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-search-elasticsearch</artifactId>
+          <version>${version.org.hibernate.search.upstream}</version>
+          <scope>compile</scope>
+        </dependency>
+
+      </dependencies>
+
+    </profile>
+
+    <profile>
+      <id>jdg-library-deployed-on-eap</id>
+      <activation>
+        <property>
+          <name>eap.home</name>
+        </property>
+      </activation>
+
+      <dependencies>
+
+        <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-query</artifactId>
+          <version>${version.org.infinispan.jdg72}</version>
+          <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-core</artifactId>
+          <version>${version.org.infinispan.jdg72}</version>
+          <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-search-engine</artifactId>
+          <version>${version.org.hibernate.search.jdg72}</version>
+          <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-search-elasticsearch</artifactId>
+          <version>${version.org.hibernate.search.jdg72}</version>
+          <scope>provided</scope>
+        </dependency>
+
+      </dependencies>
+
     </profile>
 
   </profiles>

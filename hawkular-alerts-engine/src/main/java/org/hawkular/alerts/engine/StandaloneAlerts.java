@@ -79,10 +79,12 @@ public class StandaloneAlerts {
 
         actions.setAlertsContext(alertsContext);
         actions.setDefinitions(definitions);
+        actions.init();
 
         engine.setDefinitions(definitions);
         engine.setActions(actions);
         engine.setRules(rules);
+        engine.initServices();
 
         log.debug("Waiting for initialization...");
         try {

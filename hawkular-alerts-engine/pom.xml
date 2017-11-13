@@ -102,38 +102,6 @@
       </exclusions>
     </dependency>
 
-    <!-- Infinispan/Hibernate Search deps -->
-    <dependency>
-      <groupId>org.infinispan</groupId>
-      <artifactId>infinispan-query</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.infinispan</groupId>
-          <artifactId>infinispan-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.hibernate</groupId>
-          <artifactId>hibernate-search-engine</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>org.infinispan</groupId>
-      <artifactId>infinispan-core</artifactId>
-    </dependency>
-
-    <!-- infinispan-query 9.1.1 pulls the wrong version of deps. Override here (below) -->
-    <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-search-engine</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-search-elasticsearch</artifactId>
-    </dependency>
-
     <!-- Other packaged deps -->
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -209,6 +177,90 @@
 
   <profiles>
 
+    <profile>
+      <id>upstream-ispn-packaged-inside-war</id>
+      <activation>
+        <property>
+          <name>!eap.home</name>
+        </property>
+      </activation>
+
+      <dependencies>
+
+        <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-query</artifactId>
+          <version>${version.org.infinispan.upstream}</version>
+          <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-core</artifactId>
+          <version>${version.org.infinispan.upstream}</version>
+          <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-search-engine</artifactId>
+          <version>${version.org.hibernate.search.upstream}</version>
+          <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-search-elasticsearch</artifactId>
+          <version>${version.org.hibernate.search.upstream}</version>
+          <scope>compile</scope>
+        </dependency>
+
+      </dependencies>
+
+    </profile>
+
+    <profile>
+      <id>jdg-library-deployed-on-eap</id>
+      <activation>
+        <property>
+          <name>eap.home</name>
+        </property>
+      </activation>
+
+      <dependencies>
+
+        <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-query</artifactId>
+          <version>${version.org.infinispan.jdg72}</version>
+          <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.infinispan</groupId>
+          <artifactId>infinispan-core</artifactId>
+          <version>${version.org.infinispan.jdg72}</version>
+          <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-search-engine</artifactId>
+          <version>${version.org.hibernate.search.jdg72}</version>
+          <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-search-elasticsearch</artifactId>
+          <version>${version.org.hibernate.search.jdg72}</version>
+          <scope>provided</scope>
+        </dependency>
+
+      </dependencies>
+
+    </profile>
+
     <!--
           Profiles to control test scenarios activated with the variable test-env
           Default tests don't run performance and persistence tests.
@@ -230,6 +282,10 @@
                 <property>
                   <name>testOutput</name>
                   <value>${project.build.testOutputDirectory}</value>
+                </property>
+                <property>
+                  <name>jboss.server.config.dir</name>
+                  <value>${project.build.directory}</value>
                 </property>
                 <property>
                   <name>jboss.server.data.dir</name>
@@ -263,6 +319,10 @@
                 <property>
                   <name>testOutput</name>
                   <value>${project.build.testOutputDirectory}</value>
+                </property>
+                <property>
+                  <name>jboss.server.config.dir</name>
+                  <value>${project.build.directory}</value>
                 </property>
                 <property>
                   <name>jboss.server.data.dir</name>

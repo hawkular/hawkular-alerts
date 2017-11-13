@@ -42,15 +42,6 @@
     </xsl:copy>
   </xsl:template>
 
-  <xsl:template match="//*[*[local-name()='in-vm-acceptor']]">
-    <xsl:copy>
-      <xsl:apply-templates select="@*|comment()|node()" />
-      <jms-topic name="HawkularAlertData" entries="java:/topic/HawkularAlertData"/>
-      <jms-topic name="HawkularCommandEvent" entries="java:/topic/HawkularCommandEvent"/>
-
-    </xsl:copy>
-  </xsl:template>
-
   <!-- copy everything else as-is -->
   <xsl:template match="node()|comment()|@*">
     <xsl:copy>

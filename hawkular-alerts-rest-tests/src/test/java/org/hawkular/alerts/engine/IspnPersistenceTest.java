@@ -47,6 +47,8 @@ public class IspnPersistenceTest extends PersistenceTest {
     @BeforeClass
     public static void initSessionAndResetTestSchema() throws Exception {
         System.setProperty("hawkular-alerts.backend", "ispn");
+        System.setProperty("jboss.server.config.dir", "target");
+        System.setProperty("jboss.server.data.dir", "target/persistence-test");
 
         definitionsService = StandaloneAlerts.getDefinitionsService();
         alertsService = StandaloneAlerts.getAlertsService();

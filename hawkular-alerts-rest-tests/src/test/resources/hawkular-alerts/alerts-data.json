@@ -1,0 +1,375 @@
+{
+  "triggers":[
+    {
+      "trigger":{
+        "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+        "id": "trigger-1",
+        "enabled": true,
+        "name": "NumericData-01-low",
+        "description": "description 1",
+        "severity": "HIGH",
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ],
+        "context": {
+          "name1":"value1"
+        },
+        "tags": {
+          "tname1":"tvalue1",
+          "tname2":"tvalue2"
+        }
+      },
+      "dampenings":[
+        {
+          "triggerMode": "FIRING",
+          "type": "STRICT",
+          "evalTrueSetting": 2,
+          "evalTotalSetting": 2
+        }
+      ],
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "NumericData-01",
+          "operator": "LT",
+          "threshold": 10.0,
+          "context": {
+            "description": "Response Time",
+            "unit": "ms"
+          }
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+        "id": "trigger-2",
+        "enabled": true,
+        "name": "NumericData-01-02-high",
+        "description": "description 2",
+        "severity": "HIGH",
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ]
+      },
+      "dampenings":[],
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "NumericData-01",
+          "operator": "GTE",
+          "threshold": 15.0,
+          "context": {
+            "description": "Response Time",
+            "unit": "ms"
+          }
+        },
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "NumericData-02",
+          "operator": "GTE",
+          "threshold": 15.0,
+          "context": {
+            "description": "Response Time",
+            "unit": "ms"
+          }
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+        "id": "trigger-3",
+        "enabled": true,
+        "name": "NumericData-03-range",
+        "description": "description 3",
+        "severity": "HIGH",
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ]
+      },
+      "dampenings":[],
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "range",
+          "dataId": "NumericData-03",
+          "operatorLow": "INCLUSIVE",
+          "operatorHigh": "INCLUSIVE",
+          "thresholdLow": 10.0,
+          "thresholdHigh": 15.0,
+          "inRange": true,
+          "context": {
+            "description": "Response Time",
+            "unit": "ms"
+          }
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+        "id": "trigger-4",
+        "enabled": true,
+        "name": "CompareData-01-d1-lthalf-d2",
+        "description": "description 4",
+        "severity": "HIGH",
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ]
+      },
+      "dampenings":[],
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "compare",
+          "dataId": "NumericData-01",
+          "operator": "LT",
+          "data2Multiplier": 0.5,
+          "data2Id": "NumericData-02",
+          "context": {
+            "description": "Response Time",
+            "unit": "ms"
+          }
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+        "id": "trigger-5",
+        "enabled": true,
+        "name": "StringData-01-starts",
+        "description": "description 5",
+        "severity": "HIGH",
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ]
+      },
+      "dampenings":[],
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "string",
+          "dataId": "StringData-01",
+          "operator": "STARTS_WITH",
+          "pattern": "Fred",
+          "ignoreCase": false,
+          "context": {
+            "description": "Server Name"
+          }
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+        "id": "trigger-6",
+        "enabled": true,
+        "name": "Availability-01-NOT-UP",
+        "description": "description 6",
+        "severity": "HIGH",
+        "actions": [
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-1"},
+          {"actionPlugin":"snmp", "actionId":"SNMP-Trap-2"},
+          {"actionPlugin":"sms", "actionId":"sms-to-cio"},
+          {"actionPlugin":"email", "actionId":"email-to-admin"},
+          {"actionPlugin":"aerogear", "actionId":"agpush-to-admin"}
+        ]
+      },
+      "dampenings":[],
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "availability",
+          "dataId": "Availability-01",
+          "operator": "NOT_UP",
+          "context": {
+            "description": "Server"
+          }
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+        "id": "trigger-7",
+        "type": "GROUP",
+        "enabled": true,
+        "name": "Parent-NumericData-Token-low",
+        "description": "description 8",
+        "severity": "HIGH",
+        "actions": [
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
+        ]
+      },
+      "dampenings":[
+        {
+          "triggerMode": "FIRING",
+          "type": "RELAXED_COUNT",
+          "evalTrueSetting": 1,
+          "evalTotalSetting": 2
+        }
+      ],
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "NumericData-Token",
+          "operator": "LT",
+          "threshold": 10.0,
+          "context": {
+            "description": "Response Time",
+            "unit": "ms"
+          }
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+        "id": "trigger-8",
+        "eventType": "EVENT",
+        "enabled": true,
+        "name": "NumericData-01-low",
+        "description": "Event generating trigger",
+        "severity": "HIGH",
+        "actions": [
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
+        ],
+        "context": {
+          "trigger-8-name":"value"
+        },
+        "tags": {
+          "trigger8-name1":"value1",
+          "trigger8-name2":"value2"
+        }
+      },
+      "dampenings":[],
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "threshold",
+          "dataId": "NumericData-01",
+          "operator": "LT",
+          "threshold": 10.0,
+          "context": {
+            "description": "Response Time",
+            "unit": "ms"
+          }
+        }
+      ]
+    },
+    {
+      "trigger":{
+        "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+        "id": "trigger-9",
+        "enabled": true,
+        "name": "RateConditionTest",
+        "description": "Rate Condition Test",
+        "severity": "HIGH",
+        "actions": [
+          {"actionPlugin":"email", "actionId":"email-to-admin"}
+        ]
+      },
+      "dampenings":[],
+      "conditions":[
+        {
+          "triggerMode": "FIRING",
+          "type": "rate",
+          "dataId": "SessionCount",
+          "direction": "INCREASING",
+          "period": "MINUTE",
+          "operator": "GT",
+          "threshold": 100.0,
+          "context": {
+            "description": "SessionCountPerMinute"
+          }
+        }
+      ]
+    }
+  ],
+  "actions":[
+    {
+      "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+      "actionPlugin": "snmp",
+      "actionId": "SNMP-Trap-1",
+      "properties": {
+        "host": "snmp-host",
+        "port": "1234",
+        "oid": "1.2.3.4.5",
+        "description": "This is an example of SNMP Action Plugin"
+      }
+    },
+    {
+      "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+      "actionPlugin": "snmp",
+      "actionId": "SNMP-Trap-2",
+      "properties": {
+        "host": "snmp-host",
+        "port": "1234",
+        "oid": "1.2.3.4.5",
+        "description": "This is an example of SNMP Action Plugin"
+      }
+    },
+    {
+      "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+      "actionPlugin": "email",
+      "actionId": "email-to-admin",
+      "properties": {
+        "to": "admin@hawkular.org",
+        "cc": "bigboss@hawkular.org",
+        "description": "This is an example of Email Action Plugin"
+      }
+    },
+    {
+      "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+      "actionPlugin": "sms",
+      "actionId": "sms-to-cio",
+      "properties": {
+        "phone": "+15005550006",
+        "description": "This is an example of SMS Action Plugin"
+      }
+    },
+    {
+      "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+      "actionPlugin": "aerogear",
+      "actionId": "agpush-to-admin",
+      "properties": {
+        "alias": "GeorgeAbitbol",
+        "description": "This is an example of Aerogear Action Plugin"
+      }
+    },
+    {
+      "tenantId": "28026b36-8fe4-4332-84c8-524e173a68bf",
+      "actionPlugin": "file",
+      "actionId": "file-to-admin",
+      "properties": {
+        "description": "This is an example of File Plugin"
+      }
+    }
+  ]
+}

@@ -23,7 +23,6 @@ import java.nio.file.Paths;
 
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
-import org.hawkular.commons.properties.HawkularProperties;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 
@@ -35,12 +34,7 @@ import org.infinispan.manager.EmbeddedCacheManager;
  */
 public class IspnCacheManager {
     private static final MsgLogger log = MsgLogging.getMsgLogger(IspnCacheManager.class);
-    private static final String ISPN_CONFIG_DISTRIBUTED = "ispn-alerting-distributed.xml";
-    private static final String ISPN_CONFIG_LOCAL = "ispn-alerting-local.xml";
-    private static final String ALERTS_DISTRIBUTED = "hawkular-alerts.distributed";
-    private static final String ALERTS_DISTRIBUTED_ENV = "HAWKULAR_ALERTS_DISTRIBUTED";
-    private static final String ALERTS_DISTRIBUTED_DEFAULT = "false";
-
+    private static final String ISPN_CONFIG = "hawkular-alerting-ispn.xml";
     private static EmbeddedCacheManager cacheManager = null;
     private static boolean distributed = false;
 
@@ -65,17 +59,16 @@ public class IspnCacheManager {
     private static synchronized void init() {
         if (cacheManager == null) {
             try {
-                distributed = Boolean.valueOf(HawkularProperties.getProperty(ALERTS_DISTRIBUTED, ALERTS_DISTRIBUTED_ENV,
-                        ALERTS_DISTRIBUTED_DEFAULT));
-                String configFilename = distributed ? ISPN_CONFIG_DISTRIBUTED : ISPN_CONFIG_LOCAL;
                 Path configPath = Paths.get(System.getProperty("jboss.server.config.dir"), "hawkular");
-                File cacheConfigFile = new File(configPath.toFile(), configFilename);
+                configPath.toFile().mkdirs();
+                File cacheConfigFile = new File(configPath.toFile(), ISPN_CONFIG);
                 if (cacheConfigFile.exists()) {
                     cacheManager = new DefaultCacheManager(cacheConfigFile.getPath());
                 } else {
                     cacheManager = new DefaultCacheManager(
-                            IspnCacheManager.class.getResourceAsStream("/" + configFilename));
+                            IspnCacheManager.class.getResourceAsStream("/" + ISPN_CONFIG));
                 }
+                distributed = cacheManager.getTransport() != null;
             } catch (IOException e) {
                 log.error(e);
             }

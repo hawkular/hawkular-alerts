@@ -90,9 +90,10 @@
     <version.org.elasticsearch.client>5.2.2</version.org.elasticsearch.client>
     <version.org.freemarker>2.3.23</version.org.freemarker>
     <version.org.hawkular.commons>0.9.8.Final-SRC-revision-4e2b056736d1f31ae3efe1df69c17f6a27173629</version.org.hawkular.commons>
-    <version.org.hibernate.search>5.8.0.Final</version.org.hibernate.search>
-    <version.org.infinispan.community>9.1.1.Final</version.org.infinispan.community>
-    <version.org.infinispan.product>8.5.0.Final</version.org.infinispan.product>
+    <version.org.hibernate.search.upstream>5.8.0.Final</version.org.hibernate.search.upstream>
+    <version.org.hibernate.search.jdg72>5.6.2.Final-redhat-1</version.org.hibernate.search.jdg72>
+    <version.org.infinispan.upstream>9.1.1.Final</version.org.infinispan.upstream>
+    <version.org.infinispan.jdg72>8.5.0.DR2-redhat-1</version.org.infinispan.jdg72>
     <version.org.jboss.jboss-vfs>3.2.12.Final</version.org.jboss.jboss-vfs> <!-- match WF version -->
     <version.org.schwering>2.0.0.Alpha3</version.org.schwering>
     <version.org.yaml>1.11</version.org.yaml>
@@ -108,32 +109,6 @@
         <version>${version.org.wildfly.bom}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-
-      <!-- WildFly does not package the ispn versions we need. Override the wf bom versions
-           and make it explicit here what we want for ispn and hibernate search -->
-      <dependency>
-        <groupId>org.infinispan</groupId>
-        <artifactId>infinispan-query</artifactId>
-        <version>${version.org.infinispan.community}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.infinispan</groupId>
-        <artifactId>infinispan-core</artifactId>
-        <version>${version.org.infinispan.community}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.hibernate</groupId>
-        <artifactId>hibernate-search-engine</artifactId>
-        <version>${version.org.hibernate.search}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.hibernate</groupId>
-        <artifactId>hibernate-search-elasticsearch</artifactId>
-        <version>${version.org.hibernate.search}</version>
       </dependency>
 
     </dependencies>
