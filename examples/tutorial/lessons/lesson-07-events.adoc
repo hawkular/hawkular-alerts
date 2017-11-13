@@ -1,7 +1,7 @@
 
 == Lesson 07 - Events
 
-In previous lessons we've learned about defining triggers and how those triggers fire alerts.  We've learned about the alert lifecycle and how actions can be executed on lifecycle changes.  As we discuss in our http://www.hawkular.org/community/docs/developer-guide/alerts.html#\_alerting\_philosophy[alerting philosophy], alerts should be generated infrequently and with great care, in order to maintain their relevance. In Hawkular Alerting a trigger can also generate an __Event__. Events are used to record interesting system happenings that don't justify an alert, or may help build evidence towards a future alert.
+In previous lessons we've learned about defining triggers and how those triggers fire alerts.  We've learned about the alert lifecycle and how actions can be executed on lifecycle changes.  As we discuss in our http://www.hawkular.org/community/docs/developer-guide/alerts-v2.html#\_alerting\_philosophy[alerting philosophy], alerts should be generated infrequently and with great care, in order to maintain their relevance. In Hawkular Alerting a trigger can also generate an __Event__. Events are used to record interesting system happenings that don't justify an alert, or may help build evidence towards a future alert.
 
 Events don't require immediate human intervention, don't need to be resolved, and don't have life-cycle.  They just record a happening at some point in time.  There are multiple ways to get events into the system, and several things that can be done with them.  Let's work through an example...
 

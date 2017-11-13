@@ -1,7 +1,7 @@
 
 == Lesson 05 - Alert Life-cycle and Auto-Resolve
 
-The past few lessons taught the basics of defining triggers and firing alerts.  Now that you can create alerts we recommend reading this brief snippet about our http://www.hawkular.org/community/docs/developer-guide/alerts.html#_alerting_philosophy[alerting philosophy].  When an alert is generated it typically requires human intervention and it begins a simple life-cycle:
+The past few lessons taught the basics of defining triggers and firing alerts.  Now that you can create alerts we recommend reading this brief snippet about our http://www.hawkular.org/community/docs/developer-guide/alerts-v2.html#_alerting_philosophy[alerting philosophy].  When an alert is generated it typically requires human intervention and it begins a simple life-cycle:
 
 image::image-alert-lifecycle.png[Alert Life-cycle]
 
@@ -150,7 +150,7 @@ Hawkular Alerting provides a powerful feature called _Auto-Resolve_.  We have al
 
 Note that when `autoResolve=true` the `autoDisable` and `autoEnable` options are *ignored*. An auto-resolve trigger toggles between FIRING mode and AUTORESOLVE mode so by its nature it autoDisables and autoEnables.
 
-The AUTORESOLVE condition set can logically be thought of as the opposite of the FIRING condition set. But in practice it is often not just the negation of the FIRING condition set.  Also, the AUTORESOLVE condition set can define its own dampening.  For example, an alert may be raised due to a shorter spike of high response times but we may not want to declare the issue resolved until we have a longer period of acceptable response times. http://www.hawkular.org/community/docs/developer-guide/alerts.html#_autoresolve[See here for more detail] on the auto resolve feature.  Now, let's try an example to see it in action.
+The AUTORESOLVE condition set can logically be thought of as the opposite of the FIRING condition set. But in practice it is often not just the negation of the FIRING condition set.  Also, the AUTORESOLVE condition set can define its own dampening.  For example, an alert may be raised due to a shorter spike of high response times but we may not want to declare the issue resolved until we have a longer period of acceptable response times. http://www.hawkular.org/community/docs/developer-guide/alerts-v2.html#_autoresolve[See here for more detail] on the auto resolve feature.  Now, let's try an example to see it in action.
 
 First, let's delete the lesson-03 trigger, so we don't get any more lesson-03 alerts.
 

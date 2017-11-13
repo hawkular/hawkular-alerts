@@ -84,7 +84,7 @@ We'll ignore some fields for now, but a couple of settings are important:
 
 === Conditions
 
-The big thing we're missing are the conditions that define when the trigger should fire an alert.  HAlerting offers http://www.hawkular.org/community/docs/developer-guide/alerts.html#\_conditions[many different condition types] out of the box.  Each condition performs evaluations against incoming data to see if it is satisfied.  A condition type found in virtually any alerting system is __Threshold__, so let's start with a threshold condition for our tutorial. Note that the body supports a list of conditions but for now we'll only use one.
+The big thing we're missing are the conditions that define when the trigger should fire an alert.  HAlerting offers http://www.hawkular.org/community/docs/developer-guide/alerts-v2.html#\_conditions[many different condition types] out of the box.  Each condition performs evaluations against incoming data to see if it is satisfied.  A condition type found in virtually any alerting system is __Threshold__, so let's start with a threshold condition for our tutorial. Note that the body supports a list of conditions but for now we'll only use one.
 
 [cols="1,5l"]
 |===
@@ -242,11 +242,11 @@ Content-Type: application/json
 }
 ----
 
-You can see that an Alert carries a lot of information to help understand its origin. The alert fields themselves are probably clear.  The trigger is attached for reference.  We'll cover dampening and lifecycle in the next few lessons.  For now, look more closely at the _evalSets_ field.  This field explains why the trigger fired the alert.  Because the `lesson-02` trigger has only one condition, each evalSet has only one condition evaluation.  And because we are firing as soon as we have a single true evaluation (no dampening), we only have one evalSet.  In this case we can see that a `gauge-1' datapoint was received with a value of 93. because `93 GTE 50` is true, the trigger fired.
+You can see that an Alert carries a lot of information to help understand its origin. The alert fields themselves are probably clear.  The trigger is attached for reference.  We'll cover dampening and lifecycle in the next few lessons.  For now, look more closely at the _evalSets_ field.  This field explains why the trigger fired the alert.  Because the `lesson-02` trigger has only one condition, each evalSet has only one condition evaluation.  And because we are firing as soon as we have a single true evaluation (no dampening), we only have one evalSet.  In this case we can see that a `gauge-1` datapoint was received with a value of 93. because `93 GTE 50` is true, the trigger fired.
 
 === Exercise
 
-At this point you may feel comfortable creating a trigger and trying some of the http://www.hawkular.org/community/docs/developer-guide/alerts.html#\_conditions[other condition types] offered out of the box by hAlerting.
+At this point you may feel comfortable creating a trigger and trying some of the http://www.hawkular.org/community/docs/developer-guide/alerts-v2.html#\_conditions[other condition types] offered out of the box by hAlerting.
 
 When you are ready, move on to the next lesson.
 

@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "description": "Hawkular Alerts UI App",
   "license": "Apache-2.0",
-  "homepage": "http://www.hawkular.org/community/docs/developer-guide/alerts.html",
+  "homepage": "http://www.hawkular.org/community/docs/developer-guide/alerts-v2.html",
   "repository": {
     "type": "git",
     "url": "https://github.com/hawkular/hawkular-alerts"

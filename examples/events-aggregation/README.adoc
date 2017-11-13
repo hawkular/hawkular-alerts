@@ -6,7 +6,7 @@ The Events Aggregation Extension allows to scope Sliding Windows on Events and d
 
 A introductory article can be found under the link link:http://www.hawkular.org/blog/2017/01/13/events-aggregation-extension.html[Extending Complex Event Processing in Hawkular Alerting].
 
-Full documentation about this Extension can que found in link:http://www.hawkular.org/community/docs/developer-guide/alerts.html#_events_aggregation_extension[Events Aggregation Extension].
+Full documentation about this Extension can que found in link:http://www.hawkular.org/community/docs/developer-guide/alerts-v2.html#_events_aggregation_extension[Events Aggregation Extension].
 
 [NOTE]
 ====

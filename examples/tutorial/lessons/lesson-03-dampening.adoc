@@ -14,7 +14,7 @@ Dampening is concerned with *condition set* evaluations, not individual conditio
 
 Sometimes strict dampening is, well, too strict.  In that case we have relaxed dampening, again in the count and time varieties.  Relaxed-count means N out of M consecutive true evaluations.  Relaxed-time means N true evaluations in some minimum period of time.  One note on relaxed time, unless data is reported frequently enough the dampening may never be satisfied.  To varying degrees the time based dampening options are tied to the reporting intervals of the relevant dataIds.
 
-You can find http://www.hawkular.org/community/docs/developer-guide/alerts.html#_trigger_dampening[more details on dampening options here].
+You can find http://www.hawkular.org/community/docs/developer-guide/alerts-v2.html#_trigger_dampening[more details on dampening options here].
 
 === Example
 

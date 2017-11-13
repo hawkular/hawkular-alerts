@@ -332,7 +332,7 @@ This introduction to actions should be enough to get you going.  But with the pr
 
 Here is a short https://github.com/hawkular/hawkular-alerts/tree/master/examples/webhook[example showing the webhook plugin].
 
-Here are some instructions for http://www.hawkular.org/community/docs/developer-guide/alerts.html#_actions_plugins[building a custom plugin].
+Here are some instructions for http://www.hawkular.org/community/docs/developer-guide/alerts-v2.html#_actions_plugins[building a custom plugin].
 
 Otherwise, it's time to move on...
 
