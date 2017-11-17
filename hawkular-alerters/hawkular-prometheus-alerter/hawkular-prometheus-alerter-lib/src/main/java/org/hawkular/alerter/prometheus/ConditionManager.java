@@ -152,6 +152,10 @@ public class ConditionManager {
         }
     }
 
+    public String getPrometheusUrlDefault() {
+        return defaultProperties.get(URL);
+    }
+
     @PreDestroy
     public void stop() {
         log.infof("Stopping Hawkular Prometheus External Alerter");

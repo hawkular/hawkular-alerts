@@ -18,6 +18,7 @@ package org.hawkular.alerter.prometheus.rest;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
 import static org.hawkular.alerter.prometheus.ServiceNames.Service.ALERTS_SERVICE;
 
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.ejb.EJB;
 import javax.naming.InitialContext;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -34,6 +36,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
+import org.hawkular.alerter.prometheus.ConditionManager;
 import org.hawkular.alerter.prometheus.ServiceNames;
 import org.hawkular.alerts.api.model.event.Event;
 import org.hawkular.alerts.api.services.AlertsService;
@@ -51,8 +54,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class Handler {
     private final Logger log = Logger.getLogger(Handler.class);
 
+    @EJB
+    ConditionManager conditionManager;
+
     public Handler() {
         log.debug("Creating instance.");
+    }
+
+    @GET
+    @Path("/endpoint")
+    @Produces(TEXT_PLAIN)
+    public Response endpoint() {
+        return ok(conditionManager.getPrometheusUrlDefault());
     }
 
     @GET

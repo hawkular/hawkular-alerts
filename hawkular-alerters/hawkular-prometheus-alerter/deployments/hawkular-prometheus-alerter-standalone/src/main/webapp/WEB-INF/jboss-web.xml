@@ -18,5 +18,5 @@
 
 -->
 <jboss-web>
-  <context-root>/hawkular/__alerter_prometheus</context-root>
+  <context-root>/hawkular/alerter/prometheus</context-root>
 </jboss-web>
