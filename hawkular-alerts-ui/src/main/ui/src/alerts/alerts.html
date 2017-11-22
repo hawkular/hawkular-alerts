@@ -90,9 +90,10 @@
                 <span class="fa fa-ellipsis-v"></span>
               </button>
               <ul class="dropdown-menu" aria-labelledby="alertsKebab">
+                <li ng-click="updateFilter()"><a>Refresh</a></li>
+                <li role="separator" class="divider"></li>
                 <li ng-click="ackSelected()"><a>Ack Selected (TD?)</a></li>
                 <li ng-click="resolveSelected()"><a>Resolve Selected (TD?)</a></li>
-                <li role="separator" class="divider"></li>
                 <li ng-click="deleteSelected()"><a>Delete Selected (TD?)</a></li>
               </ul>
             </div>

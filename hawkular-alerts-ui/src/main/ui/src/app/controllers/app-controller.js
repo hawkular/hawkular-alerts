@@ -83,7 +83,7 @@ angular.module('hwk.appModule').controller( 'hwk.appController', ['$scope', '$ro
     $scope.newTenant = {};
 
     // [lponce] comment if you don't want a pre-filled tenant
-    $scope.newTenant.tenant = 'my-organization';
+    $scope.newTenant.tenant = 'hawkular';
 
     $scope.updateTenant = function () {
       $rootScope.selectedTenant = $scope.newTenant.tenant;
