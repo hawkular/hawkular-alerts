@@ -295,6 +295,7 @@ public class Event implements Comparable<Event>, Serializable {
             this.text = isEmpty(trigger.getDescription()) ? trigger.getName() : trigger.getDescription();
         }
         this.tags = trigger.getTags();
+        this.eventType = trigger.getEventType().name();
     }
 
     public String getEventType() {
