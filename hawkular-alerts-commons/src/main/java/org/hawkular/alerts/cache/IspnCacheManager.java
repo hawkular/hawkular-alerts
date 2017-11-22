@@ -23,8 +23,11 @@ import java.nio.file.Paths;
 
 import org.hawkular.commons.log.MsgLogger;
 import org.hawkular.commons.log.MsgLogging;
+import org.hawkular.commons.properties.HawkularProperties;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.query.Search;
+import org.infinispan.query.SearchManager;
 
 /**
  * Load the DefaultCacheManager from infinispan
@@ -34,6 +37,8 @@ import org.infinispan.manager.EmbeddedCacheManager;
  */
 public class IspnCacheManager {
     private static final MsgLogger log = MsgLogging.getMsgLogger(IspnCacheManager.class);
+    private static final String ISPN_BACKEND_REINDEX = "hawkular-alerts.backend-reindex";
+    private static final String ISPN_BACKEND_REINDEX_DEFAULT = "false";
     private static final String ISPN_CONFIG = "hawkular-alerting-ispn.xml";
     private static EmbeddedCacheManager cacheManager = null;
     private static boolean distributed = false;
@@ -69,6 +74,17 @@ public class IspnCacheManager {
                             IspnCacheManager.class.getResourceAsStream("/" + ISPN_CONFIG));
                 }
                 distributed = cacheManager.getTransport() != null;
+
+                if (Boolean.valueOf(
+                        HawkularProperties.getProperty(ISPN_BACKEND_REINDEX, ISPN_BACKEND_REINDEX_DEFAULT))) {
+                    log.info("Reindexing Ispn [backend] started.");
+                    long startReindex = System.currentTimeMillis();
+                    SearchManager searchManager = Search
+                            .getSearchManager(IspnCacheManager.getCacheManager().getCache("backend"));
+                    searchManager.getMassIndexer().start();
+                    long stopReindex = System.currentTimeMillis();
+                    log.info("Reindexing Ispn [backend] completed in [" + (stopReindex - startReindex) + " ms]");
+                }
             } catch (IOException e) {
                 log.error(e);
             }
