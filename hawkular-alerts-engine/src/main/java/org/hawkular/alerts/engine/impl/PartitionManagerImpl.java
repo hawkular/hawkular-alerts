@@ -215,10 +215,12 @@ public class PartitionManagerImpl implements PartitionManager {
 
     @PostConstruct
     public void init() {
+        // PartitionManager as a singleton always fetches the cacheManager and stops it on shutdown.
+        cacheManager = IspnCacheManager.getCacheManager();
+
         if (!distributed) {
             log.infoPartitionManagerDisabled();
         } else {
-            cacheManager = IspnCacheManager.getCacheManager();
             partitionCache = cacheManager.getCache("partition");
             triggersCache = cacheManager.getCache("triggers");
             dataCache = cacheManager.getCache("data");
@@ -248,6 +250,8 @@ public class PartitionManagerImpl implements PartitionManager {
             dataCache.stop();
             triggersCache.stop();
             partitionCache.stop();
+        }
+        if (null != cacheManager) {
             cacheManager.stop();
         }
     }
