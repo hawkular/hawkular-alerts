@@ -36,10 +36,15 @@
       </form>
     </div>
   </div>
+
   <!-- List -->
-  <div class="row" ng-show="selectedTenant != null && selectedTenant != ''">
+
+  <div class="row row-cards-pf" ng-show="selectedTenant != null && selectedTenant != ''">
+
     <div class="list-group list-view-pf list-view-pf-view">
-      <div class="list-group-item" ng-repeat="t in triggers | startFrom: (pageNumber - 1) * pageSize | limitTo: (pageSize ? pageSize : 5)">
+
+      <div class="list-group-item" ng-repeat="t in triggers | startFrom: (pageNumber - 1) * pageSize | limitTo: (pageSize ? pageSize : 5)" repeat-done>
+
         <div class="list-view-pf-actions">
           <div class="dropdown pull-right dropdown-kebab-pf">
             <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebabRight15" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -55,64 +60,134 @@
             </ul>
           </div>
         </div>
+
         <div class="list-view-pf-main-info">
+
           <div class="list-view-pf-left">
-            <span class="fa fa-flash list-view-pf-icon"></span>
+            <span class="fa fa-flash"></span>
           </div>
+
           <div class="list-view-pf-body">
-            <div class="list-view-pf-description-25">
+
+            <div class="list-view-pf-description">
               <div class="list-group-item-heading">
-                {{ t.trigger.name }} <small>{{ t.trigger.description }}</small> <small>Id: {{ t.trigger.id }}</small> <small>Enabled: {{ t.trigger.enabled }}</small>
+                {{ t.trigger.name }} <small>Type: {{ t.trigger.type }}</small>  <small>Enabled: {{ t.trigger.enabled }}</small> <small>Id: {{ t.trigger.id }}</small>
               </div>
             </div>
+
+            <!-- Expandable sections -->
+
             <div class="list-view-pf-additional-info">
+
+              <!-- Conditions -->
               <div class="list-view-pf-additional-info-item">
-                <dl>
-                  <dt>Fires when</dt>
-                  <dt ng-repeat-start="c in t.conditions"></dt>
-                  <dd ng-show="c.triggerMode == 'FIRING'" ng-repeat-end>
-                    <div>{{ c.displayString }}</div>
-                  </dd>
-                  <dt ng-show="t.trigger.autoResolve">Resolves when</dt>
-                  <dt ng-repeat-start="c in t.conditions"></dt>
-                  <dd ng-show="c.triggerMode == 'AUTORESOLVE'" ng-repeat-end>
-                    <div>{{ c.displayString }}</div>
-                  </dd>
-                </dl>
+                <div class="list-view-pf-expand">
+                  <span class="fa fa-angle-right"></span> <strong>{{ getLength(t.conditions) }}</strong> Conditions
+                </div>
               </div>
-              <div class="list-view-pf-additional-info-item" ng-show="t.trigger.actions != null">
-                <dl class="dl-horizontal">
-                  <dt>Actions</dt>
-                  <dd></dd>
-                  <dt ng-repeat-start="a in t.trigger.actions">
-                    <span class="fa fa-envelope list-view-pf-icon-lg" ng-show="a.actionPlugin == 'email'"></span> <span class="fa fa-code list-view-pf-icon-lg"
-                      ng-show="a.actionPlugin == 'webhook'"></span> <span class="fa fa-file-code-o list-view-pf-icon-lg" ng-show="a.actionPlugin == 'elasticsearch'"></span>
-                  </dt>
-                  <dd ng-repeat-end>{{ a.actionId }}</dd>
-                </dl>
-              </div>
-              <div class="list-view-pf-additional-info-item" ng-show="t.trigger.tags != null">
-                <dl class="dl-horizontal">
-                  <dt>Tags</dt>
-                  <dd></dd>
-                  <dt ng-repeat-start="(key, value) in t.trigger.tags">{{ key }}:</dt>
-                  <dd ng-repeat-end>{{ value }}</dd>
-                </dl>
-              </div>
+
+              <!-- Actions -->
               <div class="list-view-pf-additional-info-item">
-                <dl class="dl-horizontal" ng-show="t.trigger.context != null">
-                  <dt>Context</dt>
-                  <dd></dd>
-                  <dt ng-repeat-start="(key, value) in t.trigger.context">{{ key }}:</dt>
-                  <dd ng-repeat-end>{{ value }}</dd>
-                </dl>
+                <div class="list-view-pf-expand">
+                  <span class="fa fa-angle-right"></span> <strong>{{ getLength(t.trigger.actions) }}</strong> Actions
+                </div>
               </div>
+
+              <!-- Context -->
+              <div class="list-view-pf-additional-info-item">
+                <div class="list-view-pf-expand">
+                  <span class="fa fa-angle-right"></span> <span class="pficon pficon-info"></span> <strong>{{ getLength(t.trigger.context) }}</strong> Context
+                </div>
+              </div>
+
+              <!-- Tags -->
+              <div class="list-view-pf-additional-info-item">
+                <div class="list-view-pf-expand">
+                  <span class="fa fa-angle-right"></span> <span class="pficon pficon-info"></span> <strong>{{ getLength(t.trigger.tags) }}</strong> Tags
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
+
+        <!-- The expanded sections -->
+
+        <!-- Conditions -->
+        <div class="list-group-item-container container-fluid hidden">
+          <div class="close">
+            <span class="pficon pficon-close"></span>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <dl class="dl-horizontal">
+                <dt>Fires when</dt>
+                <dt ng-repeat-start="c in t.conditions"></dt>
+                <dd ng-show="c.triggerMode == 'FIRING'" ng-repeat-end>
+                  <div>{{ c.displayString }}</div>
+                </dd>
+                <dt ng-show="t.trigger.autoResolve">Resolves when</dt>
+                <dt ng-repeat-start="c in t.conditions"></dt>
+                <dd ng-show="c.triggerMode == 'AUTORESOLVE'" ng-repeat-end>
+                  <div>{{ c.displayString }}</div>
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="list-group-item-container container-fluid hidden">
+          <div class="close">
+            <span class="pficon pficon-close"></span>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <dl class="dl-horizontal">
+                <dt ng-repeat-start="a in t.trigger.actions">
+                  <span class="fa fa-envelope list-view-pf-icon-lg" ng-show="a.actionPlugin == 'email'"></span> <span class="fa fa-code list-view-pf-icon-lg"
+                    ng-show="a.actionPlugin == 'webhook'"></span> <span class="fa fa-file-code-o list-view-pf-icon-lg" ng-show="a.actionPlugin == 'elasticsearch'"></span>
+                </dt>
+                <dd ng-repeat-end>{{ a.actionId }}</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <!-- Context -->
+        <div class="list-group-item-container container-fluid hidden">
+          <div class="close">
+            <span class="pficon pficon-close"></span>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <dl class="dl-horizontal">
+                <dt ng-repeat-start="(key, value) in t.trigger.context">{{ key }}:</dt>
+                <dd ng-repeat-end>{{ value }}</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="list-group-item-container container-fluid hidden">
+          <div class="close">
+            <span class="pficon pficon-close"></span>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <dl class="dl-horizontal">
+                <dt ng-repeat-start="(key, value) in t.trigger.tags">{{ key }}:</dt>
+                <dd ng-repeat-end>{{ value }}</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
+
   <!-- Pagination -->
   <form class="form-inline" role="form" ng-show="selectedTenant != null && selectedTenant != ''">
     <div class="col-md-12">
@@ -149,28 +224,27 @@
     </div>
   </div>
 </div>
-<div ng-controller="hwk.triggersController">
-  <script type="text/ng-template" id="jsonModal.html">
-    <div class="modal-content modal-lg">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" ng-click="cancel()" aria-hidden="true">
-          <span class="pficon pficon-close"></span>
-        </button>
-        <h4 class="modal-title">{{ jsonModal.title }}</h4>
-      </div>
-      <div class="modal-body">
-        <form class="form-horizontal">
-          <div class="form-group">
-            <div class="col-md-12">
-              <textarea class="form-control textarea-resize" ng-model="jsonModal.json" ng-readonly="{{ jsonModal.readOnly }}" rows="20" placeholder="{{ jsonModal.placeholder }}" />
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="cancel()">Cancel</button>
-        <button type="button" class="btn btn-primary" data-dismiss="modal" ng-show="{{ !jsonModal.readOnly }}" ng-disabled="!isValid()" ng-click="save()">Save</button>
-      </div>
+
+<script type="text/ng-template" id="jsonModal.html">
+  <div class="modal-content modal-lg">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" ng-click="cancel()" aria-hidden="true">
+        <span class="pficon pficon-close"></span>
+      </button>
+      <h4 class="modal-title">{{ jsonModal.title }}</h4>
     </div>
-  </script>
-</div>
+    <div class="modal-body">
+      <form class="form-horizontal">
+        <div class="form-group">
+          <div class="col-md-12">
+            <textarea class="form-control textarea-resize" ng-model="jsonModal.json" ng-readonly="{{ jsonModal.readOnly }}" rows="20" placeholder="{{ jsonModal.placeholder }}" />
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="cancel()">Cancel</button>
+      <button type="button" class="btn btn-primary" data-dismiss="modal" ng-show="{{ !jsonModal.readOnly }}" ng-disabled="!isValid()" ng-click="save()">Save</button>
+    </div>
+  </div>
+</script>

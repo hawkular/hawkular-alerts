@@ -167,7 +167,7 @@ public class ExternalCondition extends Condition {
 
     @Override
     public void updateDisplayString() {
-        String s = String.format("%s: %s matches [%s]", this.alerterId, this.dataId, this.expression);
+        String s = String.format("%s matches [%s]", this.alerterId, this.expression);
         setDisplayString(s);
     }
 

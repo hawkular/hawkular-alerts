@@ -15,4 +15,19 @@
  * limitations under the License.
  */
 
-angular.module( 'hwk.triggersModule', []);
+var triggersModule = angular.module( 'hwk.triggersModule', []);
+
+triggersModule.directive('repeatDone', function($timeout) {
+  'use strict';
+
+  return {
+    restrict: 'A',
+    link: function (scope, element, attr) {
+      if (scope.$last === true) {
+        $timeout(function () {
+          scope.$emit('ngRepeatDoneTypes');
+        }, 0);
+      }
+    }
+  };
+});
