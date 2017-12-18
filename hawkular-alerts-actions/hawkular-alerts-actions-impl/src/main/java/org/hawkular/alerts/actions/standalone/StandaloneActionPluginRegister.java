@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,6 +33,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.hawkular.alerts.actions.api.ActionPluginListener;
+import org.hawkular.alerts.api.exception.FoundException;
 import org.hawkular.alerts.api.services.ActionListener;
 import org.hawkular.alerts.api.services.ActionsService;
 import org.hawkular.alerts.api.services.DefinitionsService;
@@ -69,11 +70,20 @@ public class StandaloneActionPluginRegister {
             ActionPluginListener actionPluginListener = plugins.get(actionPlugin);
             Set<String> properties = actionPluginListener.getProperties();
             Map<String, String> defaultProperties = actionPluginListener.getDefaultProperties();
+
             try {
-                if (defaultProperties != null && !defaultProperties.isEmpty() ) {
-                    definitions.addActionPlugin(actionPlugin, defaultProperties);
-                } else {
-                    definitions.addActionPlugin(actionPlugin, properties);
+                try {
+                    if (defaultProperties != null && !defaultProperties.isEmpty() ) {
+                        definitions.addActionPlugin(actionPlugin, defaultProperties);
+                    } else {
+                        definitions.addActionPlugin(actionPlugin, properties);
+                    }
+                } catch (FoundException e) {
+                    if (defaultProperties != null && !defaultProperties.isEmpty() ) {
+                        definitions.updateActionPlugin(actionPlugin, defaultProperties);
+                    } else {
+                        definitions.updateActionPlugin(actionPlugin, properties);
+                    }
                 }
                 ActionListener actionListener = new StandaloneActionPluginListener(ActionPlugins.getPlugins());
                 actions.addListener(actionListener);
