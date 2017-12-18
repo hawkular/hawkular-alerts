@@ -17,6 +17,7 @@
 package org.hawkular.alerts.engine.impl.ispn;
 
 import static org.hawkular.alerts.api.util.Util.isEmpty;
+import static org.hawkular.alerts.cache.IspnCacheManager.BACKEND_EVENTS_CACHE;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromEventId;
 import static org.hawkular.alerts.engine.tags.ExpressionTagQueryParser.ExpressionTagResolver.EQ;
@@ -102,7 +103,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
     @EJB
     PropertiesService properties;
 
-    Cache<String, Object> backend;
+    Cache<String, Object> backendEvents;
 
     QueryFactory queryFactory;
 
@@ -110,12 +111,12 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
     @PostConstruct
     public void init() {
-        backend = IspnCacheManager.getCacheManager().getCache("backend");
-        if (backend == null) {
-            log.error("Ispn backend cache not found. Check configuration.");
-            throw new RuntimeException("backend cache not found");
+        backendEvents = IspnCacheManager.getCacheManager().getCache(BACKEND_EVENTS_CACHE);
+        if (backendEvents == null) {
+            log.error("Ispn backendEvents cache not found. Check configuration.");
+            throw new RuntimeException("backendEvents cache not found");
         }
-        queryFactory = Search.getQueryFactory(backend);
+        queryFactory = Search.getQueryFactory(backendEvents);
         parser = new IspnExpressionTagQueryParser((tokens, query) -> {
             if (tokens != null) {
                 String tag;
@@ -228,7 +229,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
         for (Alert alert : alertsToAck) {
             alert.addNote(ackBy, ackNotes);
             alert.addLifecycle(Status.ACKNOWLEDGED, ackBy, System.currentTimeMillis());
-            backend.put(pk(alert), new IspnEvent(alert));
+            backendEvents.put(pk(alert), new IspnEvent(alert));
             sendAction(alert);
         }
     }
@@ -243,7 +244,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
         }
         log.debugf("Adding %s alerts", alerts.size());
         for (Alert alert : alerts) {
-            backend.put(pk(alert), new IspnEvent(alert));
+            backendEvents.put(pk(alert), new IspnEvent(alert));
         }
     }
 
@@ -265,7 +266,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
         for (Alert alert : existingAlerts) {
             tags.entrySet().stream().forEach(tag -> alert.addTag(tag.getKey(), tag.getValue()));
-            backend.put(pk(alert), new IspnEvent(alert));
+            backendEvents.put(pk(alert), new IspnEvent(alert));
         }
     }
 
@@ -296,7 +297,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
         for (Event event : existingEvents) {
             tags.entrySet().stream().forEach(tag -> event.addTag(tag.getKey(), tag.getValue()));
-            backend.put(pk(event), new IspnEvent(event));
+            backendEvents.put(pk(event), new IspnEvent(event));
         }
     }
 
@@ -310,7 +311,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
         }
         log.debugf("Adding %s events", events.size());
         for (Event event : events) {
-            backend.put(pk(event), new IspnEvent(event));
+            backendEvents.put(pk(event), new IspnEvent(event));
         }
     }
 
@@ -333,7 +334,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
 
         alert.addNote(user, text);
 
-        backend.put(pk(alert), new IspnEvent(alert));
+        backendEvents.put(pk(alert), new IspnEvent(alert));
     }
 
     @Override
@@ -352,13 +353,13 @@ public class IspnAlertsServiceImpl implements AlertsService {
             return 0;
         }
         try {
-            backend.startBatch();
+            backendEvents.startBatch();
             for (Alert alert : alertsToDelete) {
-                backend.remove(pk(alert));
+                backendEvents.remove(pk(alert));
             }
-            backend.endBatch(true);
+            backendEvents.endBatch(true);
         } catch (Exception e) {
-            backend.endBatch(false);
+            backendEvents.endBatch(false);
             throw e;
         }
         return alertsToDelete.size();
@@ -380,13 +381,13 @@ public class IspnAlertsServiceImpl implements AlertsService {
             return 0;
         }
         try {
-            backend.startBatch();
+            backendEvents.startBatch();
             for (Event event : eventsToDelete) {
-                backend.remove(pk(event));
+                backendEvents.remove(pk(event));
             }
-            backend.endBatch(true);
+            backendEvents.endBatch(true);
         } catch (Exception e) {
-            backend.endBatch(false);
+            backendEvents.endBatch(false);
             throw e;
         }
         return eventsToDelete.size();
@@ -402,7 +403,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
         }
 
         String pk = pkFromEventId(tenantId, alertId);
-        IspnEvent ispnEvent = (IspnEvent) backend.get(pk);
+        IspnEvent ispnEvent = (IspnEvent) backendEvents.get(pk);
         return ispnEvent != null && ispnEvent.getEvent() instanceof Alert ? (Alert) ispnEvent.getEvent() : null;
     }
 
@@ -570,7 +571,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
         }
 
         String pk = pkFromEventId(tenantId, eventId);
-        IspnEvent ispnEvent = (IspnEvent) backend.get(pk);
+        IspnEvent ispnEvent = (IspnEvent) backendEvents.get(pk);
         return ispnEvent != null ? ispnEvent.getEvent() : null;
     }
 
@@ -701,7 +702,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
                 }
             }
             if (modified) {
-                backend.put(pk(alert), new IspnEvent(alert));
+                backendEvents.put(pk(alert), new IspnEvent(alert));
             }
         }
     }
@@ -732,7 +733,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
                 }
             }
             if (modified) {
-                backend.put(pk(event), new IspnEvent(event));
+                backendEvents.put(pk(event), new IspnEvent(event));
             }
         }
     }
@@ -762,7 +763,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
             alert.addNote(resolvedBy, resolvedNotes);
             alert.setResolvedEvalSets(resolvedEvalSets);
             alert.addLifecycle(Status.RESOLVED, resolvedBy, System.currentTimeMillis());
-            backend.put(pk(alert), new IspnEvent(alert));
+            backendEvents.put(pk(alert), new IspnEvent(alert));
             sendAction(alert);
         }
 
@@ -799,7 +800,7 @@ public class IspnAlertsServiceImpl implements AlertsService {
             alert.addNote(resolvedBy, resolvedNotes);
             alert.setResolvedEvalSets(resolvedEvalSets);
             alert.addLifecycle(Status.RESOLVED, resolvedBy, System.currentTimeMillis());
-            backend.put(pk(alert), new IspnEvent(alert));
+            backendEvents.put(pk(alert), new IspnEvent(alert));
             sendAction(alert);
         }
 

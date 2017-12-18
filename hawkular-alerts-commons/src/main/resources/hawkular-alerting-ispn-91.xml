@@ -22,7 +22,7 @@
     xsi:schemaLocation="urn:infinispan:config:9.1 http://www.infinispan.org/schemas/infinispan-config-9.1.xsd"
     xmlns="urn:infinispan:config:9.1">
 
-  <cache-container name="hawkular-alerts" default-cache="backend">
+  <cache-container name="hawkular-alerts" default-cache="backend_triggers">
     <local-cache name="partition"/>
     <local-cache name="triggers"/>
     <local-cache name="data"/>
@@ -37,7 +37,7 @@
     </local-cache>
 
     <!-- Backend for definitions, actions history, events and alerts -->
-    <local-cache name="backend">
+    <local-cache name="backend_triggers">
       <transaction mode="BATCH"/>
       <persistence>
         <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${jboss.server.data.dir}/hawkular-alerting">
@@ -46,19 +46,17 @@
       </persistence>
       <indexing index="LOCAL">
         <indexed-entities>
-          <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnAction</indexed-entity>
           <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnActionDefinition</indexed-entity>
           <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnCondition</indexed-entity>
           <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnDampening</indexed-entity>
-          <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnEvent</indexed-entity>
           <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnTrigger</indexed-entity>
         </indexed-entities>
         <property name="default.indexmanager">near-real-time</property>
         <property name="default.directory_provider">infinispan</property>
         <property name="default.chunk_size">128000</property>
-        <property name="default.locking_cachename">LuceneIndexesLocking_custom</property>
-        <property name="default.data_cachename">LuceneIndexesData_custom</property>
-        <property name="default.metadata_cachename">LuceneIndexesMetadata_custom</property>
+        <property name="default.locking_cachename">backend_triggers_locking</property>
+        <property name="default.data_cachename">backend_triggers_indexes_data</property>
+        <property name="default.metadata_cachename">backend_triggers_indexes_metadata</property>
         <!-- The default is 10, but we don't want to waste many cycles in merging
          (tune for writes at cost of reader fragmentation) -->
 
@@ -72,7 +70,7 @@
         <property name="lucene_version">LUCENE_CURRENT</property>
       </indexing>
     </local-cache>
-    <local-cache name="LuceneIndexesMetadata_custom">
+    <local-cache name="backend_triggers_indexes_metadata">
       <persistence passivation="false">
         <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${jboss.server.data.dir}/hawkular-alerting">
           <write-behind thread-pool-size="5" />
@@ -80,7 +78,7 @@
       </persistence>
       <indexing index="NONE"/>
     </local-cache>
-    <local-cache name="LuceneIndexesData_custom">
+    <local-cache name="backend_triggers_indexes_data">
       <persistence passivation="false">
         <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${jboss.server.data.dir}/hawkular-alerting">
           <write-behind thread-pool-size="5" />
@@ -88,7 +86,63 @@
       </persistence>
       <indexing index="NONE" />
     </local-cache>
-    <local-cache name="LuceneIndexesLocking_custom">
+    <local-cache name="backend_triggers_locking">
+      <persistence passivation="false">
+        <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${jboss.server.data.dir}/hawkular-alerting">
+          <write-behind thread-pool-size="5" />
+        </file-store>
+      </persistence>
+      <indexing index="NONE" />
+    </local-cache>
+
+    <local-cache name="backend_events">
+      <transaction mode="BATCH"/>
+      <persistence>
+        <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${jboss.server.data.dir}/hawkular-alerting">
+          <write-behind thread-pool-size="5" modification-queue-size="10000" />
+        </file-store>
+      </persistence>
+      <indexing index="LOCAL">
+        <indexed-entities>
+          <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnAction</indexed-entity>
+          <indexed-entity>org.hawkular.alerts.engine.impl.ispn.model.IspnEvent</indexed-entity>
+        </indexed-entities>
+        <property name="default.indexmanager">near-real-time</property>
+        <property name="default.directory_provider">infinispan</property>
+        <property name="default.chunk_size">128000</property>
+        <property name="default.locking_cachename">backend_events_locking</property>
+        <property name="default.data_cachename">backend_events_indexes_data</property>
+        <property name="default.metadata_cachename">backend_events_indexes_metadata</property>
+        <!-- The default is 10, but we don't want to waste many cycles in merging
+         (tune for writes at cost of reader fragmentation) -->
+
+        <property name="default.indexwriter.merge_factor">30</property>
+        <!-- Never create segments larger than 1GB -->
+        <property name="default.indexwriter.merge_max_size">1024</property>
+        <!-- IndexWriter flush buffer size in MB -->
+        <property name="default.indexwriter.ram_buffer_size">64</property>
+        <!-- Enable sharding on writers -->
+        <property name="default.sharding_strategy.nbr_of_shards">6</property>
+        <property name="lucene_version">LUCENE_CURRENT</property>
+      </indexing>
+    </local-cache>
+    <local-cache name="backend_events_indexes_metadata">
+      <persistence passivation="false">
+        <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${jboss.server.data.dir}/hawkular-alerting">
+          <write-behind thread-pool-size="5" />
+        </file-store>
+      </persistence>
+      <indexing index="NONE"/>
+    </local-cache>
+    <local-cache name="backend_events_indexes_data">
+      <persistence passivation="false">
+        <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${jboss.server.data.dir}/hawkular-alerting">
+          <write-behind thread-pool-size="5" />
+        </file-store>
+      </persistence>
+      <indexing index="NONE" />
+    </local-cache>
+    <local-cache name="backend_events_locking">
       <persistence passivation="false">
         <file-store preload="true" fetch-state="true" read-only="false" purge="false" path="${jboss.server.data.dir}/hawkular-alerting">
           <write-behind thread-pool-size="5" />

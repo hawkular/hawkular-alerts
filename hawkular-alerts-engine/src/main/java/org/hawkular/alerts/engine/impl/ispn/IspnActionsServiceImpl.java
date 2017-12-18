@@ -17,6 +17,7 @@
 package org.hawkular.alerts.engine.impl.ispn;
 
 import static org.hawkular.alerts.api.util.Util.isEmpty;
+import static org.hawkular.alerts.cache.IspnCacheManager.BACKEND_EVENTS_CACHE;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -84,18 +85,18 @@ public class IspnActionsServiceImpl implements ActionsService {
     @EJB
     ActionsCacheManager actionsCacheManager;
 
-    Cache<String, Object> backend;
+    Cache<String, Object> backendEvents;
 
     QueryFactory queryFactory;
 
     @PostConstruct
     public void init() {
-        backend = IspnCacheManager.getCacheManager().getCache("backend");
-        if (backend == null) {
-            log.error("Ispn backend cache not found. Check configuration.");
-            throw new RuntimeException("backend cache not found");
+        backendEvents = IspnCacheManager.getCacheManager().getCache(BACKEND_EVENTS_CACHE);
+        if (backendEvents == null) {
+            log.error("Ispn backendEvents cache not found. Check configuration.");
+            throw new RuntimeException("backendEvents cache not found");
         }
-        queryFactory = Search.getQueryFactory(backend);
+        queryFactory = Search.getQueryFactory(backendEvents);
     }
 
     public void setAlertsContext(AlertsContext alertsContext) {
@@ -145,7 +146,7 @@ public class IspnActionsServiceImpl implements ActionsService {
 
         try {
             String pk = IspnPk.pk(action);
-            IspnAction IspnAction = (IspnAction) backend.get(pk);
+            IspnAction IspnAction = (IspnAction) backendEvents.get(pk);
             if (IspnAction == null) {
                 insertAction(action);
                 log.debugf("No existing action found for %s, inserting %s", pk, action);
@@ -153,7 +154,7 @@ public class IspnActionsServiceImpl implements ActionsService {
             }
             Action existingAction = IspnAction.getAction();
             existingAction.setResult(action.getResult());
-            backend.put(pk, new IspnAction(existingAction));
+            backendEvents.put(pk, new IspnAction(existingAction));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -263,15 +264,15 @@ public class IspnActionsServiceImpl implements ActionsService {
         }
 
         try {
-            backend.startBatch();
+            backendEvents.startBatch();
             actionsToDelete.stream()
-                    .forEach(a -> backend.remove(IspnPk.pk(a)));
-            backend.endBatch(true);
+                    .forEach(a -> backendEvents.remove(IspnPk.pk(a)));
+            backendEvents.endBatch(true);
             return actionsToDelete.size();
 
         } catch (Exception e) {
             try {
-                backend.endBatch(false);
+                backendEvents.endBatch(false);
             } catch (Exception e2) {
                 msgLog.errorDatabaseException(e2.getMessage());
             }
@@ -419,7 +420,7 @@ public class IspnActionsServiceImpl implements ActionsService {
             action.setResult(WAITING_RESULT);
         }
         try {
-            backend.put(IspnPk.pk(action), new IspnAction(action));
+            backendEvents.put(IspnPk.pk(action), new IspnAction(action));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
         }

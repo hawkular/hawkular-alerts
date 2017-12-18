@@ -20,6 +20,7 @@ import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFI
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_REMOVE;
 import static org.hawkular.alerts.api.services.DefinitionsEvent.Type.ACTION_DEFINITION_UPDATE;
 import static org.hawkular.alerts.api.util.Util.isEmpty;
+import static org.hawkular.alerts.cache.IspnCacheManager.BACKEND_TRIGGERS_CACHE;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pk;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromDampeningId;
 import static org.hawkular.alerts.engine.impl.ispn.IspnPk.pkFromTriggerId;
@@ -116,7 +117,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
     @EJB
     PropertiesService properties;
 
-    Cache<String, Object> backend;
+    Cache<String, Object> backendTriggers;
 
     QueryFactory queryFactory;
 
@@ -125,12 +126,12 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     @PostConstruct
     public void init() {
-        backend = IspnCacheManager.getCacheManager().getCache("backend");
-        if (backend == null) {
-            log.error("Ispn backend cache not found. Check configuration.");
-            throw new RuntimeException("backend cache not found");
+        backendTriggers = IspnCacheManager.getCacheManager().getCache(BACKEND_TRIGGERS_CACHE);
+        if (backendTriggers == null) {
+            log.error("Ispn backendTriggers cache not found. Check configuration.");
+            throw new RuntimeException("backendTriggers cache not found");
         }
-        queryFactory = Search.getQueryFactory(backend);
+        queryFactory = Search.getQueryFactory(backendTriggers);
     }
 
     public void setAlertsEngine(AlertsEngine alertsEngine) {
@@ -182,11 +183,11 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             }
         }
         String pk = pk(actionDefinition);
-        IspnActionDefinition found = (IspnActionDefinition) backend.get(pk);
+        IspnActionDefinition found = (IspnActionDefinition) backendTriggers.get(pk);
         if (found != null) {
             throw new FoundApplicationException(pk);
         }
-        backend.put(pk(actionDefinition), new IspnActionDefinition(actionDefinition));
+        backendTriggers.put(pk(actionDefinition), new IspnActionDefinition(actionDefinition));
 
         notifyListeners(new DefinitionsEvent(ACTION_DEFINITION_CREATE, actionDefinition));
     }
@@ -719,7 +720,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("TriggerId must be not null");
         }
         String pk = pkFromTriggerId(tenantId, triggerId);
-        IspnTrigger found = (IspnTrigger) backend.get(pk);
+        IspnTrigger found = (IspnTrigger) backendTriggers.get(pk);
         if (found == null) {
             throw new NotFoundApplicationException(pk);
         }
@@ -1089,7 +1090,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         }
 
         String pk = pkFromDampeningId(dampeningId);
-        IspnDampening found = (IspnDampening) backend.get(pk);
+        IspnDampening found = (IspnDampening) backendTriggers.get(pk);
         if (found == null) {
             throw new NotFoundApplicationException(pk);
         }
@@ -1391,10 +1392,10 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("defaultProperties must be not null");
         }
         String pk = pk(actionPlugin);
-        if (backend.get(pk) != null) {
+        if (backendTriggers.get(pk) != null) {
             throw new FoundApplicationException(pk);
         }
-        backend.put(pk, new IspnActionPlugin(actionPlugin, defaultProperties));
+        backendTriggers.put(pk, new IspnActionPlugin(actionPlugin, defaultProperties));
     }
 
     @Override
@@ -1402,7 +1403,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
-        backend.remove(pk(actionPlugin));
+        backendTriggers.remove(pk(actionPlugin));
     }
 
     @Override
@@ -1424,12 +1425,12 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             throw new IllegalArgumentException("defaultProperties must be not null");
         }
         String pk = pk(actionPlugin);
-        IspnActionPlugin found = (IspnActionPlugin) backend.get(pk);
+        IspnActionPlugin found = (IspnActionPlugin) backendTriggers.get(pk);
         if (found == null) {
             throw new NotFoundApplicationException(pk);
         }
         found.setDefaultProperties(defaultProperties);
-        backend.put(pk, found);
+        backendTriggers.put(pk, found);
     }
 
     @Override
@@ -1447,7 +1448,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
-        IspnActionPlugin found = (IspnActionPlugin) backend.get(pk(actionPlugin));
+        IspnActionPlugin found = (IspnActionPlugin) backendTriggers.get(pk(actionPlugin));
         return found == null ? null : found.getDefaultProperties().keySet();
     }
 
@@ -1456,7 +1457,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionPlugin)) {
             throw new IllegalArgumentException("actionPlugin must be not null");
         }
-        IspnActionPlugin found = (IspnActionPlugin) backend.get(pk(actionPlugin));
+        IspnActionPlugin found = (IspnActionPlugin) backendTriggers.get(pk(actionPlugin));
         return found == null ? null : found.getDefaultProperties();
     }
 
@@ -1471,7 +1472,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionId)) {
             throw new IllegalArgumentException("ActionId must be not null");
         }
-        backend.remove(pk(tenantId, actionPlugin, actionId));
+        backendTriggers.remove(pk(tenantId, actionPlugin, actionId));
 
         notifyListeners(new DefinitionsEvent(ACTION_DEFINITION_REMOVE, tenantId, actionPlugin, actionId));
     }
@@ -1508,11 +1509,11 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
             }
         }
         String pk = pk(actionDefinition);
-        IspnActionDefinition found = (IspnActionDefinition) backend.get(pk);
+        IspnActionDefinition found = (IspnActionDefinition) backendTriggers.get(pk);
         if (found == null) {
             throw new NotFoundApplicationException(pk);
         }
-        backend.put(pk, new IspnActionDefinition(actionDefinition));
+        backendTriggers.put(pk, new IspnActionDefinition(actionDefinition));
 
         notifyListeners(new DefinitionsEvent(ACTION_DEFINITION_UPDATE, actionDefinition));
     }
@@ -1590,7 +1591,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         if (isEmpty(actionId)) {
             throw new IllegalArgumentException("actionId must be not null");
         }
-        IspnActionDefinition actionDefinition = (IspnActionDefinition) backend
+        IspnActionDefinition actionDefinition = (IspnActionDefinition) backendTriggers
                 .get(pk(tenantId, actionPlugin, actionId));
         return actionDefinition != null ? actionDefinition.getActionDefinition() : null;
     }
@@ -1855,11 +1856,11 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         }
 
         String pk = pk(trigger);
-        IspnTrigger found = (IspnTrigger) backend.get(pk);
+        IspnTrigger found = (IspnTrigger) backendTriggers.get(pk);
         if (found != null) {
             throw new FoundApplicationException(pk);
         }
-        backend.put(pk, new IspnTrigger(trigger));
+        backendTriggers.put(pk, new IspnTrigger(trigger));
 
         if (null != alertsEngine) {
             alertsEngine.addTrigger(trigger.getTenantId(), trigger.getId());
@@ -1872,17 +1873,17 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
         String tenantId = trigger.getTenantId();
         String triggerId = trigger.getId();
         try {
-            backend.startBatch();
+            backendTriggers.startBatch();
 
-            backend.remove(pkFromTriggerId(tenantId, triggerId));
+            backendTriggers.remove(pkFromTriggerId(tenantId, triggerId));
             removeConditions(tenantId, triggerId, null);
             getTriggerDampenings(tenantId, triggerId, null).stream()
-                    .forEach(d -> backend.remove(pk(d)));
+                    .forEach(d -> backendTriggers.remove(pk(d)));
 
-            backend.endBatch(true);
+            backendTriggers.endBatch(true);
         } catch (Exception e) {
             try {
-                backend.endBatch(false);
+                backendTriggers.endBatch(false);
             } catch (Exception e2) {
                 msgLog.errorDatabaseException(e2.getMessage());
             }
@@ -1903,7 +1904,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     private Trigger updateTrigger(Trigger trigger) throws Exception {
         String pk = pk(trigger);
-        backend.put(pk, new IspnTrigger(trigger));
+        backendTriggers.put(pk, new IspnTrigger(trigger));
 
         if (null != alertsEngine) {
             alertsEngine.reloadTrigger(trigger.getTenantId(), trigger.getId());
@@ -2025,7 +2026,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     private Dampening addDampening(Dampening dampening) throws Exception {
         try {
-            backend.put(pk(dampening), new IspnDampening(dampening));
+            backendTriggers.put(pk(dampening), new IspnDampening(dampening));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -2182,9 +2183,9 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
         try {
             String pk = pkFromTriggerId(tenantId, memberTriggerId);
-            Trigger memberTrigger = (Trigger) backend.get(pk);
+            Trigger memberTrigger = (Trigger) backendTriggers.get(pk);
             memberTrigger.setDataIdMap(dataIdMap);
-            backend.put(pk, memberTrigger);
+            backendTriggers.put(pk, memberTrigger);
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -2330,7 +2331,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
                 }
                 newConditions.put(pk(cond), new IspnCondition(cond));
             }
-            backend.putAll(newConditions);
+            backendTriggers.putAll(newConditions);
 
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
@@ -2350,7 +2351,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
         try {
             getTriggerConditions(tenantId, triggerId, triggerMode).stream()
-                    .forEach(c -> backend.remove(pk(c)));
+                    .forEach(c -> backendTriggers.remove(pk(c)));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -2359,7 +2360,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     private void removeDampening(Dampening dampening) throws Exception {
         try {
-            backend.remove(pk(dampening));
+            backendTriggers.remove(pk(dampening));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;
@@ -2374,7 +2375,7 @@ public class IspnDefinitionsServiceImpl implements DefinitionsService {
 
     private Dampening updateDampening(Dampening dampening) throws Exception {
         try {
-            backend.put(pk(dampening), new IspnDampening(dampening));
+            backendTriggers.put(pk(dampening), new IspnDampening(dampening));
         } catch (Exception e) {
             msgLog.errorDatabaseException(e.getMessage());
             throw e;

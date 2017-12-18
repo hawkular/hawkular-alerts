@@ -37,6 +37,9 @@ import org.infinispan.query.SearchManager;
  */
 public class IspnCacheManager {
     private static final MsgLogger log = MsgLogging.getMsgLogger(IspnCacheManager.class);
+    public static final String BACKEND_TRIGGERS_CACHE = "backend_triggers";
+    public static final String BACKEND_EVENTS_CACHE = "backend_events";
+    private static final String[] CACHES = { BACKEND_TRIGGERS_CACHE, BACKEND_EVENTS_CACHE };
     private static final String ISPN_BACKEND_REINDEX = "hawkular-alerts.backend-reindex";
     private static final String ISPN_BACKEND_REINDEX_DEFAULT = "false";
     private static final String ISPN_CONFIG = "hawkular-alerting-ispn.xml";
@@ -77,13 +80,15 @@ public class IspnCacheManager {
 
                 if (Boolean.valueOf(
                         HawkularProperties.getProperty(ISPN_BACKEND_REINDEX, ISPN_BACKEND_REINDEX_DEFAULT))) {
-                    log.info("Reindexing Ispn [backend] started.");
-                    long startReindex = System.currentTimeMillis();
-                    SearchManager searchManager = Search
-                            .getSearchManager(IspnCacheManager.getCacheManager().getCache("backend"));
-                    searchManager.getMassIndexer().start();
-                    long stopReindex = System.currentTimeMillis();
-                    log.info("Reindexing Ispn [backend] completed in [" + (stopReindex - startReindex) + " ms]");
+                    for (String cache : CACHES) {
+                        log.infof("Reindexing Ispn [%s] started.", cache);
+                        long startReindex = System.currentTimeMillis();
+                        SearchManager searchManager = Search
+                                .getSearchManager(IspnCacheManager.getCacheManager().getCache(cache));
+                        searchManager.getMassIndexer().start();
+                        long stopReindex = System.currentTimeMillis();
+                        log.infof("Reindexing Ispn [%s] completed in [%s] ms", cache, (stopReindex - startReindex));
+                    }
                 }
             } catch (IOException e) {
                 log.error(e);
