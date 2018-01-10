@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2018 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -89,7 +89,7 @@
     <version.org.drools>6.4.0.Final</version.org.drools>
     <version.org.elasticsearch.client>5.2.2</version.org.elasticsearch.client>
     <version.org.freemarker>2.3.23</version.org.freemarker>
-    <version.org.hawkular.commons>0.9.8.Final-SRC-revision-4e2b056736d1f31ae3efe1df69c17f6a27173629</version.org.hawkular.commons>
+    <version.org.hawkular.commons>0.9.8.Final</version.org.hawkular.commons>
     <version.org.hibernate.search.upstream>5.8.0.Final</version.org.hibernate.search.upstream>
     <version.org.hibernate.search.jdg72>5.6.2.Final-redhat-1</version.org.hibernate.search.jdg72>
     <version.org.infinispan.upstream>9.1.1.Final</version.org.infinispan.upstream>
