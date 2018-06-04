@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2017 Red Hat, Inc. and/or its affiliates
+    Copyright 2015-2018 Red Hat, Inc. and/or its affiliates
     and other contributors as indicated by the @author tags.
 
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -69,6 +69,13 @@
   </issueManagement>
 
   <properties>
+    <!-- overrides parent versions in order to support Wildfly 11  -->
+    <version.com.google.guava>20.0</version.com.google.guava>
+    <version.org.wildfly>11.0.0.Final</version.org.wildfly>
+    <version.org.wildfly.core>3.0.8.Final</version.org.wildfly.core>
+    <version.org.wildfly.bom>11.0.0.Final</version.org.wildfly.bom>
+    <version.com.datastax.cassandra>3.3.0</version.com.datastax.cassandra>
+
     <!-- overrides 3.1.2 from parent which produces NPE -->
     <version.com.icegreen>1.4.1</version.com.icegreen>
     <version.javaee.spec>7.0</version.javaee.spec>
@@ -86,6 +93,7 @@
     <version.org.schwering>2.0.0.Alpha3</version.org.schwering>
     <version.org.slf4j>1.7.2</version.org.slf4j>
     <version.org.yaml>1.11</version.org.yaml>
+    <version.log4j>1.2.17</version.log4j>
   </properties>
 
   <dependencyManagement>
@@ -98,7 +106,12 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-
+      <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>${version.log4j}</version>
+        <scope>provided</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
