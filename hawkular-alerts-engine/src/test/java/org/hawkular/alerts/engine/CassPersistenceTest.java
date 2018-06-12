@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2015-2018 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,6 +37,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author Lucas Ponce
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Ignore
 public class CassPersistenceTest extends PersistenceTest {
 
     private static final Logger logger = LoggerFactory.getLogger(CassPersistenceTest.class);
