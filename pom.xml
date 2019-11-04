@@ -134,7 +134,7 @@
 
     <!-- Checkstyle and maven-checkstyle-plugin -->
     <version.maven-checkstyle-plugin>2.17</version.maven-checkstyle-plugin>
-    <version.com.puppycrawl.tools.checkstyle>6.8</version.com.puppycrawl.tools.checkstyle>
+    <version.com.puppycrawl.tools.checkstyle>8.18</version.com.puppycrawl.tools.checkstyle>
     <!-- the default value pointing at checkstyle.xml in hawkular-build-tools -->
     <checkstyle.configLocation>hawkular-checkstyle/checkstyle.xml</checkstyle.configLocation>
     <checkstyle.consoleOutput>true</checkstyle.consoleOutput>
